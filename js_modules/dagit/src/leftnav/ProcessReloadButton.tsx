@@ -1,14 +1,13 @@
 import * as React from "react";
 import { useQuery, useMutation, useApolloClient } from "react-apollo";
 import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
+import { Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
-import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
-import { ShortcutHandler } from "./ShortcutHandler";
-import { SharedToaster } from "./DomUtils";
+import { ReloadEnabledQuery } from "./types/ReloadEnabledQuery";
+import { ShortcutHandler } from "../ShortcutHandler";
+import { SharedToaster } from "../DomUtils";
 
-export const ProcessStatus: React.FunctionComponent = () => {
+export const ProcessReloadButton: React.FunctionComponent = () => {
   const apollo = useApolloClient();
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);
@@ -16,7 +15,7 @@ export const ProcessStatus: React.FunctionComponent = () => {
     "none" | "closing" | "waiting"
   >("none");
 
-  const { data } = useQuery<ProcessStatusQuery>(PROCESS_STATUS_QUERY, {
+  const { data } = useQuery<ReloadEnabledQuery>(RELOAD_ENABLED_QUERY, {
     fetchPolicy: "cache-and-network"
   });
 
@@ -50,7 +49,7 @@ export const ProcessStatus: React.FunctionComponent = () => {
     reload();
   };
   return (
-    <Label>
+    <div>
       {data.reloadSupported && (
         <ShortcutHandler
           onShortcut={onClick}
@@ -79,30 +78,13 @@ export const ProcessStatus: React.FunctionComponent = () => {
           </Tooltip>
         </ShortcutHandler>
       )}
-      <div style={{ height: 14 }} />
-      {data.instance && data.instance.info ? (
-        <Tooltip
-          hoverOpenDelay={500}
-          content={
-            <div style={{ whiteSpace: "pre-wrap" }}>{data.instance.info}</div>
-          }
-        >
-          {data.version}
-        </Tooltip>
-      ) : (
-        data.version
-      )}
-    </Label>
+    </div>
   );
 };
 
-export const PROCESS_STATUS_QUERY = gql`
-  query ProcessStatusQuery {
-    version
+export const RELOAD_ENABLED_QUERY = gql`
+  query ReloadEnabledQuery {
     reloadSupported
-    instance {
-      info
-    }
   }
 `;
 
@@ -110,12 +92,4 @@ const RELOAD_DAGIT_MUTATION = gql`
   mutation ReloadDagitMutation {
     reloadDagit
   }
-`;
-
-const Label = styled.span`
-  color: ${Colors.LIGHT_GRAY1};
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
 `;

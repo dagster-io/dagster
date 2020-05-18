@@ -3,11 +3,11 @@ import gql from "graphql-tag";
 import * as querystring from "query-string";
 import { ApolloClient } from "apollo-client";
 import { DirectGraphQLSubscription } from "../DirectGraphQLSubscription";
-import { Run } from "./Run";
 import { RunPipelineRunEventFragment } from "./types/RunPipelineRunEventFragment";
 import { PipelineRunStatus } from "../types/globalTypes";
 import { PipelineRunLogsSubscriptionStatusFragment } from "./types/PipelineRunLogsSubscriptionStatusFragment";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
+import { Run } from "./Run";
 import {
   TokenizingFieldValue,
   tokenizedValuesFromString

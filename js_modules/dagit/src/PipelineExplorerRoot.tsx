@@ -12,7 +12,10 @@ import {
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
 } from "./types/PipelineExplorerRootQuery";
-import { selectorFromString, PipelineSelector } from "./PipelineSelectorUtils";
+import {
+  selectorFromString,
+  PipelineSelector
+} from "./leftnav/PipelineSelectorUtils";
 import styled from "styled-components/macro";
 
 function explodeComposite(

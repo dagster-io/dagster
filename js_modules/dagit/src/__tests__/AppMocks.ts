@@ -2,10 +2,8 @@ import path from "path";
 import { ROOT_PIPELINES_QUERY } from "../App";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
-import {
-  SOLIDS_ROOT_QUERY,
-  USED_SOLID_DETAILS_QUERY
-} from "../solids/SolidsRoot";
+import { SOLIDS_ROOT_QUERY } from "../solids/SolidsRoot";
+import { USED_SOLID_DETAILS_QUERY } from "../solids/SolidDetailsRoot";
 import { PIPELINE_EXPLORER_ROOT_QUERY } from "../PipelineExplorerRoot";
 import { SIDEBAR_TABBED_CONTAINER_SOLID_QUERY } from "../SidebarSolidContainer";
 import { CachedGraphQLRequest } from "./MockedApolloLinks";

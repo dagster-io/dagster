@@ -7,7 +7,7 @@ import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables
 } from "./types/TypeExplorerContainerQuery";
-import { PipelineSelector } from "../PipelineSelectorUtils";
+import { PipelineSelector } from "../leftnav/PipelineSelectorUtils";
 
 interface ITypeExplorerContainerProps {
   selector: PipelineSelector;

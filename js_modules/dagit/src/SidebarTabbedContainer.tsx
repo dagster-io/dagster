@@ -9,7 +9,7 @@ import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedCon
 import { SidebarSolidContainer } from "./SidebarSolidContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import { SolidNameOrPath } from "./PipelineExplorer";
-import { PipelineSelector } from "./PipelineSelectorUtils";
+import { PipelineSelector } from "./leftnav/PipelineSelectorUtils";
 
 interface ISidebarTabbedContainerProps {
   types?: string;

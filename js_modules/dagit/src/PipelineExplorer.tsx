@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import Color from "color";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup, Checkbox, Button } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup, Checkbox } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -15,9 +15,12 @@ import { SplitPanelContainer } from "./SplitPanelContainer";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { filterByQuery } from "./GraphQueryImpl";
-import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
+import { SolidJumpBar } from "./PipelineJumpComponents";
 import { GraphQueryInput } from "./GraphQueryInput";
-import { PipelineSelector, selectorToString } from "./PipelineSelectorUtils";
+import {
+  PipelineSelector,
+  selectorToString
+} from "./leftnav/PipelineSelectorUtils";
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -141,7 +144,7 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const { selector, options, history, pipeline, parentHandle } = this.props;
+    const { selector, options, pipeline, parentHandle } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
@@ -187,15 +190,6 @@ export default class PipelineExplorer extends React.Component<
               style={{ background: backgroundTranslucent }}
               ref={this.pathOverlayEl}
             >
-              {selector.snapshotId ? (
-                <Button>{selector.snapshotId}</Button>
-              ) : (
-                <PipelineJumpBar
-                  selectedPipelineName={pipeline.name}
-                  onChange={name => history.push(`/pipeline/${name}:/`)}
-                />
-              )}
-              <Icon icon="chevron-right" />
               {selector.path
                 .slice(0, selector.path.length - 1)
                 .map((name, idx) => (

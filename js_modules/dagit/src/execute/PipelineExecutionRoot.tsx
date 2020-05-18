@@ -16,11 +16,10 @@ import {
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 import { ExecutionTabs } from "./ExecutionTabs";
 import { RouteComponentProps } from "react-router-dom";
-import { PipelineJumpBar } from "../PipelineJumpComponents";
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelineSelector: string;
-}>> = ({ match, history }) => {
+}>> = ({ match }) => {
   const pipelineName = match.params.pipelineSelector.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
 
@@ -40,11 +39,6 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   return (
     <PipelineExecutionWrapper>
       <TabBarContainer>
-        <PipelineJumpBar
-          selectedPipelineName={pipelineName}
-          onChange={pipelineName => history.push(`/playground/${pipelineName}`)}
-        />
-
         <ExecutionTabs data={data} onSave={onSave} />
         <div style={{ flex: 1 }} />
       </TabBarContainer>

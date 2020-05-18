@@ -10,223 +10,498 @@ exports[`renders execution 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/playground/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/playground/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     className="sc-htpNat iwJDzi"
@@ -234,71 +509,6 @@ exports[`renders execution 1`] = `
     <div
       className="sc-bxivhb kqOucM"
     >
-      <span
-        className="bp3-popover-wrapper"
-      >
-        <span
-          className="bp3-popover-target"
-          onClick={[Function]}
-        >
-          <div
-            className=""
-            onKeyDown={[Function]}
-          >
-            <button
-              className="bp3-button"
-              id="playground-select-pipeline"
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
-            >
-              <span
-                className="bp3-icon bp3-icon-send-to-graph"
-                icon="send-to-graph"
-              >
-                <svg
-                  data-icon="send-to-graph"
-                  height={16}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    send-to-graph
-                  </desc>
-                  <path
-                    d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              <span
-                className="bp3-button-text"
-              >
-                airline_demo_ingest_pipeline
-              </span>
-              <span
-                className="bp3-icon bp3-icon-double-caret-vertical"
-                icon="double-caret-vertical"
-              >
-                <svg
-                  data-icon="double-caret-vertical"
-                  height={16}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    double-caret-vertical
-                  </desc>
-                  <path
-                    d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-          </div>
-        </span>
-      </span>
       <div
         className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 cKVAOT"
       >
@@ -307,7 +517,7 @@ exports[`renders execution 1`] = `
           onClick={[Function]}
           onDoubleClick={[Function]}
         >
-          Workspace
+          New Run
         </div>
         <div
           className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 idqSMM"
@@ -403,223 +613,498 @@ exports[`renders pipeline page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     style={
@@ -653,90 +1138,6 @@ exports[`renders pipeline page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  id="playground-select-pipeline"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    airline_demo_ingest_pipeline
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <span
-            className="bp3-icon bp3-icon-chevron-right"
-            icon="chevron-right"
-          >
-            <svg
-              data-icon="chevron-right"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-right
-              </desc>
-              <path
-                d="M10.71 7.29l-4-4a1.003 1.003 0 00-1.42 1.42L8.59 8 5.3 11.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71l4-4c.18-.18.29-.43.29-.71 0-.28-.11-.53-.29-.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
           <span
             className="bp3-popover-wrapper"
           >
@@ -4771,223 +5172,498 @@ exports[`renders pipeline solid page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     style={
@@ -5021,90 +5697,6 @@ exports[`renders pipeline solid page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  id="playground-select-pipeline"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    airline_demo_ingest_pipeline
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <span
-            className="bp3-icon bp3-icon-chevron-right"
-            icon="chevron-right"
-          >
-            <svg
-              data-icon="chevron-right"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-right
-              </desc>
-              <path
-                d="M10.71 7.29l-4-4a1.003 1.003 0 00-1.42 1.42L8.59 8 5.3 11.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71l4-4c.18-.18.29-.43.29-.71 0-.28-.11-.53-.29-.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
           <span
             className="bp3-popover-wrapper"
           >
@@ -9139,223 +9731,434 @@ exports[`renders solids explorer 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
@@ -9372,7 +10175,7 @@ exports[`renders solids explorer 1`] = `
       }
     >
       <div
-        className="SolidsRoot__SolidListColumnContainer-ie1ggt-3 gRHPbE"
+        className="SolidsRoot__SolidListColumnContainer-ie1ggt-2 feboQJ"
       >
         <div
           style={
@@ -9471,7 +10274,7 @@ exports[`renders solids explorer 1`] = `
       }
     >
       <div
-        className="SolidsRoot__SolidDetailScrollContainer-ie1ggt-1 gQqIcX"
+        className="SolidDetailsRoot__SolidDetailScrollContainer-sc-1ley82l-0 cLqGgK"
       >
         <div
           className="SolidCard__SolidCardContainer-sc-8ub8qu-1 izzXTc"
@@ -10662,223 +11465,498 @@ exports[`renders type page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     style={
@@ -10912,90 +11990,6 @@ exports[`renders type page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  id="playground-select-pipeline"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    airline_demo_ingest_pipeline
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <span
-            className="bp3-icon bp3-icon-chevron-right"
-            icon="chevron-right"
-          >
-            <svg
-              data-icon="chevron-right"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-right
-              </desc>
-              <path
-                d="M10.71 7.29l-4-4a1.003 1.003 0 00-1.42 1.42L8.59 8 5.3 11.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71l4-4c.18-.18.29-.43.29-.71 0-.28-.11-.53-.29-.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
           <span
             className="bp3-popover-wrapper"
           >
@@ -15030,223 +16024,498 @@ exports[`renders type page 2`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     style={
@@ -15280,90 +16549,6 @@ exports[`renders type page 2`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  id="playground-select-pipeline"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    airline_demo_ingest_pipeline
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <span
-            className="bp3-icon bp3-icon-chevron-right"
-            icon="chevron-right"
-          >
-            <svg
-              data-icon="chevron-right"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-right
-              </desc>
-              <path
-                d="M10.71 7.29l-4-4a1.003 1.003 0 00-1.42 1.42L8.59 8 5.3 11.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71l4-4c.18-.18.29-.43.29-.71 0-.28-.11-.53-.29-.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
           <span
             className="bp3-popover-wrapper"
           >
@@ -19398,223 +20583,498 @@ exports[`renders without error 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-1 hRYjx"
+    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
   >
-    <div
-      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
-      onClick={[Function]}
-    >
-      <img
-        alt="logo"
-        src={
-          Object {
-            "process": [Function],
-          }
-        }
-        style={
-          Object {
-            "height": 40,
-          }
-        }
-      />
-      <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
-        style={
-          Object {
-            "background": "#3DCC91",
-          }
-        }
-        title="Connecting..."
-      />
-    </div>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/pipeline/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-diagram-tree"
-        icon="diagram-tree"
-      >
-        <svg
-          data-icon="diagram-tree"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            diagram-tree
-          </desc>
-          <path
-            d="M19 10v5h-2v-4h-6v4H9v-4H3v4H1v-5a1 1 0 011-1h7V5h2v4h7a1 1 0 011 1zM1 16h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm16 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-8 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2a1 1 0 011-1zM9 0h2a1 1 0 011 1v2a1 1 0 01-1 1H9a1 1 0 01-1-1V1a1 1 0 011-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Pipelines
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/solids"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-git-commit"
-        icon="git-commit"
-      >
-        <svg
-          data-icon="git-commit"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            git-commit
-          </desc>
-          <path
-            d="M19 9h-4.1a5 5 0 00-9.8 0H1c-.55 0-1 .45-1 1s.45 1 1 1h4.1a5 5 0 009.8 0H19c.55 0 1-.45 1-1s-.45-1-1-1zm-9 4c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Solids
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/runs"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-history"
-        icon="history"
-      >
-        <svg
-          data-icon="history"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            history
-          </desc>
-          <path
-            d="M10 0C6.71 0 3.82 1.6 2 4.05V2c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.76C5.23 3.17 7.47 2 10 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8c0-.55-.45-1-1-1s-1 .45-1 1c0 5.52 4.48 10 10 10s10-4.48 10-10S15.52 0 10 0zm0 3c-.55 0-1 .45-1 1v6c0 .28.11.53.29.71l3 3a1.003 1.003 0 001.42-1.42L11 9.59V4c0-.55-.45-1-1-1z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Runs
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground/airline_demo_ingest_pipeline/"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-manually-entered-data"
-        icon="manually-entered-data"
-      >
-        <svg
-          data-icon="manually-entered-data"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            manually-entered-data
-          </desc>
-          <path
-            d="M1 12h4.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm16.77-3.94l1.65-1.65c.36-.36.58-.86.58-1.41 0-1.1-.9-2-2-2-.55 0-1.05.22-1.41.59l-1.65 1.65 2.83 2.82zM1 4h12.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zM0 15c0 .55.45 1 1 1h.34l2-2H1c-.55 0-1 .45-1 1zm1-7h8.34l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm18 2h-.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zm0 4h-4.34l-2 2H19c.55 0 1-.45 1-1s-.45-1-1-1zM4 19l4.41-1.59-2.81-2.79L4 19zM14.23 5.94l-7.65 7.65 2.83 2.83 7.65-7.65-2.83-2.83z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Playground
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/schedules"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-calendar"
-        icon="calendar"
-      >
-        <svg
-          data-icon="calendar"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            calendar
-          </desc>
-          <path
-            d="M15 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zM5 5c.6 0 1-.4 1-1V2c0-.5-.4-1-1-1s-1 .5-1 1v2c0 .6.4 1 1 1zm13-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H7v1c0 1.1-.9 2-2 2s-2-.9-2-2V3H2c-.5 0-1 .5-1 1v14c0 .5.5 1 1 1h16c.5 0 1-.5 1-1V4c0-.5-.5-1-1-1zM7 17H3v-4h4v4zm0-5H3V8h4v4zm5 5H8v-4h4v4zm0-5H8V8h4v4zm5 5h-4v-4h4v4zm0-5h-4V8h4v4z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Schedules
-      </div>
-    </a>
-    <a
-      className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/assets"
-      onClick={[Function]}
-    >
-      <span
-        className="bp3-icon bp3-icon-panel-table"
-        icon="panel-table"
-      >
-        <svg
-          data-icon="panel-table"
-          height={30}
-          viewBox="0 0 20 20"
-          width={30}
-        >
-          <desc>
-            panel-table
-          </desc>
-          <path
-            d="M19 1H1c-.6 0-1 .4-1 1v15c0 .6.4 1 1 1h18c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zm-9 11H7V9h3v3zm0-4H7V5h3v3zm-8 8V3h4v13H2zm5 0v-3h3v3H7zm11 0h-7v-3h7v3zm0-4h-7V9h7v3zm0-4h-7V5h7v3z"
-            fillRule="evenodd"
-          />
-        </svg>
-      </span>
-      <div
-        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
-      >
-        Assets
-      </div>
-    </a>
     <div
       style={
         Object {
-          "flex": 1,
+          "flexShrink": 0,
+        }
+      }
+    >
+      <div
+        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+      >
+        <img
+          alt="logo"
+          onClick={[Function]}
+          src={
+            Object {
+              "process": [Function],
+            }
+          }
+          style={
+            Object {
+              "height": 40,
+            }
+          }
+        />
+        <div
+          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+        >
+          <img
+            alt="title"
+            src={
+              Object {
+                "process": [Function],
+              }
+            }
+            style={
+              Object {
+                "height": 10,
+              }
+            }
+          />
+          <span />
+        </div>
+        <div
+          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          style={
+            Object {
+              "background": "#3DCC91",
+            }
+          }
+          title="Connecting..."
+        />
+      </div>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/runs"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-history"
+          icon="history"
+        >
+          <svg
+            data-icon="history"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              history
+            </desc>
+            <path
+              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Runs
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/schedules"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-calendar"
+          icon="calendar"
+        >
+          <svg
+            data-icon="calendar"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              calendar
+            </desc>
+            <path
+              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Schedules
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-osl909-2 kPedjP"
+        href="/assets"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-panel-table"
+          icon="panel-table"
+        >
+          <svg
+            data-icon="panel-table"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              panel-table
+            </desc>
+            <path
+              d="M15 1H1c-.6 0-1 .4-1 1v11c0 .6.4 1 1 1h14c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM8 9H6V7h2v2zm0-3H6V4h2v2zm-6 6V3h3v9H2zm4 0v-2h2v2H6zm8 0H9v-2h5v2zm0-3H9V7h5v2zm0-3H9V4h5v2z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-osl909-3 FMDcX"
+        >
+          Assets
+        </div>
+      </a>
+    </div>
+    <div
+      style={
+        Object {
+          "height": 40,
         }
       }
     />
-    <span />
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "background": "rgba(0,0,0,0.3)",
+          "color": "#FFFFFF",
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        style={
+          Object {
+            "alignItems": "center",
+            "borderBottom": "1px solid #30404D",
+            "display": "flex",
+            "padding": "10px 10px",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "color": "#5C7080",
+                "fontSize": 10.5,
+              }
+            }
+          >
+            ENVIRONMENT
+          </div>
+          Repository
+        </div>
+        <span />
+      </div>
+      <div
+        style={
+          Object {
+            "display": "flex",
+            "flex": 1,
+            "flexDirection": "column",
+          }
+        }
+      >
+        <div
+          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+        >
+          <div
+            className="bp3-input-group bp3-small"
+          >
+            <input
+              className="bp3-input"
+              onChange={[Function]}
+              placeholder="Search pipelines..."
+              style={
+                Object {
+                  "background": "#30404D",
+                  "border": "1px solid #394B59",
+                  "paddingRight": 10,
+                }
+              }
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            style={
+              Object {
+                "width": 4,
+              }
+            }
+          />
+          <div
+            className="bp3-button-group"
+          >
+            <button
+              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            <button
+              className="bp3-button bp3-small"
+              onClick={[Function]}
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-git-commit"
+                icon="git-commit"
+              >
+                <svg
+                  data-icon="git-commit"
+                  height={13}
+                  viewBox="0 0 16 16"
+                  width={13}
+                >
+                  <desc>
+                    git-commit
+                  </desc>
+                  <path
+                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+        >
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            href="/pipeline/airline_demo_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_ingest_pipeline
+          </a>
+          <div>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Definition
+            </a>
+            <a
+              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
+              href="/playground/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              <span
+                className="bp3-icon bp3-icon-manually-entered-data"
+                icon="manually-entered-data"
+                style={
+                  Object {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <svg
+                  data-icon="manually-entered-data"
+                  height={14}
+                  viewBox="0 0 16 16"
+                  width={14}
+                >
+                  <desc>
+                    manually-entered-data
+                  </desc>
+                  <path
+                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Playground
+            </a>
+          </div>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/airline_demo_warehouse_pipeline/"
+            onClick={[Function]}
+          >
+            airline_demo_warehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/composition/"
+            onClick={[Function]}
+          >
+            composition
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/daily_weather_pipeline/"
+            onClick={[Function]}
+          >
+            daily_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/error_monster/"
+            onClick={[Function]}
+          >
+            error_monster
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/event_ingest_pipeline/"
+            onClick={[Function]}
+          >
+            event_ingest_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/generate_training_set_and_train_model/"
+            onClick={[Function]}
+          >
+            generate_training_set_and_train_model
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/jaffle_pipeline/"
+            onClick={[Function]}
+          >
+            jaffle_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/log_spew/"
+            onClick={[Function]}
+          >
+            log_spew
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/longitudinal_pipeline/"
+            onClick={[Function]}
+          >
+            longitudinal_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/many_events/"
+            onClick={[Function]}
+          >
+            many_events
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
+            onClick={[Function]}
+          >
+            pandas_hello_world_pipeline_with_read_csv
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/pyspark_pagerank/"
+            onClick={[Function]}
+          >
+            pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
+            onClick={[Function]}
+          >
+            simple_pyspark_sfo_weather_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/sleepy_pipeline/"
+            onClick={[Function]}
+          >
+            sleepy_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/stdout_spew_pipeline/"
+            onClick={[Function]}
+          >
+            stdout_spew_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            href="/pipeline/unreliable_pipeline/"
+            onClick={[Function]}
+          >
+            unreliable_pipeline
+          </a>
+        </div>
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
   </div>
   <div
     style={
@@ -19648,90 +21108,6 @@ exports[`renders without error 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  id="playground-select-pipeline"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    airline_demo_ingest_pipeline
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <span
-            className="bp3-icon bp3-icon-chevron-right"
-            icon="chevron-right"
-          >
-            <svg
-              data-icon="chevron-right"
-              height={16}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-right
-              </desc>
-              <path
-                d="M10.71 7.29l-4-4a1.003 1.003 0 00-1.42 1.42L8.59 8 5.3 11.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71l4-4c.18-.18.29-.43.29-.71 0-.28-.11-.53-.29-.71z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </span>
           <span
             className="bp3-popover-wrapper"
           >

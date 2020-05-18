@@ -16,10 +16,12 @@ import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
 import { ScheduleRoot } from "./schedules/ScheduleRoot";
 import { AssetsRoot } from "./assets/AssetsRoot";
-import { LeftNav } from "./LeftNav";
+import { LeftNav } from "./leftnav/LeftNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { FeatureFlagsRoot } from "./FeatureFlagsRoot";
+import { InstanceDetailsRoot } from "./InstanceDetailsRoot";
+import { SolidDetailsRoot } from "./solids/SolidDetailsRoot";
 
 function extractData(result?: RootPipelinesQuery) {
   if (!result || !result.pipelinesOrError) {
@@ -39,10 +41,12 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/flags" component={FeatureFlagsRoot} />
     <Route path="/runs/all/:runId" component={RunRoot} />
-    <Route path="/runs/:pipelineName/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
+    <Route path="/runs/:pipelineName/:runId" component={RunRoot} />
+    <Route path="/solid/:name" component={SolidDetailsRoot} />
     <Route path="/solids/:name?" component={SolidsRoot} />
 
+    {/* Capture solid subpath in a regex match */}
     <Route
       path="/playground/:pipelineSelector/setup"
       component={PipelineExecutionSetupRoot}
@@ -51,13 +55,13 @@ const AppRoutes = () => (
       path="/playground/:pipelineSelector"
       component={PipelineExecutionRoot}
     />
-    {/* Capture solid subpath in a regex match */}
     <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
 
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
     <Route path="/schedules" component={SchedulesRoot} />
     <Route path="/assets" component={AssetsRoot} exact={true} />
     <Route path="/assets/:assetSelector" component={AssetsRoot} />
+    <Route path="/instance" component={InstanceDetailsRoot} />
 
     <PipelineNamesContext.Consumer>
       {names =>

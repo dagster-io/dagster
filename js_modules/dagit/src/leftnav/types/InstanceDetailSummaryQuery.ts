@@ -4,16 +4,15 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: ProcessStatusQuery
+// GraphQL query operation: InstanceDetailSummaryQuery
 // ====================================================
 
-export interface ProcessStatusQuery_instance {
+export interface InstanceDetailSummaryQuery_instance {
   __typename: "Instance";
   info: string;
 }
 
-export interface ProcessStatusQuery {
+export interface InstanceDetailSummaryQuery {
   version: string;
-  reloadSupported: boolean;
-  instance: ProcessStatusQuery_instance;
+  instance: InstanceDetailSummaryQuery_instance;
 }
