@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import json
+import sys
 
 import click
 
@@ -12,13 +13,13 @@ from dagster.core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream
 
 # Snapshot CLI
 
 
-@click.command(name='repository', help='Return the snapshot for the given repositoy')
+@click.command(name='repository', help='Return the snapshot for the given repository')
 @repository_target_argument
 def repository_snapshot_command(**kwargs):
     recon_repo = recon_repo_for_cli_args(kwargs)
@@ -60,8 +61,11 @@ snapshot_cli = create_snapshot_cli_group()
 @click.argument('output_file', type=click.Path())
 @click.option('--solid-subset', '-s', help="Comma-separated list of solids")
 @click.option('--environment-dict')
+@click.option('--instance-ref')
 @click.option('--mode')
-def execute_pipeline_command(output_file, solid_subset, environment_dict, mode, **kwargs):
+def execute_pipeline_command(
+    output_file, solid_subset, environment_dict, instance_ref, mode, **kwargs
+):
     '''
     This command might want to take a runId instead of current arguments
 
@@ -80,7 +84,16 @@ def execute_pipeline_command(output_file, solid_subset, environment_dict, mode, 
         # and the exception is serialized as a SerializableErrorInfo
         environment_dict = json.loads(environment_dict)
 
-        instance = DagsterInstance.get()
+        try:
+            instance = DagsterInstance.from_ref(
+                deserialize_json_to_dagster_namedtuple(instance_ref)
+            )
+        except:  # pylint: disable=bare-except
+            stream.send_error(
+                sys.exc_info(),
+                message='Could not deserialize {json_string}'.format(json_string=instance_ref),
+            )
+            return
 
         for event in execute_pipeline_iterator(
             definition, environment_dict=environment_dict, mode=mode, instance=instance,

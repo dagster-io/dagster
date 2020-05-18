@@ -11,7 +11,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 @whitelist_for_serdes
@@ -21,15 +21,38 @@ class IPCStartMessage(namedtuple('_IPCStartMessage', '')):
 
 
 @whitelist_for_serdes
+class IPCErrorMessage(namedtuple('_IPCErrorMessage', 'serializable_error_info message')):
+    '''
+    This represents a user error encountered during the IPC call. This indicates a business
+    logic error, rather than a protocol. Consider this a "task failed successfully"
+    use case.
+    '''
+
+    def __new__(cls, serializable_error_info, message):
+        return super(IPCErrorMessage, cls).__new__(
+            cls,
+            serializable_error_info=check.inst_param(
+                serializable_error_info, 'serializable_error_info', SerializableErrorInfo
+            ),
+            message=check.opt_str_param(message, 'message'),
+        )
+
+
+@whitelist_for_serdes
 class IPCEndMessage(namedtuple('_IPCEndMessage', '')):
     def __new__(cls):
         return super(IPCEndMessage, cls).__new__(cls)
 
 
-class DagsterIPCError(DagsterError):
+class DagsterIPCProtocolError(DagsterError):
+    '''
+    This indicates that something went wrong with the protocol. E.g. the
+    process being called did not emit an IPCStartMessage first.
+    '''
+
     def __init__(self, message):
         self.message = message
-        super(DagsterIPCError, self).__init__(message)
+        super(DagsterIPCProtocolError, self).__init__(message)
 
 
 class FileBasedWriteStream:
@@ -40,10 +63,22 @@ class FileBasedWriteStream:
     def send(self, dagster_named_tuple):
         _send(self._file_path, dagster_named_tuple)
 
+    def send_error(self, exc_info, message=None):
+        _send_error(self._file_path, exc_info, message=message)
+
 
 def _send(file_path, obj):
     with open(os.path.abspath(file_path), 'a+') as fp:
         fp.write(serialize_dagster_namedtuple(obj) + '\n')
+
+
+def _send_error(file_path, exc_info, message):
+    return _send(
+        file_path,
+        IPCErrorMessage(
+            serializable_error_info=serializable_error_info_from_exc_info(exc_info), message=message
+        ),
+    )
 
 
 @contextmanager
@@ -53,7 +88,7 @@ def ipc_write_stream(file_path):
     try:
         yield FileBasedWriteStream(file_path)
     except Exception:  # pylint: disable=broad-except
-        _send(file_path, serializable_error_info_from_exc_info(sys.exc_info()))
+        _send_error(file_path, sys.exc_info(), message=None)
     finally:
         _send(file_path, IPCEndMessage())
 
@@ -75,7 +110,9 @@ def ipc_read_event_stream(file_path, timeout=5):
         sleep(sleep_interval)
 
     if not os.path.exists(file_path):
-        raise DagsterIPCError("Timeout: read stream has not recieved any data in {timeout} seconds")
+        raise DagsterIPCProtocolError(
+            "Timeout: read stream has not received any data in {timeout} seconds"
+        )
 
     with open(os.path.abspath(file_path), 'r') as file_pointer:
         message = _process_line(file_pointer)
@@ -86,7 +123,7 @@ def ipc_read_event_stream(file_path, timeout=5):
 
         # Process start message
         if not isinstance(message, IPCStartMessage):
-            raise DagsterIPCError(
+            raise DagsterIPCProtocolError(
                 "Attempted to read stream at file {file_path}, but first message was not an "
                 "IPCStartMessage".format(file_path=file_path)
             )

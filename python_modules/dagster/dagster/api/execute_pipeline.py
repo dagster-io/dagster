@@ -4,12 +4,15 @@ import uuid
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.instance import DagsterInstance
+from dagster.serdes import serialize_dagster_namedtuple
 from dagster.serdes.ipc import ipc_read_event_stream
 from dagster.seven.temp_dir import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
 
 
-def api_execute_pipeline(recon_repo, pipeline_name, environment_dict, mode, solid_subset):
+def api_execute_pipeline(instance, recon_repo, pipeline_name, environment_dict, mode, solid_subset):
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(pipeline_name, 'pipeline_name')
     check.dict_param(environment_dict, 'environment_dict')
@@ -27,13 +30,15 @@ def api_execute_pipeline(recon_repo, pipeline_name, environment_dict, mode, soli
 
         command = (
             "dagster api execute_pipeline -y {repository_file} {pipeline_name} "
-            "{output_file} --environment-dict='{environment_dict}' --mode={mode}".format(
-                repository_file=recon_repo.yaml_path,
-                pipeline_name=pipeline_name,
-                output_file=output_file,
-                environment_dict=json.dumps(environment_dict),
-                mode=mode,
-            )
+            "{output_file} --environment-dict='{environment_dict}' --mode={mode} "
+            "--instance-ref='{instance_ref}'"
+        ).format(
+            repository_file=recon_repo.yaml_path,
+            pipeline_name=pipeline_name,
+            output_file=output_file,
+            environment_dict=json.dumps(environment_dict),
+            mode=mode,
+            instance_ref=serialize_dagster_namedtuple(instance.get_ref()),
         )
 
         if solid_subset:

@@ -1,7 +1,9 @@
+import sys
+import tempfile
 from collections import namedtuple
 
 from dagster.serdes import whitelist_for_serdes
-from dagster.serdes.ipc import ipc_read_event_stream, ipc_write_stream
+from dagster.serdes.ipc import IPCErrorMessage, ipc_read_event_stream, ipc_write_stream
 from dagster.utils import safe_tempfile_path
 
 
@@ -38,3 +40,39 @@ def test_write_empty_stream():
             messages.append(message)
 
         assert len(messages) == 0
+
+
+def test_write_error_stream():
+    with tempfile.NamedTemporaryFile() as f:
+        with ipc_write_stream(f.name) as _:
+            raise Exception('uh oh')
+
+        messages = []
+        for message in ipc_read_event_stream(f.name):
+            messages.append(message)
+
+        assert len(messages) == 1
+        message = messages[0]
+
+        assert isinstance(message, IPCErrorMessage)
+        assert 'uh oh' in message.serializable_error_info.message
+
+
+def test_write_error_with_custom_message():
+    with tempfile.NamedTemporaryFile() as f:
+        with ipc_write_stream(f.name) as stream:
+            try:
+                raise Exception('uh oh')
+            except:  # pylint: disable=bare-except
+                stream.send_error(sys.exc_info(), message='custom')
+
+        messages = []
+        for message in ipc_read_event_stream(f.name):
+            messages.append(message)
+
+        assert len(messages) == 1
+        ipc_message = messages[0]
+
+        assert isinstance(ipc_message, IPCErrorMessage)
+        assert 'uh oh' in ipc_message.serializable_error_info.message
+        assert ipc_message.message == 'custom'

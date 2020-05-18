@@ -1,13 +1,14 @@
 from click.testing import CliRunner
 
-from dagster import file_relative_path
+from dagster import file_relative_path, seven
 from dagster.cli.api import (
     execute_pipeline_command,
     pipeline_snapshot_command,
     repository_snapshot_command,
 )
 from dagster.core.host_representation import ExternalPipelineData, ExternalRepositoryData
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.core.instance import DagsterInstance
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCEndMessage, IPCStartMessage
 from dagster.utils import safe_tempfile_path
 
@@ -69,32 +70,38 @@ def test_execute_pipeline_command():
     runner = CliRunner()
 
     with safe_tempfile_path() as filename:
-        result = runner.invoke(
-            execute_pipeline_command,
-            [
-                '-y',
-                file_relative_path(__file__, 'repository_file.yaml'),
-                'foo',
-                filename,
-                '--environment-dict={}',
-                '--mode=default',
-            ],
-        )
+        with seven.TemporaryDirectory() as temp_dir:
+            instance = DagsterInstance.local_temp(temp_dir)
+            result = runner.invoke(
+                execute_pipeline_command,
+                [
+                    '-y',
+                    file_relative_path(__file__, 'repository_file.yaml'),
+                    'foo',
+                    filename,
+                    '--environment-dict={}',
+                    "--instance-ref={instance_ref_json}".format(
+                        instance_ref_json=serialize_dagster_namedtuple(instance.get_ref())
+                    ),
+                    '--mode=default',
+                ],
+            )
 
-        assert result.exit_code == 0
+            assert result.exit_code == 0
 
-        with open(filename, 'r') as f:
-            # Read lines from output file, and strip newline characters
-            lines = [line.rstrip() for line in f.readlines()]
-            assert len(lines) == 13
+            with open(filename, 'r') as f:
+                # Read lines from output file, and strip newline characters
+                lines = [line.rstrip() for line in f.readlines()]
 
-            # Check all lines are serialized dagster named tuples
-            for line in lines:
-                deserialize_json_to_dagster_namedtuple(line)
+                assert len(lines) == 13
 
-            # Check for start ane dnd messages
-            assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
-            assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
+                # Check all lines are serialized dagster named tuples
+                for line in lines:
+                    deserialize_json_to_dagster_namedtuple(line)
+
+                # Check for start ane dnd messages
+                assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
+                assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
 
 
 def test_execute_pipeline_command_missing_args():
