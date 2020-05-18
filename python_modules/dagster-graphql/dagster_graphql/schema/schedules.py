@@ -84,9 +84,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
     def __init__(self, graphene_info, schedule_def):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
-        self._schedule_context = ScheduleExecutionContext(
-            graphene_info.context.instance, graphene_info.context.get_repository_definition()
-        )
+        self._schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
 
         super(DauphinScheduleDefinition, self).__init__(

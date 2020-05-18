@@ -12,7 +12,7 @@ from dagster.utils import merge_dicts
 from .mode import DEFAULT_MODE_NAME
 
 
-class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance repository')):
+class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance')):
     '''Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
@@ -21,17 +21,14 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance 
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
-        repository (RepositoryDefinition): The repository that contains the pipeline
-            the schedule is targeting
     '''
 
-    def __new__(cls, instance, repository):
-        from dagster.core.definitions.repository import RepositoryDefinition
+    def __new__(
+        cls, instance,
+    ):
 
         return super(ScheduleExecutionContext, cls).__new__(
-            cls,
-            check.inst_param(instance, 'instance', DagsterInstance),
-            check.inst_param(repository, 'repository', RepositoryDefinition),
+            cls, check.inst_param(instance, 'instance', DagsterInstance),
         )
 
 
