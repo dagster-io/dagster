@@ -135,6 +135,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     validated_config = validate_config(
         environment_schema.environment_type, pipeline_run.environment_dict
     )
+
     if not validated_config.success:
         # If the config is invalid, we construct a DagsterInvalidConfigError exception and
         # insert it into the event log. We also return a PipelineConfigValidationInvalid user facing

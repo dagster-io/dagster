@@ -150,10 +150,13 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
         external_pipeline.get_mode(mode).root_config_key,
         environment_dict,
     )
+
+    execution_plan_snapshot = None
     if validation_result.success:
         execution_plan_index = graphene_info.context.create_execution_plan_index(
             external_pipeline, environment_dict, mode, execution_params.step_keys
         )
+        execution_plan_snapshot = execution_plan_index.execution_plan_snapshot
 
     pipeline_run = instance.create_run(
         pipeline_name=external_pipeline.name,
@@ -166,7 +169,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
         ),
         tags=execution_params.execution_metadata.tags,
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
     )
 
     # Inject errors into event log at this point
