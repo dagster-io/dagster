@@ -763,6 +763,11 @@ const GaantChartContainer = styled.div`
     overflow: hidden;
     user-select: text;
     z-index: 2;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
   }
 
   .dot {
