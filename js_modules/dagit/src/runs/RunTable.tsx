@@ -9,7 +9,9 @@ import {
   Popover,
   MenuDivider,
   NonIdealState,
-  Intent
+  Intent,
+  Tooltip,
+  Position
 } from "@blueprintjs/core";
 import {
   Details,
@@ -42,6 +44,7 @@ import { useMutation, useLazyQuery } from "react-apollo";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { TokenizingFieldValue } from "../TokenizingField";
+import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -58,6 +61,9 @@ const PipelineEnvironmentYamlQuery = gql`
     }
   }
 `;
+
+const OPEN_PLAYGROUND_UNKNOWN =
+  "Playground is unavailable because the pipeline is not present in the current repository.";
 
 export class RunTable extends React.Component<RunTableProps> {
   static fragments = {
@@ -373,36 +379,48 @@ const RunActionsMenu: React.FunctionComponent<{
           />
           <MenuDivider />
 
-          <MenuItem
-            text="Open in Playground..."
-            disabled={!infoReady}
-            icon="edit"
-            target="_blank"
-            href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
-              mode: run.mode,
-              config: envYaml,
-              solidSubset:
-                run.pipeline.__typename === "Pipeline"
-                  ? run.pipeline.solids.map(s => s.name)
-                  : []
-            })}`}
-          />
-          <MenuItem
-            text="Re-execute"
-            disabled={!infoReady}
-            icon="repeat"
-            onClick={async () => {
-              const result = await reexecute({
-                variables: getReexecutionVariables({
-                  run,
-                  envYaml
-                })
-              });
-              handleReexecutionResult(run.pipeline.name, result, {
-                openInNewWindow: false
-              });
-            }}
-          />
+          <Tooltip
+            content={OPEN_PLAYGROUND_UNKNOWN}
+            position={Position.BOTTOM}
+            disabled={infoReady}
+          >
+            <MenuItem
+              text="Open in Playground..."
+              disabled={!infoReady}
+              icon="edit"
+              target="_blank"
+              href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
+                mode: run.mode,
+                config: envYaml,
+                solidSubset:
+                  run.pipeline.__typename === "Pipeline"
+                    ? run.pipeline.solids.map(s => s.name)
+                    : []
+              })}`}
+            />
+          </Tooltip>
+          <Tooltip
+            content={REEXECUTE_PIPELINE_UNKNOWN}
+            position={Position.BOTTOM}
+            disabled={infoReady}
+          >
+            <MenuItem
+              text="Re-execute"
+              disabled={!infoReady}
+              icon="repeat"
+              onClick={async () => {
+                const result = await reexecute({
+                  variables: getReexecutionVariables({
+                    run,
+                    envYaml
+                  })
+                });
+                handleReexecutionResult(run.pipeline.name, result, {
+                  openInNewWindow: false
+                });
+              }}
+            />
+          </Tooltip>
           <MenuItem
             text="Cancel"
             icon="stop"
