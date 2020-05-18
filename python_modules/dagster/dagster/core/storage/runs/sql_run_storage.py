@@ -279,6 +279,133 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return (root_run_id, [root_run] + run_group)
 
+    def get_run_groups(self, filters=None, cursor=None, limit=None):
+        # The runs that would be returned by calling RunStorage.get_runs with the same arguments
+        runs = self._runs_query(
+            filters=filters, cursor=cursor, limit=limit, columns=['run_body', 'run_id']
+        ).alias('runs')
+
+        # Gets us the run_id and associated root_run_id for every run in storage that is a
+        # descendant run of some root
+        #
+        # pseudosql:
+        #   with all_descendant_runs as (
+        #     select *
+        #     from run_tags
+        #     where key = @ROOT_RUN_ID_TAG
+        #   )
+
+        all_descendant_runs = (
+            db.select([RunTagsTable])
+            .where(RunTagsTable.c.key == ROOT_RUN_ID_TAG)
+            .alias('all_descendant_runs')
+        )
+
+        # Augment the runs in our query, for those runs that are the descendant of some root run,
+        # with the root_run_id
+        #
+        # pseudosql:
+        #
+        #   with runs_augmented as (
+        #     select
+        #       runs.run_id as run_id,
+        #       all_descendant_runs.value as root_run_id
+        #     from runs
+        #     left outer join all_descendant_runs
+        #       on all_descendant_runs.run_id = runs.run_id
+        #   )
+
+        runs_augmented = (
+            db.select(
+                [runs.c.run_id.label('run_id'), all_descendant_runs.c.value.label('root_run_id'),]
+            )
+            .select_from(
+                runs.join(
+                    all_descendant_runs,
+                    all_descendant_runs.c.run_id == RunsTable.c.run_id,
+                    isouter=True,
+                )
+            )
+            .alias('runs_augmented')
+        )
+
+        # Get all the runs our query will return. This includes runs as well as their root runs.
+        #
+        # pseudosql:
+        #
+        #    with runs_and_root_runs as (
+        #      select runs.run_id as run_id
+        #      from runs, runs_augmented
+        #      where
+        #        runs.run_id = runs_augmented.run_id or
+        #        runs.run_id = runs_augmented.root_run_id
+        #    )
+
+        runs_and_root_runs = (
+            db.select([RunsTable.c.run_id.label('run_id')])
+            .select_from(runs_augmented)
+            .where(
+                db.or_(
+                    RunsTable.c.run_id == runs_augmented.c.run_id,
+                    RunsTable.c.run_id == runs_augmented.c.root_run_id,
+                )
+            )
+            .distinct(RunsTable.c.run_id)
+        ).alias('runs_and_root_runs')
+
+        # We count the descendants of all of the runs in our query that are roots so that
+        # we can accurately display when a root run has more descendants than are returned by this
+        # query and afford a drill-down. This might be an unnecessary complication, but the
+        # alternative isn't obvious -- we could go and fetch *all* the runs in any group that we're
+        # going to return in this query, and then append those.
+        #
+        # pseudosql:
+        #
+        #    select runs.run_body, count(all_descendant_runs.id) as child_counts
+        #    from runs
+        #    join runs_and_root_runs on runs.run_id = runs_and_root_runs.run_id
+        #    left outer join all_descendant_runs
+        #      on all_descendant_runs.value = runs_and_root_runs.run_id
+        #    group by runs.run_body
+        #    order by child_counts desc
+
+        runs_and_root_runs_with_descendant_counts = (
+            db.select(
+                [
+                    RunsTable.c.run_body,
+                    db.func.count(all_descendant_runs.c.id).label('child_counts'),
+                ]
+            )
+            .select_from(
+                RunsTable.join(
+                    runs_and_root_runs, RunsTable.c.run_id == runs_and_root_runs.c.run_id
+                ).join(
+                    all_descendant_runs,
+                    all_descendant_runs.c.value == runs_and_root_runs.c.run_id,
+                    isouter=True,
+                )
+            )
+            .group_by(RunsTable.c.run_body)
+            .order_by(db.desc(db.column('child_counts')))
+        )
+
+        with self.connect() as conn:
+            res = conn.execute(runs_and_root_runs_with_descendant_counts).fetchall()
+
+        # Postprocess: descendant runs get aggregated with their roots
+        run_groups = defaultdict(lambda: {'runs': [], 'count': 0})
+        for (run_body, count) in res:
+            row = (run_body,)
+            pipeline_run = self._row_to_run(row)
+            root_run_id = pipeline_run.get_root_run_id()
+            if root_run_id is not None:
+                run_groups[root_run_id]['runs'].append(pipeline_run)
+            else:
+                run_groups[pipeline_run.run_id]['runs'].append(pipeline_run)
+                run_groups[pipeline_run.run_id]['count'] = count + 1
+
+        return run_groups
+
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
         return bool(self.get_run_by_id(run_id))

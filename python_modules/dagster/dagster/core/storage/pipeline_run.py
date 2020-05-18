@@ -2,6 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 
@@ -189,6 +190,12 @@ class PipelineRun(
 
     def with_execution_plan_snapshot_id(self, execution_plan_snapshot_id):
         return self._replace(execution_plan_snapshot_id=execution_plan_snapshot_id)
+
+    def get_root_run_id(self):
+        return self.tags.get(ROOT_RUN_ID_TAG)
+
+    def get_parent_run_id(self):
+        return self.tags.get(PARENT_RUN_ID_TAG)
 
     @property
     def is_finished(self):
