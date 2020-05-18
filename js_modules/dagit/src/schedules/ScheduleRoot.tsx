@@ -206,7 +206,7 @@ const TicksTable: React.FunctionComponent<{
 };
 
 // TODO: Delete in 0.8.0 release
-// https://github.com/dagster-io/dagster/issues/228
+// https://github.com/dagster-io/dagster/issues/2288
 interface AttemptsTableProps {
   attemptList: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList[];
 }

@@ -108,7 +108,7 @@ class DauphinScheduleAttemptStatus(dauphin.Enum):
 
 
 # TODO: Delete in 0.8.0 release
-# https://github.com/dagster-io/dagster/issues/228
+# https://github.com/dagster-io/dagster/issues/2288
 class DauphinScheduleAttempt(dauphin.ObjectType):
     class Meta(object):
         name = 'ScheduleAttempt'
@@ -202,7 +202,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     ticks_count = dauphin.NonNull(dauphin.Int)
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
     # TODO: Delete attempts and attempts_count in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/228
+    # https://github.com/dagster-io/dagster/issues/2288
     attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
     attempts_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
@@ -221,7 +221,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         )
 
     # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/228
+    # https://github.com/dagster-io/dagster/issues/2288
     def resolve_attempts(self, graphene_info, **kwargs):
         limit = kwargs.get('limit')
 
@@ -276,13 +276,13 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         return attempts
 
     # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/228
+    # https://github.com/dagster-io/dagster/issues/2288
     def resolve_attempts_count(self, graphene_info):
         attempt_files = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
         return len(attempt_files)
 
     # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/228
+    # https://github.com/dagster-io/dagster/issues/2288
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
         external_repository = graphene_info.context.get_external_repository()
