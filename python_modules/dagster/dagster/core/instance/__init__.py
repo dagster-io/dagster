@@ -675,6 +675,9 @@ class DagsterInstance:
     def get_runs_count(self, filters=None):
         return self._run_storage.get_runs_count(filters)
 
+    def get_run_groups(self, filters=None, cursor=None, limit=None):
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+
     def wipe(self):
         self._run_storage.wipe()
         self._event_storage.wipe()

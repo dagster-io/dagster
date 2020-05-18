@@ -663,6 +663,14 @@ class DauphinRunGroupOrError(dauphin.Union):
         types = ('RunGroup', DauphinRunGroupNotFoundError, DauphinPythonError)
 
 
+class DauphinRunGroupsOrError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RunGroupsOrError'
+        types = ('RunGroups', DauphinPythonError)
+
+    results = dauphin.non_null_list('RunGroup')
+
+
 class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'PartitionSetNotFoundError'

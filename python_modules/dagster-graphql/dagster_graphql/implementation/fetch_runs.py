@@ -91,6 +91,28 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [graphene_info.schema.type_named('PipelineRun')(run) for run in runs]
 
 
+def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
+    from ..schema.runs import DauphinRunGroup
+
+    check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+    check.opt_str_param(cursor, 'cursor')
+    check.opt_int_param(limit, 'limit')
+
+    instance = graphene_info.context.instance
+    run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+
+    for root_run_id in run_groups:
+        run_groups[root_run_id]['runs'] = [
+            graphene_info.schema.type_named('PipelineRun')(run)
+            for run in run_groups[root_run_id]['runs']
+        ]
+
+    return [
+        DauphinRunGroup(root_run_id=root_run_id, runs=run_group['runs'])
+        for root_run_id, run_group in run_groups.items()
+    ]
+
+
 @capture_dauphin_error
 def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)

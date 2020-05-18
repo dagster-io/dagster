@@ -38,6 +38,7 @@ from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
     get_run_by_id,
     get_run_group,
+    get_run_groups,
     get_run_tags,
     get_runs,
     validate_pipeline_config,
@@ -118,6 +119,13 @@ class DauphinQuery(dauphin.ObjectType):
 
     runGroupOrError = dauphin.Field(
         dauphin.NonNull('RunGroupOrError'), runId=dauphin.NonNull(dauphin.ID)
+    )
+
+    runGroupsOrError = dauphin.Field(
+        dauphin.NonNull('RunGroupsOrError'),
+        filter=dauphin.Argument('PipelineRunsFilter'),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
     )
 
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
@@ -213,6 +221,17 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run_by_id(graphene_info, runId)
+
+    def resolve_runGroupsOrError(self, graphene_info, **kwargs):
+        filters = kwargs.get('filter')
+        if filters is not None:
+            filters = filters.to_selector()
+
+        return graphene_info.schema.type_named('RunGroupsOrError')(
+            results=get_run_groups(
+                graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit')
+            )
+        )
 
     def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
         pipeline_name = kwargs.get('pipelineName')
