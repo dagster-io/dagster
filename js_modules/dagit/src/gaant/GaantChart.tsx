@@ -235,7 +235,7 @@ export class GaantChart extends React.Component<
       nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
       mode: options.mode
     });
-    console.log(options);
+
     return (
       <GaantChartContainer>
         <OptionsContainer>
