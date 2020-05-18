@@ -93,7 +93,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     except DagsterRunConflict as exc:
         return graphene_info.schema.type_named('PipelineRunConflict')(exc)
 
-    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
+    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
@@ -162,7 +162,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
             external_pipeline, validated_config.errors
         )
 
-    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
+    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)

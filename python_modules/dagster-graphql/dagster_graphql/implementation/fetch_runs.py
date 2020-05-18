@@ -139,8 +139,11 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('ExecutionPlan')(
-        graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline, mode=mode, environment_dict=environment_dict
+        graphene_info.context.legacy_get_external_execution_plan(
+            external_pipeline=external_pipeline,
+            mode=mode,
+            environment_dict=environment_dict,
+            step_keys_to_execute=None,
         )
     )
 

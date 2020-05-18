@@ -209,6 +209,6 @@ snapshots['test_get_partition_set 1'] = {
 
 snapshots['test_get_partition_set 2'] = {
     'partitionSetOrError': {
-        '__typename': 'PythonError'
+        '__typename': 'PartitionSetNotFoundError'
     }
 }

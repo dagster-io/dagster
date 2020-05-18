@@ -116,7 +116,7 @@ def test_start_stop_schedule():
         )
 
         # Initialize scheduler
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
@@ -160,7 +160,7 @@ def test_get_all_schedules():
         )
 
         # Initialize scheduler
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",

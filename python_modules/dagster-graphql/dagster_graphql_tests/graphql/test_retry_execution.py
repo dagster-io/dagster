@@ -380,7 +380,7 @@ def test_retry_early_terminate():
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
         # Terminate the current pipeline run at the second step
-        context.execution_manager.terminate(run_id)
+        context.legacy_environment.execution_manager.terminate(run_id)
 
         records = instance.all_logs(run_id)
 
@@ -423,7 +423,7 @@ def test_retry_early_terminate():
             },
         )
         # Wait until the run is finished
-        while context.execution_manager.is_process_running(new_run_id):
+        while context.legacy_environment.execution_manager.is_process_running(new_run_id):
             pass
 
         retry_records = instance.all_logs(new_run_id)

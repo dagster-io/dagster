@@ -22,6 +22,10 @@ from .utils import InMemoryRunLauncher, sync_get_all_logs_for_run
 SCHEDULE_TICKS_QUERY = '''
 {
     scheduler {
+    ... on PythonError {
+        message
+        stack
+    }
     ... on Scheduler {
         runningSchedules {
             scheduleDefinition {
@@ -355,7 +359,7 @@ def test_tick_success(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
 
         reconcile_scheduler_state("", "", repository, instance)
         schedule_def = repository.get_schedule_def("no_config_pipeline_hourly_schedule")
@@ -394,7 +398,7 @@ def test_tick_skip(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         execute_dagster_graphql(
@@ -426,7 +430,7 @@ def test_should_execute_scheduler_error(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         execute_dagster_graphql(
@@ -465,7 +469,7 @@ def test_tags_scheduler_error(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         result = execute_dagster_graphql(
@@ -501,7 +505,7 @@ def test_enviornment_dict_scheduler_error(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         result = execute_dagster_graphql(
@@ -538,7 +542,7 @@ def test_enviornment_dict_scheduler_error_serialize_cauze():
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         result = execute_dagster_graphql(
@@ -565,7 +569,7 @@ def test_query_multiple_schedule_ticks(snapshot):
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
-        repository = context.get_repository_definition()
+        repository = context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
         for scheduleName in [

@@ -1,4 +1,3 @@
-from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.implementation.external import (
     get_external_pipeline_or_raise,
     get_full_external_pipeline_or_raise,
@@ -101,7 +100,7 @@ def get_pipelines_or_error(graphene_info):
 def get_pipelines_or_raise(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     dauphin_pipelines = list(
-        map(DauphinPipeline, graphene_info.context.get_all_external_pipelines())
+        map(DauphinPipeline, graphene_info.context.legacy_get_all_external_pipelines())
     )
     return graphene_info.schema.type_named('PipelineConnection')(
         nodes=sorted(dauphin_pipelines, key=lambda pipeline: pipeline.name)
@@ -112,13 +111,6 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
 
-    if not isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext):
-        # TODO: Support solid sub selection.
-        check.invariant(
-            not selector.solid_subset,
-            desc="DagsterGraphQLOutOfProcessRepositoryContext doesn't support pipeline sub-selection.",
-        )
-
     return DauphinPipeline(
         get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
     )
@@ -127,11 +119,6 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
 def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
-
-    check.invariant(
-        isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext),
-        'Can only get definition objects in process',
-    )
 
     pipeline_name = selector.name
 

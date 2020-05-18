@@ -1,9 +1,10 @@
-import abc
+from abc import ABCMeta, abstractmethod, abstractproperty
+from collections import namedtuple
 
 import six
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.container import get_external_repository_from_image
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
@@ -19,137 +20,212 @@ from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
 
 
-class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
-    def __init__(self, external_repository, instance):
-        self._external_repository = check.inst_param(
-            external_repository, 'external_repository', ExternalRepository
+# identify a pipeline with in a DagsterGraphQLContext
+class PipelineHandle(
+    namedtuple('_PipelineHandle', 'environment_name repository_name pipeline_name')
+):
+    def to_string(self):
+        return '{self.environment_name}.{self.repository_name}.{self.pipeline_name}'.format(
+            self=self
         )
+
+
+class DagsterGraphQLContext:
+    def __init__(self, instance, environments, version=None):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self._environments = {}
+        for env in check.list_param(environments, 'environments', DagsterEnvironment):
+            check.invariant(
+                self._environments.get(env.name) is None,
+                'Can not have multiple environments with the same name, got multiple "{name}"'.format(
+                    name=env.name
+                ),
+            )
+            self._environments[env.name] = env
+        self.version = version
 
     @property
     def instance(self):
         return self._instance
 
-    @abc.abstractproperty
-    def is_reload_supported(self):
-        pass
-
-    def get_external_repository(self):
-        return self._external_repository
-
-    def has_external_pipeline(self, name):
-        check.str_param(name, 'name')
-        return self._external_repository.has_pipeline(name)
-
-    def get_full_external_pipeline(self, name):
-        check.str_param(name, 'name')
-        return self._external_repository.get_external_pipeline(name)
-
-    def get_all_external_pipelines(self):
-        return self._external_repository.get_all_external_pipelines()
-
-    @abc.abstractmethod
-    def get_external_pipeline(self, name, solid_subset):
-        pass
-
-    @abc.abstractmethod
-    def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        pass
-
-    @abc.abstractmethod
-    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
-        pass
-
-    @abc.abstractmethod
-    def execute_pipeline(self, external_pipeline, pipeline_run):
-        pass
-
-
-class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
-    def __init__(self, external_repository, execution_manager, instance, version=None):
-        super(DagsterGraphQLOutOfProcessRepositoryContext, self).__init__(
-            external_repository=external_repository, instance=instance
+    def get_external_pipeline(self, handle, solid_subset):
+        check.inst_param(handle, 'handle', PipelineHandle)
+        return self._environments[handle.environment_name].get_external_pipeline(
+            handle, solid_subset
         )
-        self.execution_manager = check.inst_param(
-            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
-        )
-        self.version = version
+
+    # Legacy family of methods for assuming one in process environment with one repository
 
     @property
-    def is_reload_supported(self):
-        return False
+    def legacy_environment(self):
+        check.invariant(len(self._environments) == 1, '[legacy] must have only one environment')
+        return next(iter(self._environments.values()))
 
-    def get_external_pipeline(self, name, solid_subset):
-        raise NotImplementedError('Not yet supported out of process')
+    @property
+    def legacy_external_repository(self):
+        repos = self.legacy_environment.get_repositories()
+        check.invariant(len(repos) == 1, '[legacy] must have only one repository')
+        return next(iter(repos.values()))
+
+    def legacy_has_external_pipeline(self, name):
+        check.str_param(name, 'name')
+        return self.legacy_external_repository.has_pipeline(name)
+
+    def legacy_get_full_external_pipeline(self, name):
+        check.str_param(name, 'name')
+        return self.legacy_external_repository.get_external_pipeline(name)
+
+    def legacy_get_all_external_pipelines(self):
+        return self.legacy_external_repository.get_all_external_pipelines()
+
+    def legacy_get_external_pipeline(self, name, solid_subset):
+        return self.legacy_environment.get_external_pipeline(
+            PipelineHandle(
+                environment_name=self.legacy_environment.name,
+                repository_name=self.legacy_external_repository.name,
+                pipeline_name=name,
+            ),
+            solid_subset,
+        )
+
+    def legacy_get_external_execution_plan(
+        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+    ):
+        return self.legacy_environment.get_external_execution_plan(
+            external_pipeline, environment_dict, mode, step_keys_to_execute
+        )
+
+    def legacy_execute_plan(
+        self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+    ):
+        return self.legacy_environment.execute_plan(
+            self.instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+        )
+
+    def legacy_execute_pipeline(self, external_pipeline, pipeline_run):
+        return self.legacy_environment.execute_pipeline(
+            self.instance, external_pipeline, pipeline_run
+        )
+
+    def legacy_get_repository_definition(self):
+        check.invariant(
+            isinstance(self.legacy_environment, InProcessDagsterEnvironment),
+            '[legacy] must be in process env',
+        )
+        return self.legacy_environment.get_reconstructable_repository().get_definition()
+
+
+class DagsterEnvironment(six.with_metaclass(ABCMeta)):
+    @abstractmethod
+    def get_repository(self, name):
+        pass
+
+    @abstractmethod
+    def get_repositories(self):
+        pass
+
+    @abstractproperty
+    def name(self):
+        pass
+
+    @abstractmethod
+    def get_external_execution_plan(
+        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+    ):
+        pass
+
+    @abstractmethod
+    def execute_plan(
+        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+    ):
+        pass
+
+    @abstractmethod
+    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
+        pass
+
+    @abstractmethod
+    def get_external_pipeline(self, handle, solid_subset):
+        pass
+
+
+class DockerDagsterEnvironment(DagsterEnvironment):
+    def __init__(self, name, image):
+        self._name = check.str_param(name, 'name')
+        self._image = check.str_param(image, 'image')
+
+        external_repo = get_external_repository_from_image(image)
+        self._repositories = {external_repo.name: external_repo}
+
+    @property
+    def name(self):
+        return self._name
+
+    def get_repository(self, name):
+        return self._repositories[name]
+
+    def get_repositories(self):
+        return self._repositories
 
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
         raise NotImplementedError('Not yet supported out of process')
 
-    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+    def execute_plan(
+        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+    ):
         raise NotImplementedError('Not yet supported out of process')
 
-    def execute_pipeline(self, external_pipeline, pipeline_run):
+    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
+        raise NotImplementedError('Not yet supported out of process')
+
+    def get_external_pipeline(self, handle, solid_subset):
         raise NotImplementedError('Not yet supported out of process')
 
 
-class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
-    def __init__(self, recon_repo, execution_manager, instance, reloader=None, version=None):
-        super(DagsterGraphQLInProcessRepositoryContext, self).__init__(
-            external_repository=ExternalRepository.from_repository_def(recon_repo.get_definition()),
-            instance=instance,
-        )
+class InProcessDagsterEnvironment(DagsterEnvironment):
+    def __init__(self, recon_repo, execution_manager, reloader=None):
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
+        external_repo = ExternalRepository.from_repository_def(recon_repo.get_definition())
+        self._repositories = {external_repo.name: external_repo}
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
-        self.version = version
+        self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
 
-    def get_reconstructable_repo(self):
+    def get_reconstructable_pipeline(self, name):
+        return self._recon_repo.get_reconstructable_pipeline(name)
+
+    def get_reconstructable_repository(self):
         return self._recon_repo
-
-    def get_repository_definition(self):
-        return self._recon_repo.get_definition()
-
-    def get_partition_set(self, partition_set_name):
-        return next(
-            (
-                partition_set
-                for partition_set in self.get_all_partition_sets()
-                if partition_set.name == partition_set_name
-            ),
-            None,
-        )
-
-    def get_all_partition_sets(self):
-        repo_def = self.get_repository_definition()
-        return repo_def.partition_set_defs + [
-            schedule_def.get_partition_set()
-            for schedule_def in repo_def.schedule_defs
-            if isinstance(schedule_def, PartitionScheduleDefinition)
-        ]
-
-    def get_reconstructable_pipeline(self, pipeline_name):
-        return self._recon_repo.get_reconstructable_pipeline(pipeline_name)
 
     @property
     def is_reload_supported(self):
         return self.reloader and self.reloader.is_reload_supported
 
-    def get_external_pipeline(self, name, solid_subset):
-        check.str_param(name, 'name')
-        check.list_param(solid_subset, 'solid_subset', of_type=str)
+    @property
+    def name(self):
+        return '<<in_process>>'
 
+    def get_repository(self, name):
+        return self._repositories[name]
+
+    def get_repositories(self):
+        return self._repositories
+
+    def get_external_pipeline(self, handle, solid_subset):
+        check.inst_param(handle, 'handle', PipelineHandle)
+        check.invariant(
+            handle.environment_name == self.name,
+            'Received invalid handle, environment name mismatch',
+        )
         return ExternalPipeline.from_pipeline_def(
-            self.get_reconstructable_pipeline(name).get_definition(), solid_subset=solid_subset,
+            self.get_reconstructable_pipeline(handle.pipeline_name).get_definition(), solid_subset
         )
 
     def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute=None
+        self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         check.dict_param(environment_dict, 'environment_dict')
@@ -171,7 +247,10 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
             represented_pipeline=external_pipeline,
         )
 
-    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+    def execute_plan(
+        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+    ):
+        check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         check.dict_param(environment_dict, 'environment_dict')
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -186,20 +265,19 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
 
         execute_plan(
             execution_plan=execution_plan,
-            instance=self.instance,
+            instance=instance,
             pipeline_run=pipeline_run,
             environment_dict=environment_dict,
         )
 
-    def execute_pipeline(self, external_pipeline, pipeline_run):
+    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
+        check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         self.execution_manager.execute_pipeline(
             self.get_reconstructable_pipeline(external_pipeline.name).subset_for_execution(
                 pipeline_run.solid_subset
-            )
-            if pipeline_run.solid_subset
-            else self.get_reconstructable_pipeline(external_pipeline.name),
+            ),
             pipeline_run,
-            instance=self.instance,
+            instance=instance,
         )

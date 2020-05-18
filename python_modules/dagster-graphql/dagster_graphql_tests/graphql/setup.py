@@ -5,7 +5,10 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import DagsterGraphQLOutOfProcessRepositoryContext
+from dagster_graphql.implementation.context import (
+    DagsterGraphQLContext,
+    InProcessDagsterEnvironment,
+)
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
@@ -49,7 +52,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.core.definitions.partition import last_empty_partition
-from dagster.core.host_representation import ExternalRepository
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
@@ -90,10 +93,14 @@ def define_test_context(instance):
 
 
 def define_test_snapshot_context():
-    return DagsterGraphQLOutOfProcessRepositoryContext(
+    return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-        external_repository=ExternalRepository.from_repository_def(define_repository()),
+        environments=[
+            InProcessDagsterEnvironment(
+                ReconstructableRepository.for_file(__file__, 'define_repository'),
+                execution_manager=SynchronousExecutionManager(),
+            )
+        ],
     )
 
 

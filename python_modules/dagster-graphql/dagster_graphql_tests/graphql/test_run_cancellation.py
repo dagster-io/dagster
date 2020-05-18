@@ -79,8 +79,8 @@ def test_run_not_found():
 def test_terminate_failed():
     with safe_tempfile_path() as path:
         context = define_test_subprocess_context(DagsterInstance.local_temp())
-        old_terminate = context.execution_manager.terminate
-        context.execution_manager.terminate = lambda _run_id: False
+        old_terminate = context.legacy_environment.execution_manager.terminate
+        context.legacy_environment.execution_manager.terminate = lambda _run_id: False
         result = execute_dagster_graphql(
             context,
             START_PIPELINE_EXECUTION_QUERY,
@@ -113,7 +113,7 @@ def test_terminate_failed():
             'Unable to terminate run'
         )
 
-        context.execution_manager.terminate = old_terminate
+        context.legacy_environment.execution_manager.terminate = old_terminate
 
         result = execute_dagster_graphql(
             context, RUN_CANCELLATION_QUERY, variables={'runId': run_id}
@@ -129,7 +129,7 @@ def test_run_finished():
     instance = DagsterInstance.local_temp()
     context = define_test_subprocess_context(instance)
     pipeline_result = execute_pipeline(
-        context.get_reconstructable_pipeline('noop_pipeline'), instance=instance
+        context.legacy_environment.get_reconstructable_pipeline('noop_pipeline'), instance=instance
     )
     assert pipeline_result.success
     assert pipeline_result.run_id

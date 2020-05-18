@@ -190,7 +190,7 @@ class DauphinQuery(dauphin.ObjectType):
         return graphene_info.context.version
 
     def resolve_reloadSupported(self, graphene_info):
-        return graphene_info.context.is_reload_supported
+        return graphene_info.context.legacy_environment.is_reload_supported
 
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
@@ -595,7 +595,7 @@ class DauphinReloadDagit(dauphin.Mutation):
     Output = dauphin.NonNull(dauphin.Boolean)
 
     def mutate(self, graphene_info):
-        return graphene_info.context.reloader.reload()
+        return graphene_info.context.legacy_environment.reloader.reload()
 
 
 class DauphinMutation(dauphin.ObjectType):

@@ -59,7 +59,7 @@ class DaskConfig(
         # context: https://github.com/dask/distributed/issues/3313
         if not getattr(self, 'address', None):
             # We set threads_per_worker because Dagster is not thread-safe. Even though
-            # processes=True by default, there is a clever piece of machinery
+            # environments=True by default, there is a clever piece of machinery
             # (dask.distributed.deploy.local.nprocesses_nthreads) that automagically makes execution
             # multithreaded by default when the number of available cores is greater than 4.
             # See: https://github.com/dagster-io/dagster/issues/2181

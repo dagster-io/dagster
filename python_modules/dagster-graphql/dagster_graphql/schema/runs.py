@@ -194,7 +194,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self.runId
 
     def resolve_canCancel(self, graphene_info):
-        return graphene_info.context.execution_manager.can_terminate(self.run_id)
+        return graphene_info.context.legacy_environment.execution_manager.can_terminate(self.run_id)
 
     def resolve_executionSelection(self, graphene_info):
         return graphene_info.schema.type_named('ExecutionSelection')(self._pipeline_run.selector)

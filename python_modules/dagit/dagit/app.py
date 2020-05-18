@@ -8,9 +8,9 @@ import warnings
 
 import nbformat
 from dagster_graphql.implementation.context import (
+    DagsterEnvironment,
     DagsterGraphQLContext,
-    DagsterGraphQLInProcessRepositoryContext,
-    DagsterGraphQLOutOfProcessRepositoryContext,
+    InProcessDagsterEnvironment,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import (
     QueueingSubprocessExecutionManager,
@@ -30,7 +30,6 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -194,19 +193,15 @@ def get_execution_manager(instance):
     return SubprocessExecutionManager(instance)
 
 
-def create_app_with_external_repository(external_repository, instance):
-    check.inst_param(external_repository, 'external_repository', ExternalRepository)
+def create_app_with_environments(dagster_environments, instance):
+    check.list_param(dagster_environments, 'dagster_environments', of_type=DagsterEnvironment)
     check.inst_param(instance, 'instance', DagsterInstance)
 
-    execution_manager = get_execution_manager(instance)
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
-    context = DagsterGraphQLOutOfProcessRepositoryContext(
-        external_repository=external_repository,
-        instance=instance,
-        execution_manager=execution_manager,
-        version=__version__,
+    context = DagsterGraphQLContext(
+        environments=dagster_environments, instance=instance, version=__version__,
     )
     return instantiate_app_with_views(context)
 
@@ -220,22 +215,24 @@ def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
-    context = DagsterGraphQLInProcessRepositoryContext(
-        recon_repo=recon_repo,
+    context = DagsterGraphQLContext(
         instance=instance,
-        execution_manager=execution_manager,
-        reloader=reloader,
+        environments=[
+            InProcessDagsterEnvironment(
+                recon_repo, execution_manager=execution_manager, reloader=reloader,
+            )
+        ],
         version=__version__,
     )
 
     # Automatically initialize scheduler everytime Dagit loads
     scheduler = instance.scheduler
-    repository = context.get_repository_definition()
+    repository = context.legacy_get_repository_definition()
 
     if repository.schedule_defs:
         if scheduler:
             python_path = sys.executable
-            repository_path = context.get_reconstructable_repo().yaml_path
+            repository_path = context.legacy_environment.get_reconstructable_repository().yaml_path
             reconcile_scheduler_state(
                 python_path, repository_path, repository=repository, instance=instance
             )

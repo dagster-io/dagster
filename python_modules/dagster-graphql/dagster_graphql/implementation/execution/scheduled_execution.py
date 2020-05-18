@@ -45,7 +45,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
         # We first load the repository and schedule definition to create
         # and store a ScheduleTick.
         # If this fails, this error should be sent to the file based scheduler logs.
-        external_repository = graphene_info.context.get_external_repository()
+        external_repository = graphene_info.context.legacy_external_repository
         repository_name = external_repository.name
         schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
         cron_schedule = "Unknown" if not schedule_def else schedule_def.cron_schedule
@@ -153,7 +153,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
         environment_dict,
     )
     if validation_result.success:
-        external_execution_plan = graphene_info.context.get_external_execution_plan(
+        external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
             external_pipeline, environment_dict, mode, execution_params.step_keys
         )
 
