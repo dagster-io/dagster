@@ -14,7 +14,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite import SqliteScheduleStorage
 from dagster.utils import file_relative_path
-from dagster.utils.test import FilesytemTestScheduler
+from dagster.utils.test import FilesystemTestScheduler
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
 from .utils import InMemoryRunLauncher, sync_get_all_logs_for_run
@@ -51,7 +51,7 @@ def get_instance(temp_dir):
         local_artifact_storage=LocalArtifactStorage(temp_dir),
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
-        scheduler=FilesytemTestScheduler(temp_dir),
+        scheduler=FilesystemTestScheduler(temp_dir),
         schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
         compute_log_manager=NoOpComputeLogManager(temp_dir),
     )

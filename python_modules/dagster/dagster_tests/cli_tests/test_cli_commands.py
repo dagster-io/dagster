@@ -52,7 +52,7 @@ from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path
-from dagster.utils.test import FilesytemTestScheduler
+from dagster.utils.test import FilesystemTestScheduler
 
 
 def no_print(_):
@@ -664,7 +664,7 @@ def define_scheduler_instance():
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesytemTestScheduler(temp_dir),
+            scheduler=FilesystemTestScheduler(temp_dir),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
         )
 

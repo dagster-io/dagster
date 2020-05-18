@@ -366,7 +366,7 @@ def restore_directory(src):
             shutil.copytree(dst, src)
 
 
-class FilesytemTestScheduler(Scheduler):
+class FilesystemTestScheduler(Scheduler):
     def __init__(self, artifacts_dir):
         check.str_param(artifacts_dir, 'artifacts_dir')
         self._artifacts_dir = artifacts_dir

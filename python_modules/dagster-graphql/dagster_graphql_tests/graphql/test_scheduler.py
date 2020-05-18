@@ -18,7 +18,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.utils import file_relative_path
-from dagster.utils.test import FilesytemTestScheduler
+from dagster.utils.test import FilesystemTestScheduler
 
 GET_SCHEDULES_QUERY = '''
 {
@@ -108,7 +108,7 @@ def test_start_stop_schedule():
             event_storage=InMemoryEventLogStorage(),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesytemTestScheduler(temp_dir),
+            scheduler=FilesystemTestScheduler(temp_dir),
         )
 
         context = define_context_for_repository_yaml(
@@ -152,7 +152,7 @@ def test_get_all_schedules():
             event_storage=InMemoryEventLogStorage(),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesytemTestScheduler(temp_dir),
+            scheduler=FilesystemTestScheduler(temp_dir),
         )
 
         context = define_context_for_repository_yaml(
