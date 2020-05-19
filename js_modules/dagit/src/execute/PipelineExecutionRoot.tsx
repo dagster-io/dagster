@@ -1,11 +1,10 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
 import ExecutionSessionContainer, {
   ExecutionSessionContainerError
 } from "./ExecutionSessionContainer";
 import { QueryResult, Query } from "react-apollo";
-import { NonIdealState, Colors } from "@blueprintjs/core";
+import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
   useStorage,
@@ -37,11 +36,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   };
 
   return (
-    <PipelineExecutionWrapper>
-      <TabBarContainer>
-        <ExecutionTabs data={data} onSave={onSave} />
-        <div style={{ flex: 1 }} />
-      </TabBarContainer>
+    <>
+      <ExecutionTabs data={data} onSave={onSave} />
       <Query
         // never serve cached Pipeline given new vars by forcing teardown of the Query.
         // Apollo's behaviors are sort of whacky, even with no-cache. Should just use
@@ -125,7 +121,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
           );
         }}
       </Query>
-    </PipelineExecutionWrapper>
+    </>
   );
 };
 
@@ -154,24 +150,4 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
 
   ${ExecutionSessionContainer.fragments.ExecutionSessionContainerFragment}
   ${ExecutionSessionContainer.fragments.EnvironmentSchemaOrErrorFragment}
-`;
-
-const PipelineExecutionWrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-`;
-
-const TabBarContainer = styled.div`
-  height: 45px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  border-bottom: 1px solid ${Colors.GRAY5};
-  background: ${Colors.LIGHT_GRAY3};
-  padding: 2px 10px;
-  z-index: 3;
 `;

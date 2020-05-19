@@ -17,10 +17,7 @@ import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSol
 import { filterByQuery } from "./GraphQueryImpl";
 import { SolidJumpBar } from "./PipelineJumpComponents";
 import { GraphQueryInput } from "./GraphQueryInput";
-import {
-  PipelineSelector,
-  selectorToString
-} from "./leftnav/PipelineSelectorUtils";
+import { PipelineSelector, selectorToString } from "./PipelineSelectorUtils";
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -172,9 +169,7 @@ export default class PipelineExplorer extends React.Component<
       selectedHandle = undefined;
     }
 
-    const backgroundColor = parentHandle
-      ? Colors.LIGHT_GRAY3
-      : Colors.LIGHT_GRAY5;
+    const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
 
     const backgroundTranslucent = Color(backgroundColor)
       .fade(0.6)

@@ -6,7 +6,7 @@ import { ApolloLink } from "apollo-link";
 import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
-import { WebsocketStatusProvider } from "./leftnav/WebsocketStatus";
+import { WebsocketStatusProvider } from "./WebsocketStatus";
 import { App } from "./App";
 import AppCache from "./AppCache";
 

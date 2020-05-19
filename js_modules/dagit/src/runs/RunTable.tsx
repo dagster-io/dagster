@@ -390,7 +390,9 @@ const RunActionsMenu: React.FunctionComponent<{
               disabled={!infoReady}
               icon="edit"
               target="_blank"
-              href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
+              href={`/pipeline/${
+                run.pipeline.name
+              }/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
                 solidSubset:

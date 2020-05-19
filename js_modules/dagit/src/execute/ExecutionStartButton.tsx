@@ -2,7 +2,7 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { Button, Icon, Intent, Spinner, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { WebsocketStatusContext } from "../leftnav/WebsocketStatus";
+import { WebsocketStatusContext } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
 
 interface IExecutionStartButtonProps {

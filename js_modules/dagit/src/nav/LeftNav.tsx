@@ -1,11 +1,11 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Route } from "react-router";
+import { useRouteMatch, useHistory } from "react-router";
 import styled from "styled-components/macro";
 import { Colors, Icon } from "@blueprintjs/core";
 
 import { InstanceDetailsLink } from "./InstanceDetailsLink";
-import { WebsocketStatus } from "./WebsocketStatus";
+import { WebsocketStatus } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { EnvironmentPicker } from "./EnvironmentPicker";
 import { EnvironmentContentList } from "./EnvironmentContentList";
@@ -36,60 +36,60 @@ const INSTANCE_TABS = [
 ];
 
 export const LeftNav = () => {
+  const history = useHistory();
+  const match = useRouteMatch<{ tab: string; selector: string }>([
+    "/pipeline/:selector/:tab?",
+    "/solid/:selector",
+    "/:tab?"
+  ]);
+
   return (
-    <Route
-      path="/:tab?/:pipelineSelector?"
-      render={({ match: { params }, history }) => (
-        <LeftNavContainer>
-          <div style={{ flexShrink: 0 }}>
-            <LogoContainer>
-              <img
-                alt="logo"
-                src={navBarImage}
-                style={{ height: 40 }}
-                onClick={() => history.push("/")}
-              />
-              <LogoMetaContainer>
-                <img src={navTitleImage} style={{ height: 10 }} alt="title" />
-                <InstanceDetailsLink />
-              </LogoMetaContainer>
-              <LogoWebsocketStatus />
-            </LogoContainer>
-            {INSTANCE_TABS.map((t, i) => (
-              <ShortcutHandler
-                key={t.tab}
-                onShortcut={() => history.push(t.to)}
-                shortcutLabel={`⌥${i + 1}`}
-                shortcutFilter={e =>
-                  e.keyCode === KEYCODE_FOR_1 + i && e.altKey
-                }
-              >
-                <Tab
-                  to={t.to}
-                  className={params.tab === t.tab ? "selected" : ""}
-                >
-                  {t.icon}
-                  <TabLabel>{t.label}</TabLabel>
-                </Tab>
-              </ShortcutHandler>
-            ))}
-          </div>
-          <div style={{ height: 40 }} />
-          <div
-            className="bp3-dark"
-            style={{
-              background: `rgba(0,0,0,0.3)`,
-              color: Colors.WHITE,
-              flex: 1
-            }}
+    <LeftNavContainer>
+      <div style={{ flexShrink: 0 }}>
+        <LogoContainer>
+          <img
+            alt="logo"
+            src={navBarImage}
+            style={{ height: 40 }}
+            onClick={() => history.push("/")}
+          />
+          <LogoMetaContainer>
+            <img src={navTitleImage} style={{ height: 10 }} alt="title" />
+            <InstanceDetailsLink />
+          </LogoMetaContainer>
+          <LogoWebsocketStatus />
+        </LogoContainer>
+        {INSTANCE_TABS.map((t, i) => (
+          <ShortcutHandler
+            key={t.tab}
+            onShortcut={() => history.push(t.to)}
+            shortcutLabel={`⌥${i + 1}`}
+            shortcutFilter={e => e.keyCode === KEYCODE_FOR_1 + i && e.altKey}
           >
-            <EnvironmentPicker />
-            <EnvironmentContentList />
-            <div style={{ flex: 1 }} />
-          </div>
-        </LeftNavContainer>
-      )}
-    />
+            <Tab
+              to={t.to}
+              className={match?.params.tab === t.tab ? "selected" : ""}
+            >
+              {t.icon}
+              <TabLabel>{t.label}</TabLabel>
+            </Tab>
+          </ShortcutHandler>
+        ))}
+      </div>
+      <div style={{ height: 40 }} />
+      <div
+        className="bp3-dark"
+        style={{
+          background: `rgba(0,0,0,0.3)`,
+          color: Colors.WHITE,
+          flex: 1
+        }}
+      >
+        <EnvironmentPicker />
+        <EnvironmentContentList {...match?.params} />
+        <div style={{ flex: 1 }} />
+      </div>
+    </LeftNavContainer>
   );
 };
 
@@ -124,12 +124,10 @@ const Tab = styled(Link)`
     color: ${Colors.WHITE};
     text-decoration: none;
   }
-  &:active {
+  &:focus {
     outline: 0;
-    border-left: 4px solid ${Colors.DARK_GRAY4};
   }
   &.selected {
-    outline: 0;
     color: ${Colors.WHITE};
     border-left: 4px solid ${Colors.COBALT3};
     font-weight: 600;

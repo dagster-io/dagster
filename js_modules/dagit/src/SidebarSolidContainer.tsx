@@ -6,7 +6,7 @@ import { SolidNameOrPath } from "./PipelineExplorer";
 import { useQuery } from "react-apollo";
 import Loading from "./Loading";
 import gql from "graphql-tag";
-import { PipelineSelector } from "./leftnav/PipelineSelectorUtils";
+import { PipelineSelector } from "./PipelineSelectorUtils";
 
 interface SidebarSolidContainerProps {
   handleID: string;

@@ -283,11 +283,13 @@ export const ScheduleRow: React.FunctionComponent<{
                   text="Open in Playground..."
                   icon="edit"
                   target="_blank"
-                  href={`/playground/${pipelineName}/setup?${qs.stringify({
-                    mode,
-                    solidSubset,
-                    config: environmentConfigYaml
-                  })}`}
+                  href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
+                    {
+                      mode,
+                      solidSubset,
+                      config: environmentConfigYaml
+                    }
+                  )}`}
                 />
               ) : (
                 <MenuItem

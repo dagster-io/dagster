@@ -4,7 +4,7 @@ import Loading from "../Loading";
 import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";
 import { TypeListContainerQuery } from "./types/TypeListContainerQuery";
-import { PipelineSelector } from "../leftnav/PipelineSelectorUtils";
+import { PipelineSelector } from "../PipelineSelectorUtils";
 
 interface ITypeListContainerProps {
   selector: PipelineSelector;

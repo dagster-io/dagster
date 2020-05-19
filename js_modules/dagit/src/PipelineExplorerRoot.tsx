@@ -12,10 +12,7 @@ import {
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
 } from "./types/PipelineExplorerRootQuery";
-import {
-  selectorFromString,
-  PipelineSelector
-} from "./leftnav/PipelineSelectorUtils";
+import { selectorFromString, PipelineSelector } from "./PipelineSelectorUtils";
 import styled from "styled-components/macro";
 
 function explodeComposite(
@@ -143,14 +140,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           : result.solidHandles;
 
         return (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column"
-            }}
-          >
+          <>
             {selector.snapshotId && (
               <SnapshotNotice>
                 You are viewing a historical pipeline snapshot.
@@ -173,7 +163,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
                   .map(s => ({ handleID: s.handleID }))
               }
             />
-          </div>
+          </>
         );
       }}
     </ExplorerSnapshotResolver>

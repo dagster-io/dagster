@@ -10,7 +10,7 @@ exports[`renders execution 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -20,7 +20,7 @@ exports[`renders execution 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -37,7 +37,7 @@ exports[`renders execution 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -55,7 +55,7 @@ exports[`renders execution 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -65,7 +65,7 @@ exports[`renders execution 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -89,13 +89,13 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -119,13 +119,13 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -149,7 +149,7 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -213,7 +213,7 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -300,194 +300,130 @@ exports[`renders execution 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
-            href="/playground/airline_demo_ingest_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            href="/pipeline/airline_demo_ingest_pipeline/playground"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/airline_demo_warehouse_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/airline_demo_warehouse_pipeline/playground"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/composition/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/composition/playground"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/daily_weather_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/daily_weather_pipeline/playground"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/error_monster/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/error_monster/playground"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/event_ingest_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/event_ingest_pipeline/playground"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/generate_training_set_and_train_model/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/generate_training_set_and_train_model/playground"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/jaffle_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/jaffle_pipeline/playground"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/log_spew/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/log_spew/playground"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/longitudinal_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/longitudinal_pipeline/playground"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/many_events/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/many_events/playground"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/pandas_hello_world_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/pandas_hello_world_pipeline/playground"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/pandas_hello_world_pipeline_with_read_csv/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/pandas_hello_world_pipeline_with_read_csv/playground"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/pyspark_pagerank/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/pyspark_pagerank/playground"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/simple_pyspark_sfo_weather_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_pyspark_sfo_weather_pipeline/playground"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/sleepy_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/sleepy_pipeline/playground"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/stdout_spew_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/stdout_spew_pipeline/playground"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
-            href="/playground/unreliable_pipeline/"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/unreliable_pipeline/playground"
             onClick={[Function]}
           >
             unreliable_pipeline
@@ -504,28 +440,112 @@ exports[`renders execution 1`] = `
     </div>
   </div>
   <div
-    className="sc-htpNat iwJDzi"
+    style={
+      Object {
+        "display": "flex",
+        "flexDirection": "column",
+        "height": "100%",
+        "width": "100%",
+      }
+    }
   >
     <div
-      className="sc-bxivhb kqOucM"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 cKVAOT"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
       >
-        <div
-          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 evxttF"
-          onClick={[Function]}
-          onDoubleClick={[Function]}
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
         >
-          New Run
-        </div>
-        <div
-          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 idqSMM"
-          onClick={[Function]}
-          onDoubleClick={[Function]}
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
         >
-          Add...
-        </div>
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
       </div>
       <div
         style={
@@ -534,6 +554,24 @@ exports[`renders execution 1`] = `
           }
         }
       />
+    </div>
+    <div
+      className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 ijLiyT"
+    >
+      <div
+        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 gQeajv"
+        onClick={[Function]}
+        onDoubleClick={[Function]}
+      >
+        New Run
+      </div>
+      <div
+        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 bkIzJY"
+        onClick={[Function]}
+        onDoubleClick={[Function]}
+      >
+        Add...
+      </div>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 iGxzwI"
@@ -613,7 +651,7 @@ exports[`renders pipeline page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -623,7 +661,7 @@ exports[`renders pipeline page 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -640,7 +678,7 @@ exports[`renders pipeline page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -658,7 +696,7 @@ exports[`renders pipeline page 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -668,7 +706,7 @@ exports[`renders pipeline page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -692,13 +730,13 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -722,13 +760,13 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -752,7 +790,7 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -816,7 +854,7 @@ exports[`renders pipeline page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -903,193 +941,129 @@ exports[`renders pipeline page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -1117,6 +1091,112 @@ exports[`renders pipeline page 1`] = `
     }
   >
     <div
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+    >
+      <div
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+      >
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
+    <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
       id="split-panel-container"
     >
@@ -1134,7 +1214,7 @@ exports[`renders pipeline page 1`] = `
           className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -1242,7 +1322,7 @@ exports[`renders pipeline page 1`] = `
           className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -1307,7 +1387,7 @@ exports[`renders pipeline page 1`] = `
           onWheel={[Function]}
           style={
             Object {
-              "backgroundColor": "#F5F8FA",
+              "backgroundColor": "#FFFFFF",
               "height": "100%",
               "overflow": "hidden",
               "position": "relative",
@@ -5172,7 +5252,7 @@ exports[`renders pipeline solid page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -5182,7 +5262,7 @@ exports[`renders pipeline solid page 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -5199,7 +5279,7 @@ exports[`renders pipeline solid page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -5217,7 +5297,7 @@ exports[`renders pipeline solid page 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -5227,7 +5307,7 @@ exports[`renders pipeline solid page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -5251,13 +5331,13 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -5281,13 +5361,13 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -5311,7 +5391,7 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -5375,7 +5455,7 @@ exports[`renders pipeline solid page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -5462,193 +5542,129 @@ exports[`renders pipeline solid page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -5676,6 +5692,112 @@ exports[`renders pipeline solid page 1`] = `
     }
   >
     <div
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+    >
+      <div
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+      >
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
+    <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
       id="split-panel-container"
     >
@@ -5693,7 +5815,7 @@ exports[`renders pipeline solid page 1`] = `
           className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -5801,7 +5923,7 @@ exports[`renders pipeline solid page 1`] = `
           className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -5866,7 +5988,7 @@ exports[`renders pipeline solid page 1`] = `
           onWheel={[Function]}
           style={
             Object {
-              "backgroundColor": "#F5F8FA",
+              "backgroundColor": "#FFFFFF",
               "height": "100%",
               "overflow": "hidden",
               "position": "relative",
@@ -9731,7 +9853,7 @@ exports[`renders solids explorer 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -9741,7 +9863,7 @@ exports[`renders solids explorer 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -9758,7 +9880,7 @@ exports[`renders solids explorer 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -9776,7 +9898,7 @@ exports[`renders solids explorer 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -9786,7 +9908,7 @@ exports[`renders solids explorer 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -9810,13 +9932,13 @@ exports[`renders solids explorer 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -9840,13 +9962,13 @@ exports[`renders solids explorer 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -9870,7 +9992,7 @@ exports[`renders solids explorer 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -9934,7 +10056,7 @@ exports[`renders solids explorer 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -10021,129 +10143,129 @@ exports[`renders solids explorer 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -11465,7 +11587,7 @@ exports[`renders type page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -11475,7 +11597,7 @@ exports[`renders type page 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -11492,7 +11614,7 @@ exports[`renders type page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -11510,7 +11632,7 @@ exports[`renders type page 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -11520,7 +11642,7 @@ exports[`renders type page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -11544,13 +11666,13 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -11574,13 +11696,13 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -11604,7 +11726,7 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -11668,7 +11790,7 @@ exports[`renders type page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -11755,193 +11877,129 @@ exports[`renders type page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -11969,6 +12027,112 @@ exports[`renders type page 1`] = `
     }
   >
     <div
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+    >
+      <div
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+      >
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
+    <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
       id="split-panel-container"
     >
@@ -11986,7 +12150,7 @@ exports[`renders type page 1`] = `
           className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -12094,7 +12258,7 @@ exports[`renders type page 1`] = `
           className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -12159,7 +12323,7 @@ exports[`renders type page 1`] = `
           onWheel={[Function]}
           style={
             Object {
-              "backgroundColor": "#F5F8FA",
+              "backgroundColor": "#FFFFFF",
               "height": "100%",
               "overflow": "hidden",
               "position": "relative",
@@ -16024,7 +16188,7 @@ exports[`renders type page 2`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -16034,7 +16198,7 @@ exports[`renders type page 2`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -16051,7 +16215,7 @@ exports[`renders type page 2`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -16069,7 +16233,7 @@ exports[`renders type page 2`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -16079,7 +16243,7 @@ exports[`renders type page 2`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -16103,13 +16267,13 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -16133,13 +16297,13 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -16163,7 +16327,7 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -16227,7 +16391,7 @@ exports[`renders type page 2`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -16314,193 +16478,129 @@ exports[`renders type page 2`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -16528,6 +16628,112 @@ exports[`renders type page 2`] = `
     }
   >
     <div
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+    >
+      <div
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+      >
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
+    <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
       id="split-panel-container"
     >
@@ -16545,7 +16751,7 @@ exports[`renders type page 2`] = `
           className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -16653,7 +16859,7 @@ exports[`renders type page 2`] = `
           className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -16718,7 +16924,7 @@ exports[`renders type page 2`] = `
           onWheel={[Function]}
           style={
             Object {
-              "backgroundColor": "#F5F8FA",
+              "backgroundColor": "#FFFFFF",
               "height": "100%",
               "overflow": "hidden",
               "position": "relative",
@@ -20583,7 +20789,7 @@ exports[`renders without error 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-osl909-1 gmJAYY"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
   >
     <div
       style={
@@ -20593,7 +20799,7 @@ exports[`renders without error 1`] = `
       }
     >
       <div
-        className="LeftNav__LogoContainer-osl909-4 iqyWnK"
+        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
       >
         <img
           alt="logo"
@@ -20610,7 +20816,7 @@ exports[`renders without error 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-osl909-5 bpPMCN"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
         >
           <img
             alt="title"
@@ -20628,7 +20834,7 @@ exports[`renders without error 1`] = `
           <span />
         </div>
         <div
-          className="WebsocketStatus__Circle-sc-1rr0r58-0 bRcTsX LeftNav__LogoWebsocketStatus-osl909-0 bNeYTZ"
+          className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-sc-1s6k43w-0 jcGFaP"
           style={
             Object {
               "background": "#3DCC91",
@@ -20638,7 +20844,7 @@ exports[`renders without error 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/runs"
         onClick={[Function]}
       >
@@ -20662,13 +20868,13 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/schedules"
         onClick={[Function]}
       >
@@ -20692,13 +20898,13 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Schedules
         </div>
       </a>
       <a
-        className="LeftNav__Tab-osl909-2 kPedjP"
+        className="LeftNav__Tab-sc-1s6k43w-2 kaIQBa"
         href="/assets"
         onClick={[Function]}
       >
@@ -20722,7 +20928,7 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-osl909-3 FMDcX"
+          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
         >
           Assets
         </div>
@@ -20786,7 +20992,7 @@ exports[`renders without error 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1uudsgx-0 eiehNv"
+          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -20873,193 +21079,129 @@ exports[`renders without error 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1uudsgx-1 fGhiNd"
+          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz selected"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
             airline_demo_ingest_pipeline
           </a>
-          <div>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy selected"
-              href="/pipeline/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Definition
-            </a>
-            <a
-              className="EnvironmentContentList__Item-sc-1uudsgx-2 EnvironmentContentList__Subitem-sc-1uudsgx-3 hZCGSy"
-              href="/playground/airline_demo_ingest_pipeline/"
-              onClick={[Function]}
-            >
-              <span
-                className="bp3-icon bp3-icon-manually-entered-data"
-                icon="manually-entered-data"
-                style={
-                  Object {
-                    "marginRight": 8,
-                  }
-                }
-              >
-                <svg
-                  data-icon="manually-entered-data"
-                  height={14}
-                  viewBox="0 0 16 16"
-                  width={14}
-                >
-                  <desc>
-                    manually-entered-data
-                  </desc>
-                  <path
-                    d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              Playground
-            </a>
-          </div>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
             jaffle_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
             pyspark_pagerank
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1uudsgx-2 fnokqz"
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -21087,6 +21229,112 @@ exports[`renders without error 1`] = `
     }
   >
     <div
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+    >
+      <div
+        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+      >
+        airline_demo_ingest_pipeline
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-dashboard"
+          icon="dashboard"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="dashboard"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              dashboard
+            </desc>
+            <path
+              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Overview
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-diagram-tree"
+          icon="diagram-tree"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="diagram-tree"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              diagram-tree
+            </desc>
+            <path
+              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Definition
+      </div>
+      <div
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-manually-entered-data"
+          icon="manually-entered-data"
+          style={
+            Object {
+              "paddingRight": 8,
+            }
+          }
+        >
+          <svg
+            data-icon="manually-entered-data"
+            height={16}
+            viewBox="0 0 16 16"
+            width={16}
+          >
+            <desc>
+              manually-entered-data
+            </desc>
+            <path
+              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        Playground
+      </div>
+      <div
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
+      />
+    </div>
+    <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
       id="split-panel-container"
     >
@@ -21104,7 +21352,7 @@ exports[`renders without error 1`] = `
           className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -21212,7 +21460,7 @@ exports[`renders without error 1`] = `
           className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
           style={
             Object {
-              "background": "rgba(245, 248, 250, 0.4)",
+              "background": "rgba(255, 255, 255, 0.4)",
             }
           }
         >
@@ -21277,7 +21525,7 @@ exports[`renders without error 1`] = `
           onWheel={[Function]}
           style={
             Object {
-              "backgroundColor": "#F5F8FA",
+              "backgroundColor": "#FFFFFF",
               "height": "100%",
               "overflow": "hidden",
               "position": "relative",
