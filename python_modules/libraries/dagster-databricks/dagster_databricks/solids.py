@@ -20,13 +20,12 @@ _DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
 
 
 class DatabricksRunJobSolidDefinition(SolidDefinition):
-    """
-    Solid to run a Databricks job.
+    '''Solid to run a Databricks job.
 
     The job configuration is passed entirely by config, and no code is synchronised to Databricks.
     See :py:class:`dagster_databricks.databricks_pyspark_step_launcher` to run PySpark solids within
     a Databricks job.
-    """
+    '''
 
     def __init__(
         self,
@@ -51,11 +50,11 @@ class DatabricksRunJobSolidDefinition(SolidDefinition):
             )
             run_config = context.solid_config['run_config'].copy()
             task = run_config.pop('task')
-            run_id = job_runner.submit_run(run_config, task)
+            databricks_run_id = job_runner.submit_run(run_config, task)
             context.log.info('waiting for Databricks job completion...')
 
-            job_runner.wait_for_run_to_complete(context.log, run_id)
-            yield Output(run_id)
+            job_runner.wait_for_run_to_complete(context.log, databricks_run_id)
+            yield Output(databricks_run_id)
 
         super(DatabricksRunJobSolidDefinition, self).__init__(
             name=name,

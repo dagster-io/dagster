@@ -1,5 +1,4 @@
-"""
-The main entrypoint for solids executed using the DatabricksPySparkStepLauncher.
+'''The main entrypoint for solids executed using the DatabricksPySparkStepLauncher.
 
 This script is launched on Databricks using a `spark_python_task` and is passed the following
 parameters:
@@ -7,7 +6,7 @@ parameters:
 - the DBFS path to the pickled `step_run_ref` file
 - the DBFS path to the zipped pipeline
 - paths to any other zipped packages which have been uploaded to DBFS.
-"""
+'''
 
 import os
 import pickle
@@ -27,9 +26,8 @@ if 'DATABRICKS_TOKEN' not in os.environ:
 
 
 def setup_s3_storage(scope, credentials):
-    """
-    Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
-    """
+    '''Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
+    '''
     access_key = dbutils.secrets.get(scope=scope, key=credentials['access_key_key'])
     secret_key = dbutils.secrets.get(scope=scope, key=credentials['secret_key_key'])
 
@@ -43,9 +41,8 @@ def setup_s3_storage(scope, credentials):
 
 
 def setup_adls2_storage(scope, credentials):
-    """
-    Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
-    """
+    '''Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
+    '''
     storage_account_key = dbutils.secrets.get(
         scope=scope, key=credentials['storage_account_key_key']
     )
@@ -56,13 +53,12 @@ def setup_adls2_storage(scope, credentials):
 
 
 def setup_storage(step_run_ref):
-    """
-    Setup any storage required by the run.
+    '''Setup any storage required by the run.
 
     At least one of S3 or ADLS2 storage should be provided in config, so that the run can
     save intermediate files to a location accessible by the original process which launched
     the job.
-    """
+    '''
     storage = step_run_ref.environment_dict['resources']['pyspark_step_launcher']['config'][
         'storage'
     ]
@@ -77,7 +73,6 @@ def setup_storage(step_run_ref):
 
 
 def main(step_run_ref_filepath, pipeline_zip, other_zips):
-
     # Extract any zip files to a temporary directory and add that temporary directory
     # to the site path so the contained files can be imported.
     #

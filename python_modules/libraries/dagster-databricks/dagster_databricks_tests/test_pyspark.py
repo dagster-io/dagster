@@ -42,12 +42,12 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
                 'nodes': {'node_types': {'node_type_id': 'Standard_DS3_v2'},},
             },
         },
-        "libraries": [
+        'libraries': [
             # TODO: uncomment when dagster-azure is merged.
-            # {"pypi": {"package": "azure-storage-file-datalake~=12.0.1"}},
-            {"pypi": {"package": "dagster-aws==0.7.13"}},
-            {"pypi": {"package": "databricks-api"}},
-            {"pypi": {"package": "pytest"}},
+            # {'pypi': {'package': 'azure-storage-file-datalake~=12.0.1'}},
+            {'pypi': {'package': 'dagster-aws==0.7.13'}},
+            {'pypi': {'package': 'databricks-api'}},
+            {'pypi': {'package': 'pytest'}},
         ],
     },
     'storage': {
@@ -196,14 +196,14 @@ def test_do_it_live_databricks_s3():
     assert result.success
 
 
-@pytest.mark.skip(reason="Need dagster-azure to be merged")
+@pytest.mark.skip(reason='Need dagster-azure to be merged')
 @pytest.mark.skipif(
     'DATABRICKS_TEST_DO_IT_LIVE' not in os.environ,
     reason='This test is slow and requires a Databricks cluster; run only upon explicit request',
 )
 def test_do_it_live_databricks_adls2():
     config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-    config["storage"] = {
+    config['storage'] = {
         'secret_scope': 'dagster-databricks-tests',
         'credentials': {
             'adls2': {

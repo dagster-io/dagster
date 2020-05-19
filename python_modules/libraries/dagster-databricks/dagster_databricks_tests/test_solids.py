@@ -32,7 +32,7 @@ def test_run_databricks_job(mock_wait_for_run, mock_submit_run, databricks_run_c
     assert result.success
 
     mock_submit_run.assert_called_once()
-    task = databricks_run_config.pop("task")
+    task = databricks_run_config.pop('task')
     assert mock_submit_run.call_args[0][0] == databricks_run_config
     assert mock_submit_run.call_args[0][1] == task
     mock_wait_for_run.assert_called_once()

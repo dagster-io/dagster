@@ -1,5 +1,4 @@
-"""
-Databricks integration for Dagster.
+'''Databricks integration for Dagster.
 
 This package provides:
 
@@ -7,7 +6,7 @@ This package provides:
     launches a Databricks job in which a solid can be run
 - the :py:class:`~dagster_databricks.DatabricksRunJobSolidDefinition`, which can be used
     to execute an arbitrary task in Databricks.
-"""
+'''
 
 from dagster.core.utils import check_dagster_package_version
 

@@ -13,7 +13,7 @@ TOKEN = 'super-secret-token'
 
 @mock.patch('dagster_databricks.databricks.DatabricksClient.submit_run')
 def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = {"run_id": 1}
+    mock_submit_run.return_value = {'run_id': 1}
 
     runner = DatabricksJobRunner(HOST, TOKEN)
     task = databricks_run_config.pop('task')
@@ -22,7 +22,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
         run_name=databricks_run_config['run_name'],
         new_cluster=None,
         existing_cluster_id=databricks_run_config['cluster']['existing'],
-        spark_jar_task=task["spark_jar_task"],
+        spark_jar_task=task['spark_jar_task'],
         libraries=[
             {'pypi': {'package': 'dagster=={}'.format(dagster.__version__)}},
             {'pypi': {'package': 'dagster_pyspark=={}'.format(dagster.__version__)}},
@@ -33,7 +33,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
 
 @mock.patch('dagster_databricks.databricks.DatabricksClient.submit_run')
 def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = {"run_id": 1}
+    mock_submit_run.return_value = {'run_id': 1}
 
     runner = DatabricksJobRunner(HOST, TOKEN)
 
@@ -55,7 +55,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
             'custom_tags': [{'key': '__dagster_version', 'value': dagster.__version__}],
         },
         existing_cluster_id=None,
-        spark_jar_task=task["spark_jar_task"],
+        spark_jar_task=task['spark_jar_task'],
         libraries=[
             {'pypi': {'package': 'dagster=={}'.format(dagster.__version__)}},
             {'pypi': {'package': 'dagster_pyspark=={}'.format(dagster.__version__)}},
@@ -66,12 +66,12 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
 
 @mock.patch('dagster_databricks.databricks.DatabricksClient.submit_run')
 def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = {"run_id": 1}
+    mock_submit_run.return_value = {'run_id': 1}
 
     context = create_test_pipeline_execution_context()
     runner = DatabricksJobRunner(HOST, TOKEN, poll_interval_sec=0.01)
     task = databricks_run_config.pop('task')
-    run_id = runner.submit_run(databricks_run_config, task)
+    databricks_run_id = runner.submit_run(databricks_run_config, task)
 
     calls = {
         'num_calls': 0,
@@ -90,14 +90,14 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
         else:
             return calls['final_state']
 
-    with mock.patch.object(runner._client, 'get_run_state', new=new_get_run_state):
-        runner.wait_for_run_to_complete(context.log, run_id)
+    with mock.patch.object(runner.client, 'get_run_state', new=new_get_run_state):
+        runner.wait_for_run_to_complete(context.log, databricks_run_id)
 
     calls['num_calls'] = 0
     calls['final_state'] = DatabricksRunState(
         DatabricksRunLifeCycleState.Terminated, DatabricksRunResultState.Failed, 'Failed',
     )
     with pytest.raises(DatabricksError) as exc_info:
-        with mock.patch.object(runner._client, 'get_run_state', new=new_get_run_state):
-            runner.wait_for_run_to_complete(context.log, run_id)
+        with mock.patch.object(runner.client, 'get_run_state', new=new_get_run_state):
+            runner.wait_for_run_to_complete(context.log, databricks_run_id)
     assert 'Run 1 failed with result state' in str(exc_info.value)
