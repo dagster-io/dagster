@@ -32,6 +32,7 @@ def setup_s3_storage(scope, credentials):
     secret_key = dbutils.secrets.get(scope=scope, key=credentials['secret_key_key'])
 
     # Spark APIs will use this.
+    # See https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context.
     sc._jsc.hadoopConfiguration().set('fs.s3n.awsAccessKeyId', access_key)
     sc._jsc.hadoopConfiguration().set('fs.s3n.awsSecretAccessKey', secret_key)
 
@@ -46,6 +47,7 @@ def setup_adls2_storage(scope, credentials):
     storage_account_key = dbutils.secrets.get(
         scope=scope, key=credentials['storage_account_key_key']
     )
+    # See https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
     sc._jsc.hadoopConfiguration().set(
         'fs.azure.account.key.{}.dfs.core.windows.net'.format(credentials['storage_account_name']),
         storage_account_key,
