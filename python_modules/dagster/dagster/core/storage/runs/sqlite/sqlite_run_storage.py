@@ -6,16 +6,19 @@ from sqlalchemy.pool import NullPool
 
 from dagster import check
 from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
     get_alembic_config,
     handle_schema_errors,
     run_alembic_downgrade,
     run_alembic_upgrade,
+    stamp_alembic_rev,
 )
+from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
-from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev
 from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
 
@@ -64,8 +67,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def from_local(base_dir, inst_data=None):
         check.str_param(base_dir, 'base_dir')
         mkdir_p(base_dir)
-        path_components = os.path.abspath(base_dir).split(os.sep)
-        conn_string = 'sqlite:///{}'.format('/'.join(path_components + ['runs.db']))
+        conn_string = create_db_conn_string(base_dir, 'runs')
         engine = create_engine(conn_string, poolclass=NullPool)
         engine.execute('PRAGMA journal_mode=WAL;')
         RunStorageSqlMetadata.create_all(engine)

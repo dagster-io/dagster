@@ -12,17 +12,18 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
-
-from ...pipeline_run import PipelineRunStatus
-from ...sql import (
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.sql import (
     create_engine,
     get_alembic_config,
     handle_schema_errors,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster.core.storage.sqlite import create_db_conn_string
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.utils import mkdir_p
+
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage
 
@@ -96,7 +97,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def conn_string_for_run_id(self, run_id):
         check.str_param(run_id, 'run_id')
-        return 'sqlite:///{}'.format('/'.join(self.path_for_run_id(run_id).split(os.sep)))
+        return create_db_conn_string(self._base_dir, run_id)
 
     def _initdb(self, engine, run_id):
 
