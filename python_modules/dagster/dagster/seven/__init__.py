@@ -7,6 +7,7 @@ import signal
 import sys
 import tempfile
 import time
+from types import MethodType
 
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory

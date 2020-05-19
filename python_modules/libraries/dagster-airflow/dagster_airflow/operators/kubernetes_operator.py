@@ -12,7 +12,6 @@ from dagster import __version__ as dagster_version
 from dagster import seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
@@ -171,14 +170,16 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
             try:
                 if self.instance:
-                    run = self.instance.get_or_create_run(
+                    run = self.instance.register_managed_run(
                         pipeline_name=self.pipeline_name,
                         run_id=self.run_id,
                         environment_dict=self.environment_dict,
                         mode=self.mode,
+                        solid_subset=None,
                         step_keys_to_execute=None,
                         tags=None,
-                        status=PipelineRunStatus.MANAGED,
+                        root_run_id=None,
+                        parent_run_id=None,
                         pipeline_snapshot=self.pipeline_snapshot,
                         execution_plan_snapshot=self.execution_plan_snapshot,
                     )

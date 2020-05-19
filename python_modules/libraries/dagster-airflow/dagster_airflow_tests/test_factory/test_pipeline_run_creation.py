@@ -2,6 +2,7 @@ import mock
 
 from dagster import DagsterInstance, seven
 from dagster.core.errors import DagsterRunAlreadyExists
+from dagster.core.test_utils import register_managed_run_for_test
 
 
 class Spy(object):
@@ -20,9 +21,9 @@ class Spy(object):
             raise DagsterRunAlreadyExists
 
 
-# See comment for fn get_or_create_run().
+# See comment for fn register_managed_run().
 # Test the case where:
-# 1. Multiple callers invoke get_or_create_run() simultaneously for the same run.
+# 1. Multiple callers invoke register_managed_run() simultaneously for the same run.
 # 2. Both receive has_run() is False. See: (*)
 # 3. Both try to add_run(), with the first succeeding. We expect the second to receive
 #    DagsterRunAlreadyExists exception.
@@ -39,7 +40,7 @@ def test_pipeline_run_creation_race():
         instance._run_storage.add_run = add_run_mock  # pylint: disable=protected-access
 
         # This invocation should successfully add the run to run storage
-        pipeline_run = instance.get_or_create_run(run_id=run_id)
+        pipeline_run = register_managed_run_for_test(instance, run_id=run_id)
         assert len(add_run_mock.call_args_list) == 1
         assert instance.has_run(run_id)
 
@@ -51,7 +52,7 @@ def test_pipeline_run_creation_race():
         # (*) Simulate a race where second invocation receives has_run() is False
         fetched_pipeline_run = ''
         with mock.patch.object(instance, 'has_run', mock.MagicMock(return_value=False)):
-            fetched_pipeline_run = instance.get_or_create_run(run_id=run_id)
+            fetched_pipeline_run = register_managed_run_for_test(instance, run_id=run_id)
 
         # Check that add_run received DagsterRunAlreadyExists exception and did not return value
         assert len(add_run_mock.call_args_list) == 2

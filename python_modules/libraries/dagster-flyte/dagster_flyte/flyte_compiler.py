@@ -46,10 +46,19 @@ class DagsterFlyteCompiler:
         check.inst(execution_plan, ExecutionPlan)
 
         instance = DagsterInstance.ephemeral()
-        instance.get_or_create_run(
+        instance.create_run(
             pipeline_name=execution_plan.pipeline_def.display_name,
             run_id=execution_plan.pipeline_def.display_name,
             environment_dict=self.environment_dict,
+            mode=None,
+            solid_subset=None,
+            step_keys_to_execute=None,
+            status=None,
+            tags=None,
+            root_run_id=None,
+            parent_run_id=None,
+            pipeline_snapshot=None,
+            execution_plan_snapshot=None,
         )
 
         plan_iterator = execute_plan_iterator(

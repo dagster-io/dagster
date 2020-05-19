@@ -112,3 +112,63 @@ def environ(env):
                 del os.environ[key]
             else:
                 os.environ[key] = value
+
+
+def create_run_for_test(
+    instance,
+    pipeline_name=None,
+    run_id=None,
+    environment_dict=None,
+    mode=None,
+    solid_subset=None,
+    step_keys_to_execute=None,
+    status=None,
+    tags=None,
+    root_run_id=None,
+    parent_run_id=None,
+    pipeline_snapshot=None,
+    execution_plan_snapshot=None,
+):
+    return instance.create_run(
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        status,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
+    )
+
+
+def register_managed_run_for_test(
+    instance,
+    pipeline_name=None,
+    run_id=None,
+    environment_dict=None,
+    mode=None,
+    solid_subset=None,
+    step_keys_to_execute=None,
+    tags=None,
+    root_run_id=None,
+    parent_run_id=None,
+    pipeline_snapshot=None,
+    execution_plan_snapshot=None,
+):
+    return instance.register_managed_run(
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
+    )

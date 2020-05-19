@@ -164,6 +164,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
 
     pipeline_run = instance.create_run(
         pipeline_name=external_pipeline.name,
+        run_id=None,
         environment_dict=environment_dict,
         mode=mode,
         solid_subset=(
@@ -171,7 +172,11 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
             if execution_params.selector is not None
             else None
         ),
+        step_keys_to_execute=None,
+        status=None,
         tags=execution_params.execution_metadata.tags,
+        root_run_id=None,
+        parent_run_id=None,
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot
         if external_execution_plan

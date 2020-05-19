@@ -21,6 +21,7 @@ from dagster import (
 from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.test_utils import create_run_for_test
 from dagster.utils import get_multiprocessing_context
 
 HELLO_SOLID = 'HELLO SOLID'
@@ -233,7 +234,7 @@ def expected_outer_prefix():
 def test_single():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    pipeline_run = instance.create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
+    pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
     step_keys = ['A', 'B', 'C']
 
@@ -264,7 +265,7 @@ def test_single():
 def test_multi():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    pipeline_run = instance.create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
+    pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
     context = get_multiprocessing_context()
 
     step_keys = ['A', 'B', 'C']

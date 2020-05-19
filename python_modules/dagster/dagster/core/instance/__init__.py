@@ -574,24 +574,19 @@ class DagsterInstance:
 
     def create_run(
         self,
-        pipeline_name=None,
-        run_id=None,
-        environment_dict=None,
-        mode=None,
-        solid_subset=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        status,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
-
-        # This logic is factored out since it's shared with `get_or_create_run`, which will soon be
-        # deleted. When it is deleted, the body of `_construct_run_with_snapshots` can be brought
-        # back into this function.
-        # https://github.com/dagster-io/dagster/issues/2412
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -608,20 +603,19 @@ class DagsterInstance:
         )
         return self._run_storage.add_run(pipeline_run)
 
-    def get_or_create_run(
+    def register_managed_run(
         self,
-        pipeline_name=None,
-        run_id=None,
-        environment_dict=None,
-        mode=None,
-        solid_subset=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -641,7 +635,7 @@ class DagsterInstance:
             mode=mode,
             solid_subset=solid_subset,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=PipelineRunStatus.MANAGED,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,

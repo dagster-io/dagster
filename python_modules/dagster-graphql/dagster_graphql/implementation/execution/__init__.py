@@ -186,12 +186,17 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         # https://github.com/dagster-io/dagster/issues/1876
         pipeline_run = graphene_info.context.instance.create_run(
             pipeline_name=external_pipeline.name,
-            pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=mode,
+            solid_subset=None,
+            step_keys_to_execute=None,
+            status=None,
             tags=execution_params.execution_metadata.tags or {},
+            root_run_id=None,
+            parent_run_id=None,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         )
 
     ensure_valid_step_keys(external_execution_plan, execution_params.step_keys)
