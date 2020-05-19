@@ -69,7 +69,7 @@ class DagsterType(object):
             this value when automatically persisting it between execution steps. You should set
             this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
             for this type.
-        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
             depending on the storage being used for intermediates, they should specify this
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
@@ -438,7 +438,7 @@ class PythonObjectDagsterType(DagsterType):
             this value when automatically persisting it between execution steps. You should set
             this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
             for this type.
-        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+        auto_plugins (Optional[List[Type[TypeStoragePlugin]]]): If types must be serialized differently
             depending on the storage being used for intermediates, they should specify this
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
