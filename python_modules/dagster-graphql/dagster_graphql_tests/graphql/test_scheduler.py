@@ -179,7 +179,7 @@ def test_get_all_schedules():
         assert scheduler_result.data
         assert scheduler_result.data['scheduler']
         assert scheduler_result.data['scheduler']['runningSchedules']
-        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 17
+        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 18
 
         for schedule in scheduler_result.data['scheduler']['runningSchedules']:
             if schedule['scheduleDefinition']['name'] == 'no_config_pipeline_hourly_schedule':
@@ -187,6 +187,11 @@ def test_get_all_schedules():
 
             if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':
                 assert schedule['scheduleDefinition']['environmentConfigYaml'] is None
+            elif schedule['scheduleDefinition']['name'] == 'invalid_config_schedule':
+                assert (
+                    schedule['scheduleDefinition']['environmentConfigYaml']
+                    == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+                )
             else:
                 assert (
                     schedule['scheduleDefinition']['environmentConfigYaml']

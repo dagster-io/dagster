@@ -667,3 +667,40 @@ def test_tagged_pipeline_scheduled_execution_with_run_launcher():
             tag['key'] == 'foo' and tag['value'] == 'bar'
             for tag in result.data['startScheduledExecution']['run']['tags']
         )
+
+
+def test_invalid_config_schedule_error(snapshot):
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.legacy_get_repository_definition()
+        reconcile_scheduler_state("", "", repository, instance)
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'invalid_config_schedule'},
+        )
+
+        assert (
+            result.data['startScheduledExecution']['__typename']
+            == 'PipelineConfigValidationInvalid'
+        )
+
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            x
+            for x in result.data['scheduler']['runningSchedules']
+            if x['scheduleDefinition']['name'] == 'invalid_config_schedule'
+        )
+        assert schedule_result['stats']['ticksSucceeded'] == 1
+        snapshot.assert_match(schedule_result)
+
+        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'invalid_config_schedule')
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.status == ScheduleTickStatus.SUCCESS

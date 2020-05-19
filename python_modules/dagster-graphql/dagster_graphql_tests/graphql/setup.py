@@ -922,6 +922,13 @@ def define_schedules():
         tags={'foo': 'notbar'},
     )
 
+    invalid_config_schedule = ScheduleDefinition(
+        name="invalid_config_schedule",
+        cron_schedule="0 0 * * *",
+        pipeline_name="pipeline_with_enum_config",
+        environment_dict={"solids": {"takes_an_enum": {'config': "invalid"}}},
+    )
+
     return [
         environment_dict_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -940,6 +947,7 @@ def define_schedules():
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
         tags_error_schedule,
+        invalid_config_schedule,
     ]
 
 
