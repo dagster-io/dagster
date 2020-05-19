@@ -28,14 +28,20 @@ export interface RunTableRunFragment_pipeline_Pipeline {
 
 export type RunTableRunFragment_pipeline = RunTableRunFragment_pipeline_UnknownPipeline | RunTableRunFragment_pipeline_Pipeline;
 
+export interface RunTableRunFragment_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
-  startTime: number | null;
-  endTime: number | null;
   expectations: number;
   materializations: number;
+  startTime: number | null;
+  endTime: number | null;
 }
 
 export interface RunTableRunFragment_stats_PythonError_cause {
@@ -53,12 +59,6 @@ export interface RunTableRunFragment_stats_PythonError {
 
 export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
 
-export interface RunTableRunFragment_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface RunTableRunFragment {
   __typename: "PipelineRun";
   runId: string;
@@ -70,6 +70,6 @@ export interface RunTableRunFragment {
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
   pipeline: RunTableRunFragment_pipeline;
-  stats: RunTableRunFragment_stats;
   tags: RunTableRunFragment_tags[];
+  stats: RunTableRunFragment_stats;
 }

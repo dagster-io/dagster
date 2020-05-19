@@ -11,7 +11,33 @@ import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
 import { RunTableRunFragment } from "./types/RunTableRunFragment";
-import { RunFragment } from "../runs/types/RunFragment";
+import { RunFragment } from "./types/RunFragment";
+import { RunActionMenuFragment } from "./types/RunActionMenuFragment";
+import { RunTimeFragment } from "./types/RunTimeFragment";
+import { unixTimestampToString } from "../Util";
+import PythonErrorInfo from "../PythonErrorInfo";
+
+import { useMutation, useLazyQuery } from "react-apollo";
+import {
+  Button,
+  Menu,
+  MenuItem,
+  Popover,
+  MenuDivider,
+  Intent,
+  Icon,
+  Tooltip,
+  Position
+} from "@blueprintjs/core";
+import { SharedToaster } from "../DomUtils";
+import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
+import * as qs from "query-string";
+import { Details } from "../ListComponents";
+import { Link } from "react-router-dom";
+import { RunStatsDetailFragment } from "./types/RunStatsDetailFragment";
+import { formatElapsedTime } from "../Util";
+import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
+import { DocumentNode } from "graphql";
 
 export type IRunStatus =
   | "SUCCESS"
@@ -134,7 +160,7 @@ export function handleReexecutionResult(
 }
 
 function getExecutionMetadata(
-  run: RunFragment | RunTableRunFragment,
+  run: RunFragment | RunTableRunFragment | RunActionMenuFragment,
   resumeRetry = false
 ) {
   return {
@@ -165,13 +191,13 @@ function getExecutionMetadata(
 }
 
 function isRunFragment(
-  run: RunFragment | RunTableRunFragment
+  run: RunFragment | RunTableRunFragment | RunActionMenuFragment
 ): run is RunFragment {
   return (run as RunFragment).environmentConfigYaml !== undefined;
 }
 
 export function getReexecutionVariables(input: {
-  run: RunFragment | RunTableRunFragment;
+  run: RunFragment | RunTableRunFragment | RunActionMenuFragment;
   envYaml?: string;
   stepKeys?: string[];
   resumeRetry?: boolean;
@@ -412,3 +438,323 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
     }
   }
 `;
+
+const OPEN_PLAYGROUND_UNKNOWN =
+  "Playground is unavailable because the pipeline is not present in the current repository.";
+
+export const RunActionsMenu: React.FunctionComponent<{
+  run: RunTableRunFragment | RunActionMenuFragment;
+  refetchQueries: { query: DocumentNode; variables: any }[];
+}> = ({ run, refetchQueries }) => {
+  const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
+  const [cancel] = useMutation(CANCEL_MUTATION, { refetchQueries });
+  const [destroy] = useMutation(DELETE_MUTATION, { refetchQueries });
+  const [loadEnv, { called, loading, data }] = useLazyQuery(
+    PipelineEnvironmentYamlQuery,
+    {
+      variables: { runId: run.runId }
+    }
+  );
+
+  const envYaml = data?.pipelineRunOrError?.environmentConfigYaml;
+  const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
+  return (
+    <Popover
+      content={
+        <Menu>
+          <MenuItem
+            text={
+              loading ? "Loading Configuration..." : "View Configuration..."
+            }
+            disabled={envYaml == null}
+            icon="share"
+            onClick={() =>
+              showCustomAlert({
+                title: "Config",
+                body: (
+                  <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
+                )
+              })
+            }
+          />
+          <MenuDivider />
+
+          <Tooltip
+            content={OPEN_PLAYGROUND_UNKNOWN}
+            position={Position.BOTTOM}
+            disabled={infoReady}
+          >
+            <MenuItem
+              text="Open in Playground..."
+              disabled={!infoReady}
+              icon="edit"
+              target="_blank"
+              href={`/pipeline/${
+                run.pipeline.name
+              }/playground/setup?${qs.stringify({
+                mode: run.mode,
+                config: envYaml,
+                solidSubset:
+                  run.pipeline.__typename === "Pipeline"
+                    ? run.pipeline.solids.map(s => s.name)
+                    : []
+              })}`}
+            />
+          </Tooltip>
+          <Tooltip
+            content={REEXECUTE_PIPELINE_UNKNOWN}
+            position={Position.BOTTOM}
+            disabled={infoReady}
+          >
+            <MenuItem
+              text="Re-execute"
+              disabled={!infoReady}
+              icon="repeat"
+              onClick={async () => {
+                const result = await reexecute({
+                  variables: getReexecutionVariables({
+                    run,
+                    envYaml
+                  })
+                });
+                handleReexecutionResult(run.pipeline.name, result, {
+                  openInNewWindow: false
+                });
+              }}
+            />
+          </Tooltip>
+          <MenuItem
+            text="Cancel"
+            icon="stop"
+            disabled={!run.canCancel}
+            onClick={async () => {
+              const result = await cancel({ variables: { runId: run.runId } });
+              showToastFor(
+                result.data.cancelPipelineExecution,
+                "Run cancelled."
+              );
+            }}
+          />
+          <MenuDivider />
+          <MenuItem
+            text="Delete"
+            icon="trash"
+            disabled={run.canCancel}
+            onClick={async () => {
+              const result = await destroy({ variables: { runId: run.runId } });
+              showToastFor(result.data.deletePipelineRun, "Run deleted.");
+            }}
+          />
+        </Menu>
+      }
+      position={"bottom"}
+      onOpening={() => {
+        if (!called) {
+          loadEnv();
+        }
+      }}
+    >
+      <Button minimal={true} icon="more" />
+    </Popover>
+  );
+};
+
+function showToastFor(
+  possibleError: { __typename: string; message?: string },
+  successMessage: string
+) {
+  if ("message" in possibleError) {
+    SharedToaster.show({
+      message: possibleError.message,
+      icon: "error",
+      intent: Intent.DANGER
+    });
+  } else {
+    SharedToaster.show({
+      message: successMessage,
+      icon: "confirm",
+      intent: Intent.SUCCESS
+    });
+  }
+}
+
+// Avoid fetching envYaml on load in Runs page. It is slow.
+const PipelineEnvironmentYamlQuery = gql`
+  query PipelineEnvironmentYamlQuery($runId: ID!) {
+    pipelineRunOrError(runId: $runId) {
+      ... on PipelineRun {
+        environmentConfigYaml
+      }
+    }
+  }
+`;
+
+export const RunStatsDetails = ({ run }: { run: RunStatsDetailFragment }) => {
+  if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
+    return (
+      <Popover
+        content={<PythonErrorInfo error={run.stats} />}
+        targetTagName="div"
+      >
+        <Details>
+          <Icon icon="error" /> Failed to load stats
+        </Details>
+      </Popover>
+    );
+  }
+  return (
+    <Details>
+      <Link
+        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
+      >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
+      <Link to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}>
+        {`${run.stats.stepsFailed} steps failed, `}{" "}
+      </Link>
+      <Link
+        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
+      >{`${run.stats.materializations} materializations`}</Link>
+      ,{" "}
+      <Link
+        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
+      >{`${run.stats.expectations} expectations passed`}</Link>
+    </Details>
+  );
+};
+
+export const RunTime = ({ run }: { run: RunTimeFragment }) => {
+  if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
+    return (
+      <Popover content={<PythonErrorInfo error={run.stats} />}>
+        <div>
+          <Icon icon="error" /> Failed to load times
+        </div>
+      </Popover>
+    );
+  }
+
+  return (
+    <>
+      {run.stats.startTime ? (
+        <div style={{ marginBottom: 4 }}>
+          <Icon icon="calendar" /> {unixTimestampToString(run.stats.startTime)}
+          <Icon
+            icon="arrow-right"
+            style={{ marginLeft: 10, marginRight: 10 }}
+          />
+          {unixTimestampToString(run.stats.endTime)}
+        </div>
+      ) : run.status === "FAILURE" ? (
+        <div style={{ marginBottom: 4 }}> Failed to start</div>
+      ) : (
+        <div style={{ marginBottom: 4 }}>
+          <Icon icon="calendar" /> Starting...
+        </div>
+      )}
+      <TimeElapsed
+        startUnix={run.stats.startTime}
+        endUnix={run.stats.endTime}
+      />
+    </>
+  );
+};
+
+export class TimeElapsed extends React.Component<{
+  startUnix: number | null;
+  endUnix: number | null;
+}> {
+  _interval?: NodeJS.Timer;
+  _timeout?: NodeJS.Timer;
+
+  componentDidMount() {
+    if (this.props.endUnix) return;
+
+    // align to the next second and then update every second so the elapsed
+    // time "ticks" up. Our render method uses Date.now(), so all we need to
+    // do is force another React render. We could clone the time into React
+    // state but that is a bit messier.
+    setTimeout(() => {
+      this.forceUpdate();
+      this._interval = setInterval(() => this.forceUpdate(), 1000);
+    }, Date.now() % 1000);
+  }
+
+  componentWillUnmount() {
+    if (this._timeout) clearInterval(this._timeout);
+    if (this._interval) clearInterval(this._interval);
+  }
+
+  render() {
+    const start = this.props.startUnix ? this.props.startUnix * 1000 : 0;
+    const end = this.props.endUnix ? this.props.endUnix * 1000 : Date.now();
+
+    return (
+      <div>
+        <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
+      </div>
+    );
+  }
+}
+
+export const RunComponentFragments = {
+  STATS_DETAIL_FRAGMENT: gql`
+    fragment RunStatsDetailFragment on PipelineRun {
+      runId
+      pipeline {
+        ... on PipelineReference {
+          name
+        }
+      }
+      stats {
+        ... on PipelineRunStatsSnapshot {
+          stepsSucceeded
+          stepsFailed
+          expectations
+          materializations
+        }
+        ... on PythonError {
+          ...PythonErrorFragment
+        }
+      }
+    }
+    ${PythonErrorInfo.fragments.PythonErrorFragment}
+  `,
+  RUN_TIME_FRAGMENT: gql`
+    fragment RunTimeFragment on PipelineRun {
+      status
+      stats {
+        ... on PipelineRunStatsSnapshot {
+          startTime
+          endTime
+        }
+        ... on PythonError {
+          ...PythonErrorFragment
+        }
+      }
+    }
+    ${PythonErrorInfo.fragments.PythonErrorFragment}
+  `,
+  RUN_ACTION_MENU_FRAGMENT: gql`
+    fragment RunActionMenuFragment on PipelineRun {
+      runId
+      rootRunId
+      pipeline {
+        __typename
+        ... on PipelineReference {
+          name
+        }
+        ... on Pipeline {
+          pipelineSnapshotId
+          solids {
+            name
+          }
+        }
+      }
+      mode
+      canCancel
+      tags {
+        key
+        value
+      }
+    }
+  `
+};

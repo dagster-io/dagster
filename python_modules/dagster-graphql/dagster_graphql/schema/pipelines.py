@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.context import ExternalPipeline
+from dagster_graphql.implementation.fetch_runs import get_runs
+from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
@@ -67,6 +69,10 @@ class DauphinIPipelineSnapshotMixin(object):
         'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     tags = dauphin.non_null_list('PipelineTag')
+    runs = dauphin.Field(
+        dauphin.non_null_list('PipelineRun'), cursor=dauphin.String(), limit=dauphin.Int(),
+    )
+    schedules = dauphin.non_null_list('RunningSchedule')
 
     def resolve_pipeline_snapshot_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
@@ -150,6 +156,20 @@ class DauphinIPipelineSnapshotMixin(object):
     def resolve_solidSubset(self, _graphene_info):
         return self.get_represented_pipeline().solid_subset
 
+    def resolve_runs(self, graphene_info, **kwargs):
+        runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
+        return get_runs(graphene_info, runs_filter, kwargs.get('cursor'), kwargs.get('limit'))
+
+    def resolve_schedules(self, graphene_info):
+        external_repository = graphene_info.context.legacy_external_repository
+        schedules = graphene_info.context.instance.all_schedules(external_repository.name)
+        return [
+            graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
+            for schedule in schedules
+            if get_dagster_schedule_def(graphene_info, schedule.name).name
+            == self.get_represented_pipeline().name
+        ]
+
 
 class DauphinIPipelineSnapshot(dauphin.Interface):
     class Meta(object):
@@ -194,14 +214,6 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         return [
             DauphinPipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
-        ]
-
-    def resolve_runs(self, graphene_info):
-        return [
-            graphene_info.schema.type_named('PipelineRun')(r)
-            for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(pipeline_name=self._external_pipeline.name)
-            )
         ]
 
 

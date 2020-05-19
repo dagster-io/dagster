@@ -8,6 +8,7 @@ import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
 import { PipelineNamesContext } from "./PipelineNamesContext";
 import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
+import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
 import { RunRoot } from "./runs/RunRoot";
@@ -37,8 +38,6 @@ function extractData(result?: RootPipelinesQuery) {
     return { pipelines: [], error: result.pipelinesOrError };
   }
 }
-
-const PipelineOverviewRoot = () => <h4>Overview</h4>;
 
 const AppRoutes = () => (
   <Switch>

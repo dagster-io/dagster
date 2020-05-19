@@ -122,14 +122,20 @@ export interface AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline {
 
 export type AssetQuery_assetOrError_Asset_runs_pipeline = AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline | AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline;
 
+export interface AssetQuery_assetOrError_Asset_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface AssetQuery_assetOrError_Asset_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
-  startTime: number | null;
-  endTime: number | null;
   expectations: number;
   materializations: number;
+  startTime: number | null;
+  endTime: number | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_runs_stats_PythonError_cause {
@@ -147,12 +153,6 @@ export interface AssetQuery_assetOrError_Asset_runs_stats_PythonError {
 
 export type AssetQuery_assetOrError_Asset_runs_stats = AssetQuery_assetOrError_Asset_runs_stats_PipelineRunStatsSnapshot | AssetQuery_assetOrError_Asset_runs_stats_PythonError;
 
-export interface AssetQuery_assetOrError_Asset_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface AssetQuery_assetOrError_Asset_runs {
   __typename: "PipelineRun";
   runId: string;
@@ -164,8 +164,8 @@ export interface AssetQuery_assetOrError_Asset_runs {
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
   pipeline: AssetQuery_assetOrError_Asset_runs_pipeline;
-  stats: AssetQuery_assetOrError_Asset_runs_stats;
   tags: AssetQuery_assetOrError_Asset_runs_tags[];
+  stats: AssetQuery_assetOrError_Asset_runs_stats;
 }
 
 export interface AssetQuery_assetOrError_Asset {

@@ -706,8 +706,9 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  presets: [PipelinePreset!]!
   runs: [PipelineRun!]!
+  schedules: [RunningSchedule!]!
+  presets: [PipelinePreset!]!
 }
 
 interface PipelineConfigValidationError {
@@ -790,6 +791,7 @@ type PipelineRun {
   rootRunId: String
   parentRunId: String
   canCancel: Boolean!
+  assets: [Asset!]!
 }
 
 type PipelineRunConflict implements Error {
@@ -876,6 +878,8 @@ type PipelineSnapshot implements IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [RunningSchedule!]!
 }
 
 type PipelineSnapshotNotFoundError implements Error {

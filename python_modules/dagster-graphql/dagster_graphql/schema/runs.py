@@ -4,6 +4,7 @@ import logging
 
 import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
 from dagster_graphql.implementation.utils import PipelineSelector
@@ -121,6 +122,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     rootRunId = dauphin.Field(dauphin.String)
     parentRunId = dauphin.Field(dauphin.String)
     canCancel = dauphin.NonNull(dauphin.Boolean)
+    assets = dauphin.non_null_list('Asset')
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -197,6 +199,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_canCancel(self, graphene_info):
         return graphene_info.context.legacy_environment.execution_manager.can_terminate(self.run_id)
+
+    def resolve_assets(self, graphene_info):
+        return get_assets_for_run_id(graphene_info, self.run_id)
 
 
 class DauphinRunGroup(dauphin.ObjectType):

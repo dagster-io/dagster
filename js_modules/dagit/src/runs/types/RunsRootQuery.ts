@@ -28,14 +28,20 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline
 
 export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline;
 
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
-  startTime: number | null;
-  endTime: number | null;
   expectations: number;
   materializations: number;
+  startTime: number | null;
+  endTime: number | null;
 }
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
@@ -53,12 +59,6 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_Py
 
 export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
 
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
@@ -70,8 +70,8 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
   pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
-  stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
+  stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
 }
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns {

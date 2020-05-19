@@ -1,69 +1,34 @@
 import * as React from "react";
-import * as qs from "query-string";
 import gql from "graphql-tag";
 import {
-  Button,
-  Icon,
-  Menu,
-  MenuItem,
-  Popover,
-  MenuDivider,
-  NonIdealState,
-  Intent,
-  Tooltip,
-  Position
-} from "@blueprintjs/core";
-import {
-  Details,
   Legend,
   LegendColumn,
   RowColumn,
   RowContainer
 } from "../ListComponents";
-import {
-  RunStatus,
-  titleForRun,
-  handleReexecutionResult,
-  START_PIPELINE_REEXECUTION_MUTATION,
-  DELETE_MUTATION,
-  CANCEL_MUTATION,
-  getReexecutionVariables
-} from "./RunUtils";
 import { RunTag } from "./RunTag";
-import { formatElapsedTime, unixTimestampToString } from "../Util";
-import { SharedToaster } from "../DomUtils";
-
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
-import { Link } from "react-router-dom";
 import {
   RunTableRunFragment,
   RunTableRunFragment_tags
 } from "./types/RunTableRunFragment";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { useMutation, useLazyQuery } from "react-apollo";
+import { TokenizingFieldValue } from "../TokenizingField";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 import PythonErrorInfo from "../PythonErrorInfo";
-import { TokenizingFieldValue } from "../TokenizingField";
-import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
+import { NonIdealState, Icon } from "@blueprintjs/core";
+import { Link } from "react-router-dom";
+import {
+  RunStatus,
+  titleForRun,
+  RunActionsMenu,
+  RunTime,
+  RunStatsDetails,
+  RunComponentFragments
+} from "./RunUtils";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
 }
-
-// Avoid fetching envYaml on load in Runs page. It is slow.
-const PipelineEnvironmentYamlQuery = gql`
-  query PipelineEnvironmentYamlQuery($runId: ID!) {
-    pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
-        environmentConfigYaml
-      }
-    }
-  }
-`;
-
-const OPEN_PLAYGROUND_UNKNOWN =
-  "Playground is unavailable because the pipeline is not present in the current repository.";
 
 export class RunTable extends React.Component<RunTableProps> {
   static fragments = {
@@ -90,25 +55,17 @@ export class RunTable extends React.Component<RunTableProps> {
             }
           }
         }
-        stats {
-          __typename
-          ... on PipelineRunStatsSnapshot {
-            stepsSucceeded
-            stepsFailed
-            startTime
-            endTime
-            expectations
-            materializations
-          }
-          ...PythonErrorFragment
-        }
         tags {
           key
           value
         }
+        ...RunStatsDetailFragment
+        ...RunTimeFragment
       }
 
       ${PythonErrorInfo.fragments.PythonErrorFragment}
+      ${RunComponentFragments.STATS_DETAIL_FRAGMENT}
+      ${RunComponentFragments.RUN_TIME_FRAGMENT}
     `
   };
 
@@ -150,69 +107,7 @@ const RunRow: React.FunctionComponent<{
   run: RunTableRunFragment;
   onSetFilter: (search: TokenizingFieldValue[]) => void;
 }> = ({ run, onSetFilter }) => {
-  let details;
-  let time;
-  if (run.stats.__typename === "PipelineRunStatsSnapshot") {
-    details = (
-      <Details>
-        <Link
-          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
-        >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
-        <Link
-          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}
-        >
-          {`${run.stats.stepsFailed} steps failed, `}{" "}
-        </Link>
-        <Link
-          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
-        >{`${run.stats.materializations} materializations`}</Link>
-        ,{" "}
-        <Link
-          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
-        >{`${run.stats.expectations} expectations passed`}</Link>
-      </Details>
-    );
-    time = (
-      <>
-        {run.stats.startTime ? (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" />{" "}
-            {unixTimestampToString(run.stats.startTime)}
-            <Icon
-              icon="arrow-right"
-              style={{ marginLeft: 10, marginRight: 10 }}
-            />
-            {unixTimestampToString(run.stats.endTime)}
-          </div>
-        ) : run.status === "FAILURE" ? (
-          <div style={{ marginBottom: 4 }}> Failed to start</div>
-        ) : (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" /> Starting...
-          </div>
-        )}
-        <RunTime startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
-      </>
-    );
-  } else {
-    details = (
-      <Popover
-        content={<PythonErrorInfo error={run.stats} />}
-        targetTagName="div"
-      >
-        <Details>
-          <Icon icon="error" /> Failed to load stats
-        </Details>
-      </Popover>
-    );
-    time = (
-      <Popover content={<PythonErrorInfo error={run.stats} />}>
-        <div>
-          <Icon icon="error" /> Failed to load times
-        </div>
-      </Popover>
-    );
-  }
+  const variables = React.useContext(RunsQueryVariablesContext);
 
   const onTagClick = (tag: RunTableRunFragment_tags) => {
     onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
@@ -227,6 +122,8 @@ const RunRow: React.FunctionComponent<{
     pipelineLink = `/pipeline/${run.pipeline.name}/`;
   }
 
+  const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
+
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
@@ -236,7 +133,7 @@ const RunRow: React.FunctionComponent<{
         <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
-        {details}
+        <RunStatsDetails run={run} />
       </RowColumn>
       <RowColumn>
         <Link to={pipelineLink}>
@@ -257,9 +154,11 @@ const RunRow: React.FunctionComponent<{
           <RunTags tags={run.tags} onClick={onTagClick} />
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1.8, borderRight: 0 }}>{time}</RowColumn>
+      <RowColumn style={{ flex: 1.8, borderRight: 0 }}>
+        <RunTime run={run} />
+      </RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
-        <RunActionsMenu run={run} />
+        <RunActionsMenu run={run} refetchQueries={refetchQueries} />
       </RowColumn>
     </RowContainer>
   );
@@ -337,182 +236,3 @@ const RunTags: React.FunctionComponent<{
     </div>
   );
 };
-
-const RunActionsMenu: React.FunctionComponent<{
-  run: RunTableRunFragment;
-}> = ({ run }) => {
-  const variables = React.useContext(RunsQueryVariablesContext);
-  const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
-  const [cancel] = useMutation(CANCEL_MUTATION, {
-    refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
-  });
-  const [destroy] = useMutation(DELETE_MUTATION, {
-    refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
-  });
-  const [loadEnv, { called, loading, data }] = useLazyQuery(
-    PipelineEnvironmentYamlQuery,
-    {
-      variables: { runId: run.runId }
-    }
-  );
-
-  const envYaml = data?.pipelineRunOrError?.environmentConfigYaml;
-  const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
-  return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem
-            text={
-              loading ? "Loading Configuration..." : "View Configuration..."
-            }
-            disabled={envYaml == null}
-            icon="share"
-            onClick={() =>
-              showCustomAlert({
-                title: "Config",
-                body: (
-                  <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
-                )
-              })
-            }
-          />
-          <MenuDivider />
-
-          <Tooltip
-            content={OPEN_PLAYGROUND_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Open in Playground..."
-              disabled={!infoReady}
-              icon="edit"
-              target="_blank"
-              href={`/pipeline/${
-                run.pipeline.name
-              }/playground/setup?${qs.stringify({
-                mode: run.mode,
-                config: envYaml,
-                solidSubset:
-                  run.pipeline.__typename === "Pipeline"
-                    ? run.pipeline.solids.map(s => s.name)
-                    : []
-              })}`}
-            />
-          </Tooltip>
-          <Tooltip
-            content={REEXECUTE_PIPELINE_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Re-execute"
-              disabled={!infoReady}
-              icon="repeat"
-              onClick={async () => {
-                const result = await reexecute({
-                  variables: getReexecutionVariables({
-                    run,
-                    envYaml
-                  })
-                });
-                handleReexecutionResult(run.pipeline.name, result, {
-                  openInNewWindow: false
-                });
-              }}
-            />
-          </Tooltip>
-          <MenuItem
-            text="Cancel"
-            icon="stop"
-            disabled={!run.canCancel}
-            onClick={async () => {
-              const result = await cancel({ variables: { runId: run.runId } });
-              showToastFor(
-                result.data.cancelPipelineExecution,
-                "Run cancelled."
-              );
-            }}
-          />
-          <MenuDivider />
-          <MenuItem
-            text="Delete"
-            icon="trash"
-            disabled={run.canCancel}
-            onClick={async () => {
-              const result = await destroy({ variables: { runId: run.runId } });
-              showToastFor(result.data.deletePipelineRun, "Run deleted.");
-            }}
-          />
-        </Menu>
-      }
-      position={"bottom"}
-      onOpening={() => {
-        if (!called) {
-          loadEnv();
-        }
-      }}
-    >
-      <Button minimal={true} icon="more" />
-    </Popover>
-  );
-};
-
-class RunTime extends React.Component<{
-  startUnix: number | null;
-  endUnix: number | null;
-}> {
-  _interval?: NodeJS.Timer;
-  _timeout?: NodeJS.Timer;
-
-  componentDidMount() {
-    if (this.props.endUnix) return;
-
-    // align to the next second and then update every second so the elapsed
-    // time "ticks" up. Our render method uses Date.now(), so all we need to
-    // do is force another React render. We could clone the time into React
-    // state but that is a bit messier.
-    setTimeout(() => {
-      this.forceUpdate();
-      this._interval = setInterval(() => this.forceUpdate(), 1000);
-    }, Date.now() % 1000);
-  }
-
-  componentWillUnmount() {
-    if (this._timeout) clearInterval(this._timeout);
-    if (this._interval) clearInterval(this._interval);
-  }
-
-  render() {
-    const start = this.props.startUnix ? this.props.startUnix * 1000 : 0;
-    const end = this.props.endUnix ? this.props.endUnix * 1000 : Date.now();
-
-    return (
-      <div>
-        <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
-      </div>
-    );
-  }
-}
-
-function showToastFor(
-  possibleError: { __typename: string; message?: string },
-  successMessage: string
-) {
-  if ("message" in possibleError) {
-    SharedToaster.show({
-      message: possibleError.message,
-      icon: "error",
-      intent: Intent.DANGER
-    });
-  } else {
-    SharedToaster.show({
-      message: successMessage,
-      icon: "confirm",
-      intent: Intent.SUCCESS
-    });
-  }
-}
