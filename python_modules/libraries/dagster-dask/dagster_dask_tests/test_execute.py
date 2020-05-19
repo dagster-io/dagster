@@ -11,8 +11,8 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.executor import default_executors
-from dagster.core.definitions.pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline

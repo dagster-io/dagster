@@ -4,18 +4,18 @@ from collections import namedtuple
 import six
 
 from dagster import check, seven
+from dagster.core.code_pointer import (
+    CodePointer,
+    FileCodePointer,
+    ModuleCodePointer,
+    get_python_file_from_previous_stack_frame,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import lru_cache
 from dagster.utils import load_yaml_from_path
 
 from .executable import InterProcessExecutablePipeline
-from .pointer import (
-    CodePointer,
-    FileCodePointer,
-    ModuleCodePointer,
-    get_python_file_from_previous_stack_frame,
-)
 
 EPHEMERAL_NAME = '<<unnamed>>'
 

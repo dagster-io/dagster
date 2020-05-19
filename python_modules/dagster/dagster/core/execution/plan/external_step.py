@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 from dagster import Field, StringSource, check, resource
-from dagster.core.definitions.pointer import FileCodePointer, ModuleCodePointer
+from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructablePipelineFromRepo,

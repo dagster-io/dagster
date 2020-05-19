@@ -1,9 +1,9 @@
 import pytest
 
 from dagster.cli.load_handle import UsageError, recon_pipeline_for_cli_args
+from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions import PipelineDefinition, RepositoryDefinition
 from dagster.core.definitions.decorators import lambda_solid
-from dagster.core.definitions.pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructablePipelineFromRepo,
