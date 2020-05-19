@@ -1,6 +1,5 @@
 import json
 import os
-import tempfile
 from uuid import uuid4
 
 from click.testing import CliRunner
@@ -16,6 +15,7 @@ from dagster.core.host_representation import ExternalPipelineData, ExternalRepos
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCEndMessage, IPCStartMessage, ipc_read_event_stream
 from dagster.seven.temp_dir import get_system_temp_directory
+from dagster.utils import safe_tempfile_path
 from dagster.utils.temp_file import get_temp_dir
 
 
@@ -75,14 +75,14 @@ def test_snapshot_command_pipeline_solid_subset():
 def test_execute_pipeline_command():
     runner = CliRunner()
 
-    with tempfile.NamedTemporaryFile() as f:
+    with safe_tempfile_path() as filename:
         result = runner.invoke(
             execute_pipeline_command,
             [
                 '-y',
                 file_relative_path(__file__, 'repository_file.yaml'),
                 'foo',
-                f.name,
+                filename,
                 '--environment-dict={}',
                 '--mode=default',
             ],
@@ -90,41 +90,43 @@ def test_execute_pipeline_command():
 
         assert result.exit_code == 0
 
-        # Read lines from output file, and strip newline characters
-        lines = [line.decode('utf-8').rstrip() for line in f.readlines()]
-        assert len(lines) == 13
+        with open(filename, 'r') as f:
+            # Read lines from output file, and strip newline characters
+            lines = [line.rstrip() for line in f.readlines()]
+            assert len(lines) == 13
 
-        # Check all lines are serialized dagster named tuples
-        for line in lines:
-            deserialize_json_to_dagster_namedtuple(line)
+            # Check all lines are serialized dagster named tuples
+            for line in lines:
+                deserialize_json_to_dagster_namedtuple(line)
 
-        # Check for start ane dnd messages
-        assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
-        assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
+            # Check for start ane dnd messages
+            assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
+            assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
 
 
 def test_execute_pipeline_command_missing_args():
     runner = CliRunner()
 
-    with tempfile.NamedTemporaryFile() as f:
+    with safe_tempfile_path() as filename:
         result = runner.invoke(
             execute_pipeline_command,
-            ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo', f.name],
+            ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo', filename],
         )
 
         assert result.exit_code == 0
 
-        # Read lines from output file, and strip newline characters
-        lines = [line.decode('utf-8').rstrip() for line in f.readlines()]
-        assert len(lines) == 3
+        with open(filename, 'r') as f:
+            # Read lines from output file, and strip newline characters
+            lines = [line.rstrip() for line in f.readlines()]
+            assert len(lines) == 3
 
-        # Check all lines are serialized dagster named tuples
-        for line in lines:
-            deserialize_json_to_dagster_namedtuple(line)
+            # Check all lines are serialized dagster named tuples
+            for line in lines:
+                deserialize_json_to_dagster_namedtuple(line)
 
-        # Check for start ane dnd messages
-        assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
-        assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
+            # Check for start ane dnd messages
+            assert deserialize_json_to_dagster_namedtuple(lines[0]) == IPCStartMessage()
+            assert deserialize_json_to_dagster_namedtuple(lines[-1]) == IPCEndMessage()
 
 
 def _execute_pipeline_command(
