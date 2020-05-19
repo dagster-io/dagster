@@ -383,6 +383,7 @@ const RunActionsMenu: React.FunctionComponent<{
             content={OPEN_PLAYGROUND_UNKNOWN}
             position={Position.BOTTOM}
             disabled={infoReady}
+            wrapperTagName="div"
           >
             <MenuItem
               text="Open in Playground..."
@@ -403,6 +404,7 @@ const RunActionsMenu: React.FunctionComponent<{
             content={REEXECUTE_PIPELINE_UNKNOWN}
             position={Position.BOTTOM}
             disabled={infoReady}
+            wrapperTagName="div"
           >
             <MenuItem
               text="Re-execute"
