@@ -1,3 +1,14 @@
+"""
+Fields here are taken from the Databricks API docs.
+
+Most are left the same, but some have been modified to better express
+the requirements.
+
+See:
+- https://docs.databricks.com/dev-tools/api/latest/jobs.html
+- https://docs.databricks.com/dev-tools/api/latest/clusters.html
+- https://docs.databricks.com/dev-tools/api/latest/libraries.html
+"""
 from dagster import Bool, Field, Int, Permissive, Selector, Shape, String
 
 
