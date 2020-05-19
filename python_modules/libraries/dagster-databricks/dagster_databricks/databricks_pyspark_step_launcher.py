@@ -13,10 +13,10 @@ from dagster.core.execution.plan.external_step import (
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
+from dagster_pyspark.utils import build_pyspark_zip
 from dagster.serdes import deserialize_value
 
 from .configs import define_databricks_storage_config, define_databricks_submit_run_config
-from .utils import build_pyspark_zip
 
 
 CODE_ZIP_NAME = 'code.zip'

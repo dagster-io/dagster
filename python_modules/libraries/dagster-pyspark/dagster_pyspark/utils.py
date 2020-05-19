@@ -1,6 +1,3 @@
-"""
-TODO: this is copied from `dagster_aws.emr` and should be shared instead somehow.
-"""
 import os
 import zipfile
 

@@ -5,8 +5,8 @@ import time
 import boto3
 from botocore.exceptions import ClientError
 from dagster_aws.emr import EmrJobRunner, emr_step_main
-from dagster_aws.emr.utils import build_pyspark_zip
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
+from dagster_pyspark.utils import build_pyspark_zip
 from dagster_spark.configs_spark import spark_config as get_spark_config
 from dagster_spark.utils import flatten_dict, format_for_cli
 
