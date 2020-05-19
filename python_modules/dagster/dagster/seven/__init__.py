@@ -117,7 +117,7 @@ except ImportError:
     # (we do not want to override or conflict with our users mocks)
     # we never fail when importing this.
 
-    # This will only be used within *our* test enviroment of which
+    # This will only be used within *our* test environment of which
     # we have total control
     try:
         import mock
@@ -125,21 +125,25 @@ except ImportError:
         pass
 
 
-def get_args(callble):
+def get_args(callable_):
     if sys.version_info.major >= 3:
         return [
             parameter.name
-            for parameter in inspect.signature(callble).parameters.values()
+            for parameter in inspect.signature(callable_).parameters.values()
             if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
         ]
     else:
-        if inspect.isclass(callble):
-            if issubclass(callble, tuple):
-                arg_spec = inspect.getargspec(callble.__new__)  # pylint: disable=deprecated-method
+        if inspect.isclass(callable_):
+            if issubclass(callable_, tuple):
+                arg_spec = inspect.getargspec(  # pylint: disable=deprecated-method
+                    callable_.__new__
+                )
             else:
-                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+                arg_spec = inspect.getargspec(  # pylint: disable=deprecated-method
+                    callable_.__init__
+                )
         else:
-            arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
+            arg_spec = inspect.getargspec(callable_)  # pylint: disable=deprecated-method
         return arg_spec.args
 
 
