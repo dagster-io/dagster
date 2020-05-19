@@ -148,8 +148,17 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     def _start_cron_job(self, instance, repository, schedule):
         script_file = self._write_bash_script_to_file(instance, repository, schedule)
 
+        schedule_logs_directory = self.get_logs_directory(instance, repository, schedule.name)
+        if not os.path.isdir(schedule_logs_directory):
+            utils.mkdir_p(schedule_logs_directory)
+        schedule_log_file_path = self.get_logs_path(instance, repository, schedule.name)
+
+        command = "{script_file} >> {schedule_log_file_path} 2>&1".format(
+            script_file=script_file, schedule_log_file_path=schedule_log_file_path
+        )
+
         job = self._cron_tab.new(
-            command=script_file,
+            command=command,
             comment='dagster-schedule: {repository_name}.{schedule_name}'.format(
                 repository_name=repository.name, schedule_name=schedule.name
             ),
@@ -174,7 +183,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
         return len(list(matching_jobs))
 
-    def get_log_path(self, instance, repository, schedule_name):
+    def get_logs_directory(self, instance, repository, schedule_name):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(repository, 'repository', RepositoryDefinition)
         check.str_param(schedule_name, 'schedule_name')
@@ -183,16 +192,25 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         schedule_logs_directory = os.path.join(logs_directory, repository.name, schedule_name)
         return schedule_logs_directory
 
+    def get_logs_path(self, instance, repository, schedule_name):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+
+        logs_directory = self.get_logs_directory(instance, repository, schedule_name)
+        return os.path.join(logs_directory, "scheduler.log")
+
     def _write_bash_script_to_file(self, instance, repository, schedule):
         # Get path to store bash script
         script_file = self._get_bash_script_file_path(instance, repository, schedule)
 
         # Get path to store schedule attempt logs
-        schedule_logs_path = self.get_log_path(instance, repository, schedule.name)
-        if not os.path.isdir(schedule_logs_path):
-            utils.mkdir_p(schedule_logs_path)
+        schedule_logs_directory = self.get_logs_directory(instance, repository, schedule.name)
+        if not os.path.isdir(schedule_logs_directory):
+            utils.mkdir_p(schedule_logs_directory)
+
         schedule_log_file_name = "{}_{}.result".format("${RUN_DATE}", schedule.name)
-        schedule_log_file_path = os.path.join(schedule_logs_path, schedule_log_file_name)
+        schedule_log_file_path = os.path.join(schedule_logs_directory, schedule_log_file_name)
 
         # Environment information needed for execution
         dagster_graphql_path = os.path.join(

@@ -130,7 +130,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``False``.
-    
+
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
@@ -182,7 +182,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 class _ExecuteRunWithPlanIterable(object):
     '''Utility class to consolidate execution logic.
-    
+
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
     for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,

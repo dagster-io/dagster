@@ -131,5 +131,5 @@ def get_dagster_schedule(graphene_info, schedule_name):
 def get_schedule_attempt_filenames(graphene_info, schedule_name):
     instance = graphene_info.context.instance
     repository = graphene_info.context.get_repository()
-    log_dir = instance.log_path_for_schedule(repository, schedule_name)
+    log_dir = instance.logs_directory_for_schedule(repository, schedule_name)
     return glob.glob(os.path.join(log_dir, "*.result"))

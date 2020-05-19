@@ -288,7 +288,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
         repository = graphene_info.context.get_repository()
-        return instance.log_path_for_schedule(repository, self._schedule.name)
+        return instance.logs_directory_for_schedule(repository, self._schedule.name)
 
     def resolve_stats(self, graphene_info):
         repository = graphene_info.context.get_repository()
