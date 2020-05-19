@@ -9,7 +9,13 @@ from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
-from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
+from .utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    PipelineSelector,
+    UserFacingGraphQLError,
+    capture_dauphin_error,
+)
 
 
 @capture_dauphin_error
@@ -91,11 +97,10 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
     check_tags(pipeline_tags, 'pipeline_tags')
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
-    selector = schedule_def.selector
     mode = schedule_def.mode
 
     return ExecutionParams(
-        selector=selector,
+        selector=PipelineSelector(schedule_def.pipeline_name, schedule_def.solid_subset),
         environment_dict=environment_dict,
         mode=mode,
         execution_metadata=ExecutionMetadata(tags=tags, run_id=None),

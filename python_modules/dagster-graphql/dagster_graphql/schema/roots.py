@@ -48,10 +48,13 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_scheduler_or_error,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
+from dagster_graphql.implementation.utils import (
+    ExecutionMetadata,
+    PipelineSelector,
+    UserFacingGraphQLError,
+)
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -71,10 +74,10 @@ class DauphinQuery(dauphin.ObjectType):
     reloadSupported = dauphin.NonNull(dauphin.Boolean)
 
     pipelineOrError = dauphin.Field(
-        dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('ExecutionSelector')
+        dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('PipelineSelector')
     )
     pipeline = dauphin.Field(
-        dauphin.NonNull('Pipeline'), params=dauphin.NonNull('ExecutionSelector')
+        dauphin.NonNull('Pipeline'), params=dauphin.NonNull('PipelineSelector')
     )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
@@ -134,7 +137,7 @@ class DauphinQuery(dauphin.ObjectType):
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
-            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
@@ -143,7 +146,7 @@ class DauphinQuery(dauphin.ObjectType):
     executionPlan = dauphin.Field(
         dauphin.NonNull('ExecutionPlanResult'),
         args={
-            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
@@ -152,7 +155,7 @@ class DauphinQuery(dauphin.ObjectType):
     environmentSchemaOrError = dauphin.Field(
         dauphin.NonNull('EnvironmentSchemaOrError'),
         args={
-            'selector': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'selector': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'mode': dauphin.Argument(dauphin.String),
         },
         description='''Fetch an environment schema given an execution selection and a mode.
@@ -536,7 +539,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=ExecutionSelector(selector.name, preset.solid_subset),
+            selector=PipelineSelector(selector.name, preset.solid_subset),
             environment_dict=preset.environment_dict,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
@@ -550,7 +553,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
-        selector=ExecutionSelector.from_dict(graphql_execution_params.get('selector')),
+        selector=PipelineSelector.from_dict(graphql_execution_params.get('selector')),
         environment_dict=graphql_execution_params.get('environmentConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
@@ -661,7 +664,7 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     class Meta(object):
         name = 'ExecutionParams'
 
-    selector = dauphin.NonNull('ExecutionSelector')
+    selector = dauphin.NonNull('PipelineSelector')
     environmentConfigData = dauphin.Field('EnvironmentConfigData')
     mode = dauphin.Field(dauphin.String)
     executionMetadata = dauphin.Field('ExecutionMetadata')
@@ -669,9 +672,9 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     preset = dauphin.Field(dauphin.String)
 
 
-class DauphinExecutionSelector(dauphin.InputObjectType):
+class DauphinPipelineSelector(dauphin.InputObjectType):
     class Meta(object):
-        name = 'ExecutionSelector'
+        name = 'PipelineSelector'
         description = '''This type represents the fields necessary to identify a
         pipeline or pipeline subset.'''
 
@@ -679,7 +682,7 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
     solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
     def to_selector(self):
-        return ExecutionSelector(self.name, self.solidSubset)
+        return PipelineSelector(self.name, self.solidSubset)
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

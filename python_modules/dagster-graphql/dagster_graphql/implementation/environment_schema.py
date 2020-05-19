@@ -2,17 +2,16 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.host_representation import RepresentedPipeline
 
 from .external import get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
 def resolve_environment_schema_or_error(graphene_info, selector, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(

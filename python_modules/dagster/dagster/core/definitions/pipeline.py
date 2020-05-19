@@ -1,9 +1,6 @@
-from collections import namedtuple
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
-from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import rename_warning
 
 from .dependency import (
@@ -308,7 +305,7 @@ class PipelineDefinition(IContainSolids):
         return list(set(self._solid_dict.values()))
 
     def has_solid_named(self, name):
-        '''Return whether or not there is a top level solid with this name in the pipeline 
+        '''Return whether or not there is a top level solid with this name in the pipeline
 
         Args:
             name (str): Name of solid
@@ -366,10 +363,6 @@ class PipelineDefinition(IContainSolids):
     @property
     def dependency_structure(self):
         return self._dependency_structure
-
-    @property
-    def selector(self):
-        return ExecutionSelector(self.name)
 
     def has_runtime_type(self, name):
         rename_warning(
@@ -473,13 +466,13 @@ class PipelineDefinition(IContainSolids):
 
     @property
     def solid_subset(self):
-        return self.selector.solid_subset
+        return None
 
 
 class PipelineSubsetForExecution(PipelineDefinition):
     @property
-    def selector(self):
-        return ExecutionSelector(self.name, list(self._solid_dict.keys()))
+    def solid_subset(self):
+        return list(self._solid_dict.keys())
 
     @property
     def parent_pipeline_def(self):
@@ -615,25 +608,6 @@ def _build_all_solid_defs(solid_defs):
                 all_defs[solid_def.name] = solid_def
 
     return all_defs
-
-
-@whitelist_for_serdes
-class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
-    def __new__(cls, name, solid_subset=None):
-        return super(ExecutionSelector, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            solid_subset=None
-            if solid_subset is None
-            else check.list_param(solid_subset, 'solid_subset', of_type=str),
-        )
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls(name=data['name'], solid_subset=data.get('solidSubset'))
-
-    def to_graphql_input(self):
-        return {'name': self.name, 'solidSubset': self.solid_subset}
 
 
 def _create_environment_schema(pipeline_def, mode_definition):

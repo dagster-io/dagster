@@ -17,7 +17,7 @@ from .setup import (
 )
 
 EXECUTION_PLAN_QUERY = '''
-query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: ExecutionSelector!, $mode: String!) {
+query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: PipelineSelector!, $mode: String!) {
   executionPlan(environmentConfigData: $environmentConfigData, pipeline: $pipeline, mode: $mode) {
     __typename
     ... on ExecutionPlan {

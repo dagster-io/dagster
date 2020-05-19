@@ -24,7 +24,7 @@ from dagster.utils.merger import merge_dicts
 
 from ..external import get_external_pipeline_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
-from ..utils import capture_dauphin_error
+from ..utils import PipelineSelector, capture_dauphin_error
 from .launch_execution import _launch_pipeline_execution_for_created_run
 from .start_execution import _start_pipeline_execution_for_created_run
 
@@ -105,17 +105,16 @@ def start_scheduled_execution(graphene_info, schedule_name):
             errors.append(error_data)
 
         external_pipeline = get_external_pipeline_or_raise(
-            graphene_info, schedule_def.selector.name, schedule_def.selector.solid_subset
+            graphene_info, schedule_def.pipeline_name, schedule_def.solid_subset
         )
         pipeline_tags = external_pipeline.tags or {}
         check_tags(pipeline_tags, 'pipeline_tags')
         tags = merge_dicts(pipeline_tags, schedule_tags)
 
-        selector = schedule_def.selector
         mode = schedule_def.mode
 
         execution_params = ExecutionParams(
-            selector=selector,
+            selector=PipelineSelector(schedule_def.pipeline_name, schedule_def.solid_subset),
             environment_dict=environment_dict,
             mode=mode,
             execution_metadata=ExecutionMetadata(tags=tags, run_id=None),

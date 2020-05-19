@@ -2,7 +2,6 @@ import sys
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -30,6 +29,24 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
+class PipelineSelector(namedtuple('_PipelineSelector', 'name solid_subset')):
+    def __new__(cls, name, solid_subset=None):
+        return super(PipelineSelector, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            solid_subset=None
+            if solid_subset is None
+            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+        )
+
+    def to_graphql_input(self):
+        return {'name': self.name, 'solidSubset': self.solid_subset}
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(name=data['name'], solid_subset=data.get('solidSubset'))
+
+
 class ExecutionParams(
     namedtuple('_ExecutionParams', 'selector environment_dict mode execution_metadata step_keys',)
 ):
@@ -39,7 +56,7 @@ class ExecutionParams(
 
         return super(ExecutionParams, cls).__new__(
             cls,
-            selector=check.inst_param(selector, 'selector', ExecutionSelector),
+            selector=check.inst_param(selector, 'selector', PipelineSelector),
             environment_dict=environment_dict,
             mode=check.str_param(mode, 'mode'),
             execution_metadata=check.inst_param(

@@ -3,11 +3,10 @@ from graphql.execution.base import ResolveInfo
 from dagster import PipelineDefinition, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_schema
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
 
 
 def is_config_valid(pipeline_def, environment_dict, mode):
@@ -116,7 +115,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 @capture_dauphin_error
 def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
@@ -131,7 +130,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
 @capture_dauphin_error
 def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(

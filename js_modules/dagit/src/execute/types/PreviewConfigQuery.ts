@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ExecutionSelector, EvaluationErrorReason } from "./../../types/globalTypes";
+import { PipelineSelector, EvaluationErrorReason } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviewConfigQuery
@@ -141,7 +141,7 @@ export interface PreviewConfigQuery {
 }
 
 export interface PreviewConfigQueryVariables {
-  pipeline: ExecutionSelector;
+  pipeline: PipelineSelector;
   environmentConfigData: any;
   mode: string;
 }

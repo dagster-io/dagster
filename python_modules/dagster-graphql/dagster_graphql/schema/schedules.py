@@ -90,8 +90,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         super(DauphinScheduleDefinition, self).__init__(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
-            pipeline_name=schedule_def.selector.name,
-            solid_subset=schedule_def.selector.solid_subset,
+            pipeline_name=schedule_def.pipeline_name,
+            solid_subset=schedule_def.solid_subset,
             mode=schedule_def.mode,
         )
 

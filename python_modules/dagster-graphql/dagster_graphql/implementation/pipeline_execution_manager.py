@@ -267,9 +267,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
         try:
             return execute_run(
-                pipeline.subset_for_execution(pipeline_run.selector.solid_subset),
-                pipeline_run,
-                instance,
+                pipeline.subset_for_execution(pipeline_run.solid_subset), pipeline_run, instance,
             )
 
         # Add a DagsterEvent for unexpected exceptions

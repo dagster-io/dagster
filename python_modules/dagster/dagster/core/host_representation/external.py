@@ -79,7 +79,6 @@ class ExternalPipeline(RepresentedPipeline):
             external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
         )
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-
         self._solid_subset = (
             None if solid_subset is None else check.list_param(solid_subset, 'solid_subset', str)
         )

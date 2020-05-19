@@ -26,6 +26,7 @@ class DauphinPipelineReference(dauphin.Interface):
         name = 'PipelineReference'
 
     name = dauphin.NonNull(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
@@ -34,6 +35,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
         interfaces = (DauphinPipelineReference,)
 
     name = dauphin.NonNull(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinIPipelineSnapshotMixin(object):
@@ -144,6 +146,9 @@ class DauphinIPipelineSnapshotMixin(object):
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
+
+    def resolve_solidSubset(self, _graphene_info):
+        return self.get_represented_pipeline().solid_subset
 
 
 class DauphinIPipelineSnapshot(dauphin.Interface):

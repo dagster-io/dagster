@@ -37,14 +37,6 @@ def create_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
-        pipeline_def = pipeline.get_definition()
-        check.invariant(
-            pipeline_def.selector == pipeline_run.selector,
-            'Selector mismatch! PipelineDef: {pipe} vs PipelineRun: {run}'.format(
-                pipe=pipeline_def.selector, run=pipeline_run.selector,
-            ),
-        )
-
         step_keys_str = ", ".join(step_keys)
 
         execution_plan = create_execution_plan(

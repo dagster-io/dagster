@@ -437,7 +437,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
-    $pipeline: ExecutionSelector!
+    $pipeline: PipelineSelector!
     $environmentConfigData: EnvironmentConfigData!
     $mode: String!
   ) {

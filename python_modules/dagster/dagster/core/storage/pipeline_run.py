@@ -101,8 +101,6 @@ class PipelineRun(
         previous_run_id=None,
         selector=None,
     ):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
@@ -206,12 +204,6 @@ class PipelineRun(
         return self.tags.get(RESUME_RETRY_TAG) == 'true'
 
     @property
-    def selector(self):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
-        return ExecutionSelector(name=self.pipeline_name, solid_subset=self.solid_subset)
-
-    @property
     def previous_run_id(self):
         # Compat
         return self.parent_run_id
@@ -250,3 +242,35 @@ class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_ids pipeline_nam
     @staticmethod
     def for_partition(partition_set, partition):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+
+
+###################################################################################################
+# GRAVEYARD
+#
+#            -|-
+#             |
+#        _-'~~~~~`-_
+#      .'           '.
+#      |    R I P    |
+#      |             |
+#      |  Execution  |
+#      |  Selector   |
+#      |             |
+#      |             |
+###################################################################################################
+
+
+@whitelist_for_serdes
+class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
+    '''
+    Kept here to maintain loading of PipelineRuns from when it was still alive.
+    '''
+
+    def __new__(cls, name, solid_subset=None):
+        return super(ExecutionSelector, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            solid_subset=None
+            if solid_subset is None
+            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+        )

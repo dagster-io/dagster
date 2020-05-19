@@ -102,7 +102,7 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, pipeline_run.selector.name, pipeline_run.selector.solid_subset
+        graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
     )
 
     # Run config validation

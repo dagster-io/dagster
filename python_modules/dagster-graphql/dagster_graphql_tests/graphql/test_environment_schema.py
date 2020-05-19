@@ -3,7 +3,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from .setup import csv_hello_world_solids_config
 
 ENVIRONMENT_SCHEMA_QUERY = '''
-query($selector: ExecutionSelector! $mode: String!)
+query($selector: PipelineSelector! $mode: String!)
 {
   environmentSchemaOrError(selector: $selector, mode: $mode){
     __typename
@@ -60,7 +60,7 @@ def test_environment_schema_mode_not_found(graphql_context):
 
 
 ENVIRONMENT_SCHEMA_CONFIG_TYPE_QUERY = '''
-query($selector: ExecutionSelector! $mode: String! $configTypeName: String!)
+query($selector: PipelineSelector! $mode: String! $configTypeName: String!)
 {
   environmentSchemaOrError(selector: $selector, mode: $mode){
     __typename
@@ -86,7 +86,7 @@ query($selector: ExecutionSelector! $mode: String! $configTypeName: String!)
 ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
     $environmentConfigData: EnvironmentConfigData,
-    $selector: ExecutionSelector!,
+    $selector: PipelineSelector!,
     $mode: String!
 ) {
   environmentSchemaOrError(selector: $selector mode: $mode) {

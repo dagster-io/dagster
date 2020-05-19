@@ -6,6 +6,7 @@ import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
+from dagster_graphql.implementation.utils import PipelineSelector
 
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
@@ -18,7 +19,6 @@ from dagster.core.definitions.events import (
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData
@@ -121,7 +121,6 @@ class DauphinPipelineRun(dauphin.ObjectType):
     rootRunId = dauphin.Field(dauphin.String)
     parentRunId = dauphin.Field(dauphin.String)
     canCancel = dauphin.NonNull(dauphin.Boolean)
-    executionSelection = dauphin.NonNull('ExecutionSelection')
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -130,7 +129,10 @@ class DauphinPipelineRun(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
+        return get_pipeline_reference_or_raise(
+            graphene_info,
+            PipelineSelector(self._pipeline_run.pipeline_name, self._pipeline_run.solid_subset),
+        )
 
     def resolve_pipelineSnapshotId(self, _):
         return self._pipeline_run.pipeline_snapshot_id
@@ -196,9 +198,6 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_canCancel(self, graphene_info):
         return graphene_info.context.legacy_environment.execution_manager.can_terminate(self.run_id)
 
-    def resolve_executionSelection(self, graphene_info):
-        return graphene_info.schema.type_named('ExecutionSelection')(self._pipeline_run.selector)
-
 
 class DauphinRunGroup(dauphin.ObjectType):
     class Meta(object):
@@ -212,20 +211,6 @@ class DauphinRunGroup(dauphin.ObjectType):
         check.list_param(runs, 'runs', DauphinPipelineRun)
 
         super(DauphinRunGroup, self).__init__(rootRunId=root_run_id, runs=runs)
-
-
-# output version of input type DauphinExecutionSelector
-class DauphinExecutionSelection(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ExecutionSelection'
-
-    name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
-
-    def __init__(self, selector):
-        check.inst_param(selector, 'selector', ExecutionSelector)
-        self.name = selector.name
-        self.solidSubset = selector.solid_subset
 
 
 class DauphinLogLevel(dauphin.Enum):

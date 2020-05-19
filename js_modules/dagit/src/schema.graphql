@@ -270,7 +270,7 @@ input ExecutionMetadata {
 }
 
 input ExecutionParams {
-  selector: ExecutionSelector!
+  selector: PipelineSelector!
   environmentConfigData: EnvironmentConfigData
   mode: String
   executionMetadata: ExecutionMetadata
@@ -284,16 +284,6 @@ type ExecutionPlan {
 }
 
 union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
-
-type ExecutionSelection {
-  name: String!
-  solidSubset: [String!]
-}
-
-input ExecutionSelector {
-  name: String!
-  solidSubset: [String!]
-}
 
 type ExecutionStep {
   key: String!
@@ -707,6 +697,7 @@ union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
 type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot {
   solids: [Solid!]!
   name: String!
+  solidSubset: [String!]
   description: String
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
@@ -780,6 +771,7 @@ type PipelinePreset {
 
 interface PipelineReference {
   name: String!
+  solidSubset: [String!]
 }
 
 type PipelineRun {
@@ -798,7 +790,6 @@ type PipelineRun {
   rootRunId: String
   parentRunId: String
   canCancel: Boolean!
-  executionSelection: ExecutionSelection!
 }
 
 type PipelineRunConflict implements Error {
@@ -869,6 +860,11 @@ type PipelineRunStepStats {
   expectationResults: [ExpectationResult!]!
 }
 
+input PipelineSelector {
+  name: String!
+  solidSubset: [String!]
+}
+
 type PipelineSnapshot implements IPipelineSnapshot {
   name: String!
   description: String
@@ -934,8 +930,8 @@ type PythonError implements Error {
 type Query {
   version: String!
   reloadSupported: Boolean!
-  pipelineOrError(params: ExecutionSelector!): PipelineOrError!
-  pipeline(params: ExecutionSelector!): Pipeline!
+  pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  pipeline(params: PipelineSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
   pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
@@ -951,9 +947,9 @@ type Query {
   runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
-  isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
-  environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
+  isPipelineConfigValid(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
+  executionPlan(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
+  environmentSchemaOrError(selector: PipelineSelector!, mode: String): EnvironmentSchemaOrError!
   instance: Instance!
   assetsOrError: AssetsOrError!
   assetOrError(assetKey: String!): AssetOrError!
@@ -1240,6 +1236,7 @@ type TypeCheck implements DisplayableEvent {
 
 type UnknownPipeline implements PipelineReference {
   name: String!
+  solidSubset: [String!]
 }
 
 type UsedSolid {

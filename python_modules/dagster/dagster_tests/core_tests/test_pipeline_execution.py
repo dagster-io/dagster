@@ -923,19 +923,6 @@ def test_optional():
     assert result_optional.skipped
 
 
-def test_basic_pipeline_selector():
-    @solid
-    def def_one(_):
-        pass
-
-    # dsl subsets the definitions appropriately
-    @pipeline
-    def pipe():
-        def_one()
-
-    assert pipe.selector.solid_subset == None
-
-
 def test_selector_with_partial_dependency_dict():
     executed = {}
 
@@ -972,7 +959,7 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert set(pipe.subset_for_execution(['def_two']).selector.solid_subset) == {'def_two'}
+    assert set(pipe.subset_for_execution(['def_two']).solid_subset) == {'def_two'}
 
 
 def test_default_run_id():

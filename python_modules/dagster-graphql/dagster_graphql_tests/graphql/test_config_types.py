@@ -9,7 +9,7 @@ from .setup import csv_hello_world_solids_config
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
     $environmentConfigData: EnvironmentConfigData,
-    $pipeline: ExecutionSelector!,
+    $pipeline: PipelineSelector!,
     $mode: String!
 ) {
     isPipelineConfigValid(

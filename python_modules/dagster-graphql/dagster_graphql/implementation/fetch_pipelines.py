@@ -2,11 +2,11 @@ from dagster_graphql.implementation.external import (
     get_external_pipeline_or_raise,
     get_full_external_pipeline_or_raise,
 )
+from dagster_graphql.implementation.utils import PipelineSelector
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
@@ -73,7 +73,7 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
     from ..schema.errors import DauphinPipelineNotFoundError, DauphinInvalidSubsetError
 
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     try:
         return get_dauphin_pipeline_from_selector(graphene_info, selector)
     except UserFacingGraphQLError as exc:
@@ -86,7 +86,9 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
             # UnknownPipeline
             isinstance(exc.dauphin_error, DauphinInvalidSubsetError)
         ):
-            return graphene_info.schema.type_named('UnknownPipeline')(selector.name)
+            return graphene_info.schema.type_named('UnknownPipeline')(
+                selector.name, selector.solid_subset
+            )
 
         raise
 
@@ -109,7 +111,7 @@ def get_pipelines_or_raise(graphene_info):
 
 def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
     return DauphinPipeline(
         get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
@@ -118,7 +120,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
 
 def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
     pipeline_name = selector.name
 

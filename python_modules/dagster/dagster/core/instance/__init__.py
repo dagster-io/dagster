@@ -12,11 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import (
-    ExecutionSelector,
-    PipelineDefinition,
-    PipelineSubsetForExecution,
-)
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
