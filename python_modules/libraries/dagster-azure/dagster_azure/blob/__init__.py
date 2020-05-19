@@ -1,0 +1,2 @@
+from .blob_fake_resource import create_blob_fake_resource
+from .compute_log_manager import AzureBlobComputeLogManager
