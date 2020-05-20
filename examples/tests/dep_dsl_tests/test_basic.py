@@ -1,4 +1,4 @@
-from dagster_examples.dep_dsl.repo import define_dep_dsl_pipeline
+from dep_dsl.repo import define_dep_dsl_pipeline
 
 from dagster import execute_pipeline
 
