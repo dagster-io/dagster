@@ -10,6 +10,7 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
+from .handle import EnvironmentHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -21,7 +22,8 @@ class ExternalRepository:
     objects such as these to interact with user-defined artifacts.
     '''
 
-    def __init__(self, external_repository_data):
+    def __init__(self, external_repository_data, environment_handle):
+        check.inst_param(environment_handle, 'environment_handle', EnvironmentHandle)
         self.external_repository_data = check.inst_param(
             external_repository_data, 'external_repository_data', ExternalRepositoryData
         )
@@ -32,6 +34,7 @@ class ExternalRepository:
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
+        self._handle = RepositoryHandle(external_repository_data.name, environment_handle)
 
     @property
     def name(self):
@@ -46,20 +49,30 @@ class ExternalRepository:
     def get_pipeline_indices(self):
         return self._pipeline_index_map.values()
 
-    def get_external_pipeline(self, pipeline_name):
+    def has_external_pipeline(self, pipeline_name):
+        return pipeline_name in self._pipeline_index_map
+
+    def get_full_external_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
         return ExternalPipeline(
             self.get_pipeline_index(pipeline_name),
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
             solid_subset=None,
+            repository_handle=self.handle,
         )
 
     def get_all_external_pipelines(self):
-        return [self.get_external_pipeline(pn) for pn in self._pipeline_index_map]
+        return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
+
+    @property
+    def handle(self):
+        return self._handle
 
     @staticmethod
-    def from_repository_def(repository_definition):
-        return ExternalRepository(external_repository_data_from_def(repository_definition))
+    def from_repository_def(repository_definition, environment_handle):
+        return ExternalRepository(
+            external_repository_data_from_def(repository_definition), environment_handle
+        )
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -69,9 +82,9 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     '''
 
-    def __init__(
-        self, pipeline_index, external_pipeline_data, solid_subset,
-    ):
+    def __init__(self, pipeline_index, external_pipeline_data, solid_subset, repository_handle):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+
         super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
 
         self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
@@ -82,6 +95,7 @@ class ExternalPipeline(RepresentedPipeline):
         self._solid_subset = (
             None if solid_subset is None else check.list_param(solid_subset, 'solid_subset', str)
         )
+        self._handle = PipelineHandle(self.pipeline_index.name, repository_handle)
 
     @property
     def solid_subset(self):
@@ -117,17 +131,6 @@ class ExternalPipeline(RepresentedPipeline):
             mode_name if mode_name else self.get_default_mode_name()
         ).root_config_key
 
-    @staticmethod
-    def from_pipeline_def(pipeline_def, solid_subset=None):
-        if solid_subset:
-            pipeline_def = pipeline_def.subset_for_execution(solid_subset)
-
-        return ExternalPipeline(
-            PipelineIndex(PipelineSnapshot.from_pipeline_def(pipeline_def)),
-            external_pipeline_data_from_def(pipeline_def),
-            solid_subset=solid_subset,
-        )
-
     def get_default_mode_name(self):
         return self.pipeline_index.get_default_mode_name()
 
@@ -142,6 +145,22 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def identifying_pipeline_snapshot_id(self):
         return self._pipeline_index.pipeline_snapshot_id
+
+    @property
+    def handle(self):
+        return self._handle
+
+    @staticmethod
+    def from_pipeline_def(pipeline_def, solid_subset, repository_handle):
+        if solid_subset:
+            pipeline_def = pipeline_def.subset_for_execution(solid_subset)
+
+        return ExternalPipeline(
+            PipelineIndex(PipelineSnapshot.from_pipeline_def(pipeline_def)),
+            external_pipeline_data_from_def(pipeline_def),
+            solid_subset=solid_subset,
+            repository_handle=repository_handle,
+        )
 
 
 class ExternalExecutionPlan:

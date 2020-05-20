@@ -119,7 +119,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.name, selector.solid_subset
+        graphene_info, selector.pipeline_name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
@@ -134,7 +134,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.name, selector.solid_subset
+        graphene_info, selector.pipeline_name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('ExecutionPlan')(

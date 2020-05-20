@@ -50,7 +50,9 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+        graphene_info,
+        execution_params.selector.pipeline_name,
+        execution_params.selector.solid_subset,
     )
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
@@ -70,7 +72,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     pipeline_run = instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        pipeline_name=execution_params.selector.name,
+        pipeline_name=execution_params.selector.pipeline_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),

@@ -53,7 +53,9 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+        graphene_info,
+        execution_params.selector.pipeline_name,
+        execution_params.selector.solid_subset,
     )
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)

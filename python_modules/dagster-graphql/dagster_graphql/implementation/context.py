@@ -8,6 +8,7 @@ from dagster.core.definitions.container import get_external_repository_from_imag
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
+    EnvironmentHandle,
     ExternalExecutionPlan,
     ExternalPipeline,
     ExternalRepository,
@@ -73,7 +74,7 @@ class DagsterGraphQLContext:
 
     def legacy_get_full_external_pipeline(self, name):
         check.str_param(name, 'name')
-        return self.legacy_external_repository.get_external_pipeline(name)
+        return self.legacy_external_repository.get_full_external_pipeline(name)
 
     def legacy_get_all_external_pipelines(self):
         return self.legacy_external_repository.get_all_external_pipelines()
@@ -187,8 +188,10 @@ class DockerDagsterEnvironment(DagsterEnvironment):
 class InProcessDagsterEnvironment(DagsterEnvironment):
     def __init__(self, recon_repo, execution_manager, reloader=None):
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        external_repo = ExternalRepository.from_repository_def(recon_repo.get_definition())
-        self._repositories = {external_repo.name: external_repo}
+        self._external_repo = ExternalRepository.from_repository_def(
+            recon_repo.get_definition(), EnvironmentHandle(self.name)
+        )
+        self._repositories = {self._external_repo.name: self._external_repo}
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
@@ -221,7 +224,9 @@ class InProcessDagsterEnvironment(DagsterEnvironment):
             'Received invalid handle, environment name mismatch',
         )
         return ExternalPipeline.from_pipeline_def(
-            self.get_reconstructable_pipeline(handle.pipeline_name).get_definition(), solid_subset
+            self.get_reconstructable_pipeline(handle.pipeline_name).get_definition(),
+            solid_subset,
+            self._external_repo.handle,
         )
 
     def get_external_execution_plan(

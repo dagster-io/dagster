@@ -96,7 +96,10 @@ export interface PipelineRunsFilter {
 }
 
 export interface PipelineSelector {
-  name: string;
+  name?: string | null;
+  pipelineName?: string | null;
+  repositoryName?: string | null;
+  environmentName?: string | null;
   solidSubset?: string[] | null;
 }
 

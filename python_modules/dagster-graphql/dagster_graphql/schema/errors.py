@@ -160,7 +160,7 @@ class DauphinPresetNotFoundError(dauphin.ObjectType):
     def __init__(self, preset, selector):
         self.preset = check.str_param(preset, 'preset')
         self.message = 'Preset {preset} not found in pipeline {pipeline}.'.format(
-            preset=preset, pipeline=selector.name
+            preset=preset, pipeline=selector.pipeline_name
         )
 
 
@@ -174,7 +174,7 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
     def __init__(self, mode, selector):
         self.mode = check.str_param(mode, 'mode')
         self.message = 'Mode {mode} not found in pipeline {pipeline}.'.format(
-            mode=mode, pipeline=selector.name
+            mode=mode, pipeline=selector.pipeline_name
         )
 
 

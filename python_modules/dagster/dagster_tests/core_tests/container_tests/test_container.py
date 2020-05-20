@@ -1,6 +1,10 @@
 from dagster import RepositoryDefinition, pipeline, solid
 from dagster.core.definitions.container import get_external_repository_from_image
-from dagster.core.host_representation import ExternalRepository, external_repository_data_from_def
+from dagster.core.host_representation import (
+    EnvironmentHandle,
+    ExternalRepository,
+    external_repository_data_from_def,
+)
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -33,5 +37,7 @@ def test_container_snapshot_provider(mocker):
     )
     assert (
         external_repository.external_repository_data
-        == ExternalRepository.from_repository_def(noop_repo()).external_repository_data
+        == ExternalRepository.from_repository_def(
+            noop_repo(), EnvironmentHandle("foo:latest")
+        ).external_repository_data
     )

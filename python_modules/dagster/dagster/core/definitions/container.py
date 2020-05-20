@@ -5,7 +5,11 @@ from uuid import uuid4
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
-from dagster.core.host_representation import ExternalRepository, ExternalRepositoryData
+from dagster.core.host_representation import (
+    EnvironmentHandle,
+    ExternalRepository,
+    ExternalRepositoryData,
+)
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import ipc_read_event_stream
 from dagster.seven import get_system_temp_directory
@@ -91,7 +95,7 @@ def get_external_repository_from_image(image):
                     received=type(external_repo_data)
                 )
             )
-        return ExternalRepository(external_repo_data)
+        return ExternalRepository(external_repo_data, EnvironmentHandle(image))
 
 
 def execute_pipeline_iterator_from_image(

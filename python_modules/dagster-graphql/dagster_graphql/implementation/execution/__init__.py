@@ -151,7 +151,9 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+        graphene_info,
+        execution_params.selector.pipeline_name,
+        execution_params.selector.solid_subset,
     )
     ensure_valid_config(
         external_pipeline=external_pipeline,

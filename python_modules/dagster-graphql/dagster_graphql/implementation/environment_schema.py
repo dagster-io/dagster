@@ -15,7 +15,7 @@ def resolve_environment_schema_or_error(graphene_info, selector, mode):
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.name, selector.solid_subset
+        graphene_info, selector.pipeline_name, selector.solid_subset
     )
 
     if mode is None:

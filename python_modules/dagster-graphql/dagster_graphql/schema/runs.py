@@ -133,7 +133,11 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_pipeline(self, graphene_info):
         return get_pipeline_reference_or_raise(
             graphene_info,
-            PipelineSelector(self._pipeline_run.pipeline_name, self._pipeline_run.solid_subset),
+            PipelineSelector.legacy(
+                graphene_info.context,
+                self._pipeline_run.pipeline_name,
+                self._pipeline_run.solid_subset,
+            ),
         )
 
     def resolve_pipelineSnapshotId(self, _):

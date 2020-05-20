@@ -202,10 +202,16 @@ class DauphinQuery(dauphin.ObjectType):
         return get_schedule_or_error(graphene_info, schedule_name)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
-        return get_pipeline_or_error(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline_or_error(
+            graphene_info,
+            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
+        )
 
     def resolve_pipeline(self, graphene_info, **kwargs):
-        return get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline_or_raise(
+            graphene_info,
+            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
+        )
 
     def resolve_pipelinesOrError(self, graphene_info):
         return get_pipelines_or_error(graphene_info)
@@ -259,7 +265,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
             graphene_info,
-            pipeline.to_selector(),
+            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
             kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
         )
@@ -267,14 +273,16 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_executionPlan(self, graphene_info, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
-            pipeline.to_selector(),
+            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
             kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
         )
 
     def resolve_environmentSchemaOrError(self, graphene_info, **kwargs):
         return resolve_environment_schema_or_error(
-            graphene_info, kwargs['selector'].to_selector(), kwargs.get('mode')
+            graphene_info,
+            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['selector']),
+            kwargs.get('mode'),
         )
 
     def resolve_instance(self, graphene_info):
@@ -511,6 +519,9 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 def create_execution_params(graphene_info, graphql_execution_params):
 
     preset_name = graphql_execution_params.get('preset')
+    selector = PipelineSelector.from_graphql_input(
+        graphene_info.context, graphql_execution_params['selector']
+    )
     if preset_name:
         check.invariant(
             not graphql_execution_params.get('environmentConfigData'),
@@ -521,13 +532,14 @@ def create_execution_params(graphene_info, graphql_execution_params):
             'Invalid ExecutionParams. Cannot define mode when using preset',
         )
 
-        selector = graphql_execution_params['selector'].to_selector()
         check.invariant(
             not selector.solid_subset,
             'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
         )
 
-        external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector.name)
+        external_pipeline = get_full_external_pipeline_or_raise(
+            graphene_info, selector.pipeline_name
+        )
 
         if not external_pipeline.has_preset(preset_name):
             raise UserFacingGraphQLError(
@@ -539,7 +551,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=PipelineSelector(selector.name, preset.solid_subset),
+            selector=selector.with_solid_subset(preset.solid_subset),
             environment_dict=preset.environment_dict,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
@@ -548,12 +560,14 @@ def create_execution_params(graphene_info, graphql_execution_params):
             step_keys=graphql_execution_params.get('stepKeys'),
         )
 
-    return execution_params_from_graphql(graphql_execution_params)
+    return execution_params_from_graphql(graphene_info.context, graphql_execution_params)
 
 
-def execution_params_from_graphql(graphql_execution_params):
+def execution_params_from_graphql(context, graphql_execution_params):
     return ExecutionParams(
-        selector=PipelineSelector.from_dict(graphql_execution_params.get('selector')),
+        selector=PipelineSelector.from_graphql_input(
+            context, graphql_execution_params.get('selector')
+        ),
         environment_dict=graphql_execution_params.get('environmentConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
@@ -678,11 +692,13 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
         description = '''This type represents the fields necessary to identify a
         pipeline or pipeline subset.'''
 
-    name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    # legacy_
+    name = dauphin.Field(dauphin.String)
 
-    def to_selector(self):
-        return PipelineSelector(self.name, self.solidSubset)
+    pipelineName = dauphin.Field(dauphin.String)
+    repositoryName = dauphin.Field(dauphin.String)
+    environmentName = dauphin.Field(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

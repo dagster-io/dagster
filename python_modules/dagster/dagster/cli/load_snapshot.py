@@ -13,7 +13,7 @@ def get_pipeline_snapshot_from_cli_args(cli_args):
             msg='--image is not supported without dagster[docker] or the Python package docker installed.',
         )
         external_repo = get_external_repository_from_image(cli_args.get('image'))
-        return external_repo.get_external_pipeline(
+        return external_repo.get_full_external_pipeline(
             cli_args.get('pipeline_name')[0]
         ).pipeline_snapshot
     else:

@@ -444,14 +444,10 @@ class PipelineDefinition(IContainSolids):
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self):
-        return self.get_external_pipeline().get_pipeline_index_for_compat()
+        from dagster.core.snap import PipelineSnapshot
+        from dagster.core.host_representation import PipelineIndex
 
-    def get_external_pipeline(self):
-        if self._cached_external_pipeline is None:
-            from dagster.core.host_representation import ExternalPipeline
-
-            self._cached_external_pipeline = ExternalPipeline.from_pipeline_def(self)
-        return self._cached_external_pipeline
+        return PipelineIndex(PipelineSnapshot.from_pipeline_def(self))
 
     def get_config_schema_snapshot(self):
         return self.get_pipeline_snapshot().config_schema_snapshot

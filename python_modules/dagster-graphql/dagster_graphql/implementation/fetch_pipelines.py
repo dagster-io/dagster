@@ -87,7 +87,7 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
             isinstance(exc.dauphin_error, DauphinInvalidSubsetError)
         ):
             return graphene_info.schema.type_named('UnknownPipeline')(
-                selector.name, selector.solid_subset
+                selector.pipeline_name, selector.solid_subset
             )
 
         raise
@@ -114,7 +114,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(selector, 'selector', PipelineSelector)
 
     return DauphinPipeline(
-        get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
+        get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
     )
 
 
@@ -122,7 +122,7 @@ def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', PipelineSelector)
 
-    pipeline_name = selector.name
+    pipeline_name = selector.pipeline_name
 
     # for error check of pipeline existence
     get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
@@ -133,5 +133,5 @@ def get_reconstructable_pipeline_from_selector(graphene_info, selector):
         return recon_pipeline
 
     # for error checking
-    get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
+    get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
     return recon_pipeline.subset_for_execution(selector.solid_subset)

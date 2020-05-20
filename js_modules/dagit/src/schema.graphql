@@ -863,7 +863,10 @@ type PipelineRunStepStats {
 }
 
 input PipelineSelector {
-  name: String!
+  name: String
+  pipelineName: String
+  repositoryName: String
+  environmentName: String
   solidSubset: [String!]
 }
 
