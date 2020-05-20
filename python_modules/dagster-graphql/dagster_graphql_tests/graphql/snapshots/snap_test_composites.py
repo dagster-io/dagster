@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_composites 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
         'solidHandles': [

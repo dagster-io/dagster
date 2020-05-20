@@ -2,7 +2,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 RESOURCE_QUERY = '''
 {
-  pipeline(params: { name: "multi_mode_with_resources" }) {
+  pipelineOrError(params: { name: "multi_mode_with_resources" }) {
     __typename
     ... on Pipeline {
       modes {
@@ -31,13 +31,15 @@ RESOURCE_QUERY = '''
 '''
 
 REQUIRED_RESOURCE_QUERY = '''{
-  pipeline(params: { name:"required_resource_pipeline" }){
-    name
-    solids {
-      definition {
-          requiredResources {
-            resourceKey
-          }
+  pipelineOrError(params: { name:"required_resource_pipeline" }){
+    ... on Pipeline {
+      name
+      solids {
+        definition {
+            requiredResources {
+              resourceKey
+            }
+        }
       }
     }
   }
@@ -50,9 +52,9 @@ def test_mode_fetch_resources(graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']
-    assert result.data['pipeline']['modes']
-    for mode_data in result.data['pipeline']['modes']:
+    assert result.data['pipelineOrError']
+    assert result.data['pipelineOrError']['modes']
+    for mode_data in result.data['pipelineOrError']['modes']:
         assert mode_data['resources']
 
     snapshot.assert_match(result.data)
@@ -65,8 +67,8 @@ def test_required_resources(graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']['solids']
-    [solid] = result.data['pipeline']['solids']
+    assert result.data['pipelineOrError']['solids']
+    [solid] = result.data['pipelineOrError']['solids']
     assert solid
     assert solid['definition']['requiredResources']
     assert solid['definition']['requiredResources'] == [{'resourceKey': 'R1'}]

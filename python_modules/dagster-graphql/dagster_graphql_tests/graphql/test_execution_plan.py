@@ -18,7 +18,7 @@ from .setup import (
 
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: PipelineSelector!, $mode: String!) {
-  executionPlan(environmentConfigData: $environmentConfigData, pipeline: $pipeline, mode: $mode) {
+  executionPlanOrError(environmentConfigData: $environmentConfigData, pipeline: $pipeline, mode: $mode) {
     __typename
     ... on ExecutionPlan {
       steps {
@@ -430,13 +430,13 @@ def test_invalid_config_fetch_execute_plan(graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert len(result.data['executionPlan']['errors']) == 1
+    assert result.data['executionPlanOrError']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert len(result.data['executionPlanOrError']['errors']) == 1
     assert (
         'Invalid scalar at path root:solids:sum_solid:inputs:num'
-        in result.data['executionPlan']['errors'][0]['message']
+        in result.data['executionPlanOrError']['errors'][0]['message']
     )
-    result.data['executionPlan']['errors'][0][
+    result.data['executionPlanOrError']['errors'][0][
         'message'
     ] = 'Invalid scalar at path root:solids:sum_solid:inputs:num'
     snapshot.assert_match(result.data)
@@ -526,7 +526,7 @@ def test_basic_execute_plan_with_materialization(graphql_context):
             },
         )
 
-        steps_data = result.data['executionPlan']['steps']
+        steps_data = result.data['executionPlanOrError']['steps']
 
         assert set([step_data['key'] for step_data in steps_data]) == set(
             ['sum_solid.compute', 'sum_sq_solid.compute',]

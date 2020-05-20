@@ -32,11 +32,15 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
     <Loading queryResult={queryResult}>
       {data => {
         if (
-          data.pipeline &&
-          data.pipeline.dagsterTypeOrError &&
-          data.pipeline.dagsterTypeOrError.__typename === "RegularDagsterType"
+          data.pipelineOrError &&
+          data.pipelineOrError.__typename === "Pipeline" &&
+          data.pipelineOrError.dagsterTypeOrError &&
+          data.pipelineOrError.dagsterTypeOrError.__typename ===
+            "RegularDagsterType"
         ) {
-          return <TypeExplorer type={data.pipeline.dagsterTypeOrError} />;
+          return (
+            <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />
+          );
         } else {
           return <div>Type Not Found</div>;
         }
@@ -50,11 +54,14 @@ export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
     $pipelineName: String!
     $dagsterTypeName: String!
   ) {
-    pipeline(params: { name: $pipelineName }) {
-      dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
-        __typename
-        ... on RegularDagsterType {
-          ...TypeExplorerFragment
+    pipelineOrError(params: { name: $pipelineName }) {
+      __typename
+      ... on Pipeline {
+        dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
+          __typename
+          ... on RegularDagsterType {
+            ...TypeExplorerFragment
+          }
         }
       }
     }

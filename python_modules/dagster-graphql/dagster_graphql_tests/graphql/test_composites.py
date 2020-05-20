@@ -2,7 +2,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 COMPOSITES_QUERY = '''
 query CompositesQuery {
-  pipeline(params: { name: "composites_pipeline" }) {
+  pipelineOrError(params: { name: "composites_pipeline" }) {
     __typename
     ... on Pipeline {
       name
@@ -64,7 +64,7 @@ fragment SolidInfo on Solid {
 
 PARENT_ID_QUERY = '''
 query withParent($parentHandleID: String) {
-  pipeline(params: { name: "composites_pipeline" }) {
+  pipelineOrError(params: { name: "composites_pipeline" }) {
     __typename
     ... on Pipeline {
       name
@@ -78,7 +78,7 @@ query withParent($parentHandleID: String) {
 
 SOLID_ID_QUERY = '''
 query solidFetch($id: String!) {
-  pipeline(params: { name: "composites_pipeline" }) {
+  pipelineOrError(params: { name: "composites_pipeline" }) {
     __typename
     ... on Pipeline {
       name
@@ -112,7 +112,7 @@ def test_composites(graphql_context, snapshot):
     result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY)
     handle_map = {}
 
-    for obj in result.data["pipeline"]["solidHandles"]:
+    for obj in result.data["pipelineOrError"]["solidHandles"]:
         handle_map[obj["handleID"]] = obj["solid"]
 
     assert len(handle_map) == 10
@@ -122,43 +122,43 @@ def test_composites(graphql_context, snapshot):
 
 def test_parent_id_arg(graphql_context):
     result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {})
-    assert len(result.data["pipeline"]["solidHandles"]) == 10
+    assert len(result.data["pipelineOrError"]["solidHandles"]) == 10
 
     result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {'parentHandleID': ''})
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
+    assert len(result.data["pipelineOrError"]["solidHandles"]) == 2
 
     result = execute_dagster_graphql(
         graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four'}
     )
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
+    assert len(result.data["pipelineOrError"]["solidHandles"]) == 2
 
     result = execute_dagster_graphql(
         graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.adder_1'}
     )
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
+    assert len(result.data["pipelineOrError"]["solidHandles"]) == 2
 
     result = execute_dagster_graphql(
         graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.doot'}
     )
-    assert len(result.data["pipeline"]["solidHandles"]) == 0
+    assert len(result.data["pipelineOrError"]["solidHandles"]) == 0
 
 
 def test_solid_id(graphql_context):
     result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'add_four'})
-    assert result.data["pipeline"]["solidHandle"]["handleID"] == 'add_four'
+    assert result.data["pipelineOrError"]["solidHandle"]["handleID"] == 'add_four'
 
     result = execute_dagster_graphql(
         graphql_context, SOLID_ID_QUERY, {'id': 'add_four.adder_1.adder_1'}
     )
-    assert result.data["pipeline"]["solidHandle"]["handleID"] == 'add_four.adder_1.adder_1'
+    assert result.data["pipelineOrError"]["solidHandle"]["handleID"] == 'add_four.adder_1.adder_1'
 
     result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'bonkahog'})
-    assert result.data["pipeline"]["solidHandle"] == None
+    assert result.data["pipelineOrError"]["solidHandle"] == None
 
 
 COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = '''
 query CompositesQuery {
-  pipeline(params: { name: "composites_pipeline" }) {
+  pipelineOrError(params: { name: "composites_pipeline" }) {
     __typename
     ... on Pipeline {
       name

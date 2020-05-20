@@ -385,7 +385,7 @@ export default class ExecutionSessionContainer extends React.Component<
           environmentSchema ? (
             <RunPreview
               document={previewedDocument}
-              plan={preview ? preview.executionPlan : null}
+              plan={preview ? preview.executionPlanOrError : null}
               validation={preview ? preview.isPipelineConfigValid : null}
               environmentSchema={environmentSchema}
               onHighlightPath={path =>
@@ -396,7 +396,8 @@ export default class ExecutionSessionContainer extends React.Component<
                   pipelineName={pipeline.name}
                   getVariables={this.buildExecutionVariables}
                   disabled={
-                    preview?.executionPlan?.__typename !== "ExecutionPlan"
+                    preview?.executionPlanOrError?.__typename !==
+                    "ExecutionPlan"
                   }
                 />
               }
@@ -449,16 +450,16 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...ConfigEditorValidationFragment
       ...RunPreviewValidationFragment
     }
-    executionPlan(
+    executionPlanOrError(
       pipeline: $pipeline
       environmentConfigData: $environmentConfigData
       mode: $mode
     ) {
-      ...RunPreviewExecutionPlanResultFragment
+      ...RunPreviewExecutionPlanOrErrorFragment
     }
   }
   ${RunPreview.fragments.RunPreviewValidationFragment}
-  ${RunPreview.fragments.RunPreviewExecutionPlanResultFragment}
+  ${RunPreview.fragments.RunPreviewExecutionPlanOrErrorFragment}
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
 

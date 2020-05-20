@@ -13,7 +13,7 @@ import {
   ConfigEditorEnvironmentSchemaFragment,
   ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType
 } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
-import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
+import { RunPreviewExecutionPlanOrErrorFragment } from "./types/RunPreviewExecutionPlanOrErrorFragment";
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors
@@ -27,7 +27,7 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
 }
 
 interface RunPreviewProps {
-  plan: RunPreviewExecutionPlanResultFragment | null;
+  plan: RunPreviewExecutionPlanOrErrorFragment | null;
   validation: RunPreviewValidationFragment | null;
   document: object | null;
 
@@ -45,8 +45,8 @@ export class RunPreview extends React.Component<
   RunPreviewState
 > {
   static fragments = {
-    RunPreviewExecutionPlanResultFragment: gql`
-      fragment RunPreviewExecutionPlanResultFragment on ExecutionPlanResult {
+    RunPreviewExecutionPlanOrErrorFragment: gql`
+      fragment RunPreviewExecutionPlanOrErrorFragment on ExecutionPlanOrError {
         __typename
         ... on ExecutionPlan {
           __typename

@@ -7,7 +7,11 @@
 // GraphQL query operation: ConfigPresetsQuery
 // ====================================================
 
-export interface ConfigPresetsQuery_pipeline_presets {
+export interface ConfigPresetsQuery_pipelineOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
+}
+
+export interface ConfigPresetsQuery_pipelineOrError_Pipeline_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
@@ -15,21 +19,23 @@ export interface ConfigPresetsQuery_pipeline_presets {
   environmentConfigYaml: string;
 }
 
-export interface ConfigPresetsQuery_pipeline_tags {
+export interface ConfigPresetsQuery_pipelineOrError_Pipeline_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface ConfigPresetsQuery_pipeline {
+export interface ConfigPresetsQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   name: string;
-  presets: ConfigPresetsQuery_pipeline_presets[];
-  tags: ConfigPresetsQuery_pipeline_tags[];
+  presets: ConfigPresetsQuery_pipelineOrError_Pipeline_presets[];
+  tags: ConfigPresetsQuery_pipelineOrError_Pipeline_tags[];
 }
 
+export type ConfigPresetsQuery_pipelineOrError = ConfigPresetsQuery_pipelineOrError_PipelineNotFoundError | ConfigPresetsQuery_pipelineOrError_Pipeline;
+
 export interface ConfigPresetsQuery {
-  pipeline: ConfigPresetsQuery_pipeline;
+  pipelineOrError: ConfigPresetsQuery_pipelineOrError;
 }
 
 export interface ConfigPresetsQueryVariables {

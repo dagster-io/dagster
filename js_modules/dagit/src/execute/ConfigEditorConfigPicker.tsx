@@ -14,7 +14,7 @@ import { Select, Suggest } from "@blueprintjs/select";
 import { useQuery } from "react-apollo";
 import {
   ConfigPresetsQuery,
-  ConfigPresetsQuery_pipeline_presets
+  ConfigPresetsQuery_pipelineOrError_Pipeline_presets
 } from "./types/ConfigPresetsQuery";
 import {
   ConfigPartitionsQuery,
@@ -30,7 +30,7 @@ import { isEqual } from "apollo-utilities";
 import styled from "styled-components";
 import { ShortcutHandler } from "../ShortcutHandler";
 
-type Preset = ConfigPresetsQuery_pipeline_presets;
+type Preset = ConfigPresetsQuery_pipelineOrError_Pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
 type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
 type ConfigGenerator = Preset | PartitionSet;
@@ -64,6 +64,9 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   onSelectPreset = (preset: Preset, pipeline?: Pipeline) => {
+    if (!pipeline || true) {
+      console.error("Could not load pipeline tags");
+    }
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
@@ -77,6 +80,9 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   onSelectPartition = (partition: Partition, pipeline?: Pipeline) => {
+    if (!pipeline || true) {
+      console.error("Could not load pipeline tags");
+    }
     this.onCommit({
       name: partition.name,
       base: Object.assign({}, this.props.base, {
@@ -198,7 +204,14 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
           />
         )}
         noResults={<Menu.Item disabled={true} text="No presets." />}
-        onItemSelect={item => onSelect(item, data?.pipeline)}
+        onItemSelect={item => {
+          return onSelect(
+            item,
+            data?.pipelineOrError.__typename === "Pipeline"
+              ? data.pipelineOrError
+              : undefined
+          );
+        }}
       />
     );
   },
@@ -356,18 +369,21 @@ const PickerContainer = styled.div`
 
 export const CONFIG_PRESETS_QUERY = gql`
   query ConfigPresetsQuery($pipelineName: String!) {
-    pipeline(params: { name: $pipelineName }) {
-      name
-      presets {
-        __typename
+    pipelineOrError(params: { name: $pipelineName }) {
+      __typename
+      ... on Pipeline {
         name
-        mode
-        solidSubset
-        environmentConfigYaml
-      }
-      tags {
-        key
-        value
+        presets {
+          __typename
+          name
+          mode
+          solidSubset
+          environmentConfigYaml
+        }
+        tags {
+          key
+          value
+        }
       }
     }
   }
@@ -393,11 +409,14 @@ export const CONFIG_PARTITIONS_QUERY = gql`
     $partitionSetName: String!
     $pipelineName: String!
   ) {
-    pipeline(params: { name: $pipelineName }) {
-      name
-      tags {
-        key
-        value
+    pipelineOrError(params: { name: $pipelineName }) {
+      __typename
+      ... on Pipeline {
+        name
+        tags {
+          key
+          value
+        }
       }
     }
     partitionSetOrError(partitionSetName: $partitionSetName) {
@@ -446,14 +465,17 @@ function usePresetsAndPartitions(
   return {
     loading: presetsQuery.loading || partitionSetsQuery.loading,
     presets:
-      presetsQuery.data?.pipeline?.__typename === "Pipeline"
-        ? presetsQuery.data.pipeline.presets.sort(byName)
+      presetsQuery.data?.pipelineOrError?.__typename === "Pipeline"
+        ? presetsQuery.data.pipelineOrError.presets.sort(byName)
         : [],
     partitionSets:
       partitionSetsQuery.data?.partitionSetsOrError?.__typename ===
       "PartitionSets"
         ? partitionSetsQuery.data.partitionSetsOrError.results.sort(byName)
         : [],
-    pipeline: presetsQuery.data?.pipeline
+    pipeline:
+      presetsQuery.data?.pipelineOrError?.__typename === "Pipeline"
+        ? presetsQuery.data.pipelineOrError
+        : undefined
   };
 }

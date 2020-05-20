@@ -502,7 +502,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
 }
 
 snapshots['test_invalid_config_fetch_execute_plan 1'] = {
-    'executionPlan': {
+    'executionPlanOrError': {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {

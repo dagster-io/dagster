@@ -2,7 +2,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 LOGGER_QUERY = '''
 {
-  pipeline(params: { name: "multi_mode_with_loggers" }) {
+  pipelineOrError(params: { name: "multi_mode_with_loggers" }) {
     __typename
     ... on Pipeline {
       modes {
@@ -37,9 +37,9 @@ def test_mode_fetch_loggers(graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']
-    assert result.data['pipeline']['modes']
-    for mode_data in result.data['pipeline']['modes']:
+    assert result.data['pipelineOrError']
+    assert result.data['pipelineOrError']['modes']
+    for mode_data in result.data['pipelineOrError']['modes']:
         assert mode_data['loggers']
 
     snapshot.assert_match(result.data)

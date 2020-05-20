@@ -5,8 +5,8 @@ import PipelineGraph from "../graph/PipelineGraph";
 import { useQuery } from "react-apollo";
 import {
   SolidSelectorQuery,
-  SolidSelectorQuery_pipeline,
-  SolidSelectorQuery_pipeline_solids
+  SolidSelectorQuery_pipelineOrError,
+  SolidSelectorQuery_pipelineOrError_Pipeline_solids
 } from "./types/SolidSelectorQuery";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
 import { SubsetError } from "./ExecutionSessionContainer";
@@ -26,8 +26,8 @@ interface ISolidSelectorProps {
 }
 
 interface SolidSelectorModalProps {
-  pipeline: SolidSelectorQuery_pipeline;
-  queryResultSolids: SolidSelectorQuery_pipeline_solids[];
+  pipelineOrError: SolidSelectorQuery_pipelineOrError;
+  queryResultSolids: SolidSelectorQuery_pipelineOrError_Pipeline_solids[];
   errorMessage: string | null;
 }
 
@@ -35,14 +35,25 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   graphRef = React.createRef<PipelineGraph>();
 
   render() {
-    const { pipeline, queryResultSolids, errorMessage } = this.props;
+    const { pipelineOrError, queryResultSolids, errorMessage } = this.props;
+
+    if (pipelineOrError.__typename !== "Pipeline") {
+      return (
+        <SolidSelectorModalContainer>
+          {errorMessage && (
+            <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>
+          )}
+        </SolidSelectorModalContainer>
+      );
+    }
+
     return (
       <SolidSelectorModalContainer>
         {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
         <PipelineGraph
           ref={this.graphRef}
           backgroundColor={Colors.WHITE}
-          pipelineName={pipeline.name}
+          pipelineName={pipelineOrError.name}
           solids={queryResultSolids}
           layout={getDagrePipelineLayout(queryResultSolids)}
           interactor={SVGViewport.Interactors.None}
@@ -56,11 +67,23 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
 
 export const SOLID_SELECTOR_QUERY = gql`
   query SolidSelectorQuery($name: String!) {
-    pipeline(params: { name: $name }) {
-      name
-      solids {
+    pipelineOrError(params: { name: $name }) {
+      __typename
+      ... on Pipeline {
         name
-        ...PipelineGraphSolidFragment
+        solids {
+          name
+          ...PipelineGraphSolidFragment
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
+        message
+      }
+      ... on PythonError {
+        message
       }
     }
   }
@@ -75,29 +98,45 @@ export default (props: ISolidSelectorProps) => {
     variables: { name: props.pipelineName },
     fetchPolicy: "cache-and-network"
   });
+  React.useEffect(() => {
+    setPending(query || "");
+  }, [query, focused]);
 
-  const queryResultSolids = data?.pipeline
-    ? filterByQuery(data.pipeline.solids, pending).all
-    : [];
+  const queryResultSolids =
+    data?.pipelineOrError.__typename === "Pipeline"
+      ? filterByQuery(data!.pipelineOrError.solids, pending).all
+      : [];
+
+  const pipelineErrorMessage =
+    data?.pipelineOrError.__typename !== "Pipeline"
+      ? data?.pipelineOrError.message || null
+      : null;
+
+  if (pipelineErrorMessage) {
+    console.error(`Could not load pipeline ${props.pipelineName}`);
+  }
 
   const errorMessage =
     queryResultSolids.length === 0 || pending.length === 0
-      ? `You must provie a valid solid query or * to execute the entire pipeline.`
+      ? `You must provide a valid solid query or * to execute the entire pipeline.`
       : serverProvidedSubsetError
       ? serverProvidedSubsetError.message
-      : null;
+      : pipelineErrorMessage;
 
   const onCommitPendingValue = (applied: string) => {
-    if (!data?.pipeline) return;
+    if (data?.pipelineOrError.__typename !== "Pipeline") return;
 
     if (applied === "") {
       applied = "*";
     }
-    const queryResultSolids = filterByQuery(data.pipeline.solids, applied).all;
+    const queryResultSolids = filterByQuery(
+      data.pipelineOrError.solids,
+      applied
+    ).all;
 
     // If all solids are returned, we set the subset to null rather than sending
     // a comma separated list of evey solid to the API
-    if (queryResultSolids.length === data.pipeline.solids.length) {
+    if (queryResultSolids.length === data.pipelineOrError.solids.length) {
       onChange(null, applied);
     } else {
       onChange(
@@ -106,10 +145,6 @@ export default (props: ISolidSelectorProps) => {
       );
     }
   };
-
-  React.useEffect(() => {
-    setPending(query || "");
-  }, [query, focused]);
 
   return (
     <div style={{ position: "relative" }}>
@@ -120,7 +155,11 @@ export default (props: ISolidSelectorProps) => {
         <GraphQueryInput
           width={(pending !== "*" && pending !== "") || focused ? 350 : 90}
           intent={errorMessage ? Intent.DANGER : Intent.NONE}
-          items={data?.pipeline ? data?.pipeline.solids : []}
+          items={
+            data?.pipelineOrError.__typename === "Pipeline"
+              ? data?.pipelineOrError.solids
+              : []
+          }
           value={pending}
           placeholder="Type a Solid Subset"
           onChange={setPending}
@@ -139,9 +178,9 @@ export default (props: ISolidSelectorProps) => {
           }}
         />
       </ShortcutHandler>
-      {focused && data?.pipeline && (
+      {focused && data?.pipelineOrError && (
         <SolidSelectorModal
-          pipeline={data?.pipeline}
+          pipelineOrError={data?.pipelineOrError}
           errorMessage={errorMessage}
           queryResultSolids={queryResultSolids}
         />

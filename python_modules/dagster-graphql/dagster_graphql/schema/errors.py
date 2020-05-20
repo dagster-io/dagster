@@ -445,9 +445,9 @@ class DauphinPipelinesOrError(dauphin.Union):
         types = ('PipelineConnection', DauphinPythonError)
 
 
-class DauphinExecutionPlanResult(dauphin.Union):
+class DauphinExecutionPlanOrError(dauphin.Union):
     class Meta(object):
-        name = 'ExecutionPlanResult'
+        name = 'ExecutionPlanOrError'
         types = (
             'ExecutionPlan',
             DauphinPipelineConfigValidationInvalid,

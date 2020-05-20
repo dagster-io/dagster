@@ -36,14 +36,20 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
 
   return (
     <Loading queryResult={queryResult}>
-      {({ pipeline }) =>
-        pipeline ? (
+      {({ pipelineOrError }) => {
+        if (pipelineOrError?.__typename !== "Pipeline") {
+          // should not reach here, unless the pipeline loads and then does not load in subsequent
+          // requests
+          console.error("Could not load pipeline solids");
+          return <span>Could not load pipeline solids.</span>;
+        }
+        return (
           <>
             <SidebarSolidInvocation
               key={`${handleID}-inv`}
-              solid={pipeline!.solidHandle!.solid}
+              solid={pipelineOrError!.solidHandle!.solid}
               onEnterCompositeSolid={
-                pipeline!.solidHandle!.solid.definition.__typename ===
+                pipelineOrError!.solidHandle!.solid.definition.__typename ===
                 "CompositeSolidDefinition"
                   ? onEnterCompositeSolid
                   : undefined
@@ -52,17 +58,15 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
             <SidebarSolidDefinition
               key={`${handleID}-def`}
               showingSubsolids={showingSubsolids}
-              definition={pipeline!.solidHandle!.solid.definition}
+              definition={pipelineOrError!.solidHandle!.solid.definition}
               getInvocations={getInvocations}
               onClickInvocation={({ handleID }) =>
                 onClickSolid({ path: handleID.split(".") })
               }
             />
           </>
-        ) : (
-          <span />
-        )
-      }
+        );
+      }}
     </Loading>
   );
 };
@@ -72,15 +76,18 @@ export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
     $pipeline: String!
     $handleID: String!
   ) {
-    pipeline(params: { name: $pipeline }) {
-      name
-      solidHandle(handleID: $handleID) {
-        solid {
-          ...SidebarSolidInvocationFragment
+    pipelineOrError(params: { name: $pipeline }) {
+      __typename
+      ... on Pipeline {
+        name
+        solidHandle(handleID: $handleID) {
+          solid {
+            ...SidebarSolidInvocationFragment
 
-          definition {
-            __typename
-            ...SidebarSolidDefinitionFragment
+            definition {
+              __typename
+              ...SidebarSolidDefinitionFragment
+            }
           }
         }
       }

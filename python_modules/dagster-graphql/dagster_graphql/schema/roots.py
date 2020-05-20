@@ -27,12 +27,9 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
-    get_pipeline_or_raise,
-    get_pipeline_snapshot,
     get_pipeline_snapshot_or_error_from_pipeline_name,
     get_pipeline_snapshot_or_error_from_snapshot_id,
     get_pipelines_or_error,
-    get_pipelines_or_raise,
 )
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
@@ -76,16 +73,7 @@ class DauphinQuery(dauphin.ObjectType):
     pipelineOrError = dauphin.Field(
         dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('PipelineSelector')
     )
-    pipeline = dauphin.Field(
-        dauphin.NonNull('Pipeline'), params=dauphin.NonNull('PipelineSelector')
-    )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
-    pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
-
-    pipelineSnapshot = dauphin.Field(
-        dauphin.NonNull('PipelineSnapshot'),
-        snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-    )
 
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
@@ -143,8 +131,8 @@ class DauphinQuery(dauphin.ObjectType):
         },
     )
 
-    executionPlan = dauphin.Field(
-        dauphin.NonNull('ExecutionPlanResult'),
+    executionPlanOrError = dauphin.Field(
+        dauphin.NonNull('ExecutionPlanOrError'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
@@ -167,9 +155,6 @@ class DauphinQuery(dauphin.ObjectType):
     assetOrError = dauphin.Field(
         dauphin.NonNull('AssetOrError'), assetKey=dauphin.NonNull(dauphin.String)
     )
-
-    def resolve_pipelineSnapshot(self, graphene_info, **kwargs):
-        return get_pipeline_snapshot(graphene_info, kwargs['snapshotId'])
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
@@ -207,17 +192,8 @@ class DauphinQuery(dauphin.ObjectType):
             PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
         )
 
-    def resolve_pipeline(self, graphene_info, **kwargs):
-        return get_pipeline_or_raise(
-            graphene_info,
-            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
-        )
-
     def resolve_pipelinesOrError(self, graphene_info):
         return get_pipelines_or_error(graphene_info)
-
-    def resolve_pipelines(self, graphene_info):
-        return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
         filters = kwargs.get('filter')
@@ -270,7 +246,7 @@ class DauphinQuery(dauphin.ObjectType):
             kwargs.get('mode'),
         )
 
-    def resolve_executionPlan(self, graphene_info, pipeline, **kwargs):
+    def resolve_executionPlanOrError(self, graphene_info, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
             PipelineSelector.from_graphql_input(graphene_info.context, pipeline),

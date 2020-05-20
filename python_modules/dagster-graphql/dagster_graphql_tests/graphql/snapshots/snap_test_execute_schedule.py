@@ -367,3 +367,22 @@ snapshots['test_should_execute_scheduler_error 1'] = {
     ],
     'ticksCount': 1
 }
+
+snapshots['test_invalid_config_schedule_error 1'] = {
+    'scheduleDefinition': {
+        'name': 'invalid_config_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}

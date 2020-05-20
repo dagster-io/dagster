@@ -1,9 +1,6 @@
 import csv
 from collections import OrderedDict
 
-import pytest
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.setup import define_repository
 
@@ -106,7 +103,7 @@ fragment innerInfo on ConfigType {
 }
 
 {
-  pipeline(params: { name: "more_complicated_nested_config" }) {
+  pipelineOrError(params: { name: "more_complicated_nested_config" }) {
     __typename
     ... on Pipeline {
       name
@@ -153,11 +150,13 @@ def define_circular_dependency_pipeline():
 
 
 def test_pipelines(graphql_context):
-    result = execute_dagster_graphql(graphql_context, '{ pipelines { nodes { name } } }')
+    result = execute_dagster_graphql(
+        graphql_context, '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
+    )
     assert not result.errors
     assert result.data
 
-    assert {p['name'] for p in result.data['pipelines']['nodes']} == {
+    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
         p.name for p in define_repository().get_all_pipelines()
     }
 
@@ -185,30 +184,17 @@ def test_pipeline_by_name(graphql_context):
         graphql_context,
         '''
     {
-        pipeline(params: {name: "csv_hello_world_two"}) {
-            name
+        pipelineOrError(params: {name: "csv_hello_world_two"}) {
+            ... on Pipeline {
+                name
+            }
         }
     }''',
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipeline']['name'] == 'csv_hello_world_two'
-
-
-def test_pipeline_by_name_not_found(graphql_context):
-    with pytest.raises(UserFacingGraphQLError) as exc:
-        execute_dagster_graphql(
-            graphql_context,
-            '''
-        {
-            pipeline(params: {name: "gkjhds"}) {
-              name
-            }
-        }''',
-        )
-
-    assert isinstance(exc.value.dauphin_error, DauphinPipelineNotFoundError)
+    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
 
 
 def test_pipeline_or_error_by_name(graphql_context):

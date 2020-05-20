@@ -9,7 +9,7 @@ from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
-  pipeline(params: { name: $name }) {
+  pipelineOrError(params: { name: $name }) {
     ... on PipelineReference { name }
     ... on Pipeline {
       pipelineSnapshotId
@@ -135,7 +135,7 @@ ALL_RUN_GROUPS_QUERY = '''
 
 
 def _get_runs_data(result, run_id):
-    for run_data in result.data['pipeline']['runs']:
+    for run_data in result.data['pipelineOrError']['runs']:
         if run_data['runId'] == run_id:
             # so caller can delete keys
             return copy.deepcopy(run_data)

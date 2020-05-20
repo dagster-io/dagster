@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_presets_on_examples 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'airline_demo_ingest_pipeline',
         'presets': [
             {
@@ -341,7 +341,7 @@ storage:
 }
 
 snapshots['test_presets_on_examples 2'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'airline_demo_warehouse_pipeline',
         'presets': [
             {
@@ -387,7 +387,7 @@ solids:
 }
 
 snapshots['test_presets_on_examples 3'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'composition',
         'presets': [
         ]
@@ -395,7 +395,7 @@ snapshots['test_presets_on_examples 3'] = {
 }
 
 snapshots['test_presets_on_examples 4'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'daily_weather_pipeline',
         'presets': [
             {
@@ -479,7 +479,7 @@ solids:
 }
 
 snapshots['test_presets_on_examples 5'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'error_monster',
         'presets': [
             {
@@ -511,7 +511,7 @@ solids:
 }
 
 snapshots['test_presets_on_examples 6'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'event_ingest_pipeline',
         'presets': [
             {
@@ -552,7 +552,7 @@ solids:
 }
 
 snapshots['test_presets_on_examples 7'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'generate_training_set_and_train_model',
         'presets': [
             {
@@ -830,7 +830,7 @@ solids:
 }
 
 snapshots['test_presets_on_examples 8'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'jaffle_pipeline',
         'presets': [
         ]
@@ -838,7 +838,7 @@ snapshots['test_presets_on_examples 8'] = {
 }
 
 snapshots['test_presets_on_examples 9'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'log_spew',
         'presets': [
         ]
@@ -846,7 +846,7 @@ snapshots['test_presets_on_examples 9'] = {
 }
 
 snapshots['test_presets_on_examples 10'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'longitudinal_pipeline',
         'presets': [
         ]
@@ -854,7 +854,7 @@ snapshots['test_presets_on_examples 10'] = {
 }
 
 snapshots['test_presets_on_examples 11'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'many_events',
         'presets': [
         ]
@@ -862,7 +862,7 @@ snapshots['test_presets_on_examples 11'] = {
 }
 
 snapshots['test_presets_on_examples 12'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'pandas_hello_world_pipeline',
         'presets': [
             {
@@ -906,7 +906,7 @@ snapshots['test_presets_on_examples 12'] = {
 }
 
 snapshots['test_presets_on_examples 13'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'pandas_hello_world_pipeline_with_read_csv',
         'presets': [
         ]
@@ -914,7 +914,7 @@ snapshots['test_presets_on_examples 13'] = {
 }
 
 snapshots['test_presets_on_examples 14'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'pyspark_pagerank',
         'presets': [
         ]
@@ -922,7 +922,7 @@ snapshots['test_presets_on_examples 14'] = {
 }
 
 snapshots['test_presets_on_examples 15'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'simple_pyspark_sfo_weather_pipeline',
         'presets': [
             {
@@ -979,7 +979,7 @@ storage:
 }
 
 snapshots['test_presets_on_examples 16'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'sleepy_pipeline',
         'presets': [
             {
@@ -1005,7 +1005,7 @@ storage:
 }
 
 snapshots['test_presets_on_examples 17'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'stdout_spew_pipeline',
         'presets': [
         ]
@@ -1013,7 +1013,7 @@ snapshots['test_presets_on_examples 17'] = {
 }
 
 snapshots['test_presets_on_examples 18'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'unreliable_pipeline',
         'presets': [
         ]

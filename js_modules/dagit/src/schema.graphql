@@ -283,7 +283,7 @@ type ExecutionPlan {
   artifactsPersisted: Boolean!
 }
 
-union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
+union ExecutionPlanOrError = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 type ExecutionStep {
   key: String!
@@ -938,10 +938,7 @@ type Query {
   version: String!
   reloadSupported: Boolean!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipeline(params: PipelineSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
-  pipelines: PipelineConnection!
-  pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
   pipelineSnapshotOrError(snapshotId: String, activePipelineName: String): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
@@ -955,7 +952,7 @@ type Query {
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   isPipelineConfigValid(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlan(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
+  executionPlanOrError(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanOrError!
   environmentSchemaOrError(selector: PipelineSelector!, mode: String): EnvironmentSchemaOrError!
   instance: Instance!
   assetsOrError: AssetsOrError!

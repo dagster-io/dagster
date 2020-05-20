@@ -11,15 +11,6 @@ from dagster import check
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
-def get_pipeline_snapshot(graphene_info, snapshot_id):
-    check.str_param(snapshot_id, 'snapshot_id')
-    historical_pipeline = graphene_info.context.instance.get_historical_pipeline(snapshot_id)
-    # Check is ok because this is only used for pipelineSnapshot which is for adhoc
-    # In fact we should probably delete all the non OrError fields
-    check.invariant(historical_pipeline, 'Pipeline fetch failed')
-    return DauphinPipelineSnapshot(historical_pipeline)
-
-
 @capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
@@ -56,12 +47,6 @@ def get_pipeline_or_error(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
-def get_pipeline_or_raise(graphene_info, selector):
-    '''Returns a DauphinPipeline or raises a UserFacingGraphQLError if one cannot be retrieved
-    from the selector, e.g., the pipeline is not present in the loaded repository.'''
-    return get_dauphin_pipeline_from_selector(graphene_info, selector)
-
-
 def get_pipeline_reference_or_raise(graphene_info, selector):
     '''Returns a DauphinPipelineReference or raises a UserFacingGraphQLError if a pipeline
     reference cannot be retrieved from the selector, e.g, a UserFacingGraphQLError that wraps an
@@ -95,11 +80,6 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
 
 @capture_dauphin_error
 def get_pipelines_or_error(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    return get_pipelines_or_raise(graphene_info)
-
-
-def get_pipelines_or_raise(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     dauphin_pipelines = list(
         map(DauphinPipeline, graphene_info.context.legacy_get_all_external_pipelines())
