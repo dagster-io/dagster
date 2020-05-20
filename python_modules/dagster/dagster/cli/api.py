@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import sys
 
 import click
@@ -7,6 +8,8 @@ import click
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.errors import DagsterSubprocessError
+from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
@@ -15,6 +18,7 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 # Snapshot CLI
 
@@ -137,18 +141,53 @@ def execute_run_command(output_file, config_yaml, pipeline_run, instance_ref):
 
 def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, instance_ref_json):
     with ipc_write_stream(output_file) as stream:
-        pipeline_run = _get_pipeline_run(stream, pipeline_run_json)
-        if not pipeline_run:
-            return
-
         instance = _get_instance(stream, instance_ref_json)
         if not instance:
             return
 
+        pipeline_run = _get_pipeline_run(stream, pipeline_run_json)
+        if not pipeline_run:
+            return
+
+        pid = os.getpid()
+        instance.report_engine_event(
+            'Started process for pipeline (pid: {pid}).'.format(pid=pid),
+            pipeline_run,
+            EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+        )
+
         recon_pipeline = _get_recon_pipeline(stream, config_yaml, pipeline_run)
 
-        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
-            stream.send(event)
+        try:
+            for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
+                stream.send(event)
+
+        except DagsterSubprocessError as err:
+            if not all(
+                [
+                    err_info.cls_name == 'KeyboardInterrupt'
+                    for err_info in err.subprocess_error_infos
+                ]
+            ):
+                instance.report_engine_event(
+                    'An exception was thrown during execution that is likely a framework error, '
+                    'rather than an error in user code.',
+                    pipeline_run,
+                    EngineEventData.engine_error(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    ),
+                )
+        except Exception:  # pylint: disable=broad-except
+            instance.report_engine_event(
+                'An exception was thrown during execution that is likely a framework error, '
+                'rather than an error in user code.',
+                pipeline_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+        finally:
+            instance.report_engine_event(
+                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+            )
 
 
 def create_api_cli_group():

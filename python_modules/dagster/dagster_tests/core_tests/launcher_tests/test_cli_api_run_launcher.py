@@ -47,7 +47,7 @@ def sleepy_pipeline():
 
 def define_repository():
     return RepositoryDefinition(
-        name='nope', pipeline_defs=[noop_pipeline, crashy_pipeline, sleepy_pipeline]
+        name='nope', pipeline_defs=[noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
     )
 
 
@@ -170,9 +170,76 @@ def test_terminated_run():
         assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
 
 
+def _get_engine_events(event_records):
+    for er in event_records:
+        if er.dagster_event and er.dagster_event.is_engine_event:
+            yield er
+
+
 def _message_exists(event_records, message_text):
     for event_record in event_records:
         if message_text in event_record.message:
             return True
 
     return False
+
+
+@solid
+def return_one(_):
+    return 1
+
+
+@solid
+def multiply_by_2(_, num):
+    return num * 2
+
+
+@solid
+def multiply_by_3(_, num):
+    return num * 3
+
+
+@solid
+def add(_, num1, num2):
+    return num1 + num2
+
+
+@pipeline
+def math_diamond():
+    one = return_one()
+    add(multiply_by_2(one), multiply_by_3(one))
+
+
+def test_engine_events():
+
+    with temp_instance() as instance:
+        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=math_diamond, environment_dict=None
+        )
+        run_id = pipeline_run.run_id
+
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+        external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
+        launcher = CliApiRunLauncher()
+        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.join()
+
+        finished_pipeline_run = instance.get_run_by_id(run_id)
+
+        assert finished_pipeline_run
+        assert finished_pipeline_run.run_id == run_id
+        assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+        event_records = instance.all_logs(run_id)
+
+        about_to_start, started_process, executing_steps, finished_steps, process_exited = tuple(
+            _get_engine_events(event_records)
+        )
+
+        assert 'About to start process' in about_to_start.message
+        assert 'Started process for pipeline' in started_process.message
+        assert 'Executing steps in process' in executing_steps.message
+        assert 'Finished steps in process' in finished_steps.message
+        assert 'Process for pipeline exited' in process_exited.message

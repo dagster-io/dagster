@@ -3,6 +3,7 @@ import subprocess
 import uuid
 
 from dagster import check
+from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import serialize_dagster_namedtuple
@@ -59,5 +60,13 @@ def cli_api_execute_run(output_file, instance, repo_yaml, pipeline_run):
             pipeline_run=serialize_dagster_namedtuple(pipeline_run)
         ),
     ]
+
+    instance.report_engine_event(
+        'About to start process for pipeline "{pipeline_name}" (run_id: {run_id}).'.format(
+            pipeline_name=pipeline_run.pipeline_name, run_id=pipeline_run.run_id
+        ),
+        pipeline_run,
+        engine_event_data=EngineEventData(marker_start='cli_api_subprocess_init'),
+    )
 
     return subprocess.Popen(parts)
