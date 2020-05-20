@@ -6,6 +6,7 @@
 
 - Dagit now allows re-executing arbitrary step subset via step selector syntax, regardless of whether
   the previous pipeline failed or not.
+- Added a search filter for the root Assets page
 
 **Bugfix**
 

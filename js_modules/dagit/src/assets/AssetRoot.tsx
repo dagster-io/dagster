@@ -220,7 +220,7 @@ export const ASSET_QUERY = gql`
             }
           }
         }
-        runs {
+        runs(limit: 10) {
           ...RunTableRunFragment
         }
       }
