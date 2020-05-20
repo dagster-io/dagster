@@ -12,21 +12,17 @@ import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
+  solidSubset: string[] | null;
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids {
-  __typename: "Solid";
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
   name: string;
-}
-
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
+  solidSubset: string[] | null;
   pipelineSnapshotId: string;
-  solids: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids[];
 }
 
-export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline;
+export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_PipelineSnapshot;
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";

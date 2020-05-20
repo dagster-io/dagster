@@ -44,15 +44,12 @@ export class RunTable extends React.Component<RunTableProps> {
         pipelineSnapshotId
         pipeline {
           __typename
-
           ... on PipelineReference {
             name
+            solidSubset
           }
-          ... on Pipeline {
+          ... on PipelineSnapshot {
             pipelineSnapshotId
-            solids {
-              name
-            }
           }
         }
         tags {
@@ -115,7 +112,7 @@ const RunRow: React.FunctionComponent<{
 
   let pipelineLink = `/pipeline/${run.pipeline.name}@${run.pipelineSnapshotId}/`;
   if (
-    run.pipeline.__typename === "Pipeline" &&
+    run.pipeline.__typename === "PipelineSnapshot" &&
     run.pipeline.pipelineSnapshotId === run.pipelineSnapshotId
   ) {
     // If the pipeline snapshot is still current, go to the live view not the snapshot.

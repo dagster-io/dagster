@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface RunStatsDetailFragment_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

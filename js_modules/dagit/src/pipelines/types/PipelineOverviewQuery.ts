@@ -233,21 +233,17 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
+  solidSubset: string[] | null;
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline_solids {
-  __typename: "Solid";
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
   name: string;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
+  solidSubset: string[] | null;
   pipelineSnapshotId: string;
-  solids: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline_solids[];
 }
 
-export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline;
+export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_PipelineSnapshot;
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags {
   __typename: "PipelineTag";
@@ -315,7 +311,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

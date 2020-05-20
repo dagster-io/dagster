@@ -31,7 +31,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks {
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

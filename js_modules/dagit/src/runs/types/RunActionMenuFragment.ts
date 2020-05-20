@@ -10,21 +10,17 @@
 export interface RunActionMenuFragment_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
+  solidSubset: string[] | null;
 }
 
-export interface RunActionMenuFragment_pipeline_Pipeline_solids {
-  __typename: "Solid";
+export interface RunActionMenuFragment_pipeline_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
   name: string;
-}
-
-export interface RunActionMenuFragment_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
+  solidSubset: string[] | null;
   pipelineSnapshotId: string;
-  solids: RunActionMenuFragment_pipeline_Pipeline_solids[];
 }
 
-export type RunActionMenuFragment_pipeline = RunActionMenuFragment_pipeline_UnknownPipeline | RunActionMenuFragment_pipeline_Pipeline;
+export type RunActionMenuFragment_pipeline = RunActionMenuFragment_pipeline_UnknownPipeline | RunActionMenuFragment_pipeline_PipelineSnapshot;
 
 export interface RunActionMenuFragment_tags {
   __typename: "PipelineTag";

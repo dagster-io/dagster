@@ -75,7 +75,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_2.adder_1'
+                        'handleID': 'add_four.adder_1.adder_2'
                     }
                 },
                 {
@@ -83,7 +83,7 @@ snapshots['test_query_all_solids 1'] = {
                         'name': 'composites_pipeline'
                     },
                     'solidHandle': {
-                        'handleID': 'add_four.adder_1.adder_2'
+                        'handleID': 'add_four.adder_2.adder_1'
                     }
                 },
                 {

@@ -673,10 +673,9 @@ type PartitionSets {
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
 
-type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot {
+type Pipeline implements SolidContainer & IPipelineSnapshot {
   solids: [Solid!]!
   name: String!
-  solidSubset: [String!]
   description: String
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
@@ -849,7 +848,7 @@ input PipelineSelector {
   solidSubset: [String!]
 }
 
-type PipelineSnapshot implements IPipelineSnapshot {
+type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   name: String!
   description: String
   pipelineSnapshotId: String!
@@ -860,6 +859,7 @@ type PipelineSnapshot implements IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  solidSubset: [String!]
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [RunningSchedule!]!
 }

@@ -51,6 +51,14 @@ class RepresentedPipeline(six.with_metaclass(ABCMeta)):
     def parent_pipeline_snapshot(self):
         return self._pipeline_index.parent_pipeline_snapshot
 
+    @property
+    def solid_subset(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_subset
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
     # Config
 
     @property

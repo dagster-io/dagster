@@ -31,7 +31,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         self._instance = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
-        self._processes_lock = None
+        self._processes_lock = threading.Lock()
         self._stopping = False
         self._thread = None
         self._inst_data = inst_data
@@ -58,7 +58,6 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         check.invariant(self._instance is None, 'Must only call initialize once')
         self._instance = instance
 
-        self._processes_lock = threading.Lock()
         self._thread = threading.Thread(target=self._clock, args=())
         self._thread.daemon = True
         self._thread.start()

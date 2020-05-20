@@ -32,13 +32,15 @@ def get_used_solid_map(graphene_info):
                     pipeline=DauphinPipeline(external_pipeline), solidHandle=handle,
                 )
             )
+
     return OrderedDict(
         (
             definition.name,
             DauphinUsedSolid(
                 definition=definition,
                 invocations=sorted(
-                    inv_by_def_name[definition.name], key=lambda i: i.solidHandle.handleID
+                    inv_by_def_name[definition.name],
+                    key=lambda i: i.solidHandle.handleID.to_string(),
                 ),
             ),
         )

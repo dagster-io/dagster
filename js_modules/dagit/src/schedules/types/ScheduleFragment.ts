@@ -26,7 +26,7 @@ export interface ScheduleFragment_ticks {
 }
 
 export interface ScheduleFragment_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

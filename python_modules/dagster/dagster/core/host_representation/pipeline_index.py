@@ -18,7 +18,7 @@ class PipelineIndex:
         if self.pipeline_snapshot.lineage_snapshot:
             check.invariant(
                 self.parent_pipeline_snapshot is not None,
-                'Can not create PipelneIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot',
+                'Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot',
             )
             parent_id = create_pipeline_snapshot_id(self.parent_pipeline_snapshot)
             check.invariant(

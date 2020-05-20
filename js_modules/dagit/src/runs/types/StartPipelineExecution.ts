@@ -14,7 +14,7 @@ export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunD
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

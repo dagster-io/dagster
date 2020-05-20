@@ -197,7 +197,7 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
 class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     class Meta(object):
         name = 'Pipeline'
-        interfaces = (DauphinSolidContainer, DauphinPipelineReference, DauphinIPipelineSnapshot)
+        interfaces = (DauphinSolidContainer, DauphinIPipelineSnapshot)
 
     presets = dauphin.non_null_list('PipelinePreset')
     runs = dauphin.non_null_list('PipelineRun')
@@ -370,7 +370,7 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
     class Meta(object):
         name = 'PipelineSnapshot'
-        interfaces = (DauphinIPipelineSnapshot,)
+        interfaces = (DauphinIPipelineSnapshot, DauphinPipelineReference)
 
     def get_represented_pipeline(self):
         return self._represented_pipeline

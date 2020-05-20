@@ -10,7 +10,7 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunStatusPipelineRunFragment_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

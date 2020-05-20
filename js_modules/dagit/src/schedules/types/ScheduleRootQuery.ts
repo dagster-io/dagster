@@ -32,7 +32,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks {
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
@@ -52,7 +52,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_stats {
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 

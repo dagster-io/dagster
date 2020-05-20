@@ -18,7 +18,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
 }
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
@@ -106,21 +106,17 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
 export interface AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
+  solidSubset: string[] | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline_solids {
-  __typename: "Solid";
+export interface AssetQuery_assetOrError_Asset_runs_pipeline_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
   name: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
+  solidSubset: string[] | null;
   pipelineSnapshotId: string;
-  solids: AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline_solids[];
 }
 
-export type AssetQuery_assetOrError_Asset_runs_pipeline = AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline | AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline;
+export type AssetQuery_assetOrError_Asset_runs_pipeline = AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline | AssetQuery_assetOrError_Asset_runs_pipeline_PipelineSnapshot;
 
 export interface AssetQuery_assetOrError_Asset_runs_tags {
   __typename: "PipelineTag";

@@ -12,21 +12,17 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 export interface RunTableRunFragment_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
+  solidSubset: string[] | null;
 }
 
-export interface RunTableRunFragment_pipeline_Pipeline_solids {
-  __typename: "Solid";
+export interface RunTableRunFragment_pipeline_PipelineSnapshot {
+  __typename: "PipelineSnapshot";
   name: string;
-}
-
-export interface RunTableRunFragment_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
+  solidSubset: string[] | null;
   pipelineSnapshotId: string;
-  solids: RunTableRunFragment_pipeline_Pipeline_solids[];
 }
 
-export type RunTableRunFragment_pipeline = RunTableRunFragment_pipeline_UnknownPipeline | RunTableRunFragment_pipeline_Pipeline;
+export type RunTableRunFragment_pipeline = RunTableRunFragment_pipeline_UnknownPipeline | RunTableRunFragment_pipeline_PipelineSnapshot;
 
 export interface RunTableRunFragment_tags {
   __typename: "PipelineTag";

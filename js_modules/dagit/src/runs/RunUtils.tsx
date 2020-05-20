@@ -246,11 +246,11 @@ export function getReexecutionVariables(input: {
             repositoryLocationName,
             repositoryName,
             pipelineName: run.pipeline.name,
-            solidSubset: run.pipeline.solids.map(s => s.name)
+            solidSubset: run.pipeline.solidSubset
           }
         : {
             name: run.pipeline.name,
-            solidSubset: run.pipeline.solids.map(s => s.name)
+            solidSubset: run.pipeline.solidSubset
           };
 
     const executionParams = {
@@ -285,10 +285,7 @@ export function getReexecutionVariables(input: {
         runConfigData: yaml.parse(envYaml),
         selector: {
           name: run.pipeline.name,
-          solidSubset:
-            run.pipeline.__typename === "Pipeline"
-              ? run.pipeline.solids.map(s => s.name)
-              : []
+          solidSubset: run.pipeline.solidSubset
         },
         executionMetadata: getExecutionMetadata(run)
       }
@@ -503,7 +500,8 @@ export const RunActionsMenu: React.FunctionComponent<{
   );
 
   const envYaml = data?.pipelineRunOrError?.runConfigYaml;
-  const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
+  const infoReady =
+    run.pipeline.__typename === "PipelineSnapshot" && envYaml != null;
   return (
     <Popover
       content={
@@ -540,10 +538,7 @@ export const RunActionsMenu: React.FunctionComponent<{
               }/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
-                solidSubset:
-                  run.pipeline.__typename === "Pipeline"
-                    ? run.pipeline.solids.map(s => s.name)
-                    : []
+                solidSubset: run.pipeline.solidSubset
               })}`}
             />
           </Tooltip>
@@ -789,12 +784,10 @@ export const RunComponentFragments = {
         __typename
         ... on PipelineReference {
           name
+          solidSubset
         }
-        ... on Pipeline {
+        ... on PipelineSnapshot {
           pipelineSnapshotId
-          solids {
-            name
-          }
         }
       }
       mode

@@ -14,8 +14,8 @@ from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
-    ... on PipelineReference { name }
     ... on Pipeline {
+      name
       pipelineSnapshotId
       runs {
         ...RunHistoryRunFragment
@@ -283,25 +283,25 @@ def test_runs_over_time():
         t1_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
 
         assert t1_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': None,
         }
 
         assert t1_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
             'solidSubset': None,
         }
 
         assert t1_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_A'],
         }
 
         assert t1_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_B'],
         }
@@ -314,25 +314,25 @@ def test_runs_over_time():
         t2_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
 
         assert t2_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': None,
         }
 
         assert t2_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_A'],
         }
         # pipeline name changed
         assert t2_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
             'solidSubset': None,
         }
         # subset no longer valid - b renamed
         assert t2_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_B'],
         }
@@ -373,21 +373,21 @@ def test_run_groups_over_time():
 
         # test full_evolve_run_id
         assert t1_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': None,
         }
 
         # test foo_run_id
         assert t1_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
             'solidSubset': None,
         }
 
         # test evolve_a_run_id
         assert t1_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_A'],
         }
@@ -395,7 +395,7 @@ def test_run_groups_over_time():
 
         # test evolve_b_run_id
         assert t1_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_B'],
         }
@@ -415,14 +415,14 @@ def test_run_groups_over_time():
 
         # test full_evolve_run_id
         assert t2_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': None,
         }
 
         # test evolve_a_run_id
         assert t2_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_A'],
         }
@@ -442,13 +442,13 @@ def test_run_groups_over_time():
 
         # pipeline name changed
         assert t2_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
             'solidSubset': None,
         }
         # subset no longer valid - b renamed
         assert t2_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
             'solidSubset': ['solid_B'],
         }
