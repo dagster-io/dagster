@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import json
 import sys
 
 import click
@@ -8,7 +7,7 @@ import click
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.execution.api import execute_pipeline_iterator, execute_run_iterator
+from dagster.core.execution.api import execute_run_iterator
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -55,51 +54,6 @@ snapshot_cli = create_snapshot_cli_group()
 
 
 # Execution CLI
-
-
-@click.command(name='execute_pipeline', help='Execute pipeline')
-@pipeline_target_command
-@click.argument('output_file', type=click.Path())
-@click.option('--solid-subset', '-s', help="Comma-separated list of solids")
-@click.option('--environment-dict')
-@click.option('--instance-ref')
-@click.option('--mode')
-def execute_pipeline_command(
-    output_file, solid_subset, environment_dict, instance_ref, mode, **kwargs
-):
-    '''
-    This command might want to take a runId instead of current arguments
-
-    1. Should take optional flags to determine where to store the log output
-    2. Investigate python logging library to see what we can do there
-    '''
-
-    with ipc_write_stream(output_file) as stream:
-        recon_pipeline = recon_pipeline_for_cli_args(kwargs)
-        definition = recon_pipeline.get_definition()
-
-        if solid_subset:
-            definition = definition.subset_for_execution(solid_subset.split(","))
-
-        # This can raise a ValueError, but this is caught by the broad-except
-        # and the exception is serialized as a SerializableErrorInfo
-        environment_dict = json.loads(environment_dict)
-
-        try:
-            instance = DagsterInstance.from_ref(
-                deserialize_json_to_dagster_namedtuple(instance_ref)
-            )
-        except:  # pylint: disable=bare-except
-            stream.send_error(
-                sys.exc_info(),
-                message='Could not deserialize {json_string}'.format(json_string=instance_ref),
-            )
-            return
-
-        for event in execute_pipeline_iterator(
-            definition, environment_dict=environment_dict, mode=mode, instance=instance,
-        ):
-            stream.send(event)
 
 
 def _subset(recon_pipeline, solid_subset):
@@ -200,7 +154,6 @@ def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, insta
 def create_api_cli_group():
     group = click.Group(name="api")
     group.add_command(snapshot_cli)
-    group.add_command(execute_pipeline_command)
     group.add_command(execute_run_command)
     return group
 

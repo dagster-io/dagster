@@ -2,7 +2,7 @@ from click.testing import CliRunner
 
 from dagster import file_relative_path, seven
 from dagster.cli.api import (
-    execute_pipeline_command,
+    execute_run_command,
     pipeline_snapshot_command,
     repository_snapshot_command,
 )
@@ -66,24 +66,27 @@ def test_snapshot_command_pipeline_solid_subset():
     )
 
 
-def test_execute_pipeline_command():
+def test_execute_run_command():
     runner = CliRunner()
 
     with safe_tempfile_path() as filename:
         with seven.TemporaryDirectory() as temp_dir:
             instance = DagsterInstance.local_temp(temp_dir)
+            pipeline_run = instance.create_run(
+                pipeline_name='foo', environment_dict={}, mode='default',
+            )
             result = runner.invoke(
-                execute_pipeline_command,
+                execute_run_command,
                 [
                     '-y',
                     file_relative_path(__file__, 'repository_file.yaml'),
-                    'foo',
                     filename,
-                    '--environment-dict={}',
                     "--instance-ref={instance_ref_json}".format(
                         instance_ref_json=serialize_dagster_namedtuple(instance.get_ref())
                     ),
-                    '--mode=default',
+                    '--pipeline-run={pipeline_run}'.format(
+                        pipeline_run=serialize_dagster_namedtuple(pipeline_run)
+                    ),
                 ],
             )
 
@@ -109,8 +112,13 @@ def test_execute_pipeline_command_missing_args():
 
     with safe_tempfile_path() as filename:
         result = runner.invoke(
-            execute_pipeline_command,
-            ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo', filename],
+            execute_run_command,
+            [
+                '-y',
+                file_relative_path(__file__, 'repository_file.yaml'),
+                filename,
+                # no instance or pipeline_run
+            ],
         )
 
         assert result.exit_code == 0
