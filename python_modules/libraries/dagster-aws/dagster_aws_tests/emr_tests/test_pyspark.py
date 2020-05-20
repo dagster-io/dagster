@@ -112,9 +112,8 @@ def test_local():
 
 
 @mock_emr
-@mock.patch('dagster_aws.emr.emr.EmrJobRunner.wait_for_emr_steps_to_complete')
-@mock.patch('dagster_aws.emr.emr_pyspark_step_launcher.EmrPySparkStepLauncher.get_step_events')
-def test_pyspark_emr(mock_wait, mock_get_step_events):
+@mock.patch('dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete')
+def test_pyspark_emr(mock_is_emr_step_complete):
     run_job_flow_args = dict(
         Instances={
             'InstanceCount': 1,
@@ -150,8 +149,7 @@ def test_pyspark_emr(mock_wait, mock_get_step_events):
         },
     )
     assert result.success
-    assert mock_wait.called_once
-    assert mock_get_step_events.called_once
+    assert mock_is_emr_step_complete.called
 
 
 def sync_code():

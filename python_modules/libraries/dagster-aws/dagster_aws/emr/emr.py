@@ -22,7 +22,6 @@
 # limitations under the License.
 import gzip
 import re
-import time
 from io import BytesIO
 
 import boto3
@@ -248,100 +247,67 @@ class EmrJobRunner:
         )
         return emr_client.add_job_flow_steps(**steps_kwargs)['StepIds']
 
-    def wait_for_emr_steps_to_complete(self, log, cluster_id, emr_step_ids):
-        '''Wait for every step of the job to complete, one by one.
+    def is_emr_step_complete(self, log, cluster_id, emr_step_id):
+        step = self.describe_step(cluster_id, emr_step_id)['Step']
+        step_state = EmrStepState(step['Status']['State'])
 
-        Args:
-            log (DagsterLogManager): Log manager, for logging
-            cluster_id (str): The ID of the cluster
-            step_ids (List[str]): List of EMR step IDs to wait for
-        '''
-        check.str_param(cluster_id, 'cluster_id')
-        check.list_param(emr_step_ids, 'step_ids', of_type=str)
+        if step_state == EmrStepState.Pending:
+            cluster = self.describe_cluster(cluster_id)['Cluster']
 
-        for emr_step_id in emr_step_ids:
-            log.info('Waiting for EMR step %s to complete...' % emr_step_id)
-            self._wait_for_emr_step_to_complete(log, cluster_id, emr_step_id)
+            reason = _get_reason(cluster)
+            reason_desc = (': %s' % reason) if reason else ''
 
-    def _wait_for_emr_step_to_complete(self, log, cluster_id, emr_step_id):
-        '''Helper for wait_for_steps_to_complete(). Wait for step with the given ID to complete.
+            log.info('PENDING (cluster is %s%s)' % (cluster['Status']['State'], reason_desc))
+            return False
 
-        Args:
-            cluster_id (str): The ID of the cluster
-            emr_step_id (str): EMR Step ID to wait for
+        elif step_state == EmrStepState.Running:
+            time_running_desc = ''
 
-        Raises:
-            EmrError: Raised when the step is marked by EMR as failed instead of completing
-                successfully.
-        '''
-        check.str_param(cluster_id, 'cluster_id')
-        check.str_param(emr_step_id, 'emr_step_id')
+            start = step['Status']['Timeline'].get('StartDateTime')
+            if start:
+                time_running_desc = ' for %s' % strip_microseconds(_boto3_now() - start)
 
-        while True:
-            # don't antagonize EMR's throttling
-            log.debug('Waiting %.1f seconds...' % self.check_cluster_every)
-            time.sleep(self.check_cluster_every)
+            log.info('RUNNING%s' % time_running_desc)
+            return False
 
-            step = self.describe_step(cluster_id, emr_step_id)['Step']
-            step_state = EmrStepState(step['Status']['State'])
+        # we're done, will return at the end of this
+        elif step_state == EmrStepState.Completed:
+            log.info('COMPLETED')
+            return True
+        else:
+            # step has failed somehow. *reason* seems to only be set
+            # when job is cancelled (e.g. 'Job terminated')
+            reason = _get_reason(step)
+            reason_desc = (' (%s)' % reason) if reason else ''
 
-            if step_state == EmrStepState.Pending:
-                cluster = self.describe_cluster(cluster_id)['Cluster']
+            log.info('%s%s' % (step_state.value, reason_desc))
 
-                reason = _get_reason(cluster)
-                reason_desc = (': %s' % reason) if reason else ''
-
-                log.info('PENDING (cluster is %s%s)' % (cluster['Status']['State'], reason_desc))
-                continue
-
-            elif step_state == EmrStepState.Running:
-                time_running_desc = ''
-
-                start = step['Status']['Timeline'].get('StartDateTime')
-                if start:
-                    time_running_desc = ' for %s' % strip_microseconds(_boto3_now() - start)
-
-                log.info('RUNNING%s' % time_running_desc)
-                continue
-
-            # we're done, will return at the end of this
-            elif step_state == EmrStepState.Completed:
-                log.info('COMPLETED')
-                return
-            else:
-                # step has failed somehow. *reason* seems to only be set
-                # when job is cancelled (e.g. 'Job terminated')
-                reason = _get_reason(step)
-                reason_desc = (' (%s)' % reason) if reason else ''
-
-                log.info('%s%s' % (step_state.value, reason_desc))
-
-                # print cluster status; this might give more context
-                # why step didn't succeed
-                cluster = self.describe_cluster(cluster_id)['Cluster']
-                reason = _get_reason(cluster)
-                reason_desc = (': %s' % reason) if reason else ''
-                log.info(
-                    'Cluster %s %s %s%s'
-                    % (
-                        cluster['Id'],
-                        'was' if 'ED' in cluster['Status']['State'] else 'is',
-                        cluster['Status']['State'],
-                        reason_desc,
-                    )
+            # print cluster status; this might give more context
+            # why step didn't succeed
+            cluster = self.describe_cluster(cluster_id)['Cluster']
+            reason = _get_reason(cluster)
+            reason_desc = (': %s' % reason) if reason else ''
+            log.info(
+                'Cluster %s %s %s%s'
+                % (
+                    cluster['Id'],
+                    'was' if 'ED' in cluster['Status']['State'] else 'is',
+                    cluster['Status']['State'],
+                    reason_desc,
                 )
+            )
 
-                if EmrClusterState(cluster['Status']['State']) in EMR_CLUSTER_TERMINATED_STATES:
-                    # was it caused by IAM roles?
-                    self._check_for_missing_default_iam_roles(log, cluster)
+            if EmrClusterState(cluster['Status']['State']) in EMR_CLUSTER_TERMINATED_STATES:
+                # was it caused by IAM roles?
+                self._check_for_missing_default_iam_roles(log, cluster)
 
-                    # TODO: extract logs here to surface failure reason
-                    # See: https://github.com/dagster-io/dagster/issues/1954
+                # TODO: extract logs here to surface failure reason
+                # See: https://github.com/dagster-io/dagster/issues/1954
 
-            if step_state == EmrStepState.Failed:
-                log.info('EMR step %s failed' % emr_step_id)
+        if step_state == EmrStepState.Failed:
+            log.info('EMR step %s failed' % emr_step_id)
 
-            raise EmrError('EMR step failed')
+        raise EmrError('EMR step failed')
 
     def _check_for_missing_default_iam_roles(self, log, cluster):
         '''If cluster couldn't start due to missing IAM roles, tell user what to do.'''

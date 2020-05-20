@@ -176,7 +176,7 @@ def test_wait_for_log():
 
 
 @mock_emr
-def test_emr_wait_for_step(emr_cluster_config):
+def test_is_emr_step_complete(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION, check_cluster_every=1)
 
@@ -203,26 +203,18 @@ def test_emr_wait_for_step(emr_cluster_config):
             },
         }
 
-    calls = {'num_calls': 0, 'final_state': 'COMPLETED'}
+    emr_step_id = step_ids[0]
+    describe_step_returns = [
+        get_step_dict(emr_step_id, 'PENDING'),
+        get_step_dict(emr_step_id, 'RUNNING'),
+        get_step_dict(emr_step_id, 'COMPLETED'),
+        get_step_dict(emr_step_id, 'FAILED'),
+    ]
+    with mock.patch.object(EmrJobRunner, 'describe_step', side_effect=describe_step_returns):
+        assert not emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
+        assert not emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
+        assert emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
 
-    def new_describe_step(_, cluster_id, step_id):
-        calls['num_calls'] += 1
-
-        if calls['num_calls'] == 1:
-            return get_step_dict(step_id, 'PENDING')
-        elif calls['num_calls'] == 2:
-            return get_step_dict(step_id, 'RUNNING')
-        else:
-            return get_step_dict(step_id, calls['final_state'])
-
-        return emr.describe_step(cluster_id, step_id)
-
-    with mock.patch.object(EmrJobRunner, 'describe_step', new=new_describe_step):
-        emr.wait_for_emr_steps_to_complete(context.log, cluster_id, step_ids)
-
-    calls['num_calls'] = 0
-    calls['final_state'] = 'FAILED'
-    with pytest.raises(EmrError) as exc_info:
-        with mock.patch.object(EmrJobRunner, 'describe_step', new=new_describe_step):
-            emr.wait_for_emr_steps_to_complete(context.log, cluster_id, step_ids)
-    assert 'step failed' in str(exc_info.value)
+        with pytest.raises(EmrError) as exc_info:
+            emr.is_emr_step_complete(context.log, cluster_id, emr_step_id)
+            assert 'step failed' in str(exc_info.value)
