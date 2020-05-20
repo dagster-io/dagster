@@ -1,5 +1,4 @@
 import sys
-import tempfile
 from collections import namedtuple
 
 from dagster.serdes import whitelist_for_serdes

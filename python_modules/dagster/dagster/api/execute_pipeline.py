@@ -11,6 +11,12 @@ from dagster.seven.temp_dir import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
 
 
+def escape_json_string_for_command(json_string):
+    quote_charcter = r'"'
+    escaped_quote_charcter = r"\""
+    return json_string.replace(quote_charcter, escaped_quote_charcter)
+
+
 def api_execute_pipeline(instance, recon_repo, pipeline_name, environment_dict, mode, solid_subset):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
@@ -22,11 +28,6 @@ def api_execute_pipeline(instance, recon_repo, pipeline_name, environment_dict, 
     check.param_invariant(
         recon_repo.yaml_path, 'recon_repo', 'Only support yaml-based repositories for now'
     )
-
-    def escape_json_string_for_command(json_string):
-        quote_charcter = r'"'
-        escaped_quote_charcter = r"\""
-        return json_string.replace(quote_charcter, escaped_quote_charcter)
 
     with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:
 
