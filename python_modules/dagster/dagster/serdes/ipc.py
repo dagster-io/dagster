@@ -101,7 +101,7 @@ def _process_line(file_pointer, sleep_interval=0.1):
         sleep(sleep_interval)
 
 
-def ipc_read_event_stream(file_path, timeout=5):
+def ipc_read_event_stream(file_path, timeout=30):
     # Wait for file to be ready
     sleep_interval = 0.1
     elapsed_time = 0

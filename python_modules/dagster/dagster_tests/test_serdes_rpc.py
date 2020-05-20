@@ -1,5 +1,4 @@
 import sys
-import tempfile
 from collections import namedtuple
 
 from dagster.serdes import whitelist_for_serdes
@@ -43,12 +42,12 @@ def test_write_empty_stream():
 
 
 def test_write_error_stream():
-    with tempfile.NamedTemporaryFile() as f:
-        with ipc_write_stream(f.name) as _:
+    with safe_tempfile_path() as filename:
+        with ipc_write_stream(filename) as _:
             raise Exception('uh oh')
 
         messages = []
-        for message in ipc_read_event_stream(f.name):
+        for message in ipc_read_event_stream(filename):
             messages.append(message)
 
         assert len(messages) == 1
@@ -59,15 +58,15 @@ def test_write_error_stream():
 
 
 def test_write_error_with_custom_message():
-    with tempfile.NamedTemporaryFile() as f:
-        with ipc_write_stream(f.name) as stream:
+    with safe_tempfile_path() as filename:
+        with ipc_write_stream(filename) as stream:
             try:
                 raise Exception('uh oh')
             except:  # pylint: disable=bare-except
                 stream.send_error(sys.exc_info(), message='custom')
 
         messages = []
-        for message in ipc_read_event_stream(f.name):
+        for message in ipc_read_event_stream(filename):
             messages.append(message)
 
         assert len(messages) == 1
