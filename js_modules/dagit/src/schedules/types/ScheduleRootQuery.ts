@@ -66,6 +66,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tic
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline;
+  status: PipelineRunStatus;
   runId: string;
 }
 
@@ -104,6 +105,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
+  runningJobCount: number;
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks[];
   runsCount: number;

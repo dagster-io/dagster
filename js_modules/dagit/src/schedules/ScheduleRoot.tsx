@@ -25,6 +25,7 @@ import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
 import * as querystring from "query-string";
 import { PartitionView } from "./PartitionView";
+import { RunStatus } from "../runs/RunUtils";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_TICKS_TO_TO_DISPLAY = 5;
@@ -119,9 +120,12 @@ const RenderEventSpecificData: React.FunctionComponent<{
           minimal={true}
           href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}
         >
-          <Tag fill={true} minimal={true} intent={Intent.SUCCESS}>
-            Run {data.run?.runId}
-          </Tag>
+          <div style={{ display: "flex" }}>
+            {data.run?.status && <RunStatus status={data.run?.status} />}
+            <Tag fill={true} minimal={true} style={{ marginLeft: 10 }}>
+              Run {data.run?.runId}
+            </Tag>
+          </div>
         </AnchorButton>
       );
   }
@@ -134,7 +138,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
     case ScheduleTickStatus.STARTED:
       return (
         <Tag minimal={true} intent={Intent.PRIMARY}>
-          Success
+          Started
         </Tag>
       );
     case ScheduleTickStatus.SUCCESS:
@@ -214,6 +218,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
                 pipeline {
                   name
                 }
+                status
                 runId
               }
             }

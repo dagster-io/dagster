@@ -862,6 +862,9 @@ class DagsterInstance:
     def end_schedule(self, repository_name, schedule_name):
         return self._scheduler.end_schedule(self, repository_name, schedule_name)
 
+    def running_job_count(self, repository_name, schedule_name):
+        return self._scheduler.running_job_count(repository_name, schedule_name)
+
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
 
@@ -870,32 +873,25 @@ class DagsterInstance:
         schedule_info = self.all_schedules_info()
         schedules = []
         for repository_name, schedule in schedule_info:
-            if (
-                schedule.status == ScheduleStatus.RUNNING
-                and not self._scheduler.is_scheduler_job_running(repository_name, schedule.name)
+            if schedule.status == ScheduleStatus.RUNNING and not self.running_job_count(
+                repository_name, schedule.name
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be running, but the scheduler is not "
-                    "running the schedule. Run `dagster schedule up` to resolve".format(
-                        schedule_name=schedule.name
-                    )
+                    "running the schedule.".format(schedule_name=schedule.name)
                 )
-            elif (
-                schedule.status == ScheduleStatus.STOPPED
-                and self._scheduler.is_scheduler_job_running(repository_name, schedule.name)
+            elif schedule.status == ScheduleStatus.STOPPED and self.running_job_count(
+                repository_name, schedule.name
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be stopped, but the scheduler is still running "
-                    "the schedule. Run `dagster schedule up` to resolve".format(
-                        schedule_name=schedule.name
-                    )
+                    "the schedule.".format(schedule_name=schedule.name)
                 )
 
-            if self._scheduler.is_scheduler_job_running(repository_name, schedule.name) > 1:
+            if self.running_job_count(repository_name, schedule.name) > 1:
                 errors.append(
                     "Duplicate jobs found: More than one job for schedule {schedule_name} are "
-                    "running on the scheduler.  "
-                    "Run `dagster schedule up` to resolve".format(schedule_name=schedule.name)
+                    "running on the scheduler.".format(schedule_name=schedule.name)
                 )
 
             schedule_info = {

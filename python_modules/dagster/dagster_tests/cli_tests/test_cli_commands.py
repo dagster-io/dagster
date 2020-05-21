@@ -817,7 +817,7 @@ def test_schedules_wipe_correct_delete_message(_patch_scheduler_instance):
 
     # Verify schedules were wiped
     assert result.exit_code == 0
-    assert result.output == 'Planned Changes:\n  + foo_schedule (add)\n'
+    assert result.output == 'Planned Schedule Changes:\n  + foo_schedule (add)\n'
 
 
 def test_schedules_wipe_incorrect_delete_message(_patch_scheduler_instance):
@@ -902,7 +902,7 @@ def test_schedules_logs(_patch_scheduler_instance):
     )
 
     assert result.exit_code == 0
-    assert result.output.endswith('/scheduler.log\n')
+    assert result.output.endswith('scheduler.log\n')
 
 
 @pytest.mark.skipif(

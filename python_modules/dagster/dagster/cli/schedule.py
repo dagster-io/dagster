@@ -59,10 +59,13 @@ def repository_target_argument(f):
 
 
 def print_changes(repository, instance, print_fn=print, preview=False):
+    debug_info = instance.scheduler_debug_info()
+    errors = debug_info.errors
     changeset = get_schedule_change_set(
         instance.all_schedules(repository.name), repository.schedule_defs
     )
-    if len(changeset) == 0:
+
+    if len(errors) == 0 and len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
             print_fn(
@@ -73,7 +76,20 @@ def print_changes(repository, instance, print_fn=print, preview=False):
             print_fn('{num} schedules unchanged'.format(num=len(repository.schedule_defs)))
         return
 
-    print_fn(click.style('Planned Changes:' if preview else 'Changes:', fg='magenta', bold=True))
+    if len(errors):
+        print_fn(
+            click.style(
+                'Planned Error Fixes:' if preview else 'Errors Resolved:', fg='magenta', bold=True
+            )
+        )
+        print_fn("\n".join(debug_info.errors))
+
+    if len(changeset):
+        print_fn(
+            click.style(
+                'Planned Schedule Changes:' if preview else 'Changes:', fg='magenta', bold=True
+            )
+        )
 
     for change in changeset:
         change_type, schedule_name, changes = change
@@ -426,7 +442,7 @@ def execute_debug_command(print_fn):
 
     errors = debug_info.errors
     if len(errors):
-        title = "Errors"
+        title = "Errors (Run `dagster schedule up` to resolve)"
         output += "\n{title}\n{sep}\n{info}\n\n".format(
             title=title, sep="=" * len(title), info="\n".join(debug_info.errors),
         )

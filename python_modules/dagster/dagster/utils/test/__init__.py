@@ -432,9 +432,9 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         instance.update_schedule(repository_name, stopped_schedule)
         return stopped_schedule
 
-    def is_scheduler_job_running(self, repository_name, schedule_name):
+    def running_job_count(self, repository_name, schedule_name):
         # Not currently tested in dagster core
-        return None
+        return 0
 
     def end_schedule(self, instance, repository_name, schedule_name):
         schedule = instance.get_schedule_by_name(repository_name, schedule_name)

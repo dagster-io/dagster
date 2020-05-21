@@ -66,7 +66,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         self._start_cron_job(instance, repository_name, started_schedule)
 
         # Check that the schedule made it to the cron tab
-        if not self.is_scheduler_job_running(repository_name, schedule.name):
+        if not self.running_job_count(repository_name, schedule.name):
             raise DagsterInvariantViolationError(
                 "Attempted to write cron job for schedule {schedule_name}, but failed".format(
                     schedule_name=schedule.name
@@ -91,7 +91,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
         self._end_cron_job(instance, repository_name, stopped_schedule)
 
-        if self.is_scheduler_job_running(repository_name, schedule.name):
+        if self.running_job_count(repository_name, schedule.name):
             raise DagsterInvariantViolationError(
                 "Attempted to remove cron job for schedule {schedule_name}, but failed. The cron "
                 "job for the schedule is still running".format(schedule_name=schedule.name)
@@ -185,8 +185,9 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         if os.path.isfile(script_file):
             os.remove(script_file)
 
-    def is_scheduler_job_running(self, repository_name, schedule_name):
-        matching_jobs = self._cron_tab.find_comment(
+    def running_job_count(self, repository_name, schedule_name):
+        cron_tab = CronTab(user=True)
+        matching_jobs = cron_tab.find_comment(
             self._cron_tag_for_schedule(repository_name, schedule_name)
         )
 

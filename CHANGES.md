@@ -50,6 +50,7 @@
   create PipelineRun entries simultaneously.
 - Fixed an issue with schedules that had invalid config not logging the appropriate error.
 
+
 ## 0.7.13
 
 **Breaking Changes**

@@ -171,7 +171,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def is_scheduler_job_running(self, repository_name, schedule_name):
+    def running_job_count(self, repository_name, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:

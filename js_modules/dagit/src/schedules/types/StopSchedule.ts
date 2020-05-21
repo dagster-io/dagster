@@ -16,6 +16,7 @@ export interface StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule
 
 export interface StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule {
   __typename: "RunningSchedule";
+  runningJobCount: number;
   scheduleDefinition: StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule_scheduleDefinition;
   status: ScheduleStatus;
 }

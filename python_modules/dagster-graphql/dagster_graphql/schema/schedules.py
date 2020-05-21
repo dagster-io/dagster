@@ -184,6 +184,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
     ticks_count = dauphin.NonNull(dauphin.Int)
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
+    logs_path = dauphin.NonNull(dauphin.String)
+    running_job_count = dauphin.NonNull(dauphin.Int)
 
     def __init__(self, graphene_info, schedule):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
@@ -198,6 +200,13 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             python_path=schedule.python_path,
             repository_path=schedule.repository_path,
         )
+
+    def resolve_running_job_count(self, graphene_info):
+        external_repository = graphene_info.context.legacy_external_repository
+        running_job_count = graphene_info.context.instance.running_job_count(
+            external_repository.name, self._schedule.name
+        )
+        return running_job_count
 
     def resolve_stats(self, graphene_info):
         external_repository = graphene_info.context.legacy_external_repository
