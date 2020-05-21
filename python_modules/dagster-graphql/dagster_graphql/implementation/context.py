@@ -4,7 +4,6 @@ from collections import namedtuple
 import six
 
 from dagster import check
-from dagster.core.definitions.container import get_external_repository_from_image
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
@@ -148,41 +147,6 @@ class DagsterEnvironment(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_external_pipeline(self, handle, solid_subset):
         pass
-
-
-class DockerDagsterEnvironment(DagsterEnvironment):
-    def __init__(self, name, image):
-        self._name = check.str_param(name, 'name')
-        self._image = check.str_param(image, 'image')
-
-        external_repo = get_external_repository_from_image(image)
-        self._repositories = {external_repo.name: external_repo}
-
-    @property
-    def name(self):
-        return self._name
-
-    def get_repository(self, name):
-        return self._repositories[name]
-
-    def get_repositories(self):
-        return self._repositories
-
-    def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        raise NotImplementedError('Not yet supported out of process')
-
-    def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-    ):
-        raise NotImplementedError('Not yet supported out of process')
-
-    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
-        raise NotImplementedError('Not yet supported out of process')
-
-    def get_external_pipeline(self, handle, solid_subset):
-        raise NotImplementedError('Not yet supported out of process')
 
 
 class InProcessDagsterEnvironment(DagsterEnvironment):

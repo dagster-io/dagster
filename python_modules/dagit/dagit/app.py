@@ -8,7 +8,6 @@ import warnings
 
 import nbformat
 from dagster_graphql.implementation.context import (
-    DagsterEnvironment,
     DagsterGraphQLContext,
     InProcessDagsterEnvironment,
 )
@@ -191,19 +190,6 @@ def get_execution_manager(instance):
             instance, execution_manager_settings.get('max_concurrent_runs')
         )
     return SubprocessExecutionManager(instance)
-
-
-def create_app_with_environments(dagster_environments, instance):
-    check.list_param(dagster_environments, 'dagster_environments', of_type=DagsterEnvironment)
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    warn_if_compute_logs_disabled()
-
-    print('Loading repository...')
-    context = DagsterGraphQLContext(
-        environments=dagster_environments, instance=instance, version=__version__,
-    )
-    return instantiate_app_with_views(context)
 
 
 def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
