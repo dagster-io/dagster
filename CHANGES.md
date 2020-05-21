@@ -11,6 +11,9 @@
 **Bugfix**
 
 - Fixes an issue with config schema validation on Arrays
+- Fixes an issue with initializing K8sRunLauncher when configured via `dagster.yaml`
+- Fixes a race condition in Airflow injection logic that happens when multiple Operators try to
+  create PipelineRun entries simultaneously.
 
 ## 0.7.13
 

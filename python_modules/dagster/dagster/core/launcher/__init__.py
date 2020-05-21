@@ -10,10 +10,10 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
 
         This method should begin the execution of the specified run, and may emit engine events.
         Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.get_or_create_run()``) *before* this method is called, and
+        ``DagsterInstance.create_run()``) *before* this method is called, and
         should be in the ``PipelineRunStatus.NOT_STARTED`` state. Typically, this method will not
         be invoked directly, but should be invoked through ``DagsterInstance.launch_run()``.
-        
+
         Args:
             instance (DagsterInstance): The instance in which the run has been created.
             run (PipelineRun): The PipelineRun to launch.
