@@ -68,5 +68,5 @@ def dask_executor(init_context):
 
     '''
     check_cross_process_constraints(init_context)
-    (cluster_type, cluster_configuration), = init_context.executor_config['cluster'].items()
+    ((cluster_type, cluster_configuration),) = init_context.executor_config['cluster'].items()
     return DaskConfig(cluster_type, cluster_configuration)
