@@ -177,6 +177,10 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = self._get_process(run_id)
         return _is_alive(process) if process else False
 
+    @property
+    def supports_termination(self):
+        return True
+
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
 
@@ -202,6 +206,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         process.kill()
+        process.wait()
         return True
 
     def get_active_run_count(self):

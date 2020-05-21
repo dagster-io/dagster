@@ -172,8 +172,12 @@ def test_terminated_run():
 
         time.sleep(0.5)
 
+        assert launcher.supports_termination
         assert launcher.can_terminate(run_id)
-        launcher.terminate(run_id)
+        assert launcher.terminate(run_id)
+
+        # Return false is already terminated
+        assert not launcher.terminate(run_id)
 
         launcher.join()
 

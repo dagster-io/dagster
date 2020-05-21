@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 import six
 
+from dagster import check
+
 
 class RunLauncher(six.with_metaclass(ABCMeta)):
     @abstractmethod
@@ -24,3 +26,20 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
             PipelineRun: The launched run. This should be in the ``PipelineRunStatus.STARTED``
                 state, or, if a synchronous failure occurs, the ``PipelineRunStatus.FAILURE`` state.
         '''
+
+    @property
+    def supports_termination(self):
+        return False
+
+    def terminate(self, run_id):
+        '''
+        Terminates a process.
+
+        Returns False is the process was already terminated. Returns true if
+        the process was alive and was successfully terminated
+        '''
+        check.str_param(run_id, 'run_id')
+        check.not_implemented(
+            'If a run launcher returns True on its supports_termination property '
+            'it must override the terminate method.'
+        )
