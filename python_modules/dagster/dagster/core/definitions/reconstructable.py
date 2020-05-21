@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple
 
 import six
@@ -13,7 +12,6 @@ from dagster.core.code_pointer import (
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
-from dagster.utils import load_yaml_from_path
 
 from .executable import ExecutablePipeline
 
@@ -49,21 +47,7 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
     @classmethod
     def from_yaml(cls, file_path):
         check.str_param(file_path, 'file_path')
-
-        config = load_yaml_from_path(file_path)
-        repository_config = check.dict_elem(config, 'repository')
-        module_name = check.opt_str_elem(repository_config, 'module')
-        file_name = check.opt_str_elem(repository_config, 'file')
-        fn_name = check.str_elem(repository_config, 'fn')
-
-        if module_name:
-            pointer = ModuleCodePointer(module_name, fn_name)
-        else:
-            # rebase file in config off of the path in the config file
-            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-            pointer = FileCodePointer(file_name, fn_name)
-
-        return cls(pointer=pointer, yaml_path=file_path)
+        return cls(pointer=CodePointer.from_yaml(file_path), yaml_path=file_path)
 
 
 @whitelist_for_serdes
