@@ -26,23 +26,11 @@ linkchecker http://127.0.0.1:8000
 NODE_ENV=production make buildnext
 ```
 
-2. Update version links in `next/src/pages/versions/index.mdx` such as (replace `<new_version>` with e.g. `0.7.12`):
+2. Update version links in `next/src/pages/versions/index.mdx`, run:
 
 ```
-# Dagster Versions
-
-## Current version (Stable)
-
-| **<new_version>** | [Documentation](/docs/install) | [Release Notes](https://github.com/dagster-io/dagster/releases/tag/<new_version>) |
-| ----------- | ------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------- |
-
-
-## All Versions
-
-| **<new_version>** | [Documentation](/<new_version>/docs/install)                     | [Release Notes](https://github.com/dagster-io/dagster/releases/tag/<new_version>) |                                         |
-| ----------- | ------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------- |
-| **0.7.11**  | [Documentation](/0.7.11/docs/install) | [Release Notes](https://github.com/dagster-io/dagster/releases/tag/0.7.11)  |                                         |
-| **0.7.10**  | [Documentation](/0.7.10/docs/install) | [Release Notes](https://github.com/dagster-io/dagster/releases/tag/0.7.10)  |                                         |
+cd next
+yarn update-version <new_version> # e.g. `yarn update-version 0.7.12`
 ```
 
 3. Build the static doc site by running `make root_build` in the `docs` directory. It will generate a folder called `out` in the `docs` directory.

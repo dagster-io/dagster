@@ -45,6 +45,7 @@
     "export": "next export",
     "process": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/processData.ts",
     "sitemap": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/generateSitemap.ts",
+    "update-version": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/updateVersion.ts",
     "test": "jest"
   },
   "devDependencies": {
