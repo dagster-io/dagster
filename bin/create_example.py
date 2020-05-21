@@ -30,7 +30,7 @@ def copy_directory(src, dest):
 
 
 @click.command()
-@click.option('--name', prompt='Name of library', help='Name of library')
+@click.option('--name', prompt='Name of example to create', help='Name of example')
 def main(name):
     template_library_path = os.path.abspath('bin/assets/dagster-example-tmpl')
     new_template_library_path = os.path.abspath('examples/{name}'.format(name=name))
