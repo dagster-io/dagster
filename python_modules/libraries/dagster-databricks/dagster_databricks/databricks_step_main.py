@@ -15,6 +15,7 @@ import sys
 import tempfile
 import zipfile
 
+from dagster import check
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
 from dagster.serdes import serialize_value
 
@@ -74,11 +75,25 @@ def setup_storage(step_run_ref):
     save intermediate files to a location accessible by the original process which launched
     the job.
     '''
+    root_storage = step_run_ref.environment_dict['storage']
+    check.invariant(
+        's3' in root_storage or 'adls2' in root_storage, 'No compatible storage found in config'
+    )
+
     storage = step_run_ref.environment_dict['resources']['pyspark_step_launcher']['config'][
         'storage'
     ]
     scope = storage['secret_scope']
     credentials = storage['credentials']
+
+    check.invariant(
+        len(credentials) == 1, 'No valid storage credentials found in pyspark_step_launcher config'
+    )
+    check.invariant(
+        list(credentials)[0] == list(root_storage)[0],
+        "Storage credentials in step launcher config don't match root storage",
+    )
+
     if 's3' in credentials:
         setup_s3_storage(scope, credentials['s3'])
     elif 'adls2' in credentials:
