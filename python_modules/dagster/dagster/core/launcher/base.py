@@ -5,7 +5,7 @@ import six
 
 class RunLauncher(six.with_metaclass(ABCMeta)):
     @abstractmethod
-    def launch_run(self, instance, run):
+    def launch_run(self, instance, run, external_pipeline=None):
         '''Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.
@@ -17,6 +17,8 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         Args:
             instance (DagsterInstance): The instance in which the run has been created.
             run (PipelineRun): The PipelineRun to launch.
+            external_pipeline (ExternalPipeline): The pipeline that is being launched (currently
+             optional during migration)
 
         Returns:
             PipelineRun: The launched run. This should be in the ``PipelineRunStatus.STARTED``

@@ -75,7 +75,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             )
 
-    def launch_run(self, instance, run):
+    def launch_run(self, instance, run, external_pipeline=None):
         self.validate()
         variables = {'runId': run.run_id}
         response = requests.post(
