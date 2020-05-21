@@ -176,6 +176,17 @@ def _get_engine_events(event_records):
             yield er
 
 
+def _get_successful_step_keys(event_records):
+
+    step_keys = set()
+
+    for er in event_records:
+        if er.dagster_event and er.dagster_event.is_step_success:
+            step_keys.add(er.dagster_event.step_key)
+
+    return step_keys
+
+
 def _message_exists(event_records, message_text):
     for event_record in event_records:
         if message_text in event_record.message:
@@ -208,6 +219,67 @@ def add(_, num1, num2):
 def math_diamond():
     one = return_one()
     add(multiply_by_2(one), multiply_by_3(one))
+
+
+def test_single_solid_subset_execution():
+    with temp_instance() as instance:
+        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=math_diamond, environment_dict=None, solid_subset=['return_one']
+        )
+        run_id = pipeline_run.run_id
+
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+        external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
+
+        launcher = CliApiRunLauncher()
+        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.join()
+
+        finished_pipeline_run = instance.get_run_by_id(run_id)
+
+        event_records = instance.all_logs(run_id)
+
+        assert finished_pipeline_run
+        assert finished_pipeline_run.run_id == run_id
+        assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+
+        assert _get_successful_step_keys(event_records) == {'return_one.compute'}
+
+
+def test_multi_solid_subset_execution():
+    with temp_instance() as instance:
+        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=math_diamond,
+            environment_dict=None,
+            solid_subset=['return_one', 'multiply_by_2'],
+        )
+        run_id = pipeline_run.run_id
+
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+        external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
+
+        launcher = CliApiRunLauncher()
+        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.join()
+
+        finished_pipeline_run = instance.get_run_by_id(run_id)
+
+        event_records = instance.all_logs(run_id)
+
+        assert finished_pipeline_run
+        assert finished_pipeline_run.run_id == run_id
+        assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
+
+        assert _get_successful_step_keys(event_records) == {
+            'return_one.compute',
+            'multiply_by_2.compute',
+        }
 
 
 def test_engine_events():

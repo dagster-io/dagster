@@ -5,9 +5,13 @@ import sys
 
 import click
 
+from dagster import check
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
@@ -61,11 +65,9 @@ snapshot_cli = create_snapshot_cli_group()
 
 
 def _subset(recon_pipeline, solid_subset):
-    return (
-        recon_pipeline.subset_for_execution(solid_subset.split(','))
-        if solid_subset
-        else recon_pipeline
-    )
+    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    return recon_pipeline.subset_for_execution(solid_subset) if solid_subset else recon_pipeline
 
 
 def _get_instance(stream, instance_ref_json):
@@ -157,8 +159,11 @@ def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, insta
         )
 
         recon_pipeline = _get_recon_pipeline(stream, config_yaml, pipeline_run)
+        if not recon_pipeline:
+            return
 
         try:
+
             for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
                 stream.send(event)
 
