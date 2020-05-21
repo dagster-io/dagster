@@ -531,6 +531,14 @@ def define_databricks_submit_run_config():
     )
 
 
+def _define_secret_scope():
+    return Field(
+        String,
+        description='The Databricks secret scope containing the storage secrets.',
+        is_required=True,
+    )
+
+
 def _define_s3_storage_credentials():
     access_key_key = Field(
         String,
@@ -543,7 +551,13 @@ def _define_s3_storage_credentials():
         is_required=True,
     )
     return Field(
-        Shape(fields={'access_key_key': access_key_key, 'secret_key_key': secret_key_key}),
+        Shape(
+            fields={
+                'secret_scope': _define_secret_scope(),
+                'access_key_key': access_key_key,
+                'secret_key_key': secret_key_key,
+            }
+        ),
         description='S3 storage secret configuration',
     )
 
@@ -562,6 +576,7 @@ def _define_adls2_storage_credentials():
     return Field(
         Shape(
             fields={
+                'secret_scope': _define_secret_scope(),
                 'storage_account_name': storage_account_name,
                 'storage_account_key_key': storage_account_key_key,
             }
@@ -579,13 +594,14 @@ def _define_storage_credentials():
 
 
 def define_databricks_storage_config():
-    secret_scope = Field(
-        String,
-        description='The Databricks secret scope containing the storage secrets.',
-        is_required=True,
-    )
     return Field(
-        Shape(fields={'secret_scope': secret_scope, 'credentials': _define_storage_credentials()}),
+        Selector(
+            {
+                's3': _define_s3_storage_credentials()
+                # TODO: uncomment when dagster-azure is merged.
+                # 'adls2': _define_adls2_storage_credentials(),
+            }
+        ),
         description='Databricks storage configuration. Solids using the '
         'DatabricksPySparkStepLauncher to execute pipeline steps in Databricks MUST configure '
         'storage using this config (either S3 or ADLS2 can be used). Access credentials for the '

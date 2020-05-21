@@ -17,11 +17,10 @@ resources:
       local_pipeline_package_path: .
       staging_prefix: /dagster-databricks-tests
       storage:
-        credentials:
-          s3:
-            access_key_key: aws-access-key
-            secret_key_key: aws-secret-key
-        secret_scope: dagster-databricks-tests
+        s3:
+          secret_scope: dagster-databricks-tests
+          access_key_key: aws-access-key
+          secret_key_key: aws-secret-key
 solids:
   make_weather_samples:
     inputs:

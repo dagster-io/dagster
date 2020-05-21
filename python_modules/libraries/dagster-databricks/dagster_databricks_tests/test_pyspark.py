@@ -51,10 +51,11 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
         ],
     },
     'storage': {
-        'secret_scope': 'dagster-databricks-tests',
-        'credentials': {
-            's3': {'access_key_key': 'aws-access-key', 'secret_key_key': 'aws-secret-key'}
-        },
+        's3': {
+            'secret_scope': 'dagster-databricks-tests',
+            'access_key_key': 'aws-access-key',
+            'secret_key_key': 'aws-secret-key',
+        }
     },
 }
 
@@ -204,13 +205,11 @@ def test_do_it_live_databricks_s3():
 def test_do_it_live_databricks_adls2():
     config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
     config['storage'] = {
-        'secret_scope': 'dagster-databricks-tests',
-        'credentials': {
-            'adls2': {
-                'storage_account_name': ADLS2_STORAGE_ACCOUNT,
-                'storage_account_key_key': 'adls2-storage-key',
-            }
-        },
+        'adls2': {
+            'secret_scope': 'dagster-databricks-tests',
+            'storage_account_name': ADLS2_STORAGE_ACCOUNT,
+            'storage_account_key_key': 'adls2-storage-key',
+        }
     }
 
     result = execute_pipeline(

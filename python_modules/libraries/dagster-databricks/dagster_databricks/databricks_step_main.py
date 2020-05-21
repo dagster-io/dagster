@@ -26,15 +26,18 @@ if 'DATABRICKS_TOKEN' not in os.environ:
     os.environ['DATABRICKS_TOKEN'] = ''
 
 
-def setup_s3_storage(scope, credentials):
+def setup_s3_storage(storage):
     '''Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
     '''
+
+    scope = storage['secret_scope']
+
     # dbutils is globally defined in the Databricks runtime
     access_key = dbutils.secrets.get(  # noqa  # pylint: disable=undefined-variable
-        scope=scope, key=credentials['access_key_key']
+        scope=scope, key=storage['access_key_key']
     )
     secret_key = dbutils.secrets.get(  # noqa  # pylint: disable=undefined-variable
-        scope=scope, key=credentials['secret_key_key']
+        scope=scope, key=storage['secret_key_key']
     )
 
     # Spark APIs will use this.
@@ -52,18 +55,18 @@ def setup_s3_storage(scope, credentials):
     os.environ['AWS_SECRET_ACCESS_KEY'] = secret_key
 
 
-def setup_adls2_storage(scope, credentials):
+def setup_adls2_storage(storage):
     '''Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
     '''
     # dbutils is globally defined in the Databricks runtime
     storage_account_key = dbutils.secrets.get(  # noqa  # pylint: disable=undefined-variable
-        scope=scope, key=credentials['storage_account_key_key']
+        scope=storage['secret_scope'], key=storage['storage_account_key_key']
     )
     # Spark APIs will use this.
     # See https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
     # sc is globally defined in the Databricks runtime and points to the Spark context
     sc._jsc.hadoopConfiguration().set(  # noqa  # pylint: disable=undefined-variable,protected-access
-        'fs.azure.account.key.{}.dfs.core.windows.net'.format(credentials['storage_account_name']),
+        'fs.azure.account.key.{}.dfs.core.windows.net'.format(storage['storage_account_name']),
         storage_account_key,
     )
 
@@ -83,21 +86,18 @@ def setup_storage(step_run_ref):
     storage = step_run_ref.environment_dict['resources']['pyspark_step_launcher']['config'][
         'storage'
     ]
-    scope = storage['secret_scope']
-    credentials = storage['credentials']
-
     check.invariant(
-        len(credentials) == 1, 'No valid storage credentials found in pyspark_step_launcher config'
+        len(storage) == 1, 'No valid storage credentials found in pyspark_step_launcher config'
     )
     check.invariant(
-        list(credentials)[0] == list(root_storage)[0],
+        list(storage)[0] == list(root_storage)[0],
         "Storage credentials in step launcher config don't match root storage",
     )
 
-    if 's3' in credentials:
-        setup_s3_storage(scope, credentials['s3'])
-    elif 'adls2' in credentials:
-        setup_adls2_storage(scope, credentials['adls2'])
+    if 's3' in storage:
+        setup_s3_storage(storage['s3'])
+    elif 'adls2' in storage:
+        setup_adls2_storage(storage['adls2'])
     else:
         raise Exception('No valid storage found!')
 
