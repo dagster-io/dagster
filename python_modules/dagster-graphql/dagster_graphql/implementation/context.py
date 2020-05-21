@@ -11,6 +11,8 @@ from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
     ExternalRepository,
+    InProcessOrigin,
+    RepositoryHandle,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import snapshot_from_execution_plan
@@ -152,8 +154,15 @@ class DagsterEnvironment(six.with_metaclass(ABCMeta)):
 class InProcessDagsterEnvironment(DagsterEnvironment):
     def __init__(self, recon_repo, execution_manager, reloader=None):
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+        repo_def = recon_repo.get_definition()
         self._external_repo = ExternalRepository.from_repository_def(
-            recon_repo.get_definition(), EnvironmentHandle(self.name)
+            repo_def,
+            RepositoryHandle(
+                repository_name=repo_def.name,
+                environment_handle=EnvironmentHandle(
+                    self.name, InProcessOrigin(recon_repo.pointer, recon_repo.yaml_path)
+                ),
+            ),
         )
         self._repositories = {self._external_repo.name: self._external_repo}
         self.execution_manager = check.inst_param(

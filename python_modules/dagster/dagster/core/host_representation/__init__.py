@@ -14,7 +14,7 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from .handle import EnvironmentHandle, PipelineHandle, RepositoryHandle
+from .handle import EnvironmentHandle, InProcessOrigin, PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline

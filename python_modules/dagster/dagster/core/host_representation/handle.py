@@ -1,14 +1,31 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.code_pointer import CodePointer
 
 
-class EnvironmentHandle(namedtuple('_EnvironmentHandle', 'environment_name')):
-    def __new__(cls, environment_name):
+class InProcessOrigin(namedtuple('_InProcessOrigin', 'pointer repo_yaml')):
+    def __new__(cls, pointer, repo_yaml):
+        return super(InProcessOrigin, cls).__new__(
+            cls,
+            pointer=check.inst_param(pointer, 'pointer', CodePointer),
+            repo_yaml=check.opt_str_param(repo_yaml, 'repo_yaml'),
+        )
+
+
+class EnvironmentHandle(namedtuple('_EnvironmentHandle', 'environment_name in_process_origin')):
+    def __new__(cls, environment_name, in_process_origin):
         return super(EnvironmentHandle, cls).__new__(
             cls,
             check.str_param(environment_name, 'environment_name'),
-            # source to be added
+            check.inst_param(in_process_origin, 'in_process_origin', InProcessOrigin),
+        )
+
+    @staticmethod
+    def legacy_from_yaml(environment_name, repo_yaml):
+        return EnvironmentHandle(
+            environment_name=environment_name,
+            in_process_origin=InProcessOrigin(CodePointer.from_yaml(repo_yaml), repo_yaml),
         )
 
 
