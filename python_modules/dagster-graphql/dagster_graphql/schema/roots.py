@@ -796,7 +796,7 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
         )
 
 
-class DauhphinRunLauncher(dauphin.ObjectType):
+class DauphinRunLauncher(dauphin.ObjectType):
     class Meta(object):
         name = 'RunLauncher'
 
@@ -809,7 +809,7 @@ class DauhphinRunLauncher(dauphin.ObjectType):
         return self._run_launcher.__class__.__name__
 
 
-class DauhphinInstance(dauphin.ObjectType):
+class DauphinInstance(dauphin.ObjectType):
     class Meta(object):
         name = 'Instance'
 
@@ -825,9 +825,7 @@ class DauhphinInstance(dauphin.ObjectType):
 
     def resolve_runLauncher(self, _graphene_info):
         return (
-            DauhphinRunLauncher(self._instance.run_launcher)
-            if self._instance.run_launcher
-            else None
+            DauphinRunLauncher(self._instance.run_launcher) if self._instance.run_launcher else None
         )
 
     def resolve_disableRunStart(self, _graphene_info):
