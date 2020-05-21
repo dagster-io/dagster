@@ -71,7 +71,6 @@ def _do_setup(name='dagster'):
             # cli
             'click>=5.0',
             'coloredlogs>=6.1',
-            'graphviz>=0.8.4',
             'PyYAML',
             # core (not explicitly expressed atm)
             'alembic>=1.2.1',

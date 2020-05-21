@@ -25,7 +25,6 @@ from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
 
@@ -34,7 +33,6 @@ def create_pipeline_cli_group():
     group = click.Group(name="pipeline")
     group.add_command(pipeline_list_command)
     group.add_command(pipeline_print_command)
-    group.add_command(pipeline_graphviz_command)
     group.add_command(pipeline_execute_command)
     group.add_command(pipeline_backfill_command)
     group.add_command(pipeline_scaffold_command)
@@ -238,22 +236,6 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
             solid_invocation_snap.solid_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
-
-
-@click.command(
-    name='graphviz',
-    help=(
-        'Visualize a pipeline using graphviz. Must be installed on your system '
-        '(e.g. homebrew install graphviz on mac). \n\n{instructions}'.format(
-            instructions=get_pipeline_instructions('graphviz')
-        )
-    ),
-)
-@click.option('--only-solids', is_flag=True)
-@pipeline_target_command
-def pipeline_graphviz_command(only_solids, **kwargs):
-    pipeline = recon_pipeline_for_cli_args(kwargs)
-    build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
 @click.command(
