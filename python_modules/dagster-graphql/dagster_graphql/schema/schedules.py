@@ -208,6 +208,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
     attempts_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
+    running_job_count = dauphin.NonNull(dauphin.Int)
 
     def __init__(self, graphene_info, schedule):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
@@ -221,6 +222,13 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             python_path=schedule.python_path,
             repository_path=schedule.repository_path,
         )
+
+    def resolve_running_job_count(self, graphene_info):
+        repository = graphene_info.context.get_repository()
+        running_job_count = graphene_info.context.instance.running_job_count(
+            repository.name, self._schedule.name
+        )
+        return running_job_count
 
     # TODO: Delete in 0.8.0 release
     # https://github.com/dagster-io/dagster/issues/228

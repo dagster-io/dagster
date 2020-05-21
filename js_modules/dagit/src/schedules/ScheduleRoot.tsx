@@ -137,9 +137,12 @@ const RenderEventSpecificData: React.FunctionComponent<{
           minimal={true}
           href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}
         >
-          <Tag fill={true} minimal={true} intent={Intent.SUCCESS}>
-            Run {data.run?.runId}
-          </Tag>
+          <div style={{ display: "flex" }}>
+            {data.run?.status && <RunStatus status={data.run?.status} />}
+            <Tag fill={true} minimal={true} style={{ marginLeft: 10 }}>
+              Run {data.run?.runId}
+            </Tag>
+          </div>
         </AnchorButton>
       );
   }
@@ -152,7 +155,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
     case ScheduleTickStatus.STARTED:
       return (
         <Tag minimal={true} intent={Intent.PRIMARY}>
-          Success
+          Started
         </Tag>
       );
     case ScheduleTickStatus.SUCCESS:
@@ -339,6 +342,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
                 pipeline {
                   name
                 }
+                status
                 runId
               }
             }

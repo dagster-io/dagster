@@ -16,6 +16,7 @@ export interface StartSchedule_startSchedule_RunningScheduleResult_schedule_sche
 
 export interface StartSchedule_startSchedule_RunningScheduleResult_schedule {
   __typename: "RunningSchedule";
+  runningJobCount: number;
   scheduleDefinition: StartSchedule_startSchedule_RunningScheduleResult_schedule_scheduleDefinition;
   status: ScheduleStatus;
 }
