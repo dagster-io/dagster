@@ -42,6 +42,10 @@ class DagsterGraphQLContext:
     def instance(self):
         return self._instance
 
+    @property
+    def repository_locations(self):
+        return list(self._repository_locations.values())
+
     def get_external_pipeline(self, handle, solid_subset):
         check.inst_param(handle, 'handle', PipelineHandle)
         return self._repository_locations[handle.location_name].get_external_pipeline(

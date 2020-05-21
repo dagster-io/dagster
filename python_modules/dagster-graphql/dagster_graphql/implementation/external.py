@@ -8,7 +8,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .utils import UserFacingGraphQLError
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 def get_full_external_pipeline_or_raise(graphene_info, pipeline_name):
@@ -119,4 +119,15 @@ def get_external_execution_plan_or_raise(
         environment_dict=environment_dict,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
+    )
+
+
+@capture_dauphin_error
+def fetch_repository_locations(graphene_info):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    return graphene_info.schema.type_named('RepositoryLocationConnection')(
+        nodes=[
+            graphene_info.schema.type_named('RepositoryLocation')(location=location)
+            for location in graphene_info.context.repository_locations
+        ]
     )

@@ -684,3 +684,9 @@ class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
         self.message = 'Partition set {partition_set_name} could not be found.'.format(
             partition_set_name=self.partition_set_name
         )
+
+
+class DauphinRepositoryLocationsOrError(dauphin.Union):
+    class Meta(object):
+        name = 'RepositoryLocationsOrError'
+        types = ('RepositoryLocationConnection', DauphinPythonError)

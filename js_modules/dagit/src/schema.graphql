@@ -926,6 +926,7 @@ type PythonError implements Error {
 type Query {
   version: String!
   reloadSupported: Boolean!
+  repositoryLocationsOrError: RepositoryLocationsOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelinesOrError: PipelinesOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineName: String): PipelineSnapshotOrError!
@@ -970,6 +971,22 @@ type RegularDagsterType implements DagsterType {
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
 }
+
+type Repository {
+  name: String!
+  pipelines: [Pipeline!]!
+}
+
+type RepositoryLocation {
+  name: String!
+  repositories: [Repository!]!
+}
+
+type RepositoryLocationConnection {
+  nodes: [RepositoryLocation!]!
+}
+
+union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
 
 type Resource {
   name: String!
