@@ -11,6 +11,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import import_module_from_path
+from dagster.utils import load_yaml_from_path
 
 
 class CodePointer(six.with_metaclass(ABCMeta)):
@@ -21,6 +22,25 @@ class CodePointer(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def describe(self):
         pass
+
+    @staticmethod
+    def from_yaml(file_path):
+        check.str_param(file_path, 'file_path')
+        config = load_yaml_from_path(file_path)
+        repository_config = check.dict_elem(config, 'repository')
+        module_name = check.opt_str_elem(repository_config, 'module')
+        file_name = check.opt_str_elem(repository_config, 'file')
+        fn_name = check.str_elem(repository_config, 'fn')
+
+        return (
+            ModuleCodePointer(module_name, fn_name)
+            if module_name
+            else FileCodePointer(
+                # rebase file in config off of the path in the config file
+                python_file=os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name),
+                fn_name=fn_name,
+            )
+        )
 
 
 @whitelist_for_serdes
