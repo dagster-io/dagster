@@ -33,6 +33,7 @@ from .ref import InstanceRef, compute_logs_directory
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
 # 'execution_date' used in Airflow operator execution and 'is_airflow_ingest_pipeline' determines
 # whether 'airflow_execution_date' is needed.
+# https://github.com/dagster-io/dagster/issues/2403
 AIRFLOW_EXECUTION_DATE_STR = 'airflow_execution_date'
 IS_AIRFLOW_INGEST_PIPELINE_STR = 'is_airflow_ingest_pipeline'
 
@@ -510,6 +511,7 @@ class DagsterInstance:
         execution_plan_snapshot,
     ):
 
+        # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
