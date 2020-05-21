@@ -218,9 +218,7 @@ def test_start_schedule_cron_job(
         assert len(cron_jobs) == 3
 
         for cron_job in cron_jobs:
-            match = re.findall(
-                r"^(.*?) (/.*) >> (.*) 2>&1 # dagster-schedule: test\.(.*)", cron_job
-            )
+            match = re.findall(r"^(.*?) (/.*) > (.*) 2>&1 # dagster-schedule: test\.(.*)", cron_job)
             cron_schedule, command, log_file, schedule_name = match[0]
 
             schedule_def = schedules_dict[schedule_name]
