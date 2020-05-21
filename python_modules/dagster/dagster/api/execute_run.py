@@ -20,9 +20,17 @@ def sync_cli_api_execute_run(
         output_file = os.path.join(tmp_dir, output_file_name)
         pipeline_run = instance.create_run(
             pipeline_name=pipeline_name,
+            run_id=None,
             environment_dict=environment_dict,
             mode=mode,
             solid_subset=solid_subset,
+            step_keys_to_execute=None,
+            status=None,
+            tags=None,
+            root_run_id=None,
+            parent_run_id=None,
+            pipeline_snapshot=None,
+            execution_plan_snapshot=None,
         )
         process = cli_api_execute_run(output_file, instance, repo_yaml, pipeline_run)
 

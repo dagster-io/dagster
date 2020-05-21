@@ -8,6 +8,7 @@ from dagster.cli.api import (
 )
 from dagster.core.host_representation import ExternalPipelineData, ExternalRepositoryData
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import create_run_for_test
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCEndMessage, IPCStartMessage
 from dagster.utils import safe_tempfile_path
@@ -72,8 +73,8 @@ def test_execute_run_command():
     with safe_tempfile_path() as filename:
         with seven.TemporaryDirectory() as temp_dir:
             instance = DagsterInstance.local_temp(temp_dir)
-            pipeline_run = instance.create_run(
-                pipeline_name='foo', environment_dict={}, mode='default',
+            pipeline_run = create_run_for_test(
+                instance, pipeline_name='foo', environment_dict={}, mode='default',
             )
             result = runner.invoke(
                 execute_run_command,
