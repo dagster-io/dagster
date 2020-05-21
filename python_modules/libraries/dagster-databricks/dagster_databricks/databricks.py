@@ -191,7 +191,7 @@ class DatabricksJobRunner:
             new_cluster=new_cluster,
             existing_cluster_id=existing_cluster_id,
             libraries=libraries,
-            **task,
+            **task
         )
         response = self.client.submit_run(**config)
         return response['run_id']

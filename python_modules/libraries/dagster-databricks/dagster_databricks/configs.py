@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''Fields here are taken from the Databricks API docs.
 
 Most are left the same, but some have been modified to better express
@@ -441,7 +442,7 @@ def _define_notebook_task():
     base_parameters = Field(
         Permissive(),
         description='Base parameters to be used for each run of this job. '
-        'If the notebook takes a parameter that is not specified in the job’s base_parameters '
+        "If the notebook takes a parameter that is not specified in the job's base_parameters "
         'or the run-now override parameters, the default value from the notebook will be used. '
         'Retrieve these parameters in a notebook by using dbutils.widgets.get().',
         is_required=False,
