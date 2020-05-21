@@ -44,6 +44,11 @@ def _do_setup(name='dagster-dask'):
             'dask>=1.2.2',
             'distributed>=1.28.1',
         ],
+        extras_require={
+            'yarn': ['dask_yarn'],
+            'pbs': ['dask_jobqueue'],
+            'kube': ['dask_kubernetes'],
+        },
         zip_safe=False,
     )
 

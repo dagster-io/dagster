@@ -70,7 +70,33 @@ class DaskEngine(Engine):  # pylint: disable=no-init
 
         instance = pipeline_context.instance
 
-        with dask.distributed.Client(**dask_config.build_dict(pipeline_name)) as client:
+        cluster_type = dask_config.cluster_type
+        if cluster_type == 'local':
+            from dask.distributed import LocalCluster
+
+            cluster = LocalCluster(**dask_config.build_dict(pipeline_name))
+        elif cluster_type == 'yarn':
+            from dask_yarn import YarnCluster
+
+            cluster = YarnCluster(**dask_config.build_dict(pipeline_name))
+        elif cluster_type == 'ssh':
+            from dask.distributed import SSHCluster
+
+            cluster = SSHCluster(**dask_config.build_dict(pipeline_name))
+        elif cluster_type == 'pbs':
+            from dask_jobqueue import PBSCluster
+
+            cluster = PBSCluster(**dask_config.build_dict(pipeline_name))
+        elif cluster_type == 'kube':
+            from dask_kubernetes import KubeCluster
+
+            cluster = KubeCluster(**dask_config.build_dict(pipeline_name))
+        else:
+            raise ValueError(
+                f"Must be providing one of the following ('local', 'yarn', 'ssh', 'pbs', 'kube') not {cluster_type}"
+            )
+
+        with dask.distributed.Client(cluster) as client:
             execution_futures = []
             execution_futures_dict = {}
 
