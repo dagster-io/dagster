@@ -7,7 +7,7 @@ def test_job_serialization():
         job_image='test/foo:latest',
         dagster_home='/opt/dagster/dagster_home',
         image_pull_policy='Always',
-        image_pull_secrets=None,
+        image_pull_secrets=[{'name': 'my_secret'}],
         service_account_name=None,
         instance_config_map='some-instance-configmap',
         postgres_password_secret='some-secret-name',
