@@ -9,8 +9,7 @@
 
 **Bugfix**
 
-- Fixes an issue with config schema validation on Arrays.
-- Fixes some issues with schedule start/stop from the CLI.
+- Fixes an issue with config schema validation on Arrays
 
 ## 0.7.13
 
