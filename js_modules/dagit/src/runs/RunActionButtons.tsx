@@ -34,7 +34,7 @@ const REEXECUTE_SUBSET_TITLE = `Selected Step Subset`;
 const REEXECUTE_FROM_FAILURE_TITLE = "From Failure";
 
 // Descriptions of re-execute options
-const REEXECUTE_PIPELINE_UNKNOWN =
+export const REEXECUTE_PIPELINE_UNKNOWN =
   "Re-execute is unavailable because the pipeline is not present in the current repository.";
 
 const REEXECUTE_FULL_PIPELINE_DESCRIPTION =
