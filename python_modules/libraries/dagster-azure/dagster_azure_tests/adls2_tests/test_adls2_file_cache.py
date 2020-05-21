@@ -1,10 +1,10 @@
 import io
 
-from dagster_azure.adls2 import ADLS2FakeClient, ADLS2FileCache, ADLS2FileHandle
+from dagster_azure.adls2 import FakeADLS2ServiceClient, ADLS2FileCache, ADLS2FileHandle
 
 
 def test_adls2_file_cache_file_not_present(storage_account, file_system, credential):
-    fake_client = ADLS2FakeClient(storage_account, credential)
+    fake_client = FakeADLS2ServiceClient(storage_account, credential)
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
@@ -17,7 +17,7 @@ def test_adls2_file_cache_file_not_present(storage_account, file_system, credent
 
 
 def test_adls2_file_cache_file_present(storage_account, file_system, credential):
-    fake_client = ADLS2FakeClient(storage_account, credential)
+    fake_client = FakeADLS2ServiceClient(storage_account, credential)
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
@@ -34,7 +34,7 @@ def test_adls2_file_cache_file_present(storage_account, file_system, credential)
 
 
 def test_adls2_file_cache_correct_handle(storage_account, file_system, credential):
-    fake_client = ADLS2FakeClient(storage_account, credential)
+    fake_client = FakeADLS2ServiceClient(storage_account, credential)
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
@@ -47,7 +47,7 @@ def test_adls2_file_cache_correct_handle(storage_account, file_system, credentia
 
 
 def test_adls2_file_cache_write_file_object(storage_account, file_system, credential):
-    fake_client = ADLS2FakeClient(storage_account, credential)
+    fake_client = FakeADLS2ServiceClient(storage_account, credential)
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,

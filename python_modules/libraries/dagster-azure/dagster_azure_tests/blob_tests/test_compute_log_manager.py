@@ -2,7 +2,7 @@ import os
 import sys
 
 import six
-from dagster_azure.blob import AzureBlobComputeLogManager, create_blob_fake_resource
+from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -27,7 +27,7 @@ def test_compute_log_manager(
     mock_create_blob_client, mock_generate_blob_sas, storage_account, container, credential
 ):
     mock_generate_blob_sas.return_value = 'fake-url'
-    fake_client = create_blob_fake_resource(storage_account)
+    fake_client = FakeBlobServiceClient(storage_account)
     mock_create_blob_client.return_value = fake_client
 
     @pipeline

@@ -1,4 +1,4 @@
-from .adls2_fake_resource import ADLS2FakeClient, create_adls2_fake_resource
+from .fake_adls2_resource import FakeADLS2ServiceClient
 from .file_cache import ADLS2FileCache, adls2_file_cache
 from .file_manager import ADLS2FileHandle, ADLS2FileManager
 from .intermediate_store import ADLS2IntermediateStore

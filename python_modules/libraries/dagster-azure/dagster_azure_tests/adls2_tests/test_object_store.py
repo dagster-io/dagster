@@ -1,4 +1,4 @@
-from dagster_azure.adls2 import ADLS2ObjectStore, ADLS2FakeClient
+from dagster_azure.adls2 import ADLS2ObjectStore, FakeADLS2ServiceClient
 
 from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 
@@ -6,7 +6,7 @@ from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 def test_adls2_object_store(
     storage_account, credential, file_system, caplog
 ):  # pylint: disable=too-many-function-args
-    adls2_fake_client = ADLS2FakeClient(storage_account, credential)
+    adls2_fake_client = FakeADLS2ServiceClient(storage_account, credential)
 
     key = 'foo'
     # Uses mock ADLS2 client

@@ -3,10 +3,10 @@ import uuid
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
-    create_adls2_fake_resource,
+    FakeADLS2ServiceClient,
     adls2_plus_default_storage_defs,
 )
-from dagster_azure.blob import create_blob_fake_resource
+from dagster_azure.blob import FakeBlobServiceClient
 
 from dagster import (
     InputDefinition,
@@ -102,8 +102,8 @@ def test_depends_on_adls2_resource_intermediates(
     def add_numbers(_, num_one, num_two):
         return num_one + num_two
 
-    mock_create_blob_client.return_value = create_blob_fake_resource(storage_account)
-    adls2_fake_resource = create_adls2_fake_resource(storage_account)
+    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
+    adls2_fake_resource = FakeADLS2ServiceClient(storage_account)
 
     @pipeline(
         mode_defs=[
@@ -160,8 +160,8 @@ def test_depends_on_adls2_resource_file_manager(
         assert isinstance(local_path, str)
         assert open(local_path, 'rb').read() == bar_bytes
 
-    mock_create_blob_client.return_value = create_blob_fake_resource(storage_account)
-    adls2_fake_resource = create_adls2_fake_resource(storage_account)
+    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
+    adls2_fake_resource = FakeADLS2ServiceClient(storage_account)
 
     @pipeline(
         mode_defs=[
