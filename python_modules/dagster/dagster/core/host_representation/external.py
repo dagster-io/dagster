@@ -10,7 +10,7 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from .handle import EnvironmentHandle, PipelineHandle, RepositoryHandle
+from .handle import PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -22,8 +22,7 @@ class ExternalRepository:
     objects such as these to interact with user-defined artifacts.
     '''
 
-    def __init__(self, external_repository_data, environment_handle):
-        check.inst_param(environment_handle, 'environment_handle', EnvironmentHandle)
+    def __init__(self, external_repository_data, repository_handle):
         self.external_repository_data = check.inst_param(
             external_repository_data, 'external_repository_data', ExternalRepositoryData
         )
@@ -34,7 +33,7 @@ class ExternalRepository:
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
-        self._handle = RepositoryHandle(external_repository_data.name, environment_handle)
+        self._handle = check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
 
     @property
     def name(self):
@@ -69,9 +68,9 @@ class ExternalRepository:
         return self._handle
 
     @staticmethod
-    def from_repository_def(repository_definition, environment_handle):
+    def from_repository_def(repository_definition, repository_handle):
         return ExternalRepository(
-            external_repository_data_from_def(repository_definition), environment_handle
+            external_repository_data_from_def(repository_definition), repository_handle,
         )
 
 
