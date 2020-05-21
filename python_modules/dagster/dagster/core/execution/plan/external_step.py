@@ -7,7 +7,6 @@ from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
-    ReconstructablePipelineFromRepo,
     ReconstructableRepository,
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
@@ -99,21 +98,10 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
     '''
     recon_pipeline = step_context.pipeline
     if package_dir:
-
         if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
-            recon_pipeline.pointer, FileCodePointer
-        ):
-            recon_pipeline = ReconstructablePipeline(
-                pointer=ModuleCodePointer(
-                    _module_in_package_dir(recon_pipeline.pointer.python_file, package_dir),
-                    recon_pipeline.pointer.fn_name,
-                ),
-                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
-            )
-        elif isinstance(recon_pipeline, ReconstructablePipelineFromRepo) and isinstance(
             recon_pipeline.repository.pointer, FileCodePointer
         ):
-            recon_pipeline = ReconstructablePipelineFromRepo(
+            recon_pipeline = ReconstructablePipeline(
                 repository=ReconstructableRepository(
                     pointer=ModuleCodePointer(
                         _module_in_package_dir(

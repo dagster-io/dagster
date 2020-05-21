@@ -21,7 +21,7 @@ from dagster import (
     seven,
 )
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.definitions.executable import InterProcessExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
@@ -100,7 +100,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
-    if not isinstance(compute_context.pipeline, InterProcessExecutablePipeline):
+    if not isinstance(compute_context.pipeline, ReconstructablePipeline):
         raise DagstermillError(
             'Can\'t execute a dagstermill solid from a pipeline that is not reconstructable. '
             'Use the reconstructable() function if executing from python'

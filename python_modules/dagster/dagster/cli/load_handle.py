@@ -21,9 +21,8 @@ def _cli_load_invariant(condition, msg=None):
 
 
 def recon_pipeline_for_cli_args(kwargs):
-    '''Builds an ReconstructablePipeline or ReconstructablePipelineFromRepo
-    for CLI arguments, which can be any of the combinations for repo/pipeline
-    loading above.
+    '''Builds a ReconstructablePipeline for CLI arguments, which can be
+    any of the combinations for repo/pipeline loading above.
     '''
     check.dict_param(kwargs, 'kwargs')
 

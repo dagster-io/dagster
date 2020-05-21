@@ -11,7 +11,6 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
@@ -79,7 +78,7 @@ def test_pandas_dask():
     }
 
     result = execute_pipeline(
-        ReconstructablePipeline(FileCodePointer(__file__, pandas_pipeline.name)),
+        ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
         environment_dict={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'timeout': 30}}},

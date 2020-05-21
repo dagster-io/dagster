@@ -4,10 +4,7 @@ from dagster.cli.load_handle import UsageError, recon_pipeline_for_cli_args
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions import PipelineDefinition, RepositoryDefinition
 from dagster.core.definitions.decorators import lambda_solid
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructablePipelineFromRepo,
-)
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.utils import file_relative_path
 
 
@@ -17,7 +14,7 @@ def test_repository_python_file():
     recon_pipeline = recon_pipeline_for_cli_args(
         {'pipeline_name': 'foo', 'python_file': python_file, 'fn_name': 'define_bar_repo'}
     )
-    assert isinstance(recon_pipeline, ReconstructablePipelineFromRepo)
+    assert isinstance(recon_pipeline, ReconstructablePipeline)
     assert recon_pipeline.repository.pointer == FileCodePointer(python_file, 'define_bar_repo')
     assert recon_pipeline.pipeline_name == 'foo'
 
@@ -54,7 +51,7 @@ def test_repository_module():
             'repository_yaml': None,
         }
     )
-    assert isinstance(recon_pipeline, ReconstructablePipelineFromRepo)
+    assert isinstance(recon_pipeline, ReconstructablePipeline)
     assert recon_pipeline.repository.pointer == ModuleCodePointer('dagster', 'define_bar_repo')
     assert recon_pipeline.pipeline_name == 'foo'
 
@@ -72,21 +69,25 @@ def test_pipeline_python_file():
         }
     )
     assert isinstance(recon_pipeline, ReconstructablePipeline)
-    assert recon_pipeline.pointer == FileCodePointer(python_file, 'define_pipeline')
+    assert recon_pipeline.repository.pointer == FileCodePointer(python_file, 'define_pipeline')
 
 
 def test_pipeline_module():
-    recon_pipeline = recon_pipeline_for_cli_args(
-        {
-            'module_name': 'dagster',
-            'fn_name': 'define_pipeline',
-            'pipeline_name': None,
-            'python_file': None,
-            'repository_yaml': None,
-        }
-    )
-    assert isinstance(recon_pipeline, ReconstructablePipeline)
-    assert recon_pipeline.pointer == ModuleCodePointer('dagster', 'define_pipeline')
+    from dagster.core.errors import DagsterInvariantViolationError
+
+    with pytest.raises(DagsterInvariantViolationError):
+        # can't find it so it pukes
+        recon_pipeline = recon_pipeline_for_cli_args(
+            {
+                'module_name': 'dagster',
+                'fn_name': 'define_pipeline',
+                'pipeline_name': None,
+                'python_file': None,
+                'repository_yaml': None,
+            }
+        )
+        assert isinstance(recon_pipeline, ReconstructablePipeline)
+        assert recon_pipeline.repository.pointer == ModuleCodePointer('dagster', 'define_pipeline')
 
 
 def test_yaml_file():
@@ -99,7 +100,7 @@ def test_yaml_file():
             'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
         }
     )
-    assert isinstance(recon_pipeline, ReconstructablePipelineFromRepo)
+    assert isinstance(recon_pipeline, ReconstructablePipeline)
 
     assert recon_pipeline.repository.pointer == ModuleCodePointer(
         'dagster_examples.intro_tutorial.repos', 'define_repo'

@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 import six
 
 from dagster import check
-from dagster.core.definitions.executable import InterProcessExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.retries import Retries
 
 
@@ -31,7 +31,7 @@ class InProcessExecutorConfig(ExecutorConfig):
 class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, pipeline, retries, max_concurrent=None):
 
-        self.pipeline = check.inst_param(pipeline, 'pipeline', InterProcessExecutablePipeline)
+        self.pipeline = check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
         self.retries = check.inst_param(retries, 'retries', Retries)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')

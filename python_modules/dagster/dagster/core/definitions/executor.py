@@ -4,7 +4,7 @@ from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.definitions.executable import InterProcessExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.retries import Retries, get_retries_config
@@ -229,7 +229,7 @@ def check_cross_process_constraints(init_context):
 
 
 def _check_intra_process_pipeline(pipeline):
-    if not isinstance(pipeline, InterProcessExecutablePipeline):
+    if not isinstance(pipeline, ReconstructablePipeline):
         raise DagsterUnmetExecutorRequirementsError(
             'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
             'that is not reconstructable. Pipelines must be loaded in a way that allows dagster to reconstruct '

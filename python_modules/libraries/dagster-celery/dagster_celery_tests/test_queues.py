@@ -9,7 +9,6 @@ from dagster_celery import celery_executor
 from dagster_celery.cli import main
 
 from dagster import ModeDefinition, default_executors, execute_pipeline, pipeline, seven, solid
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 
@@ -25,7 +24,7 @@ celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_exe
 @contextmanager
 def execute_pipeline_on_celery(pipeline_name):
     with seven.TemporaryDirectory() as tempdir:
-        pipeline_def = ReconstructablePipeline(FileCodePointer(__file__, pipeline_name))
+        pipeline_def = ReconstructablePipeline.for_file(__file__, pipeline_name)
         instance = DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
             pipeline_def,

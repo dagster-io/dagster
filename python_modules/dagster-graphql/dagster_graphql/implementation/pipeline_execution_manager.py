@@ -9,7 +9,8 @@ import gevent
 import six
 
 from dagster import DagsterInstance, PipelineRun, check
-from dagster.core.definitions.executable import ExecutablePipeline, InterProcessExecutablePipeline
+from dagster.core.definitions.executable import ExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run
@@ -155,7 +156,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
     def execute_pipeline(self, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
-        check.inst_param(pipeline, 'pipeline', InterProcessExecutablePipeline)
+        check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
         term_event = self._multiprocessing_context.Event()
         mp_process = self._multiprocessing_context.Process(
             target=self.__class__.in_mp_process,
@@ -255,7 +256,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         start_termination_thread(term_event)
 
         try:
-            pipeline = InterProcessExecutablePipeline.from_dict(pipeline_dict)
+            pipeline = ReconstructablePipeline.from_dict(pipeline_dict)
         except Exception:  # pylint: disable=broad-except
             instance.report_engine_event(
                 'Failed attempting to load pipeline "{}"'.format(pipeline_name),
@@ -329,12 +330,12 @@ class QueueingSubprocessExecutionManager(PipelineExecutionManager):
     def _start_pipeline_execution(self, job_args):
         pipeline_dict = job_args['pipeline_dict']
         pipeline_run = job_args['pipeline_run']
-        pipeline = InterProcessExecutablePipeline.from_dict(pipeline_dict)
+        pipeline = ReconstructablePipeline.from_dict(pipeline_dict)
         instance = DagsterInstance.from_ref(job_args['instance_ref'])
         self._delegate.execute_pipeline(pipeline, pipeline_run, instance)
 
     def execute_pipeline(self, pipeline, pipeline_run, instance):
-        check.inst_param(pipeline, 'pipeline', InterProcessExecutablePipeline)
+        check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
         job_args = {
             'pipeline_dict': pipeline.to_dict(),
             'pipeline_run': pipeline_run,

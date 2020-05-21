@@ -38,7 +38,7 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
-from .executable import ExecutablePipeline, InterProcessExecutablePipeline
+from .executable import ExecutablePipeline
 from .executor import (
     ExecutorDefinition,
     default_executors,
@@ -53,7 +53,7 @@ from .output import OutputDefinition, OutputMapping
 from .partition import Partition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
-from .reconstructable import reconstructable
+from .reconstructable import ReconstructablePipeline, reconstructable
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
