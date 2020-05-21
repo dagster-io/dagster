@@ -1,5 +1,5 @@
 import path from "path";
-import { ROOT_PIPELINES_QUERY } from "../App";
+import { ROOT_REPOSITORIES_QUERY } from "../App";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 import { SOLIDS_ROOT_QUERY } from "../solids/SolidsRoot";
@@ -15,10 +15,10 @@ import { SidebarTabbedContainerSolidQueryVariables } from "../types/SidebarTabbe
 
 export const MOCKS: CachedGraphQLRequest[] = [
   {
-    name: "ROOT_PIPELINES_QUERY",
-    query: ROOT_PIPELINES_QUERY,
+    name: "ROOT_REPOSITORIES_QUERY",
+    query: ROOT_REPOSITORIES_QUERY,
     variables: undefined,
-    filepath: path.join(__dirname, "__data__", "ROOT_PIPELINES_QUERY.json")
+    filepath: path.join(__dirname, "__data__", "ROOT_REPOSITORIES_QUERY.json")
   },
   {
     name: "PIPELINE_EXPLORER_ROOT_QUERY",

@@ -3,14 +3,13 @@ import * as React from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 
 import CustomAlertProvider from "./CustomAlertProvider";
-import { NonIdealState } from "@blueprintjs/core";
+import { NonIdealState, Spinner } from "@blueprintjs/core";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
-import { PipelineNamesContext } from "./PipelineNamesContext";
 import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
 import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
-import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
+import { RootRepositoriesQuery } from "./types/RootRepositoriesQuery";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
@@ -24,20 +23,36 @@ import { useQuery } from "react-apollo";
 import { FeatureFlagsRoot } from "./FeatureFlagsRoot";
 import { InstanceDetailsRoot } from "./InstanceDetailsRoot";
 import { SolidDetailsRoot } from "./solids/SolidDetailsRoot";
+import {
+  DagsterRepositoryContext,
+  REPOSITORY_LOCATION_FRAGMENT
+} from "./DagsterRepositoryContext";
 
-function extractData(result?: RootPipelinesQuery) {
-  if (!result || !result.pipelinesOrError) {
-    return { pipelines: [], error: null };
-  }
-  if (result.pipelinesOrError.__typename === "PipelineConnection") {
+const extractData = (result: RootRepositoriesQuery | undefined) => {
+  if (!result?.repositoryLocationsOrError) {
     return {
-      pipelines: result.pipelinesOrError.nodes.map(p => p.name),
-      error: null
+      repositoryContext: {
+        repositoryLocation: undefined,
+        repository: undefined
+      }
     };
-  } else {
-    return { pipelines: [], error: result.pipelinesOrError };
   }
-}
+
+  if (result.repositoryLocationsOrError.__typename === "PythonError") {
+    return {
+      error: result.repositoryLocationsOrError,
+      repositoryContext: {
+        repositoryLocation: undefined,
+        repository: undefined
+      }
+    };
+  }
+
+  const [repositoryLocation] = result.repositoryLocationsOrError.nodes || [];
+  const [repository] = repositoryLocation?.repositories || [];
+  const repositoryContext = { repositoryLocation, repository };
+  return { repositoryContext };
+};
 
 const AppRoutes = () => (
   <Switch>
@@ -85,28 +100,30 @@ const AppRoutes = () => (
       )}
     />
 
-    <PipelineNamesContext.Consumer>
-      {names =>
-        names.length ? (
-          <Redirect to={`/pipeline/${names[0]}/`} />
+    <DagsterRepositoryContext.Consumer>
+      {context =>
+        context.repository?.pipelines.length ? (
+          <Redirect to={`/pipeline/${context.repository.pipelines[0].name}/`} />
         ) : (
           <Route render={() => <NonIdealState title="No pipelines" />} />
         )
       }
-    </PipelineNamesContext.Consumer>
+    </DagsterRepositoryContext.Consumer>
   </Switch>
 );
 
 export const App: React.FunctionComponent = () => {
-  const result = useQuery<RootPipelinesQuery>(ROOT_PIPELINES_QUERY, {
+  const result = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: "cache-and-network"
   });
-  const { pipelines, error } = extractData(result.data);
+
+  const { repositoryContext, error } = extractData(result?.data);
+  const { repositoryLocation, repository } = repositoryContext;
 
   return (
     <div style={{ display: "flex", height: "100%" }}>
       <BrowserRouter>
-        <PipelineNamesContext.Provider value={pipelines || []}>
+        <DagsterRepositoryContext.Provider value={repositoryContext}>
           <LeftNav />
           {error ? (
             <PythonErrorInfo
@@ -114,30 +131,32 @@ export const App: React.FunctionComponent = () => {
               error={error}
               centered={true}
             />
-          ) : (
+          ) : repositoryLocation && repository ? (
             <>
               <AppRoutes />
               <CustomAlertProvider />
             </>
+          ) : (
+            <NonIdealState icon={<Spinner size={24} />} />
           )}
-        </PipelineNamesContext.Provider>
+        </DagsterRepositoryContext.Provider>
       </BrowserRouter>
     </div>
   );
 };
 
-export const ROOT_PIPELINES_QUERY = gql`
-  query RootPipelinesQuery {
-    pipelinesOrError {
+export const ROOT_REPOSITORIES_QUERY = gql`
+  query RootRepositoriesQuery {
+    repositoryLocationsOrError {
       __typename
-      ...PythonErrorFragment
-      ... on PipelineConnection {
+      ... on RepositoryLocationConnection {
         nodes {
-          name
+          ...RepositoryLocationFragment
         }
       }
+      ...PythonErrorFragment
     }
   }
-
+  ${REPOSITORY_LOCATION_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

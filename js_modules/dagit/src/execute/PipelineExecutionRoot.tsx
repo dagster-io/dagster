@@ -15,7 +15,6 @@ import {
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 import { ExecutionTabs } from "./ExecutionTabs";
 import { RouteComponentProps } from "react-router-dom";
-
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({ match }) => {

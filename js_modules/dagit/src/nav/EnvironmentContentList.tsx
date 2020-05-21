@@ -12,8 +12,8 @@ import { Link } from "react-router-dom";
 import styled from "styled-components/macro";
 
 import { tabForPipelinePathComponent } from "./PipelineNav";
-import { PipelineNamesContext } from "../PipelineNamesContext";
 import { ContentListSolidsQuery } from "./types/ContentListSolidsQuery";
+import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
@@ -23,7 +23,7 @@ export const EnvironmentContentList: React.FunctionComponent<{
   tab?: string;
 }> = ({ tab, selector }) => {
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
-  const pipelineNames = React.useContext(PipelineNamesContext);
+  const { repository } = React.useContext(DagsterRepositoryContext);
   const pipelineTab = tabForPipelinePathComponent(tab);
   const [q, setQ] = React.useState<string>("");
 
@@ -71,7 +71,8 @@ export const EnvironmentContentList: React.FunctionComponent<{
       </Header>
       {type === "pipelines" ? (
         <Items>
-          {pipelineNames
+          {(repository?.pipelines || [])
+            .map(pipeline => pipeline.name)
             .filter(p => !q || iincludes(p, q))
             .map(p => (
               <Item

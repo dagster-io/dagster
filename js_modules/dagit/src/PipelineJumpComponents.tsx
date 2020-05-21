@@ -4,8 +4,8 @@ import { Select } from "@blueprintjs/select";
 import { Button, MenuItem } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
-import { PipelineNamesContext } from "./PipelineNamesContext";
 import { ShortcutHandler } from "./ShortcutHandler";
+import { DagsterRepositoryContext } from "./DagsterRepositoryContext";
 
 interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
@@ -82,11 +82,11 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
         onGlobalKeyDown={this.onGlobalKeyDown}
         shortcutLabel={`⌥P`}
       >
-        <PipelineNamesContext.Consumer>
-          {pipelineNames => (
+        <DagsterRepositoryContext.Consumer>
+          {context => (
             <StringSelect
               ref={this.select}
-              items={pipelineNames}
+              items={context.repository?.pipelines.map(x => x.name) || []}
               itemRenderer={BasicStringRenderer}
               itemListPredicate={BasicStringPredicate}
               noResults={<MenuItem disabled={true} text="No results." />}
@@ -95,13 +95,13 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
               <Button
                 text={selectedPipelineName || "Select a pipeline..."}
                 id="playground-select-pipeline"
-                disabled={pipelineNames.length === 0}
+                disabled={!context.repository?.pipelines.length}
                 rightIcon="double-caret-vertical"
                 icon="send-to-graph"
               />
             </StringSelect>
           )}
-        </PipelineNamesContext.Consumer>
+        </DagsterRepositoryContext.Consumer>
       </ShortcutHandler>
     );
   }
