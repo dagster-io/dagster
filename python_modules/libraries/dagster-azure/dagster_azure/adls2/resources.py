@@ -1,5 +1,6 @@
 from dagster import Field, Selector, String, StringSource, resource
 
+from dagster_azure.blob.utils import create_blob_client
 from .utils import create_adls2_client
 
 
@@ -73,4 +74,24 @@ def adls2_resource(context):
     '''
     storage_account = context.resource_config['storage_account']
     credential = context.resource_config["credential"].copy().popitem()[1]
-    return create_adls2_client(storage_account, credential)
+    return ADLS2Resource(storage_account, credential)
+
+
+class ADLS2Resource(object):
+    '''Resource containing clients to access Azure Data Lake Storage Gen2.
+
+    Contains a client for both the Data Lake and Blob APIs, to work around the limitations
+    of each.
+    '''
+
+    def __init__(self, storage_account, credential):
+        self._adls2_client = create_adls2_client(storage_account, credential)
+        self._blob_client = create_blob_client(storage_account, credential)
+
+    @property
+    def adls2_client(self):
+        return self._adls2_client
+
+    @property
+    def blob_client(self):
+        return self._blob_client

@@ -3,10 +3,9 @@ import uuid
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
-    FakeADLS2ServiceClient,
+    FakeADLS2Resource,
     adls2_plus_default_storage_defs,
 )
-from dagster_azure.blob import FakeBlobServiceClient
 
 from dagster import (
     InputDefinition,
@@ -91,10 +90,7 @@ def test_adls2_file_manager_read(storage_account, file_system):
     file_manager.delete_local_temp()
 
 
-@mock.patch('dagster_azure.adls2.object_store.create_blob_client')
-def test_depends_on_adls2_resource_intermediates(
-    mock_create_blob_client, storage_account, file_system
-):
+def test_depends_on_adls2_resource_intermediates(storage_account, file_system):
     @solid(
         input_defs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
         output_defs=[OutputDefinition(Int)],
@@ -102,8 +98,7 @@ def test_depends_on_adls2_resource_intermediates(
     def add_numbers(_, num_one, num_two):
         return num_one + num_two
 
-    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
-    adls2_fake_resource = FakeADLS2ServiceClient(storage_account)
+    adls2_fake_resource = FakeADLS2Resource(storage_account)
 
     @pipeline(
         mode_defs=[
@@ -129,13 +124,13 @@ def test_depends_on_adls2_resource_intermediates(
     assert result.success
     assert result.result_for_solid('add_numbers').output_value() == 6
 
-    assert file_system in adls2_fake_resource.file_systems
+    assert file_system in adls2_fake_resource.adls2_client.file_systems
 
     keys = set()
     for step_key, output_name in [('add_numbers.compute', 'result')]:
         keys.add(create_adls2_key(result.run_id, step_key, output_name))
 
-    assert set(adls2_fake_resource.file_systems[file_system].keys()) == keys
+    assert set(adls2_fake_resource.adls2_client.file_systems[file_system].keys()) == keys
 
 
 def create_adls2_key(run_id, step_key, output_name):
@@ -144,10 +139,7 @@ def create_adls2_key(run_id, step_key, output_name):
     )
 
 
-@mock.patch('dagster_azure.adls2.object_store.create_blob_client')
-def test_depends_on_adls2_resource_file_manager(
-    mock_create_blob_client, storage_account, file_system
-):
+def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     bar_bytes = 'bar'.encode()
 
     @solid(output_defs=[OutputDefinition(ADLS2FileHandle)])
@@ -160,8 +152,7 @@ def test_depends_on_adls2_resource_file_manager(
         assert isinstance(local_path, str)
         assert open(local_path, 'rb').read() == bar_bytes
 
-    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
-    adls2_fake_resource = FakeADLS2ServiceClient(storage_account)
+    adls2_fake_resource = FakeADLS2Resource(storage_account)
 
     @pipeline(
         mode_defs=[
@@ -181,7 +172,7 @@ def test_depends_on_adls2_resource_file_manager(
 
     assert result.success
 
-    keys_in_bucket = set(adls2_fake_resource.file_systems[file_system].keys())
+    keys_in_bucket = set(adls2_fake_resource.adls2_client.file_systems[file_system].keys())
 
     for step_key, output_name in [
         ('emit_file.compute', 'result'),

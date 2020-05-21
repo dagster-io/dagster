@@ -9,6 +9,7 @@ from dagster_azure.adls2 import (
     adls2_resource,
     create_adls2_client,
 )
+from dagster_azure.blob import create_blob_client
 
 from dagster import (
     Bool,
@@ -102,9 +103,14 @@ def get_azure_credential():
         raise Exception("AZURE_STORAGE_ACCOUNT_KEY must be set for intermediate store tests")
 
 
-def get_client(storage_account):
+def get_adls2_client(storage_account):
     creds = get_azure_credential()["key"]
     return create_adls2_client(storage_account, creds)
+
+
+def get_blob_client(storage_account):
+    creds = get_azure_credential()["key"]
+    return create_blob_client(storage_account, creds)
 
 
 @nettest
@@ -149,10 +155,12 @@ def test_using_adls2_for_subplan(storage_account, file_system):
         instance,
     ) as context:
 
+        resource = context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2
         store = ADLS2IntermediateStore(
             file_system=file_system,
             run_id=run_id,
-            client=context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2,
+            adls2_client=resource.adls2_client,
+            blob_client=resource.blob_client,
         )
         intermediates_manager = IntermediateStoreIntermediatesManager(store)
         step_output_handle = StepOutputHandle('return_one.compute')
@@ -206,7 +214,8 @@ def test_adls2_intermediate_store_with_type_storage_plugin(storage_account, file
     run_id = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account),
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
         run_id=run_id,
         file_system=file_system,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -230,7 +239,8 @@ def test_adls2_intermediate_store_with_composite_type_storage_plugin(storage_acc
     run_id = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account),
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
         run_id=run_id,
         file_system=file_system,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -251,7 +261,10 @@ def test_adls2_intermediate_store_composite_types_with_custom_serializer_for_inn
     run_id = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account), run_id=run_id, file_system=file_system,
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
+        run_id=run_id,
+        file_system=file_system,
     )
 
     obj_name = 'list'
@@ -275,7 +288,10 @@ def test_adls2_intermediate_store_with_custom_serializer(storage_account, file_s
     run_id = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account), run_id=run_id, file_system=file_system,
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
+        run_id=run_id,
+        file_system=file_system,
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -324,11 +340,13 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
     with scoped_pipeline_context(
         execution_plan, environment_dict, pipeline_run, instance,
     ) as context:
+        resource = context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2
         store = ADLS2IntermediateStore(
             run_id=result.run_id,
             file_system=file_system,
             prefix=adls2_prefix,
-            client=context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2,
+            adls2_client=resource.adls2_client,
+            blob_client=resource.blob_client,
         )
         intermediates_manager = IntermediateStoreIntermediatesManager(store)
         assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
@@ -351,7 +369,8 @@ def test_adls2_intermediate_store_with_custom_prefix(storage_account, file_syste
     run_id = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account),
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
         run_id=run_id,
         file_system=file_system,
         prefix='custom_prefix',
@@ -380,12 +399,18 @@ def test_adls2_intermediate_store(storage_account, file_system):
     run_id_2 = make_new_run_id()
 
     intermediate_store = ADLS2IntermediateStore(
-        client=get_client(storage_account), run_id=run_id, file_system=file_system,
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
+        run_id=run_id,
+        file_system=file_system,
     )
     assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
 
     intermediate_store_2 = ADLS2IntermediateStore(
-        client=get_client(storage_account), run_id=run_id_2, file_system=file_system,
+        adls2_client=get_adls2_client(storage_account),
+        blob_client=get_blob_client(storage_account),
+        run_id=run_id_2,
+        file_system=file_system,
     )
     assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
 
@@ -438,7 +463,10 @@ def test_custom_read_write_mode(storage_account, file_system):
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
             intermediate_store = ADLS2IntermediateStore(
-                client=get_client(storage_account), run_id=run_id, file_system=file_system,
+                adls2_client=get_adls2_client(storage_account),
+                blob_client=get_blob_client(storage_account),
+                run_id=run_id,
+                file_system=file_system,
             )
             intermediate_store.set_object(
                 data_frame, context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']

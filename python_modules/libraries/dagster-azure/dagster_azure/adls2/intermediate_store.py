@@ -13,13 +13,19 @@ class ADLS2IntermediateStore(IntermediateStore):
     '''
 
     def __init__(
-        self, file_system, run_id, client, type_storage_plugin_registry=None, prefix='dagster',
+        self,
+        file_system,
+        run_id,
+        adls2_client,
+        blob_client,
+        type_storage_plugin_registry=None,
+        prefix='dagster',
     ):
         check.str_param(file_system, 'file_system')
         check.str_param(prefix, 'prefix')
         check.str_param(run_id, 'run_id')
 
-        object_store = ADLS2ObjectStore(file_system, client)
+        object_store = ADLS2ObjectStore(file_system, adls2_client, blob_client)
 
         def root_for_run_id(r_id):
             return object_store.key_for_paths([prefix, 'storage', r_id])

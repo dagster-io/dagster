@@ -1,16 +1,20 @@
-from dagster_azure.adls2 import ADLS2ObjectStore, FakeADLS2ServiceClient
-
 from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
+
+from dagster_azure.adls2 import ADLS2ObjectStore, FakeADLS2ServiceClient
+from dagster_azure.blob import FakeBlobServiceClient
 
 
 def test_adls2_object_store(
     storage_account, credential, file_system, caplog
 ):  # pylint: disable=too-many-function-args
     adls2_fake_client = FakeADLS2ServiceClient(storage_account, credential)
+    blob_fake_client = FakeBlobServiceClient(storage_account, credential)
 
     key = 'foo'
     # Uses mock ADLS2 client
-    adls2_obj_store = ADLS2ObjectStore(file_system, client=adls2_fake_client)
+    adls2_obj_store = ADLS2ObjectStore(
+        file_system, adls2_client=adls2_fake_client, blob_client=blob_fake_client
+    )
     res = adls2_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
     assert res.key == 'abfss://{fs}@{account}.dfs.core.windows.net/{key}'.format(
         fs=file_system, account=storage_account, key=key

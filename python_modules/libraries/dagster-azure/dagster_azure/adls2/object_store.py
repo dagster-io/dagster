@@ -9,25 +9,18 @@ from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
-from dagster.seven import urlparse
-
-from dagster_azure.blob.utils import create_blob_client
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
 class ADLS2ObjectStore(ObjectStore):
-    def __init__(self, file_system, client, lease_duration=DEFAULT_LEASE_DURATION):
-        self.adls2_client = client
+    def __init__(
+        self, file_system, adls2_client, blob_client, lease_duration=DEFAULT_LEASE_DURATION
+    ):
+        self.adls2_client = adls2_client
         self.file_system_client = self.adls2_client.get_file_system_client(file_system)
         # We also need a blob client to handle copying as ADLS doesn't have a copy API yet
-        self.blob_client = create_blob_client(
-            client.account_name,
-            # client.credential is non-null if a secret key was used to authenticate
-            client.credential.account_key if client.credential is not None
-            # otherwise the SAS token will be in the query string of the URL
-            else urlparse(client.url).query,
-        )
+        self.blob_client = blob_client
         self.blob_container_client = self.blob_client.get_container_client(file_system)
 
         self.lease_duration = lease_duration

@@ -49,23 +49,24 @@ def adls2_system_storage(init_context):
               adls2_file_system: my-cool-file-system
               adls2_prefix: good/prefix-for-files-
     '''
-    client = init_context.resources.adls2
+    resource = init_context.resources.adls2
     adls2_base = '{prefix}/storage/{run_id}/files'.format(
         prefix=init_context.system_storage_config['adls2_prefix'],
         run_id=init_context.pipeline_run.run_id,
     )
     return SystemStorageData(
         file_manager=ADLS2FileManager(
-            adls2_client=client,
+            adls2_client=resource.adls2_client,
             file_system=init_context.system_storage_config['adls2_file_system'],
             prefix=adls2_base,
         ),
         intermediates_manager=IntermediateStoreIntermediatesManager(
             ADLS2IntermediateStore(
-                client=client,
                 file_system=init_context.system_storage_config['adls2_file_system'],
-                prefix=init_context.system_storage_config['adls2_prefix'],
                 run_id=init_context.pipeline_run.run_id,
+                adls2_client=resource.adls2_client,
+                blob_client=resource.blob_client,
+                prefix=init_context.system_storage_config['adls2_prefix'],
                 type_storage_plugin_registry=init_context.type_storage_plugin_registry,
             )
         ),
