@@ -1026,8 +1026,6 @@ type RunningSchedule {
   ticks(limit: Int): [ScheduleTick!]!
   ticksCount: Int!
   stats: ScheduleTickStatsSnapshot!
-  attempts(limit: Int): [ScheduleAttempt!]!
-  attemptsCount: Int!
   logsPath: String!
 }
 
@@ -1053,19 +1051,6 @@ type ScalarUnionConfigType implements ConfigType {
   nonScalarType: ConfigType!
   scalarTypeKey: String!
   nonScalarTypeKey: String!
-}
-
-type ScheduleAttempt {
-  time: Float!
-  jsonResult: String!
-  status: ScheduleAttemptStatus!
-  run: PipelineRun
-}
-
-enum ScheduleAttemptStatus {
-  SUCCESS
-  ERROR
-  SKIPPED
 }
 
 type ScheduleDefinition {

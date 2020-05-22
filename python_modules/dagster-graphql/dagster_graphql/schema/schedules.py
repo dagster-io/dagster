@@ -1,12 +1,7 @@
-import heapq
-import json
-import os
-
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import (
     get_dagster_schedule_def,
-    get_schedule_attempt_filenames,
     start_schedule,
     stop_schedule,
 )
@@ -96,29 +91,6 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         )
 
 
-# TODO: Delete in 0.8.0 release
-# https://github.com/dagster-io/dagster/issues/2288
-class DauphinScheduleAttemptStatus(dauphin.Enum):
-    class Meta(object):
-        name = 'ScheduleAttemptStatus'
-
-    SUCCESS = 'SUCCESS'
-    ERROR = 'ERROR'
-    SKIPPED = 'SKIPPED'
-
-
-# TODO: Delete in 0.8.0 release
-# https://github.com/dagster-io/dagster/issues/2288
-class DauphinScheduleAttempt(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ScheduleAttempt'
-
-    time = dauphin.NonNull(dauphin.Float)
-    json_result = dauphin.NonNull(dauphin.String)
-    status = dauphin.NonNull('ScheduleAttemptStatus')
-    run = dauphin.Field('PipelineRun')
-
-
 DauphinScheduleTickStatus = dauphin.Enum.from_enum(ScheduleTickStatus)
 
 
@@ -201,10 +173,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
     ticks_count = dauphin.NonNull(dauphin.Int)
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
-    # TODO: Delete attempts and attempts_count in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/2288
-    attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
-    attempts_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
@@ -219,74 +187,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             python_path=schedule.python_path,
             repository_path=schedule.repository_path,
         )
-
-    # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/2288
-    def resolve_attempts(self, graphene_info, **kwargs):
-        limit = kwargs.get('limit')
-
-        results = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
-        if limit is None:
-            limit = len(results)
-        latest_results = heapq.nlargest(limit, results, key=os.path.getctime)
-
-        attempts = []
-        for result_path in latest_results:
-            with open(result_path, 'r') as f:
-                line = f.readline()
-                if not line:
-                    continue  # File is empty
-
-                start_scheduled_execution_response = json.loads(line)
-                run = None
-
-                if 'errors' in start_scheduled_execution_response:
-                    status = DauphinScheduleAttemptStatus.ERROR
-                    json_result = start_scheduled_execution_response['errors']
-                else:
-                    json_result = start_scheduled_execution_response['data'][
-                        'startScheduledExecution'
-                    ]
-                    typename = json_result['__typename']
-
-                    if (
-                        typename == 'StartPipelineRunSuccess'
-                        or typename == 'LaunchPipelineRunSuccess'
-                    ):
-                        status = DauphinScheduleAttemptStatus.SUCCESS
-                        run_id = json_result['run']['runId']
-                        if graphene_info.context.instance.has_run(run_id):
-                            run = graphene_info.schema.type_named('PipelineRun')(
-                                graphene_info.context.instance.get_run_by_id(run_id)
-                            )
-                    elif typename == 'ScheduledExecutionBlocked':
-                        status = DauphinScheduleAttemptStatus.SKIPPED
-                    else:
-                        status = DauphinScheduleAttemptStatus.ERROR
-
-                attempts.append(
-                    graphene_info.schema.type_named('ScheduleAttempt')(
-                        time=os.path.getctime(result_path),
-                        json_result=json.dumps(json_result),
-                        status=status,
-                        run=run,
-                    )
-                )
-
-        return attempts
-
-    # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/2288
-    def resolve_attempts_count(self, graphene_info):
-        attempt_files = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
-        return len(attempt_files)
-
-    # TODO: Delete in 0.8.0 release
-    # https://github.com/dagster-io/dagster/issues/2288
-    def resolve_logs_path(self, graphene_info):
-        instance = graphene_info.context.instance
-        external_repository = graphene_info.context.legacy_external_repository
-        return instance.log_path_for_schedule(external_repository.name, self._schedule.name)
 
     def resolve_stats(self, graphene_info):
         external_repository = graphene_info.context.legacy_external_repository

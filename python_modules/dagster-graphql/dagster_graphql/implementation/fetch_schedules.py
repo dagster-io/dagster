@@ -1,6 +1,3 @@
-import glob
-import os
-
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
@@ -137,10 +134,3 @@ def get_dagster_schedule(graphene_info, schedule_name):
         )
 
     return schedule
-
-
-def get_schedule_attempt_filenames(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
-    instance = graphene_info.context.instance
-    log_dir = instance.log_path_for_schedule(external_repository.name, schedule_name)
-    return glob.glob(os.path.join(log_dir, "*.result"))

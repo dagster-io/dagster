@@ -44,12 +44,6 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum ScheduleAttemptStatus {
-  ERROR = "ERROR",
-  SKIPPED = "SKIPPED",
-  SUCCESS = "SUCCESS",
-}
-
 export enum ScheduleStatus {
   ENDED = "ENDED",
   RUNNING = "RUNNING",

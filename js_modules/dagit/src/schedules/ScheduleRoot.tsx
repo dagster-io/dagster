@@ -9,42 +9,25 @@ import {
 import { Query, QueryResult } from "react-apollo";
 import {
   ScheduleRootQuery,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
 } from "./types/ScheduleRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
-import { Link } from "react-router-dom";
-import { ScheduleRow, ScheduleRowFragment, AttemptStatus } from "./ScheduleRow";
+import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
 
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString, assertUnreachable } from "../Util";
-import { RunStatus } from "../runs/RunUtils";
 import { ScheduleTickStatus } from "../types/globalTypes";
-import styled from "styled-components/macro";
-import {
-  Collapse,
-  Divider,
-  Icon,
-  Intent,
-  Callout,
-  Code,
-  Tag,
-  AnchorButton
-} from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import { Intent, Tag, AnchorButton } from "@blueprintjs/core";
 import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
-import { useState } from "react";
 import * as querystring from "query-string";
-import { ButtonLink } from "../ButtonLink";
 import { PartitionView } from "./PartitionView";
 
 const NUM_RUNS_TO_DISPLAY = 10;
-const NUM_ATTEMPTS_TO_DISPLAY = 5;
+const NUM_TICKS_TO_TO_DISPLAY = 5;
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
@@ -64,7 +47,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
       variables={{
         scheduleName,
         limit: NUM_RUNS_TO_DISPLAY,
-        attemptsLimit: NUM_ATTEMPTS_TO_DISPLAY
+        ticksLimit: NUM_TICKS_TO_TO_DISPLAY
       }}
       fetchPolicy="cache-and-network"
       pollInterval={15 * 1000}
@@ -90,7 +73,6 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
                       setCursor={setCursor}
                     />
                   ) : null}
-                  <AttemptsTable attemptList={scheduleOrError.attemptList} />
                 </ScrollContainer>
               );
             } else {
@@ -205,118 +187,11 @@ const TicksTable: React.FunctionComponent<{
   ) : null;
 };
 
-// TODO: Delete in 0.8.0 release
-// https://github.com/dagster-io/dagster/issues/2288
-interface AttemptsTableProps {
-  attemptList: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList[];
-}
-
-const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
-  attemptList
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  if (!attemptList || !attemptList.length) {
-    return null;
-  }
-  return (
-    <AttemptsTableContainer>
-      <Header>
-        Old Attempts (Deprecated){" "}
-        <Icon
-          style={{ cursor: "pointer" }}
-          icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT}
-          iconSize={Icon.SIZE_LARGE}
-          intent={Intent.PRIMARY}
-          onClick={() => setIsOpen(!isOpen)}
-        />
-      </Header>
-      <Divider />
-      <Collapse isOpen={isOpen}>
-        <Callout
-          title={
-            "These schedule attempts will be no longer visible in Dagit 0.8.0"
-          }
-          intent={Intent.WARNING}
-          style={{ margin: "10px 0" }}
-        >
-          <p>
-            The way Dagster stores schedule attempts has been updated to use a
-            database, which can be configured using{" "}
-            <a href="https://docs.dagster.io/docs/deploying/instance/#scheduler-storage">
-              <Code>Scheduler Storage</Code>
-            </a>
-            . Previously, attempts were stored on the fileystem at{" "}
-            <Code>$DAGSTER_HOME/schedules/logs/</Code>. This update removes the
-            dependency on the filesytem for the scheduler, and enables the
-            durability of schedule attempt history across deploys of dagster.
-          </p>
-        </Callout>
-        {attemptList.map((attempt, i) => (
-          <RowContainer key={i} style={{ marginBottom: 0, boxShadow: "none" }}>
-            <RowColumn
-              style={{
-                maxWidth: 30,
-                borderRight: 0,
-                padding: 7
-              }}
-            >
-              {attempt.run ? (
-                <RunStatus status={attempt.run.status} />
-              ) : (
-                <AttemptStatus status={attempt.status} />
-              )}
-            </RowColumn>
-            <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
-              {attempt.run ? (
-                <div>
-                  <Link to={`/runs/all/${attempt.run.runId}`}>
-                    {attempt.run.runId}
-                  </Link>
-                </div>
-              ) : (
-                <div>
-                  <ButtonLink
-                    onClick={() =>
-                      showCustomAlert({
-                        title: "Schedule Response",
-                        body: (
-                          <>
-                            <HighlightedCodeBlock
-                              value={JSON.stringify(
-                                JSON.parse(attempt.jsonResult),
-                                null,
-                                2
-                              )}
-                              languages={["json"]}
-                            />
-                          </>
-                        )
-                      })
-                    }
-                  >
-                    {" "}
-                    View error
-                  </ButtonLink>
-                </div>
-              )}
-            </RowColumn>
-            <RowColumn
-              style={{ maxWidth: 200, paddingLeft: 0, textAlign: "left" }}
-            >
-              {unixTimestampToString(attempt.time)}
-            </RowColumn>
-          </RowContainer>
-        ))}
-      </Collapse>
-    </AttemptsTableContainer>
-  );
-};
-
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery(
     $scheduleName: String!
     $limit: Int!
-    $attemptsLimit: Int!
+    $ticksLimit: Int!
   ) {
     scheduleOrError(scheduleName: $scheduleName) {
       ... on RunningSchedule {
@@ -328,7 +203,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
             name
           }
         }
-        ticksList: ticks(limit: $attemptsLimit) {
+        ticksList: ticks(limit: $ticksLimit) {
           tickId
           status
           timestamp
@@ -349,15 +224,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
             }
           }
         }
-        attemptList: attempts(limit: $attemptsLimit) {
-          time
-          jsonResult
-          status
-          run {
-            runId
-            status
-          }
-        }
       }
       ... on ScheduleNotFoundError {
         message
@@ -371,8 +237,4 @@ export const SCHEDULE_ROOT_QUERY = gql`
 
   ${ScheduleRowFragment}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
-`;
-
-const AttemptsTableContainer = styled.div`
-  margin: 20px 0;
 `;
