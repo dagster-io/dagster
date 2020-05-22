@@ -19,7 +19,7 @@ class DaskConfig(
     ):
         return super(DaskConfig, cls).__new__(
             cls,
-            cluster_type=check.opt_str_param(cluster_type, 'cluster_type'),
+            cluster_type=check.opt_str_param(cluster_type, 'cluster_type', default='local'),
             cluster_configuration=check.opt_dict_param(
                 cluster_configuration, 'cluster_configuration'
             ),
@@ -30,10 +30,6 @@ class DaskConfig(
         from .engine import DaskEngine
 
         return DaskEngine
-
-    @property
-    def cluster_type(self):
-        return getattr(self, 'cluster_type', 'local')
 
     def build_dict(self, pipeline_name):
         '''Returns a dict we can use for kwargs passed to dask client instantiation.
