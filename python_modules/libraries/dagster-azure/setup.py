@@ -38,7 +38,11 @@ def _do_setup(name='dagster-azure'):
         ],
         packages=find_packages(exclude=['test']),
         include_package_data=True,
-        install_requires=['azure-storage-file-datalake~=12.0.1', 'dagster'],
+        install_requires=[
+            'azure-storage-blob~=12.3.0',
+            'azure-storage-file-datalake~=12.0.1',
+            'dagster',
+        ],
         entry_points={'console_scripts': ['dagster-azure = dagster_azure.cli.cli:main']},
         zip_safe=False,
     )
