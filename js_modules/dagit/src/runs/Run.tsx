@@ -215,6 +215,7 @@ interface ReexecuteWithDataProps {
   getReexecutionVariables: (input: {
     run: RunFragment;
     stepKeys?: string[];
+    stepQuery?: string;
     resumeRetry?: boolean;
   }) => StartPipelineReexecutionVariables | undefined;
 }
@@ -239,11 +240,13 @@ const ReexecuteWithData = ({
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
+  const stepQuery = query !== "*" ? query : "";
   const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
       stepKeys,
+      stepQuery,
       resumeRetry
     });
     const result = await startPipelineReexecution({ variables });
@@ -256,6 +259,7 @@ const ReexecuteWithData = ({
     const variables = getReexecutionVariables({
       run,
       stepKeys,
+      stepQuery,
       resumeRetry
     });
     const result = await launchPipelineReexecution({ variables });

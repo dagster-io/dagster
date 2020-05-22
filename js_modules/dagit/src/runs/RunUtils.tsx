@@ -161,14 +161,19 @@ export function handleReexecutionResult(
 
 function getExecutionMetadata(
   run: RunFragment | RunTableRunFragment | RunActionMenuFragment,
-  resumeRetry = false
+  resumeRetry = false,
+  stepKeys: string[] = [],
+  stepQuery = ""
 ) {
   return {
     parentRunId: run.runId,
     rootRunId: run.rootRunId ? run.rootRunId : run.runId,
     tags: [
       ...run.tags
-        .filter(tag => tag.key !== "dagster/is_resume_retry")
+        .filter(
+          tag =>
+            !(tag.key in ["dagster/is_resume_retry", "dagster/step_selection"])
+        )
         .map(tag => ({
           key: tag.key,
           value: tag.value
@@ -178,6 +183,8 @@ function getExecutionMetadata(
         key: "dagster/is_resume_retry",
         value: resumeRetry.toString()
       },
+      // pass run group info via tags
+      // https://github.com/dagster-io/dagster/issues/2495
       {
         key: "dagster/parent_run_id",
         value: run.runId
@@ -185,7 +192,16 @@ function getExecutionMetadata(
       {
         key: "dagster/root_run_id",
         value: run.rootRunId ? run.rootRunId : run.runId
-      }
+      },
+      // pass step selection query via tags
+      ...(stepKeys.length > 0 && stepQuery
+        ? [
+            {
+              key: "dagster/step_selection",
+              value: stepQuery
+            }
+          ]
+        : [])
     ]
   };
 }
@@ -200,9 +216,10 @@ export function getReexecutionVariables(input: {
   run: RunFragment | RunTableRunFragment | RunActionMenuFragment;
   envYaml?: string;
   stepKeys?: string[];
+  stepQuery?: string;
   resumeRetry?: boolean;
 }) {
-  const { run, envYaml, stepKeys, resumeRetry } = input;
+  const { run, envYaml, stepKeys, resumeRetry, stepQuery } = input;
 
   if (isRunFragment(run)) {
     if (!run || run.pipeline.__typename === "UnknownPipeline") {
@@ -228,7 +245,9 @@ export function getReexecutionVariables(input: {
 
     executionParams["executionMetadata"] = getExecutionMetadata(
       run,
-      resumeRetry
+      resumeRetry,
+      stepKeys,
+      stepQuery
     );
 
     return { executionParams };

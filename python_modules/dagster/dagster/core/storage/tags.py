@@ -16,6 +16,8 @@ ROOT_RUN_ID_TAG = '{prefix}root_run_id'.format(prefix=SYSTEM_TAG_PREFIX)
 
 RESUME_RETRY_TAG = '{prefix}is_resume_retry'.format(prefix=SYSTEM_TAG_PREFIX)
 
+STEP_SELECTION_TAG = '{prefix}step_selection'.format(prefix=SYSTEM_TAG_PREFIX)
+
 
 def check_tags(obj, name):
     check.opt_dict_param(obj, name, key_type=str, value_type=str)
