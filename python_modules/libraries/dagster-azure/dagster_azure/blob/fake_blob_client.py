@@ -1,7 +1,7 @@
-from collections import defaultdict
-from contextlib import contextmanager
 import io
 import random
+from collections import defaultdict
+from contextlib import contextmanager
 
 from azure.core.exceptions import ResourceNotFoundError
 

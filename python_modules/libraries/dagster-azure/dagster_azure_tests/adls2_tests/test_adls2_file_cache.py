@@ -1,6 +1,6 @@
 import io
 
-from dagster_azure.adls2 import FakeADLS2ServiceClient, ADLS2FileCache, ADLS2FileHandle
+from dagster_azure.adls2 import ADLS2FileCache, ADLS2FileHandle, FakeADLS2ServiceClient
 
 
 def test_adls2_file_cache_file_not_present(storage_account, file_system, credential):

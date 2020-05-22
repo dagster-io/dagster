@@ -3,6 +3,7 @@ import os
 from contextlib import contextmanager
 
 from azure.storage.blob import generate_blob_sas
+
 from dagster import Field, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,

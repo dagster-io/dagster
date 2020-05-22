@@ -1,6 +1,7 @@
+from dagster_azure.blob.utils import create_blob_client
+
 from dagster import Field, Selector, String, StringSource, resource
 
-from dagster_azure.blob.utils import create_blob_client
 from .utils import create_adls2_client
 
 

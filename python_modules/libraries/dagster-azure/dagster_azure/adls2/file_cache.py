@@ -1,6 +1,6 @@
 from azure.core.exceptions import ResourceNotFoundError
 
-from dagster import Field, String, StringSource, Selector, check, resource
+from dagster import Field, Selector, String, StringSource, check, resource
 from dagster.core.storage.file_cache import FileCache
 
 from .file_manager import ADLS2FileHandle
