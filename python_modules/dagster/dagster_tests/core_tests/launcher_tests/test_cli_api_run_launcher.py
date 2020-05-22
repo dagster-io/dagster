@@ -8,7 +8,6 @@ from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, s
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import EnvironmentHandle, ExternalRepository, RepositoryHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p
@@ -53,17 +52,29 @@ def define_repository():
 
 @contextmanager
 def temp_instance():
+    # This whole thing is fairly sketchy. When using seven.TemporaryDirectory()
+    # we are occasionally seeing the error
+    # "FileNotFoundError: [Errno 2] No such file or directory: 'runs.db-wal'"
+    # This may indicate some sort of resource leakage or ordering issue
+    # where the launched process []
     system_temp = get_system_temp_directory()
 
-    tmp_path = os.path.join(system_temp, str(uuid.uuid4()))
-    mkdir_p(tmp_path)
+    temp_dir = os.path.join(system_temp, str(uuid.uuid4()))
+    mkdir_p(temp_dir)
     try:
-        yield DagsterInstance.local_temp(tmp_path)
+        instance = DagsterInstance.local_temp(
+            temp_dir,
+            overrides={
+                'run_launcher': {'module': 'dagster.core.launcher', 'class': 'CliApiRunLauncher',}
+            },
+        )
+        yield instance
+        instance.run_launcher.join()
     finally:
-        if os.path.exists(tmp_path):
+        if os.path.exists(temp_dir):
             try:
                 # sometimes this fails, but seemingly only on windows
-                shutil.rmtree(tmp_path)
+                shutil.rmtree(temp_dir)
             except seven.FileNotFoundError:
                 pass
 
@@ -97,7 +108,7 @@ def test_successful_run():
 
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(
             instance=instance, run=pipeline_run, external_pipeline=external_pipeline
         )
@@ -123,7 +134,7 @@ def test_crashy_run():
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
 
         time.sleep(2)
@@ -156,7 +167,7 @@ def test_terminated_run():
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
 
         time.sleep(0.5)
@@ -234,7 +245,7 @@ def test_single_solid_subset_execution():
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
         launcher.join()
 
@@ -264,7 +275,7 @@ def test_multi_solid_subset_execution():
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
         launcher.join()
 
@@ -295,7 +306,7 @@ def test_engine_events():
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
-        launcher = CliApiRunLauncher()
+        launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
         launcher.join()
 

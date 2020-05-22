@@ -7,6 +7,7 @@ from dagster.api.execute_run import cli_api_execute_run
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.serdes import ConfigurableClass
 from dagster.seven.temp_dir import get_system_temp_directory
 
 from .base import RunLauncher
@@ -18,18 +19,31 @@ def _is_alive(popen):
     return popen.poll() is None
 
 
-class CliApiRunLauncher(RunLauncher):
+class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     '''
     This run launcher launches a new process which invokes
     the command `dagster api execute_run`.
     '''
 
-    def __init__(self):
+    def __init__(self, inst_data=None):
         self._instance = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
         self._processes_lock = None
         self._thread = None
+        self._inst_data = inst_data  # stop linter from complaining
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return CliApiRunLauncher(inst_data)
 
     def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
@@ -136,6 +150,10 @@ class CliApiRunLauncher(RunLauncher):
             self._output_files_by_run_id[run.run_id] = output_file
 
     def join(self):
+        # If this hasn't been initialize at all, we can just do a noop
+        if not self._instance:
+            return
+
         with self._processes_lock:
             for run_id, process in self._living_process_by_run_id.items():
                 if _is_alive(process):
