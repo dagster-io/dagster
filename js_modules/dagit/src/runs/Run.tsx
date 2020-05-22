@@ -268,16 +268,33 @@ const ReexecuteWithData = ({
     });
   };
 
-  const onClickStep = (stepKey: string) => {
-    if (selectedSteps.length === 1 && selectedSteps[0] === stepKey) {
-      // deselect previously selected single step and clear query
-      onSetSelectedSteps([]);
-      onSetQuery("*");
+  const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
+    const index = selectedSteps.indexOf(stepKey);
+    let newSelected: string[];
+
+    if (evt.shiftKey) {
+      // shift-click to multi select steps
+      newSelected = [...selectedSteps];
+
+      if (index !== -1) {
+        // deselect the step if already selected
+        newSelected.splice(index, 1);
+      } else {
+        // select the step otherwise
+        newSelected.push(stepKey);
+      }
     } else {
-      // click a single step to select the step and update query
-      onSetSelectedSteps([stepKey]);
-      onSetQuery(stepKey);
+      if (selectedSteps.length === 1 && index !== -1) {
+        // deselect the step if already selected
+        newSelected = [];
+      } else {
+        // select the step otherwise
+        newSelected = [stepKey];
+      }
     }
+
+    onSetSelectedSteps(newSelected);
+    onSetQuery(newSelected.join(", ") || "*");
   };
 
   return (

@@ -15,7 +15,7 @@ interface GaantStatusPanelProps {
   run?: RunFragment;
   nowMs: number;
 
-  onClickStep?: (step: string) => void;
+  onClickStep?: (step: string, evt: React.MouseEvent<any>) => void;
   onHighlightStep?: (step: string | null) => void;
   onDoubleClickStep?: (step: string) => void;
 }
@@ -73,7 +73,7 @@ const StepItem: React.FunctionComponent<{
   selected: boolean;
   metadata: IRunMetadataDict;
   nowMs: number;
-  onClick?: (name: string) => void;
+  onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
 }> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
@@ -83,7 +83,7 @@ const StepItem: React.FunctionComponent<{
     <StepItemContainer
       key={name}
       selected={selected}
-      onClick={() => onClick?.(name)}
+      onClick={(evt: React.MouseEvent<any>) => onClick?.(name, evt)}
       onDoubleClick={() => onDoubleClick?.(name)}
       onMouseEnter={() => onHover?.(name)}
       onMouseLeave={() => onHover?.(null)}

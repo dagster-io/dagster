@@ -133,7 +133,7 @@ interface GaantChartProps {
   toolbarLeftActions?: React.ReactChild;
   run?: RunFragment;
 
-  onClickStep: (step: string) => void;
+  onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelectedSteps: (steps: string[]) => void;
   onSetQuery: (value: string) => void;
 }
@@ -509,7 +509,7 @@ interface GaantChartViewportContentsProps {
   viewport: GaantViewport;
   setHoveredNodeName: (name: string | null) => void;
   onDoubleClickStep: (step: string) => void;
-  onClickStep: (step: string) => void;
+  onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
 const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
@@ -575,7 +575,9 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         data-tooltip-text={
           box.width < box.node.name.length * 5 ? box.node.name : undefined
         }
-        onClick={() => props.onClickStep(box.node.name)}
+        onClick={(evt: React.MouseEvent<any>) =>
+          props.onClickStep(box.node.name, evt)
+        }
         onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
         onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
         onMouseLeave={() => props.setHoveredNodeName(null)}
