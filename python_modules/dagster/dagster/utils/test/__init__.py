@@ -39,6 +39,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.utils import make_new_run_id
+from dagster.serdes import ConfigurableClass
 
 # pylint: disable=unused-import
 from ..temp_file import (
@@ -377,10 +378,23 @@ def restore_directory(src):
             shutil.copytree(dst, src)
 
 
-class FilesystemTestScheduler(Scheduler):
-    def __init__(self, artifacts_dir):
+class FilesystemTestScheduler(Scheduler, ConfigurableClass):
+    def __init__(self, artifacts_dir, inst_data=None):
         check.str_param(artifacts_dir, 'artifacts_dir')
         self._artifacts_dir = artifacts_dir
+        self._inst_data = inst_data
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {'base_dir': str}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return FilesystemTestScheduler(artifacts_dir=config_value['base_dir'], inst_data=inst_data)
 
     def debug_info(self):
         return ""

@@ -386,3 +386,22 @@ snapshots['test_invalid_config_schedule_error 1'] = {
     ],
     'ticksCount': 1
 }
+
+snapshots['test_environment_dict_scheduler_error 1'] = {
+    'scheduleDefinition': {
+        'name': 'environment_dict_error_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
