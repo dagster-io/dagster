@@ -4,7 +4,7 @@ import time
 import uuid
 from contextlib import contextmanager
 
-from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
+from dagster import RepositoryDefinition, file_relative_path, pipeline, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import EnvironmentHandle, ExternalRepository, RepositoryHandle
 from dagster.core.instance import DagsterInstance
