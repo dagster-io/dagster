@@ -38,6 +38,8 @@ interface RunProps {
 
 interface RunState {
   logsFilter: LogFilter;
+  query: string;
+  selectedSteps: string[];
 }
 
 export class Run extends React.Component<RunProps, RunState> {
@@ -114,7 +116,9 @@ export class Run extends React.Component<RunProps, RunState> {
   };
 
   state: RunState = {
-    logsFilter: GetDefaultLogFilter()
+    logsFilter: GetDefaultLogFilter(),
+    query: "*",
+    selectedSteps: []
   };
 
   onShowStateDetails = (
@@ -135,9 +139,31 @@ export class Run extends React.Component<RunProps, RunState> {
     }
   };
 
+  onSetLogsFilter = (logsFilter: LogFilter) => {
+    this.setState({ logsFilter });
+  };
+
+  onSetQuery = (query: string) => {
+    this.setState({ query });
+
+    // filter the log following the DSL step selection
+    this.setState(prevState => {
+      return {
+        logsFilter: {
+          ...prevState.logsFilter,
+          values: query !== "*" ? [{ token: "query", value: query }] : []
+        }
+      };
+    });
+  };
+
+  onSetSelectedSteps = (selectedSteps: string[]) => {
+    this.setState({ selectedSteps });
+  };
+
   render() {
     const { client, run } = this.props;
-    const { logsFilter } = this.state;
+    const { logsFilter, query, selectedSteps } = this.state;
 
     return (
       <RunContext.Provider value={run}>
@@ -147,6 +173,7 @@ export class Run extends React.Component<RunProps, RunState> {
           client={client}
           runId={run ? run.runId : ""}
           filter={logsFilter}
+          selectedSteps={selectedSteps}
         >
           {({ filteredNodes, allNodes, loaded }) => (
             <ReexecuteWithData
@@ -155,7 +182,11 @@ export class Run extends React.Component<RunProps, RunState> {
               allNodes={allNodes}
               logsLoading={!loaded}
               logsFilter={logsFilter}
-              onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
+              query={query}
+              selectedSteps={selectedSteps}
+              onSetLogsFilter={this.onSetLogsFilter}
+              onSetQuery={this.onSetQuery}
+              onSetSelectedSteps={this.onSetSelectedSteps}
               onShowStateDetails={this.onShowStateDetails}
               getReexecutionVariables={getReexecutionVariables}
             />
@@ -171,7 +202,11 @@ interface ReexecuteWithDataProps {
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: LogFilter;
+  query: string;
+  selectedSteps: string[];
   logsLoading: boolean;
+  onSetQuery: (v: string) => void;
+  onSetSelectedSteps: (v: string[]) => void;
   onSetLogsFilter: (v: LogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
@@ -190,7 +225,11 @@ const ReexecuteWithData = ({
   filteredNodes,
   logsFilter,
   logsLoading,
+  query,
+  selectedSteps,
   onSetLogsFilter,
+  onSetQuery,
+  onSetSelectedSteps,
   getReexecutionVariables
 }: ReexecuteWithDataProps) => {
   const [startPipelineReexecution] = useMutation(
@@ -225,26 +264,15 @@ const ReexecuteWithData = ({
     });
   };
 
-  const [selectedSteps, setSelectedSteps] = React.useState<string[]>([]);
-  const [query, setQuery] = React.useState<string>("*");
-
   const onClickStep = (stepKey: string) => {
     if (selectedSteps.length === 1 && selectedSteps[0] === stepKey) {
-      // deselect previously selected single step
-      onSetLogsFilter({
-        ...logsFilter,
-        values: []
-      });
-      setSelectedSteps([]);
-      setQuery("*");
+      // deselect previously selected single step and clear query
+      onSetSelectedSteps([]);
+      onSetQuery("*");
     } else {
-      // click a single step to select the step and apply log filter
-      onSetLogsFilter({
-        ...logsFilter,
-        values: [{ token: "step", value: stepKey }]
-      });
-      setSelectedSteps([stepKey]);
-      setQuery(stepKey);
+      // click a single step to select the step and update query
+      onSetSelectedSteps([stepKey]);
+      onSetQuery(stepKey);
     }
   };
 
@@ -288,9 +316,9 @@ const ReexecuteWithData = ({
                 metadata={metadata}
                 selectedSteps={selectedSteps}
                 onClickStep={onClickStep}
-                setSelectedSteps={setSelectedSteps}
+                onSetSelectedSteps={onSetSelectedSteps}
                 query={query}
-                setQuery={setQuery}
+                onSetQuery={onSetQuery}
               />
             ) : (
               <NonIdealState

@@ -134,8 +134,8 @@ interface GaantChartProps {
   run?: RunFragment;
 
   onClickStep: (step: string) => void;
-  setSelectedSteps: (steps: string[]) => void;
-  setQuery: (value: string) => void;
+  onSetSelectedSteps: (steps: string[]) => void;
+  onSetQuery: (value: string) => void;
 }
 
 interface GaantChartState {
@@ -207,7 +207,7 @@ export class GaantChart extends React.Component<
 
   onUpdateQuery = (query: string) => {
     // update query
-    this.props.setQuery(query || "*");
+    this.props.onSetQuery(query || "*");
 
     // update selectedSteps
     let currSelectedSteps: string[] = [];
@@ -216,7 +216,7 @@ export class GaantChart extends React.Component<
       const graphFiltered = filterByQuery(graph, query);
       currSelectedSteps = graphFiltered.all.map(node => node.name);
     }
-    this.props.setSelectedSteps(currSelectedSteps);
+    this.props.onSetSelectedSteps(currSelectedSteps);
   };
 
   onDoubleClickStep = (stepKey: string) => {
