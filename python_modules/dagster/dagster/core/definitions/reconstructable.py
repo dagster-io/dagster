@@ -44,6 +44,9 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
     def for_module(cls, module, fn_name):
         return cls(ModuleCodePointer(module, fn_name))
 
+    def get_cli_args(self):
+        return self.pointer.get_cli_args()
+
     @classmethod
     def from_yaml(cls, file_path):
         check.str_param(file_path, 'file_path')

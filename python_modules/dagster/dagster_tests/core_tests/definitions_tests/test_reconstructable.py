@@ -1,9 +1,10 @@
+import os
 import sys
 
 import pytest
 
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
-from dagster.core.definitions.reconstructable import reconstructable
+from dagster.core.definitions.reconstructable import ReconstructableRepository, reconstructable
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 
 
@@ -123,3 +124,12 @@ def test_inner_decorator_3():
         match='Use a function or decorated function defined at module scope',
     ):
         reconstructable(pipe)
+
+
+def test_reconstructable_cli_args():
+    recon_file = ReconstructableRepository.for_file('foo_file', 'bar_function')
+    assert recon_file.get_cli_args() == '-f {foo_file} -n bar_function'.format(
+        foo_file=os.path.abspath(os.path.expanduser('foo_file'))
+    )
+    recon_module = ReconstructableRepository.for_module('foo_module', 'bar_function')
+    assert recon_module.get_cli_args() == '-m foo_module -n bar_function'

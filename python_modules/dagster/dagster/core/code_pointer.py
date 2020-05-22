@@ -47,7 +47,7 @@ class CodePointer(six.with_metaclass(ABCMeta)):
 class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), CodePointer):
     def __new__(cls, python_file, fn_name):
         return super(FileCodePointer, cls).__new__(
-            cls, check.str_param(python_file, 'python_file'), check.str_param(fn_name, 'fn_name')
+            cls, check.str_param(python_file, 'python_file'), check.str_param(fn_name, 'fn_name'),
         )
 
     def load_target(self):
@@ -64,6 +64,11 @@ class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), Cod
 
     def describe(self):
         return '{self.python_file}::{self.fn_name}'.format(self=self)
+
+    def get_cli_args(self):
+        return '-f {python_file} -n {fn_name}'.format(
+            python_file=os.path.abspath(os.path.expanduser(self.python_file)), fn_name=self.fn_name
+        )
 
 
 @whitelist_for_serdes
@@ -84,6 +89,9 @@ class ModuleCodePointer(namedtuple('_ModuleCodePointer', 'module fn_name'), Code
 
     def describe(self):
         return 'from {self.module} import {self.fn_name}'.format(self=self)
+
+    def get_cli_args(self):
+        return '-m {module} -n {fn_name}'.format(module=self.module, fn_name=self.fn_name)
 
 
 def get_python_file_from_previous_stack_frame():
