@@ -50,6 +50,7 @@ def define_repository():
     )
 
 
+# https://github.com/dagster-io/dagster/issues/2503
 @contextmanager
 def temp_instance():
     # This whole thing is fairly sketchy. When using seven.TemporaryDirectory()
@@ -57,6 +58,7 @@ def temp_instance():
     # "FileNotFoundError: [Errno 2] No such file or directory: 'runs.db-wal'"
     # This may indicate some sort of resource leakage or ordering issue
     # where the launched process []
+
     system_temp = get_system_temp_directory()
 
     temp_dir = os.path.join(system_temp, str(uuid.uuid4()))
@@ -75,7 +77,7 @@ def temp_instance():
             try:
                 # sometimes this fails, but seemingly only on windows
                 shutil.rmtree(temp_dir)
-            except seven.FileNotFoundError:
+            except:  # pylint: disable=bare-except
                 pass
 
 
