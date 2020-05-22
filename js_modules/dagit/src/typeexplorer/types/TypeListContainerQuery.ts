@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: TypeListContainerQuery
 // ====================================================
@@ -32,5 +34,5 @@ export interface TypeListContainerQuery {
 }
 
 export interface TypeListContainerQueryVariables {
-  pipelineName: string;
+  pipelineSelector: PipelineSelector;
 }

@@ -39,7 +39,11 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "TYPE_EXPLORER_CONTAINER_QUERY",
     query: TYPE_EXPLORER_CONTAINER_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline",
+      pipelineSelector: {
+        environmentName: "<<in_process>>",
+        repositoryName: "internal-dagit-repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      },
       dagsterTypeName: "PySparkDataFrame"
     } as TypeExplorerContainerQueryVariables,
     filepath: path.join(
@@ -52,7 +56,11 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "TYPE_LIST_CONTAINER_QUERY",
     query: TYPE_LIST_CONTAINER_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline"
+      pipelineSelector: {
+        environmentName: "<<in_process>>",
+        repositoryName: "internal-dagit-repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      }
     } as TypeListContainerQueryVariables,
     filepath: path.join(__dirname, "__data__", "TYPE_LIST_CONTAINER_QUERY.json")
   },
@@ -72,7 +80,11 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "SIDEBAR_TABBED_CONTAINER_SOLID_QUERY",
     query: SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     variables: {
-      pipeline: "airline_demo_ingest_pipeline",
+      selector: {
+        environmentName: "<<in_process>>",
+        repositoryName: "internal-dagit-repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      },
       handleID: "download_q2_sfo_weather"
     } as SidebarTabbedContainerSolidQueryVariables,
     filepath: path.join(

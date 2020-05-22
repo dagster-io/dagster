@@ -1,7 +1,7 @@
 import csv
 from collections import OrderedDict
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 from dagster_graphql_tests.graphql.setup import define_repository
 
 from dagster import (
@@ -102,8 +102,8 @@ fragment innerInfo on ConfigType {
   }
 }
 
-{
-  pipelineOrError(params: { name: "more_complicated_nested_config" }) {
+query TypeRenderQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       name
@@ -129,7 +129,8 @@ fragment innerInfo on ConfigType {
 
 
 def test_type_rendering(graphql_context):
-    result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY)
+    selector = get_legacy_pipeline_selector(graphql_context, "more_complicated_nested_config")
+    result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY, {'selector': selector})
     assert not result.errors
     assert result.data
 
@@ -179,35 +180,19 @@ def define_test_repository():
     )
 
 
-def test_pipeline_by_name(graphql_context):
+def test_pipeline_or_error_by_name(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, "csv_hello_world_two")
     result = execute_dagster_graphql(
         graphql_context,
         '''
-    {
-        pipelineOrError(params: {name: "csv_hello_world_two"}) {
+    query NamedPipelineQuery($selector: PipelineSelector!) {
+        pipelineOrError(params: $selector) {
             ... on Pipeline {
                 name
             }
         }
     }''',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
-
-
-def test_pipeline_or_error_by_name(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        '''
-    {
-        pipelineOrError(params: { name: "csv_hello_world_two" }) {
-          ... on Pipeline {
-             name
-           }
-        }
-    }''',
+        {'selector': selector},
     )
 
     assert not result.errors
@@ -216,17 +201,19 @@ def test_pipeline_or_error_by_name(graphql_context):
 
 
 def test_pipeline_or_error_by_name_not_found(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, "foobar")
     result = execute_dagster_graphql(
         graphql_context,
         '''
-    {
-        pipelineOrError(params: { name: "foobar" }) {
-          __typename
-          ... on Pipeline {
-             name
-           }
-        }
-    }''',
+        query NamedPipelineQuery($selector: PipelineSelector!) {
+            pipelineOrError(params: $selector) {
+                __typename
+                ... on Pipeline {
+                    name
+                }
+            }
+        }''',
+        {'selector': selector},
     )
 
     assert not result.errors

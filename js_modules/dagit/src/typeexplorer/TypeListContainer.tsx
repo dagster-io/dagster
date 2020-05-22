@@ -5,6 +5,7 @@ import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";
 import { TypeListContainerQuery } from "./types/TypeListContainerQuery";
 import { PipelineExplorerPath } from "../PipelinePathUtils";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 interface ITypeListContainerProps {
   explorerPath: PipelineExplorerPath;
@@ -13,13 +14,12 @@ interface ITypeListContainerProps {
 export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
   explorerPath
 }) => {
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<TypeListContainerQuery>(
     TYPE_LIST_CONTAINER_QUERY,
     {
       fetchPolicy: "cache-and-network",
-      variables: {
-        pipelineName: explorerPath.pipelineName
-      }
+      variables: { pipelineSelector }
     }
   );
 
@@ -37,8 +37,8 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
 };
 
 export const TYPE_LIST_CONTAINER_QUERY = gql`
-  query TypeListContainerQuery($pipelineName: String!) {
-    pipelineOrError(params: { name: $pipelineName }) {
+  query TypeListContainerQuery($pipelineSelector: PipelineSelector!) {
+    pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
         name

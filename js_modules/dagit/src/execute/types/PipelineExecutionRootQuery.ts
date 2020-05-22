@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: PipelineExecutionRootQuery
 // ====================================================
@@ -153,7 +155,6 @@ export interface PipelineExecutionRootQuery {
 }
 
 export interface PipelineExecutionRootQueryVariables {
-  name: string;
-  solidSubset?: string[] | null;
+  selector: PipelineSelector;
   mode?: string | null;
 }

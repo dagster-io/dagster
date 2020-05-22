@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: SidebarTabbedContainerSolidQuery
 // ====================================================
@@ -606,6 +608,6 @@ export interface SidebarTabbedContainerSolidQuery {
 }
 
 export interface SidebarTabbedContainerSolidQueryVariables {
-  pipeline: string;
+  selector: PipelineSelector;
   handleID: string;
 }

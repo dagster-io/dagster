@@ -7,6 +7,7 @@ import { useQuery } from "react-apollo";
 import Loading from "./Loading";
 import gql from "graphql-tag";
 import { PipelineExplorerPath } from "./PipelinePathUtils";
+import { usePipelineSelector } from "./DagsterRepositoryContext";
 
 interface SidebarSolidContainerProps {
   handleID: string;
@@ -26,10 +27,11 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
   onEnterCompositeSolid,
   onClickSolid
 }) => {
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {
-      variables: { pipeline: explorerPath.pipelineName, handleID: handleID },
+      variables: { selector: pipelineSelector, handleID: handleID },
       fetchPolicy: "cache-and-network"
     }
   );
@@ -73,10 +75,10 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
 
 export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
   query SidebarTabbedContainerSolidQuery(
-    $pipeline: String!
+    $selector: PipelineSelector!
     $handleID: String!
   ) {
-    pipelineOrError(params: { name: $pipeline }) {
+    pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
         name

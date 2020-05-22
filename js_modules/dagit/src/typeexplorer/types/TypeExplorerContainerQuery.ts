@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: TypeExplorerContainerQuery
 // ====================================================
@@ -707,6 +709,6 @@ export interface TypeExplorerContainerQuery {
 }
 
 export interface TypeExplorerContainerQueryVariables {
-  pipelineName: string;
+  pipelineSelector: PipelineSelector;
   dagsterTypeName: string;
 }

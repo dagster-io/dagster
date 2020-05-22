@@ -29,6 +29,7 @@ import { IExecutionSession } from "../LocalStorage";
 import { isEqual } from "apollo-utilities";
 import styled from "styled-components";
 import { ShortcutHandler } from "../ShortcutHandler";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 type Preset = ConfigPresetsQuery_pipelineOrError_Pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
@@ -64,7 +65,7 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   onSelectPreset = (preset: Preset, pipeline?: Pipeline) => {
-    if (!pipeline || true) {
+    if (!pipeline) {
       console.error("Could not load pipeline tags");
     }
     this.onCommit({
@@ -80,7 +81,7 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   onSelectPartition = (partition: Partition, pipeline?: Pipeline) => {
-    if (!pipeline || true) {
+    if (!pipeline) {
       console.error("Could not load pipeline tags");
     }
     this.onCommit({
@@ -140,10 +141,11 @@ interface ConfigEditorPartitionPickerProps {
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
   props => {
     const { partitionSetName, pipelineName, value, onSelect } = props;
+    const pipelineSelector = usePipelineSelector(pipelineName);
     const { data, loading } = useQuery<ConfigPartitionsQuery>(
       CONFIG_PARTITIONS_QUERY,
       {
-        variables: { partitionSetName, pipelineName },
+        variables: { partitionSetName, pipelineSelector },
         fetchPolicy: "network-only"
       }
     );
@@ -367,9 +369,9 @@ const PickerContainer = styled.div`
   align-items: center;
 `;
 
-export const CONFIG_PRESETS_QUERY = gql`
-  query ConfigPresetsQuery($pipelineName: String!) {
-    pipelineOrError(params: { name: $pipelineName }) {
+const CONFIG_PRESETS_QUERY = gql`
+  query ConfigPresetsQuery($pipelineSelector: PipelineSelector!) {
+    pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
         name
@@ -404,12 +406,12 @@ export const CONFIG_PARTITION_SETS_QUERY = gql`
   }
 `;
 
-export const CONFIG_PARTITIONS_QUERY = gql`
+const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $partitionSetName: String!
-    $pipelineName: String!
+    $pipelineSelector: PipelineSelector!
   ) {
-    pipelineOrError(params: { name: $pipelineName }) {
+    pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
         name
@@ -447,9 +449,10 @@ function usePresetsAndPartitions(
   loading: boolean;
   pipeline?: Pipeline;
 } {
+  const pipelineSelector = usePipelineSelector(pipelineName);
   const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
     fetchPolicy: "cache-and-network",
-    variables: { pipelineName }
+    variables: { pipelineSelector }
   });
   const partitionSetsQuery = useQuery<ConfigPartitionSetsQuery>(
     CONFIG_PARTITION_SETS_QUERY,

@@ -1,6 +1,10 @@
 import copy
 
-from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_context_for_file,
+    execute_dagster_graphql,
+    get_legacy_pipeline_selector,
+)
 
 from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
 from dagster.core.execution.api import execute_run
@@ -8,8 +12,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 
 RUNS_QUERY = '''
-query PipelineRunsRootQuery($name: String!) {
-  pipelineOrError(params: { name: $name }) {
+query PipelineRunsRootQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     ... on PipelineReference { name }
     ... on Pipeline {
       pipelineSnapshotId
@@ -148,6 +152,8 @@ def test_get_runs_over_graphql(graphql_context):
     # other code in this file which reads itself to load a repo
     from .utils import sync_execute_get_run_log_data
 
+    selector = get_legacy_pipeline_selector(graphql_context, "multi_mode_with_resources")
+
     payload_one = sync_execute_get_run_log_data(
         context=graphql_context,
         variables={
@@ -175,9 +181,7 @@ def test_get_runs_over_graphql(graphql_context):
 
     read_context = graphql_context
 
-    result = execute_dagster_graphql(
-        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
-    )
+    result = execute_dagster_graphql(read_context, RUNS_QUERY, variables={'selector': selector})
 
     # delete the second run
     result = execute_dagster_graphql(
@@ -187,9 +191,7 @@ def test_get_runs_over_graphql(graphql_context):
     assert result.data['deletePipelineRun']['runId'] == run_id_two
 
     # query it back out
-    result = execute_dagster_graphql(
-        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
-    )
+    result = execute_dagster_graphql(read_context, RUNS_QUERY, variables={'selector': selector})
 
     # first is the same
     run_one_data = _get_runs_data(result, run_id_one)

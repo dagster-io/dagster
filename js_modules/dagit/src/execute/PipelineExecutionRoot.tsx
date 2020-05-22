@@ -15,16 +15,20 @@ import {
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 import { ExecutionTabs } from "./ExecutionTabs";
 import { RouteComponentProps } from "react-router-dom";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
+
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({ match }) => {
   const pipelineName = match.params.pipelinePath.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
-
+  const pipelineSelector = usePipelineSelector(
+    pipelineName,
+    data.sessions[data.current]?.solidSubset || undefined
+  );
   const vars = {
-    name: pipelineName,
-    mode: data.sessions[data.current]?.mode,
-    solidSubset: data.sessions[data.current]?.solidSubset
+    selector: pipelineSelector,
+    mode: data.sessions[data.current]?.mode
   };
 
   const onSaveSession = (
@@ -66,7 +70,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                 currentSession={data.sessions[data.current]}
                 onSaveSession={changes => onSaveSession(data.current, changes)}
               >
-                {vars.name !== "" ? (
+                {vars.selector.name !== "" ? (
                   <NonIdealState
                     icon={IconNames.FLOW_BRANCH}
                     title="Pipeline Not Found"
@@ -124,13 +128,12 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   );
 };
 
-export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
+const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query PipelineExecutionRootQuery(
-    $name: String!
-    $solidSubset: [String!]
+    $selector: PipelineSelector!
     $mode: String
   ) {
-    pipelineOrError(params: { name: $name, solidSubset: $solidSubset }) {
+    pipelineOrError(params: $selector) {
       ... on PipelineNotFoundError {
         message
       }
@@ -139,10 +142,7 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
       ...ExecutionSessionContainerFragment
     }
-    environmentSchemaOrError(
-      selector: { name: $name, solidSubset: $solidSubset }
-      mode: $mode
-    ) {
+    environmentSchemaOrError(selector: $selector, mode: $mode) {
       ...ExecutionSessionContainerEnvironmentSchemaFragment
     }
   }

@@ -15,6 +15,7 @@ import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery } from "../GraphQueryImpl";
 import SVGViewport from "../graph/SVGViewport";
 import styled from "styled-components/macro";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -65,9 +66,9 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   }
 }
 
-export const SOLID_SELECTOR_QUERY = gql`
-  query SolidSelectorQuery($name: String!) {
-    pipelineOrError(params: { name: $name }) {
+const SOLID_SELECTOR_QUERY = gql`
+  query SolidSelectorQuery($selector: PipelineSelector!) {
+    pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
         name
@@ -94,8 +95,9 @@ export default (props: ISolidSelectorProps) => {
   const { serverProvidedSubsetError, query, onChange } = props;
   const [pending, setPending] = React.useState<string>(query || "");
   const [focused, setFocused] = React.useState(false);
+  const selector = usePipelineSelector(props.pipelineName);
   const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { name: props.pipelineName },
+    variables: { selector },
     fetchPolicy: "cache-and-network"
   });
   React.useEffect(() => {
