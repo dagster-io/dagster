@@ -133,7 +133,7 @@ def sum_sq_solid(sum_df):
 )
 def df_expectations_solid(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
-    yield ExpectationResult(label="other_expecation", success=True)
+    yield ExpectationResult(label="other_expectation", success=True)
     yield Output(sum_df)
 
 
