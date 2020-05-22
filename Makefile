@@ -40,6 +40,7 @@ install_dev_python_modules:
 				-e python_modules/dagit \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
+				-e python_modules/libraries/dagster-azure \
 				-e python_modules/libraries/dagster-bash \
 				-e python_modules/libraries/dagster-celery \
 				-e python_modules/libraries/dagster-cron \
