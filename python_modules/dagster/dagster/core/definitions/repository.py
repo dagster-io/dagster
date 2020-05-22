@@ -220,6 +220,6 @@ class RepositoryDefinition(object):
         self._schedule_defs = schedule_defs
 
     def get_schedule_def(self, name):
-        return next(
-            schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
-        )
+        for schedule_def in self._schedule_defs:
+            if schedule_def.name == name:
+                return schedule_def

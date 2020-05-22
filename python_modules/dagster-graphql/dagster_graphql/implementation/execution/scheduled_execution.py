@@ -58,6 +58,13 @@ def start_scheduled_execution(graphene_info, schedule_name):
                 status=ScheduleTickStatus.STARTED,
             ),
         )
+        with user_code_error_boundary(
+            ScheduleExecutionError,
+            lambda: 'Schedule {schedule_name} not found in repository.'.format(
+                schedule_name=schedule_name
+            ),
+        ):
+            check.invariant(schedule_def is not None)
 
         # Run should_execute and halt if it returns False
         schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
