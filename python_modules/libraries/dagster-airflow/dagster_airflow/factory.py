@@ -53,7 +53,7 @@ class DagsterOperatorInvocationArgs(
     namedtuple(
         'DagsterOperatorInvocationArgs',
         'handle pipeline_name environment_dict mode step_keys instance_ref pipeline_snapshot '
-        'execution_plan_snapshot',
+        'execution_plan_snapshot parent_pipeline_snapshot',
     )
 ):
     def __new__(
@@ -66,6 +66,7 @@ class DagsterOperatorInvocationArgs(
         instance_ref,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     ):
         return super(DagsterOperatorInvocationArgs, cls).__new__(
             cls,
@@ -77,6 +78,7 @@ class DagsterOperatorInvocationArgs(
             instance_ref=instance_ref,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
 
@@ -86,7 +88,7 @@ class DagsterOperatorParameters(
         (
             'handle pipeline_name environment_dict '
             'mode task_id step_keys dag instance_ref op_kwargs pipeline_snapshot '
-            'execution_plan_snapshot'
+            'execution_plan_snapshot parent_pipeline_snapshot'
         ),
     )
 ):
@@ -103,6 +105,7 @@ class DagsterOperatorParameters(
         op_kwargs=None,
         pipeline_snapshot=None,
         execution_plan_snapshot=None,
+        parent_pipeline_snapshot=None,
     ):
         check_storage_specified(environment_dict)
         return super(DagsterOperatorParameters, cls).__new__(
@@ -124,6 +127,9 @@ class DagsterOperatorParameters(
             execution_plan_snapshot=check.inst_param(
                 execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
             ),
+            parent_pipeline_snapshot=check.opt_inst_param(
+                parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot
+            ),
         )
 
     @property
@@ -137,6 +143,7 @@ class DagsterOperatorParameters(
             instance_ref=self.instance_ref,
             pipeline_snapshot=self.pipeline_snapshot,
             execution_plan_snapshot=self.execution_plan_snapshot,
+            parent_pipeline_snapshot=self.parent_pipeline_snapshot,
         )
 
 

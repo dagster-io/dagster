@@ -47,6 +47,10 @@ class RepresentedPipeline(six.with_metaclass(ABCMeta)):
     def pipeline_snapshot(self):
         return self._pipeline_index.pipeline_snapshot
 
+    @property
+    def parent_pipeline_snapshot(self):
+        return self._pipeline_index.parent_pipeline_snapshot
+
     # Config
 
     @property

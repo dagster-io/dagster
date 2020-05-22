@@ -248,6 +248,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
         parent_run_id=None,
         pipeline_snapshot=None,
         execution_plan_snapshot=None,
+        parent_pipeline_snapshot=None,
     )
     with scoped_pipeline_context(
         create_execution_plan(pipeline), {}, pipeline_run, instance,

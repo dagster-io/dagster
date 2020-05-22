@@ -188,6 +188,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot
         if external_execution_plan
         else None,
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
     )
 
     # Inject errors into event log at this point

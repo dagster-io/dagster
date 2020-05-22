@@ -81,6 +81,7 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
     pipeline_run = instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         pipeline_name=execution_params.selector.pipeline_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id

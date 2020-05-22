@@ -108,6 +108,7 @@ def invoke_steps_within_python_operator(
     handle = invocation_args.handle
     pipeline_snapshot = invocation_args.pipeline_snapshot
     execution_plan_snapshot = invocation_args.execution_plan_snapshot
+    parent_pipeline_snapshot = invocation_args.parent_pipeline_snapshot
 
     run_id = dag_run.run_id
 
@@ -133,6 +134,7 @@ def invoke_steps_within_python_operator(
             parent_run_id=None,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
     events = execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref,)

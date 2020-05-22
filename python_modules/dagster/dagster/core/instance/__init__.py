@@ -415,7 +415,15 @@ class DagsterInstance:
     def get_historical_pipeline(self, snapshot_id):
         from dagster.core.host_representation import HistoricalPipeline
 
-        return HistoricalPipeline(self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id)
+        snapshot = self._run_storage.get_pipeline_snapshot(snapshot_id)
+        parent_snapshot = (
+            self._run_storage.get_pipeline_snapshot(snapshot.lineage_snapshot.parent_snapshot_id)
+            if snapshot.lineage_snapshot
+            else None
+        )
+        return HistoricalPipeline(
+            self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id, parent_snapshot
+        )
 
     def has_historical_pipeline(self, snapshot_id):
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
@@ -493,6 +501,7 @@ class DagsterInstance:
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan, pipeline_def.get_pipeline_snapshot_id()
             ),
+            parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         )
 
     def _construct_run_with_snapshots(
@@ -509,6 +518,7 @@ class DagsterInstance:
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     ):
 
         # https://github.com/dagster-io/dagster/issues/2403
@@ -532,13 +542,29 @@ class DagsterInstance:
         if pipeline_snapshot is not None:
             from dagster.core.snap import create_pipeline_snapshot_id
 
-            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+            if pipeline_snapshot.lineage_snapshot:
+                if not self._run_storage.has_pipeline_snapshot(
+                    pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                ):
+                    check.invariant(
+                        create_pipeline_snapshot_id(parent_pipeline_snapshot)
+                        == pipeline_snapshot.lineage_snapshot.parent_snapshot_id,
+                        'Parent pipeline snapshot id out of sync with passed parent pipeline snapshot',
+                    )
 
+                    returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                        parent_pipeline_snapshot
+                    )
+                    check.invariant(
+                        pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                        == returned_pipeline_snapshot_id
+                    )
+
+            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
             if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
                 returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
                     pipeline_snapshot
                 )
-
                 check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
 
             pipeline_run = pipeline_run.with_pipeline_snapshot_id(pipeline_snapshot_id)
@@ -586,6 +612,7 @@ class DagsterInstance:
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     ):
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -600,6 +627,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
         return self._run_storage.add_run(pipeline_run)
 
@@ -616,6 +644,7 @@ class DagsterInstance:
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -641,6 +670,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
         def get_run():

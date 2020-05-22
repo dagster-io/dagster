@@ -998,6 +998,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
     ]
   },
   "description": "desc",
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -2045,6 +2046,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
     ]
   },
   "description": null,
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -2098,7 +2100,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_pipeline_snap_all_props 2'] = '75aa095697d017a543513f51d28f56b9bd1c025b'
+snapshots['test_pipeline_snap_all_props 2'] = 'cd3d779aca26bc583fec474bd2a548f6715fcd87'
 
 snapshots['test_two_invocations_deps_snap 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3108,6 +3110,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
     ]
   },
   "description": null,
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -3161,7 +3164,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_two_invocations_deps_snap 2'] = 'c11155cf0dbda918c338cefb3b74582a6929a9b7'
+snapshots['test_two_invocations_deps_snap 2'] = '5d3c38cf6adb95a3d4a77e13bb539e36897745db'
 
 snapshots['test_basic_dep_fan_out 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4211,6 +4214,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
     ]
   },
   "description": null,
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -4289,7 +4293,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_dep_fan_out 2'] = '4866ed4b25dfdf0a480c34a70ab7da4220fd98eb'
+snapshots['test_basic_dep_fan_out 2'] = '61abeed5a5518d09a004d474fe8bcedd46de4ab5'
 
 snapshots['test_basic_fan_in 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5314,6 +5318,7 @@ snapshots['test_basic_fan_in 1'] = '''{
     ]
   },
   "description": null,
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -5392,7 +5397,7 @@ snapshots['test_basic_fan_in 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_fan_in 2'] = '74a3c520635d8204e06986c91cddacfe505fd815'
+snapshots['test_basic_fan_in 2'] = 'dafbb3454447be9361bae6d0e7de3f331ad9d099'
 
 snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -6386,6 +6391,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
     ]
   },
   "description": null,
+  "lineage_snapshot": null,
   "mode_def_snaps": [
     {
       "__class__": "ModeDefSnap",
@@ -6439,7 +6445,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_empty_pipeline_snap_props 2'] = 'e95e6f29f25ea236ce191a1e8b49ae8601a0afef'
+snapshots['test_empty_pipeline_snap_props 2'] = '5477a4bd4f8161b7ec6c72c54ca64196f25c8375'
 
 snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
   "__class__": "ConfigTypeSnap",

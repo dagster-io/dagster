@@ -26,8 +26,6 @@ from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.core.host_representation.pipeline_index import PipelineIndex
-from dagster.core.snap import PipelineSnapshot
 
 
 # we can do this because we only use in a hosted user process
@@ -90,8 +88,5 @@ def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset):
     )
 
     return ExternalPipeline(
-        PipelineIndex(PipelineSnapshot.from_pipeline_def(pipeline_def)),
-        external_pipeline_data_from_def(pipeline_def),
-        solid_subset=solid_subset,
-        repository_handle=repository_handle,
+        external_pipeline_data_from_def(pipeline_def), repository_handle=repository_handle,
     )

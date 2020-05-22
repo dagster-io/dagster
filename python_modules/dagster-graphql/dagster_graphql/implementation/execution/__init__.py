@@ -215,6 +215,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
             parent_run_id=None,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         )
 
     ensure_valid_step_keys(external_execution_plan, execution_params.step_keys)

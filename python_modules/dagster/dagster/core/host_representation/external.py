@@ -24,7 +24,10 @@ class ExternalRepository:
         self._pipeline_index_map = OrderedDict(
             (
                 external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(external_pipeline_data.pipeline_snapshot),
+                PipelineIndex(
+                    external_pipeline_data.pipeline_snapshot,
+                    external_pipeline_data.parent_pipeline_snapshot,
+                ),
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
@@ -49,9 +52,7 @@ class ExternalRepository:
     def get_full_external_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
         return ExternalPipeline(
-            self.get_pipeline_index(pipeline_name),
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
-            solid_subset=None,
             repository_handle=self.handle,
         )
 
@@ -70,36 +71,38 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     '''
 
-    def __init__(self, pipeline_index, external_pipeline_data, solid_subset, repository_handle):
+    def __init__(self, external_pipeline_data, repository_handle):
         check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.inst_param(external_pipeline_data, 'external_pipeline_data', ExternalPipelineData)
 
-        super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
-
-        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        self._external_pipeline_data = check.inst_param(
-            external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
+        super(ExternalPipeline, self).__init__(
+            pipeline_index=PipelineIndex(
+                external_pipeline_data.pipeline_snapshot,
+                external_pipeline_data.parent_pipeline_snapshot,
+            )
         )
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-        self._solid_subset = (
-            None if solid_subset is None else check.list_param(solid_subset, 'solid_subset', str)
-        )
-        self._handle = PipelineHandle(self.pipeline_index.name, repository_handle)
+        self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
 
     @property
     def solid_subset(self):
-        return self._solid_subset
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_subset
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
 
     @property
     def active_presets(self):
-        return self._external_pipeline_data.active_presets
+        return list(self._active_preset_dict.values())
 
     @property
     def solid_names(self):
-        return self.pipeline_index.pipeline_snapshot.solid_names
+        return self._pipeline_index.pipeline_snapshot.solid_names
 
     def has_solid_invocation(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        return self.pipeline_index.has_solid_invocation(solid_name)
+        return self._pipeline_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name):
         check.str_param(preset_name, 'preset_name')
@@ -111,7 +114,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     def has_mode(self, mode_name):
         check.str_param(mode_name, 'mode_name')
-        return self.pipeline_index.has_mode_def(mode_name)
+        return self._pipeline_index.has_mode_def(mode_name)
 
     def root_config_key_for_mode(self, mode_name):
         check.opt_str_param(mode_name, 'mode_name')
@@ -120,11 +123,11 @@ class ExternalPipeline(RepresentedPipeline):
         ).root_config_key
 
     def get_default_mode_name(self):
-        return self.pipeline_index.get_default_mode_name()
+        return self._pipeline_index.get_default_mode_name()
 
     @property
     def tags(self):
-        return self.pipeline_index.pipeline_snapshot.tags
+        return self._pipeline_index.pipeline_snapshot.tags
 
     @property
     def computed_pipeline_snapshot_id(self):

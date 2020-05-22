@@ -177,6 +177,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         self.pipeline_name = dagster_operator_parameters.pipeline_name
         self.pipeline_snapshot = dagster_operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = dagster_operator_parameters.execution_plan_snapshot
+        self.parent_pipeline_snapshot = dagster_operator_parameters.parent_pipeline_snapshot
         self.mode = dagster_operator_parameters.mode
         self.step_keys = dagster_operator_parameters.step_keys
         self._run_id = None
@@ -294,6 +295,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                     parent_run_id=None,
                     pipeline_snapshot=self.pipeline_snapshot,
                     execution_plan_snapshot=self.execution_plan_snapshot,
+                    parent_pipeline_snapshot=self.parent_pipeline_snapshot,
                 )
 
             raw_res = super(DagsterDockerOperator, self).execute(context)

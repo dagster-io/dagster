@@ -128,6 +128,7 @@ def create_run_for_test(
     parent_run_id=None,
     pipeline_snapshot=None,
     execution_plan_snapshot=None,
+    parent_pipeline_snapshot=None,
 ):
     return instance.create_run(
         pipeline_name,
@@ -142,6 +143,7 @@ def create_run_for_test(
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     )
 
 
@@ -158,6 +160,7 @@ def register_managed_run_for_test(
     parent_run_id=None,
     pipeline_snapshot=None,
     execution_plan_snapshot=None,
+    parent_pipeline_snapshot=None,
 ):
     return instance.register_managed_run(
         pipeline_name,
@@ -171,4 +174,5 @@ def register_managed_run_for_test(
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
     )

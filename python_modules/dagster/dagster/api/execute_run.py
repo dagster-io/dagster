@@ -31,6 +31,7 @@ def sync_cli_api_execute_run(
             parent_run_id=None,
             pipeline_snapshot=None,
             execution_plan_snapshot=None,
+            parent_pipeline_snapshot=None,
         )
         process = cli_api_execute_run(output_file, instance, repo_yaml, pipeline_run)
 

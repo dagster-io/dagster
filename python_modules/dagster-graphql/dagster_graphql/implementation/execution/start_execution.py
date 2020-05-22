@@ -108,6 +108,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
             parent_run_id=execution_params.execution_metadata.parent_run_id,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         )
 
     except DagsterRunConflict as exc:

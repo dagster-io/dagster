@@ -104,6 +104,7 @@ class DagsterFlyteCompiler:
             parent_run_id=None,
             pipeline_snapshot=None,
             execution_plan_snapshot=None,
+            parent_pipeline_snapshot=None,
         )
 
         initialization_manager = pipeline_initialization_manager(

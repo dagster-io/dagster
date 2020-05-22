@@ -17,7 +17,7 @@ from dagster.config.snap import (
     ConfigSchemaSnapshot,
     ConfigTypeSnap,
 )
-from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
 from dagster.serdes import deserialize_value, whitelist_for_serdes
 
 from .config_types import build_config_schema_snapshot
@@ -47,7 +47,7 @@ class PipelineSnapshot(
         '_PipelineSnapshot',
         'name description tags '
         'config_schema_snapshot dagster_type_namespace_snapshot solid_definitions_snapshot '
-        'dep_structure_snapshot mode_def_snaps',
+        'dep_structure_snapshot mode_def_snaps lineage_snapshot',
     )
 ):
     def __new__(
@@ -60,6 +60,7 @@ class PipelineSnapshot(
         solid_definitions_snapshot,
         dep_structure_snapshot,
         mode_def_snaps,
+        lineage_snapshot=None,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -81,11 +82,23 @@ class PipelineSnapshot(
                 dep_structure_snapshot, 'dep_structure_snapshot', DependencyStructureSnapshot
             ),
             mode_def_snaps=check.list_param(mode_def_snaps, 'mode_def_snaps', of_type=ModeDefSnap),
+            lineage_snapshot=check.opt_inst_param(
+                lineage_snapshot, 'lineage_snapshot', PipelineSnapshotLineage
+            ),
         )
 
-    @staticmethod
-    def from_pipeline_def(pipeline_def):
+    @classmethod
+    def from_pipeline_def(cls, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+        lineage = None
+        if isinstance(pipeline_def, PipelineSubsetForExecution):
+            lineage = PipelineSnapshotLineage(
+                create_pipeline_snapshot_id(
+                    cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
+                ),
+                pipeline_def.solid_subset,
+            )
+
         return PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
@@ -100,6 +113,7 @@ class PipelineSnapshot(
                 )
                 for md in pipeline_def.mode_definitions
             ],
+            lineage_snapshot=lineage,
         )
 
     def get_solid_def_snap(self, solid_def_name):
@@ -260,3 +274,17 @@ def construct_config_type_from_snap(config_type_snap, config_snap_map):
     elif config_type_snap.kind == ConfigTypeKind.NONEABLE:
         return _construct_noneable_from_snap(config_type_snap, config_snap_map)
     check.failed('Could not evaluate config type snap kind: {}'.format(config_type_snap.kind))
+
+
+@whitelist_for_serdes
+class PipelineSnapshotLineage(
+    namedtuple('_PipelineSnapshotLineage', 'parent_snapshot_id solid_subset',)
+):
+    def __new__(
+        cls, parent_snapshot_id, solid_subset,
+    ):
+        return super(PipelineSnapshotLineage, cls).__new__(
+            cls,
+            check.str_param(parent_snapshot_id, parent_snapshot_id),
+            check.opt_list_param(solid_subset, 'solid_subset', str),
+        )

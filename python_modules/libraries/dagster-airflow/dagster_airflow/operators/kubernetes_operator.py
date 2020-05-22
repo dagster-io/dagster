@@ -39,6 +39,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         self.pipeline_name = operator_parameters.pipeline_name
         self.pipeline_snapshot = operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = operator_parameters.execution_plan_snapshot
+        self.parent_pipeline_snapshot = operator_parameters.parent_pipeline_snapshot
         kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
             pipeline_name=self.pipeline_name, task_id=operator_parameters.task_id
         ).replace(
@@ -182,6 +183,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                         parent_run_id=None,
                         pipeline_snapshot=self.pipeline_snapshot,
                         execution_plan_snapshot=self.execution_plan_snapshot,
+                        parent_pipeline_snapshot=self.parent_pipeline_snapshot,
                     )
 
                 # we won't use the "result", which is the pod's xcom json file
