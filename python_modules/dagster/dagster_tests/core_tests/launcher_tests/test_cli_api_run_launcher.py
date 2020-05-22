@@ -1,7 +1,10 @@
+# WINDOWS TEST DIFFERENT HASH
 import os
-import shutil
+
+# import shutil
 import time
-import uuid
+
+# import uuid
 from contextlib import contextmanager
 
 from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
@@ -10,8 +13,9 @@ from dagster.core.host_representation import EnvironmentHandle, ExternalReposito
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.seven import get_system_temp_directory
-from dagster.utils import mkdir_p
+
+# from dagster.seven import get_system_temp_directory
+# from dagster.utils import mkdir_p
 
 
 @solid
@@ -53,19 +57,20 @@ def define_repository():
 
 @contextmanager
 def temp_instance():
-    system_temp = get_system_temp_directory()
+    # system_temp = get_system_temp_directory()
 
-    tmp_path = os.path.join(system_temp, str(uuid.uuid4()))
-    mkdir_p(tmp_path)
-    try:
-        yield DagsterInstance.local_temp(tmp_path)
-    finally:
-        if os.path.exists(tmp_path):
-            try:
-                # sometimes this fails, but seemingly only on windows
-                shutil.rmtree(tmp_path)
-            except seven.FileNotFoundError:
-                pass
+    # tmp_path = os.path.join(system_temp, str(uuid.uuid4()))
+    # mkdir_p(tmp_path)
+    with seven.TemporaryDirectory() as temp_dir:
+        # try:
+        yield DagsterInstance.local_temp(temp_dir)
+    # finally:
+    #     if os.path.exists(tmp_path):
+    #         try:
+    #             # sometimes this fails, but seemingly only on windows
+    #             shutil.rmtree(tmp_path)
+    #         except seven.FileNotFoundError:
+    #             pass
 
 
 def test_repo_construction():
