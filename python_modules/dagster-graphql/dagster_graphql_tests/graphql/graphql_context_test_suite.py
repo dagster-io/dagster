@@ -210,7 +210,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             GraphQLTestInstances.sqlite_instance,
             GraphQLTestEnvironments.user_code_in_host_process,
-            GraphQLTestExecutionManagers.sync_execution_manager,
+            GraphQLTestExecutionManagers.subprocess_execution_manager,
             test_id='sqlite_subprocess_start',
         )
 
