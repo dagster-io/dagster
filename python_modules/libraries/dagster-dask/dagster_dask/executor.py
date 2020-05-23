@@ -42,16 +42,19 @@ def dask_executor(init_context):
     The Dask executor optionally takes the following config:
 
     .. code-block::
-
-        {
-            address?: '127.0.0.1:8786',  # The address of a Dask scheduler
-            timeout?: 5,  # Timeout duration for initial connection to the scheduler
-            scheduler_file?: '/path/to/file'  # Path to a file with scheduler information
-            # Whether to connect directly to the workers, or ask the scheduler to serve as
-            # intermediary
-            direct_to_workers?: False,
-            heartbeat_interval?: 1000,  # Time in milliseconds between heartbeats to scheduler
-        }
+        cluster:
+            {
+                local?:  # The cluster type, one of the following ('local', 'yarn', 'ssh', 'pbs', 'kube').
+                    {
+                        address?: '127.0.0.1:8786',  # The address of a Dask scheduler
+                        timeout?: 5,  # Timeout duration for initial connection to the scheduler
+                        scheduler_file?: '/path/to/file'  # Path to a file with scheduler information
+                        # Whether to connect directly to the workers, or ask the scheduler to serve as
+                        # intermediary
+                        direct_to_workers?: False,
+                        heartbeat_interval?: 1000,  # Time in milliseconds between heartbeats to scheduler
+                    }
+            }
 
     If you'd like to configure a dask executor in addition to the
     :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a

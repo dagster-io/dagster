@@ -31,10 +31,6 @@ class DaskConfig(
 
         return DaskEngine
 
-    @property
-    def cluster_type(self):
-        return getattr(self, 'cluster_type', 'local')
-
     def build_dict(self, pipeline_name):
         '''Returns a dict we can use for kwargs passed to dask client instantiation.
 
