@@ -43,3 +43,12 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
             'If a run launcher returns True on its supports_termination property '
             'it must override the terminate method.'
         )
+
+    @property
+    def hijack_start(self):
+        '''
+        Indicates whether or not this launcher should hijack the "Start" graphql
+        mutations in dagster-graphql to instead go through the "Launch" code paths.
+        This property is temporary while we perform that migration.
+        '''
+        return False

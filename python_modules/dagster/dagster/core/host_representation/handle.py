@@ -12,6 +12,10 @@ class InProcessOrigin(namedtuple('_InProcessOrigin', 'pointer repo_yaml')):
             repo_yaml=check.opt_str_param(repo_yaml, 'repo_yaml'),
         )
 
+    def load(self):
+        target = self.pointer.load_target()
+        return target() if callable(target) else target
+
 
 class EnvironmentHandle(namedtuple('_EnvironmentHandle', 'environment_name in_process_origin')):
     def __new__(cls, environment_name, in_process_origin):

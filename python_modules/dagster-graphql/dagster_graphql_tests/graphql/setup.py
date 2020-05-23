@@ -93,13 +93,16 @@ def define_test_context(instance):
     return define_context_for_file(__file__, "define_repository", instance)
 
 
+def create_main_recon_repo():
+    return ReconstructableRepository.for_file(__file__, 'define_repository')
+
+
 def define_test_snapshot_context():
     return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
         environments=[
             InProcessDagsterEnvironment(
-                ReconstructableRepository.for_file(__file__, 'define_repository'),
-                execution_manager=SynchronousExecutionManager(),
+                create_main_recon_repo(), execution_manager=SynchronousExecutionManager(),
             )
         ],
     )
