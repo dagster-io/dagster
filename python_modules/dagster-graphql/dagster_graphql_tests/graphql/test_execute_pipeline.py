@@ -17,48 +17,54 @@ from .execution_queries import (
     START_PIPELINE_EXECUTION_QUERY,
     SUBSCRIPTION_QUERY,
 )
+from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .setup import csv_hello_world, csv_hello_world_solids_config, define_test_context
 from .utils import sync_execute_get_run_log_data
 
 
-def test_basic_start_pipeline_execution(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'mode': 'default',
-            }
-        },
-    )
+class TestExecutePipeline(
+    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+):
+    def test_start_pipeline_execution(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'csv_hello_world'},
+                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'mode': 'default',
+                }
+            },
+        )
 
-    assert not result.errors
-    assert result.data
+        assert not result.errors
+        assert result.data
 
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-    assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-    assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        # just test existence
+        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
+        assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
+    def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'csv_hello_world'},
+                    'preset': 'test_inline',
+                }
+            },
+        )
 
-def test_basic_start_pipeline_execution_with_preset(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {'selector': {'name': 'csv_hello_world'}, 'preset': 'test_inline'}
-        },
-    )
+        assert not result.errors
+        assert result.data
 
-    assert not result.errors
-    assert result.data
-
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-    assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-    assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        # just test existence
+        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
+        assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
 
 def test_basic_start_pipeline_execution_with_pipeline_def_tags(graphql_context):
