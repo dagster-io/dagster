@@ -94,7 +94,7 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
         status=PipelineRunStatus.NOT_STARTED,
     )
 
-    return instance.launch_run(pipeline_run.run_id)
+    return instance.launch_run(pipeline_run.run_id, external_pipeline=external_pipeline)
 
 
 def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):

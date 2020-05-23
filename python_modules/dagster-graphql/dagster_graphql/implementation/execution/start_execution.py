@@ -39,6 +39,24 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
+    instance = graphene_info.context.instance
+    execution_manager_settings = instance.dagit_settings.get('execution_manager')
+    if execution_manager_settings and execution_manager_settings.get('disabled'):
+        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
+
+    # This is a purely migratory codepath that allows use to configure
+    # run launchers to "hijack" the start process. Once the launch-start
+    # unification is complete the entire start code path will be
+    # eliminated, including this.
+    if instance.run_launcher and instance.run_launcher.hijack_start:
+        from .launch_execution import do_launch
+
+        run = do_launch(graphene_info, execution_params, is_reexecuted)
+
+        return graphene_info.schema.type_named('StartPipelineRunSuccess')(
+            run=graphene_info.schema.type_named('PipelineRun')(run)
+        )
+
     if is_reexecuted:
         # required fields for re-execution
         execution_metadata = check.inst_param(
@@ -46,11 +64,6 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         )
         check.str_param(execution_metadata.root_run_id, 'root_run_id')
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
-
-    instance = graphene_info.context.instance
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
     external_pipeline = get_external_pipeline_or_raise(
         graphene_info,

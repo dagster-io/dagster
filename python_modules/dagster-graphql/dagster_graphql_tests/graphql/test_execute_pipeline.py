@@ -23,7 +23,10 @@ from .utils import sync_execute_get_run_log_data
 
 
 class TestExecutePipeline(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+    make_graphql_context_test_suite(
+        context_variants=GraphQLContextVariant.all_legacy_variants()
+        + [GraphQLContextVariant.in_memory_hijacking_in_memory_run_launcher()]
+    )
 ):
     def test_start_pipeline_execution(self, graphql_context):
         result = execute_dagster_graphql(

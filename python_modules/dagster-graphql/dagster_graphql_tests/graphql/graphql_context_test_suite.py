@@ -12,6 +12,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     SubprocessExecutionManager,
     SynchronousExecutionManager,
 )
+from dagster_graphql.test.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -37,6 +38,19 @@ class GraphQLTestInstances:
                 run_storage=InMemoryRunStorage(),
                 event_storage=InMemoryEventLogStorage(),
                 compute_log_manager=NoOpComputeLogManager(temp_dir),
+            )
+
+    @staticmethod
+    @contextmanager
+    def hijacking_in_memory_instance():
+        with seven.TemporaryDirectory() as temp_dir:
+            yield DagsterInstance(
+                instance_type=InstanceType.EPHEMERAL,
+                local_artifact_storage=LocalArtifactStorage(temp_dir),
+                run_storage=InMemoryRunStorage(),
+                event_storage=InMemoryEventLogStorage(),
+                compute_log_manager=NoOpComputeLogManager(temp_dir),
+                run_launcher=SyncInMemoryRunLauncher(hijack_start=True),
             )
 
     @staticmethod
@@ -194,6 +208,15 @@ class GraphQLContextVariant:
             GraphQLTestEnvironments.user_code_in_host_process,
             GraphQLTestExecutionManagers.sync_execution_manager,
             test_id='in_memory_in_process_start',
+        )
+
+    @staticmethod
+    def in_memory_hijacking_in_memory_run_launcher():
+        return GraphQLContextVariant(
+            GraphQLTestInstances.hijacking_in_memory_instance,
+            GraphQLTestEnvironments.user_code_in_host_process,
+            GraphQLTestExecutionManagers.sync_execution_manager,  # unused because hijacked
+            test_id='in_memory_hijacking_in_memory_run_launcher',
         )
 
     @staticmethod
