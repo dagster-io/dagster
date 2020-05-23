@@ -18,7 +18,12 @@ from ..external import (
     get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
-from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
+from ..utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    UserFacingGraphQLError,
+    capture_dauphin_error,
+)
 
 
 @capture_dauphin_error
@@ -31,9 +36,10 @@ def launch_pipeline_execution(graphene_info, execution_params):
     return _launch_pipeline_execution(graphene_info, execution_params)
 
 
-def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
+def do_launch(graphene_info, execution_params, is_reexecuted=False):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.bool_param(is_reexecuted, 'is_reexecuted')
 
     if is_reexecuted:
         # required fields for re-execution
@@ -47,7 +53,9 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     run_launcher = instance.run_launcher
 
     if run_launcher is None:
-        return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('RunLauncherNotDefinedError')()
+        )
 
     external_pipeline = get_external_pipeline_or_raise(
         graphene_info,
@@ -86,7 +94,15 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         status=PipelineRunStatus.NOT_STARTED,
     )
 
-    run = instance.launch_run(pipeline_run.run_id, external_pipeline)
+    return instance.launch_run(pipeline_run.run_id)
+
+
+def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=False):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.bool_param(is_reexecuted, 'is_reexecuted')
+
+    run = do_launch(graphene_info, execution_params, is_reexecuted)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
