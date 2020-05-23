@@ -6,11 +6,11 @@ import { SolidNameOrPath } from "./PipelineExplorer";
 import { useQuery } from "react-apollo";
 import Loading from "./Loading";
 import gql from "graphql-tag";
-import { PipelineSelector } from "./PipelineSelectorUtils";
+import { PipelineExplorerPath } from "./PipelinePathUtils";
 
 interface SidebarSolidContainerProps {
   handleID: string;
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   showingSubsolids: boolean;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => { handleID: string }[];
@@ -20,7 +20,7 @@ interface SidebarSolidContainerProps {
 
 export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({
   handleID,
-  selector,
+  explorerPath,
   getInvocations,
   showingSubsolids,
   onEnterCompositeSolid,
@@ -29,7 +29,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {
-      variables: { pipeline: selector.pipelineName, handleID: handleID },
+      variables: { pipeline: explorerPath.pipelineName, handleID: handleID },
       fetchPolicy: "cache-and-network"
     }
   );

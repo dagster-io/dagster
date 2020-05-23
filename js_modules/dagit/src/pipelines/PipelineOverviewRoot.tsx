@@ -31,9 +31,9 @@ type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
 
 export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineSelector: string;
+  pipelinePath: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const pipelineName = match.params.pipelinePath.split(":")[0];
 
   const queryResult = useQuery<
     PipelineOverviewQuery,

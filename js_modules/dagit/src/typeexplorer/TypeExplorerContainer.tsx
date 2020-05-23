@@ -7,15 +7,15 @@ import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables
 } from "./types/TypeExplorerContainerQuery";
-import { PipelineSelector } from "../PipelineSelectorUtils";
+import { PipelineExplorerPath } from "../PipelinePathUtils";
 
 interface ITypeExplorerContainerProps {
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   typeName: string;
 }
 
 export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContainerProps> = ({
-  selector,
+  explorerPath,
   typeName
 }) => {
   const queryResult = useQuery<
@@ -24,7 +24,7 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
   >(TYPE_EXPLORER_CONTAINER_QUERY, {
     fetchPolicy: "cache-and-network",
     variables: {
-      pipelineName: selector.pipelineName,
+      pipelineName: explorerPath.pipelineName,
       dagsterTypeName: typeName
     }
   });

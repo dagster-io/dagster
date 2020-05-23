@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components/macro";
 import { Colors, Icon, IconName } from "@blueprintjs/core";
 import { useRouteMatch, useHistory } from "react-router-dom";
-import { selectorFromString } from "../PipelineSelectorUtils";
+import { explorerPathFromString } from "../PipelinePathUtils";
 
 const PIPELINE_TABS: {
   title: string;
@@ -35,7 +35,7 @@ export const PipelineNav: React.FunctionComponent = () => {
   }
 
   const active = tabForPipelinePathComponent(match.params.tab);
-  const { pipelineName } = selectorFromString(match.params.selector);
+  const { pipelineName } = explorerPathFromString(match.params.selector);
 
   return (
     <PipelineTabBarContainer>

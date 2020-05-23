@@ -17,9 +17,9 @@ import { ExecutionTabs } from "./ExecutionTabs";
 import { RouteComponentProps } from "react-router-dom";
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineSelector: string;
+  pipelinePath: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const pipelineName = match.params.pipelinePath.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
 
   const vars = {

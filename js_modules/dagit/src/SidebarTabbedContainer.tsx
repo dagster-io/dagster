@@ -9,13 +9,13 @@ import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedCon
 import { SidebarSolidContainer } from "./SidebarSolidContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import { SolidNameOrPath } from "./PipelineExplorer";
-import { PipelineSelector } from "./PipelineSelectorUtils";
+import { PipelineExplorerPath } from "./PipelinePathUtils";
 
 interface ISidebarTabbedContainerProps {
   types?: string;
   typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   solidHandleID?: string;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => { handleID: string }[];
@@ -64,7 +64,7 @@ export default class SidebarTabbedContainer extends React.Component<
       typeExplorer,
       types,
       pipeline,
-      selector,
+      explorerPath,
       solidHandleID,
       getInvocations,
       parentSolidHandleID,
@@ -78,16 +78,19 @@ export default class SidebarTabbedContainer extends React.Component<
     if (typeExplorer) {
       activeTab = "types";
       content = (
-        <TypeExplorerContainer selector={selector} typeName={typeExplorer} />
+        <TypeExplorerContainer
+          explorerPath={explorerPath}
+          typeName={typeExplorer}
+        />
       );
     } else if (types) {
       activeTab = "types";
-      content = <TypeListContainer selector={selector} />;
+      content = <TypeListContainer explorerPath={explorerPath} />;
     } else if (solidHandleID) {
       content = (
         <SidebarSolidContainer
           key={solidHandleID}
-          selector={selector}
+          explorerPath={explorerPath}
           handleID={solidHandleID}
           showingSubsolids={false}
           getInvocations={getInvocations}
@@ -99,7 +102,7 @@ export default class SidebarTabbedContainer extends React.Component<
       content = (
         <SidebarSolidContainer
           key={parentSolidHandleID}
-          selector={selector}
+          explorerPath={explorerPath}
           handleID={parentSolidHandleID}
           showingSubsolids={true}
           getInvocations={getInvocations}

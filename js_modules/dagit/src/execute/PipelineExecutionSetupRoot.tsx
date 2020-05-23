@@ -9,9 +9,9 @@ import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router-dom";
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineSelector: string;
+  pipelinePath: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const pipelineName = match.params.pipelinePath.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
   const qs = querystring.parse(window.location.search);
 

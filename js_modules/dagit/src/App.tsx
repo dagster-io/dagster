@@ -67,15 +67,15 @@ const AppRoutes = () => (
           <PipelineNav />
           <Switch>
             <Route
-              path="/pipeline/:pipelineSelector/overview"
+              path="/pipeline/:pipelinePath/overview"
               component={PipelineOverviewRoot}
             />
             <Route
-              path="/pipeline/:pipelineSelector/playground/setup"
+              path="/pipeline/:pipelinePath/playground/setup"
               component={PipelineExecutionSetupRoot}
             />
             <Route
-              path="/pipeline/:pipelineSelector/playground"
+              path="/pipeline/:pipelinePath/playground"
               component={PipelineExecutionRoot}
             />
             {/* Capture solid subpath in a regex match */}

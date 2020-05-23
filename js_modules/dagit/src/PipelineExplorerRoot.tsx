@@ -12,7 +12,10 @@ import {
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
 } from "./types/PipelineExplorerRootQuery";
-import { selectorFromString, PipelineSelector } from "./PipelineSelectorUtils";
+import {
+  explorerPathFromString,
+  PipelineExplorerPath
+} from "./PipelinePathUtils";
 import styled from "styled-components/macro";
 
 function explodeComposite(
@@ -120,16 +123,17 @@ function explodeCompositesInHandleGraph(
   return results;
 }
 export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
-  const selector = selectorFromString(props.match.params["0"]);
+  const explorerPath = explorerPathFromString(props.match.params["0"]);
 
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false
   });
 
-  const selectedName = selector.path[selector.path.length - 1];
+  const selectedName =
+    explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
   return (
-    <ExplorerSnapshotResolver selector={selector} options={options}>
+    <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
       {result => {
         if (result.__typename === "NonIdealState") {
           return <NonIdealState {...result} />;
@@ -141,7 +145,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
         return (
           <>
-            {selector.snapshotId && (
+            {explorerPath.snapshotId && (
               <SnapshotNotice>
                 You are viewing a historical pipeline snapshot.
               </SnapshotNotice>
@@ -149,7 +153,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
             <PipelineExplorer
               options={options}
               setOptions={setOptions}
-              selector={selector}
+              explorerPath={explorerPath}
               history={props.history}
               pipeline={result}
               handles={displayedHandles}
@@ -209,7 +213,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
 `;
 
 interface ResolverProps {
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   options: PipelineExplorerOptions;
   children: (
     result:
@@ -225,10 +229,13 @@ interface ResolverProps {
 
 const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
   children,
-  selector,
+  explorerPath,
   options
 }) => {
-  const parentNames = selector.path.slice(0, selector.path.length - 1);
+  const parentNames = explorerPath.pathSolids.slice(
+    0,
+    explorerPath.pathSolids.length - 1
+  );
 
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
@@ -237,8 +244,10 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
     variables: {
-      pipelineName: selector.snapshotId ? undefined : selector.pipelineName,
-      snapshotId: selector.snapshotId ? selector.snapshotId : undefined,
+      pipelineName: explorerPath.snapshotId
+        ? undefined
+        : explorerPath.pipelineName,
+      snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
       rootHandleID: parentNames.join("."),
       requestScopeHandleID: options.explodeComposites
         ? undefined

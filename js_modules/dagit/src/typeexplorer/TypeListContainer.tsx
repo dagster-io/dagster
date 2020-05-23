@@ -4,21 +4,21 @@ import Loading from "../Loading";
 import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";
 import { TypeListContainerQuery } from "./types/TypeListContainerQuery";
-import { PipelineSelector } from "../PipelineSelectorUtils";
+import { PipelineExplorerPath } from "../PipelinePathUtils";
 
 interface ITypeListContainerProps {
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
 }
 
 export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
-  selector
+  explorerPath
 }) => {
   const queryResult = useQuery<TypeListContainerQuery>(
     TYPE_LIST_CONTAINER_QUERY,
     {
       fetchPolicy: "cache-and-network",
       variables: {
-        pipelineName: selector.pipelineName
+        pipelineName: explorerPath.pipelineName
       }
     }
   );
