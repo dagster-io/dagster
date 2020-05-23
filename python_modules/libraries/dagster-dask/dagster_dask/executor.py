@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Int, String, Selector, Permissive
+from dagster import Field, Permissive, Selector
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 
 from .config import DaskConfig

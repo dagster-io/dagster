@@ -40,7 +40,12 @@ class DaskConfig(
             << use client here >>
 
         '''
-        dask_cfg = getattr(self, 'cluster_configuration', {'name': pipeline_name})
+
+        # dask_cfg = {'name': pipeline_name}  ## This causes an error when running with `LocalCluster`.
+        dask_cfg = {}
+        if self.cluster_configuration:
+            for k, v in self.cluster_configuration.items():
+                dask_cfg[k] = v
 
         # if address is set, don't add LocalCluster args
         # context: https://github.com/dask/distributed/issues/3313
