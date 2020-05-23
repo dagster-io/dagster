@@ -19,7 +19,7 @@ class DaskConfig(
     ):
         return super(DaskConfig, cls).__new__(
             cls,
-            cluster_type=check.opt_str_param(cluster_type, 'cluster_type'),
+            cluster_type=check.opt_str_param(cluster_type, 'cluster_type', default='local'),
             cluster_configuration=check.opt_dict_param(
                 cluster_configuration, 'cluster_configuration'
             ),
