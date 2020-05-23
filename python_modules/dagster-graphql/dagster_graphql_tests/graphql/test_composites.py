@@ -1,95 +1,13 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-COMPOSITES_QUERY = '''
-query CompositesQuery {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles {
-        handleID
-        solid {
-          ...SolidInfo
-        }
-      }
-    }
-  }
-}
-
-fragment SolidInfo on Solid {
-  name
-  inputs {
-    definition {
-      name
-    }
-    dependsOn {
-      solid {
-        name
-      }
-    }
-  }
-  outputs {
-    definition {
-      name
-    }
-    dependedBy {
-      solid {
-        name
-      }
-    }
-  }
-  definition {
-    ... on CompositeSolidDefinition {
-      solids { name }
-      inputMappings {
-        definition { name }
-        mappedInput {
-          definition { name }
-          solid { name }
-        }
-      }
-      outputMappings {
-        definition {
-          name
-        }
-        mappedOutput {
-          definition { name }
-          solid { name }
-        }
-      }
-    }
-  }
-}
-'''
-
-PARENT_ID_QUERY = '''
-query withParent($parentHandleID: String) {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles(parentHandleID: $parentHandleID) {
-        handleID
-      }
-    }
-  }
-}
-'''
-
-SOLID_ID_QUERY = '''
-query solidFetch($id: String!) {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandle(handleID: $id) {
-        handleID
-      }
-    }
-  }
-}
-'''
-
+from .composites_query import (
+    COMPOSITES_QUERY,
+    COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,
+    NESTED_INPUT_DEPENDS_ON,
+    NESTED_OUTPUT_DEPENDED_BY,
+    PARENT_ID_QUERY,
+    SOLID_ID_QUERY,
+)
 
 # 10 total solids in the composite pipeline:
 #
@@ -154,66 +72,6 @@ def test_solid_id(graphql_context):
 
     result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'bonkahog'})
     assert result.data["pipelineOrError"]["solidHandle"] == None
-
-
-COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = '''
-query CompositesQuery {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles {
-        handleID
-        solid {
-          ...SolidInfo
-        }
-      }
-    }
-  }
-}
-'''
-
-
-NESTED_INPUT_DEPENDS_ON = '''
-fragment SolidInfo on Solid {
-  outputs {
-    dependedBy {
-      solid {
-        name
-        inputs {
-          definition { name }
-          dependsOn {
-            definition {
-              name
-            }
-          }
-        }
-      }
-    }
-  }
-}
-'''
-
-NESTED_OUTPUT_DEPENDED_BY = '''
-fragment SolidInfo on Solid {
-  name
-  inputs {
-    definition {
-      name
-    }
-    dependsOn {
-      solid {
-        name
-        outputs {
-          dependedBy {
-            definition { name }
-          }
-        }
-      }
-    }
-  }
-}
-'''
 
 
 def test_recurse_composites_depends(graphql_context):
