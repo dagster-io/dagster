@@ -121,7 +121,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     tags = dauphin.non_null_list('PipelineTag')
     rootRunId = dauphin.Field(dauphin.String)
     parentRunId = dauphin.Field(dauphin.String)
-    canCancel = dauphin.NonNull(dauphin.Boolean)
+    canTerminate = dauphin.NonNull(dauphin.Boolean)
     assets = dauphin.non_null_list('Asset')
 
     def __init__(self, pipeline_run):
@@ -201,7 +201,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def run_id(self):
         return self.runId
 
-    def resolve_canCancel(self, graphene_info):
+    def resolve_canTerminate(self, graphene_info):
         return graphene_info.context.legacy_environment.execution_manager.can_terminate(self.run_id)
 
     def resolve_assets(self, graphene_info):

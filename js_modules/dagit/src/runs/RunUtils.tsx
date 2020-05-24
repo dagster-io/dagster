@@ -376,18 +376,18 @@ export const DELETE_MUTATION = gql`
 
 export const CANCEL_MUTATION = gql`
   mutation Cancel($runId: String!) {
-    cancelPipelineExecution(runId: $runId) {
+    terminatePipelineExecution(runId: $runId) {
       __typename
-      ... on CancelPipelineExecutionFailure {
+      ... on TerminatePipelineExecutionFailure {
         message
       }
       ... on PipelineRunNotFoundError {
         message
       }
-      ... on CancelPipelineExecutionSuccess {
+      ... on TerminatePipelineExecutionSuccess {
         run {
           runId
-          canCancel
+          canTerminate
         }
       }
     }
@@ -545,11 +545,11 @@ export const RunActionsMenu: React.FunctionComponent<{
           <MenuItem
             text="Cancel"
             icon="stop"
-            disabled={!run.canCancel}
+            disabled={!run.canTerminate}
             onClick={async () => {
               const result = await cancel({ variables: { runId: run.runId } });
               showToastFor(
-                result.data.cancelPipelineExecution,
+                result.data.terminatePipelineExecution,
                 "Run cancelled."
               );
             }}
@@ -558,7 +558,7 @@ export const RunActionsMenu: React.FunctionComponent<{
           <MenuItem
             text="Delete"
             icon="trash"
-            disabled={run.canCancel}
+            disabled={run.canTerminate}
             onClick={async () => {
               const result = await destroy({ variables: { runId: run.runId } });
               showToastFor(result.data.deletePipelineRun, "Run deleted.");
@@ -769,7 +769,7 @@ export const RunComponentFragments = {
         }
       }
       mode
-      canCancel
+      canTerminate
       tags {
         key
         value

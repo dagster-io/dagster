@@ -64,7 +64,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
-  canCancel: boolean;
+  canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;

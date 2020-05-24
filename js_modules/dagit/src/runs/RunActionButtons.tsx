@@ -61,7 +61,7 @@ interface RunActionButtonsRun {
   pipeline: {
     __typename: string;
   };
-  canCancel: boolean;
+  canTerminate: boolean;
 }
 
 interface RunActionButtonsProps {
@@ -94,9 +94,9 @@ const CancelRunButton: React.FunctionComponent<{
           variables: { runId: run.runId }
         });
         setInFlight(false);
-        if (res.data?.cancelPipelineExecution?.message) {
+        if (res.data?.terminatePipelineExecution?.message) {
           SharedToaster.show({
-            message: res.data.cancelPipelineExecution.message,
+            message: res.data.terminatePipelineExecution.message,
             icon: "error",
             intent: Intent.DANGER
           });
@@ -346,7 +346,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
           />
         </ExecutionStartButton>
       </LaunchButtonGroup>
-      {run?.canCancel && (
+      {run?.canTerminate && (
         <>
           <div style={{ minWidth: 6 }} />
           <CancelRunButton run={run} />

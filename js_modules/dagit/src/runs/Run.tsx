@@ -50,7 +50,7 @@ export class Run extends React.Component<RunProps, RunState> {
 
         environmentConfigYaml
         runId
-        canCancel
+        canTerminate
         status
         mode
         tags {

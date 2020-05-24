@@ -13,5 +13,5 @@ export interface PipelineRunLogsSubscriptionStatusFragment {
   __typename: "PipelineRun";
   runId: string;
   status: PipelineRunStatus;
-  canCancel: boolean;
+  canTerminate: boolean;
 }

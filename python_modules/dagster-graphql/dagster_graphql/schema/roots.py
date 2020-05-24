@@ -5,7 +5,6 @@ from dagster_graphql.implementation.environment_schema import (
 )
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
-    cancel_pipeline_execution,
     delete_pipeline_run,
     do_execute_plan,
     get_compute_log_observable,
@@ -15,6 +14,7 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
     start_pipeline_reexecution,
     start_scheduled_execution,
+    terminate_pipeline_execution,
 )
 from dagster_graphql.implementation.execution.start_execution import (
     start_pipeline_execution_for_created_run,
@@ -306,27 +306,27 @@ class DauphinDeleteRunMutation(dauphin.Mutation):
         return delete_pipeline_run(graphene_info, run_id)
 
 
-class DauphinCancelPipelineExecutionSuccess(dauphin.ObjectType):
+class DauphinTerminatePipelineExecutionSuccess(dauphin.ObjectType):
     class Meta(object):
-        name = 'CancelPipelineExecutionSuccess'
+        name = 'TerminatePipelineExecutionSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
-class DauphinCancelPipelineExecutionFailure(dauphin.ObjectType):
+class DauphinTerminatePipelineExecutionFailure(dauphin.ObjectType):
     class Meta(object):
-        name = 'CancelPipelineExecutionFailure'
+        name = 'TerminatePipelineExecutionFailure'
 
     run = dauphin.NonNull('PipelineRun')
     message = dauphin.NonNull(dauphin.String)
 
 
-class DauphinCancelPipelineExecutionResult(dauphin.Union):
+class DauphinTerminatePipelineExecutionResult(dauphin.Union):
     class Meta(object):
-        name = 'CancelPipelineExecutionResult'
+        name = 'TerminatePipelineExecutionResult'
         types = (
-            'CancelPipelineExecutionSuccess',
-            'CancelPipelineExecutionFailure',
+            'TerminatePipelineExecutionSuccess',
+            'TerminatePipelineExecutionFailure',
             'PipelineRunNotFoundError',
             'PythonError',
         )
@@ -436,17 +436,17 @@ class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
         )
 
 
-class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
+class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
     class Meta(object):
-        name = 'CancelPipelineExecutionMutation'
+        name = 'TerminatePipelineExecutionMutation'
 
     class Arguments(object):
         runId = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull('CancelPipelineExecutionResult')
+    Output = dauphin.NonNull('TerminatePipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return cancel_pipeline_execution(graphene_info, kwargs['runId'])
+        return terminate_pipeline_execution(graphene_info, kwargs['runId'])
 
 
 class DauphinExecutionTag(dauphin.InputObjectType):
@@ -607,7 +607,7 @@ class DauphinMutation(dauphin.ObjectType):
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     reload_dagit = DauphinReloadDagit.Field()
-    cancel_pipeline_execution = DauphinCancelPipelineExecutionMutation.Field()
+    terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
 
 

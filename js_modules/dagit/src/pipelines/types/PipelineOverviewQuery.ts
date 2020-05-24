@@ -291,7 +291,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   rootRunId: string | null;
   pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline;
   mode: string;
-  canCancel: boolean;
+  canTerminate: boolean;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags[];
   stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   status: PipelineRunStatus;

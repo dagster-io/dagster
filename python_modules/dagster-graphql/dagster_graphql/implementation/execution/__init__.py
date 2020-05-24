@@ -50,7 +50,7 @@ from .start_execution import start_pipeline_execution, start_pipeline_reexecutio
 
 
 @capture_dauphin_error
-def cancel_pipeline_execution(graphene_info, run_id):
+def terminate_pipeline_execution(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
 
@@ -63,7 +63,7 @@ def cancel_pipeline_execution(graphene_info, run_id):
     dauphin_run = graphene_info.schema.type_named('PipelineRun')(run)
 
     if run.status != PipelineRunStatus.STARTED:
-        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
+        return graphene_info.schema.type_named('TerminatePipelineExecutionFailure')(
             run=dauphin_run,
             message='Run {run_id} is not in a started state. Current status is {status}'.format(
                 run_id=run.run_id, status=run.status.value
@@ -71,11 +71,11 @@ def cancel_pipeline_execution(graphene_info, run_id):
         )
 
     if not graphene_info.context.legacy_environment.execution_manager.terminate(run_id):
-        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
+        return graphene_info.schema.type_named('TerminatePipelineExecutionFailure')(
             run=dauphin_run, message='Unable to terminate run {run_id}'.format(run_id=run.run_id)
         )
 
-    return graphene_info.schema.type_named('CancelPipelineExecutionSuccess')(dauphin_run)
+    return graphene_info.schema.type_named('TerminatePipelineExecutionSuccess')(dauphin_run)
 
 
 @capture_dauphin_error

@@ -74,7 +74,7 @@ export interface RunFragment {
   status: PipelineRunStatus;
   pipeline: RunFragment_pipeline;
   environmentConfigYaml: string;
-  canCancel: boolean;
+  canTerminate: boolean;
   mode: string;
   tags: RunFragment_tags[];
   rootRunId: string | null;

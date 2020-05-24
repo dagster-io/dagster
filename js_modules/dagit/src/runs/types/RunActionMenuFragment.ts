@@ -38,6 +38,6 @@ export interface RunActionMenuFragment {
   rootRunId: string | null;
   pipeline: RunActionMenuFragment_pipeline;
   mode: string;
-  canCancel: boolean;
+  canTerminate: boolean;
   tags: RunActionMenuFragment_tags[];
 }

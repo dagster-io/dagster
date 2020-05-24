@@ -12,14 +12,14 @@ from .setup import define_test_subprocess_context
 
 RUN_CANCELLATION_QUERY = '''
 mutation($runId: String!) {
-  cancelPipelineExecution(runId: $runId){
+  terminatePipelineExecution(runId: $runId){
     __typename
-    ... on CancelPipelineExecutionSuccess{
+    ... on TerminatePipelineExecutionSuccess{
       run {
         runId
       }
     }
-    ... on CancelPipelineExecutionFailure {
+    ... on TerminatePipelineExecutionFailure {
       run {
         runId
       }
@@ -66,14 +66,15 @@ def test_basic_cancellation():
         )
 
         assert (
-            result.data['cancelPipelineExecution']['__typename'] == 'CancelPipelineExecutionSuccess'
+            result.data['terminatePipelineExecution']['__typename']
+            == 'TerminatePipelineExecutionSuccess'
         )
 
 
 def test_run_not_found():
     context = define_test_subprocess_context(DagsterInstance.local_temp())
     result = execute_dagster_graphql(context, RUN_CANCELLATION_QUERY, variables={'runId': 'nope'})
-    assert result.data['cancelPipelineExecution']['__typename'] == 'PipelineRunNotFoundError'
+    assert result.data['terminatePipelineExecution']['__typename'] == 'PipelineRunNotFoundError'
 
 
 def test_terminate_failed():
@@ -107,9 +108,10 @@ def test_terminate_failed():
             context, RUN_CANCELLATION_QUERY, variables={'runId': run_id}
         )
         assert (
-            result.data['cancelPipelineExecution']['__typename'] == 'CancelPipelineExecutionFailure'
+            result.data['terminatePipelineExecution']['__typename']
+            == 'TerminatePipelineExecutionFailure'
         )
-        assert result.data['cancelPipelineExecution']['message'].startswith(
+        assert result.data['terminatePipelineExecution']['message'].startswith(
             'Unable to terminate run'
         )
 
@@ -120,7 +122,8 @@ def test_terminate_failed():
         )
 
         assert (
-            result.data['cancelPipelineExecution']['__typename'] == 'CancelPipelineExecutionSuccess'
+            result.data['terminatePipelineExecution']['__typename']
+            == 'TerminatePipelineExecutionSuccess'
         )
 
 
@@ -140,8 +143,11 @@ def test_run_finished():
         context, RUN_CANCELLATION_QUERY, variables={'runId': pipeline_result.run_id}
     )
 
-    assert result.data['cancelPipelineExecution']['__typename'] == 'CancelPipelineExecutionFailure'
+    assert (
+        result.data['terminatePipelineExecution']['__typename']
+        == 'TerminatePipelineExecutionFailure'
+    )
     assert (
         'is not in a started state. Current status is SUCCESS'
-        in result.data['cancelPipelineExecution']['message']
+        in result.data['terminatePipelineExecution']['message']
     )

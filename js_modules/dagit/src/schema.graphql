@@ -30,17 +30,6 @@ type AssetsNotSupportedError implements Error {
 
 union AssetsOrError = AssetConnection | AssetsNotSupportedError
 
-type CancelPipelineExecutionFailure {
-  run: PipelineRun!
-  message: String!
-}
-
-union CancelPipelineExecutionResult = CancelPipelineExecutionSuccess | CancelPipelineExecutionFailure | PipelineRunNotFoundError | PythonError
-
-type CancelPipelineExecutionSuccess {
-  run: PipelineRun!
-}
-
 type CompositeConfigType implements ConfigType {
   key: String!
   description: String
@@ -582,7 +571,7 @@ type Mutation {
   startSchedule(scheduleName: String!): ScheduleMutationResult!
   stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
   reloadDagit: Boolean!
-  cancelPipelineExecution(runId: String!): CancelPipelineExecutionResult!
+  terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
 }
 
@@ -790,7 +779,7 @@ type PipelineRun {
   tags: [PipelineTag!]!
   rootRunId: String
   parentRunId: String
-  canCancel: Boolean!
+  canTerminate: Boolean!
   assets: [Asset!]!
 }
 
@@ -1214,6 +1203,17 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
 type Subscription {
   pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
+}
+
+type TerminatePipelineExecutionFailure {
+  run: PipelineRun!
+  message: String!
+}
+
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError
+
+type TerminatePipelineExecutionSuccess {
+  run: PipelineRun!
 }
 
 type TypeCheck implements DisplayableEvent {

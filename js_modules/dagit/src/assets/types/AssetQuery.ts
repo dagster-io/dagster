@@ -158,7 +158,7 @@ export interface AssetQuery_assetOrError_Asset_runs {
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
-  canCancel: boolean;
+  canTerminate: boolean;
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;

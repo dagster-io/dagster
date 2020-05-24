@@ -86,7 +86,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         status=PipelineRunStatus.NOT_STARTED,
     )
 
-    run = instance.launch_run(pipeline_run.run_id)
+    run = instance.launch_run(pipeline_run.run_id, external_pipeline)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)

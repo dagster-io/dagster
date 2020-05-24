@@ -37,7 +37,7 @@ export class RunTable extends React.Component<RunTableProps> {
         runId
         status
         stepKeysToExecute
-        canCancel
+        canTerminate
         mode
         rootRunId
         parentRunId
