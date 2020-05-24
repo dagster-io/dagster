@@ -1,16 +1,12 @@
 import os
-import shutil
 import time
-import uuid
 from contextlib import contextmanager
 
-from dagster import RepositoryDefinition, file_relative_path, pipeline, solid
+from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import EnvironmentHandle, ExternalRepository, RepositoryHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.seven import get_system_temp_directory
-from dagster.utils import mkdir_p
 
 
 @solid
@@ -50,35 +46,19 @@ def define_repository():
     )
 
 
-# https://github.com/dagster-io/dagster/issues/2503
 @contextmanager
 def temp_instance():
-    # This whole thing is fairly sketchy. When using seven.TemporaryDirectory()
-    # we are occasionally seeing the error
-    # "FileNotFoundError: [Errno 2] No such file or directory: 'runs.db-wal'"
-    # This may indicate some sort of resource leakage or ordering issue
-    # where the launched process []
-
-    system_temp = get_system_temp_directory()
-
-    temp_dir = os.path.join(system_temp, str(uuid.uuid4()))
-    mkdir_p(temp_dir)
-    try:
+    with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(
             temp_dir,
             overrides={
                 'run_launcher': {'module': 'dagster.core.launcher', 'class': 'CliApiRunLauncher',}
             },
         )
-        yield instance
-        instance.run_launcher.join()
-    finally:
-        if os.path.exists(temp_dir):
-            try:
-                # sometimes this fails, but seemingly only on windows
-                shutil.rmtree(temp_dir)
-            except:  # pylint: disable=bare-except
-                pass
+        try:
+            yield instance
+        finally:
+            instance.run_launcher.join()
 
 
 def test_repo_construction():
