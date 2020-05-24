@@ -99,7 +99,7 @@ def get_step_output(step_events, step_key, output_name='result'):
 def get_azure_credential():
     try:
         return {'key': os.environ["AZURE_STORAGE_ACCOUNT_KEY"]}
-    except KeyError as err:
+    except KeyError:
         raise Exception("AZURE_STORAGE_ACCOUNT_KEY must be set for intermediate store tests")
 
 
