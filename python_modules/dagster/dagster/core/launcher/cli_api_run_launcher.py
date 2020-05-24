@@ -5,6 +5,7 @@ import time
 
 from dagster import check
 from dagster.api.execute_run import cli_api_execute_run
+from dagster.config import Field
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -26,26 +27,31 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     the command `dagster api execute_run`.
     '''
 
-    def __init__(self, inst_data=None):
+    def __init__(self, hijack_start=False, inst_data=None):
         self._instance = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
         self._processes_lock = None
         self._stopping = False
         self._thread = None
-        self._inst_data = inst_data  # stop linter from complaining
+        self._inst_data = inst_data
+        self._hijack_start = check.bool_param(hijack_start, 'hijack_start')
 
     @property
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def hijack_start(self):
+        return self._hijack_start
+
     @classmethod
     def config_type(cls):
-        return {}
+        return {'hijack_start': Field(bool, is_required=False, default_value=False)}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return CliApiRunLauncher(inst_data)
+        return CliApiRunLauncher(hijack_start=config_value['hijack_start'], inst_data=inst_data)
 
     def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
