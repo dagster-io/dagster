@@ -1,4 +1,5 @@
 import os
+import signal
 import threading
 import time
 
@@ -150,6 +151,8 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             self._living_process_by_run_id[run.run_id] = process
             self._output_files_by_run_id[run.run_id] = output_file
 
+        return run
+
     def join(self):
         # If this hasn't been initialize at all, we can just do a noop
         if not self._instance:
@@ -211,7 +214,10 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         if not _is_alive(process):
             return False
 
-        process.kill()
+        # Send sigint to allow the pipeline run to terminate gracefully and
+        # report termination to the instance.
+        process.send_signal(signal.SIGINT)
+
         process.wait()
         return True
 

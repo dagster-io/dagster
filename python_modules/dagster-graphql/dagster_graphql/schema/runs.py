@@ -202,7 +202,15 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self.runId
 
     def resolve_canTerminate(self, graphene_info):
-        return graphene_info.context.legacy_environment.execution_manager.can_terminate(self.run_id)
+        legacy_cancel = graphene_info.context.legacy_environment.execution_manager.can_terminate(
+            self.run_id
+        )
+        launcher_cancel = (
+            graphene_info.context.instance.run_launcher.can_terminate(self.run_id)
+            if graphene_info.context.instance.run_launcher
+            else False
+        )
+        return legacy_cancel or launcher_cancel
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
