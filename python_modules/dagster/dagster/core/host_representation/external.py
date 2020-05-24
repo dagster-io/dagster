@@ -1,15 +1,10 @@
 from collections import OrderedDict
 
 from dagster import check
-from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
-from .external_data import (
-    ExternalPipelineData,
-    ExternalRepositoryData,
-    external_pipeline_data_from_def,
-    external_repository_data_from_def,
-)
+from .external_data import ExternalPipelineData, ExternalRepositoryData
 from .handle import PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
@@ -66,12 +61,6 @@ class ExternalRepository:
     @property
     def handle(self):
         return self._handle
-
-    @staticmethod
-    def from_repository_def(repository_definition, repository_handle):
-        return ExternalRepository(
-            external_repository_data_from_def(repository_definition), repository_handle,
-        )
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -148,18 +137,6 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def handle(self):
         return self._handle
-
-    @staticmethod
-    def from_pipeline_def(pipeline_def, solid_subset, repository_handle):
-        if solid_subset:
-            pipeline_def = pipeline_def.subset_for_execution(solid_subset)
-
-        return ExternalPipeline(
-            PipelineIndex(PipelineSnapshot.from_pipeline_def(pipeline_def)),
-            external_pipeline_data_from_def(pipeline_def),
-            solid_subset=solid_subset,
-            repository_handle=repository_handle,
-        )
 
 
 class ExternalExecutionPlan:

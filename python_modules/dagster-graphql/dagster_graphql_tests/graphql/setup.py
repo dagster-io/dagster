@@ -53,10 +53,10 @@ from dagster import (
 )
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import EnvironmentHandle, RepositoryHandle
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
+from dagster.utils.hosted_user_process import repository_handle_from_yaml
 
 
 @input_hydration_config(String)
@@ -220,12 +220,7 @@ def define_repository():
 
 
 def get_repository_handle():
-    return RepositoryHandle(
-        'test',
-        EnvironmentHandle.legacy_from_yaml(
-            'dagster-graphql', file_relative_path(__file__, 'repo.yaml')
-        ),
-    )
+    return repository_handle_from_yaml(file_relative_path(__file__, 'repo.yaml'))
 
 
 @pipeline

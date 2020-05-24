@@ -31,7 +31,7 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 
     @lru_cache(maxsize=1)
     def get_definition(self):
-        return _load_repo(self.pointer)
+        return repository_def_from_pointer(self.pointer)
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
@@ -159,14 +159,14 @@ def bootstrap_standalone_recon_pipeline(pointer):
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
     # to get the pipeline on demand in order to get name, we could avoid this.
-    pipeline_def = _load_pipeline(pointer)
+    pipeline_def = pipeline_def_from_pointer(pointer)
     return ReconstructablePipeline(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
         pipeline_name=pipeline_def.name,
     )
 
 
-def _load_pipeline(pointer):
+def pipeline_def_from_pointer(pointer):
     from .pipeline import PipelineDefinition
 
     target = pointer.load_target()
@@ -196,7 +196,7 @@ def _load_pipeline(pointer):
     )
 
 
-def _load_repo(pointer):
+def repository_def_from_pointer(pointer):
     from .pipeline import PipelineDefinition
     from .repository import RepositoryDefinition
 

@@ -6,17 +6,14 @@ import six
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.host_representation import (
-    EnvironmentHandle,
-    ExternalExecutionPlan,
-    ExternalPipeline,
-    ExternalRepository,
-    InProcessOrigin,
-    RepositoryHandle,
-)
+from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils.hosted_user_process import (
+    external_pipeline_from_recon_pipeline,
+    external_repo_from_recon_repo,
+)
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
@@ -153,17 +150,9 @@ class DagsterEnvironment(six.with_metaclass(ABCMeta)):
 
 class InProcessDagsterEnvironment(DagsterEnvironment):
     def __init__(self, recon_repo, execution_manager, reloader=None):
+
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        repo_def = recon_repo.get_definition()
-        self._external_repo = ExternalRepository.from_repository_def(
-            repo_def,
-            RepositoryHandle(
-                repository_name=repo_def.name,
-                environment_handle=EnvironmentHandle(
-                    self.name, InProcessOrigin(recon_repo.pointer, recon_repo.yaml_path)
-                ),
-            ),
-        )
+        self._external_repo = external_repo_from_recon_repo(recon_repo)
         self._repositories = {self._external_repo.name: self._external_repo}
         self.execution_manager = check.opt_inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
@@ -196,10 +185,9 @@ class InProcessDagsterEnvironment(DagsterEnvironment):
             handle.environment_name == self.name,
             'Received invalid handle, environment name mismatch',
         )
-        return ExternalPipeline.from_pipeline_def(
-            self.get_reconstructable_pipeline(handle.pipeline_name).get_definition(),
-            solid_subset,
-            self._external_repo.handle,
+        return external_pipeline_from_recon_pipeline(
+            recon_pipeline=self.get_reconstructable_pipeline(handle.pipeline_name),
+            solid_subset=solid_subset,
         )
 
     def get_external_execution_plan(

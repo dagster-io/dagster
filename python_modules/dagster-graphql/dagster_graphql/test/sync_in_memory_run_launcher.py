@@ -3,6 +3,7 @@ from dagster.core.execution.api import execute_run
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher import RunLauncher
 from dagster.serdes import ConfigurableClass
+from dagster.utils.hosted_user_process import pipeline_def_from_pipeline_handle
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
@@ -31,12 +32,6 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, instance, run, external_pipeline=None):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        pipeline_def = _hosted_user_process_load_pipeline(external_pipeline.handle)
+        pipeline_def = pipeline_def_from_pipeline_handle(external_pipeline.handle)
         execute_run(pipeline_def, run, instance)
         return run
-
-
-# we can do this because we only use in a hosted user process
-def _hosted_user_process_load_pipeline(pipeline_handle):
-    repo_def = pipeline_handle.repository_handle.environment_handle.in_process_origin.load()
-    return repo_def.get_pipeline(pipeline_handle.pipeline_name)

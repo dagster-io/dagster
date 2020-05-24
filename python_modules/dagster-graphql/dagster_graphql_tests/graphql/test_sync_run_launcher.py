@@ -1,15 +1,10 @@
 from dagster_graphql.test.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 from dagster import DagsterInstance, seven
-from dagster.core.host_representation import (
-    EnvironmentHandle,
-    ExternalRepository,
-    InProcessOrigin,
-    RepositoryHandle,
-)
 from dagster.core.test_utils import create_run_for_test
+from dagster.utils.hosted_user_process import external_repo_from_recon_repo
 
-from .setup import create_main_recon_repo, define_repository
+from .setup import create_main_recon_repo
 
 
 def test_sync_run_launcher_hijack_property():
@@ -48,17 +43,7 @@ def test_sync_run_launcher_from_configurable_class():
 
 
 def test_sync_run_launcher_run():
-    recon_repo = create_main_recon_repo()
-
-    repository_handle = RepositoryHandle(
-        repository_name='test',
-        environment_handle=EnvironmentHandle(
-            environment_name='test',
-            in_process_origin=InProcessOrigin(recon_repo.pointer, repo_yaml=None),
-        ),
-    )
-
-    external_repo = ExternalRepository.from_repository_def(define_repository(), repository_handle)
+    external_repo = external_repo_from_recon_repo(create_main_recon_repo())
     external_pipeline = external_repo.get_full_external_pipeline('noop_pipeline')
 
     with seven.TemporaryDirectory() as temp_dir:
