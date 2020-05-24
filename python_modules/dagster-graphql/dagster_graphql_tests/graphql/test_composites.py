@@ -28,7 +28,10 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 
 
 class TestComposites(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+    make_graphql_context_test_suite(
+        context_variants=GraphQLContextVariant.all_legacy_variants()
+        + [GraphQLContextVariant.in_memory_instance_out_of_process_env()]
+    )
 ):
     def test_composites(self, graphql_context, snapshot):
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY)

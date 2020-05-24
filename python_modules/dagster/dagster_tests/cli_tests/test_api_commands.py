@@ -10,21 +10,26 @@ from dagster.core.host_representation import ExternalPipelineData, ExternalRepos
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import IPCEndMessage, IPCStartMessage
+from dagster.serdes.ipc import IPCEndMessage, IPCStartMessage, ipc_read_event_stream
 from dagster.utils import safe_tempfile_path
+from dagster.utils.temp_file import get_temp_file_name
 
 
 def test_snapshot_command_repository():
-    runner = CliRunner()
-    result = runner.invoke(
-        repository_snapshot_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')],
-    )
-    assert result.exit_code == 0
-    # Now that we have the snapshot make sure that it can be properly deserialized
-    external_repository_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(external_repository_data, ExternalRepositoryData)
-    assert external_repository_data.name == 'bar'
-    assert len(external_repository_data.external_pipeline_datas) == 2
+    with get_temp_file_name() as output_file:
+        runner = CliRunner()
+        result = runner.invoke(
+            repository_snapshot_command,
+            [output_file, '-y', file_relative_path(__file__, 'repository_file.yaml')],
+        )
+        assert result.exit_code == 0
+        # Now that we have the snapshot make sure that it can be properly deserialized
+        messages = list(ipc_read_event_stream(output_file))
+        assert len(messages) == 1
+        external_repository_data = messages[0]
+        assert isinstance(external_repository_data, ExternalRepositoryData)
+        assert external_repository_data.name == 'bar'
+        assert len(external_repository_data.external_pipeline_datas) == 2
 
 
 def test_snapshot_command_pipeline():

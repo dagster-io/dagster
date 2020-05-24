@@ -6,6 +6,7 @@ import six
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessDagsterEnvironment,
+    OutOfProcessDagsterEnvironment,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import (
     PipelineExecutionManager,
@@ -21,6 +22,7 @@ from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.utils.hosted_user_process import repository_handle_from_recon_repo
 
 
 def get_main_recon_repo():
@@ -103,6 +105,16 @@ class GraphQLTestEnvironments:
         yield InProcessDagsterEnvironment(
             recon_repo=recon_repo, execution_manager=execution_manager
         )
+
+    @staticmethod
+    @contextmanager
+    def out_of_process(recon_repo, execution_manager):
+        '''Goes out of process but same process as host process'''
+
+        check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+        check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
+        repository_handle = repository_handle_from_recon_repo(recon_repo)
+        yield OutOfProcessDagsterEnvironment('test-out-of-process-env', repository_handle)
 
 
 class GraphQLTestExecutionManagers:
@@ -249,6 +261,19 @@ class GraphQLContextVariant:
             GraphQLTestEnvironments.user_code_in_host_process,
             none_context_manager,
             test_id='in_memory_hijacking_in_memory_run_launcher',
+        )
+
+    @staticmethod
+    def in_memory_instance_out_of_process_env():
+        '''
+        Good for tests with read-only metadata queries. Does not work
+        if you have to go through the run launcher.
+        '''
+        return GraphQLContextVariant(
+            GraphQLTestInstances.in_memory_instance,
+            GraphQLTestEnvironments.out_of_process,
+            none_context_manager,
+            test_id='in_memory_instance_out_of_process_env',
         )
 
     @staticmethod

@@ -21,20 +21,19 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import ipc_write_stream
+from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 # Snapshot CLI
 
 
 @click.command(name='repository', help='Return the snapshot for the given repository')
+@click.argument('output_file', type=click.Path())
 @repository_target_argument
-def repository_snapshot_command(**kwargs):
+def repository_snapshot_command(output_file, **kwargs):
     recon_repo = recon_repo_for_cli_args(kwargs)
     definition = recon_repo.get_definition()
-
-    active_data = external_repository_data_from_def(definition)
-    click.echo(serialize_dagster_namedtuple(active_data))
+    ipc_write_unary_response(output_file, external_repository_data_from_def(definition))
 
 
 @click.command(name='pipeline', help='Return the snapshot for the given pipeline')

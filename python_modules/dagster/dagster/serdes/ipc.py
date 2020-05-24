@@ -14,6 +14,12 @@ from dagster.serdes import (
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
+def ipc_write_unary_response(output_file, obj):
+    check.not_none_param(obj, 'obj')
+    with ipc_write_stream(output_file) as stream:
+        stream.send(obj)
+
+
 @whitelist_for_serdes
 class IPCStartMessage(namedtuple('_IPCStartMessage', '')):
     def __new__(cls):

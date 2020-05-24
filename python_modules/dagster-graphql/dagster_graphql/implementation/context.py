@@ -4,9 +4,14 @@ from collections import namedtuple
 import six
 
 from dagster import check
+from dagster.api.snapshot_repository import sync_get_external_repository
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
+from dagster.core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+    RepositoryHandle,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -247,3 +252,43 @@ class InProcessDagsterEnvironment(DagsterEnvironment):
             pipeline_run,
             instance=instance,
         )
+
+
+class OutOfProcessDagsterEnvironment(DagsterEnvironment):
+    def __init__(self, name, repository_handle):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.param_invariant(
+            repository_handle.environment_handle.in_process_origin.repo_yaml,
+            'environment_handle',
+            'Must have repo_yaml for now because dagster cli api only supports that',
+        )
+        self._name = check.str_param(name, 'name')
+        self.external_repository = sync_get_external_repository(repository_handle)
+
+    def get_repository(self, name):
+        check.str_param(name, 'name')
+        check.param_invariant(name == self.external_repository.name, 'name')
+        return self.external_repository
+
+    def get_repositories(self):
+        return {self.external_repository.name: self.external_repository}
+
+    @property
+    def name(self):
+        return self._name
+
+    def get_external_execution_plan(
+        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+    ):
+        raise NotImplementedError()
+
+    def execute_plan(
+        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+    ):
+        raise NotImplementedError()
+
+    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
+        raise NotImplementedError()
+
+    def get_external_pipeline(self, handle, solid_subset):
+        raise NotImplementedError()
