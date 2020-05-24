@@ -165,7 +165,7 @@ class InProcessDagsterEnvironment(DagsterEnvironment):
             ),
         )
         self._repositories = {self._external_repo.name: self._external_repo}
-        self.execution_manager = check.inst_param(
+        self.execution_manager = check.opt_inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)

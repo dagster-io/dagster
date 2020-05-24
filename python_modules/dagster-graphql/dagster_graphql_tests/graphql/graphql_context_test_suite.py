@@ -99,7 +99,7 @@ class GraphQLTestEnvironments:
     @contextmanager
     def user_code_in_host_process(recon_repo, execution_manager):
         check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        check.inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
+        check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
         yield InProcessDagsterEnvironment(
             recon_repo=recon_repo, execution_manager=execution_manager
         )
@@ -156,6 +156,11 @@ def make_marks(mgrs):
     for mgr in mgrs:
         marks.extend(MARK_MAP.get(mgr, []))
     return marks
+
+
+@contextmanager
+def none_context_manager(*_args, **_kwargs):
+    yield None
 
 
 class GraphQLContextVariant:
@@ -242,7 +247,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             GraphQLTestInstances.hijacking_in_memory_instance,
             GraphQLTestEnvironments.user_code_in_host_process,
-            GraphQLTestExecutionManagers.sync_execution_manager,  # unused because hijacked
+            none_context_manager,
             test_id='in_memory_hijacking_in_memory_run_launcher',
         )
 
@@ -251,7 +256,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             GraphQLTestInstances.hijacking_sqlite_instance,
             GraphQLTestEnvironments.user_code_in_host_process,
-            GraphQLTestExecutionManagers.sync_execution_manager,  # unused because hijacked
+            none_context_manager,
             test_id='sqlite_hijacking_cli_api_run_launcher',
         )
 
