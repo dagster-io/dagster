@@ -37,7 +37,7 @@ def _do_setup(name='dagster-flyte'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'flytekit'],
+        install_requires=['dagster', 'flytekit', 'python-forge'],
         tests_require=[],
         zip_safe=False,
     )

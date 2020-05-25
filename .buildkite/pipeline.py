@@ -141,7 +141,8 @@ def python_modules_tox_tests(directory, supported_pythons=None):
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(
-                version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN',],
+                version,
+                ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN',],
             )
             .build()
         )
@@ -321,7 +322,7 @@ def flyte_tests():
             StepBuilder("dagster-flyte tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pushd python_modules/libraries/dagster-flyte",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
