@@ -115,7 +115,11 @@ def get_step_output_event(logs, step_key, output_name='result'):
 
 class TestRetryExecution(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
+        context_variants=[
+            GraphQLContextVariant.sqlite_in_process_start(),
+            GraphQLContextVariant.in_memory_in_process_start(),
+            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
+        ]
     )
 ):
     def test_retry_requires_intermediates(self, graphql_context):
