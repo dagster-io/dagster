@@ -33,8 +33,8 @@ class TestExecutePipelineWithCliApiHijack(
     make_graphql_context_test_suite(
         context_variants=GraphQLContextVariant.all_legacy_variants()
         + [
-            GraphQLContextVariant.in_memory_hijacking_in_memory_run_launcher(),
-            GraphQLContextVariant.sqlite_hijacking_cli_api_run_launcher(),
+            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
+            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
         ]
     )
 ):
@@ -60,10 +60,10 @@ class TestExecutePipelineWithCliApiHijack(
         assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
 
-class TestExecutePipelineWithoutCliApiHijack(
+class TestExecutePipelineLegacyPlusInMemoryHijack(
     make_graphql_context_test_suite(
         context_variants=GraphQLContextVariant.all_legacy_variants()
-        + [GraphQLContextVariant.in_memory_hijacking_in_memory_run_launcher()]
+        + [GraphQLContextVariant.in_memory_instance_with_sync_hijack()]
     )
 ):
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
@@ -170,10 +170,6 @@ class TestExecutePipelineWithoutCliApiHijack(
                 },
             )
 
-
-class TestExecutePipelineLegacyRunsOnly(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
-):
     def test_basic_start_pipeline_execution_config_failure(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context,
@@ -218,9 +214,12 @@ class TestExecutePipelineLegacyRunsOnly(
         assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
 
-class TestExecutePipelineLegacySqliteInProcessOnly(
+class TestExecutePipelineLegacySqliteInProcessOnlyAndHijack(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
+        context_variants=[
+            GraphQLContextVariant.sqlite_in_process_start(),
+            GraphQLContextVariant.sqlite_with_sync_hijack(),
+        ]
     )
 ):
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
@@ -255,6 +254,12 @@ class TestExecutePipelineLegacySqliteInProcessOnly(
         for log_message in log_messages[1:]:
             assert log_message['step']['key']
 
+
+class TestExecutePipelineLegacySqliteInProcessOnly(
+    make_graphql_context_test_suite(
+        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
+    )
+):
     def test_subscription_query_error(self, graphql_context):
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,

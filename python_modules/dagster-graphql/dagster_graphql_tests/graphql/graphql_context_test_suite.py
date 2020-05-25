@@ -44,7 +44,7 @@ class GraphQLTestInstances:
 
     @staticmethod
     @contextmanager
-    def hijacking_in_memory_instance():
+    def in_memory_instance_with_sync_hijack():
         with seven.TemporaryDirectory() as temp_dir:
             yield DagsterInstance(
                 instance_type=InstanceType.EPHEMERAL,
@@ -57,7 +57,7 @@ class GraphQLTestInstances:
 
     @staticmethod
     @contextmanager
-    def hijacking_sqlite_instance():
+    def sqlite_instance_with_cli_api_hijack():
         with seven.TemporaryDirectory() as temp_dir:
             instance = DagsterInstance.local_temp(
                 temp_dir,
@@ -91,6 +91,27 @@ class GraphQLTestInstances:
                         'class': 'FilesystemTestScheduler',
                         'config': {'base_dir': temp_dir},
                     }
+                },
+            )
+            yield instance
+
+    @staticmethod
+    @contextmanager
+    def sqlite_instance_with_sync_hijack():
+        with seven.TemporaryDirectory() as temp_dir:
+            instance = DagsterInstance.local_temp(
+                temp_dir,
+                overrides={
+                    'scheduler': {
+                        'module': 'dagster.utils.test',
+                        'class': 'FilesystemTestScheduler',
+                        'config': {'base_dir': temp_dir},
+                    },
+                    'run_launcher': {
+                        'module': 'dagster_graphql.test.sync_in_memory_run_launcher',
+                        'class': 'SyncInMemoryRunLauncher',
+                        'config': {'hijack_start': True},
+                    },
                 },
             )
             yield instance
@@ -140,6 +161,8 @@ class Marks:
     in_memory_instance = pytest.mark.in_memory_instance
     sqlite_instance = pytest.mark.sqlite_instance
     hijacking = pytest.mark.hijacking
+    sync_run_launcher = pytest.mark.sync_run_launcher
+    cli_api_run_launcher = pytest.mark.cli_api_run_launcher
 
     # Environment marks
     hosted_user_process_env = pytest.mark.hosted_user_process_env
@@ -154,9 +177,22 @@ class Marks:
 
 MARK_MAP = {
     GraphQLTestInstances.in_memory_instance: [Marks.in_memory_instance],
-    GraphQLTestInstances.hijacking_in_memory_instance: [Marks.in_memory_instance, Marks.hijacking],
-    GraphQLTestInstances.hijacking_sqlite_instance: [Marks.sqlite_instance, Marks.hijacking],
+    GraphQLTestInstances.in_memory_instance_with_sync_hijack: [
+        Marks.in_memory_instance,
+        Marks.hijacking,
+        Marks.sync_run_launcher,
+    ],
     GraphQLTestInstances.sqlite_instance: [Marks.sqlite_instance],
+    GraphQLTestInstances.sqlite_instance_with_sync_hijack: [
+        Marks.sqlite_instance,
+        Marks.hijacking,
+        Marks.sync_run_launcher,
+    ],
+    GraphQLTestInstances.sqlite_instance_with_sync_hijack: [
+        Marks.sqlite_instance,
+        Marks.hijacking,
+        Marks.cli_api_run_launcher,
+    ],
     GraphQLTestEnvironments.user_code_in_host_process: [Marks.hosted_user_process_env],
     GraphQLTestExecutionManagers.sync_execution_manager: [Marks.in_process_start],
     GraphQLTestExecutionManagers.subprocess_execution_manager: [Marks.subprocess_start],
@@ -253,12 +289,12 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def in_memory_hijacking_in_memory_run_launcher():
+    def in_memory_instance_with_sync_hijack():
         return GraphQLContextVariant(
-            GraphQLTestInstances.hijacking_in_memory_instance,
+            GraphQLTestInstances.in_memory_instance_with_sync_hijack,
             GraphQLTestEnvironments.user_code_in_host_process,
             none_context_manager,
-            test_id='in_memory_hijacking_in_memory_run_launcher',
+            test_id='in_memory_instance_with_sync_hijack',
         )
 
     @staticmethod
@@ -275,12 +311,21 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def sqlite_hijacking_cli_api_run_launcher():
+    def sqlite_with_sync_hijack():
         return GraphQLContextVariant(
-            GraphQLTestInstances.hijacking_sqlite_instance,
+            GraphQLTestInstances.sqlite_instance_with_sync_hijack,
             GraphQLTestEnvironments.user_code_in_host_process,
             none_context_manager,
-            test_id='sqlite_hijacking_cli_api_run_launcher',
+            test_id='sqlite_with_sync_hijack',
+        )
+
+    @staticmethod
+    def sqlite_with_cli_api_hijack():
+        return GraphQLContextVariant(
+            GraphQLTestInstances.sqlite_instance_with_cli_api_hijack,
+            GraphQLTestEnvironments.user_code_in_host_process,
+            none_context_manager,
+            test_id='sqlite_with_cli_api_hijack',
         )
 
     @staticmethod
