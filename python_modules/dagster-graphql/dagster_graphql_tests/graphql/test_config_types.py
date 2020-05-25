@@ -110,9 +110,7 @@ def execute_config_graphql(context, pipeline_name, environment_dict, mode):
 
 
 class TestConfigTypes(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
-    )
+    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_readonly_variants())
 ):
     def test_pipeline_not_found(self, graphql_context):
         result = execute_config_graphql(

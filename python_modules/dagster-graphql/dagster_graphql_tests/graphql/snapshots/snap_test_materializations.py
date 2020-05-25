@@ -11,19 +11,23 @@ snapshots['test_materializations 1'] = [
         '__typename': 'PipelineStartEvent',
         'level': 'DEBUG',
         'message': 'Started execution of pipeline "materialization_pipeline".',
-        'step': None,
+        'step': None
     },
     {
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Executing steps in process ((pid: *****))',
-        'step': None,
+        'step': None
     },
     {
         '__typename': 'ExecutionStepStartEvent',
         'level': 'DEBUG',
         'message': 'Started execution of step "materialize.compute".',
-        'step': {'key': 'materialize.compute', 'kind': 'COMPUTE', 'solidHandleID': 'materialize'},
+        'step': {
+            'key': 'materialize.compute',
+            'kind': 'COMPUTE',
+            'solidHandleID': 'materialize'
+        }
     },
     {
         '__typename': 'StepMaterializationEvent',
@@ -36,75 +40,90 @@ snapshots['test_materializations 1'] = [
                     '__typename': 'EventTextMetadataEntry',
                     'description': None,
                     'label': 'text',
-                    'text': 'text is cool',
+                    'text': 'text is cool'
                 },
                 {
                     '__typename': 'EventUrlMetadataEntry',
                     'description': None,
                     'label': 'url',
-                    'url': 'https://bigty.pe/neato',
+                    'url': 'https://bigty.pe/neato'
                 },
                 {
                     '__typename': 'EventPathMetadataEntry',
                     'description': None,
                     'label': 'path',
-                    'path': '/tmp/awesome',
+                    'path': '/tmp/awesome'
                 },
                 {
                     '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"is_dope": true}',
-                    'label': 'json',
+                    'label': 'json'
                 },
                 {
                     '__typename': 'EventPythonArtifactMetadataEntry',
                     'description': None,
                     'label': 'python class',
                     'module': 'dagster.core.definitions.events',
-                    'name': 'EventMetadataEntry',
+                    'name': 'EventMetadataEntry'
                 },
                 {
                     '__typename': 'EventPythonArtifactMetadataEntry',
                     'description': None,
                     'label': 'python function',
                     'module': 'dagster.utils',
-                    'name': 'file_relative_path',
+                    'name': 'file_relative_path'
                 },
                 {
                     '__typename': 'EventFloatMetadataEntry',
                     'description': None,
                     'label': 'float',
-                    'value': 1.2,
-                },
-            ],
+                    'value': 1.2
+                }
+            ]
         },
         'message': 'a materialization with all metadata types',
-        'step': {'key': 'materialize.compute', 'solidHandleID': 'materialize'},
+        'step': {
+            'key': 'materialize.compute',
+            'solidHandleID': 'materialize'
+        }
     },
     {
         '__typename': 'ExecutionStepOutputEvent',
         'level': 'DEBUG',
         'message': 'Yielded output "result" of type "Any". (Type check passed).',
         'outputName': 'result',
-        'step': {'key': 'materialize.compute', 'kind': 'COMPUTE', 'solidHandleID': 'materialize'},
-        'typeCheck': {'description': None, 'label': 'result', 'metadataEntries': []},
+        'step': {
+            'key': 'materialize.compute',
+            'kind': 'COMPUTE',
+            'solidHandleID': 'materialize'
+        },
+        'typeCheck': {
+            'description': None,
+            'label': 'result',
+            'metadataEntries': [
+            ]
+        }
     },
     {
         '__typename': 'ExecutionStepSuccessEvent',
         'level': 'DEBUG',
         'message': 'Finished execution of step "materialize.compute" in',
-        'step': {'key': 'materialize.compute', 'solidHandleID': 'materialize'},
+        'step': {
+            'key': 'materialize.compute',
+            'solidHandleID': 'materialize'
+        }
     },
     {
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Finished steps in process ((pid: *****)) in ***.**ms',
-        'step': None,
+        'step': None
     },
     {
         '__typename': 'PipelineSuccessEvent',
         'level': 'DEBUG',
         'message': 'Finished execution of pipeline "materialization_pipeline".',
-        'step': None,
-    },
+        'step': None
+    }
 ]

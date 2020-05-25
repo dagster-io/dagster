@@ -21,7 +21,9 @@ query RunQuery($runId: ID!) {
 
 
 class TestMissingRunLauncher(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+    make_graphql_context_test_suite(
+        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
+    )
 ):
     def test_missing(self, graphql_context):
         result = execute_dagster_graphql(

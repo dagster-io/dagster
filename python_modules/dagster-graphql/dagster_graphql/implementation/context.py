@@ -265,6 +265,10 @@ class OutOfProcessDagsterEnvironment(DagsterEnvironment):
         self._name = check.str_param(name, 'name')
         self.external_repository = sync_get_external_repository(repository_handle)
 
+    @property
+    def execution_manager(self):
+        return None
+
     def get_repository(self, name):
         check.str_param(name, 'name')
         check.param_invariant(name == self.external_repository.name, 'name')

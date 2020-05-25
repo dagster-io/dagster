@@ -189,7 +189,9 @@ class TestReexecution(
 
 
 class TestRunLauncherMissingForReexecution(
-    make_graphql_context_test_suite(GraphQLContextVariant.all_legacy_variants())
+    make_graphql_context_test_suite(
+        GraphQLContextVariant.all_variants_with_legacy_execution_manager()
+    )
 ):
     def test_pipeline_reexecution_launcher_missing(self, graphql_context):
         run_id = make_new_run_id()

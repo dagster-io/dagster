@@ -31,11 +31,8 @@ from .utils import sync_execute_get_run_log_data
 
 class TestExecutePipelineWithCliApiHijack(
     make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_legacy_variants()
-        + [
-            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
-            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
-        ]
+        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
+        + GraphQLContextVariant.all_hijacking_launcher_variants()
     )
 ):
     def test_start_pipeline_execution(self, graphql_context):
@@ -62,7 +59,7 @@ class TestExecutePipelineWithCliApiHijack(
 
 class TestExecutePipelineLegacyPlusInMemoryHijack(
     make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_legacy_variants()
+        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
         + [GraphQLContextVariant.in_memory_instance_with_sync_hijack()]
     )
 ):
