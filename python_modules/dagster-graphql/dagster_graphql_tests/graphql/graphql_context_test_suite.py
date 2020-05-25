@@ -354,6 +354,14 @@ class GraphQLContextVariant:
             GraphQLContextVariant.sqlite_subprocess_start(),
         ]
 
+    @staticmethod
+    def all_launcher_variants():
+        return [
+            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
+            GraphQLContextVariant.sqlite_with_sync_hijack(),
+            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
+        ]
+
 
 @contextmanager
 def manage_graphql_context(instance_mgr, environment_mgr, em_mgr, recon_repo=None):
