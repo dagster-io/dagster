@@ -4,6 +4,7 @@ from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
+from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .setup import csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
@@ -108,407 +109,444 @@ def execute_config_graphql(context, pipeline_name, environment_dict, mode):
     )
 
 
-def test_pipeline_not_found(graphql_context):
-    result = execute_config_graphql(
-        graphql_context, pipeline_name='nope', environment_dict={}, mode='default'
+class TestConfigTypes(
+    make_graphql_context_test_suite(
+        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
     )
+):
+    def test_pipeline_not_found(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context, pipeline_name='nope', environment_dict={}, mode='default'
+        )
 
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'nope'
+        assert not result.errors
+        assert result.data
+        assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineNotFoundError'
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'nope'
 
+    def test_basic_valid_config(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict=csv_hello_world_solids_config(),
+            mode='default',
+        )
 
-def test_basic_valid_config(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict=csv_hello_world_solids_config(),
-        mode='default',
-    )
+        assert not result.errors
+        assert result.data
+        assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
 
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-
-
-def test_root_field_not_defined(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict={
-            'solids': {
-                'sum_solid': {'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}}
+    def test_root_field_not_defined(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict={
+                'solids': {
+                    'sum_solid': {
+                        'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+                    }
+                },
+                'nope': {},
             },
-            'nope': {},
-        },
-        mode='default',
-    )
+            mode='default',
+        )
 
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    errors = result.data['isPipelineConfigValid']['errors']
-    assert len(errors) == 1
-    error = errors[0]
-    assert error['__typename'] == 'FieldNotDefinedConfigError'
-    assert error['fieldName'] == 'nope'
-    assert not error['stack']['entries']
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        errors = result.data['isPipelineConfigValid']['errors']
+        assert len(errors) == 1
+        error = errors[0]
+        assert error['__typename'] == 'FieldNotDefinedConfigError'
+        assert error['fieldName'] == 'nope'
+        assert not error['stack']['entries']
 
+    def test_basic_invalid_not_defined_field(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict={
+                'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}
+            },
+            mode='default',
+        )
 
-def test_basic_invalid_not_defined_field(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict={'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}},
-        mode='default',
-    )
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        assert len(result.data['isPipelineConfigValid']['errors']) == 1
+        error_data = result.data['isPipelineConfigValid']['errors'][0]
+        assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
+        assert error_data['reason'] == 'FIELD_NOT_DEFINED'
+        assert error_data['fieldName'] == 'extra'
 
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 1
-    error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
-    assert error_data['reason'] == 'FIELD_NOT_DEFINED'
-    assert error_data['fieldName'] == 'extra'
-
-
-def test_multiple_not_defined_fields(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict={
-            'solids': {
-                'sum_solid': {
-                    'inputs': {'num': 'foo.txt', 'extra_one': 'nope', 'extra_two': 'nope'}
-                }
-            }
-        },
-        mode='default',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 1
-    error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
-    assert error_data['reason'] == 'FIELDS_NOT_DEFINED'
-    assert error_data['fieldNames'] == ['extra_one', 'extra_two']
-
-
-def test_root_wrong_type(graphql_context):
-    result = execute_config_graphql(
-        graphql_context, pipeline_name='csv_hello_world', environment_dict=123, mode='default'
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 1
-    error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
-
-
-def test_basic_invalid_config_type_mismatch(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
-        mode='default',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 1
-    error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert error_data['message']
-    assert error_data['stack']
-    assert error_data['stack']['entries']
-    assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
-    assert error_data['valueRep'] == '123'
-
-    assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
-
-
-def test_basic_invalid_config_missing_field(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='csv_hello_world',
-        environment_dict={'solids': {'sum_solid': {'inputs': {}}}},
-        mode='default',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 1
-    error_data = result.data['isPipelineConfigValid']['errors'][0]
-
-    assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
-    assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert error_data['field']['name'] == 'num'
-
-
-def test_mode_resource_config_works(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='multi_mode_with_resources',
-        environment_dict={'resources': {'op': {'config': 2}}},
-        mode='add_mode',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
-
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='multi_mode_with_resources',
-        environment_dict={'resources': {'op': {'config': 2}}},
-        mode='mult_mode',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
-
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='multi_mode_with_resources',
-        environment_dict={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
-        mode='double_adder',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
-
-
-def test_missing_resource(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='multi_mode_with_resources',
-        environment_dict={'resources': {}},
-        mode='add_mode',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    error_data = single_error_data(result)
-    assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert error_data['field']['name'] == 'op'
-
-
-def test_undefined_resource(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='multi_mode_with_resources',
-        environment_dict={'resources': {'nope': {}}},
-        mode='add_mode',
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert {'FieldNotDefinedConfigError', 'MissingFieldConfigError'} == {
-        error_data['__typename'] for error_data in result.data['isPipelineConfigValid']['errors']
-    }
-
-
-def test_more_complicated_works(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='more_complicated_nested_config',
-        environment_dict={
-            'solids': {
-                'a_solid_with_multilayered_config': {
-                    'config': {
-                        'field_any': {'123': 123},
-                        'field_one': 'foo.txt',
-                        'field_two': 'yup',
-                        'field_three': 'mmmhmmm',
-                        'nested_field': {'field_four_str': 'yaya', 'field_five_int': 234},
+    def test_multiple_not_defined_fields(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict={
+                'solids': {
+                    'sum_solid': {
+                        'inputs': {'num': 'foo.txt', 'extra_one': 'nope', 'extra_two': 'nope'}
                     }
                 }
-            }
-        },
-        mode='default',
-    )
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
-    assert valid_data['__typename'] == 'PipelineConfigValidationValid'
-    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
+            },
+            mode='default',
+        )
 
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        assert len(result.data['isPipelineConfigValid']['errors']) == 1
+        error_data = result.data['isPipelineConfigValid']['errors'][0]
+        assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
+        assert error_data['reason'] == 'FIELDS_NOT_DEFINED'
+        assert error_data['fieldNames'] == ['extra_one', 'extra_two']
 
-def test_multiple_missing_fields(graphql_context):
+    def test_root_wrong_type(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context, pipeline_name='csv_hello_world', environment_dict=123, mode='default'
+        )
 
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='more_complicated_nested_config',
-        environment_dict={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
-        mode='default',
-    )
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        assert len(result.data['isPipelineConfigValid']['errors']) == 1
+        error_data = result.data['isPipelineConfigValid']['errors'][0]
+        assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
 
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
+    def test_basic_invalid_config_type_mismatch(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
+            mode='default',
+        )
 
-    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
-    assert len(valid_data['errors']) == 1
-    error_data = valid_data['errors'][0]
-    missing_names = {field_data['name'] for field_data in error_data['fields']}
-    assert missing_names == {'nested_field', 'field_one', 'field_any'}
-    assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        assert len(result.data['isPipelineConfigValid']['errors']) == 1
+        error_data = result.data['isPipelineConfigValid']['errors'][0]
+        assert error_data['message']
+        assert error_data['stack']
+        assert error_data['stack']['entries']
+        assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
+        assert error_data['valueRep'] == '123'
 
+        assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
 
-def test_more_complicated_multiple_errors(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='more_complicated_nested_config',
-        environment_dict={
-            'solids': {
-                'a_solid_with_multilayered_config': {
-                    'config': {
-                        'field_any': [],
-                        # 'field_one': 'foo.txt', # missing
-                        'field_two': 'yup',
-                        'field_three': 'mmmhmmm',
-                        'extra_one': 'kjsdkfjd',  # extra
-                        'nested_field': {
-                            'field_four_str': 23434,  # runtime type
-                            'field_five_int': 234,
-                            'extra_two': 'ksjdkfjd',  # another extra
-                        },
+    def test_basic_invalid_config_missing_field(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='csv_hello_world',
+            environment_dict={'solids': {'sum_solid': {'inputs': {}}}},
+            mode='default',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
+        assert len(result.data['isPipelineConfigValid']['errors']) == 1
+        error_data = result.data['isPipelineConfigValid']['errors'][0]
+
+        assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
+        assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
+        assert error_data['field']['name'] == 'num'
+
+    def test_mode_resource_config_works(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='multi_mode_with_resources',
+            environment_dict={'resources': {'op': {'config': 2}}},
+            mode='add_mode',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
+
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='multi_mode_with_resources',
+            environment_dict={'resources': {'op': {'config': 2}}},
+            mode='mult_mode',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
+
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='multi_mode_with_resources',
+            environment_dict={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
+            mode='double_adder',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+        assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
+
+    def test_missing_resource(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='multi_mode_with_resources',
+            environment_dict={'resources': {}},
+            mode='add_mode',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        error_data = single_error_data(result)
+        assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
+        assert error_data['field']['name'] == 'op'
+
+    def test_undefined_resource(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='multi_mode_with_resources',
+            environment_dict={'resources': {'nope': {}}},
+            mode='add_mode',
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert {'FieldNotDefinedConfigError', 'MissingFieldConfigError'} == {
+            error_data['__typename']
+            for error_data in result.data['isPipelineConfigValid']['errors']
+        }
+
+    def test_more_complicated_works(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='more_complicated_nested_config',
+            environment_dict={
+                'solids': {
+                    'a_solid_with_multilayered_config': {
+                        'config': {
+                            'field_any': {'123': 123},
+                            'field_one': 'foo.txt',
+                            'field_two': 'yup',
+                            'field_three': 'mmmhmmm',
+                            'nested_field': {'field_four_str': 'yaya', 'field_five_int': 234},
+                        }
                     }
                 }
-            }
-        },
-        mode='default',
-    )
+            },
+            mode='default',
+        )
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
+        assert valid_data['__typename'] == 'PipelineConfigValidationValid'
+        assert valid_data['pipelineName'] == 'more_complicated_nested_config'
 
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
+    def test_multiple_missing_fields(self, graphql_context):
 
-    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
-    assert len(valid_data['errors']) == 4
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='more_complicated_nested_config',
+            environment_dict={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
+            mode='default',
+        )
 
-    missing_error_one = find_error(
-        result, ['solids', 'a_solid_with_multilayered_config', 'config'], 'MISSING_REQUIRED_FIELD'
-    )
-    assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(
-        missing_error_one
-    )
-    assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert missing_error_one['field']['name'] == 'field_one'
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
 
-    not_defined_one = find_error(
-        result, ['solids', 'a_solid_with_multilayered_config', 'config'], 'FIELD_NOT_DEFINED'
-    )
-    assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(not_defined_one)
-    assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
-    assert not_defined_one['fieldName'] == 'extra_one'
+        assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+        assert valid_data['pipelineName'] == 'more_complicated_nested_config'
+        assert len(valid_data['errors']) == 1
+        error_data = valid_data['errors'][0]
+        missing_names = {field_data['name'] for field_data in error_data['fields']}
+        assert missing_names == {'nested_field', 'field_one', 'field_any'}
+        assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
 
-    dagster_type_error = find_error(
-        result,
-        ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field', 'field_four_str'],
-        'RUNTIME_TYPE_MISMATCH',
-    )
-    assert [
-        'solids',
-        'a_solid_with_multilayered_config',
-        'config',
-        'nested_field',
-        'field_four_str',
-    ] == field_stack(dagster_type_error)
-    assert dagster_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
-    assert dagster_type_error['valueRep'] == '23434'
+    def test_more_complicated_multiple_errors(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='more_complicated_nested_config',
+            environment_dict={
+                'solids': {
+                    'a_solid_with_multilayered_config': {
+                        'config': {
+                            'field_any': [],
+                            # 'field_one': 'foo.txt', # missing
+                            'field_two': 'yup',
+                            'field_three': 'mmmhmmm',
+                            'extra_one': 'kjsdkfjd',  # extra
+                            'nested_field': {
+                                'field_four_str': 23434,  # runtime type
+                                'field_five_int': 234,
+                                'extra_two': 'ksjdkfjd',  # another extra
+                            },
+                        }
+                    }
+                }
+            },
+            mode='default',
+        )
 
-    not_defined_two = find_error(
-        result,
-        ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field'],
-        'FIELD_NOT_DEFINED',
-    )
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
 
-    assert ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field'] == field_stack(
-        not_defined_two
-    )
-    assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
-    assert not_defined_two['fieldName'] == 'extra_two'
+        assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+        assert valid_data['pipelineName'] == 'more_complicated_nested_config'
+        assert len(valid_data['errors']) == 4
 
-    # TODO: two more errors
+        missing_error_one = find_error(
+            result,
+            ['solids', 'a_solid_with_multilayered_config', 'config'],
+            'MISSING_REQUIRED_FIELD',
+        )
+        assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(
+            missing_error_one
+        )
+        assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
+        assert missing_error_one['field']['name'] == 'field_one'
 
+        not_defined_one = find_error(
+            result, ['solids', 'a_solid_with_multilayered_config', 'config'], 'FIELD_NOT_DEFINED'
+        )
+        assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(
+            not_defined_one
+        )
+        assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
+        assert not_defined_one['fieldName'] == 'extra_one'
 
-def test_config_list(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='pipeline_with_list',
-        environment_dict={'solids': {'solid_with_list': {'config': [1, 2]}}},
-        mode='default',
-    )
+        dagster_type_error = find_error(
+            result,
+            [
+                'solids',
+                'a_solid_with_multilayered_config',
+                'config',
+                'nested_field',
+                'field_four_str',
+            ],
+            'RUNTIME_TYPE_MISMATCH',
+        )
+        assert [
+            'solids',
+            'a_solid_with_multilayered_config',
+            'config',
+            'nested_field',
+            'field_four_str',
+        ] == field_stack(dagster_type_error)
+        assert dagster_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
+        assert dagster_type_error['valueRep'] == '23434'
 
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
-    assert valid_data['__typename'] == 'PipelineConfigValidationValid'
-    assert valid_data['pipelineName'] == 'pipeline_with_list'
+        not_defined_two = find_error(
+            result,
+            ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field'],
+            'FIELD_NOT_DEFINED',
+        )
 
+        assert [
+            'solids',
+            'a_solid_with_multilayered_config',
+            'config',
+            'nested_field',
+        ] == field_stack(not_defined_two)
+        assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
+        assert not_defined_two['fieldName'] == 'extra_two'
 
-def test_config_list_invalid(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='pipeline_with_list',
-        environment_dict={'solids': {'solid_with_list': {'config': 'foo'}}},
-        mode='default',
-    )
+        # TODO: two more errors
 
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
-    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipelineName'] == 'pipeline_with_list'
-    assert len(valid_data['errors']) == 1
-    assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
+    def test_config_list(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='pipeline_with_list',
+            environment_dict={'solids': {'solid_with_list': {'config': [1, 2]}}},
+            mode='default',
+        )
 
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
+        assert valid_data['__typename'] == 'PipelineConfigValidationValid'
+        assert valid_data['pipelineName'] == 'pipeline_with_list'
 
-def test_config_list_item_invalid(graphql_context):
-    result = execute_config_graphql(
-        graphql_context,
-        pipeline_name='pipeline_with_list',
-        environment_dict={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
-        mode='default',
-    )
+    def test_config_list_invalid(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='pipeline_with_list',
+            environment_dict={'solids': {'solid_with_list': {'config': 'foo'}}},
+            mode='default',
+        )
 
-    assert not result.errors
-    assert result.data
-    valid_data = result.data['isPipelineConfigValid']
-    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipelineName'] == 'pipeline_with_list'
-    assert len(valid_data['errors']) == 1
-    entries = valid_data['errors'][0]['stack']['entries']
-    assert len(entries) == 4
-    assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
+        assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+        assert valid_data['pipelineName'] == 'pipeline_with_list'
+        assert len(valid_data['errors']) == 1
+        assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
 
-    last_entry = entries[3]
-    assert last_entry['__typename'] == 'EvaluationStackListItemEntry'
-    assert last_entry['listIndex'] == 1
+    def test_config_list_item_invalid(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name='pipeline_with_list',
+            environment_dict={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
+            mode='default',
+        )
+
+        assert not result.errors
+        assert result.data
+        valid_data = result.data['isPipelineConfigValid']
+        assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+        assert valid_data['pipelineName'] == 'pipeline_with_list'
+        assert len(valid_data['errors']) == 1
+        entries = valid_data['errors'][0]['stack']['entries']
+        assert len(entries) == 4
+        assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
+
+        last_entry = entries[3]
+        assert last_entry['__typename'] == 'EvaluationStackListItemEntry'
+        assert last_entry['listIndex'] == 1
+
+    def test_smoke_test_config_type_system(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            ALL_CONFIG_TYPES_QUERY,
+            {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
+        )
+
+        config_types_data = result.data['environmentSchemaOrError']['allConfigTypes']
+
+        assert has_config_type_with_key_prefix(config_types_data, 'Shape.')
+
+        for builtin_config_type in ALL_CONFIG_BUILTINS:
+            assert has_config_type(config_types_data, builtin_config_type.given_name)
 
 
 def pipeline_named(result, name):
@@ -532,21 +570,6 @@ def has_config_type(config_types_data, name):
             return True
 
     return False
-
-
-def test_smoke_test_config_type_system(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        ALL_CONFIG_TYPES_QUERY,
-        {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
-    )
-
-    config_types_data = result.data['environmentSchemaOrError']['allConfigTypes']
-
-    assert has_config_type_with_key_prefix(config_types_data, 'Shape.')
-
-    for builtin_config_type in ALL_CONFIG_BUILTINS:
-        assert has_config_type(config_types_data, builtin_config_type.given_name)
 
 
 ALL_CONFIG_TYPES_QUERY = '''

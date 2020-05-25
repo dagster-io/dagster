@@ -21,3 +21,19 @@ snapshots['test_compute_logs_subscription_graphql 1'] = [
         }
     }
 ]
+
+snapshots['TestComputeLogs.test_get_compute_logs_over_graphql[sqlite_in_process_start] 1'] = {
+    'stdout': {
+        'data': '''HELLO WORLD
+'''
+    }
+}
+
+snapshots['TestComputeLogs.test_compute_logs_subscription_graphql[sqlite_in_process_start] 1'] = [
+    {
+        'computeLogs': {
+            'data': '''HELLO WORLD
+'''
+        }
+    }
+]
