@@ -164,43 +164,51 @@ class TestExecutePipelineWithoutCliApiHijack(
             )
 
 
-def test_basic_start_pipeline_execution_config_failure(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
-                'mode': 'default',
-            }
-        },
-    )
+class TestExecutePipelineLegacyRunsOnly(
+    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+):
+    def test_basic_start_pipeline_execution_config_failure(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'csv_hello_world'},
+                    'environmentConfigData': {
+                        'solids': {'sum_solid': {'inputs': {'num': 384938439}}}
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
 
-    assert not result.errors
-    assert result.data
-    assert result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
 
+    def test_basis_start_pipeline_not_found_error(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'sjkdfkdjkf'},
+                    'environmentConfigData': {
+                        'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
 
-def test_basis_start_pipeline_not_found_error(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'sjkdfkdjkf'},
-                'environmentConfigData': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
-                'mode': 'default',
-            }
-        },
-    )
+        assert not result.errors
+        assert result.data
 
-    assert not result.errors
-    assert result.data
-
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
+        # just test existence
+        assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
+        assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
 
 def test_basic_start_pipeline_execution_and_subscribe(graphql_context):
