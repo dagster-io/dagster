@@ -31,3 +31,29 @@ snapshots['test_full_pipeline_reexecution_in_memory_storage 1'] = {
         }
     }
 }
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_in_process_start] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_in_process_start] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}

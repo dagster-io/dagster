@@ -35,3 +35,6 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_def = pipeline_def_from_pipeline_handle(external_pipeline.handle)
         execute_run(pipeline_def, run, instance)
         return run
+
+    def join(self):
+        '''Nothing to join on since all executions are synchronous.'''
