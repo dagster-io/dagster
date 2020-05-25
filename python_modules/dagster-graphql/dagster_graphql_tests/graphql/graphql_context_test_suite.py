@@ -355,7 +355,7 @@ class GraphQLContextVariant:
         ]
 
     @staticmethod
-    def all_launcher_variants():
+    def all_hijacking_launcher_variants():
         return [
             GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
             GraphQLContextVariant.sqlite_with_sync_hijack(),

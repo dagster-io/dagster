@@ -57,3 +57,107 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
         }
     }
 }
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_instance_with_sync_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[in_memory_instance_with_sync_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_sync_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_cli_api_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_sync_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_cli_api_hijack] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_in_process_start] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_subprocess_start] 1'] = {
+    'startPipelineExecution': {
+        '__typename': 'StartPipelineRunSuccess',
+        'run': {
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'tags': [
+            ]
+        }
+    }
+}
