@@ -137,6 +137,14 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
+    if instance.run_launcher and instance.run_launcher.hijack_start:
+        from .launch_execution import do_launch_for_created_run
+
+        run = do_launch_for_created_run(graphene_info, run_id)
+
+        return graphene_info.schema.type_named('StartPipelineRunSuccess')(
+            run=graphene_info.schema.type_named('PipelineRun')(run)
+        )
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
@@ -157,7 +165,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         # graphql error.
 
         # We currently re-use the engine events machinery to add the error to the event log, but
-        # may need to create a new event type and instance method to handle these erros.
+        # may need to create a new event type and instance method to handle these errors.
         invalid_config_exception = DagsterInvalidConfigError(
             'Error in config for pipeline {}'.format(external_pipeline.name),
             validated_config.errors,

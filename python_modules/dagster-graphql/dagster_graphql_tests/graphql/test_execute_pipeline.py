@@ -254,12 +254,6 @@ class TestExecutePipelineLegacySqliteInProcessOnlyAndHijack(
         for log_message in log_messages[1:]:
             assert log_message['step']['key']
 
-
-class TestExecutePipelineLegacySqliteInProcessOnly(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
-    )
-):
     def test_subscription_query_error(self, graphql_context):
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
