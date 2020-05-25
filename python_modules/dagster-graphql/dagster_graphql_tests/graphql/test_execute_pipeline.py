@@ -1,4 +1,5 @@
 import uuid
+from contextlib import contextmanager
 
 import pytest
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
@@ -17,8 +18,14 @@ from .execution_queries import (
     START_PIPELINE_EXECUTION_QUERY,
     SUBSCRIPTION_QUERY,
 )
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-from .setup import csv_hello_world, csv_hello_world_solids_config, define_test_context
+from .graphql_context_test_suite import (
+    GraphQLContextVariant,
+    GraphQLTestEnvironments,
+    GraphQLTestExecutionManagers,
+    Marks,
+    make_graphql_context_test_suite,
+)
+from .setup import csv_hello_world, csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
 
@@ -463,14 +470,30 @@ class TestExecutePipelineLegacySqliteInProcessOnly(
         )
 
 
-def test_start_pipeline_execution_with_start_disabled():
+@contextmanager
+def sqlite_instance_with_manager_disabled():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(
+        yield DagsterInstance.local_temp(
             tempdir=temp_dir, overrides={'dagit': {'execution_manager': {'disabled': True}}}
         )
-        context = define_test_context(instance)
+
+
+class TestExecutePipelineManagerDisabled(
+    make_graphql_context_test_suite(
+        context_variants=[
+            GraphQLContextVariant(
+                instance_mgr=sqlite_instance_with_manager_disabled,
+                environment_mgr=GraphQLTestEnvironments.user_code_in_host_process,
+                em_mgr=GraphQLTestExecutionManagers.sync_execution_manager,
+                test_id='sqlite_instance_with_disabled_execution_manager',
+                additional_marks=[Marks.sqlite_instance],
+            )
+        ]
+    )
+):
+    def test_start_pipeline_execution_with_start_disabled(self, graphql_context):
         result = execute_dagster_graphql(
-            context,
+            graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {

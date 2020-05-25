@@ -234,15 +234,13 @@ class GraphQLContextVariant:
     All tests managed by this system are marked with "graphql_context_test_suite".
     '''
 
-    def __init__(self, instance_mgr, environment_mgr, em_mgr, test_id=None, marks=None):
+    def __init__(self, instance_mgr, environment_mgr, em_mgr, test_id=None, additional_marks=None):
         self.instance_mgr = check.callable_param(instance_mgr, 'instance_mgr')
         self.environment_mgr = check.callable_param(environment_mgr, 'environment_mgr')
         self.em_mgr = check.callable_param(em_mgr, 'em_mgr')
         self.test_id = check.opt_str_param(test_id, 'test_id')
-        self.marks = (
-            make_marks([instance_mgr, environment_mgr, em_mgr])
-            if marks is None
-            else check.list_param(marks, 'marks')
+        self.marks = make_marks([instance_mgr, environment_mgr, em_mgr]) + check.opt_list_param(
+            additional_marks, 'additional_marks'
         )
 
     @staticmethod
