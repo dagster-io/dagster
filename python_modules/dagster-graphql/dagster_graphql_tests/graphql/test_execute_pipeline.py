@@ -104,65 +104,64 @@ class TestExecutePipelineWithoutCliApiHijack(
             == 'hello_world_with_tags'
         )
 
+    def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
+        with pytest.raises(UserFacingGraphQLError) as exc_info:
+            execute_dagster_graphql(
+                graphql_context,
+                START_PIPELINE_EXECUTION_QUERY,
+                variables={
+                    'executionParams': {
+                        'selector': {'name': 'csv_hello_world'},
+                        'preset': 'undefined_preset',
+                    }
+                },
+            )
 
-def test_basic_start_pipeline_execution_with_non_existent_preset(graphql_context):
-    with pytest.raises(UserFacingGraphQLError) as exc_info:
-        execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
-                    'preset': 'undefined_preset',
-                }
-            },
+        assert (
+            exc_info.value.dauphin_error.message
+            == 'Preset undefined_preset not found in pipeline csv_hello_world.'
         )
 
-    assert (
-        exc_info.value.dauphin_error.message
-        == 'Preset undefined_preset not found in pipeline csv_hello_world.'
-    )
+    def test_basic_start_pipeline_execution_with_preset_failure(self, graphql_context):
+        # These should check for proper graphql errors rather than check errors
+        # https://github.com/dagster-io/dagster/issues/2507
+        with pytest.raises(check.CheckError):
+            execute_dagster_graphql(
+                graphql_context,
+                START_PIPELINE_EXECUTION_QUERY,
+                variables={
+                    'executionParams': {
+                        'selector': {'name': 'csv_hello_world', 'solidSubset': 'sum_sq_solid'},
+                        'preset': 'test_inline',
+                    }
+                },
+            )
 
+        with pytest.raises(check.CheckError):
+            execute_dagster_graphql(
+                graphql_context,
+                START_PIPELINE_EXECUTION_QUERY,
+                variables={
+                    'executionParams': {
+                        'selector': {'name': 'csv_hello_world'},
+                        'preset': 'test_inline',
+                        'environmentConfigData': csv_hello_world_solids_config(),
+                    }
+                },
+            )
 
-def test_basic_start_pipeline_execution_with_preset_failure(graphql_context):
-
-    with pytest.raises(check.CheckError):
-        execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'csv_hello_world', 'solidSubset': 'sum_sq_solid'},
-                    'preset': 'test_inline',
-                }
-            },
-        )
-
-    with pytest.raises(check.CheckError):
-        execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
-                    'preset': 'test_inline',
-                    'environmentConfigData': csv_hello_world_solids_config(),
-                }
-            },
-        )
-
-    with pytest.raises(check.CheckError):
-        execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
-                    'preset': 'test_inline',
-                    'mode': 'default',
-                }
-            },
-        )
+        with pytest.raises(check.CheckError):
+            execute_dagster_graphql(
+                graphql_context,
+                START_PIPELINE_EXECUTION_QUERY,
+                variables={
+                    'executionParams': {
+                        'selector': {'name': 'csv_hello_world'},
+                        'preset': 'test_inline',
+                        'mode': 'default',
+                    }
+                },
+            )
 
 
 def test_basic_start_pipeline_execution_config_failure(graphql_context):

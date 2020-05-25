@@ -499,6 +499,8 @@ def create_execution_params(graphene_info, graphql_execution_params):
         graphene_info.context, graphql_execution_params['selector']
     )
     if preset_name:
+        # This should return proper GraphQL errors
+        # https://github.com/dagster-io/dagster/issues/2507
         check.invariant(
             not graphql_execution_params.get('environmentConfigData'),
             'Invalid ExecutionParams. Cannot define environment_dict when using preset',
