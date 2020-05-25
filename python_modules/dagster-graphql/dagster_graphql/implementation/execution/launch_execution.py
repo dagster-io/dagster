@@ -110,7 +110,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     )
 
 
-def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
+def do_launch_for_created_run(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
 
@@ -118,7 +118,9 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
     instance = graphene_info.context.instance
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
-        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
+        )
 
     external_pipeline = get_external_pipeline_or_raise(
         graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
@@ -158,19 +160,31 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
 
         instance.report_run_failed(pipeline_run)
 
-        return DauphinPipelineConfigValidationInvalid.for_validation_errors(
-            external_pipeline, validated_config.errors
+        raise UserFacingGraphQLError(
+            DauphinPipelineConfigValidationInvalid.for_validation_errors(
+                external_pipeline, validated_config.errors
+            )
         )
 
     try:
-        pipeline_run = instance.launch_run(pipeline_run.run_id)
+        return instance.launch_run(pipeline_run.run_id)
     except DagsterLaunchFailedError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
         instance.report_engine_event(
             error.message, pipeline_run, EngineEventData.engine_error(error),
         )
         instance.report_run_failed(pipeline_run)
+        # https://github.com/dagster-io/dagster/issues/2508
+        # We should return a proper GraphQL error here
+        raise
+
+
+def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.str_param(run_id, 'run_id')
+
+    run = do_launch_for_created_run(graphene_info, run_id)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
+        run=graphene_info.schema.type_named('PipelineRun')(run)
     )
