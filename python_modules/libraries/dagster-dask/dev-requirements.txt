@@ -1,1 +1,3 @@
-dagster-pandas
+dask-yarn
+dask-jobqueue
+dask-kubernetes

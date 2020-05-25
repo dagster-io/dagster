@@ -28,23 +28,6 @@ def dask_engine_pipeline():
     return simple()
 
 
-def test_execute_on_dask_yarn():
-    with seven.TemporaryDirectory() as tempdir:
-        result = execute_pipeline(
-            reconstructable(dask_engine_pipeline),
-            environment_dict={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {
-                    'dask': {
-                        'config': {'cluster': {'yarn': {'timeout': 30, 'deploy_mode': 'local'}}}
-                    }
-                },
-            },
-            instance=DagsterInstance.local_temp(),
-        )
-        assert result.result_for_solid('simple').output_value() == 1
-
-
 def test_execute_on_dask_local():
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
