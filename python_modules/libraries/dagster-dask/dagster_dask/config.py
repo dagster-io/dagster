@@ -41,8 +41,11 @@ class DaskConfig(
 
         '''
 
-        # dask_cfg = {'name': pipeline_name}  ## This causes an error when running with `LocalCluster`.
-        dask_cfg = {}
+        if self.cluster_type in ['yarn', 'kube', 'pbs']:
+            dask_cfg = {'name': pipeline_name}
+        else:
+            dask_cfg = {}
+
         if self.cluster_configuration:
             for k, v in self.cluster_configuration.items():
                 dask_cfg[k] = v
