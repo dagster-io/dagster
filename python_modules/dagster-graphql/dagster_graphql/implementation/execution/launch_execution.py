@@ -10,6 +10,7 @@ from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedEr
 from dagster.core.events import EngineEventData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..external import (
@@ -88,7 +89,7 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute,
-        tags=execution_params.execution_metadata.tags,
+        tags=merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags),
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=PipelineRunStatus.NOT_STARTED,

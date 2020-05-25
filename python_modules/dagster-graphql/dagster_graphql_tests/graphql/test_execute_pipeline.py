@@ -79,27 +79,30 @@ class TestExecutePipelineWithoutCliApiHijack(
         assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
         assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
+    def test_basic_start_pipeline_execution_with_pipeline_def_tags(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'hello_world_with_tags'},
+                    'mode': 'default',
+                },
+            },
+        )
 
-def test_basic_start_pipeline_execution_with_pipeline_def_tags(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context,
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {'selector': {'name': 'hello_world_with_tags'}, 'mode': 'default',},
-        },
-    )
+        assert not result.errors
+        assert result.data['startPipelineExecution']['run']['tags'] == [
+            {'key': 'tag_key', 'value': 'tag_value'}
+        ]
 
-    assert not result.errors
-    assert result.data['startPipelineExecution']['run']['tags'] == [
-        {'key': 'tag_key', 'value': 'tag_value'}
-    ]
-
-    # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-    assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-    assert (
-        result.data['startPipelineExecution']['run']['pipeline']['name'] == 'hello_world_with_tags'
-    )
+        # just test existence
+        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
+        assert (
+            result.data['startPipelineExecution']['run']['pipeline']['name']
+            == 'hello_world_with_tags'
+        )
 
 
 def test_basic_start_pipeline_execution_with_non_existent_preset(graphql_context):
