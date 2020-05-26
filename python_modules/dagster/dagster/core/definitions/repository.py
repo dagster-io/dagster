@@ -11,6 +11,7 @@ class RepositoryDefinition(object):
 
     Args:
         name (str): The name of the repository.
+        description (Optional[str]): A string description of the repository.
         pipeline_dict (Optional[Dict[str, Callable[[], PipelineDefinition]]]):
             An dictionary of pipeline names to callables that take no parameters and return a
             :py:class:`PipelineDefinition`.
@@ -32,12 +33,14 @@ class RepositoryDefinition(object):
     def __init__(
         self,
         name,
+        description=None,
         pipeline_dict=None,
         pipeline_defs=None,
         schedule_defs=None,
         partition_set_defs=None,
     ):
         self._name = check.str_param(name, 'name')
+        self._description = check.opt_str_param(description, 'description')
 
         pipeline_dict = check.opt_dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
         pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
@@ -69,6 +72,10 @@ class RepositoryDefinition(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def pipeline_names(self):

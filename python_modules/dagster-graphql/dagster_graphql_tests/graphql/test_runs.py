@@ -226,7 +226,9 @@ def get_repo_at_time_1():
     def foo_pipeline():
         solid_A()
 
-    return RepositoryDefinition('evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline])
+    return RepositoryDefinition(
+        name='evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline]
+    )
 
 
 def get_repo_at_time_2():
@@ -247,7 +249,9 @@ def get_repo_at_time_2():
     def bar_pipeline():
         solid_A()
 
-    return RepositoryDefinition('evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline])
+    return RepositoryDefinition(
+        name='evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline]
+    )
 
 
 def test_runs_over_time():

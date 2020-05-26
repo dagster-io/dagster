@@ -78,7 +78,7 @@ def test_dupe_solid_repo_definition():
         pass
 
     repo = RepositoryDefinition(
-        'error_repo',
+        name='error_repo',
         pipeline_dict={
             'first': lambda: PipelineDefinition(name='first', solid_defs=[noop]),
             'second': lambda: PipelineDefinition(name='second', solid_defs=[noop2]),

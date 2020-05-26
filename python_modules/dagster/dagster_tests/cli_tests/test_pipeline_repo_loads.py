@@ -195,4 +195,4 @@ def define_foo_pipeline():
 
 
 def define_bar_repo():
-    return RepositoryDefinition('bar', {'foo': define_foo_pipeline})
+    return RepositoryDefinition(name='bar', pipeline_dict={'foo': define_foo_pipeline})

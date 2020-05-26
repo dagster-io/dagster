@@ -59,8 +59,8 @@ def define_baz_partitions():
 
 def define_bar_repo():
     return RepositoryDefinition(
-        'bar',
-        {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        name='bar',
+        pipeline_dict={'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
         schedule_defs=define_bar_schedules(),
         partition_set_defs=define_baz_partitions(),
     )

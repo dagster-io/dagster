@@ -23,7 +23,7 @@ def hello_cereal_pipeline():
 
 def cereal_repository():
     return RepositoryDefinition(
-        'hello_cereal_repository',
+        name='hello_cereal_repository',
         pipeline_defs=[hello_cereal_pipeline],
         schedule_defs=cereal_schedules(),
     )
