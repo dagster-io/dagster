@@ -20,7 +20,7 @@ class DauphinPartition(dauphin.ObjectType):
     partition_set_name = dauphin.NonNull(dauphin.String)
     solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
-    environmentConfigYaml = dauphin.NonNull(dauphin.String)
+    runConfigYaml = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
     runs = dauphin.non_null_list('PipelineRun')
 
@@ -37,7 +37,7 @@ class DauphinPartition(dauphin.ObjectType):
             mode=partition_set.mode,
         )
 
-    def resolve_environmentConfigYaml(self, _):
+    def resolve_runConfigYaml(self, _):
         environment_dict = self._partition_set.environment_dict_for_partition(self._partition)
         return yaml.dump(environment_dict, default_flow_style=False)
 

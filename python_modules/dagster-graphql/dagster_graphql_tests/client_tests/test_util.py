@@ -131,7 +131,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             variables = {
                 'executionParams': {
                     'selector': {'name': pipeline_def.name},
-                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'runConfigData': {'storage': {'filesystem': {}}},
                     'mode': mode,
                     'executionMetadata': {'runId': pipeline_run.run_id},
                     'stepKeys': [step.key],

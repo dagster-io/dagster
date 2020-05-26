@@ -39,7 +39,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'mode': 'default',
                 }
             },
@@ -139,7 +139,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                     'executionParams': {
                         'selector': {'name': 'csv_hello_world'},
                         'preset': 'test_inline',
-                        'environmentConfigData': csv_hello_world_solids_config(),
+                        'runConfigData': csv_hello_world_solids_config(),
                     }
                 },
             )
@@ -164,9 +164,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': {
-                        'solids': {'sum_solid': {'inputs': {'num': 384938439}}}
-                    },
+                    'runConfigData': {'solids': {'sum_solid': {'inputs': {'num': 384938439}}}},
                     'mode': 'default',
                 }
             },
@@ -185,9 +183,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'sjkdfkdjkf'},
-                    'environmentConfigData': {
-                        'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}
-                    },
+                    'runConfigData': {'solids': {'sum_solid': {'inputs': {'num': 'test.csv'}}}},
                     'mode': 'default',
                 }
             },
@@ -206,7 +202,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': {
+                    'runConfigData': {
                         'solids': {
                             'sum_solid': {
                                 'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
@@ -289,7 +285,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'no_config_pipeline'},
-                    'environmentConfigData': None,
+                    'runConfigData': None,
                     'mode': 'default',
                 }
             },
@@ -307,7 +303,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
                     'mode': 'default',
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                 }
             },
         )
@@ -329,7 +325,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': merge_dicts(
+                    'runConfigData': merge_dicts(
                         csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}
                     ),
                     'mode': 'default',
@@ -356,7 +352,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {
                         'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]
                     },
@@ -401,7 +397,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 variables={
                     'executionParams': {
                         'selector': {'name': 'csv_hello_world'},
-                        'environmentConfigData': environment_dict,
+                        'runConfigData': environment_dict,
                         'mode': 'default',
                     }
                 },
@@ -482,7 +478,7 @@ class TestExecutePipelineManagerDisabled(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {
                         'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]
                     },

@@ -70,7 +70,7 @@ export interface ExecutionMetadata {
 
 export interface ExecutionParams {
   selector: PipelineSelector;
-  environmentConfigData?: any | null;
+  runConfigData?: any | null;
   mode?: string | null;
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;

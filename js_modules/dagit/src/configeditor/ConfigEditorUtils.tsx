@@ -2,9 +2,9 @@ import gql from "graphql-tag";
 import { YamlModeValidationResult } from "./codemirror-yaml/mode";
 import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
 
-export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
-  fragment ConfigEditorEnvironmentSchemaFragment on EnvironmentSchema {
-    rootEnvironmentType {
+export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
+  fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {
+    rootConfigType {
       key
     }
     allConfigTypes {

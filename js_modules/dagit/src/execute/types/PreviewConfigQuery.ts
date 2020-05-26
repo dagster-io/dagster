@@ -142,6 +142,6 @@ export interface PreviewConfigQuery {
 
 export interface PreviewConfigQueryVariables {
   pipeline: PipelineSelector;
-  environmentConfigData: any;
+  runConfigData: any;
   mode: string;
 }

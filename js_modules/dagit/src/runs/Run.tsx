@@ -48,7 +48,7 @@ export class Run extends React.Component<RunProps, RunState> {
       fragment RunFragment on PipelineRun {
         ...RunStatusPipelineRunFragment
 
-        environmentConfigYaml
+        runConfigYaml
         runId
         canTerminate
         status

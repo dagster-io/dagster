@@ -18,7 +18,7 @@ def test_multi_mode_successful(graphql_context):
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'add_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+                'runConfigData': {'resources': {'op': {'config': 2}}},
             }
         },
     )
@@ -30,7 +30,7 @@ def test_multi_mode_successful(graphql_context):
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'mult_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+                'runConfigData': {'resources': {'op': {'config': 2}}},
             }
         },
     )
@@ -42,9 +42,7 @@ def test_multi_mode_successful(graphql_context):
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'double_adder',
-                'environmentConfigData': {
-                    'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}
-                },
+                'runConfigData': {'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}},
             }
         },
     )
@@ -54,10 +52,10 @@ def test_multi_mode_successful(graphql_context):
 MODE_QUERY = '''
 query ModesQuery($pipelineName: String!, $mode: String!)
 {
-  environmentSchemaOrError(selector: {name: $pipelineName}, mode: $mode ) {
+  runConfigSchemaOrError(selector: {name: $pipelineName}, mode: $mode ) {
     __typename
-    ... on EnvironmentSchema {
-      rootEnvironmentType {
+    ... on RunConfigSchema {
+      rootConfigType {
         key
         ... on CompositeConfigType {
           fields {
@@ -97,4 +95,4 @@ def test_query_multi_mode(graphql_context):
     modeful_result = execute_modes_query(
         graphql_context, 'multi_mode_with_resources', mode='add_mode'
     )
-    assert modeful_result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'
+    assert modeful_result.data['runConfigSchemaOrError']['__typename'] == 'RunConfigSchema'

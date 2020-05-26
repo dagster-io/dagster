@@ -1,8 +1,4 @@
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.environment_schema import (
-    resolve_environment_schema_or_error,
-    resolve_is_environment_config_valid,
-)
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
     delete_pipeline_run,
@@ -48,6 +44,10 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_scheduler_or_error,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.run_config_schema import (
+    resolve_is_run_config_valid,
+    resolve_run_config_schema_or_error,
+)
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     PipelineSelector,
@@ -130,7 +130,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
-            'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
+            'runConfigData': dauphin.Argument('RunConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
@@ -139,19 +139,19 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ExecutionPlanOrError'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
-            'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
+            'runConfigData': dauphin.Argument('RunConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
 
-    environmentSchemaOrError = dauphin.Field(
-        dauphin.NonNull('EnvironmentSchemaOrError'),
+    runConfigSchemaOrError = dauphin.Field(
+        dauphin.NonNull('RunConfigSchemaOrError'),
         args={
             'selector': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'mode': dauphin.Argument(dauphin.String),
         },
         description='''Fetch an environment schema given an execution selection and a mode.
-        See the descripton on EnvironmentSchema for more information.''',
+        See the descripton on RunConfigSchema for more information.''',
     )
 
     instance = dauphin.NonNull('Instance')
@@ -249,7 +249,7 @@ class DauphinQuery(dauphin.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
-            kwargs.get('environmentConfigData'),
+            kwargs.get('runConfigData'),
             kwargs.get('mode'),
         )
 
@@ -257,12 +257,12 @@ class DauphinQuery(dauphin.ObjectType):
         return get_execution_plan(
             graphene_info,
             PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
-            kwargs.get('environmentConfigData'),
+            kwargs.get('runConfigData'),
             kwargs.get('mode'),
         )
 
-    def resolve_environmentSchemaOrError(self, graphene_info, **kwargs):
-        return resolve_environment_schema_or_error(
+    def resolve_runConfigSchemaOrError(self, graphene_info, **kwargs):
+        return resolve_run_config_schema_or_error(
             graphene_info,
             PipelineSelector.from_graphql_input(graphene_info.context, kwargs['selector']),
             kwargs.get('mode'),
@@ -509,7 +509,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         # This should return proper GraphQL errors
         # https://github.com/dagster-io/dagster/issues/2507
         check.invariant(
-            not graphql_execution_params.get('environmentConfigData'),
+            not graphql_execution_params.get('runConfigData'),
             'Invalid ExecutionParams. Cannot define environment_dict when using preset',
         )
         check.invariant(
@@ -553,7 +553,7 @@ def execution_params_from_graphql(context, graphql_execution_params):
         selector=PipelineSelector.from_graphql_input(
             context, graphql_execution_params.get('selector')
         ),
-        environment_dict=graphql_execution_params.get('environmentConfigData') or {},
+        environment_dict=graphql_execution_params.get('runConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get('executionMetadata')
@@ -651,9 +651,9 @@ class DauphinSubscription(dauphin.ObjectType):
         )
 
 
-class DauphinEnvironmentConfigData(dauphin.GenericScalar, dauphin.Scalar):
+class DauphinRunConfigData(dauphin.GenericScalar, dauphin.Scalar):
     class Meta(object):
-        name = 'EnvironmentConfigData'
+        name = 'RunConfigData'
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
         but must conform to the constraints of the dagster config type system'''
@@ -664,7 +664,7 @@ class DauphinExecutionParams(dauphin.InputObjectType):
         name = 'ExecutionParams'
 
     selector = dauphin.NonNull('PipelineSelector')
-    environmentConfigData = dauphin.Field('EnvironmentConfigData')
+    runConfigData = dauphin.Field('RunConfigData')
     mode = dauphin.Field(dauphin.String)
     executionMetadata = dauphin.Field('ExecutionMetadata')
     stepKeys = dauphin.Field(dauphin.List(dauphin.NonNull(dauphin.String)))
@@ -726,7 +726,7 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
     values = dauphin.non_null_list(dauphin.String)
 
 
-class DauphinEnvironmentSchema(dauphin.ObjectType):
+class DauphinRunConfigSchema(dauphin.ObjectType):
     def __init__(self, represented_pipeline, mode):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, 'represented_pipeline', RepresentedPipeline
@@ -734,14 +734,14 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
         self._mode = check.str_param(mode, 'mode')
 
     class Meta(object):
-        name = 'EnvironmentSchema'
-        description = '''The environment schema represents the all the config type
+        name = 'RunConfigSchema'
+        description = '''The run config schema represents the all the config type
         information given a certain execution selection and mode of execution of that
         selection. All config interactions (e.g. checking config validity, fetching
         all config types, fetching in a particular config type) should be done
         through this type '''
 
-    rootEnvironmentType = dauphin.Field(
+    rootConfigType = dauphin.Field(
         dauphin.NonNull('ConfigType'),
         description='''Fetch the root environment type. Concretely this is the type that
         is in scope at the root of configuration document for a particular execution selection.
@@ -755,9 +755,9 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
     ''',
     )
 
-    isEnvironmentConfigValid = dauphin.Field(
+    isRunConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
-        args={'environmentConfigData': dauphin.Argument('EnvironmentConfigData')},
+        args={'runConfigData': dauphin.Argument('RunConfigData')},
         description='''Parse a particular environment config result. The return value
         either indicates that the validation succeeded by returning
         `PipelineConfigValidationValid` or that there are configuration errors
@@ -778,26 +778,23 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             key=lambda ct: ct.key,
         )
 
-    def resolve_rootEnvironmentType(self, _graphene_info):
+    def resolve_rootConfigType(self, _graphene_info):
         return to_dauphin_config_type(
             self._represented_pipeline.config_schema_snapshot,
             self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key,
         )
 
-    def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):
-        return resolve_is_environment_config_valid(
-            graphene_info,
-            self._represented_pipeline,
-            self._mode,
-            kwargs.get('environmentConfigData', {}),
+    def resolve_isRunConfigValid(self, graphene_info, **kwargs):
+        return resolve_is_run_config_valid(
+            graphene_info, self._represented_pipeline, self._mode, kwargs.get('runConfigData', {}),
         )
 
 
-class DauphinEnvironmentSchemaOrError(dauphin.Union):
+class DauphinRunConfigSchemaOrError(dauphin.Union):
     class Meta(object):
-        name = 'EnvironmentSchemaOrError'
+        name = 'RunConfigSchemaOrError'
         types = (
-            'EnvironmentSchema',
+            'RunConfigSchema',
             'PipelineNotFoundError',
             'InvalidSubsetError',
             'ModeNotFoundError',

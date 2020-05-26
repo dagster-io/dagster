@@ -130,9 +130,7 @@ def test_start_execution_text():
         {
             'executionParams': {
                 'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
-                },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
@@ -162,9 +160,7 @@ def test_start_execution_file():
         {
             'executionParams': {
                 'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
-                },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
@@ -200,9 +196,7 @@ def test_start_execution_save_output():
         {
             'executionParams': {
                 'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
-                },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
@@ -245,9 +239,7 @@ def test_start_execution_predefined():
         {
             'executionParams': {
                 'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
-                },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
@@ -293,9 +285,7 @@ def test_logs_in_start_execution_predefined():
         {
             'executionParams': {
                 'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
-                },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }

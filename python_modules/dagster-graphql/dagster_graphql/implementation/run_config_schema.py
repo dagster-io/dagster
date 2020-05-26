@@ -9,7 +9,7 @@ from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_err
 
 
 @capture_dauphin_error
-def resolve_environment_schema_or_error(graphene_info, selector, mode):
+def resolve_run_config_schema_or_error(graphene_info, selector, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
@@ -26,15 +26,13 @@ def resolve_environment_schema_or_error(graphene_info, selector, mode):
             graphene_info.schema.type_named('ModeNotFoundError')(mode=mode, selector=selector)
         )
 
-    return graphene_info.schema.type_named('EnvironmentSchema')(
+    return graphene_info.schema.type_named('RunConfigSchema')(
         represented_pipeline=external_pipeline, mode=mode,
     )
 
 
 @capture_dauphin_error
-def resolve_is_environment_config_valid(
-    graphene_info, represented_pipeline, mode, environment_dict
-):
+def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, environment_dict):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
     check.str_param(mode, 'mode')

@@ -9,12 +9,12 @@ from .setup import csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
-    $environmentConfigData: EnvironmentConfigData,
+    $runConfigData: RunConfigData,
     $pipeline: PipelineSelector!,
     $mode: String!
 ) {
     isPipelineConfigValid(
-        environmentConfigData: $environmentConfigData,
+        runConfigData: $runConfigData,
         pipeline: $pipeline,
         mode: $mode
     ) {
@@ -101,11 +101,7 @@ def execute_config_graphql(context, pipeline_name, environment_dict, mode):
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
-        {
-            'environmentConfigData': environment_dict,
-            'pipeline': {'name': pipeline_name},
-            'mode': mode,
-        },
+        {'runConfigData': environment_dict, 'pipeline': {'name': pipeline_name}, 'mode': mode,},
     )
 
 
@@ -537,7 +533,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
             {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
         )
 
-        config_types_data = result.data['environmentSchemaOrError']['allConfigTypes']
+        config_types_data = result.data['runConfigSchemaOrError']['allConfigTypes']
 
         assert has_config_type_with_key_prefix(config_types_data, 'Shape.')
 
@@ -616,8 +612,8 @@ fragment configTypeFragment on ConfigType {
 }
 
 query allConfigTypes($pipelineName: String!, $mode: String!) {
-  environmentSchemaOrError(selector: { name: $pipelineName }, mode: $mode ) {
-    ... on EnvironmentSchema {
+  runConfigSchemaOrError(selector: { name: $pipelineName }, mode: $mode ) {
+    ... on RunConfigSchema {
       allConfigTypes {
         ...configTypeFragment
       }

@@ -64,7 +64,7 @@ export const ScheduleRow: React.FunctionComponent<{
     pipelineName,
     solidSubset,
     mode,
-    environmentConfigYaml
+    runConfigYaml
   } = scheduleDefinition;
 
   const displayScheduleMutationErrors = (
@@ -264,16 +264,14 @@ export const ScheduleRow: React.FunctionComponent<{
                     title: "Config",
                     body: (
                       <HighlightedCodeBlock
-                        value={
-                          environmentConfigYaml || "Unable to resolve config"
-                        }
+                        value={runConfigYaml || "Unable to resolve config"}
                         languages={["yaml"]}
                       />
                     )
                   })
                 }
               />
-              {environmentConfigYaml !== null ? (
+              {runConfigYaml !== null ? (
                 <MenuItem
                   text="Open in Playground..."
                   icon="edit"
@@ -282,7 +280,7 @@ export const ScheduleRow: React.FunctionComponent<{
                     {
                       mode,
                       solidSubset,
-                      config: environmentConfigYaml
+                      config: runConfigYaml
                     }
                   )}`}
                 />
@@ -319,7 +317,7 @@ export const ScheduleRowFragment = gql`
       pipelineName
       solidSubset
       mode
-      environmentConfigYaml
+      runConfigYaml
     }
     logsPath
     ticks(limit: $limit) {

@@ -182,7 +182,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'eventually_successful'},
-                    'environmentConfigData': retry_config(0),
+                    'runConfigData': retry_config(0),
                 }
             },
         )
@@ -204,7 +204,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'eventually_successful'},
-                    'environmentConfigData': retry_config(1),
+                    'runConfigData': retry_config(1),
                     'executionMetadata': {
                         'rootRunId': run_id,
                         'parentRunId': run_id,
@@ -231,7 +231,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'eventually_successful'},
-                    'environmentConfigData': retry_config(2),
+                    'runConfigData': retry_config(2),
                     'executionMetadata': {
                         'rootRunId': run_id,
                         'parentRunId': run_id,
@@ -259,7 +259,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'eventually_successful'},
-                    'environmentConfigData': retry_config(3),
+                    'runConfigData': retry_config(3),
                     'executionMetadata': {
                         'rootRunId': run_id,
                         'parentRunId': run_id,
@@ -289,7 +289,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'retry_resource_pipeline'},
-                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'runConfigData': {'storage': {'filesystem': {}}},
                 }
             },
         )
@@ -308,7 +308,7 @@ class TestRetryExecution(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'retry_resource_pipeline'},
-                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'runConfigData': {'storage': {'filesystem': {}}},
                     'executionMetadata': {
                         'rootRunId': run_id,
                         'parentRunId': run_id,
@@ -393,7 +393,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -434,7 +434,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'stepKeys': ['sum_sq_solid.compute'],
                     'executionMetadata': {
                         'runId': new_run_id,
@@ -489,7 +489,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -504,7 +504,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'stepKeys': ['sum_sq_solid.compute'],
                     'executionMetadata': {
                         'runId': new_run_id,
@@ -541,7 +541,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -557,7 +557,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'stepKeys': ['nope'],
                     'executionMetadata': {
                         'runId': new_run_id,
@@ -590,7 +590,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'retry_multi_input_early_terminate_pipeline'},
-                    'environmentConfigData': {
+                    'runConfigData': {
                         'solids': {
                             'get_input_one': {'config': {'wait_to_terminate': True}},
                             'get_input_two': {'config': {'wait_to_terminate': True}},
@@ -631,7 +631,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
                 'executionParams': {
                     'mode': 'default',
                     'selector': {'name': 'retry_multi_input_early_terminate_pipeline'},
-                    'environmentConfigData': {
+                    'runConfigData': {
                         'solids': {
                             'get_input_one': {'config': {'wait_to_terminate': False}},
                             'get_input_two': {'config': {'wait_to_terminate': False}},

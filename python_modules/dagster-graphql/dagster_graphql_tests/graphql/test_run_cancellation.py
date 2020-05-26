@@ -46,7 +46,7 @@ class TestRunVariantTermination(
                     'executionParams': {
                         'selector': {'name': 'infinite_loop_pipeline'},
                         'mode': 'default',
-                        'environmentConfigData': {'solids': {'loop': {'config': {'file': path}}}},
+                        'runConfigData': {'solids': {'loop': {'config': {'file': path}}}},
                     }
                 },
             )
@@ -90,7 +90,7 @@ class TestRunVariantTermination(
                     'executionParams': {
                         'selector': {'name': 'infinite_loop_pipeline'},
                         'mode': 'default',
-                        'environmentConfigData': {'solids': {'loop': {'config': {'file': path}}}},
+                        'runConfigData': {'solids': {'loop': {'config': {'file': path}}}},
                     }
                 },
             )

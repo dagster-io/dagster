@@ -116,7 +116,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     )
     executionPlan = dauphin.Field('ExecutionPlan')
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
-    environmentConfigYaml = dauphin.NonNull(dauphin.String)
+    runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
     rootRunId = dauphin.Field(dauphin.String)
@@ -182,7 +182,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_stepKeysToExecute(self, _):
         return self._pipeline_run.step_keys_to_execute
 
-    def resolve_environmentConfigYaml(self, _graphene_info):
+    def resolve_runConfigYaml(self, _graphene_info):
         return yaml.dump(self._pipeline_run.environment_dict, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):

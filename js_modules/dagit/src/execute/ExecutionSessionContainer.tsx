@@ -18,11 +18,11 @@ import { ConfigEditorModePicker } from "./ConfigEditorModePicker";
 import { IStorageData, IExecutionSession } from "../LocalStorage";
 import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
-  CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT,
+  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   responseToYamlValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
-import { ConfigEditorEnvironmentSchemaFragment } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
+import { ConfigEditorRunConfigSchemaFragment } from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
 import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables
@@ -32,9 +32,9 @@ import {
   ExecutionSessionContainerFragment_InvalidSubsetError
 } from "./types/ExecutionSessionContainerFragment";
 import {
-  ExecutionSessionContainerEnvironmentSchemaFragment,
-  ExecutionSessionContainerEnvironmentSchemaFragment_ModeNotFoundError
-} from "./types/ExecutionSessionContainerEnvironmentSchemaFragment";
+  ExecutionSessionContainerRunConfigSchemaFragment,
+  ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError
+} from "./types/ExecutionSessionContainerRunConfigSchemaFragment";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
@@ -52,8 +52,8 @@ interface IExecutionSessionContainerProps {
   onSaveSession: (changes: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
   pipelineOrError: ExecutionSessionContainerFragment;
-  environmentSchemaOrError:
-    | ExecutionSessionContainerEnvironmentSchemaFragment
+  runConfigSchemaOrError:
+    | ExecutionSessionContainerRunConfigSchemaFragment
     | undefined;
   currentSession: IExecutionSession;
 }
@@ -72,7 +72,7 @@ export type SubsetError =
   | undefined;
 
 export type ModeNotFoundError =
-  | ExecutionSessionContainerEnvironmentSchemaFragment_ModeNotFoundError
+  | ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError
   | undefined;
 
 export default class ExecutionSessionContainer extends React.Component<
@@ -103,17 +103,17 @@ export default class ExecutionSessionContainer extends React.Component<
         }
       }
     `,
-    EnvironmentSchemaOrErrorFragment: gql`
-      fragment ExecutionSessionContainerEnvironmentSchemaFragment on EnvironmentSchemaOrError {
+    RunConfigSchemaOrErrorFragment: gql`
+      fragment ExecutionSessionContainerRunConfigSchemaFragment on RunConfigSchemaOrError {
         __typename
-        ... on EnvironmentSchema {
-          ...ConfigEditorEnvironmentSchemaFragment
+        ... on RunConfigSchema {
+          ...ConfigEditorRunConfigSchemaFragment
         }
         ... on ModeNotFoundError {
           message
         }
       }
-      ${CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT}
+      ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
     `
   };
 
@@ -140,7 +140,7 @@ export default class ExecutionSessionContainer extends React.Component<
 
   onConfigChange = (config: any) => {
     this.props.onSaveSession({
-      environmentConfigYaml: config
+      runConfigYaml: config
     });
   };
 
@@ -163,12 +163,11 @@ export default class ExecutionSessionContainer extends React.Component<
     const pipeline = this.getPipeline();
     if (!pipeline || !currentSession || !currentSession.mode) return;
     const tags = currentSession.tags || [];
-    let environmentConfigData = {};
+    let runConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      environmentConfigData =
-        yaml.parse(currentSession.environmentConfigYaml) || {};
+      runConfigData = yaml.parse(currentSession.runConfigYaml) || {};
     } catch (err) {
       alert(YAML_SYNTAX_INVALID);
       return;
@@ -176,7 +175,7 @@ export default class ExecutionSessionContainer extends React.Component<
 
     return {
       executionParams: {
-        environmentConfigData,
+        runConfigData,
         selector: {
           name: pipeline.name,
           solidSubset: currentSession.solidSubset
@@ -201,18 +200,16 @@ export default class ExecutionSessionContainer extends React.Component<
 
   // have this return an object with prebuilt index
   // https://github.com/dagster-io/dagster/issues/1966
-  getEnvironmentSchema = ():
-    | ConfigEditorEnvironmentSchemaFragment
-    | undefined => {
-    const obj = this.props.environmentSchemaOrError;
-    if (obj && obj.__typename === "EnvironmentSchema") {
+  getRunConfigSchema = (): ConfigEditorRunConfigSchemaFragment | undefined => {
+    const obj = this.props.runConfigSchemaOrError;
+    if (obj && obj.__typename === "RunConfigSchema") {
       return obj;
     }
     return undefined;
   };
 
   getModeError = (): ModeNotFoundError => {
-    const obj = this.props.environmentSchemaOrError;
+    const obj = this.props.runConfigSchemaOrError;
     if (obj && obj.__typename === "ModeNotFoundError") {
       return obj;
     }
@@ -250,7 +247,7 @@ export default class ExecutionSessionContainer extends React.Component<
       fetchPolicy: "no-cache",
       query: PREVIEW_CONFIG_QUERY,
       variables: {
-        environmentConfigData: configJSON,
+        runConfigData: configJSON,
         pipeline: {
           name: pipeline.name,
           solidSubset: currentSession.solidSubset
@@ -284,7 +281,7 @@ export default class ExecutionSessionContainer extends React.Component<
       showWhitespace,
       tagEditorOpen
     } = this.state;
-    const environmentSchema = this.getEnvironmentSchema();
+    const runConfigSchema = this.getRunConfigSchema();
     const subsetError = this.getSubsetError();
     const modeError = this.getModeError();
     const pipeline = this.getPipeline();
@@ -356,15 +353,15 @@ export default class ExecutionSessionContainer extends React.Component<
             <ConfigEditorContainer>
               <ConfigEditorHelp
                 context={editorHelpContext}
-                allInnerTypes={environmentSchema?.allConfigTypes || []}
+                allInnerTypes={runConfigSchema?.allConfigTypes || []}
               />
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
                     ref={this.editor}
                     readOnly={false}
-                    environmentSchema={environmentSchema}
-                    configCode={currentSession.environmentConfigYaml}
+                    runConfigSchema={runConfigSchema}
+                    configCode={currentSession.runConfigYaml}
                     onConfigChange={this.onConfigChange}
                     onHelpContextChange={next => {
                       if (!isHelpContextEqual(editorHelpContext, next)) {
@@ -382,12 +379,12 @@ export default class ExecutionSessionContainer extends React.Component<
           </>
         }
         second={
-          environmentSchema ? (
+          runConfigSchema ? (
             <RunPreview
               document={previewedDocument}
               plan={preview ? preview.executionPlanOrError : null}
               validation={preview ? preview.isPipelineConfigValid : null}
-              environmentSchema={environmentSchema}
+              runConfigSchema={runConfigSchema}
               onHighlightPath={path =>
                 this.editor.current?.moveCursorToPath(path)
               }
@@ -439,12 +436,12 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
     $pipeline: PipelineSelector!
-    $environmentConfigData: EnvironmentConfigData!
+    $runConfigData: RunConfigData!
     $mode: String!
   ) {
     isPipelineConfigValid(
       pipeline: $pipeline
-      environmentConfigData: $environmentConfigData
+      runConfigData: $runConfigData
       mode: $mode
     ) {
       ...ConfigEditorValidationFragment
@@ -452,7 +449,7 @@ const PREVIEW_CONFIG_QUERY = gql`
     }
     executionPlanOrError(
       pipeline: $pipeline
-      environmentConfigData: $environmentConfigData
+      runConfigData: $runConfigData
       mode: $mode
     ) {
       ...RunPreviewExecutionPlanOrErrorFragment

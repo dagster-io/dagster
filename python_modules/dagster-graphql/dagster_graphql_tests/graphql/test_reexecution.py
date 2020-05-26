@@ -51,7 +51,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -71,7 +71,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                    'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {
                         'runId': new_run_id,
                         'rootRunId': run_id,
@@ -95,7 +95,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -115,7 +115,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
-                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {
                         'runId': new_run_id,
                         'rootRunId': run_id,
@@ -141,7 +141,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'no_config_pipeline'},
-                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'runConfigData': {'storage': {'filesystem': {}}},
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
                 }
@@ -167,7 +167,7 @@ class TestReexecution(
             variables={
                 'executionParams': {
                     'selector': {'name': 'no_config_pipeline'},
-                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'runConfigData': {'storage': {'filesystem': {}}},
                     'executionMetadata': {
                         'runId': new_run_id,
                         'rootRunId': run_id,

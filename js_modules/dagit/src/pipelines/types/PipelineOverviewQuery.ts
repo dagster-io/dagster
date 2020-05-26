@@ -305,7 +305,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   pipelineName: string;
   solidSubset: (string | null)[] | null;
   mode: string;
-  environmentConfigYaml: string | null;
+  runConfigYaml: string | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_ticks {

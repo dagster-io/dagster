@@ -41,7 +41,7 @@ export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitio
   __typename: "Partition";
   name: string;
   solidSubset: string[] | null;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   mode: string;
   tags: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags[];
 }

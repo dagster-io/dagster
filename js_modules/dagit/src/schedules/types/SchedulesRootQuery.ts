@@ -21,7 +21,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   pipelineName: string;
   solidSubset: (string | null)[] | null;
   mode: string;
-  environmentConfigYaml: string | null;
+  runConfigYaml: string | null;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks {

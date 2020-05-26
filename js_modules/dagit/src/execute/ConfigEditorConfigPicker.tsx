@@ -71,7 +71,7 @@ export class ConfigEditorConfigPicker extends React.Component<
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
-      environmentConfigYaml: preset.environmentConfigYaml || "",
+      runConfigYaml: preset.runConfigYaml || "",
       solidSubset: preset.solidSubset,
       solidSubsetQuery:
         preset.solidSubset === null ? "*" : preset.solidSubset.join(","),
@@ -89,7 +89,7 @@ export class ConfigEditorConfigPicker extends React.Component<
       base: Object.assign({}, this.props.base, {
         partitionName: partition.name
       }),
-      environmentConfigYaml: partition.environmentConfigYaml || "",
+      runConfigYaml: partition.runConfigYaml || "",
       solidSubset: partition.solidSubset,
       solidSubsetQuery:
         partition.solidSubset === null ? "*" : partition.solidSubset.join(","),
@@ -380,7 +380,7 @@ const CONFIG_PRESETS_QUERY = gql`
           name
           mode
           solidSubset
-          environmentConfigYaml
+          runConfigYaml
         }
         tags {
           key
@@ -428,7 +428,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
           results {
             name
             solidSubset
-            environmentConfigYaml
+            runConfigYaml
             mode
             tags {
               key

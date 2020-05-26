@@ -19,7 +19,7 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentP
     if (qs.config || qs.mode || qs.solidSubset) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof qs.config === "string") {
-        newSession.environmentConfigYaml = qs.config;
+        newSession.runConfigYaml = qs.config;
       }
       if (typeof qs.mode === "string") {
         newSession.mode = qs.mode;

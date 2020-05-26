@@ -10,9 +10,9 @@ import { errorStackToYamlPath } from "../configeditor/ConfigEditorUtils";
 import { ButtonLink } from "../ButtonLink";
 
 import {
-  ConfigEditorEnvironmentSchemaFragment,
-  ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType
-} from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType
+} from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
 import { RunPreviewExecutionPlanOrErrorFragment } from "./types/RunPreviewExecutionPlanOrErrorFragment";
 import {
   RunPreviewValidationFragment,
@@ -32,7 +32,7 @@ interface RunPreviewProps {
   document: object | null;
 
   actions?: React.ReactChild;
-  environmentSchema: ConfigEditorEnvironmentSchemaFragment;
+  runConfigSchema: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
 }
 
@@ -112,15 +112,12 @@ export class RunPreview extends React.Component<
   }
 
   getRootCompositeChildren = () => {
-    const {
-      allConfigTypes,
-      rootEnvironmentType
-    } = this.props.environmentSchema;
+    const { allConfigTypes, rootConfigType } = this.props.runConfigSchema;
     const children: {
-      [fieldName: string]: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType;
+      [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
     } = {};
 
-    const root = allConfigTypes.find(t => t.key === rootEnvironmentType.key);
+    const root = allConfigTypes.find(t => t.key === rootConfigType.key);
     if (root?.__typename !== "CompositeConfigType") return children;
 
     root.fields.forEach(field => {

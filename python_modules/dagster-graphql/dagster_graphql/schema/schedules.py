@@ -51,10 +51,10 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_subset = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
-    environment_config_yaml = dauphin.Field(dauphin.String)
+    run_config_yaml = dauphin.Field(dauphin.String)
     partition_set = dauphin.Field('PartitionSet')
 
-    def resolve_environment_config_yaml(self, _graphene_info):
+    def resolve_run_config_yaml(self, _graphene_info):
         schedule_def = self._schedule_def
         try:
             with user_code_error_boundary(
@@ -66,8 +66,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         except ScheduleExecutionError:
             return None
 
-        environment_config_yaml = yaml.dump(environment_config, default_flow_style=False)
-        return environment_config_yaml if environment_config_yaml else ''
+        run_config_yaml = yaml.dump(environment_config, default_flow_style=False)
+        return run_config_yaml if run_config_yaml else ''
 
     def resolve_partition_set(self, graphene_info):
         if isinstance(self._schedule_def, PartitionScheduleDefinition):

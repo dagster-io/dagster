@@ -21,9 +21,9 @@ def test_basic_preset_query_with_presets(graphql_context, snapshot):
     ]
 
     # Remove local filepath from snapshot
-    result.data['pipelineOrError']['presets'][2]['environmentConfigYaml'] = re.sub(
+    result.data['pipelineOrError']['presets'][2]['runConfigYaml'] = re.sub(
         r'num: .*/data/num.csv',
         'num: /data/num.csv',
-        result.data['pipelineOrError']['presets'][2]['environmentConfigYaml'],
+        result.data['pipelineOrError']['presets'][2]['runConfigYaml'],
     )
     snapshot.assert_match(result.data)

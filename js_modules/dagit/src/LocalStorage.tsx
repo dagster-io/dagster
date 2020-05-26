@@ -31,7 +31,7 @@ export interface PipelineRunTag {
 export interface IExecutionSession {
   key: string;
   name: string;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   base:
     | { presetName: string }
     | { partitionsSetName: string; partitionName: string | null }
@@ -70,8 +70,8 @@ export function applyChangesToSession(
 ) {
   const saved = data.sessions[key];
   if (
-    changes.environmentConfigYaml &&
-    changes.environmentConfigYaml !== saved.environmentConfigYaml &&
+    changes.runConfigYaml &&
+    changes.runConfigYaml !== saved.runConfigYaml &&
     saved.runId
   ) {
     changes.configChangedSinceRun = true;
@@ -96,7 +96,7 @@ export function applyCreateSession(
       ...data.sessions,
       [key]: {
         name: "New Run",
-        environmentConfigYaml: "",
+        runConfigYaml: "",
         mode: null,
         base: null,
         solidSubset: null,

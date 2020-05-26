@@ -125,7 +125,7 @@ class ExecutionParams(
     def to_graphql_input(self):
         return {
             'selector': self.selector.to_graphql_input(),
-            'environmentConfigData': self.environment_dict,
+            'runConfigData': self.environment_dict,
             'mode': self.mode,
             'executionMetadata': self.execution_metadata.to_graphql_input(),
             'stepKeys': self.step_keys,

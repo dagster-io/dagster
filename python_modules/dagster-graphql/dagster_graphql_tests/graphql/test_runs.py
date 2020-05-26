@@ -35,7 +35,7 @@ fragment RunHistoryRunFragment on PipelineRun {
       key
     }
   }
-  environmentConfigYaml
+  runConfigYaml
   mode
   canTerminate
 }
@@ -160,7 +160,7 @@ def test_get_runs_over_graphql(graphql_context):
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'add_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+                'runConfigData': {'resources': {'op': {'config': 2}}},
             }
         },
     )
@@ -172,7 +172,7 @@ def test_get_runs_over_graphql(graphql_context):
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'add_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 3}}},
+                'runConfigData': {'resources': {'op': {'config': 3}}},
             }
         },
     )

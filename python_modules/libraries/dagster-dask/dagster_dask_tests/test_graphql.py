@@ -32,7 +32,7 @@ def test_execute_hammer_through_dagit():
 
     variables = {
         'executionParams': {
-            'environmentConfigData': {
+            'runConfigData': {
                 'storage': {'filesystem': {}},
                 'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
             },

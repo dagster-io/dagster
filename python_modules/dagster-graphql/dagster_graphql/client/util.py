@@ -240,7 +240,7 @@ def construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys
 
     variables = {
         'executionParams': {
-            'environmentConfigData': environment_dict,
+            'runConfigData': environment_dict,
             'mode': mode,
             'selector': {'name': pipeline_name},
             'executionMetadata': {'runId': run_id},

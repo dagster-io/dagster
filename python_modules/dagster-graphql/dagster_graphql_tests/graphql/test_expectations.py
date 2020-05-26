@@ -89,7 +89,7 @@ def test_basic_input_output_expectations(graphql_context, snapshot):
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world_with_expectations'},
-                'environmentConfigData': {
+                'runConfigData': {
                     'solids': {
                         'sum_solid': {
                             'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}

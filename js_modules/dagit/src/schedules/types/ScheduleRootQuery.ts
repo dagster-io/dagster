@@ -21,7 +21,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefin
   pipelineName: string;
   solidSubset: (string | null)[] | null;
   mode: string;
-  environmentConfigYaml: string | null;
+  runConfigYaml: string | null;
   partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet | null;
 }
 

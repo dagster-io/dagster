@@ -28,7 +28,7 @@ def test_term_event_lifecycle():
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
                 'mode': 'default',
-                'environmentConfigData': {
+                'runConfigData': {
                     'execution': {'multiprocess': {'config': {'max_concurrent': 4}}},
                     'solids': {
                         'sum_solid': {

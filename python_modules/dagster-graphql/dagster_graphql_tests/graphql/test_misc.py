@@ -46,8 +46,8 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 def test_enum_query(graphql_context):
     ENUM_QUERY = '''{
-    environmentSchemaOrError(selector: {name: "pipeline_with_enum_config" } ) {
-      ... on EnvironmentSchema {
+    runConfigSchemaOrError(selector: {name: "pipeline_with_enum_config" } ) {
+      ... on RunConfigSchema {
         allConfigTypes {
           __typename
           key
@@ -71,7 +71,7 @@ def test_enum_query(graphql_context):
 
     enum_type_data = None
 
-    for td in result.data['environmentSchemaOrError']['allConfigTypes']:
+    for td in result.data['runConfigSchemaOrError']['allConfigTypes']:
         if td['key'] == 'TestEnum':
             enum_type_data = td
             break

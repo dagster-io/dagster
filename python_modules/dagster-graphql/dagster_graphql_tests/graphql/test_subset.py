@@ -4,9 +4,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
 query EnvironmentQuery($pipelineName: String!, $solidSubset: [String!]){
-    environmentSchemaOrError(selector :{ name: $pipelineName, solidSubset: $solidSubset}) {
+    runConfigSchemaOrError(selector :{ name: $pipelineName, solidSubset: $solidSubset}) {
         __typename
-        ... on EnvironmentSchema {
+        ... on RunConfigSchema {
             allConfigTypes {
                 __typename
                 key
@@ -54,8 +54,8 @@ def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_conte
 
     assert not result.errors
     assert result.data
-    assert result.data['environmentSchemaOrError']['__typename'] == 'InvalidSubsetError'
-    assert '"nope" does not exist' in result.data['environmentSchemaOrError']['message']
+    assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
+    assert '"nope" does not exist' in result.data['runConfigSchemaOrError']['message']
 
 
 def test_pipeline_with_invalid_definition_error(graphql_context):
@@ -66,11 +66,11 @@ def test_pipeline_with_invalid_definition_error(graphql_context):
     )
     assert not result.errors
     assert result.data
-    assert result.data['environmentSchemaOrError']['__typename'] == 'InvalidSubsetError'
+    assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
     assert re.match(
         (
             r'.*DagsterInvalidDefinitionError[\s\S]*'
             r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
         ),
-        result.data['environmentSchemaOrError']['message'],
+        result.data['runConfigSchemaOrError']['message'],
     )

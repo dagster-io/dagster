@@ -77,7 +77,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   pipeline: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   runId: string;
   status: PipelineRunStatus;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   canTerminate: boolean;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_PipelineRun_tags[];

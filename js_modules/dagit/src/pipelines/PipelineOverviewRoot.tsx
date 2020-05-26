@@ -314,7 +314,7 @@ const ScheduleFragment = gql`
       pipelineName
       solidSubset
       mode
-      environmentConfigYaml
+      runConfigYaml
     }
     logsPath
     ticks(limit: 1) {

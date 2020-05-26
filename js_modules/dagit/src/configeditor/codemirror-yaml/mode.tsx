@@ -5,7 +5,7 @@ import "codemirror/addon/search/searchcursor";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/dialog/dialog.css";
 import * as yaml from "yaml";
-import { ConfigEditorEnvironmentSchemaFragment } from "../types/ConfigEditorEnvironmentSchemaFragment";
+import { ConfigEditorRunConfigSchemaFragment } from "../types/ConfigEditorRunConfigSchemaFragment";
 
 interface IParseStateParent {
   key: string;
@@ -318,7 +318,7 @@ CodeMirror.registerHelper(
   (
     editor: any,
     options: {
-      schema?: ConfigEditorEnvironmentSchemaFragment;
+      schema?: ConfigEditorRunConfigSchemaFragment;
     }
   ): { list: Array<CodemirrorHint> } => {
     if (!options.schema) return { list: [] };
@@ -533,7 +533,7 @@ CodeMirror.registerHelper(
  * if it is a composite type.
  */
 function findAutocompletionContext(
-  schema: ConfigEditorEnvironmentSchemaFragment | null,
+  schema: ConfigEditorRunConfigSchemaFragment | null,
   parents: IParseStateParent[],
   currentIndent: number
 ) {
@@ -546,7 +546,7 @@ function findAutocompletionContext(
   }
 
   let type = schema.allConfigTypes.find(
-    t => t.key === schema.rootEnvironmentType.key
+    t => t.key === schema.rootConfigType.key
   );
   if (!type || type.__typename !== "CompositeConfigType") {
     return null;
@@ -613,7 +613,7 @@ function findAutocompletionContext(
 
 // Find context for a fully- or partially- typed key or value in the YAML document
 export function expandAutocompletionContextAtCursor(editor: any) {
-  const schema: ConfigEditorEnvironmentSchemaFragment =
+  const schema: ConfigEditorRunConfigSchemaFragment =
     editor.options.hintOptions.schema;
 
   const cursor = editor.getCursor();
@@ -679,7 +679,7 @@ CodeMirror.registerHelper(
   (editor: any, pos: CodeMirror.Position) => {
     const token = editor.getTokenAt(pos);
 
-    const schema: ConfigEditorEnvironmentSchemaFragment =
+    const schema: ConfigEditorRunConfigSchemaFragment =
       editor.options.hintOptions.schema;
 
     if (token.type !== "atom") {

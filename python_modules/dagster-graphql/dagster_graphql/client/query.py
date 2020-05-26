@@ -199,7 +199,7 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 			pipeline {
 				name
 			}
-			environmentConfigYaml
+			runConfigYaml
 			mode
 		}
 	}
@@ -243,7 +243,7 @@ fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecu
 			pipeline {
 				name
 			}
-			environmentConfigYaml
+			runConfigYaml
 			mode
 		}
 	}
@@ -505,7 +505,7 @@ mutation(
         pipeline {
           name
         }
-        environmentConfigYaml
+        runConfigYaml
         mode
       }
     }
@@ -555,7 +555,7 @@ mutation(
         pipeline {
           name
         }
-        environmentConfigYaml
+        runConfigYaml
         mode
       }
     }

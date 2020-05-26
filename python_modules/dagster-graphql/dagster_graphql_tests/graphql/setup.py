@@ -778,7 +778,7 @@ def get_retry_multi_execution_params(should_fail, retry_id=None):
     return {
         'mode': 'default',
         'selector': {'name': 'retry_multi_output_pipeline'},
-        'environmentConfigData': {
+        'runConfigData': {
             'storage': {'filesystem': {}},
             'solids': {'can_fail': {'config': {'fail': should_fail}}},
         },

@@ -18,7 +18,7 @@ export interface ConfigPresetsQuery_pipelineOrError_Pipeline_presets {
   name: string;
   mode: string;
   solidSubset: string[] | null;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
 }
 
 export interface ConfigPresetsQuery_pipelineOrError_Pipeline_tags {

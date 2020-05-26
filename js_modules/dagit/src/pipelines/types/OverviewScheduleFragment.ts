@@ -16,7 +16,7 @@ export interface OverviewScheduleFragment_scheduleDefinition {
   pipelineName: string;
   solidSubset: (string | null)[] | null;
   mode: string;
-  environmentConfigYaml: string | null;
+  runConfigYaml: string | null;
 }
 
 export interface OverviewScheduleFragment_ticks {

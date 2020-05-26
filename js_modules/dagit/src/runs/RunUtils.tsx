@@ -212,7 +212,7 @@ function getExecutionMetadata(
 function isRunFragment(
   run: RunFragment | RunTableRunFragment | RunActionMenuFragment
 ): run is RunFragment {
-  return (run as RunFragment).environmentConfigYaml !== undefined;
+  return (run as RunFragment).runConfigYaml !== undefined;
 }
 
 export function getReexecutionVariables(input: {
@@ -231,7 +231,7 @@ export function getReexecutionVariables(input: {
 
     const executionParams = {
       mode: run.mode,
-      environmentConfigData: yaml.parse(run.environmentConfigYaml),
+      runConfigData: yaml.parse(run.runConfigYaml),
       selector: {
         name: run.pipeline.name,
         solidSubset: run.pipeline.solids.map(s => s.name)
@@ -261,7 +261,7 @@ export function getReexecutionVariables(input: {
     return {
       executionParams: {
         mode: run.mode,
-        environmentConfigData: yaml.parse(envYaml),
+        runConfigData: yaml.parse(envYaml),
         selector: {
           name: run.pipeline.name,
           solidSubset:
@@ -478,7 +478,7 @@ export const RunActionsMenu: React.FunctionComponent<{
     }
   );
 
-  const envYaml = data?.pipelineRunOrError?.environmentConfigYaml;
+  const envYaml = data?.pipelineRunOrError?.runConfigYaml;
   const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
   return (
     <Popover
@@ -605,7 +605,7 @@ const PipelineEnvironmentYamlQuery = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on PipelineRun {
-        environmentConfigYaml
+        runConfigYaml
       }
     }
   }

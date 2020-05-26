@@ -53,11 +53,11 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
       >
         {(result: QueryResult<PipelineExecutionRootQuery, any>) => {
           const pipelineOrError = result.data && result.data.pipelineOrError;
-          const environmentSchemaOrError =
-            result.data && result.data.environmentSchemaOrError;
+          const runConfigSchemaOrError =
+            result.data && result.data.runConfigSchemaOrError;
 
           if (
-            environmentSchemaOrError?.__typename === "PipelineNotFoundError" ||
+            runConfigSchemaOrError?.__typename === "PipelineNotFoundError" ||
             pipelineOrError?.__typename === "PipelineNotFoundError"
           ) {
             const message =
@@ -118,7 +118,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                 onSave(applyCreateSession(data, initial))
               }
               pipelineOrError={pipelineOrError}
-              environmentSchemaOrError={environmentSchemaOrError}
+              runConfigSchemaOrError={runConfigSchemaOrError}
               currentSession={data.sessions[data.current]}
             />
           );
@@ -142,11 +142,11 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
       ...ExecutionSessionContainerFragment
     }
-    environmentSchemaOrError(selector: $selector, mode: $mode) {
-      ...ExecutionSessionContainerEnvironmentSchemaFragment
+    runConfigSchemaOrError(selector: $selector, mode: $mode) {
+      ...ExecutionSessionContainerRunConfigSchemaFragment
     }
   }
 
   ${ExecutionSessionContainer.fragments.ExecutionSessionContainerFragment}
-  ${ExecutionSessionContainer.fragments.EnvironmentSchemaOrErrorFragment}
+  ${ExecutionSessionContainer.fragments.RunConfigSchemaOrErrorFragment}
 `;

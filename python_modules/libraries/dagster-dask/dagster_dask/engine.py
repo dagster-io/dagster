@@ -115,7 +115,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                     variables = {
                         'executionParams': {
                             'selector': {'name': pipeline_name},
-                            'environmentConfigData': environment_dict,
+                            'runConfigData': environment_dict,
                             'mode': pipeline_context.mode_def.name,
                             'executionMetadata': {'runId': pipeline_context.pipeline_run.run_id},
                             'stepKeys': [step.key],
