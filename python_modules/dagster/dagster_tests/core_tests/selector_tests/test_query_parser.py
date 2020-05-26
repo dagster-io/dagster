@@ -1,11 +1,11 @@
 import pytest
 
+from dagster.core.definitions.utils import has_valid_name_chars
 from dagster.core.selector import (
     NameToken,
     PlusToken,
     SelectionParserException,
     WhitespaceToken,
-    has_valid_name_chars,
     parse_selector_text,
     tokenize_selector_text,
 )
