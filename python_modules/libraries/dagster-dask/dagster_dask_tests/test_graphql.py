@@ -34,7 +34,10 @@ def test_execute_hammer_through_dagit():
 
     variables = {
         'executionParams': {
-            'environmentConfigData': {'storage': {'filesystem': {}}, 'execution': {'dask': {}}},
+            'environmentConfigData': {
+                'storage': {'filesystem': {}},
+                'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
+            },
             'selector': {'name': 'hammer_pipeline'},
             'mode': 'default',
         }
