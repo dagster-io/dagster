@@ -16,6 +16,7 @@ from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterat
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
+from dagster.core.selector import parse_solid_subset
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
@@ -185,8 +186,14 @@ def execute_pipeline_iterator(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute.
+        solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
+            selection queries (inlcuding names of solid invocations). For example:
+            - ['some_solid']: select "some_solid" itself.
+            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
+            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
+                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -254,6 +261,14 @@ def execute_pipeline(
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
+        solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
+            selection queries (inlcuding names of solid invocations). For example:
+            - ['some_solid']: select "some_solid" itself.
+            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
+            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
+                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
@@ -525,6 +540,16 @@ def _check_execute_pipeline_args(
 
     tags = check.opt_dict_param(tags, 'tags', key_type=str)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    if solid_subset:
+        # resolve solid selection queries to a list of qualified solid names
+        parsed_solid_subset = parse_solid_subset(pipeline_def, solid_subset)
+        if len(parsed_solid_subset) == 0:
+            raise DagsterInvariantViolationError(
+                'No qualified solid subset found for solid_subset={input}'.format(
+                    input=solid_subset
+                )
+            )
+        solid_subset = parsed_solid_subset
 
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
