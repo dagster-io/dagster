@@ -1,5 +1,4 @@
 import os
-import signal
 import threading
 import time
 
@@ -10,6 +9,7 @@ from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass
+from dagster.serdes.ipc import interrupt_ipc_subprocess
 from dagster.seven.temp_dir import get_system_temp_directory
 
 from .base import RunLauncher
@@ -220,10 +220,9 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         if not _is_alive(process):
             return False
 
-        # Send sigint to allow the pipeline run to terminate gracefully and
-        # report termination to the instance.
-        process.send_signal(signal.SIGINT)
-
+        # Pipeline execution machinery is set up to gracefully
+        # terminate and report to instance on KeyboardInterrupt
+        interrupt_ipc_subprocess(process)
         process.wait()
         return True
 

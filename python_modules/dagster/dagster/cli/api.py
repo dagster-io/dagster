@@ -21,7 +21,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response
+from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 # Snapshot CLI
@@ -160,6 +160,10 @@ def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, insta
         recon_pipeline = _get_recon_pipeline(stream, config_yaml, pipeline_run)
         if not recon_pipeline:
             return
+
+        # Perform setup so that termination of the execution will unwind and report to the
+        # instance correctly
+        setup_interrupt_support()
 
         try:
 

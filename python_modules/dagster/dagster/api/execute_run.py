@@ -1,5 +1,4 @@
 import os
-import subprocess
 import uuid
 
 from dagster import check
@@ -7,7 +6,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import serialize_dagster_namedtuple
-from dagster.serdes.ipc import ipc_read_event_stream
+from dagster.serdes.ipc import ipc_read_event_stream, open_ipc_subprocess
 from dagster.seven.temp_dir import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
 
@@ -69,4 +68,4 @@ def cli_api_execute_run(output_file, instance, repo_yaml, pipeline_run):
         engine_event_data=EngineEventData(marker_start='cli_api_subprocess_init'),
     )
 
-    return subprocess.Popen(parts)
+    return open_ipc_subprocess(parts)

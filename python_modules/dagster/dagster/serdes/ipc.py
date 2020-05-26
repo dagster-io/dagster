@@ -1,4 +1,6 @@
 import os
+import signal
+import subprocess
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
@@ -138,3 +140,32 @@ def ipc_read_event_stream(file_path, timeout=30):
         while not isinstance(message, IPCEndMessage):
             yield message
             message = _process_line(file_pointer)
+
+
+# Windows subprocess termination utilities
+# https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
+
+
+def setup_interrupt_support():
+    ''' Set SIGBREAK handler to SIGINT on Windows '''
+    if sys.platform == 'win32':
+        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
+
+
+def open_ipc_subprocess(parts):
+    ''' Sets new process group flags on Windows to support graceful termination. '''
+    check.list_param(parts, 'parts', str)
+
+    creationflags = 0
+    if sys.platform == 'win32':
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    return subprocess.Popen(parts, creationflags=creationflags)
+
+
+def interrupt_ipc_subprocess(proc):
+    ''' Send CTRL_BREAK on Windows, SIGINT on other platforms '''
+
+    if sys.platform == 'win32':
+        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+    else:
+        proc.send_signal(signal.SIGINT)
