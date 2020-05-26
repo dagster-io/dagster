@@ -580,3 +580,8 @@ class TestAThing(
             return recon_repo
 
     return _SpecificTestSuiteBase
+
+
+ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_readonly_variants()
+)

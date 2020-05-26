@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
@@ -109,9 +109,7 @@ def execute_config_graphql(context, pipeline_name, environment_dict, mode):
     )
 
 
-class TestConfigTypes(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_readonly_variants())
-):
+class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
     def test_pipeline_not_found(self, graphql_context):
         result = execute_config_graphql(
             graphql_context, pipeline_name='nope', environment_dict={}, mode='default'

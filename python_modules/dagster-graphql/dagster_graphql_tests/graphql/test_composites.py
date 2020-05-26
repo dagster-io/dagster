@@ -8,7 +8,7 @@ from .composites_query import (
     PARENT_ID_QUERY,
     SOLID_ID_QUERY,
 )
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
 # 10 total solids in the composite pipeline:
 #
@@ -27,10 +27,8 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 #       (/2)
 
 
-class TestComposites(
-    # this only needs readonly variants since they never execute anything
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_readonly_variants())
-):
+# this only needs readonly variants since they never execute anything
+class TestComposites(ReadonlyGraphQLContextTestMatrix):
     def test_composites(self, graphql_context, snapshot):
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY)
         handle_map = {}
