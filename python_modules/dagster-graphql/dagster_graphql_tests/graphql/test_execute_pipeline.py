@@ -19,9 +19,10 @@ from .execution_queries import (
     SUBSCRIPTION_QUERY,
 )
 from .graphql_context_test_suite import (
+    EMManagers,
+    EnvironmentManagers,
     GraphQLContextVariant,
-    GraphQLTestEnvironments,
-    GraphQLTestExecutionManagers,
+    MarkedManager,
     Marks,
     make_graphql_context_test_suite,
 )
@@ -478,11 +479,12 @@ class TestExecutePipelineManagerDisabled(
     make_graphql_context_test_suite(
         context_variants=[
             GraphQLContextVariant(
-                instance_mgr=sqlite_instance_with_manager_disabled,
-                environment_mgr=GraphQLTestEnvironments.user_code_in_host_process,
-                em_mgr=GraphQLTestExecutionManagers.sync_execution_manager,
+                marked_instance_mgr=MarkedManager(
+                    sqlite_instance_with_manager_disabled, [Marks.sqlite_instance]
+                ),
+                marked_environment_mgr=EnvironmentManagers.user_code_in_host_process(),
+                marked_em_mgr=EMManagers.sync(),
                 test_id='sqlite_instance_with_disabled_execution_manager',
-                additional_marks=[Marks.sqlite_instance],
             )
         ]
     )

@@ -6,14 +6,7 @@ from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import check
 
-from .graphql_context_test_suite import (
-    MARK_MAP,
-    GraphQLContextVariant,
-    GraphQLTestEnvironments,
-    GraphQLTestExecutionManagers,
-    GraphQLTestInstances,
-    manage_graphql_context,
-)
+from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_context
 
 
 @pytest.mark.parametrize('variant', GraphQLContextVariant.all_readonly_variants())
@@ -40,15 +33,6 @@ def test_legacy_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
         assert context.legacy_environment.execution_manager
-
-
-def get_all_static_functions_on_fixture_classes():
-    def _yield_all():
-        for klass in [GraphQLTestInstances, GraphQLTestEnvironments, GraphQLTestExecutionManagers]:
-            for static_function in get_all_static_functions(klass):
-                yield static_function
-
-    return list(_yield_all())
 
 
 def get_all_static_functions(klass):
@@ -82,20 +66,6 @@ def test_get_all_static_members():
             pass
 
     assert set(get_all_static_functions(Bar)) == {Bar.static_one, Bar.static_two}
-
-
-@pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
-@pytest.mark.parametrize(
-    'static_function',
-    get_all_static_functions_on_fixture_classes() if sys.version_info > (3,) else [],
-)
-def test_mark_map_is_fully_populated(static_function):
-    assert static_function in MARK_MAP, (
-        'All static functions on GraphQLTestInstances, GraphQLTestEnvironments, '
-        'and GraphQLTestExecutionManagers must be registered in the MARK_MAP. This '
-        'ensures that the GraphQLContextVariants end up being properly categorized. '
-        'In this case {static_function} must be placed in the MARK_MAP.'
-    ).format(static_function=static_function)
 
 
 @pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
