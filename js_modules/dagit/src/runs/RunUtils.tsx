@@ -169,10 +169,14 @@ function getExecutionMetadata(
     parentRunId: run.runId,
     rootRunId: run.rootRunId ? run.rootRunId : run.runId,
     tags: [
+      // Clean up tags related to run grouping once we decide its persistence
+      // https://github.com/dagster-io/dagster/issues/2495
       ...run.tags
         .filter(
           tag =>
-            !(tag.key in ["dagster/is_resume_retry", "dagster/step_selection"])
+            !["dagster/is_resume_retry", "dagster/step_selection"].includes(
+              tag.key
+            )
         )
         .map(tag => ({
           key: tag.key,
@@ -184,7 +188,6 @@ function getExecutionMetadata(
         value: resumeRetry.toString()
       },
       // pass run group info via tags
-      // https://github.com/dagster-io/dagster/issues/2495
       {
         key: "dagster/parent_run_id",
         value: run.runId
