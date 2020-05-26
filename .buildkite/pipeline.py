@@ -227,7 +227,14 @@ def _airflow_tests(name='', tox_args=''):
 
 
 def airflow_tests():
-    return (
+    tests = [
+        StepBuilder("dagster-airflow pylint")
+        .run("cd python_modules/libraries/dagster-airflow", "tox -vv -e pylint")
+        .on_integration_image(SupportedPython.V3_7)
+        .build()
+    ]
+
+    return tests + (
         _airflow_tests()
         + _airflow_tests(name='-with-k8s', tox_args='-requiresk8s')
         + _airflow_tests(name='-with-db', tox_args='-requiresairflowdb')
@@ -467,38 +474,26 @@ def coverage_step():
 
 
 def pylint_steps():
-    res = []
+    base_paths = ['.buildkite', 'bin', 'docs/next/src']
+    base_paths_ext = ['"%s/**.py"' % p for p in base_paths]
 
-    base_paths = ['.buildkite', 'bin', 'docs', 'examples']
-    base_paths_ext = ['"%s/*.py"' % p for p in base_paths]
-
-    res.append(
+    return [
         StepBuilder("pylint misc")
         .run(
-            "make install_dev_python_modules",
+            # Deps needed to pylint docs
+            """pip install \
+                -e python_modules/dagster \
+                -e python_modules/dagit \
+                -e python_modules/libraries/dagstermill \
+                -e python_modules/libraries/dagster-celery \
+                -e python_modules/libraries/dagster-dask \
+                -e examples
+            """,
             "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % ' '.join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
         .build()
-    )
-
-    python_modules = [
-        'python_modules/%s' % path
-        for path in os.listdir('python_modules/')
-        if os.path.isdir('python_modules/%s' % path)
     ]
-
-    for path in python_modules:
-        res.append(
-            StepBuilder("pylint %s" % path)
-            .run(
-                "make install_dev_python_modules",
-                "pylint -j 0 `git ls-files '%s/*.py'` --rcfile=.pylintrc" % path,
-            )
-            .on_integration_image(SupportedPython.V3_7)
-            .build()
-        )
-    return res
 
 
 def next_docs_build_tests():

@@ -141,5 +141,7 @@ def await_pg_notifications(
         conn.close()
         for s in signals_to_handle or []:
             if s in original_handlers:
-                signal_name = construct_signals(s).name
+                # Commenting out to get pylint to pass
+                # https://github.com/dagster-io/dagster/issues/2510
+                # signal_name = construct_signals(s).name
                 signal.signal(s, original_handlers[s])

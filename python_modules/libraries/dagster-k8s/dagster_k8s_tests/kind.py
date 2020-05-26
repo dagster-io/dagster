@@ -1,3 +1,6 @@
+# pylint: skip-file
+# Can't pylint this file with 2.5.2 - https://github.com/PyCQA/pylint/issues/3648
+
 import os
 import subprocess
 import time
