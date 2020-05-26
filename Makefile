@@ -72,7 +72,7 @@ install_dev_python_modules:
 	-pip install -e examples[full] $(QUIET)
 
 	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
-	-pip install -e python_modules/libraries/dagster-dask $(QUIET)
+	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
 
 	# This fails on py2
 	-pip install -r .read-the-docs-requirements.txt

@@ -1,3 +1,0 @@
-dask-yarn
-dask-jobqueue
-dask-kubernetes
