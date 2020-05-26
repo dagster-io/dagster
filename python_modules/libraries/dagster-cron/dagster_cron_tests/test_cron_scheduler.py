@@ -8,9 +8,13 @@ from dagster_cron import SystemCronScheduler
 
 from dagster import ScheduleDefinition, check, file_relative_path
 from dagster.core.definitions import RepositoryDefinition, lambda_solid, pipeline
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.scheduler import Schedule, ScheduleStatus
+from dagster.core.scheduler.scheduler import (
+    DagsterScheduleDoesNotExist,
+    DagsterScheduleReconciliationError,
+    DagsterSchedulerError,
+)
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -89,6 +93,12 @@ def define_repo():
     )
 
 
+def define_smaller_repo():
+    return RepositoryDefinition(
+        name="test", pipeline_defs=[no_config_pipeline], schedule_defs=define_schedules()[:-1],
+    )
+
+
 def define_scheduler_instance(tempdir):
     return DagsterInstance(
         instance_type=InstanceType.EPHEMERAL,
@@ -135,7 +145,9 @@ def test_re_init(
         )
 
         # Start schedule
-        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        schedule = instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # Re-initialize scheduler
         instance.reconcile_scheduler_state(
@@ -168,7 +180,9 @@ def test_start_and_stop_schedule(
 
         schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
 
-        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        schedule = instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         check.inst_param(schedule, 'schedule', Schedule)
         assert "/bin/python" in schedule.python_path
@@ -179,10 +193,23 @@ def test_start_and_stop_schedule(
             os.path.join(tempdir, 'schedules', 'scripts')
         )
 
-        instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.stop_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
         assert "{}.{}.sh".format(repository.name, schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules', 'scripts')
         )
+
+
+def test_start_non_existent_schedule(
+    restore_cron_tab, repository
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+
+        with pytest.raises(DagsterScheduleDoesNotExist):
+            # Initialize scheduler
+            instance.start_schedule_and_update_storage_state(repository, "asdf")
 
 
 def get_cron_jobs():
@@ -203,9 +230,15 @@ def test_start_schedule_cron_job(
             repository=repository,
         )
 
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
-        instance.start_schedule(repository, "no_config_pipeline_daily_schedule")
-        instance.start_schedule(repository, "default_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
+        instance.start_schedule_and_update_storage_state(
+            repository, "default_config_pipeline_every_min_schedule"
+        )
 
         # Inspect the cron tab
         cron_jobs = get_cron_jobs()
@@ -231,6 +264,54 @@ def test_start_schedule_cron_job(
             assert log_file.endswith("scheduler.log")
 
 
+def test_remove_schedule_def(
+    restore_cron_tab, repository
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+
+        # Initialize scheduler
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=repository,
+        )
+
+        assert len(instance.all_schedules(repository=repository)) == 3
+
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=define_smaller_repo(),
+        )
+
+        assert len(instance.all_schedules(repository=repository)) == 2
+
+
+def test_add_schedule_def(
+    restore_cron_tab, repository
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+
+        # Initialize scheduler
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=define_smaller_repo(),
+        )
+
+        assert len(instance.all_schedules(repository=repository)) == 2
+
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=repository,
+        )
+
+        assert len(instance.all_schedules(repository=repository)) == 3
+
+
 def test_start_and_stop_schedule_cron_tab(
     restore_cron_tab, repository
 ):  # pylint:disable=unused-argument,redefined-outer-name
@@ -245,33 +326,45 @@ def test_start_and_stop_schedule_cron_tab(
         )
 
         # Start schedule
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 1
 
         # Try starting it again
-        with pytest.raises(DagsterInvariantViolationError):
-            instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        with pytest.raises(DagsterSchedulerError):
+            instance.start_schedule_and_update_storage_state(
+                repository, "no_config_pipeline_every_min_schedule"
+            )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 1
 
         # Start another schedule
-        instance.start_schedule(repository, "no_config_pipeline_daily_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 2
 
         # Stop second schedule
-        instance.stop_schedule(repository, "no_config_pipeline_daily_schedule")
+        instance.stop_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 1
 
         # Try stopping second schedule again
-        instance.stop_schedule(repository, "no_config_pipeline_daily_schedule")
+        instance.stop_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 1
 
         # Start second schedule
-        instance.start_schedule(repository, "no_config_pipeline_daily_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 2
 
@@ -284,7 +377,9 @@ def test_start_and_stop_schedule_cron_tab(
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 2
 
-        instance.start_schedule(repository, "default_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "default_config_pipeline_every_min_schedule"
+        )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 3
 
@@ -298,9 +393,15 @@ def test_start_and_stop_schedule_cron_tab(
         assert len(cron_jobs) == 3
 
         # Stop all schedules
-        instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
-        instance.stop_schedule(repository, "no_config_pipeline_daily_schedule")
-        instance.stop_schedule(repository, "default_config_pipeline_every_min_schedule")
+        instance.stop_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
+        instance.stop_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_daily_schedule"
+        )
+        instance.stop_schedule_and_update_storage_state(
+            repository, "default_config_pipeline_every_min_schedule"
+        )
 
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 0
@@ -336,7 +437,9 @@ def test_start_schedule_fails(
 
         instance._scheduler._start_cron_job = raises  # pylint: disable=protected-access
         with pytest.raises(Exception, match='Patch'):
-            instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+            instance.start_schedule_and_update_storage_state(
+                repository, "no_config_pipeline_every_min_schedule"
+            )
 
         schedule = instance.get_schedule_by_name(repository, schedule_def.name)
 
@@ -364,10 +467,13 @@ def test_start_schedule_unsuccessful(
 
         # End schedule
         with pytest.raises(
-            DagsterInvariantViolationError,
-            match="Attempted to write cron job for schedule no_config_pipeline_every_min_schedule, but failed",
+            DagsterSchedulerError,
+            match="Attempted to write cron job for schedule no_config_pipeline_every_min_schedule, "
+            "but failed. The scheduler is not running no_config_pipeline_every_min_schedule.",
         ):
-            instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+            instance.start_schedule_and_update_storage_state(
+                repository, "no_config_pipeline_every_min_schedule"
+            )
 
 
 def test_start_schedule_manual_delete_debug(
@@ -384,7 +490,9 @@ def test_start_schedule_manual_delete_debug(
             repository=repository,
         )
 
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # Manually delete the schedule from the crontab
         instance.scheduler._end_cron_job(  # pylint: disable=protected-access
@@ -456,7 +564,9 @@ def test_start_schedule_manual_duplicate_schedules_add_debug(
             repository=repository,
         )
 
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # Manually add  extra cron tabs
         instance.scheduler._start_cron_job(  # pylint: disable=protected-access
@@ -505,7 +615,9 @@ def test_stop_schedule_fails(
 
         instance._scheduler._end_cron_job = raises  # pylint: disable=protected-access
 
-        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        schedule = instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         check.inst_param(schedule, 'schedule', Schedule)
         assert "/bin/python" in schedule.python_path
@@ -518,7 +630,9 @@ def test_stop_schedule_fails(
 
         # End schedule
         with pytest.raises(Exception, match='Patch'):
-            instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
+            instance.stop_schedule_and_update_storage_state(
+                repository, "no_config_pipeline_every_min_schedule"
+            )
 
         schedule = instance.get_schedule_by_name(repository, schedule_def.name)
 
@@ -544,14 +658,20 @@ def test_stop_schedule_unsuccessful(
 
         instance._scheduler._end_cron_job = do_nothing  # pylint: disable=protected-access
 
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # End schedule
         with pytest.raises(
-            DagsterInvariantViolationError,
-            match="Attempted to remove cron job for schedule no_config_pipeline_every_min_schedule, but failed.",
+            DagsterSchedulerError,
+            match="Attempted to remove existing cron job for schedule "
+            "no_config_pipeline_every_min_schedule, but failed. There are still 1 jobs running for "
+            "the schedule.",
         ):
-            instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
+            instance.stop_schedule_and_update_storage_state(
+                repository, "no_config_pipeline_every_min_schedule"
+            )
 
 
 def test_wipe(restore_cron_tab, repository):  # pylint:disable=unused-argument,redefined-outer-name
@@ -567,7 +687,9 @@ def test_wipe(restore_cron_tab, repository):  # pylint:disable=unused-argument,r
         )
 
         # Start schedule
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # Wipe scheduler
         instance.wipe_all_schedules()
@@ -601,10 +723,79 @@ def test_log_directory(
         )
 
         # Start schedule
-        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
 
         # Wipe scheduler
         instance.wipe_all_schedules()
 
         # Check schedules are wiped
         assert instance.all_schedules(repository) == []
+
+
+def test_reconcile_failure(
+    restore_cron_tab, repository
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=repository,
+        )
+        instance.start_schedule_and_update_storage_state(
+            repository, "no_config_pipeline_every_min_schedule"
+        )
+
+        def failed_start_job(*_):
+            raise DagsterSchedulerError("Failed to start")
+
+        def failed_end_job(*_):
+            raise DagsterSchedulerError("Failed to stop")
+
+        instance._scheduler.start_schedule = failed_start_job  # pylint: disable=protected-access
+        instance._scheduler.stop_schedule = failed_end_job  # pylint: disable=protected-access
+
+        # Initialize scheduler
+        with pytest.raises(
+            DagsterScheduleReconciliationError,
+            match="Error 1: Failed to stop\n    Error 2: Failed to stop\n    Error 3: Failed to stop",
+        ):
+            instance.reconcile_scheduler_state(
+                python_path=sys.executable,
+                repository_path=file_relative_path(__file__, '.../repository.yam'),
+                repository=repository,
+            )
+
+
+def test_reconcile_failure_when_deleting_schedule_def(
+    restore_cron_tab, repository
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+
+        # Initialize scheduler
+        instance.reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=repository,
+        )
+
+        assert len(instance.all_schedules(repository=repository)) == 3
+
+        def failed_end_job(*_):
+            raise DagsterSchedulerError("Failed to stop")
+
+        instance._scheduler.stop_schedule_and_delete_from_storage = (  # pylint: disable=protected-access
+            failed_end_job
+        )
+
+        with pytest.raises(
+            DagsterScheduleReconciliationError, match="Error 1: Failed to stop",
+        ):
+            instance.reconcile_scheduler_state(
+                python_path=sys.executable,
+                repository_path=file_relative_path(__file__, '.../repository.yam'),
+                repository=define_smaller_repo(),
+            )

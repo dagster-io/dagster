@@ -112,7 +112,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList {
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
-  runningJobCount: number;
+  runningScheduleCount: number;
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   logsPath: string;
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks[];

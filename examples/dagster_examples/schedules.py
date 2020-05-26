@@ -55,7 +55,9 @@ def backfill_should_execute(context, partition_set_def, schedule_name):
     is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
     if not is_remaining_partitions:
         try:
-            context.instance.stop_schedule(context.repository, schedule_name)
+            context.instance.stop_schedule_and_update_storage_state(
+                context.repository, schedule_name
+            )
         except OSError:
             pass
 

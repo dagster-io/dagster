@@ -16,7 +16,7 @@ from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, c
 def start_schedule(graphene_info, schedule_name):
     repository = graphene_info.context.get_repository()
     instance = graphene_info.context.instance
-    schedule = instance.start_schedule(repository, schedule_name)
+    schedule = instance.start_schedule_and_update_storage_state(repository, schedule_name)
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
             graphene_info, schedule=schedule
@@ -28,7 +28,7 @@ def start_schedule(graphene_info, schedule_name):
 def stop_schedule(graphene_info, schedule_name):
     repository = graphene_info.context.get_repository()
     instance = graphene_info.context.instance
-    schedule = instance.stop_schedule(repository, schedule_name)
+    schedule = instance.stop_schedule_and_update_storage_state(repository, schedule_name)
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
             graphene_info, schedule=schedule

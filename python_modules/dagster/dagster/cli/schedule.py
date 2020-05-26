@@ -281,14 +281,16 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     if all_flag:
         for schedule in instance.all_schedules(repository):
             try:
-                schedule = instance.start_schedule(repository, schedule.name)
+                schedule = instance.start_schedule_and_update_storage_state(
+                    repository, schedule.name
+                )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
         print_fn("Started all schedules for repository {name}".format(name=repository.name))
     else:
         try:
-            schedule = instance.start_schedule(repository, schedule_name)
+            schedule = instance.start_schedule_and_update_storage_state(repository, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -311,7 +313,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
     repository = handle.build_repository_definition()
 
     try:
-        instance.stop_schedule(repository, schedule_name)
+        instance.stop_schedule_and_update_storage_state(repository, schedule_name)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -368,8 +370,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         for schedule in instance.all_schedules(repository):
             if schedule.status == ScheduleStatus.RUNNING:
                 try:
-                    instance.stop_schedule(repository, schedule.name)
-                    instance.start_schedule(repository, schedule.name)
+                    instance.stop_schedule_and_update_storage_state(repository, schedule.name)
+                    instance.start_schedule_and_update_storage_state(repository, schedule.name)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -386,8 +388,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             )
 
         try:
-            instance.stop_schedule(repository, schedule_name)
-            instance.start_schedule(repository, schedule_name)
+            instance.stop_schedule_and_update_storage_state(repository, schedule_name)
+            instance.start_schedule_and_update_storage_state(repository, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 

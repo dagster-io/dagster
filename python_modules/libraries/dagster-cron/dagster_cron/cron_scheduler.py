@@ -6,9 +6,9 @@ import stat
 import six
 from crontab import CronTab
 
-from dagster import DagsterInstance, DagsterInvariantViolationError, check, seven, utils
+from dagster import DagsterInstance, check, seven, utils
 from dagster.core.definitions import RepositoryDefinition
-from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler import DagsterSchedulerError, Scheduler
 from dagster.serdes import ConfigurableClass
 
 
@@ -45,70 +45,57 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         )
 
     def start_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to start schedule {name}, but it does not exist.'.format(
-                    name=schedule_name
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+
+        schedule = self._get_schedule_by_name(instance, repository, schedule_name)
+
+        # If the cron job already exists, remove it. This prevents duplicate entries.
+        # Then, add a new cron job to the cron tab.
+        if self.running_schedule_count(repository.name, schedule.name) > 0:
+            self._end_cron_job(instance, repository, schedule)
+
+        self._start_cron_job(instance, repository, schedule)
+
+        # Verify that the cron job is running
+        running_schedule_count = self.running_schedule_count(repository.name, schedule.name)
+        if running_schedule_count == 0:
+            raise DagsterSchedulerError(
+                "Attempted to write cron job for schedule "
+                "{schedule_name}, but failed. "
+                "The scheduler is not running {schedule_name}.".format(schedule_name=schedule.name)
+            )
+        elif running_schedule_count > 1:
+            raise DagsterSchedulerError(
+                "Attempted to write cron job for schedule "
+                "{schedule_name}, but duplicate cron jobs were found. "
+                "There are {running_schedule_count} jobs running for the schedule."
+                "To resolve, run `dagster schedule up`, or edit the cron tab to "
+                "remove duplicate schedules".format(
+                    schedule_name=schedule.name, running_schedule_count=running_schedule_count
                 )
             )
-
-        if schedule.status == ScheduleStatus.RUNNING:
-            raise DagsterInvariantViolationError(
-                'You have attempted to start schedule {name}, but it is already running'.format(
-                    name=schedule_name
-                )
-            )
-
-        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        self._start_cron_job(instance, repository, started_schedule)
-
-        # Check that the schedule made it to the cron tab
-        if not self.running_job_count(repository.name, schedule.name):
-            raise DagsterInvariantViolationError(
-                "Attempted to write cron job for schedule {schedule_name}, but failed".format(
-                    schedule_name=schedule.name
-                )
-            )
-
-        # If the cron job was successfully installed, then update scheduler state
-        instance.update_schedule(repository, started_schedule)
-        return started_schedule
 
     def stop_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to stop schedule {name}, but was never initialized.'
-                'Use `schedule up` to initialize schedules'.format(name=schedule_name)
-            )
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
 
-        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        self._end_cron_job(instance, repository, stopped_schedule)
+        schedule = self._get_schedule_by_name(instance, repository, schedule_name)
 
-        if self.running_job_count(repository.name, schedule.name):
-            raise DagsterInvariantViolationError(
-                "Attempted to remove cron job for schedule {schedule_name}, but failed. The cron "
-                "job for the schedule is still running".format(schedule_name=schedule.name)
-            )
-
-        instance.update_schedule(repository, stopped_schedule)
-
-        return stopped_schedule
-
-    def end_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to end schedule {name}, but it is not running.'.format(
-                    name=schedule_name
-                )
-            )
-
-        instance.delete_schedule(repository, schedule)
         self._end_cron_job(instance, repository, schedule)
 
-        return schedule
+        # Verify that the cron job has been removed
+        running_schedule_count = self.running_schedule_count(repository.name, schedule.name)
+        if running_schedule_count > 0:
+            raise DagsterSchedulerError(
+                "Attempted to remove existing cron job for schedule "
+                "{schedule_name}, but failed. "
+                "There are still {running_schedule_count} jobs running for the schedule.".format(
+                    schedule_name=schedule.name, running_schedule_count=running_schedule_count
+                )
+            )
 
     def wipe(self, instance):
         # Note: This method deletes schedules from ALL repositories
@@ -176,7 +163,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         if os.path.isfile(script_file):
             os.remove(script_file)
 
-    def running_job_count(self, repository_name, schedule_name):
+    def running_schedule_count(self, repository_name, schedule_name):
         cron_tab = CronTab(user=True)
         matching_jobs = cron_tab.find_comment(
             self._cron_tag_for_schedule(repository_name, schedule_name)

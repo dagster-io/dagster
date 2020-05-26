@@ -53,25 +53,25 @@ const getNaturalLanguageCronString = (cronSchedule: string) => {
   }
 };
 
-const errorDisplay = (status: ScheduleStatus, runningJobCount: number) => {
-  if (status === ScheduleStatus.STOPPED && runningJobCount == 0) {
+const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
+  if (status === ScheduleStatus.STOPPED && runningScheduleCount == 0) {
     return null;
-  } else if (status === ScheduleStatus.RUNNING && runningJobCount == 1) {
+  } else if (status === ScheduleStatus.RUNNING && runningScheduleCount == 1) {
     return null;
   }
 
   const errors = [];
-  if (status === ScheduleStatus.RUNNING && runningJobCount === 0) {
+  if (status === ScheduleStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
       "Schedule is set to be running, but the scheduler is not running the schedule"
     );
-  } else if (status === ScheduleStatus.STOPPED && runningJobCount > 0) {
+  } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
     errors.push(
       "Schedule is set to be stopped, but the scheduler is still running the schedule"
     );
   }
 
-  if (runningJobCount > 0) {
+  if (runningScheduleCount > 0) {
     errors.push("Duplicate cron job for schedule found.");
   }
 
@@ -106,7 +106,7 @@ export const ScheduleRow: React.FunctionComponent<{
   const {
     status,
     scheduleDefinition,
-    runningJobCount,
+    runningScheduleCount,
     logsPath,
     stats,
     ticks,
@@ -194,7 +194,7 @@ export const ScheduleRow: React.FunctionComponent<{
           }}
         />
 
-        {errorDisplay(status, runningJobCount)}
+        {errorDisplay(status, runningScheduleCount)}
       </RowColumn>
       <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
       <RowColumn>
@@ -368,7 +368,7 @@ export const ScheduleRow: React.FunctionComponent<{
 export const ScheduleRowFragment = gql`
   fragment ScheduleFragment on RunningSchedule {
     __typename
-    runningJobCount
+    runningScheduleCount
     scheduleDefinition {
       name
       cronSchedule
@@ -428,7 +428,7 @@ const START_SCHEDULE_MUTATION = gql`
       ... on RunningScheduleResult {
         schedule {
           __typename
-          runningJobCount
+          runningScheduleCount
           scheduleDefinition {
             __typename
             name
@@ -451,7 +451,7 @@ const STOP_SCHEDULE_MUTATION = gql`
       ... on RunningScheduleResult {
         schedule {
           __typename
-          runningJobCount
+          runningScheduleCount
           scheduleDefinition {
             __typename
             name

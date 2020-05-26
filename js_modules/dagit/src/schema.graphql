@@ -1003,7 +1003,7 @@ type RunningSchedule {
   attempts(limit: Int): [ScheduleAttempt!]!
   attemptsCount: Int!
   logsPath: String!
-  runningJobCount: Int!
+  runningScheduleCount: Int!
 }
 
 type RunningScheduleResult {

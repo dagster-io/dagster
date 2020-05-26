@@ -33,6 +33,7 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -387,6 +388,12 @@ def restore_directory(src):
 
 
 class FilesytemTestScheduler(Scheduler):
+    '''This class is used in dagster core and dagster_graphql to test the scheduler's interactions
+    with schedule storage, which are implemented in the methods defined on the base Scheduler class.
+    Therefore, the following methods used to actually schedule jobs (e.g. create and remove cron jobs
+    on a cron tab) are left unimimplemented.
+    '''
+
     def __init__(self, artifacts_dir):
         check.str_param(artifacts_dir, 'artifacts_dir')
         self._artifacts_dir = artifacts_dir
@@ -395,52 +402,13 @@ class FilesytemTestScheduler(Scheduler):
         return ""
 
     def start_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to start schedule {name}, but it does not exist.'.format(
-                    name=schedule_name
-                )
-            )
-
-        if schedule.status == ScheduleStatus.RUNNING:
-            raise DagsterInvariantViolationError(
-                'You have attempted to start schedule {name}, but it is already running'.format(
-                    name=schedule_name
-                )
-            )
-
-        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        instance.update_schedule(repository, started_schedule)
-        return schedule
+        pass
 
     def stop_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to stop schedule {name}, but was never initialized.'
-                'Use `schedule up` to initialize schedules'.format(name=schedule_name)
-            )
+        pass
 
-        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        instance.update_schedule(repository, stopped_schedule)
-        return stopped_schedule
-
-    def running_job_count(self, repository_name, schedule_name):
-        # Not currently tested in dagster core
+    def running_schedule_count(self, repository_name, schedule_name):
         return 0
-
-    def end_schedule(self, instance, repository, schedule_name):
-        schedule = instance.get_schedule_by_name(repository, schedule_name)
-        if not schedule:
-            raise DagsterInvariantViolationError(
-                'You have attempted to end schedule {name}, but it is not running.'.format(
-                    name=schedule_name
-                )
-            )
-
-        instance.storage.delete_schedule(repository, schedule)
-        return schedule
 
     def get_logs_directory(self, instance, repository, schedule_name):
         check.inst_param(repository, 'repository', RepositoryDefinition)
