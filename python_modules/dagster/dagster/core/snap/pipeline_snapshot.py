@@ -109,7 +109,7 @@ class PipelineSnapshot(
             dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(pipeline_def),
             mode_def_snaps=[
                 build_mode_def_snap(
-                    md, pipeline_def.get_environment_schema(md.name).environment_type.key
+                    md, pipeline_def.get_run_config_schema(md.name).environment_type.key
                 )
                 for md in pipeline_def.mode_definitions
             ],

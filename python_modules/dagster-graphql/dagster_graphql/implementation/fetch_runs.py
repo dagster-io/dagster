@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import PipelineDefinition, check
 from dagster.config.validate import validate_config
-from dagster.core.definitions import create_environment_schema
+from dagster.core.definitions import create_run_config_schema
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
@@ -13,8 +13,8 @@ def is_config_valid(pipeline_def, environment_dict, mode):
     check.str_param(mode, 'mode')
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-    environment_schema = create_environment_schema(pipeline_def, mode)
-    validated_config = validate_config(environment_schema.environment_type, environment_dict)
+    run_config_schema = create_run_config_schema(pipeline_def, mode)
+    validated_config = validate_config(run_config_schema.environment_type, environment_dict)
     return validated_config.success
 
 
@@ -24,9 +24,9 @@ def get_validated_config(pipeline_def, environment_dict, mode):
     check.str_param(mode, 'mode')
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-    environment_schema = create_environment_schema(pipeline_def, mode)
+    run_config_schema = create_run_config_schema(pipeline_def, mode)
 
-    validated_config = validate_config(environment_schema.environment_type, environment_dict)
+    validated_config = validate_config(run_config_schema.environment_type, environment_dict)
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

@@ -6,13 +6,13 @@ from dagster.config.config_type import ConfigType
 from .pipeline import PipelineDefinition
 
 
-class EnvironmentSchema(
+class RunConfigSchema(
     namedtuple(
-        '_EnvironmentSchema', 'environment_type config_type_dict_by_name config_type_dict_by_key'
+        '_RunConfigSchema', 'environment_type config_type_dict_by_name config_type_dict_by_key'
     )
 ):
     def __new__(cls, environment_type, config_type_dict_by_name, config_type_dict_by_key):
-        return super(EnvironmentSchema, cls).__new__(
+        return super(RunConfigSchema, cls).__new__(
             cls,
             environment_type=check.inst_param(environment_type, 'environment_type', ConfigType),
             config_type_dict_by_name=check.dict_param(
@@ -45,12 +45,12 @@ class EnvironmentSchema(
         return self.config_type_dict_by_key.values()
 
 
-def create_environment_schema(pipeline_def, mode=None):
+def create_run_config_schema(pipeline_def, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
 
-    return pipeline_def.get_environment_schema(mode)
+    return pipeline_def.get_run_config_schema(mode)
 
 
 def create_environment_type(pipeline_def, mode=None):
-    return create_environment_schema(pipeline_def, mode).environment_type
+    return create_run_config_schema(pipeline_def, mode).environment_type

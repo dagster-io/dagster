@@ -15,7 +15,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import Materialization, Solid, create_environment_schema
+from dagster.core.definitions import Materialization, Solid, create_run_config_schema
 from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -123,11 +123,11 @@ def test_pipeline_types():
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
     )
 
-    environment_schema = create_environment_schema(pipeline_def)
+    run_config_schema = create_run_config_schema(pipeline_def)
 
-    assert environment_schema.has_config_type('String')
-    assert environment_schema.has_config_type('Int')
-    assert not environment_schema.has_config_type('SomeName')
+    assert run_config_schema.has_config_type('String')
+    assert run_config_schema.has_config_type('Int')
+    assert not run_config_schema.has_config_type('SomeName')
 
 
 def test_mapper_errors():

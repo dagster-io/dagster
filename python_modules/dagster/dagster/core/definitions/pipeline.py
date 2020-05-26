@@ -206,19 +206,19 @@ class PipelineDefinition(IContainSolids):
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
         )
-        self._cached_environment_schemas = {}
+        self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-    def get_environment_schema(self, mode=None):
+    def get_run_config_schema(self, mode=None):
         check.str_param(mode, 'mode')
 
         mode_def = self.get_mode_definition(mode)
 
-        if mode_def.name in self._cached_environment_schemas:
-            return self._cached_environment_schemas[mode_def.name]
+        if mode_def.name in self._cached_run_config_schemas:
+            return self._cached_run_config_schemas[mode_def.name]
 
-        self._cached_environment_schemas[mode_def.name] = _create_environment_schema(self, mode_def)
-        return self._cached_environment_schemas[mode_def.name]
+        self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(self, mode_def)
+        return self._cached_run_config_schemas[mode_def.name]
 
     @property
     def name(self):
@@ -614,13 +614,13 @@ def _build_all_solid_defs(solid_defs):
     return all_defs
 
 
-def _create_environment_schema(pipeline_def, mode_definition):
+def _create_run_config_schema(pipeline_def, mode_definition):
     from .environment_configs import (
         EnvironmentClassCreationData,
         construct_config_type_dictionary,
         define_environment_cls,
     )
-    from .environment_schema import EnvironmentSchema
+    from .run_config_schema import RunConfigSchema
 
     environment_type = define_environment_cls(
         EnvironmentClassCreationData(
@@ -636,7 +636,7 @@ def _create_environment_schema(pipeline_def, mode_definition):
         pipeline_def.all_solid_defs, environment_type
     )
 
-    return EnvironmentSchema(
+    return RunConfigSchema(
         environment_type=environment_type,
         config_type_dict_by_name=config_type_dict_by_name,
         config_type_dict_by_key=config_type_dict_by_key,

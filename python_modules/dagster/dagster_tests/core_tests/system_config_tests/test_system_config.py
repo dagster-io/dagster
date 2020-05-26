@@ -20,7 +20,7 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.validate import process_config
-from dagster.core.definitions import create_environment_schema, create_environment_type
+from dagster.core.definitions import create_environment_type, create_run_config_schema
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
     define_solid_config_cls,
@@ -59,9 +59,9 @@ def test_all_types_provided():
         ],
     )
 
-    environment_schema = create_environment_schema(pipeline_def)
+    run_config_schema = create_run_config_schema(pipeline_def)
 
-    all_types = list(environment_schema.all_config_types())
+    all_types = list(run_config_schema.all_config_types())
 
     matching_types = [
         tt

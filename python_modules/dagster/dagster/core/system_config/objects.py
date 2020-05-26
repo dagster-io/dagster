@@ -2,8 +2,8 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions.run_config_schema import create_environment_type
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import ensure_single_item
 

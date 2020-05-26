@@ -19,11 +19,6 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
-from .environment_schema import (
-    EnvironmentSchema,
-    create_environment_schema,
-    create_environment_type,
-)
 from .events import (
     EventMetadataEntry,
     ExpectationResult,
@@ -56,6 +51,7 @@ from .preset import PresetDefinition
 from .reconstructable import ReconstructablePipeline, reconstructable
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
+from .run_config_schema import RunConfigSchema, create_environment_type, create_run_config_schema
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 from .solid_container import IContainSolids, create_execution_structure
