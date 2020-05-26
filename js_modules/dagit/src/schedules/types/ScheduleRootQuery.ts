@@ -105,7 +105,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
-  runningJobCount: number;
+  runningScheduleCount: number;
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks[];
   runsCount: number;

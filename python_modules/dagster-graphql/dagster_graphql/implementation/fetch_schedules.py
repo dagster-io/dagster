@@ -19,8 +19,9 @@ from .utils import (
 def start_schedule(graphene_info, schedule_name):
     external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
-
-    schedule = instance.start_schedule(external_repository.name, schedule_name)
+    schedule = instance.start_schedule_and_update_storage_state(
+        external_repository.name, schedule_name
+    )
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
             graphene_info, schedule=schedule
@@ -32,8 +33,9 @@ def start_schedule(graphene_info, schedule_name):
 def stop_schedule(graphene_info, schedule_name):
     external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
-
-    schedule = instance.stop_schedule(external_repository.name, schedule_name)
+    schedule = instance.stop_schedule_and_update_storage_state(
+        external_repository.name, schedule_name
+    )
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
             graphene_info, schedule=schedule

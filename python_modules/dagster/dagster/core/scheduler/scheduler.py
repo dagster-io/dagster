@@ -6,8 +6,40 @@ import six
 
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleDefinitionData
+from dagster.core.errors import DagsterError
+from dagster.core.instance import DagsterInstance
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
+
+
+class DagsterSchedulerError(DagsterError):
+    '''Base class for all Dagster Scheduler errors'''
+
+
+class DagsterScheduleReconciliationError(DagsterError):
+    '''Error raised during schedule state reconcilation. During reconcilation, exceptions that are
+    raised when trying to start or stop a schedule are collected and passed to this wrapper exception.
+    The individual exceptions can be accessed by the `errors` property. '''
+
+    def __init__(self, preamble, errors, *args, **kwargs):
+        self.errors = errors
+
+        error_msg = preamble
+        error_messages = []
+        for i_error, error in enumerate(self.errors):
+            error_messages.append(str(error))
+            error_msg += '\n    Error {i_error}: {error_message}'.format(
+                i_error=i_error + 1, error_message=str(error)
+            )
+
+        self.message = error_msg
+        self.error_messages = error_messages
+
+        super(DagsterScheduleReconciliationError, self).__init__(error_msg, *args, **kwargs)
+
+
+class DagsterScheduleDoesNotExist(DagsterSchedulerError):
+    '''Errors raised when ending a job for a schedule.'''
 
 
 @whitelist_for_serdes
@@ -121,6 +153,17 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
     an external system such as cron to ensure scheduled repeated execution according.
     '''
 
+    def _get_schedule_by_name(self, instance, repository_name, schedule_name):
+        schedule = instance.get_schedule_by_name(repository_name, schedule_name)
+        if not schedule:
+            raise DagsterScheduleDoesNotExist(
+                'You have attempted to start the job for schedule {name}, but it does not exist.'.format(
+                    name=schedule_name
+                )
+            )
+
+        return schedule
+
     def reconcile_scheduler_state(self, instance, repository, python_path, repository_path):
         '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
         on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
@@ -170,17 +213,110 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         existing_schedule_names = set([s.name for s in instance.all_schedules(repository.name)])
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
+        schedule_reconciliation_errors = []
         for schedule in schedules_to_restart:
             # Restart is only needed if the schedule was previously running
             if schedule.status == ScheduleStatus.RUNNING:
-                self.stop_schedule(instance, repository.name, schedule.name)
-                self.start_schedule(instance, repository.name, schedule.name)
+                try:
+                    self.stop_schedule(instance, repository.name, schedule.name)
+                    self.start_schedule(instance, repository.name, schedule.name)
+                except DagsterSchedulerError as e:
+                    schedule_reconciliation_errors.append(e)
 
             if schedule.status == ScheduleStatus.STOPPED:
-                self.stop_schedule(instance, repository.name, schedule.name)
+                try:
+                    self.stop_schedule(instance, repository.name, schedule.name)
+                except DagsterSchedulerError as e:
+                    schedule_reconciliation_errors.append(e)
 
         for schedule_name in schedule_names_to_delete:
-            self.end_schedule(instance, repository.name, schedule_name)
+            try:
+                instance.stop_schedule_and_delete_from_storage(repository.name, schedule_name)
+            except DagsterSchedulerError as e:
+                schedule_reconciliation_errors.append(e)
+
+        if len(schedule_reconciliation_errors):
+            raise DagsterScheduleReconciliationError(
+                "One or more errors were encountered by the Scheduler while starting or stopping schedules. "
+                "Individual error messages follow:",
+                errors=schedule_reconciliation_errors,
+            )
+
+    def start_schedule_and_update_storage_state(self, instance, repository_name, schedule_name):
+        '''
+        Updates the status of the given schedule to `ScheduleStatus.RUNNING` in schedule storage,
+        then calls `start_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            repository (RepositoryDefinition): The repository containing the schedule definition.
+            schedule_name (string): The name of the schedule to start running.
+        '''
+
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.str_param(repository_name, 'repository_name')
+        check.str_param(schedule_name, 'schedule_name')
+
+        schedule = self._get_schedule_by_name(instance, repository_name, schedule_name)
+
+        if schedule.status == ScheduleStatus.RUNNING:
+            raise DagsterSchedulerError(
+                'You have attempted to start schedule {name}, but it is already running'.format(
+                    name=schedule_name
+                )
+            )
+
+        self.start_schedule(instance, repository_name, schedule.name)
+        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
+        instance.update_schedule(repository_name, started_schedule)
+        return started_schedule
+
+    def stop_schedule_and_update_storage_state(self, instance, repository_name, schedule_name):
+        '''
+        Updates the status of the given schedule to `ScheduleStatus.STOPPED` in schedule storage,
+        then calls `stop_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            repository (RepositoryDefinition): The repository containing the schedule definition.
+            schedule_name (string): The name of the schedule to start running.
+        '''
+
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.str_param(repository_name, 'repository_name')
+        check.str_param(schedule_name, 'schedule_name')
+
+        schedule = self._get_schedule_by_name(instance, repository_name, schedule_name)
+
+        self.stop_schedule(instance, repository_name, schedule.name)
+        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
+        instance.update_schedule(repository_name, stopped_schedule)
+        return stopped_schedule
+
+    def stop_schedule_and_delete_from_storage(self, instance, repository_name, schedule_name):
+        '''
+        Deletes a schedule from schedule storage, then calls `stop_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            repository (RepositoryDefinition): The repository containing the schedule definition.
+            schedule_name (string): The name of the schedule to start running.
+        '''
+
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.str_param(repository_name, 'repository_name')
+        check.str_param(schedule_name, 'schedule_name')
+
+        schedule = self._get_schedule_by_name(instance, repository_name, schedule_name)
+        self.stop_schedule(instance, repository_name, schedule.name)
+        instance.delete_schedule(repository_name, schedule)
+        return schedule
 
     @abc.abstractmethod
     def debug_info(self):
@@ -189,41 +325,56 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
     @abc.abstractmethod
     def start_schedule(self, instance, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
+        '''Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
+        which first updates the status of the schedule in schedule storage to `ScheduleStatus.RUNNING`,
+        then calls this method.
+
+        For example, in the cron scheduler, this method writes a cron job to the cron tab
+        for the given schedule.
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to start the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to resume
+            instance (DagsterInstance): The current instance.S
+            repository_name (string): The name of the repository containing the schedule definition.
+            schedule_name (string): The name of the schedule to start running.
         '''
 
     @abc.abstractmethod
     def stop_schedule(self, instance, repository_name, schedule_name):
-        '''Stops an existing pipeline schedule
+        '''Stop running a schedule.
+
+        This method is called by
+        1) `stop_schedule_and_update_storage_state`,
+        which first updates the status of the schedule in schedule storage to `ScheduleStatus.STOPPED`,
+        then calls this method.
+        2) `stop_schedule_and_delete_from_storage`, which deletes the schedule from schedule storage
+        then calls this method.
+
+        For example, in the cron scheduler, this method deletes the cron job for a given scheduler
+        from the cron tab.
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to stop the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to stop
+            instance (DagsterInstance): The current instance.
+            repository_name (string): The name of the repository containing the schedule definition.
+            schedule_name (string): The schedule to stop running.
         '''
 
     @abc.abstractmethod
-    def end_schedule(self, instance, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
+    def running_schedule_count(self, repository_name, schedule_name):
+        '''Returns the number of jobs currently running for the given schedule. This method is used
+        for detecting when the scheduler is out of sync with schedule storage.
+
+        For example, when:
+        - There are duplicate jobs runnning for a single schedule
+        - There are no jobs runnning for a schedule that is set to be running
+        - There are still jobs running for a schedule that is set to be stopped
+
+        When the scheduler and schedule storage are in sync, this method should return:
+        - 1 when a schedule is set to be running
+        - 0 wen a schedule is set to be stopped
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to end the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to end and delete
-        '''
-
-    @abc.abstractmethod
-    def running_job_count(self, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
-
-        Args:
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The name of the schedule to check
+            repository_name (string): The name of the repository containing the schedule definition.
+            schedule_name (string): The schedule to return the number of jobs for
         '''
 
     @abc.abstractmethod
