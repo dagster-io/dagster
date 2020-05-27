@@ -51,6 +51,12 @@ def get_pyspark_pipelines():
     return [pyspark_pagerank, simple_pyspark_sfo_weather_pipeline]
 
 
+def get_lakehouse_pipelines():
+    from dagster_examples.simple_lakehouse.pipelines import simple_lakehouse_pipeline
+
+    return [simple_lakehouse_pipeline]
+
+
 def get_jaffle_pipelines():
     from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
 
@@ -77,6 +83,7 @@ def define_demo_repo():
         + get_event_pipelines()
         + get_jaffle_pipelines()
         + get_pyspark_pipelines()
+        + get_lakehouse_pipelines()
         + get_toys_pipelines()
     )
 

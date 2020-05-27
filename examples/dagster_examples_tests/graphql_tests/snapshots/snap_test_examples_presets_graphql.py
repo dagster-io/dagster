@@ -923,6 +923,36 @@ snapshots['test_presets_on_examples 14'] = {
 
 snapshots['test_presets_on_examples 15'] = {
     'pipelineOrError': {
+        'name': 'simple_lakehouse_pipeline',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  filesystem:
+    config:
+      root: .
+''',
+                'mode': 'dev',
+                'name': 'dev',
+                'solidSubset': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  filesystem:
+    config:
+      root: .
+''',
+                'mode': 'prod',
+                'name': 'prod',
+                'solidSubset': None
+            }
+        ]
+    }
+}
+
+snapshots['test_presets_on_examples 16'] = {
+    'pipelineOrError': {
         'name': 'simple_pyspark_sfo_weather_pipeline',
         'presets': [
             {
@@ -978,7 +1008,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 16'] = {
+snapshots['test_presets_on_examples 17'] = {
     'pipelineOrError': {
         'name': 'sleepy_pipeline',
         'presets': [
@@ -1004,7 +1034,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 17'] = {
+snapshots['test_presets_on_examples 18'] = {
     'pipelineOrError': {
         'name': 'stdout_spew_pipeline',
         'presets': [
@@ -1012,7 +1042,7 @@ snapshots['test_presets_on_examples 17'] = {
     }
 }
 
-snapshots['test_presets_on_examples 18'] = {
+snapshots['test_presets_on_examples 19'] = {
     'pipelineOrError': {
         'name': 'unreliable_pipeline',
         'presets': [

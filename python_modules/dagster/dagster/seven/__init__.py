@@ -12,6 +12,11 @@ from types import MethodType
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
+if hasattr(inspect, 'signature'):
+    funcsigs = inspect
+else:
+    import funcsigs
+
 # pylint: disable=no-name-in-module,import-error,no-member
 if sys.version_info < (3, 0):
     # Python 2 tempfile doesn't have tempfile.TemporaryDirectory

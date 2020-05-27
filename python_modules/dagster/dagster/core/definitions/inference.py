@@ -5,14 +5,10 @@ import six
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.seven import funcsigs
 
 from .input import InputDefinition
 from .output import OutputDefinition
-
-if hasattr(inspect, 'signature'):
-    funcsigs = inspect
-else:
-    import funcsigs
 
 
 def infer_output_definitions(decorator_name, solid_name, fn):

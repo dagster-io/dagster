@@ -1,1 +1,0 @@
-CREATE TABLE TableTwo AS SELECT 2 as num

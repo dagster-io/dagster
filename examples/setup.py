@@ -35,6 +35,7 @@ setup(
             'google-api-python-client',
             'google-cloud-storage',
             'keras',
+            'lakehouse',
             'matplotlib==3.0.2; python_version >= "3.5"',
             'matplotlib==2.2.4; python_version < "3.5"',
             'mock',
