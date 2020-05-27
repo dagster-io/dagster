@@ -19,7 +19,7 @@ def is_clear_execution_manager(manager):
 
 def test_term_event_lifecycle():
     context = define_test_subprocess_context(DagsterInstance.local_temp())
-    execution_manager = context.legacy_environment.execution_manager
+    execution_manager = context.legacy_location.execution_manager
     is_clear_execution_manager(execution_manager)
     result = execute_dagster_graphql(
         context,

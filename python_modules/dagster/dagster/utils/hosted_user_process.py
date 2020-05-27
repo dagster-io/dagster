@@ -15,10 +15,10 @@ from dagster.core.definitions.reconstructable import (
     repository_def_from_pointer,
 )
 from dagster.core.host_representation import (
-    EnvironmentHandle,
     ExternalPipeline,
     ExternalRepository,
     InProcessOrigin,
+    LocationHandle,
     PipelineHandle,
     RepositoryHandle,
 )
@@ -31,7 +31,7 @@ from dagster.core.host_representation.external_data import (
 # we can do this because we only use in a hosted user process
 def pipeline_def_from_pipeline_handle(pipeline_handle):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.environment_handle.in_process_origin.pointer
+    pointer = pipeline_handle.repository_handle.location_handle.in_process_origin.pointer
     repo_def = repository_def_from_pointer(pointer)
     return repo_def.get_pipeline(pipeline_handle.pipeline_name)
 
@@ -41,8 +41,8 @@ def repository_handle_from_recon_repo(recon_repo):
     repository_name = recon_repo.get_definition().name
     return RepositoryHandle(
         repository_name=repository_name,
-        environment_handle=EnvironmentHandle(
-            environment_name=repository_name + '-environment',
+        location_handle=LocationHandle(
+            location_name=repository_name + '-location',
             in_process_origin=InProcessOrigin(
                 pointer=recon_repo.pointer, repo_yaml=recon_repo.yaml_path
             ),
@@ -74,7 +74,7 @@ def external_repo_from_yaml(yaml_path):
 def external_repo_from_repository_handle(repository_handle):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
 
-    pointer = repository_handle.environment_handle.in_process_origin.pointer
+    pointer = repository_handle.location_handle.in_process_origin.pointer
     repository_def = repository_def_from_pointer(pointer)
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 

@@ -605,7 +605,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
         # Terminate the current pipeline run at the second step
-        graphql_context.legacy_environment.execution_manager.terminate(run_id)
+        graphql_context.legacy_location.execution_manager.terminate(run_id)
 
         records = instance.all_logs(run_id)
 
@@ -648,7 +648,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
             },
         )
         # Wait until the run is finished
-        while graphql_context.legacy_environment.execution_manager.is_process_running(new_run_id):
+        while graphql_context.legacy_location.execution_manager.is_process_running(new_run_id):
             pass
 
         retry_records = instance.all_logs(new_run_id)

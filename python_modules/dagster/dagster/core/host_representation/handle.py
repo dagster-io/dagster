@@ -17,28 +17,28 @@ class InProcessOrigin(namedtuple('_InProcessOrigin', 'pointer repo_yaml')):
         return target() if callable(target) else target
 
 
-class EnvironmentHandle(namedtuple('_EnvironmentHandle', 'environment_name in_process_origin')):
-    def __new__(cls, environment_name, in_process_origin):
-        return super(EnvironmentHandle, cls).__new__(
+class LocationHandle(namedtuple('_LocationHandle', 'location_name in_process_origin')):
+    def __new__(cls, location_name, in_process_origin):
+        return super(LocationHandle, cls).__new__(
             cls,
-            check.str_param(environment_name, 'environment_name'),
+            check.str_param(location_name, 'location_name'),
             check.inst_param(in_process_origin, 'in_process_origin', InProcessOrigin),
         )
 
     @staticmethod
-    def legacy_from_yaml(environment_name, repo_yaml):
-        return EnvironmentHandle(
-            environment_name=environment_name,
+    def legacy_from_yaml(location_name, repo_yaml):
+        return LocationHandle(
+            location_name=location_name,
             in_process_origin=InProcessOrigin(CodePointer.from_yaml(repo_yaml), repo_yaml),
         )
 
 
-class RepositoryHandle(namedtuple('_RepositoryHandle', 'repository_name environment_handle')):
-    def __new__(cls, repository_name, environment_handle):
+class RepositoryHandle(namedtuple('_RepositoryHandle', 'repository_name location_handle')):
+    def __new__(cls, repository_name, location_handle):
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, 'repository_name'),
-            check.inst_param(environment_handle, 'environment_handle', EnvironmentHandle),
+            check.inst_param(location_handle, 'location_handle', LocationHandle),
         )
 
 
@@ -51,14 +51,12 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
         )
 
     def to_string(self):
-        return '{self.environment_name}.{self.repository_name}.{self.pipeline_name}'.format(
-            self=self
-        )
+        return '{self.location_name}.{self.repository_name}.{self.pipeline_name}'.format(self=self)
 
     @property
     def repository_name(self):
         return self.repository_handle.repository_name
 
     @property
-    def environment_name(self):
-        return self.repository_handle.environment_handle.environment_name
+    def location_name(self):
+        return self.repository_handle.location_handle.location_name

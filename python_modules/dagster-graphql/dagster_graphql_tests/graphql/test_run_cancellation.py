@@ -81,8 +81,8 @@ class TestRunVariantTermination(
 
     def test_terminate_failed(self, graphql_context):
         with safe_tempfile_path() as path:
-            old_terminate = graphql_context.legacy_environment.execution_manager.terminate
-            graphql_context.legacy_environment.execution_manager.terminate = lambda _run_id: False
+            old_terminate = graphql_context.legacy_location.execution_manager.terminate
+            graphql_context.legacy_location.execution_manager.terminate = lambda _run_id: False
             result = execute_dagster_graphql(
                 graphql_context,
                 START_PIPELINE_EXECUTION_QUERY,
@@ -116,7 +116,7 @@ class TestRunVariantTermination(
                 'Unable to terminate run'
             )
 
-            graphql_context.legacy_environment.execution_manager.terminate = old_terminate
+            graphql_context.legacy_location.execution_manager.terminate = old_terminate
 
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={'runId': run_id}
@@ -130,7 +130,7 @@ class TestRunVariantTermination(
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance
         pipeline_result = execute_pipeline(
-            graphql_context.legacy_environment.get_reconstructable_pipeline('noop_pipeline'),
+            graphql_context.legacy_location.get_reconstructable_pipeline('noop_pipeline'),
             instance=instance,
         )
         assert pipeline_result.success

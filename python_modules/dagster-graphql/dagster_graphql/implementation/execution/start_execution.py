@@ -58,7 +58,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         )
 
     check.invariant(
-        graphene_info.context.legacy_environment.execution_manager,
+        graphene_info.context.legacy_location.execution_manager,
         'Must have execution manager configured is you are not using a hijacking run launcher',
     )
 

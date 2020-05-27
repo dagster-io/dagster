@@ -13,7 +13,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_co
 def test_readonly_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
-        assert context.legacy_environment.execution_manager is None
+        assert context.legacy_location.execution_manager is None
         assert isinstance(context.instance.run_launcher, ExplodingRunLauncher)
 
 
@@ -22,7 +22,7 @@ def test_hijacking_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     assert pytest.mark.hijacking in variant.marks
     with manage_graphql_context(variant) as context:
-        assert context.legacy_environment.execution_manager is None
+        assert context.legacy_location.execution_manager is None
         assert context.instance.run_launcher.hijack_start
 
 
@@ -32,7 +32,7 @@ def test_hijacking_variants(variant):
 def test_legacy_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
-        assert context.legacy_environment.execution_manager
+        assert context.legacy_location.execution_manager
 
 
 def get_all_static_functions(klass):

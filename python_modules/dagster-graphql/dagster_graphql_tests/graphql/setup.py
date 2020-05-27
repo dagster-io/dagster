@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
+    InProcessRepositoryLocation,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
@@ -100,8 +100,8 @@ def create_main_recon_repo():
 def define_test_snapshot_context():
     return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
-        environments=[
-            InProcessDagsterEnvironment(
+        locations=[
+            InProcessRepositoryLocation(
                 create_main_recon_repo(), execution_manager=SynchronousExecutionManager(),
             )
         ],

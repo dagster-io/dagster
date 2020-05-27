@@ -9,7 +9,7 @@ import warnings
 import nbformat
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
+    InProcessRepositoryLocation,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import (
     QueueingSubprocessExecutionManager,
@@ -203,8 +203,8 @@ def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
     print('Loading repository...')
     context = DagsterGraphQLContext(
         instance=instance,
-        environments=[
-            InProcessDagsterEnvironment(
+        locations=[
+            InProcessRepositoryLocation(
                 recon_repo, execution_manager=execution_manager, reloader=reloader,
             )
         ],
@@ -218,7 +218,7 @@ def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
     if repository.schedule_defs:
         if scheduler:
             python_path = sys.executable
-            repository_path = context.legacy_environment.get_reconstructable_repository().yaml_path
+            repository_path = context.legacy_location.get_reconstructable_repository().yaml_path
             reconcile_scheduler_state(
                 python_path, repository_path, repository=repository, instance=instance
             )

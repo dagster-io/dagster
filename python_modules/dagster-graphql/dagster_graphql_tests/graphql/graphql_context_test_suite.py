@@ -5,8 +5,8 @@ import pytest
 import six
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
-    OutOfProcessDagsterEnvironment,
+    InProcessRepositoryLocation,
+    OutOfProcessRepositoryLocation,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import (
     PipelineExecutionManager,
@@ -35,7 +35,7 @@ class MarkedManager:
     MarkedManagers are passed to GraphQLContextVariants. They contain
     a contextmanager function "manager_fn" that yield the relevant
     instace, and it includes marks that will be applied to any
-    context-variant-driven test case that includes this MarkedManager. 
+    context-variant-driven test case that includes this MarkedManager.
 
     See InstanceManagers for an example construction.
 
@@ -207,7 +207,7 @@ class EnvironmentManagers:
         def _mgr_fn(recon_repo, execution_manager):
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
             check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
-            yield InProcessDagsterEnvironment(
+            yield InProcessRepositoryLocation(
                 recon_repo=recon_repo, execution_manager=execution_manager
             )
 
@@ -221,7 +221,7 @@ class EnvironmentManagers:
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
             check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
             repository_handle = repository_handle_from_recon_repo(recon_repo)
-            yield OutOfProcessDagsterEnvironment('test-out-of-process-env', repository_handle)
+            yield OutOfProcessRepositoryLocation('test-out-of-process-env', repository_handle)
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
 
@@ -306,7 +306,7 @@ class GraphQLContextVariant:
 
     marked_environment_mgr (MarkedManager): The manager_fn with in
     must be a contextmanager takes a ReconstructableRepo and a
-    PipelineExecutionManager and yields a DagsterEnvironment.
+    PipelineExecutionManager and yields a RepositoryLocation.
 
     See EnvironmentManagers for examples
 
@@ -529,7 +529,7 @@ def manage_graphql_context(context_variant, recon_repo=None):
     with context_variant.instance_mgr() as instance:
         with context_variant.em_mgr(instance) as execution_manager:
             with context_variant.environment_mgr(recon_repo, execution_manager) as environment:
-                yield DagsterGraphQLContext(instance=instance, environments=[environment])
+                yield DagsterGraphQLContext(instance=instance, locations=[environment])
 
 
 class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):
@@ -589,7 +589,7 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
     as well as common groups of run configuration
 
     One can also make bespoke GraphQLContextVariants which specific implementations
-    of DagsterInstance, DagsterEnvironment, and so forth. See that class
+    of DagsterInstance, RepositoryLocation, and so forth. See that class
     for more details.
 
 Example:

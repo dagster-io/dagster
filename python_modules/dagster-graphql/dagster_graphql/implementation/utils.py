@@ -30,14 +30,14 @@ class UserFacingGraphQLError(Exception):
 
 
 class PipelineSelector(
-    namedtuple('_PipelineSelector', 'environment_name repository_name pipeline_name solid_subset')
+    namedtuple('_PipelineSelector', 'location_name repository_name pipeline_name solid_subset')
 ):
     def __new__(
-        cls, environment_name, repository_name, pipeline_name, solid_subset,
+        cls, location_name, repository_name, pipeline_name, solid_subset,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,
-            environment_name=check.str_param(environment_name, 'environment_name'),
+            location_name=check.str_param(location_name, 'location_name'),
             repository_name=check.str_param(repository_name, 'repository_name'),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
             solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
@@ -45,7 +45,7 @@ class PipelineSelector(
 
     def to_graphql_input(self):
         return {
-            'environmentName': self.environment_name,
+            'environmentName': self.location_name,
             'repositoryName': self.repository_name,
             'pipelineName': self.pipeline_name,
             'solidSubset': self.solid_subset,
@@ -56,7 +56,7 @@ class PipelineSelector(
             self.solid_subset is None, 'Can not invoke with_solid_subset if one is already set'
         )
         return PipelineSelector(
-            self.environment_name, self.repository_name, self.pipeline_name, solid_subset
+            self.location_name, self.repository_name, self.pipeline_name, solid_subset
         )
 
     @classmethod
@@ -66,7 +66,7 @@ class PipelineSelector(
         check.inst_param(context, 'context', DagsterGraphQLContext)
 
         return cls(
-            environment_name=context.legacy_environment.name,
+            location_name=context.legacy_location.name,
             repository_name=context.legacy_external_repository.name,
             pipeline_name=name,
             solid_subset=solid_subset,
@@ -97,7 +97,7 @@ class PipelineSelector(
         )
 
         return cls(
-            environment_name=data['environmentName'],
+            location_name=data['environmentName'],
             repository_name=data['repositoryName'],
             pipeline_name=data['pipelineName'],
             solid_subset=data.get('solidSubset'),

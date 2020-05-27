@@ -22,7 +22,7 @@ def sync_get_external_repository(repo_handle):
             'repository',
             output_file,
             '-y',
-            repo_handle.environment_handle.in_process_origin.repo_yaml,
+            repo_handle.location_handle.in_process_origin.repo_yaml,
         ]
 
         process = subprocess.Popen(parts)

@@ -202,7 +202,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self.runId
 
     def resolve_canTerminate(self, graphene_info):
-        legacy_cancel = graphene_info.context.legacy_environment.execution_manager.can_terminate(
+        legacy_cancel = graphene_info.context.legacy_location.execution_manager.can_terminate(
             self.run_id
         )
         launcher_cancel = (
