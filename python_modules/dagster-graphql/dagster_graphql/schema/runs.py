@@ -556,7 +556,7 @@ class DauphinObjectStoreOperationResult(dauphin.ObjectType):
     op = dauphin.NonNull('ObjectStoreOperationType')
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinMaterialization(dauphin.ObjectType):
@@ -565,7 +565,7 @@ class DauphinMaterialization(dauphin.ObjectType):
         interfaces = (DauphinDisplayableEvent,)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinExpectationResult(dauphin.ObjectType):
@@ -576,7 +576,7 @@ class DauphinExpectationResult(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinTypeCheck(dauphin.ObjectType):
@@ -587,7 +587,7 @@ class DauphinTypeCheck(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinFailureMetadata(dauphin.ObjectType):
@@ -596,7 +596,7 @@ class DauphinFailureMetadata(dauphin.ObjectType):
         interfaces = (DauphinDisplayableEvent,)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinExecutionStepInputEvent(dauphin.ObjectType):

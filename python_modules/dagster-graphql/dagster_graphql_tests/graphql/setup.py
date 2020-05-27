@@ -672,7 +672,7 @@ def start(context):
 
 
 @solid(required_resource_keys={'b'})
-def will_fail(context, num):
+def will_fail(context, num):  # pylint: disable=unused-argument
     assert context.resources.b == 'B'
     raise Exception('fail')
 
@@ -690,7 +690,7 @@ def retry_resource_pipeline():
         OutputDefinition(str, 'start_skip', is_required=False),
     ],
 )
-def can_fail(context, inp):
+def can_fail(context, inp):  # pylint: disable=unused-argument
     if context.solid_config['fail']:
         raise Exception('blah')
 

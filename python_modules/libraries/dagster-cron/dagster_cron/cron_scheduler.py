@@ -18,7 +18,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     Enable this scheduler by adding it to your ``dagster.yaml`` in ``$DAGSTER_HOME``.
     '''
 
-    def __init__(  # pylint: disable=super-init-not-called
+    def __init__(
         self, inst_data=None,
     ):
         self._inst_data = inst_data

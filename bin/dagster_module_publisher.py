@@ -93,7 +93,7 @@ class DagsterModulePublisher:
 
         found_pyc_files = []
 
-        for root, dir_, files in os.walk(git_repo_root()):
+        for root, _, files in os.walk(git_repo_root()):
             for file_ in files:
                 if file_.endswith('.pyc'):
                     found_pyc_files.append(os.path.join(root, file_))
@@ -136,7 +136,6 @@ class DagsterModulePublisher:
         expected_modules_not_found = []
 
         module_directories = get_core_module_directories()
-        library_directories = get_library_module_directories()
 
         for module_dir in module_directories:
             if module_dir.name not in expected_python_modules_subdirectories:

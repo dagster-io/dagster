@@ -2,10 +2,10 @@ import datetime
 import sys
 import uuid
 
+import google.api_core.exceptions
 import pandas as pd
 import pytest
 from dagster_gcp import (
-    BigQueryError,
     bigquery_resource,
     bq_create_dataset,
     bq_delete_dataset,
@@ -151,6 +151,7 @@ def test_bad_config():
 
 
 def test_create_delete_dataset():
+    client = bigquery.Client()
     dataset = get_dataset()
 
     @pipeline(mode_defs=bq_modes())
@@ -162,9 +163,11 @@ def test_create_delete_dataset():
     assert execute_pipeline(create_pipeline, config).result_for_solid('create_solid').success
 
     config = {'solids': {'create_solid': {'config': {'dataset': dataset, 'exists_ok': False}}}}
-    with pytest.raises(BigQueryError) as exc_info:
+    with pytest.raises(
+        google.api_core.exceptions.Conflict,
+        match='Already Exists: Dataset %s:%s' % (client.project, dataset),
+    ):
         execute_pipeline(create_pipeline, config)
-    assert 'Dataset "%s" already exists and exists_ok is false' % dataset in str(exc_info.value)
 
     @pipeline(mode_defs=bq_modes())
     def delete_pipeline():
@@ -180,9 +183,11 @@ def test_create_delete_dataset():
 
     # Delete non-existent with "not_found_ok" False should fail
     config = {'solids': {'delete_solid': {'config': {'dataset': dataset, 'not_found_ok': False}}}}
-    with pytest.raises(BigQueryError) as exc_info:
+    with pytest.raises(
+        google.api_core.exceptions.NotFound,
+        match='Not found: Dataset %s:%s' % (client.project, dataset),
+    ):
         execute_pipeline(delete_pipeline, config)
-    assert 'Dataset "%s" does not exist and not_found_ok is false' % dataset in str(exc_info.value)
 
     assert not dataset_exists(dataset)
 

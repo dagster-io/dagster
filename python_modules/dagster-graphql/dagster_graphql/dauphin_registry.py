@@ -228,7 +228,9 @@ class DauphinTypeMap(GrapheneTypeMap):
 def create_registering_metaclass(registry):
     class RegisteringMetaclass(SubclassWithMeta_Meta):
         def __init__(cls, name, bases, namespaces):
-            super(RegisteringMetaclass, cls).__init__(name, bases, namespaces)
+            super(RegisteringMetaclass, cls).__init__(  # pylint: disable=no-value-for-parameter
+                name, bases, namespaces
+            )
             if any(base for base in bases if getattr(base, '__dauphinCoreType', False)):
                 registry.addType(cls)
 

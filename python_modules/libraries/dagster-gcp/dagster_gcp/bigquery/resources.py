@@ -1,8 +1,6 @@
-import google.api_core.exceptions
 import six
 from google.cloud import bigquery
 from google.cloud.bigquery.client import _DEFAULT_NUM_RETRIES
-from google.cloud.bigquery.retry import DEFAULT_RETRY
 
 from dagster import check, resource
 
@@ -14,27 +12,6 @@ class BigQueryClient(bigquery.Client):
     def __init__(self, project=None):
         check.opt_str_param(project, 'project')
         super(BigQueryClient, self).__init__(project=project)
-
-    def create_dataset(self, dataset, exists_ok=False, retry=DEFAULT_RETRY):
-        try:
-            super(BigQueryClient, self).create_dataset(dataset, exists_ok, retry)
-        except google.api_core.exceptions.Conflict:
-            six.raise_from(
-                BigQueryError('Dataset "%s" already exists and exists_ok is false' % dataset), None
-            )
-
-    def delete_dataset(
-        self, dataset, delete_contents=False, retry=DEFAULT_RETRY, not_found_ok=False
-    ):
-        try:
-            super(BigQueryClient, self).delete_dataset(
-                dataset, delete_contents=delete_contents, retry=retry, not_found_ok=not_found_ok
-            )
-        except google.api_core.exceptions.NotFound:
-            six.raise_from(
-                BigQueryError('Dataset "%s" does not exist and not_found_ok is false' % dataset),
-                None,
-            )
 
     def load_table_from_dataframe(
         self,
