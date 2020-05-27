@@ -13,8 +13,7 @@ sys.path.append(SCRIPT_PATH)
 
 def publish_integration_images():
     python_versions = [
-        ''.join(python_version.split('.')[:2])
-        for python_version in SupportedPythons + [SupportedPython.V3_8]
+        ''.join(python_version.split('.')[:2]) for python_version in SupportedPythons
     ]
     publish_date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S")
 

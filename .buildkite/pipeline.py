@@ -1,23 +1,19 @@
 import os
 import subprocess
-import sys
 
 import yaml
-from defines import SupportPython3sEx35, SupportedPython, SupportedPython3s, SupportedPythons
+from defines import (
+    TOX_MAP,
+    SupportedPython,
+    SupportedPython3s,
+    SupportedPython3sNo38,
+    SupportedPythons,
+    SupportedPythonsNo38,
+)
+from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
-
-sys.path.append(SCRIPT_PATH)
-
-
-TOX_MAP = {
-    SupportedPython.V3_8: "py38",
-    SupportedPython.V3_7: "py37",
-    SupportedPython.V3_6: "py36",
-    SupportedPython.V3_5: "py35",
-    SupportedPython.V2_7: "py27",
-}
 
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = True
@@ -80,7 +76,7 @@ def publish_test_images():
     '''
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
+    for version in SupportedPythons:
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
         tests.append(
             StepBuilder("test images {version}".format(version=version), key=key)
@@ -116,43 +112,14 @@ def publish_test_images():
     return tests
 
 
-def python_modules_tox_tests(directory, supported_pythons=None):
-    label = directory.replace("/", "-")
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    supported_pythons = supported_pythons or SupportedPythons + [SupportedPython.V3_8]
-    for version in supported_pythons:
-
-        # pyspark doesn't support Python 3.8 yet
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        if ('pyspark' in label or 'aws' in label) and version == SupportedPython.V3_8:
-            continue
-
-        coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
-            label=label, version=version
-        )
-        tests.append(
-            StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
-            .run(
-                "eval $(ssh-agent)",
-                "cd python_modules/{directory}".format(directory=directory),
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(
-                version,
-                ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN',],
-            )
-            .build()
-        )
-
-    return tests
+def test_image_depends_fn(version):
+    return ["dagster-test-images-{version}".format(version=TOX_MAP[version])]
 
 
 def airline_demo_tests():
     tests = []
-    for version in SupportedPython3s:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPython3sNo38:
         coverage = ".coverage.airline-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('airline-demo tests ({version})'.format(version=TOX_MAP[version]))
@@ -183,7 +150,8 @@ def airline_demo_tests():
 
 def events_demo_tests():
     tests = []
-    for version in SupportedPython3s:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPython3sNo38:
         coverage = ".coverage.events-demo.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder('events-demo tests ({version})'.format(version=TOX_MAP[version]))
@@ -201,10 +169,26 @@ def events_demo_tests():
     return tests
 
 
+def dagit_extra_cmds_fn(_):
+    return ["make rebuild_dagit"]
+
+
+def examples_extra_cmds_fn(_):
+    return [
+        "pushd examples",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container('postgres'),
+        connect_sibling_docker_container('postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'),
+        "popd",
+    ]
+
+
 def _airflow_tests(name='', tox_args=''):
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons:
+    for version in SupportedPythonsNo38:
         coverage = ".coverage.dagster-airflow{name}.{version}.$BUILDKITE_BUILD_ID".format(
             name=name, version=version
         )
@@ -250,317 +234,177 @@ def airflow_tests():
     )
 
 
-def k8s_tests():
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
-        coverage = ".coverage.dagster-k8s.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("dagster-k8s ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-                "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
-                "pushd python_modules/libraries/dagster-k8s/",
-                "tox -vv -e {ver} -- -s".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-                "popd",
-            )
-            .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
-            .on_integration_image(
-                version,
-                [
-                    'AWS_ACCOUNT_ID',
-                    'AWS_ACCESS_KEY_ID',
-                    'AWS_SECRET_ACCESS_KEY',
-                    'BUILDKITE_SECRETS_BUCKET',
-                ],
-            )
-            .build()
-        )
-    return tests
+def celery_extra_cmds_fn(version):
+    return [
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        "pushd python_modules/libraries/dagster-celery",
+        # Run the rabbitmq db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container('rabbitmq'),
+        connect_sibling_docker_container('rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'),
+        "popd",
+    ]
 
 
-def celery_tests():
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
-        coverage = ".coverage.dagster-celery.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("[dagster-celery] ({ver})".format(ver=TOX_MAP[version]))
-            .on_integration_image(
-                version, ['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',],
-            )
-            .run(
-                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-                "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
-                "pushd python_modules/libraries/dagster-celery",
-                # Run the rabbitmq db. We are in docker running docker
-                # so this will be a sibling container.
-                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-                # Can't use host networking on buildkite and communicate via localhost
-                # between these sibling containers, so pass along the ip.
-                network_buildkite_container('rabbitmq'),
-                connect_sibling_docker_container(
-                    'rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'
-                ),
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
-            .build()
-        )
-    return tests
+def dask_extra_cmds_fn(version):
+    return [
+        "pushd python_modules/libraries/dagster-dask/dagster_dask_tests/dask-docker",
+        "./build.sh " + version,
+        # Run the docker-compose dask cluster
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        network_buildkite_container('dask'),
+        connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS'),
+        "popd",
+    ]
 
 
-def flyte_tests():
-    tests = []
-    for version in SupportedPython3s:
-        coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("dagster-flyte tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "pushd python_modules/libraries/dagster-flyte",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(version)
-            .build()
-        )
-
-    tests.append(
-        StepBuilder("dagster-flyte build example")
-        .run("cd python_modules/libraries/dagster-flyte/examples", "make docker_build",)
-        .on_integration_image(SupportedPython.V3_6)
-        .build()
-    )
-    return tests
+def k8s_extra_cmds_fn(version):
+    return [
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+    ]
 
 
-def dagster_postgres_tests():
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
-        coverage = ".coverage.dagster-postgres.{version}.$BUILDKITE_BUILD_ID".format(
-            version=version
-        )
-        tests.append(
-            StepBuilder("libraries/dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-                "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
-                network_buildkite_container('postgres'),
-                connect_sibling_docker_container(
-                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                ),
-                network_buildkite_container('postgres_multi'),
-                connect_sibling_docker_container(
-                    'postgres_multi', 'test-run-storage-db', 'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
-                ),
-                connect_sibling_docker_container(
-                    'postgres_multi',
-                    'test-event-log-storage-db',
-                    'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
-                ),
-                connect_sibling_docker_container(
-                    'postgres_multi',
-                    'test-schedule-storage-db',
-                    'POSTGRES_TEST_SCHEDULE_STORAGE_DB_HOST',
-                ),
-                "pushd ../",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-                "popd",
-            )
-            .on_integration_image(version)
-            .build()
-        )
-    return tests
+def postgres_extra_cmds_fn(_):
+    return [
+        "pushd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
+        network_buildkite_container('postgres'),
+        connect_sibling_docker_container('postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'),
+        network_buildkite_container('postgres_multi'),
+        connect_sibling_docker_container(
+            'postgres_multi', 'test-run-storage-db', 'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
+        ),
+        connect_sibling_docker_container(
+            'postgres_multi',
+            'test-event-log-storage-db',
+            'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
+        ),
+        connect_sibling_docker_container(
+            'postgres_multi', 'test-schedule-storage-db', 'POSTGRES_TEST_SCHEDULE_STORAGE_DB_HOST',
+        ),
+        "popd",
+    ]
 
 
-def examples_tests():
-    tests = []
-    for version in SupportedPython3s:
-        coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "pushd examples",
-                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-                # Can't use host networking on buildkite and communicate via localhost
-                # between these sibling containers, so pass along the ip.
-                network_buildkite_container('postgres'),
-                connect_sibling_docker_container(
-                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                ),
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(version)
-            .build()
-        )
-    return tests
-
-
-def automation_tests():
-    tests = []
-    version = SupportedPython.V3_7
-    coverage = ".coverage.automation.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-    tests.append(
-        StepBuilder("automation tests ({ver})".format(ver=TOX_MAP[version]))
-        .run(
-            "pushd python_modules/automation",
-            "tox -e {ver}".format(ver=TOX_MAP[version]),
-            "mv .coverage {file}".format(file=coverage),
-            "buildkite-agent artifact upload {file}".format(file=coverage),
-        )
-        .on_integration_image(version)
-        .build()
-    )
-    return tests
-
-
-def gcp_tests():
-    tests = []
-    for version in SupportedPythons:
-        coverage = ".coverage.libraries-dagster-gcp.{version}.$BUILDKITE_BUILD_ID".format(
-            version=version
-        )
-        tests.append(
-            StepBuilder("libraries-dagster-gcp tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-                + GCP_CREDS_LOCAL_FILE,
-                "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "cd python_modules/libraries/dagster-gcp",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(
-                version,
-                [
-                    'BUILDKITE_SECRETS_BUCKET',
-                    'AWS_ACCESS_KEY_ID',
-                    'AWS_SECRET_ACCESS_KEY',
-                    'GCP_PROJECT_ID',
-                ],
-            )
-            .build()
-        )
-
-    return tests
-
-
-def dask_tests():
-    tests = []
-    # We don't test dagster-dask against Python 3.5 because Dask dropped support
-    # for 3.5 with Dask 2.7.0 (2019-11-08)
-    for version in SupportPython3sEx35:
-        coverage = ".coverage.dagster-dask.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("dagster-dask tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "pushd python_modules/libraries/dagster-dask/dagster_dask_tests/dask-docker",
-                "./build.sh " + version,
-                # Run the docker-compose dask cluster
-                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-                network_buildkite_container('dask'),
-                connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS'),
-                "popd",
-                "pushd python_modules/libraries/dagster-dask/",
-                "tox -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(
-                version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
-            )
-            .build()
-        )
-    return tests
+def gcp_extra_cmds_fn(_):
+    return [
+        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
+        + GCP_CREDS_LOCAL_FILE,
+        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+    ]
 
 
 def library_tests():
+    # Some libraries have more involved test configs or support only certain Python version;
+    # special-case those here
+    library_specs = {
+        'dagster-airflow': ModuleBuildSpec(
+            'python_modules/libraries/dagster-airflow', depends_on_fn=test_image_depends_fn
+        ),
+        'dagster-aws': ModuleBuildSpec(
+            'python_modules/libraries/dagster-aws',
+            env_vars=['AWS_DEFAULT_REGION'],
+            # See: https://github.com/dagster-io/dagster/issues/1960
+            supported_pythons=SupportedPythonsNo38,
+        ),
+        'dagster-celery': ModuleBuildSpec(
+            'python_modules/libraries/dagster-celery',
+            env_vars=['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+            extra_cmds_fn=celery_extra_cmds_fn,
+            depends_on_fn=test_image_depends_fn,
+        ),
+        'dagster-dask': ModuleBuildSpec(
+            'python_modules/libraries/dagster-dask',
+            env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
+            supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
+            extra_cmds_fn=dask_extra_cmds_fn,
+        ),
+        'dagster-flyte': ModuleBuildSpec(
+            'python_modules/libraries/dagster-flyte', supported_pythons=SupportedPython3s,
+        ),
+        'dagster-gcp': ModuleBuildSpec(
+            'python_modules/libraries/dagster-gcp',
+            env_vars=[
+                'AWS_ACCESS_KEY_ID',
+                'AWS_SECRET_ACCESS_KEY',
+                'BUILDKITE_SECRETS_BUCKET',
+                'GCP_PROJECT_ID',
+            ],
+            extra_cmds_fn=gcp_extra_cmds_fn,
+        ),
+        'dagster-k8s': ModuleBuildSpec(
+            'python_modules/libraries/dagster-k8s',
+            env_vars=[
+                'AWS_ACCOUNT_ID',
+                'AWS_ACCESS_KEY_ID',
+                'AWS_SECRET_ACCESS_KEY',
+                'BUILDKITE_SECRETS_BUCKET',
+            ],
+            extra_cmds_fn=k8s_extra_cmds_fn,
+            depends_on_fn=test_image_depends_fn,
+        ),
+        'dagster-postgres': ModuleBuildSpec(
+            'python_modules/libraries/dagster-postgres', extra_cmds_fn=postgres_extra_cmds_fn
+        ),
+        'dagster-pyspark': ModuleBuildSpec(
+            'python_modules/libraries/dagster-pyspark',
+            # See: https://github.com/dagster-io/dagster/issues/1960
+            supported_pythons=SupportedPythonsNo38,
+        ),
+        'dagster-spark': ModuleBuildSpec(
+            'python_modules/libraries/dagster-spark',
+            # See: https://github.com/dagster-io/dagster/issues/1960
+            supported_pythons=SupportedPythonsNo38,
+        ),
+        'dagster-twilio': ModuleBuildSpec(
+            'python_modules/libraries/dagster-twilio',
+            env_vars=['TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN'],
+        ),
+        'dagstermill': ModuleBuildSpec(
+            'python_modules/libraries/dagstermill',
+            supported_pythons=[
+                SupportedPython.V2_7,
+                # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
+                SupportedPython.V3_6,
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+            ],
+        ),
+        'lakehouse': ModuleBuildSpec(
+            'python_modules/libraries/lakehouse',
+            supported_pythons=[SupportedPython.V3_5, SupportedPython.V3_6, SupportedPython.V3_7],
+        ),
+    }
+
     library_path = os.path.join(SCRIPT_PATH, '..', 'python_modules/libraries/')
     library_modules = set(os.listdir(library_path))
 
     tests = []
-
-    # Some libraries have more involved tests, which must be explicitly defined here
-    extra_test_libraries = {
-        'dagster-airflow': airflow_tests(),
-        'dagster-celery': celery_tests(),
-        'dagster-flyte': flyte_tests(),
-        'dagster-dask': dask_tests(),
-        'dagster-gcp': gcp_tests(),
-        'dagster-k8s': k8s_tests(),
-        'dagster-postgres': dagster_postgres_tests(),
-        'lakehouse': lakehouse_tests(),
-    }
-
     for library in library_modules:
-        if library in extra_test_libraries:
-            tests += extra_test_libraries[library]
-        else:
-            supported_pythons = None
+        # Special case these
+        if library == 'dagster-airflow':
+            tests += airflow_tests()
+            continue
 
-            # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
-            if library == 'dagstermill':
-                supported_pythons = [
-                    SupportedPython.V2_7,
-                    SupportedPython.V3_6,
-                    SupportedPython.V3_7,
-                    SupportedPython.V3_8,
-                ]
-            tests += python_modules_tox_tests(
-                "libraries/{library}".format(library=library), supported_pythons=supported_pythons
+        if library == 'dagster-flyte':
+            tests.append(
+                StepBuilder("dagster-flyte build example")
+                .run("cd python_modules/libraries/dagster-flyte/examples", "make docker_build")
+                .on_integration_image(SupportedPython.V3_6)
+                .build()
             )
 
-    return tests
-
-
-def dagit_tests():
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
-        coverage = ".coverage.dagit.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "make rebuild_dagit",
-                "cd python_modules/dagit",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(version)
-            .build()
+        library_spec = library_specs.get(
+            library, ModuleBuildSpec('python_modules/libraries/%s' % library)
         )
 
-    return tests
-
-
-def lakehouse_tests():
-    tests = []
-    for version in SupportedPython3s:
-        coverage = ".coverage.lakehouse.{version}.$BUILDKITE_BUILD_ID".format(version=version)
-        tests.append(
-            StepBuilder("lakehouse tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "cd python_modules/libraries/lakehouse",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            )
-            .on_integration_image(version)
-            .build()
-        )
+        tests += library_spec.get_tox_build_steps()
 
     return tests
 
@@ -694,28 +538,24 @@ def next_docs_build_tests():
     return tests
 
 
-def releasability_tests():
-    tests = []
-    for version in [SupportedPython.V3_7]:
-        tests.append(
-            StepBuilder("releasibility tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(
-                "pip install -r bin/requirements.txt",
-                "pip install -r bin/dev-requirements.txt",
-                "cd bin",
-                "SLACK_RELEASE_BOT_TOKEN='dummy' pytest",
-            )
-            .on_integration_image(version)
-            .build()
+def releasability_tests(version=SupportedPython.V3_7):
+    return [
+        StepBuilder("releasibility test")
+        .run(
+            "pip install -r bin/requirements.txt",
+            "pip install -r bin/dev-requirements.txt",
+            "cd bin",
+            "SLACK_RELEASE_BOT_TOKEN='dummy' pytest",
         )
+        .on_integration_image(version)
+        .build()
+    ]
 
-    return tests
 
-
-def version_equality_checks():
+def version_equality_checks(version=SupportedPython.V3_7):
     return [
         StepBuilder("version equality checks for libraries")
-        .on_integration_image(SupportedPython.V3_7)
+        .on_integration_image(version)
         .run("pip install -r bin/requirements.txt", "python bin/version_check.py")
         .build()
     ]
@@ -780,22 +620,32 @@ if __name__ == "__main__":
     ]
 
     steps += airline_demo_tests()
-    steps += automation_tests()
     steps += events_demo_tests()
-    steps += examples_tests()
 
-    steps += dagit_tests()
-    steps += pipenv_smoke_tests()
+    steps += ModuleBuildSpec(
+        "examples",
+        # See: https://github.com/dagster-io/dagster/issues/1960
+        # Also, examples are py3-only
+        supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_6, SupportedPython.V3_5],
+        extra_cmds_fn=examples_extra_cmds_fn,
+    ).get_tox_build_steps()
 
-    steps += python_modules_tox_tests("dagster")
-    steps += python_modules_tox_tests("dagster-graphql")
+    steps += ModuleBuildSpec(
+        "python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn
+    ).get_tox_build_steps()
+
+    steps += ModuleBuildSpec(
+        "python_modules/automation", supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
+    ).get_tox_build_steps()
+
+    for mod in ["python_modules/dagster", "python_modules/dagster-graphql"]:
+        steps += ModuleBuildSpec(mod).get_tox_build_steps()
 
     steps += library_tests()
 
+    steps += pipenv_smoke_tests()
     steps += version_equality_checks()
-
     steps += releasability_tests()
-
     steps += next_docs_build_tests()
 
     if DO_COVERAGE:
