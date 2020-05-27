@@ -1,6 +1,6 @@
 import re
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 from dagster import check
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -155,12 +155,13 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
     pipeline_run = graphql_context.instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': environment_dict,
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -193,6 +194,7 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
 
 def test_success_whole_execution_plan_with_filesystem_config(graphql_context, snapshot):
     instance = graphql_context.instance
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
@@ -202,7 +204,7 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': environment_dict,
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -233,6 +235,7 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
 
 def test_success_whole_execution_plan_with_in_memory_config(graphql_context, snapshot):
     instance = graphql_context.instance
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
@@ -242,7 +245,7 @@ def test_success_whole_execution_plan_with_in_memory_config(graphql_context, sna
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': environment_dict,
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -279,13 +282,14 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
 
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': environment_dict,
                 'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -342,12 +346,13 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result_one = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': environment_dict,
                 'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -365,7 +370,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': csv_hello_world_solids_config_fs_storage(),
                 'stepKeys': ['sum_sq_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
@@ -416,11 +421,12 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
 
 
 def test_invalid_config_fetch_execute_plan(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTION_PLAN_QUERY,
         variables={
-            'pipeline': {'name': 'csv_hello_world'},
+            'pipeline': selector,
             'runConfigData': {
                 'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
             },
@@ -443,12 +449,13 @@ def test_invalid_config_fetch_execute_plan(graphql_context, snapshot):
 
 
 def test_invalid_config_execute_plan(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
+                'selector': selector,
                 'runConfigData': {
                     'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
                 },
@@ -478,13 +485,13 @@ def test_invalid_config_execute_plan(graphql_context, snapshot):
 
 
 def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
-
+    selector = get_legacy_pipeline_selector(graphql_context, 'nope')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
-                'selector': {'name': 'nope'},
+                'selector': selector,
                 'runConfigData': {
                     'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'ok'}}}}}
                 },
@@ -505,6 +512,7 @@ def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
 
 
 def test_basic_execute_plan_with_materialization(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     with get_temp_file_name() as out_csv_path:
 
         environment_dict = {
@@ -519,11 +527,7 @@ def test_basic_execute_plan_with_materialization(graphql_context):
         result = execute_dagster_graphql(
             graphql_context,
             EXECUTION_PLAN_QUERY,
-            variables={
-                'pipeline': {'name': 'csv_hello_world'},
-                'runConfigData': environment_dict,
-                'mode': 'default',
-            },
+            variables={'pipeline': selector, 'runConfigData': environment_dict, 'mode': 'default',},
         )
 
         steps_data = result.data['executionPlanOrError']['steps']
@@ -543,7 +547,7 @@ def test_basic_execute_plan_with_materialization(graphql_context):
             EXECUTE_PLAN_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': environment_dict,
                     'stepKeys': ['sum_solid.compute', 'sum_sq_solid.compute'],
                     'executionMetadata': {'runId': pipeline_run.run_id},

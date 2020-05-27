@@ -1,10 +1,10 @@
 import re
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
-query EnvironmentQuery($pipelineName: String!, $solidSubset: [String!]){
-    runConfigSchemaOrError(selector :{ name: $pipelineName, solidSubset: $solidSubset}) {
+query EnvironmentQuery($selector: PipelineSelector!){
+    runConfigSchemaOrError(selector: $selector) {
         __typename
         ... on RunConfigSchema {
             allConfigTypes {
@@ -46,10 +46,9 @@ def types_dict_of_result(subset_result, top_key):
 
 
 def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
     result = execute_dagster_graphql(
-        graphql_context,
-        SCHEMA_OR_ERROR_SUBSET_QUERY,
-        {'pipelineName': 'csv_hello_world', 'solidSubset': ['nope']},
+        graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
     )
 
     assert not result.errors
@@ -59,10 +58,11 @@ def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_conte
 
 
 def test_pipeline_with_invalid_definition_error(graphql_context):
+    selector = get_legacy_pipeline_selector(
+        graphql_context, 'pipeline_with_invalid_definition_error', ['fail_subset']
+    )
     result = execute_dagster_graphql(
-        graphql_context,
-        SCHEMA_OR_ERROR_SUBSET_QUERY,
-        {'pipelineName': 'pipeline_with_invalid_definition_error', 'solidSubset': ['fail_subset'],},
+        graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
     )
     assert not result.errors
     assert result.data

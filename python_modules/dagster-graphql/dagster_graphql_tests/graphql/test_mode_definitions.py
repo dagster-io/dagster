@@ -1,6 +1,6 @@
 import graphql
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 from .utils import sync_execute_get_events
 
@@ -12,11 +12,12 @@ def get_step_output(logs, step_key):
 
 
 def test_multi_mode_successful(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
     add_mode_logs = sync_execute_get_events(
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'add_mode',
                 'runConfigData': {'resources': {'op': {'config': 2}}},
             }
@@ -28,7 +29,7 @@ def test_multi_mode_successful(graphql_context):
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'mult_mode',
                 'runConfigData': {'resources': {'op': {'config': 2}}},
             }
@@ -40,7 +41,7 @@ def test_multi_mode_successful(graphql_context):
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'double_adder',
                 'runConfigData': {'resources': {'op': {'config': {'num_one': 2, 'num_two': 4}}}},
             }
@@ -50,9 +51,9 @@ def test_multi_mode_successful(graphql_context):
 
 
 MODE_QUERY = '''
-query ModesQuery($pipelineName: String!, $mode: String!)
+query ModesQuery($selector: PipelineSelector!, $mode: String!)
 {
-  runConfigSchemaOrError(selector: {name: $pipelineName}, mode: $mode ) {
+  runConfigSchemaOrError(selector: $selector, mode: $mode ) {
     __typename
     ... on RunConfigSchema {
       rootConfigType {
@@ -75,8 +76,9 @@ query ModesQuery($pipelineName: String!, $mode: String!)
 
 
 def execute_modes_query(context, pipeline_name, mode):
+    selector = get_legacy_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(
-        context, MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
+        context, MODE_QUERY, variables={'selector': selector, 'mode': mode,},
     )
 
 

@@ -1,6 +1,8 @@
 import re
 from copy import deepcopy
 
+from dagster_graphql.test.utils import get_legacy_pipeline_selector
+
 from .test_expectations import sanitize as sanitize_gql
 from .utils import sync_execute_get_events
 
@@ -16,16 +18,12 @@ def sanitize(logs):
 
 
 def test_materializations(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'materialization_pipeline')
     logs = sanitize_gql(
         sanitize(
             sync_execute_get_events(
                 context=graphql_context,
-                variables={
-                    'executionParams': {
-                        'selector': {'name': 'materialization_pipeline'},
-                        'mode': 'default',
-                    }
-                },
+                variables={'executionParams': {'selector': selector, 'mode': 'default',}},
             )
         )
     )

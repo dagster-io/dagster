@@ -120,6 +120,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
               pipelineOrError={pipelineOrError}
               runConfigSchemaOrError={runConfigSchemaOrError}
               currentSession={data.sessions[data.current]}
+              pipelineSelector={pipelineSelector}
             />
           );
         }}

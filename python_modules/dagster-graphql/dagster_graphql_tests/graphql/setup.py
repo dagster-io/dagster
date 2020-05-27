@@ -10,7 +10,11 @@ from dagster_graphql.implementation.context import (
     InProcessRepositoryLocation,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
+from dagster_graphql.test.utils import (
+    define_context_for_file,
+    define_subprocess_context_for_file,
+    get_legacy_pipeline_selector,
+)
 
 from dagster import (
     Any,
@@ -774,10 +778,11 @@ def retry_multi_input_early_terminate_pipeline():
     return sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
-def get_retry_multi_execution_params(should_fail, retry_id=None):
+def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
+    selector = get_legacy_pipeline_selector(graphql_context, 'retry_multi_output_pipeline')
     return {
         'mode': 'default',
-        'selector': {'name': 'retry_multi_output_pipeline'},
+        'selector': selector,
         'runConfigData': {
             'storage': {'filesystem': {}},
             'solids': {'can_fail': {'config': {'fail': should_fail}}},

@@ -158,7 +158,7 @@ def test_get_runs_over_graphql(graphql_context):
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'add_mode',
                 'runConfigData': {'resources': {'op': {'config': 2}}},
             }
@@ -170,7 +170,7 @@ def test_get_runs_over_graphql(graphql_context):
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'add_mode',
                 'runConfigData': {'resources': {'op': {'config': 3}}},
             }

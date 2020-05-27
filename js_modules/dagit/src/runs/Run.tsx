@@ -30,6 +30,7 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
 
 interface RunProps {
   client: ApolloClient<any>;
@@ -217,6 +218,8 @@ interface ReexecuteWithDataProps {
     stepKeys?: string[];
     stepQuery?: string;
     resumeRetry?: boolean;
+    environmentName?: string;
+    repositoryName?: string;
   }) => StartPipelineReexecutionVariables | undefined;
 }
 
@@ -239,6 +242,9 @@ const ReexecuteWithData = ({
   const [launchPipelineReexecution] = useMutation(
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== "*" ? query : "";
   const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
@@ -247,7 +253,9 @@ const ReexecuteWithData = ({
       run,
       stepKeys,
       stepQuery,
-      resumeRetry
+      resumeRetry,
+      environmentName: repositoryLocation?.name,
+      repositoryName: repository?.name
     });
     const result = await startPipelineReexecution({ variables });
     handleReexecutionResult(run.pipeline.name, result, {
@@ -260,7 +268,9 @@ const ReexecuteWithData = ({
       run,
       stepKeys,
       stepQuery,
-      resumeRetry
+      resumeRetry,
+      environmentName: repositoryLocation?.name,
+      repositoryName: repository?.name
     });
     const result = await launchPipelineReexecution({ variables });
     handleReexecutionResult(run.pipeline.name, result, {

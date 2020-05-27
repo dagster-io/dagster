@@ -1,7 +1,7 @@
 import os
 import time
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 from dagster import execute_pipeline
 from dagster.utils import safe_tempfile_path
@@ -38,13 +38,14 @@ class TestRunVariantTermination(
     )
 ):
     def test_basic_termination(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
                 START_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
-                        'selector': {'name': 'infinite_loop_pipeline'},
+                        'selector': selector,
                         'mode': 'default',
                         'runConfigData': {'solids': {'loop': {'config': {'file': path}}}},
                     }
@@ -80,6 +81,7 @@ class TestRunVariantTermination(
         assert result.data['terminatePipelineExecution']['__typename'] == 'PipelineRunNotFoundError'
 
     def test_terminate_failed(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.legacy_location.execution_manager.terminate
             graphql_context.legacy_location.execution_manager.terminate = lambda _run_id: False
@@ -88,7 +90,7 @@ class TestRunVariantTermination(
                 START_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
-                        'selector': {'name': 'infinite_loop_pipeline'},
+                        'selector': selector,
                         'mode': 'default',
                         'runConfigData': {'solids': {'loop': {'config': {'file': path}}}},
                     }

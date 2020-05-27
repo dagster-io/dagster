@@ -1,6 +1,6 @@
 from time import sleep
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 from dagster import DagsterEventType
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -123,15 +123,11 @@ class TestRetryExecution(
     )
 ):
     def test_retry_requires_intermediates(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'eventually_successful')
         result = execute_dagster_graphql(
             graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
-                }
-            },
+            variables={'executionParams': {'mode': 'default', 'selector': selector,}},
         )
 
         assert not result.errors
@@ -156,7 +152,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
+                    'selector': selector,
                     'executionMetadata': {
                         'rootRunId': run_id,
                         'parentRunId': run_id,
@@ -175,13 +171,14 @@ class TestRetryExecution(
         )
 
     def test_retry_pipeline_execution(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'eventually_successful')
         result = execute_dagster_graphql(
             graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
+                    'selector': selector,
                     'runConfigData': retry_config(0),
                 }
             },
@@ -203,7 +200,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
+                    'selector': selector,
                     'runConfigData': retry_config(1),
                     'executionMetadata': {
                         'rootRunId': run_id,
@@ -230,7 +227,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
+                    'selector': selector,
                     'runConfigData': retry_config(2),
                     'executionMetadata': {
                         'rootRunId': run_id,
@@ -258,7 +255,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'eventually_successful'},
+                    'selector': selector,
                     'runConfigData': retry_config(3),
                     'executionMetadata': {
                         'rootRunId': run_id,
@@ -282,13 +279,14 @@ class TestRetryExecution(
 
     def test_retry_resource_pipeline(self, graphql_context):
         context = graphql_context
+        selector = get_legacy_pipeline_selector(graphql_context, 'retry_resource_pipeline')
         result = execute_dagster_graphql(
             context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'retry_resource_pipeline'},
+                    'selector': selector,
                     'runConfigData': {'storage': {'filesystem': {}}},
                 }
             },
@@ -307,7 +305,7 @@ class TestRetryExecution(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'retry_resource_pipeline'},
+                    'selector': selector,
                     'runConfigData': {'storage': {'filesystem': {}}},
                     'executionMetadata': {
                         'rootRunId': run_id,
@@ -329,7 +327,9 @@ class TestRetryExecution(
         result = execute_dagster_graphql(
             context,
             START_PIPELINE_EXECUTION_QUERY,
-            variables={'executionParams': get_retry_multi_execution_params(should_fail=True)},
+            variables={
+                'executionParams': get_retry_multi_execution_params(context, should_fail=True)
+            },
         )
 
         run_id = result.data['startPipelineExecution']['run']['runId']
@@ -348,7 +348,7 @@ class TestRetryExecution(
             START_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': get_retry_multi_execution_params(
-                    should_fail=True, retry_id=run_id
+                    context, should_fail=True, retry_id=run_id
                 )
             },
         )
@@ -369,7 +369,7 @@ class TestRetryExecution(
             START_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': get_retry_multi_execution_params(
-                    should_fail=False, retry_id=run_id
+                    context, should_fail=False, retry_id=run_id
                 )
             },
         )
@@ -386,13 +386,14 @@ class TestRetryExecution(
         assert step_did_succeed(logs, 'grandchild_fail.compute')
 
     def test_successful_pipeline_reexecution(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql(
             graphql_context,
             START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
@@ -433,7 +434,7 @@ class TestRetryExecution(
             START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'stepKeys': ['sum_sq_solid.compute'],
                     'executionMetadata': {
@@ -481,6 +482,7 @@ class TestRetryExecution(
 
     def test_pipeline_reexecution_info_query(self, graphql_context, snapshot):
         context = graphql_context
+        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
 
         run_id = make_new_run_id()
         execute_dagster_graphql(
@@ -488,7 +490,7 @@ class TestRetryExecution(
             START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
@@ -503,7 +505,7 @@ class TestRetryExecution(
             START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config_fs_storage(),
                     'stepKeys': ['sum_sq_solid.compute'],
                     'executionMetadata': {
@@ -535,12 +537,13 @@ class TestRetryExecution(
 
     def test_pipeline_reexecution_invalid_step_in_subset(self, graphql_context):
         run_id = make_new_run_id()
+        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         execute_dagster_graphql(
             graphql_context,
             START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config(),
                     'executionMetadata': {'runId': run_id},
                     'mode': 'default',
@@ -556,7 +559,7 @@ class TestRetryExecution(
             START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
-                    'selector': {'name': 'csv_hello_world'},
+                    'selector': selector,
                     'runConfigData': csv_hello_world_solids_config(),
                     'stepKeys': ['nope'],
                     'executionMetadata': {
@@ -582,6 +585,9 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
 ):
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
+        selector = get_legacy_pipeline_selector(
+            graphql_context, 'retry_multi_input_early_terminate_pipeline'
+        )
         run_id = make_new_run_id()
         execute_dagster_graphql(
             graphql_context,
@@ -589,7 +595,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'retry_multi_input_early_terminate_pipeline'},
+                    'selector': selector,
                     'runConfigData': {
                         'solids': {
                             'get_input_one': {'config': {'wait_to_terminate': True}},
@@ -630,7 +636,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
             variables={
                 'executionParams': {
                     'mode': 'default',
-                    'selector': {'name': 'retry_multi_input_early_terminate_pipeline'},
+                    'selector': selector,
                     'runConfigData': {
                         'solids': {
                             'get_input_one': {'config': {'wait_to_terminate': False}},

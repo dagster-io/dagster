@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 from .setup import csv_hello_world_solids_config
 
@@ -21,40 +21,43 @@ query($selector: PipelineSelector! $mode: String!)
 
 
 def test_successful_run_config_schema(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_QUERY,
-        variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'add_mode'},
+        variables={'selector': selector, 'mode': 'add_mode',},
     )
     assert result.data['runConfigSchemaOrError']['__typename'] == 'RunConfigSchema'
 
 
 def test_run_config_schema_pipeline_not_found(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'jkdjfkdjfd')
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_QUERY,
-        variables={'selector': {'name': 'jkdjfkdjfd'}, 'mode': 'add_mode'},
+        variables={'selector': selector, 'mode': 'add_mode'},
     )
     assert result.data['runConfigSchemaOrError']['__typename'] == 'PipelineNotFoundError'
 
 
 def test_run_config_schema_solid_not_found(graphql_context):
+    selector = get_legacy_pipeline_selector(
+        graphql_context, 'multi_mode_with_resources', ['kdjfkdj']
+    )
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_QUERY,
-        variables={
-            'selector': {'name': 'multi_mode_with_resources', 'solidSubset': ['kdjfkdj']},
-            'mode': 'add_mode',
-        },
+        variables={'selector': selector, 'mode': 'add_mode',},
     )
     assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
 
 
 def test_run_config_schema_mode_not_found(graphql_context):
+    selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_QUERY,
-        variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'kdjfdk'},
+        variables={'selector': selector, 'mode': 'kdjfdk'},
     )
     assert result.data['runConfigSchemaOrError']['__typename'] == 'ModeNotFoundError'
 
@@ -144,11 +147,12 @@ query PipelineQuery(
 
 
 def test_basic_valid_config_on_run_config_schema(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
         variables={
-            'selector': {'name': 'csv_hello_world'},
+            'selector': selector,
             'mode': 'default',
             'runConfigData': csv_hello_world_solids_config(),
         },
@@ -164,14 +168,11 @@ def test_basic_valid_config_on_run_config_schema(graphql_context, snapshot):
 
 
 def test_basic_invalid_config_on_run_config_schema(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
-        variables={
-            'selector': {'name': 'csv_hello_world'},
-            'mode': 'default',
-            'runConfigData': {'nope': 'kdjfd'},
-        },
+        variables={'selector': selector, 'mode': 'default', 'runConfigData': {'nope': 'kdjfd'},},
     )
 
     assert not result.errors

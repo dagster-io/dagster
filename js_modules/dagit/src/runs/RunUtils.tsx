@@ -38,6 +38,7 @@ import { RunStatsDetailFragment } from "./types/RunStatsDetailFragment";
 import { formatElapsedTime } from "../Util";
 import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
 import { DocumentNode } from "graphql";
+import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
 
 export type IRunStatus =
   | "SUCCESS"
@@ -221,21 +222,41 @@ export function getReexecutionVariables(input: {
   stepKeys?: string[];
   stepQuery?: string;
   resumeRetry?: boolean;
+  environmentName?: string;
+  repositoryName?: string;
 }) {
-  const { run, envYaml, stepKeys, resumeRetry, stepQuery } = input;
+  const {
+    run,
+    envYaml,
+    stepKeys,
+    resumeRetry,
+    stepQuery,
+    environmentName,
+    repositoryName
+  } = input;
 
   if (isRunFragment(run)) {
     if (!run || run.pipeline.__typename === "UnknownPipeline") {
       return undefined;
     }
 
+    const selector =
+      environmentName && repositoryName
+        ? {
+            environmentName,
+            repositoryName,
+            pipelineName: run.pipeline.name,
+            solidSubset: run.pipeline.solids.map(s => s.name)
+          }
+        : {
+            name: run.pipeline.name,
+            solidSubset: run.pipeline.solids.map(s => s.name)
+          };
+
     const executionParams = {
       mode: run.mode,
       runConfigData: yaml.parse(run.runConfigYaml),
-      selector: {
-        name: run.pipeline.name,
-        solidSubset: run.pipeline.solids.map(s => s.name)
-      }
+      selector
     };
 
     // subset re-execution
@@ -471,6 +492,9 @@ export const RunActionsMenu: React.FunctionComponent<{
   const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, { refetchQueries });
   const [destroy] = useMutation(DELETE_MUTATION, { refetchQueries });
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
   const [loadEnv, { called, loading, data }] = useLazyQuery(
     PipelineEnvironmentYamlQuery,
     {
@@ -536,7 +560,9 @@ export const RunActionsMenu: React.FunctionComponent<{
                 const result = await reexecute({
                   variables: getReexecutionVariables({
                     run,
-                    envYaml
+                    envYaml,
+                    environmentName: repositoryLocation?.name,
+                    repositoryName: repository?.name
                   })
                 });
                 handleReexecutionResult(run.pipeline.name, result, {

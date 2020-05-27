@@ -45,26 +45,29 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 
 def test_enum_query(graphql_context):
-    ENUM_QUERY = '''{
-    runConfigSchemaOrError(selector: {name: "pipeline_with_enum_config" } ) {
-      ... on RunConfigSchema {
-        allConfigTypes {
-          __typename
-          key
-          ... on EnumConfigType {
-            values
-            {
-              value
-              description
+    selector = get_legacy_pipeline_selector(graphql_context, "pipeline_with_enum_config")
+
+    ENUM_QUERY = '''
+    query EnumQuery($selector: PipelineSelector!) {
+      runConfigSchemaOrError(selector: $selector) {
+        ... on RunConfigSchema {
+          allConfigTypes {
+            __typename
+            key
+            ... on EnumConfigType {
+              values
+              {
+                value
+                description
+              }
             }
           }
         }
       }
     }
-  }
-  '''
+    '''
 
-    result = execute_dagster_graphql(graphql_context, ENUM_QUERY)
+    result = execute_dagster_graphql(graphql_context, ENUM_QUERY, {'selector': selector,},)
 
     assert not result.errors
     assert result.data

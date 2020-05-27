@@ -42,6 +42,7 @@ import { TagContainer, TagEditor } from "./TagEditor";
 import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
 import ApolloClient from "apollo-client";
+import { PipelineSelector } from "../types/globalTypes";
 
 type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags;
 
@@ -56,6 +57,7 @@ interface IExecutionSessionContainerProps {
     | ExecutionSessionContainerRunConfigSchemaFragment
     | undefined;
   currentSession: IExecutionSession;
+  pipelineSelector: PipelineSelector;
 }
 
 interface IExecutionSessionContainerState {
@@ -159,7 +161,7 @@ export default class ExecutionSessionContainer extends React.Component<
   };
 
   buildExecutionVariables = () => {
-    const { currentSession } = this.props;
+    const { currentSession, pipelineSelector } = this.props;
     const pipeline = this.getPipeline();
     if (!pipeline || !currentSession || !currentSession.mode) return;
     const tags = currentSession.tags || [];
@@ -176,10 +178,7 @@ export default class ExecutionSessionContainer extends React.Component<
     return {
       executionParams: {
         runConfigData,
-        selector: {
-          name: pipeline.name,
-          solidSubset: currentSession.solidSubset
-        },
+        selector: pipelineSelector,
         mode: currentSession.mode,
         executionMetadata: {
           tags: tags.map(tag => ({ key: tag.key, value: tag.value }))
@@ -237,8 +236,7 @@ export default class ExecutionSessionContainer extends React.Component<
   };
 
   checkConfig = async (client: ApolloClient<any>, configJSON: object) => {
-    const { currentSession } = this.props;
-    const pipeline = this.getPipeline();
+    const { currentSession, pipelineSelector } = this.props;
 
     const { data } = await client.query<
       PreviewConfigQuery,
@@ -248,10 +246,7 @@ export default class ExecutionSessionContainer extends React.Component<
       query: PREVIEW_CONFIG_QUERY,
       variables: {
         runConfigData: configJSON,
-        pipeline: {
-          name: pipeline.name,
-          solidSubset: currentSession.solidSubset
-        },
+        pipeline: pipelineSelector,
         mode: currentSession.mode || "default"
       }
     });

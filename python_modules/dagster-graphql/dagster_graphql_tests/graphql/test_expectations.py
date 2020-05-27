@@ -1,5 +1,7 @@
 import json
 
+from dagster_graphql.test.utils import get_legacy_pipeline_selector
+
 from dagster.utils import file_relative_path
 
 from .utils import sync_execute_get_events
@@ -42,14 +44,10 @@ def sanitize(res):
 
 
 def test_basic_expectations_within_compute_step_events(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'pipeline_with_expectations')
     logs = sync_execute_get_events(
         context=graphql_context,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'pipeline_with_expectations'},
-                'mode': 'default',
-            }
-        },
+        variables={'executionParams': {'selector': selector, 'mode': 'default',}},
     )
 
     emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
@@ -84,11 +82,12 @@ def test_basic_expectations_within_compute_step_events(graphql_context, snapshot
 
 
 def test_basic_input_output_expectations(graphql_context, snapshot):
+    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world_with_expectations')
     logs = sync_execute_get_events(
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'csv_hello_world_with_expectations'},
+                'selector': selector,
                 'runConfigData': {
                     'solids': {
                         'sum_solid': {

@@ -5,7 +5,7 @@ from dagster_graphql.implementation.context import (
 )
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.schema import create_schema
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
@@ -28,6 +28,8 @@ def test_execute_hammer_through_dagit():
         instance=instance,
     )
 
+    selector = get_legacy_pipeline_selector(context, 'hammer_pipeline')
+
     executor = SyncExecutor()
 
     variables = {
@@ -36,7 +38,7 @@ def test_execute_hammer_through_dagit():
                 'storage': {'filesystem': {}},
                 'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
             },
-            'selector': {'name': 'hammer_pipeline'},
+            'selector': selector,
             'mode': 'default',
         }
     }
