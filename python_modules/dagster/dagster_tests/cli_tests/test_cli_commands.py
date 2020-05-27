@@ -14,6 +14,7 @@ from dagster import (
     PartitionSetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
+    check,
     lambda_solid,
     pipeline,
     seven,
@@ -933,6 +934,12 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def inst_data(self):
         return self._inst_data
+
+    def can_terminate(self, run_id):
+        return False
+
+    def terminate(self, run_id):
+        check.not_implemented('Termintation not supported')
 
 
 def define_baz_partitions():

@@ -1,3 +1,4 @@
+from dagster import check
 from dagster.core.launcher import RunLauncher
 from dagster.serdes import ConfigurableClass
 
@@ -23,3 +24,9 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
     def join(self):
         '''Nothing to join on since all executions are synchronous.'''
+
+    def can_terminate(self, run_id):
+        return False
+
+    def terminate(self, run_id):
+        check.not_implemented('Termination not supported')

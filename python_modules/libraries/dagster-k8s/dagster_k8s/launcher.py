@@ -182,3 +182,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             cls=K8sRunLauncher,
         )
         return run
+
+    def can_terminate(self, run_id):
+        check.str_param(run_id, 'run_id')
+        return False
+
+    def terminate(self, run_id):
+        check.str_param(run_id, 'run_id')
+        check.not_implemented('Termination not yet implemented')

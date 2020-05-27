@@ -97,3 +97,9 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 cls=self.__class__.__name__, address=self._address, result=result
             )
         )
+
+    def can_terminate(self, run_id):
+        return False
+
+    def terminate(self, run_id):
+        check.not_implemented('Termination not supported')
