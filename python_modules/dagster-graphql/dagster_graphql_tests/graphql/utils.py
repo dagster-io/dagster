@@ -7,8 +7,17 @@ from dagster import check
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
 
 
-def sync_get_all_logs_for_run(context, run_id):
+def get_all_logs_for_finished_run_via_subscription(context, run_id):
+    '''
+    You should almost certainly ensure that this run has complete or terminated in order
+    to get reliable results that you can test against.
+    '''
     check.inst_param(context, 'context', DagsterGraphQLContext)
+
+    run = context.instance.get_run_by_id(run_id)
+
+    assert run.is_finished
+
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
     subscribe_results = []
 
@@ -35,7 +44,7 @@ def sync_execute_get_payload(variables, context):
     context.drain_outstanding_executions()
 
     run_id = result.data['startPipelineExecution']['run']['runId']
-    return sync_get_all_logs_for_run(context, run_id)
+    return get_all_logs_for_finished_run_via_subscription(context, run_id)
 
 
 def sync_execute_get_run_log_data(variables, context):

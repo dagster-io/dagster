@@ -9,7 +9,7 @@ from dagster.core.scheduler.scheduler import ScheduleTickStatus
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-from .utils import sync_get_all_logs_for_run
+from .utils import get_all_logs_for_finished_run_via_subscription
 
 SCHEDULE_TICKS_QUERY = '''
 {
@@ -242,7 +242,9 @@ class TestExecuteSchedule(
 
         run_id = result.data['startScheduledExecution']['run']['runId']
 
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
         execution_step_names = [
             log['step']['key'] for log in logs if log['__typename'] == 'ExecutionStepStartEvent'
         ]
@@ -260,7 +262,9 @@ class TestExecuteSchedule(
         assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
         run_id = result.data['startScheduledExecution']['run']['runId']
 
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
         execution_step_names = [
             log['step']['key'] for log in logs if log['__typename'] == 'ExecutionStepStartEvent'
         ]

@@ -24,7 +24,7 @@ from .setup import (
     get_retry_multi_execution_params,
     retry_config,
 )
-from .utils import sync_get_all_logs_for_run
+from .utils import get_all_logs_for_finished_run_via_subscription
 
 NON_PERSISTENT_INTERMEDIATES_ERROR = (
     'Cannot perform reexecution with non persistent intermediates manager'
@@ -139,7 +139,9 @@ class TestRetryExecution(
 
         run_id = result.data['startPipelineExecution']['run']['runId']
         assert run_id
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
         assert isinstance(logs, list)
 
         assert step_did_succeed(logs, 'spawn.compute')
@@ -186,7 +188,9 @@ class TestRetryExecution(
         )
 
         run_id = result.data['startPipelineExecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
         assert step_did_succeed(logs, 'spawn.compute')
         assert step_did_fail(logs, 'fail.compute')
         assert step_did_skip(logs, 'fail_2.compute')
@@ -211,7 +215,9 @@ class TestRetryExecution(
         )
 
         run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
         assert step_did_not_run(logs, 'spawn.compute')
         assert step_did_succeed(logs, 'fail.compute')
         assert step_did_fail(logs, 'fail_2.compute')
@@ -236,7 +242,9 @@ class TestRetryExecution(
         )
 
         run_id = retry_two.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
 
         assert step_did_not_run(logs, 'spawn.compute')
         assert step_did_not_run(logs, 'fail.compute')
@@ -262,7 +270,9 @@ class TestRetryExecution(
         )
 
         run_id = retry_three.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(graphql_context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
 
         assert step_did_not_run(logs, 'spawn.compute')
         assert step_did_not_run(logs, 'fail.compute')
@@ -285,7 +295,9 @@ class TestRetryExecution(
         )
 
         run_id = result.data['startPipelineExecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
+            'messages'
+        ]
         assert step_did_succeed(logs, 'start.compute')
         assert step_did_fail(logs, 'will_fail.compute')
 
@@ -306,7 +318,9 @@ class TestRetryExecution(
             },
         )
         run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
+            'messages'
+        ]
         assert step_did_not_run(logs, 'start.compute')
         assert step_did_fail(logs, 'will_fail.compute')
 
@@ -319,7 +333,9 @@ class TestRetryExecution(
         )
 
         run_id = result.data['startPipelineExecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
+            'messages'
+        ]
         assert step_did_succeed(logs, 'multi.compute')
         assert step_did_skip(logs, 'child_multi_skip.compute')
         assert step_did_fail(logs, 'can_fail.compute')
@@ -338,7 +354,9 @@ class TestRetryExecution(
         )
 
         run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
+            'messages'
+        ]
         assert step_did_not_run(logs, 'multi.compute')
         assert step_did_not_run(logs, 'child_multi_skip.compute')
         assert step_did_fail(logs, 'can_fail.compute')
@@ -357,7 +375,9 @@ class TestRetryExecution(
         )
 
         run_id = retry_two.data['startPipelineReexecution']['run']['runId']
-        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
+            'messages'
+        ]
         assert step_did_not_run(logs, 'multi.compute')
         assert step_did_not_run(logs, 'child_multi_skip.compute')
         assert step_did_succeed(logs, 'can_fail.compute')
@@ -430,7 +450,7 @@ class TestRetryExecution(
         query_result = result_two.data['startPipelineReexecution']
         assert query_result['__typename'] == 'StartPipelineRunSuccess'
 
-        result = sync_get_all_logs_for_run(graphql_context, new_run_id)
+        result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result['pipelineRunLogs']['messages']
 
         assert isinstance(logs, list)
