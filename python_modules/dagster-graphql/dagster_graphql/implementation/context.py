@@ -118,6 +118,18 @@ class DagsterGraphQLContext:
         )
         return self.legacy_environment.get_reconstructable_repository().get_definition()
 
+    def drain_outstanding_executions(self):
+        '''
+        This ensures that any outstanding executions of runs are waited on.
+        Useful for tests contexts when you want to ensure a started run
+        has ended in order to verify its results. 
+        '''
+        if self.legacy_environment.execution_manager:
+            self.legacy_environment.execution_manager.join()
+
+        if self.instance.run_launcher:
+            self.instance.run_launcher.join()
+
 
 class DagsterEnvironment(six.with_metaclass(ABCMeta)):
     @abstractmethod

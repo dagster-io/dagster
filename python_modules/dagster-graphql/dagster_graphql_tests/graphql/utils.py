@@ -31,6 +31,9 @@ def sync_execute_get_payload(variables, context):
 
     if result.data['startPipelineExecution']['__typename'] != 'StartPipelineRunSuccess':
         raise Exception(result.data)
+
+    context.drain_outstanding_executions()
+
     run_id = result.data['startPipelineExecution']['run']['runId']
     return sync_get_all_logs_for_run(context, run_id)
 

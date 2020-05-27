@@ -21,6 +21,7 @@ from .execution_queries import (
 from .graphql_context_test_suite import (
     EMManagers,
     EnvironmentManagers,
+    ExecutingGraphQLContextTestMatrix,
     GraphQLContextVariant,
     MarkedManager,
     Marks,
@@ -30,12 +31,7 @@ from .setup import csv_hello_world, csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
 
-class TestExecutePipelineWithCliApiHijack(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-        + GraphQLContextVariant.all_hijacking_launcher_variants()
-    )
-):
+class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
     def test_start_pipeline_execution(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context,
@@ -57,13 +53,6 @@ class TestExecutePipelineWithCliApiHijack(
         assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
         assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
-
-class TestExecutePipelineLegacyPlusInMemoryHijack(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-        + [GraphQLContextVariant.in_memory_instance_with_sync_hijack()]
-    )
-):
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context,
@@ -211,15 +200,6 @@ class TestExecutePipelineLegacyPlusInMemoryHijack(
         assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
         assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
-
-class TestExecutePipelineLegacySqliteInProcessOnlyAndHijack(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.sqlite_in_process_start(),
-            GraphQLContextVariant.sqlite_with_sync_hijack(),
-        ]
-    )
-):
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -239,18 +219,24 @@ class TestExecutePipelineLegacySqliteInProcessOnlyAndHijack(
         )
 
         assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
-        log_messages = []
-        for message in run_logs['messages']:
-            if message['__typename'] == 'LogMessageEvent':
-                log_messages.append(message)
-            else:
-                # all the rest of the events are non-error system-level events
-                # and should be at INFO level
-                assert message['level'] == 'DEBUG'
-
-        # skip the first one was we know it is not associated with a step
-        for log_message in log_messages[1:]:
-            assert log_message['step']['key']
+        non_engine_event_types = [
+            message['__typename']
+            for message in run_logs['messages']
+            if message['__typename'] != 'EngineEvent'
+        ]
+        expected_non_engine_event_types = [
+            'PipelineStartEvent',
+            'ExecutionStepStartEvent',
+            'ExecutionStepInputEvent',
+            'ExecutionStepOutputEvent',
+            'ExecutionStepSuccessEvent',
+            'ExecutionStepStartEvent',
+            'ExecutionStepInputEvent',
+            'ExecutionStepOutputEvent',
+            'ExecutionStepSuccessEvent',
+            'PipelineSuccessEvent',
+        ]
+        assert non_engine_event_types == expected_non_engine_event_types
 
     def test_subscription_query_error(self, graphql_context):
         run_logs = sync_execute_get_run_log_data(

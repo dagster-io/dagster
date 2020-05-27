@@ -48,3 +48,6 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         This property is temporary while we perform that migration.
         '''
         return False
+
+    def join(self):
+        pass

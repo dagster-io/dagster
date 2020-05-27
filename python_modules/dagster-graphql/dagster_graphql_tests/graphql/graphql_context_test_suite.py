@@ -500,6 +500,13 @@ class GraphQLContextVariant:
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.hijacking)
 
     @staticmethod
+    def all_executing_variants():
+        return (
+            GraphQLContextVariant.all_variants_with_legacy_execution_manager()
+            + GraphQLContextVariant.all_hijacking_launcher_variants()
+        )
+
+    @staticmethod
     def all_readonly_variants():
         '''
         Return all readonly variants. If you try to start or launch these will error
@@ -614,4 +621,8 @@ class TestAThing(
 
 ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_readonly_variants()
+)
+
+ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_executing_variants()
 )

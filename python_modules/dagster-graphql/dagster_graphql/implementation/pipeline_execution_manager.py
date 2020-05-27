@@ -39,6 +39,9 @@ class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     def is_active(self, run_id):
         '''Whether a given run_id is actively running'''
 
+    def join(self):
+        pass
+
 
 class SynchronousExecutionManager(PipelineExecutionManager):
     def __init__(self):

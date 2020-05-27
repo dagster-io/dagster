@@ -36,9 +36,6 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         execute_run(pipeline_def, run, instance)
         return run
 
-    def join(self):
-        '''Nothing to join on since all executions are synchronous.'''
-
     def can_terminate(self, run_id):
         return False
 
