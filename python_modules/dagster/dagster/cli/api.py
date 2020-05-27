@@ -20,7 +20,7 @@ from dagster.core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -37,17 +37,18 @@ def repository_snapshot_command(output_file, **kwargs):
 
 
 @click.command(name='pipeline', help='Return the snapshot for the given pipeline')
+@click.argument('output_file', type=click.Path())
+@repository_target_argument
 @pipeline_target_command
 @click.option('--solid-subset', '-s', help="Comma-separated list of solids")
-def pipeline_snapshot_command(solid_subset, **kwargs):
+def pipeline_snapshot_command(output_file, solid_subset, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
     definition = recon_pipeline.get_definition()
 
     if solid_subset:
         definition = definition.subset_for_execution(solid_subset.split(","))
 
-    active_data = external_pipeline_data_from_def(definition)
-    click.echo(serialize_dagster_namedtuple(active_data))
+    ipc_write_unary_response(output_file, external_pipeline_data_from_def(definition))
 
 
 def create_snapshot_cli_group():

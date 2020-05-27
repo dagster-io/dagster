@@ -33,43 +33,52 @@ def test_snapshot_command_repository():
 
 
 def test_snapshot_command_pipeline():
-    runner = CliRunner()
-    result = runner.invoke(
-        pipeline_snapshot_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo'],
-    )
-    assert result.exit_code == 0
-    # Now that we have the snapshot make sure that it can be properly deserialized
-    external_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(external_pipeline_data, ExternalPipelineData)
-    assert external_pipeline_data.name == 'foo'
-    assert (
-        len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
-        == 2
-    )
+    with get_temp_file_name() as output_file:
+        runner = CliRunner()
+        result = runner.invoke(
+            pipeline_snapshot_command,
+            [output_file, '-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo'],
+        )
+        assert result.exit_code == 0
+        # Now that we have the snapshot make sure that it can be properly deserialized
+        messages = list(ipc_read_event_stream(output_file))
+        assert len(messages) == 1
+        external_pipeline_data = messages[0]
+        assert isinstance(external_pipeline_data, ExternalPipelineData)
+        assert external_pipeline_data.name == 'foo'
+        assert (
+            len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
+            == 2
+        )
 
 
 def test_snapshot_command_pipeline_solid_subset():
-    runner = CliRunner()
-    result = runner.invoke(
-        pipeline_snapshot_command,
-        [
-            '-y',
-            file_relative_path(__file__, 'repository_file.yaml'),
-            'foo',
-            '--solid-subset',
-            'do_input',
-        ],
-    )
-    assert result.exit_code == 0
-    # Now that we have the snapshot make sure that it can be properly deserialized
-    external_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(external_pipeline_data, ExternalPipelineData)
-    assert external_pipeline_data.name == 'foo'
-    assert (
-        len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
-        == 1
-    )
+
+    with get_temp_file_name() as output_file:
+        runner = CliRunner()
+        result = runner.invoke(
+            pipeline_snapshot_command,
+            [
+                output_file,
+                '-y',
+                file_relative_path(__file__, 'repository_file.yaml'),
+                'foo',
+                '--solid-subset',
+                'do_input',
+            ],
+        )
+
+        assert result.exit_code == 0
+        # Now that we have the snapshot make sure that it can be properly deserialized
+        messages = list(ipc_read_event_stream(output_file))
+        assert len(messages) == 1
+        external_pipeline_data = messages[0]
+        assert isinstance(external_pipeline_data, ExternalPipelineData)
+        assert external_pipeline_data.name == 'foo'
+        assert (
+            len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
+            == 1
+        )
 
 
 def test_execute_run_command():
