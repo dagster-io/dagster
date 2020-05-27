@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import json
 import os
 import sys
 
@@ -37,13 +38,13 @@ def repository_snapshot_command(output_file, **kwargs):
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
 @pipeline_target_command
-@click.option('--solid-subset', '-s', help="Comma-separated list of solids")
+@click.option('--solid-subset', '-s', help="JSON encoded list of solids")
 def pipeline_snapshot_command(output_file, solid_subset, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
     definition = recon_pipeline.get_definition()
 
     if solid_subset:
-        definition = definition.subset_for_execution(solid_subset.split(","))
+        definition = definition.subset_for_execution(json.loads(solid_subset))
 
     ipc_write_unary_response(output_file, external_pipeline_data_from_def(definition))
 

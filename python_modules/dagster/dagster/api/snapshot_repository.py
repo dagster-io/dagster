@@ -7,7 +7,7 @@ from dagster.core.host_representation import (
     LocationHandle,
     RepositoryHandle,
 )
-from dagster.serdes.ipc import ipc_read_event_stream
+from dagster.serdes.ipc import read_unary_response
 from dagster.seven import xplat_shlex_split
 from dagster.utils.temp_file import get_temp_file_name
 
@@ -23,11 +23,7 @@ def sync_get_external_repository(location_handle):
         returncode = subprocess.check_call(parts)
         check.invariant(returncode == 0, 'dagster api cli invocation did not complete successfully')
 
-        messages = list(ipc_read_event_stream(output_file))
-        check.invariant(len(messages) == 1)
-
-        external_repository_data = messages[0]
-
+        external_repository_data = read_unary_response(output_file)
         check.inst(external_repository_data, ExternalRepositoryData)
 
         return ExternalRepository(

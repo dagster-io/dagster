@@ -1,3 +1,5 @@
+import json
+
 from click.testing import CliRunner
 
 from dagster import file_relative_path, seven
@@ -56,6 +58,7 @@ def test_snapshot_command_pipeline_solid_subset():
 
     with get_temp_file_name() as output_file:
         runner = CliRunner()
+        solid_subset = ['do_input']
         result = runner.invoke(
             pipeline_snapshot_command,
             [
@@ -63,8 +66,7 @@ def test_snapshot_command_pipeline_solid_subset():
                 '-y',
                 file_relative_path(__file__, 'repository_file.yaml'),
                 'foo',
-                '--solid-subset',
-                'do_input',
+                '--solid-subset={solid_subset}'.format(solid_subset=json.dumps(solid_subset)),
             ],
         )
 
