@@ -35,6 +35,12 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
+def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
+    result = execute_dagster_graphql(context, query, variables)
+    context.drain_outstanding_executions()
+    return result
+
+
 def define_context_for_file(python_file, fn_name, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLContext(
