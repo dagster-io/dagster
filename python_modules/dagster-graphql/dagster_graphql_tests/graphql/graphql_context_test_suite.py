@@ -20,7 +20,7 @@ from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils.hosted_user_process import repository_handle_from_recon_repo
@@ -58,7 +58,7 @@ class InstanceManagers:
                     local_artifact_storage=LocalArtifactStorage(temp_dir),
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=NoOpComputeLogManager(temp_dir),
+                    compute_log_manager=LocalComputeLogManager(temp_dir),
                 )
 
         return MarkedManager(_in_memory_instance, [Marks.in_memory_instance])
@@ -73,7 +73,7 @@ class InstanceManagers:
                     local_artifact_storage=LocalArtifactStorage(temp_dir),
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=NoOpComputeLogManager(temp_dir),
+                    compute_log_manager=LocalComputeLogManager(temp_dir),
                     run_launcher=ExplodingRunLauncher(),
                 )
 
@@ -91,7 +91,7 @@ class InstanceManagers:
                     local_artifact_storage=LocalArtifactStorage(temp_dir),
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=NoOpComputeLogManager(temp_dir),
+                    compute_log_manager=LocalComputeLogManager(temp_dir),
                     run_launcher=SyncInMemoryRunLauncher(hijack_start=True),
                 )
 
