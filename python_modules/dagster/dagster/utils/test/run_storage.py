@@ -577,7 +577,7 @@ class TestRunStorage:
         root_run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name='foo_pipeline')
         runs = [root_run]
 
-        # Create 3 childs and 3 descendants of the rightmost child:
+        # Create 3 children and 3 descendants of the rightmost child:
         #    root
         #   /  |  \
         # [0] [1] [2]
@@ -632,3 +632,117 @@ class TestRunStorage:
 
         run_group_result = storage.get_run_group(make_new_run_id())
         assert run_group_result is None
+
+    def test_fetch_run_groups(self, storage):
+        assert storage
+        root_runs = [
+            TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name='foo_pipeline')
+            for i in range(3)
+        ]
+        runs = [run for run in root_runs]
+        for _ in range(5):
+            for root_run in root_runs:
+                runs.append(
+                    TestRunStorage.build_run(
+                        run_id=make_new_run_id(),
+                        pipeline_name='foo_pipeline',
+                        tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
+                    )
+                )
+        for run in runs:
+            storage.add_run(run)
+
+        run_groups = storage.get_run_groups(limit=5)
+
+        assert len(run_groups) == 3
+
+        expected_group_lens = {
+            root_runs[i].run_id: expected_len for i, expected_len in enumerate([2, 3, 3])
+        }
+
+        for root_run_id in run_groups:
+            assert len(run_groups[root_run_id]['runs']) == expected_group_lens[root_run_id]
+            assert run_groups[root_run_id]['count'] == 6
+
+    def test_fetch_run_groups_filter(self, storage):
+        assert storage
+
+        root_runs = [
+            TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name='foo_pipeline')
+            for i in range(3)
+        ]
+
+        runs = [run for run in root_runs]
+        for root_run in root_runs:
+            failed_run_id = make_new_run_id()
+            runs.append(
+                TestRunStorage.build_run(
+                    run_id=failed_run_id,
+                    pipeline_name='foo_pipeline',
+                    tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
+                    status=PipelineRunStatus.FAILURE,
+                )
+            )
+            for _ in range(3):
+                runs.append(
+                    TestRunStorage.build_run(
+                        run_id=make_new_run_id(),
+                        pipeline_name='foo_pipeline',
+                        tags={PARENT_RUN_ID_TAG: failed_run_id, ROOT_RUN_ID_TAG: root_run.run_id},
+                    )
+                )
+
+        for run in runs:
+            storage.add_run(run)
+
+        run_groups = storage.get_run_groups(
+            limit=5, filters=PipelineRunsFilter(status=PipelineRunStatus.FAILURE)
+        )
+
+        assert len(run_groups) == 3
+
+        for root_run_id in run_groups:
+            assert len(run_groups[root_run_id]['runs']) == 2
+            assert run_groups[root_run_id]['count'] == 5
+
+    def test_fetch_run_groups_ordering(self, storage):
+        assert storage
+
+        first_root_run = TestRunStorage.build_run(
+            run_id=make_new_run_id(), pipeline_name='foo_pipeline'
+        )
+
+        storage.add_run(first_root_run)
+
+        second_root_run = TestRunStorage.build_run(
+            run_id=make_new_run_id(), pipeline_name='foo_pipeline'
+        )
+
+        storage.add_run(second_root_run)
+
+        second_root_run_child = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name='foo_pipeline',
+            tags={
+                PARENT_RUN_ID_TAG: second_root_run.run_id,
+                ROOT_RUN_ID_TAG: second_root_run.run_id,
+            },
+        )
+
+        storage.add_run(second_root_run_child)
+
+        first_root_run_child = TestRunStorage.build_run(
+            run_id=make_new_run_id(),
+            pipeline_name='foo_pipeline',
+            tags={
+                PARENT_RUN_ID_TAG: first_root_run.run_id,
+                ROOT_RUN_ID_TAG: first_root_run.run_id,
+            },
+        )
+
+        storage.add_run(first_root_run_child)
+
+        run_groups = storage.get_run_groups(limit=1)
+
+        assert first_root_run.run_id in run_groups
+        assert second_root_run.run_id not in run_groups

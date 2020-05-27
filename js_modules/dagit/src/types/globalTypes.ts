@@ -44,12 +44,6 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
-export enum ScheduleAttemptStatus {
-  ERROR = "ERROR",
-  SKIPPED = "SKIPPED",
-  SUCCESS = "SUCCESS",
-}
-
 export enum ScheduleStatus {
   ENDED = "ENDED",
   RUNNING = "RUNNING",
@@ -75,17 +69,12 @@ export interface ExecutionMetadata {
 }
 
 export interface ExecutionParams {
-  selector: ExecutionSelector;
+  selector: PipelineSelector;
   environmentConfigData?: any | null;
   mode?: string | null;
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;
   preset?: string | null;
-}
-
-export interface ExecutionSelector {
-  name: string;
-  solidSubset?: string[] | null;
 }
 
 export interface ExecutionTag {
@@ -98,6 +87,14 @@ export interface PipelineRunsFilter {
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
   status?: PipelineRunStatus | null;
+}
+
+export interface PipelineSelector {
+  name?: string | null;
+  pipelineName?: string | null;
+  repositoryName?: string | null;
+  environmentName?: string | null;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

@@ -19,7 +19,6 @@ from ..decorator_utils import (
     validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
-from ..scheduler import SchedulerHandle
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
@@ -147,36 +146,6 @@ class _Solid(object):
         )
         update_wrapper(solid_def, fn)
         return solid_def
-
-
-def schedules(name=None):
-    '''Create a scheduler with a :py:class:`~dagster.core.scheduler.Scheduler` implementation and
-    set of :py:class:`ScheduleDefinition` instances.
-
-    Decorate a function that returns a list of :py:class:`ScheduleDefinition`.
-
-    Args:
-        scheduler (Scheduler): The scheduler implementation to use.
-
-    Examples:
-
-    .. code-block:: python
-
-        @schedules
-        def define_scheduler():
-            hello_world_schedule = ScheduleDefinition(
-                name='hello_world_schedule',
-                cron_schedule='* * * * *'
-            )
-
-            return [hello_world_schedule]
-    '''
-
-    if callable(name):
-        return SchedulerHandle(schedule_defs=name())
-
-    def _wrap(fn):
-        return SchedulerHandle(schedule_defs=fn())
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):

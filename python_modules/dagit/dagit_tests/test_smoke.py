@@ -17,10 +17,15 @@ def test_smoke_app():
     )
     client = flask_app.test_client()
 
-    result = client.post('/graphql', data={'query': 'query { pipelines { nodes { name }}}'})
+    result = client.post(
+        '/graphql',
+        data={
+            'query': 'query { pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
+        },
+    )
     data = json.loads(result.data.decode('utf-8'))
-    assert len(data['data']['pipelines']['nodes']) == 2
-    assert {node_data['name'] for node_data in data['data']['pipelines']['nodes']} == set(
+    assert len(data['data']['pipelinesOrError']['nodes']) == 2
+    assert {node_data['name'] for node_data in data['data']['pipelinesOrError']['nodes']} == set(
         ['hello_cereal_pipeline', 'complex_pipeline']
     )
 

@@ -2,7 +2,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from dagster import Partition, PartitionSetDefinition, repository_partitions
+from dagster import Partition, PartitionSetDefinition
 from dagster.utils.partitions import date_partition_range
 
 
@@ -46,6 +46,5 @@ stock_data_partitions_set = PartitionSetDefinition(
 )
 
 
-@repository_partitions
 def define_partitions():
     return [stock_data_partitions_set]

@@ -5,7 +5,10 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import DagsterGraphQLOutOfProcessRepositoryContext
+from dagster_graphql.implementation.context import (
+    DagsterGraphQLContext,
+    InProcessDagsterEnvironment,
+)
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
@@ -49,10 +52,11 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.core.definitions.partition import last_empty_partition
-from dagster.core.host_representation import ExternalRepository
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
+from dagster.utils.hosted_user_process import repository_handle_from_yaml
 
 
 @input_hydration_config(String)
@@ -89,11 +93,18 @@ def define_test_context(instance):
     return define_context_for_file(__file__, "define_repository", instance)
 
 
+def create_main_recon_repo():
+    return ReconstructableRepository.for_file(__file__, 'define_repository')
+
+
 def define_test_snapshot_context():
-    return DagsterGraphQLOutOfProcessRepositoryContext(
+    return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-        external_repository=ExternalRepository.from_repository_def(define_repository()),
+        environments=[
+            InProcessDagsterEnvironment(
+                create_main_recon_repo(), execution_manager=SynchronousExecutionManager(),
+            )
+        ],
     )
 
 
@@ -125,7 +136,7 @@ def sum_sq_solid(sum_df):
 )
 def df_expectations_solid(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
-    yield ExpectationResult(label="other_expecation", success=True)
+    yield ExpectationResult(label="other_expectation", success=True)
     yield Output(sum_df)
 
 
@@ -206,6 +217,10 @@ def define_repository():
         schedule_defs=define_schedules(),
         partition_set_defs=define_partitions(),
     )
+
+
+def get_repository_handle():
+    return repository_handle_from_yaml(file_relative_path(__file__, 'repo.yaml'))
 
 
 @pipeline
@@ -657,7 +672,7 @@ def start(context):
 
 
 @solid(required_resource_keys={'b'})
-def will_fail(context, num):
+def will_fail(context, num):  # pylint: disable=unused-argument
     assert context.resources.b == 'B'
     raise Exception('fail')
 
@@ -675,7 +690,7 @@ def retry_resource_pipeline():
         OutputDefinition(str, 'start_skip', is_required=False),
     ],
 )
-def can_fail(context, inp):
+def can_fail(context, inp):  # pylint: disable=unused-argument
     if context.solid_config['fail']:
         raise Exception('blah')
 
@@ -915,6 +930,13 @@ def define_schedules():
         tags={'foo': 'notbar'},
     )
 
+    invalid_config_schedule = ScheduleDefinition(
+        name="invalid_config_schedule",
+        cron_schedule="0 0 * * *",
+        pipeline_name="pipeline_with_enum_config",
+        environment_dict={"solids": {"takes_an_enum": {'config': "invalid"}}},
+    )
+
     return [
         environment_dict_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -933,6 +955,7 @@ def define_schedules():
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
         tags_error_schedule,
+        invalid_config_schedule,
     ]
 
 

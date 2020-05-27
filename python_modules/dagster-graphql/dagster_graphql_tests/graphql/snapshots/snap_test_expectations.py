@@ -94,13 +94,13 @@ snapshots['test_basic_input_output_expectations 1'] = [
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
             'description': None,
-            'label': 'other_expecation',
+            'label': 'other_expectation',
             'metadataEntries': [
             ],
             'success': True
         },
         'level': 'DEBUG',
-        'message': 'Expectation other_expecation passed',
+        'message': 'Expectation other_expectation passed',
         'step': {
             'key': 'df_expectations_solid.compute',
             'solidHandleID': 'df_expectations_solid'

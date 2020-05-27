@@ -1,4 +1,8 @@
-from dagster_graphql.implementation.utils import ExecutionMetadata, ExecutionParams
+from dagster_graphql.implementation.utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    PipelineSelector,
+)
 
 from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
@@ -210,14 +214,14 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     )
 
 
-def execution_params_from_pipeline_run(run):
+def execution_params_from_pipeline_run(context, run):
     check.inst_param(run, 'run', PipelineRun)
 
     return ExecutionParams(
         mode=run.mode,
         step_keys=run.step_keys_to_execute,
         environment_dict=run.environment_dict,
-        selector=run.selector,
+        selector=PipelineSelector.legacy(context, run.pipeline_name, run.solid_subset),
         execution_metadata=ExecutionMetadata(
             run_id=run.run_id,
             tags=run.tags,

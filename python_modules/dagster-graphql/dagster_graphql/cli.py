@@ -24,7 +24,7 @@ from .client.query import (
     START_PIPELINE_EXECUTION_MUTATION,
     START_SCHEDULED_EXECUTION_MUTATION,
 )
-from .implementation.context import DagsterGraphQLInProcessRepositoryContext
+from .implementation.context import DagsterGraphQLContext, InProcessDagsterEnvironment
 from .implementation.pipeline_execution_manager import SubprocessExecutionManager
 from .schema import create_schema
 from .version import __version__
@@ -54,10 +54,11 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
 
     execution_manager = SubprocessExecutionManager(instance)
 
-    context = DagsterGraphQLInProcessRepositoryContext(
-        recon_repo=recon_repo,
+    context = DagsterGraphQLContext(
+        environments=[
+            InProcessDagsterEnvironment(recon_repo, execution_manager=execution_manager,)
+        ],
         instance=instance,
-        execution_manager=execution_manager,
         version=__version__,
     )
 

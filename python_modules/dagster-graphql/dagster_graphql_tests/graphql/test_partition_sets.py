@@ -12,6 +12,10 @@ GET_PARTITION_SETS_QUERY = '''
                 mode
             }
         }
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 '''
@@ -28,6 +32,10 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
                     mode
                 }
             }
+            ... on PythonError {
+                message
+                stack
+            }
             ...on PipelineNotFoundError {
                 message
             }
@@ -39,6 +47,10 @@ GET_PARTITION_SET_QUERY = '''
     query PartitionSetQuery($partitionSetName: String!) {
         partitionSetOrError(partitionSetName: $partitionSetName) {
             __typename
+            ... on PythonError {
+                message
+                stack
+            }
             ...on PartitionSet {
                 name
                 pipelineName
@@ -98,5 +110,11 @@ def test_get_partition_set(graphql_context, snapshot):
         variables={'partitionSetName': 'invalid_partition'},
     )
 
+    print(invalid_partition_set_result.data)
+    assert (
+        invalid_partition_set_result.data['partitionSetOrError']['__typename']
+        == 'PartitionSetNotFoundError'
+    )
     assert invalid_partition_set_result.data
+
     snapshot.assert_match(invalid_partition_set_result.data)

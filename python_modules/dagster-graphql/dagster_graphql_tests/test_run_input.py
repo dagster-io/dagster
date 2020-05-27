@@ -1,7 +1,14 @@
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from dagster_graphql.schema.roots import execution_params_from_graphql
+from dagster_graphql.test.utils import define_context_for_file
 
+from dagster import DagsterInstance, pipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+
+
+@pipeline
+def pipey_mcpipeface():
+    pass
 
 
 def test_roundtrip_run():
@@ -32,13 +39,15 @@ def test_roundtrip_run():
 
     run = run_with_snapshot._replace(pipeline_snapshot_id=None, execution_plan_snapshot_id=None)
 
-    exec_params = execution_params_from_pipeline_run(run)
+    context = define_context_for_file(__file__, 'pipey_mcpipeface', DagsterInstance.ephemeral())
 
-    exec_params_gql = execution_params_from_graphql(exec_params.to_graphql_input())
+    exec_params = execution_params_from_pipeline_run(context, run)
+
+    exec_params_gql = execution_params_from_graphql(context, exec_params.to_graphql_input())
     assert exec_params_gql == exec_params
 
     empty_run = PipelineRun(pipeline_name='foo', run_id='bar', mode='default')
-    exec_params = execution_params_from_pipeline_run(empty_run)
+    exec_params = execution_params_from_pipeline_run(context, empty_run)
 
-    exec_params_gql = execution_params_from_graphql(exec_params.to_graphql_input())
+    exec_params_gql = execution_params_from_graphql(context, exec_params.to_graphql_input())
     assert exec_params_gql == exec_params

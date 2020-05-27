@@ -12,11 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import (
-    ExecutionSelector,
-    PipelineDefinition,
-    PipelineSubsetForExecution,
-)
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -37,6 +33,7 @@ from .ref import InstanceRef, compute_logs_directory
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
 # 'execution_date' used in Airflow operator execution and 'is_airflow_ingest_pipeline' determines
 # whether 'airflow_execution_date' is needed.
+# https://github.com/dagster-io/dagster/issues/2403
 AIRFLOW_EXECUTION_DATE_STR = 'airflow_execution_date'
 IS_AIRFLOW_INGEST_PIPELINE_STR = 'is_airflow_ingest_pipeline'
 
@@ -481,7 +478,7 @@ class DagsterInstance:
                 step_keys_to_execute=step_keys_to_execute,
             )
 
-        return self.get_or_create_run(
+        return self.create_run(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             environment_dict=environment_dict,
@@ -514,6 +511,7 @@ class DagsterInstance:
         execution_plan_snapshot,
     ):
 
+        # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
@@ -576,24 +574,19 @@ class DagsterInstance:
 
     def create_run(
         self,
-        pipeline_name=None,
-        run_id=None,
-        environment_dict=None,
-        mode=None,
-        solid_subset=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        status,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
-
-        # This logic is factored out since it's shared with `get_or_create_run`, which will soon be
-        # deleted. When it is deleted, the body of `_construct_run_with_snapshots` can be brought
-        # back into this function.
-        # https://github.com/dagster-io/dagster/issues/2412
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -610,23 +603,29 @@ class DagsterInstance:
         )
         return self._run_storage.add_run(pipeline_run)
 
-    def get_or_create_run(
+    def register_managed_run(
         self,
-        pipeline_name=None,
-        run_id=None,
-        environment_dict=None,
-        mode=None,
-        solid_subset=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
-        # The last usage of this method is in dagster-airflow. When the usage is removed, this method
-        # should be deleted.
+        # The usage of this method is limited to dagster-airflow, specifically in Dagster
+        # Operators that are executed in Airflow. Because a common workflow in Airflow is to
+        # retry dags from arbitrary tasks, we need any node to be capable of creating a
+        # PipelineRun.
+        #
+        # The try-except DagsterRunAlreadyExists block handles the race when multiple "root" tasks
+        # simultaneously execute self._run_storage.add_run(pipeline_run). When this happens, only
+        # one task succeeds in creating the run, while the others get DagsterRunAlreadyExists
+        # error; at this point, the failed tasks try again to fetch the existing run.
         # https://github.com/dagster-io/dagster/issues/2412
 
         pipeline_run = self._construct_run_with_snapshots(
@@ -636,7 +635,7 @@ class DagsterInstance:
             mode=mode,
             solid_subset=solid_subset,
             step_keys_to_execute=step_keys_to_execute,
-            status=status,
+            status=PipelineRunStatus.MANAGED,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -644,7 +643,7 @@ class DagsterInstance:
             execution_plan_snapshot=execution_plan_snapshot,
         )
 
-        if self.has_run(pipeline_run.run_id):
+        def get_run():
             candidate_run = self.get_run_by_id(pipeline_run.run_id)
 
             field_diff = _check_run_equality(pipeline_run, candidate_run)
@@ -658,7 +657,13 @@ class DagsterInstance:
                 )
             return candidate_run
 
-        return self._run_storage.add_run(pipeline_run)
+        if self.has_run(pipeline_run.run_id):
+            return get_run()
+
+        try:
+            return self._run_storage.add_run(pipeline_run)
+        except DagsterRunAlreadyExists:
+            return get_run()
 
     def add_run(self, pipeline_run):
         return self._run_storage.add_run(pipeline_run)
@@ -674,6 +679,9 @@ class DagsterInstance:
 
     def get_runs_count(self, filters=None):
         return self._run_storage.get_runs_count(filters)
+
+    def get_run_groups(self, filters=None, cursor=None, limit=None):
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     def wipe(self):
         self._run_storage.wipe()
@@ -796,20 +804,20 @@ class DagsterInstance:
 
     # Run launcher
 
-    def launch_run(self, run_id):
+    def launch_run(self, run_id, external_pipeline=None):
         '''Launch a pipeline run.
 
         This method delegates to the ``RunLauncher``, if any, configured on the instance, and will
         call its implementation of ``RunLauncher.launch_run()`` to begin the execution of the
         specified run. Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.get_or_create_run()``) *before* this method is called, and
+        ``DagsterInstance.create_run()``) *before* this method is called, and
         should be in the ``PipelineRunStatus.NOT_STARTED`` state.
 
         Args:
             run_id (str): The id of the run the launch.
         '''
         run = self.get_run_by_id(run_id)
-        return self._run_launcher.launch_run(self, run)
+        return self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
 
     # Scheduler
 

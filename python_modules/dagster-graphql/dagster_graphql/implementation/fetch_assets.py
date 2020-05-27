@@ -56,3 +56,15 @@ def get_asset_run_ids(graphene_info, asset_key):
     check.inst(event_storage, AssetAwareEventLogStorage)
     run_ids = event_storage.get_asset_run_ids(asset_key)
     return run_ids
+
+
+def get_assets_for_run_id(graphene_info, run_id):
+    check.str_param(run_id, 'run_id')
+
+    records = graphene_info.context.instance.all_logs(run_id)
+    asset_keys = [
+        record.dagster_event.asset_key
+        for record in records
+        if record.is_dagster_event and record.dagster_event.asset_key
+    ]
+    return [graphene_info.schema.type_named('Asset')(key=asset_key) for asset_key in asset_keys]

@@ -20,7 +20,7 @@ def get_used_solid_map(graphene_info):
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for external_pipeline in graphene_info.context.get_all_external_pipelines():
+    for external_pipeline in graphene_info.context.legacy_get_all_external_pipelines():
         for handle in build_dauphin_solid_handles(
             external_pipeline, external_pipeline.dep_structure_index
         ):

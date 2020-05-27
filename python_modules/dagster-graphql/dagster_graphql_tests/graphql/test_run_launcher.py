@@ -1,15 +1,7 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import seven
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.utils import file_relative_path
-
-from .utils import InMemoryRunLauncher
+from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_QUERY = '''
 query RunQuery($runId: ID!) {
@@ -28,91 +20,70 @@ query RunQuery($runId: ID!) {
 '''
 
 
-def test_missing(graphql_context):
-    result = execute_dagster_graphql(
-        context=graphql_context,
-        query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={
-            'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
-        },
-    )
-
-    assert result.data['launchPipelineExecution']['__typename'] == 'RunLauncherNotDefinedError'
-
-
-def test_run_launcher():
-    test_queue = InMemoryRunLauncher()
-
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
-            run_launcher=test_queue,
+class TestMissingRunLauncher(
+    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
+):
+    def test_missing(self, graphql_context):
+        result = execute_dagster_graphql(
+            context=graphql_context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
+            },
         )
 
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        assert result.data['launchPipelineExecution']['__typename'] == 'RunLauncherNotDefinedError'
+
+
+class TestBasicLaunch(
+    make_graphql_context_test_suite(
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack()]
     )
-
-    result = execute_dagster_graphql(
-        context=context,
-        query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={
-            'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
-        },
-    )
-
-    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
-    assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
-
-    run_id = result.data['launchPipelineExecution']['run']['runId']
-
-    test_queue.run_one(instance)
-
-    result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
-    assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
-    assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
-
-
-def test_run_launcher_subset():
-    test_queue = InMemoryRunLauncher()
-
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
-            run_launcher=test_queue,
+):
+    def test_run_launcher(self, graphql_context):
+        result = execute_dagster_graphql(
+            context=graphql_context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
+            },
         )
 
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-    )
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
 
-    result = execute_dagster_graphql(
-        context=context,
-        query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'more_complicated_config', 'solidSubset': ['noop_solid']},
-                'mode': 'default',
-            }
-        },
-    )
+        run_id = result.data['launchPipelineExecution']['run']['runId']
 
-    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
-    assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
+        graphql_context.instance.run_launcher.join()
 
-    run_id = result.data['launchPipelineExecution']['run']['runId']
+        result = execute_dagster_graphql(
+            context=graphql_context, query=RUN_QUERY, variables={'runId': run_id}
+        )
+        assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
+        assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
 
-    test_queue.run_one(instance)
+    def test_run_launcher_subset(self, graphql_context):
+        result = execute_dagster_graphql(
+            context=graphql_context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'more_complicated_config', 'solidSubset': ['noop_solid']},
+                    'mode': 'default',
+                }
+            },
+        )
 
-    result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
-    assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
-    assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
-    assert result.data['pipelineRunOrError']['stats']['stepsSucceeded'] == 1
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
+
+        run_id = result.data['launchPipelineExecution']['run']['runId']
+
+        graphql_context.instance.run_launcher.join()
+
+        result = execute_dagster_graphql(
+            context=graphql_context, query=RUN_QUERY, variables={'runId': run_id}
+        )
+        assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
+        assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
+        assert result.data['pipelineRunOrError']['stats']['stepsSucceeded'] == 1

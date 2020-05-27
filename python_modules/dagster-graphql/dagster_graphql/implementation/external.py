@@ -14,12 +14,12 @@ from .utils import UserFacingGraphQLError
 def get_full_external_pipeline_or_raise(graphene_info, pipeline_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
-    if not graphene_info.context.has_external_pipeline(pipeline_name):
+    if not graphene_info.context.legacy_has_external_pipeline(pipeline_name):
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
         )
 
-    return graphene_info.context.get_full_external_pipeline(pipeline_name)
+    return graphene_info.context.legacy_get_full_external_pipeline(pipeline_name)
 
 
 def get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
@@ -45,7 +45,7 @@ def get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
                 )
             )
     try:
-        return graphene_info.context.get_external_pipeline(pipeline_name, solid_subset)
+        return graphene_info.context.legacy_get_external_pipeline(pipeline_name, solid_subset)
     except DagsterInvalidDefinitionError:
         # this handles the case when you construct a subset such that an unsatisfied
         # input cannot be hydrate from config. Current this is only relevant for
@@ -102,8 +102,11 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 def get_external_execution_plan_or_raise(
     graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
 ):
-    full_external_execution_plan = graphene_info.context.get_external_execution_plan(
-        external_pipeline=external_pipeline, environment_dict=environment_dict, mode=mode,
+    full_external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
+        external_pipeline=external_pipeline,
+        environment_dict=environment_dict,
+        mode=mode,
+        step_keys_to_execute=None,
     )
 
     if not step_keys_to_execute:
@@ -111,7 +114,7 @@ def get_external_execution_plan_or_raise(
 
     ensure_valid_step_keys(full_external_execution_plan, step_keys_to_execute)
 
-    return graphene_info.context.get_external_execution_plan(
+    return graphene_info.context.legacy_get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=environment_dict,
         mode=mode,

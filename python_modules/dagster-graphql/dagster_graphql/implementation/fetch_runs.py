@@ -3,11 +3,10 @@ from graphql.execution.base import ResolveInfo
 from dagster import PipelineDefinition, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_schema
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
 
 
 def is_config_valid(pipeline_def, environment_dict, mode):
@@ -91,14 +90,36 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [graphene_info.schema.type_named('PipelineRun')(run) for run in runs]
 
 
+def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
+    from ..schema.runs import DauphinRunGroup
+
+    check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+    check.opt_str_param(cursor, 'cursor')
+    check.opt_int_param(limit, 'limit')
+
+    instance = graphene_info.context.instance
+    run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+
+    for root_run_id in run_groups:
+        run_groups[root_run_id]['runs'] = [
+            graphene_info.schema.type_named('PipelineRun')(run)
+            for run in run_groups[root_run_id]['runs']
+        ]
+
+    return [
+        DauphinRunGroup(root_run_id=root_run_id, runs=run_group['runs'])
+        for root_run_id, run_group in run_groups.items()
+    ]
+
+
 @capture_dauphin_error
 def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.name, selector.solid_subset
+        graphene_info, selector.pipeline_name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
@@ -109,16 +130,19 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
 @capture_dauphin_error
 def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.name, selector.solid_subset
+        graphene_info, selector.pipeline_name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('ExecutionPlan')(
-        graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline, mode=mode, environment_dict=environment_dict
+        graphene_info.context.legacy_get_external_execution_plan(
+            external_pipeline=external_pipeline,
+            mode=mode,
+            environment_dict=environment_dict,
+            step_keys_to_execute=None,
         )
     )
 

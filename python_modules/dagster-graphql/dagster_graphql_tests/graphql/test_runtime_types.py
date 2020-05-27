@@ -40,6 +40,7 @@ fragment schemaTypeFragment on ConfigType {
     }
   }
 }
+
 fragment dagsterTypeFragment on DagsterType {
     key
     name
@@ -64,14 +65,16 @@ fragment dagsterTypeFragment on DagsterType {
 }
 
 {
- 	pipelines {
-    nodes {
-      name
-      dagsterTypes {
-        ...dagsterTypeFragment
-      }
+    pipelinesOrError {
+        ... on PipelineConnection {
+            nodes {
+                name
+                dagsterTypes {
+                    ...dagsterTypeFragment
+                }
+            }
+        }
     }
-  }
 }
 '''
 

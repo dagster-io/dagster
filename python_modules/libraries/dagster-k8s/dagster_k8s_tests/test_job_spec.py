@@ -7,6 +7,7 @@ from dagster_test.test_project import test_project_docker_image, test_project_en
 from dagster import __version__ as dagster_version
 from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path
 
 from .utils import image_pull_policy, remove_none_recursively, wait_for_job_and_get_logs
@@ -116,8 +117,11 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
         os.path.join(test_project_environments_path(), 'env.yaml')
     )
     pipeline_name = 'demo_pipeline'
-    run = dagster_instance.create_run(
-        pipeline_name=pipeline_name, environment_dict=environment_dict, mode='default'
+    run = create_run_for_test(
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode='default',
     )
 
     dagster_instance.launch_run(run.run_id)
@@ -136,8 +140,8 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = dagster_instance.create_run(
-        pipeline_name=pipeline_name, environment_dict=environment_dict
+    run = create_run_for_test(
+        dagster_instance, pipeline_name=pipeline_name, environment_dict=environment_dict
     )
 
     dagster_instance.launch_run(run.run_id)

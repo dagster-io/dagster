@@ -2,14 +2,16 @@ from .utils import execute_dagster_graphql
 
 PRESETS_QUERY = '''
 query PresetsQuery($name: String!) {
-  pipeline(params: { name: $name }) {
-    name
-    presets {
-      __typename
+  pipelineOrError(params: { name: $name }) {
+    ... on Pipeline {
       name
-      solidSubset
-      environmentConfigYaml
-      mode
+      presets {
+        __typename
+        name
+        solidSubset
+        environmentConfigYaml
+        mode
+      }
     }
   }
 }  

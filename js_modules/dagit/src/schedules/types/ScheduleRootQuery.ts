@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus, ScheduleAttemptStatus } from "./../../types/globalTypes";
+import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -95,20 +95,6 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
   tickSpecificData: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run {
-  __typename: "PipelineRun";
-  runId: string;
-  status: PipelineRunStatus;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList {
-  __typename: "ScheduleAttempt";
-  time: number;
-  jsonResult: string;
-  status: ScheduleAttemptStatus;
-  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run | null;
-}
-
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
@@ -120,7 +106,6 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   ticksCount: number;
   status: ScheduleStatus;
   ticksList: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
-  attemptList: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList[];
 }
 
 export interface ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError {
@@ -143,5 +128,5 @@ export interface ScheduleRootQuery {
 export interface ScheduleRootQueryVariables {
   scheduleName: string;
   limit: number;
-  attemptsLimit: number;
+  ticksLimit: number;
 }

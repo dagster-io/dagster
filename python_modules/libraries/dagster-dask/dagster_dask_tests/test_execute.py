@@ -12,7 +12,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executor import default_executors
-from dagster.core.definitions.pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
@@ -28,13 +27,13 @@ def dask_engine_pipeline():
     return simple()
 
 
-def test_execute_on_dask():
+def test_execute_on_dask_local():
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
             reconstructable(dask_engine_pipeline),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'dask': {'config': {'timeout': 30}}},
+                'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
             },
             instance=DagsterInstance.local_temp(),
         )
@@ -52,7 +51,7 @@ def test_composite_execute():
         reconstructable(dask_composite_pipeline),
         environment_dict={
             'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'timeout': 30}}},
+            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
         },
         instance=DagsterInstance.local_temp(),
     )
@@ -79,10 +78,10 @@ def test_pandas_dask():
     }
 
     result = execute_pipeline(
-        ReconstructablePipeline(FileCodePointer(__file__, pandas_pipeline.name)),
+        ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
         environment_dict={
             'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'timeout': 30}}},
+            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
             **environment_dict,
         },
         instance=DagsterInstance.local_temp(),

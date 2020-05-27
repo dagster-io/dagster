@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_mode_fetch_loggers 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         '__typename': 'Pipeline',
         'modes': [
             {

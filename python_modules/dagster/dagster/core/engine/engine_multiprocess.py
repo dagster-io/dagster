@@ -112,8 +112,6 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        intermediates_manager = pipeline_context.intermediates_manager
-
         limit = pipeline_context.executor_config.max_concurrent
 
         yield DagsterEvent.engine_event(

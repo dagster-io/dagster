@@ -5,7 +5,6 @@ from dagster_graphql.implementation.environment_schema import (
 )
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
-    cancel_pipeline_execution,
     delete_pipeline_run,
     do_execute_plan,
     get_compute_log_observable,
@@ -15,6 +14,7 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
     start_pipeline_reexecution,
     start_scheduled_execution,
+    terminate_pipeline_execution,
 )
 from dagster_graphql.implementation.execution.start_execution import (
     start_pipeline_execution_for_created_run,
@@ -27,17 +27,15 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
-    get_pipeline_or_raise,
-    get_pipeline_snapshot,
     get_pipeline_snapshot_or_error_from_pipeline_name,
     get_pipeline_snapshot_or_error_from_snapshot_id,
     get_pipelines_or_error,
-    get_pipelines_or_raise,
 )
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
     get_run_by_id,
     get_run_group,
+    get_run_groups,
     get_run_tags,
     get_runs,
     validate_pipeline_config,
@@ -47,10 +45,13 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_scheduler_or_error,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
+from dagster_graphql.implementation.utils import (
+    ExecutionMetadata,
+    PipelineSelector,
+    UserFacingGraphQLError,
+)
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -70,18 +71,9 @@ class DauphinQuery(dauphin.ObjectType):
     reloadSupported = dauphin.NonNull(dauphin.Boolean)
 
     pipelineOrError = dauphin.Field(
-        dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('ExecutionSelector')
-    )
-    pipeline = dauphin.Field(
-        dauphin.NonNull('Pipeline'), params=dauphin.NonNull('ExecutionSelector')
+        dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('PipelineSelector')
     )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
-    pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
-
-    pipelineSnapshot = dauphin.Field(
-        dauphin.NonNull('PipelineSnapshot'),
-        snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-    )
 
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
@@ -120,22 +112,29 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('RunGroupOrError'), runId=dauphin.NonNull(dauphin.ID)
     )
 
+    runGroupsOrError = dauphin.Field(
+        dauphin.NonNull('RunGroupsOrError'),
+        filter=dauphin.Argument('PipelineRunsFilter'),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
+    )
+
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
     usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
-            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
     )
 
-    executionPlan = dauphin.Field(
-        dauphin.NonNull('ExecutionPlanResult'),
+    executionPlanOrError = dauphin.Field(
+        dauphin.NonNull('ExecutionPlanOrError'),
         args={
-            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'pipeline': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'environmentConfigData': dauphin.Argument('EnvironmentConfigData'),
             'mode': dauphin.Argument(dauphin.NonNull(dauphin.String)),
         },
@@ -144,7 +143,7 @@ class DauphinQuery(dauphin.ObjectType):
     environmentSchemaOrError = dauphin.Field(
         dauphin.NonNull('EnvironmentSchemaOrError'),
         args={
-            'selector': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'selector': dauphin.Argument(dauphin.NonNull('PipelineSelector')),
             'mode': dauphin.Argument(dauphin.String),
         },
         description='''Fetch an environment schema given an execution selection and a mode.
@@ -156,9 +155,6 @@ class DauphinQuery(dauphin.ObjectType):
     assetOrError = dauphin.Field(
         dauphin.NonNull('AssetOrError'), assetKey=dauphin.NonNull(dauphin.String)
     )
-
-    def resolve_pipelineSnapshot(self, graphene_info, **kwargs):
-        return get_pipeline_snapshot(graphene_info, kwargs['snapshotId'])
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
@@ -182,7 +178,7 @@ class DauphinQuery(dauphin.ObjectType):
         return graphene_info.context.version
 
     def resolve_reloadSupported(self, graphene_info):
-        return graphene_info.context.is_reload_supported
+        return graphene_info.context.legacy_environment.is_reload_supported
 
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
@@ -191,16 +187,13 @@ class DauphinQuery(dauphin.ObjectType):
         return get_schedule_or_error(graphene_info, schedule_name)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
-        return get_pipeline_or_error(graphene_info, kwargs['params'].to_selector())
-
-    def resolve_pipeline(self, graphene_info, **kwargs):
-        return get_pipeline_or_raise(graphene_info, kwargs['params'].to_selector())
+        return get_pipeline_or_error(
+            graphene_info,
+            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
+        )
 
     def resolve_pipelinesOrError(self, graphene_info):
         return get_pipelines_or_error(graphene_info)
-
-    def resolve_pipelines(self, graphene_info):
-        return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
         filters = kwargs.get('filter')
@@ -213,6 +206,17 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run_by_id(graphene_info, runId)
+
+    def resolve_runGroupsOrError(self, graphene_info, **kwargs):
+        filters = kwargs.get('filter')
+        if filters is not None:
+            filters = filters.to_selector()
+
+        return graphene_info.schema.type_named('RunGroupsOrError')(
+            results=get_run_groups(
+                graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit')
+            )
+        )
 
     def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
         pipeline_name = kwargs.get('pipelineName')
@@ -237,22 +241,24 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
             graphene_info,
-            pipeline.to_selector(),
+            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
             kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
         )
 
-    def resolve_executionPlan(self, graphene_info, pipeline, **kwargs):
+    def resolve_executionPlanOrError(self, graphene_info, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
-            pipeline.to_selector(),
+            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
             kwargs.get('environmentConfigData'),
             kwargs.get('mode'),
         )
 
     def resolve_environmentSchemaOrError(self, graphene_info, **kwargs):
         return resolve_environment_schema_or_error(
-            graphene_info, kwargs['selector'].to_selector(), kwargs.get('mode')
+            graphene_info,
+            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['selector']),
+            kwargs.get('mode'),
         )
 
     def resolve_instance(self, graphene_info):
@@ -300,27 +306,27 @@ class DauphinDeleteRunMutation(dauphin.Mutation):
         return delete_pipeline_run(graphene_info, run_id)
 
 
-class DauphinCancelPipelineExecutionSuccess(dauphin.ObjectType):
+class DauphinTerminatePipelineExecutionSuccess(dauphin.ObjectType):
     class Meta(object):
-        name = 'CancelPipelineExecutionSuccess'
+        name = 'TerminatePipelineExecutionSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
-class DauphinCancelPipelineExecutionFailure(dauphin.ObjectType):
+class DauphinTerminatePipelineExecutionFailure(dauphin.ObjectType):
     class Meta(object):
-        name = 'CancelPipelineExecutionFailure'
+        name = 'TerminatePipelineExecutionFailure'
 
     run = dauphin.NonNull('PipelineRun')
     message = dauphin.NonNull(dauphin.String)
 
 
-class DauphinCancelPipelineExecutionResult(dauphin.Union):
+class DauphinTerminatePipelineExecutionResult(dauphin.Union):
     class Meta(object):
-        name = 'CancelPipelineExecutionResult'
+        name = 'TerminatePipelineExecutionResult'
         types = (
-            'CancelPipelineExecutionSuccess',
-            'CancelPipelineExecutionFailure',
+            'TerminatePipelineExecutionSuccess',
+            'TerminatePipelineExecutionFailure',
             'PipelineRunNotFoundError',
             'PythonError',
         )
@@ -430,17 +436,17 @@ class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
         )
 
 
-class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
+class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
     class Meta(object):
-        name = 'CancelPipelineExecutionMutation'
+        name = 'TerminatePipelineExecutionMutation'
 
     class Arguments(object):
         runId = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull('CancelPipelineExecutionResult')
+    Output = dauphin.NonNull('TerminatePipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return cancel_pipeline_execution(graphene_info, kwargs['runId'])
+        return terminate_pipeline_execution(graphene_info, kwargs['runId'])
 
 
 class DauphinExecutionTag(dauphin.InputObjectType):
@@ -489,7 +495,12 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 def create_execution_params(graphene_info, graphql_execution_params):
 
     preset_name = graphql_execution_params.get('preset')
+    selector = PipelineSelector.from_graphql_input(
+        graphene_info.context, graphql_execution_params['selector']
+    )
     if preset_name:
+        # This should return proper GraphQL errors
+        # https://github.com/dagster-io/dagster/issues/2507
         check.invariant(
             not graphql_execution_params.get('environmentConfigData'),
             'Invalid ExecutionParams. Cannot define environment_dict when using preset',
@@ -499,13 +510,14 @@ def create_execution_params(graphene_info, graphql_execution_params):
             'Invalid ExecutionParams. Cannot define mode when using preset',
         )
 
-        selector = graphql_execution_params['selector'].to_selector()
         check.invariant(
             not selector.solid_subset,
             'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
         )
 
-        external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector.name)
+        external_pipeline = get_full_external_pipeline_or_raise(
+            graphene_info, selector.pipeline_name
+        )
 
         if not external_pipeline.has_preset(preset_name):
             raise UserFacingGraphQLError(
@@ -517,7 +529,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=ExecutionSelector(selector.name, preset.solid_subset),
+            selector=selector.with_solid_subset(preset.solid_subset),
             environment_dict=preset.environment_dict,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
@@ -526,12 +538,14 @@ def create_execution_params(graphene_info, graphql_execution_params):
             step_keys=graphql_execution_params.get('stepKeys'),
         )
 
-    return execution_params_from_graphql(graphql_execution_params)
+    return execution_params_from_graphql(graphene_info.context, graphql_execution_params)
 
 
-def execution_params_from_graphql(graphql_execution_params):
+def execution_params_from_graphql(context, graphql_execution_params):
     return ExecutionParams(
-        selector=ExecutionSelector.from_dict(graphql_execution_params.get('selector')),
+        selector=PipelineSelector.from_graphql_input(
+            context, graphql_execution_params.get('selector')
+        ),
         environment_dict=graphql_execution_params.get('environmentConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
@@ -576,7 +590,7 @@ class DauphinReloadDagit(dauphin.Mutation):
     Output = dauphin.NonNull(dauphin.Boolean)
 
     def mutate(self, graphene_info):
-        return graphene_info.context.reloader.reload()
+        return graphene_info.context.legacy_environment.reloader.reload()
 
 
 class DauphinMutation(dauphin.ObjectType):
@@ -595,7 +609,7 @@ class DauphinMutation(dauphin.ObjectType):
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     reload_dagit = DauphinReloadDagit.Field()
-    cancel_pipeline_execution = DauphinCancelPipelineExecutionMutation.Field()
+    terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
 
 
@@ -642,7 +656,7 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     class Meta(object):
         name = 'ExecutionParams'
 
-    selector = dauphin.NonNull('ExecutionSelector')
+    selector = dauphin.NonNull('PipelineSelector')
     environmentConfigData = dauphin.Field('EnvironmentConfigData')
     mode = dauphin.Field(dauphin.String)
     executionMetadata = dauphin.Field('ExecutionMetadata')
@@ -650,17 +664,19 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     preset = dauphin.Field(dauphin.String)
 
 
-class DauphinExecutionSelector(dauphin.InputObjectType):
+class DauphinPipelineSelector(dauphin.InputObjectType):
     class Meta(object):
-        name = 'ExecutionSelector'
+        name = 'PipelineSelector'
         description = '''This type represents the fields necessary to identify a
         pipeline or pipeline subset.'''
 
-    name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    # legacy_
+    name = dauphin.Field(dauphin.String)
 
-    def to_selector(self):
-        return ExecutionSelector(self.name, self.solidSubset)
+    pipelineName = dauphin.Field(dauphin.String)
+    repositoryName = dauphin.Field(dauphin.String)
+    environmentName = dauphin.Field(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):
@@ -782,7 +798,7 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
         )
 
 
-class DauhphinRunLauncher(dauphin.ObjectType):
+class DauphinRunLauncher(dauphin.ObjectType):
     class Meta(object):
         name = 'RunLauncher'
 
@@ -795,7 +811,7 @@ class DauhphinRunLauncher(dauphin.ObjectType):
         return self._run_launcher.__class__.__name__
 
 
-class DauhphinInstance(dauphin.ObjectType):
+class DauphinInstance(dauphin.ObjectType):
     class Meta(object):
         name = 'Instance'
 
@@ -811,9 +827,7 @@ class DauhphinInstance(dauphin.ObjectType):
 
     def resolve_runLauncher(self, _graphene_info):
         return (
-            DauhphinRunLauncher(self._instance.run_launcher)
-            if self._instance.run_launcher
-            else None
+            DauphinRunLauncher(self._instance.run_launcher) if self._instance.run_launcher else None
         )
 
     def resolve_disableRunStart(self, _graphene_info):

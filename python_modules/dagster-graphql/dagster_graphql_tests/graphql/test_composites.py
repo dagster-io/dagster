@@ -1,95 +1,14 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-COMPOSITES_QUERY = '''
-query CompositesQuery {
-  pipeline(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles {
-        handleID
-        solid {
-          ...SolidInfo
-        }
-      }
-    }
-  }
-}
-
-fragment SolidInfo on Solid {
-  name
-  inputs {
-    definition {
-      name
-    }
-    dependsOn {
-      solid {
-        name
-      }
-    }
-  }
-  outputs {
-    definition {
-      name
-    }
-    dependedBy {
-      solid {
-        name
-      }
-    }
-  }
-  definition {
-    ... on CompositeSolidDefinition {
-      solids { name }
-      inputMappings {
-        definition { name }
-        mappedInput {
-          definition { name }
-          solid { name }
-        }
-      }
-      outputMappings {
-        definition {
-          name
-        }
-        mappedOutput {
-          definition { name }
-          solid { name }
-        }
-      }
-    }
-  }
-}
-'''
-
-PARENT_ID_QUERY = '''
-query withParent($parentHandleID: String) {
-  pipeline(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles(parentHandleID: $parentHandleID) {
-        handleID
-      }
-    }
-  }
-}
-'''
-
-SOLID_ID_QUERY = '''
-query solidFetch($id: String!) {
-  pipeline(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandle(handleID: $id) {
-        handleID
-      }
-    }
-  }
-}
-'''
-
+from .composites_query import (
+    COMPOSITES_QUERY,
+    COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,
+    NESTED_INPUT_DEPENDS_ON,
+    NESTED_OUTPUT_DEPENDED_BY,
+    PARENT_ID_QUERY,
+    SOLID_ID_QUERY,
+)
+from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 # 10 total solids in the composite pipeline:
 #
@@ -108,121 +27,66 @@ query solidFetch($id: String!) {
 #       (/2)
 
 
-def test_composites(graphql_context, snapshot):
-    result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY)
-    handle_map = {}
-
-    for obj in result.data["pipeline"]["solidHandles"]:
-        handle_map[obj["handleID"]] = obj["solid"]
-
-    assert len(handle_map) == 10
-
-    snapshot.assert_match(result.data)
-
-
-def test_parent_id_arg(graphql_context):
-    result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {})
-    assert len(result.data["pipeline"]["solidHandles"]) == 10
-
-    result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {'parentHandleID': ''})
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
-
-    result = execute_dagster_graphql(
-        graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four'}
+class TestComposites(
+    make_graphql_context_test_suite(
+        context_variants=GraphQLContextVariant.all_legacy_variants()
+        + [GraphQLContextVariant.in_memory_instance_out_of_process_env()]
     )
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
+):
+    def test_composites(self, graphql_context, snapshot):
+        result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY)
+        handle_map = {}
 
-    result = execute_dagster_graphql(
-        graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.adder_1'}
-    )
-    assert len(result.data["pipeline"]["solidHandles"]) == 2
+        for obj in result.data['pipelineOrError']['solidHandles']:
+            handle_map[obj['handleID']] = obj['solid']
 
-    result = execute_dagster_graphql(
-        graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.doot'}
-    )
-    assert len(result.data["pipeline"]["solidHandles"]) == 0
+        assert len(handle_map) == 10
 
+        snapshot.assert_match(result.data)
 
-def test_solid_id(graphql_context):
-    result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'add_four'})
-    assert result.data["pipeline"]["solidHandle"]["handleID"] == 'add_four'
+    def test_parent_id_arg(self, graphql_context):
+        result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {})
+        assert len(result.data['pipelineOrError']['solidHandles']) == 10
 
-    result = execute_dagster_graphql(
-        graphql_context, SOLID_ID_QUERY, {'id': 'add_four.adder_1.adder_1'}
-    )
-    assert result.data["pipeline"]["solidHandle"]["handleID"] == 'add_four.adder_1.adder_1'
+        result = execute_dagster_graphql(graphql_context, PARENT_ID_QUERY, {'parentHandleID': ''})
+        assert len(result.data['pipelineOrError']['solidHandles']) == 2
 
-    result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'bonkahog'})
-    assert result.data["pipeline"]["solidHandle"] == None
+        result = execute_dagster_graphql(
+            graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four'}
+        )
+        assert len(result.data['pipelineOrError']['solidHandles']) == 2
 
+        result = execute_dagster_graphql(
+            graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.adder_1'}
+        )
+        assert len(result.data['pipelineOrError']['solidHandles']) == 2
 
-COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = '''
-query CompositesQuery {
-  pipeline(params: { name: "composites_pipeline" }) {
-    __typename
-    ... on Pipeline {
-      name
-      solidHandles {
-        handleID
-        solid {
-          ...SolidInfo
-        }
-      }
-    }
-  }
-}
-'''
+        result = execute_dagster_graphql(
+            graphql_context, PARENT_ID_QUERY, {'parentHandleID': 'add_four.doot'}
+        )
+        assert len(result.data['pipelineOrError']['solidHandles']) == 0
 
+    def test_solid_id(self, graphql_context):
+        result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'add_four'})
+        assert result.data['pipelineOrError']['solidHandle']['handleID'] == 'add_four'
 
-NESTED_INPUT_DEPENDS_ON = '''
-fragment SolidInfo on Solid {
-  outputs {
-    dependedBy {
-      solid {
-        name
-        inputs {
-          definition { name }
-          dependsOn {
-            definition {
-              name
-            }
-          }
-        }
-      }
-    }
-  }
-}
-'''
+        result = execute_dagster_graphql(
+            graphql_context, SOLID_ID_QUERY, {'id': 'add_four.adder_1.adder_1'}
+        )
+        assert (
+            result.data['pipelineOrError']['solidHandle']['handleID'] == 'add_four.adder_1.adder_1'
+        )
 
-NESTED_OUTPUT_DEPENDED_BY = '''
-fragment SolidInfo on Solid {
-  name
-  inputs {
-    definition {
-      name
-    }
-    dependsOn {
-      solid {
-        name
-        outputs {
-          dependedBy {
-            definition { name }
-          }
-        }
-      }
-    }
-  }
-}
-'''
+        result = execute_dagster_graphql(graphql_context, SOLID_ID_QUERY, {'id': 'bonkahog'})
+        assert result.data['pipelineOrError']['solidHandle'] == None
 
+    def test_recurse_composites_depends(self, graphql_context):
+        execute_dagster_graphql(
+            graphql_context,
+            COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_INPUT_DEPENDS_ON,
+        )
 
-def test_recurse_composites_depends(graphql_context):
-    execute_dagster_graphql(
-        graphql_context,
-        COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_INPUT_DEPENDS_ON,
-    )
-
-    execute_dagster_graphql(
-        graphql_context,
-        COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_OUTPUT_DEPENDED_BY,
-    )
+        execute_dagster_graphql(
+            graphql_context,
+            COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE + NESTED_OUTPUT_DEPENDED_BY,
+        )

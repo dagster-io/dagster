@@ -4,15 +4,35 @@ import gevent.lock
 
 from dagster import check
 from dagster.core.events.log import EventRecord
+from dagster.serdes import ConfigurableClass
 
 from .base import AssetAwareEventLogStorage, EventLogSequence, EventLogStorage
 
 
-class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage):
-    def __init__(self):
+class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
+    '''
+    In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
+
+    WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
+    '''
+
+    def __init__(self, inst_data=None):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
         self._handlers = defaultdict(set)
+        self._inst_data = inst_data
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @classmethod
+    def from_config_value(cls, inst_data, config_value):
+        return cls(inst_data)
 
     def get_logs_for_run(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')

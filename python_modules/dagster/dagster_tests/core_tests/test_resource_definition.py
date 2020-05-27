@@ -616,7 +616,7 @@ def test_solid_failure_resource_teardown_raise():
         mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
     )
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(Exception):
         execute_pipeline(pipeline)
 
     assert called == ['A', 'B']

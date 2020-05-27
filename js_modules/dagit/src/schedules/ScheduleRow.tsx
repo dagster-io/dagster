@@ -4,7 +4,6 @@ import { useMutation } from "@apollo/react-hooks";
 
 import {
   Button,
-  Colors,
   Switch,
   Icon,
   Menu,
@@ -26,11 +25,7 @@ import {
   StopSchedule,
   StopSchedule_stopRunningSchedule_PythonError
 } from "./types/StopSchedule";
-import {
-  ScheduleStatus,
-  ScheduleTickStatus,
-  ScheduleAttemptStatus
-} from "../types/globalTypes";
+import { ScheduleStatus, ScheduleTickStatus } from "../types/globalTypes";
 
 import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
@@ -283,11 +278,13 @@ export const ScheduleRow: React.FunctionComponent<{
                   text="Open in Playground..."
                   icon="edit"
                   target="_blank"
-                  href={`/playground/${pipelineName}/setup?${qs.stringify({
-                    mode,
-                    solidSubset,
-                    config: environmentConfigYaml
-                  })}`}
+                  href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
+                    {
+                      mode,
+                      solidSubset,
+                      config: environmentConfigYaml
+                    }
+                  )}`}
                 />
               ) : (
                 <MenuItem
@@ -409,28 +406,5 @@ const STOP_SCHEDULE_MUTATION = gql`
         stack
       }
     }
-  }
-`;
-
-export const AttemptStatus = styled.div<{ status: ScheduleAttemptStatus }>`
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  align-self: center;
-  transition: background 200ms linear;
-  background: ${({ status }) =>
-    ({
-      [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
-      [ScheduleAttemptStatus.ERROR]: Colors.RED3,
-      [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
-    }[status])};
-  &:hover {
-    background: ${({ status }) =>
-      ({
-        [ScheduleAttemptStatus.SUCCESS]: Colors.GREEN2,
-        [ScheduleAttemptStatus.ERROR]: Colors.RED3,
-        [ScheduleAttemptStatus.SKIPPED]: Colors.GOLD3
-      }[status])};
   }
 `;

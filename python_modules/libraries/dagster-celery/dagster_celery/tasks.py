@@ -9,7 +9,7 @@ from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
 from kombu import Queue
 
 from dagster import DagsterInstance, EventMetadataEntry, check, seven
-from dagster.core.definitions.executable import InterProcessExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.retries import Retries
@@ -31,19 +31,11 @@ def create_task(celery_app, **task_kwargs):
 
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
-        pipeline = InterProcessExecutablePipeline.from_dict(executable_dict)
+        pipeline = ReconstructablePipeline.from_dict(executable_dict)
         retries = Retries.from_config(retries_dict)
 
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
-
-        pipeline_def = pipeline.get_definition()
-        check.invariant(
-            pipeline_def.selector == pipeline_run.selector,
-            'Selector mismatch! PipelineDef: {pipe} vs PipelineRun: {run}'.format(
-                pipe=pipeline_def.selector, run=pipeline_run.selector,
-            ),
-        )
 
         step_keys_str = ", ".join(step_keys)
 

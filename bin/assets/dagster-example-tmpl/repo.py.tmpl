@@ -1,0 +1,15 @@
+from dagster import RepositoryDefinition, pipeline, solid
+
+
+@solid
+def hello(_):
+    return 1
+
+
+@pipeline
+def my_pipeline():
+    hello()
+
+
+def define_repository():
+    return RepositoryDefinition("{{EXAMPLE_NAME}}", pipeline_defs=[my_pipeline])

@@ -49,10 +49,8 @@ from dagster.core.definitions import (
     multiprocess_executor,
     pipeline,
     reconstructable,
-    repository_partitions,
     resource,
     schedule,
-    schedules,
     solid,
     system_storage,
     weekly_schedule,
@@ -167,7 +165,6 @@ __all__ = [
     'pipeline',
     'resource',
     'schedule',
-    'schedules',
     'solid',
     'system_storage',
     # Execution
@@ -271,5 +268,4 @@ __all__ = [
     'hourly_schedule',
     'monthly_schedule',
     'weekly_schedule',
-    'repository_partitions',
 ]

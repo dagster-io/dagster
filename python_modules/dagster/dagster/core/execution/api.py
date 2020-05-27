@@ -18,7 +18,7 @@ from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.telemetry import telemetry_wrapper
+from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
 from dagster.utils import merge_dicts
 
@@ -95,7 +95,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``False``.
-    
+
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
@@ -281,6 +281,8 @@ def execute_pipeline(
         instance=instance,
     )
 
+    log_repo_stats(instance=instance, pipeline=pipeline)
+
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         environment_dict=environment_dict,
@@ -447,7 +449,7 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
 
 class _ExecuteRunWithPlanIterable(object):
     '''Utility class to consolidate execution logic.
-    
+
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
     for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,

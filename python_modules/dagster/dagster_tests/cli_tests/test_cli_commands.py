@@ -52,7 +52,7 @@ from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path
-from dagster.utils.test import FilesytemTestScheduler
+from dagster.utils.test import FilesystemTestScheduler
 
 
 def no_print(_):
@@ -85,8 +85,8 @@ def baz_pipeline():
 
 def define_bar_repo():
     return RepositoryDefinition(
-        'bar',
-        {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        name='bar',
+        pipeline_dict={'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
         schedule_defs=define_bar_schedules(),
         partition_set_defs=define_baz_partitions(),
     )
@@ -664,7 +664,7 @@ def define_scheduler_instance():
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesytemTestScheduler(temp_dir),
+            scheduler=FilesystemTestScheduler(temp_dir),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
         )
 
@@ -915,7 +915,7 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
         self._queue = []
 
-    def launch_run(self, instance, run):
+    def launch_run(self, instance, run, external_pipeline=None):
         self._queue.append(run)
         return run
 

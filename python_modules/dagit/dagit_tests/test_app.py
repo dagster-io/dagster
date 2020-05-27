@@ -1,10 +1,9 @@
 import pytest
-from dagit.app import create_app_with_external_repository, create_app_with_reconstructable_repo
+from dagit.app import create_app_with_reconstructable_repo
 from dagit.cli import host_dagit_ui_with_reconstructable_repo
 
 from dagster import seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.seven import mock
 from dagster.utils import file_relative_path
@@ -15,16 +14,6 @@ def test_create_app_with_reconstructable_repo():
         file_relative_path(__file__, './repository.yaml')
     )
     assert create_app_with_reconstructable_repo(recon_repo, DagsterInstance.ephemeral())
-
-
-def test_create_app_with_external_repo_data():
-    recon_repo = ReconstructableRepository.from_yaml(
-        file_relative_path(__file__, './repository.yaml')
-    )
-    assert create_app_with_external_repository(
-        ExternalRepository.from_repository_def(recon_repo.get_definition()),
-        DagsterInstance.ephemeral(),
-    )
 
 
 def test_notebook_view():

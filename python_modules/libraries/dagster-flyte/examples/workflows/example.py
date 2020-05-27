@@ -1,14 +1,10 @@
-import sys
-
 from dagster_flyte import compile_pipeline_to_flyte  # pylint: disable=import-error
-from flytekit.common.tasks import sdk_runnable
-from flytekit.common.workflow import SdkWorkflow
 
 from dagster import pipeline, solid
 
 
 @solid
-def mult_x(context, x):  # pylint: disable=unused-argument
+def mult_x(_, x: int) -> int:
     return 2 * x
 
 
@@ -17,11 +13,22 @@ def pipe():
     mult_x()
 
 
-environment_dict: dict = {'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}}}
+environment_dict: dict = {
+    'storage': {'filesystem': {}},
+    'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}},
+}
 
-workflow_obj = compile_pipeline_to_flyte(pipe, environment_dict=environment_dict, module=__name__)
+compute_dict = {
+    'mult_x': {
+        'storage_request': '300Mi',
+        'memory_request': '300Mi',
+        'cpu_request': '200m',
+        'storage_limit': '300Mi',
+        'memory_limit': '300Mi',
+        'cpu_limit': '200m',
+    }
+}
 
-assert isinstance(workflow_obj, SdkWorkflow)
-assert len(workflow_obj.nodes) == 1
-assert hasattr(sys.modules[__name__], 'mult_x')
-assert isinstance(getattr(sys.modules[__name__], 'mult_x'), sdk_runnable.SdkRunnableTask)
+workflow_obj = compile_pipeline_to_flyte(
+    pipe, environment_dict=environment_dict, compute_dict=compute_dict, module=__name__
+)

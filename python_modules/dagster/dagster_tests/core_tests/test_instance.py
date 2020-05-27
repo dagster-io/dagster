@@ -6,15 +6,14 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
+from dagster.core.test_utils import create_run_for_test
 
 
 def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = instance.create_run(
-        pipeline_name='foo_pipeline', run_id='new_run', pipeline_snapshot=None
-    )
+    pipeline_run = create_run_for_test(instance, pipeline_name='foo_pipeline', run_id='new_run')
 
     assert instance.get_runs() == [pipeline_run]
 

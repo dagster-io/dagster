@@ -1,13 +1,18 @@
-import os
 from contextlib import contextmanager
 
 from sqlalchemy.pool import NullPool
 
 from dagster import check
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    get_alembic_config,
+    stamp_alembic_rev,
+)
+from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
-from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev
 from ..schema import ScheduleStorageSqlMetadata
 from ..sql_schedule_storage import SqlScheduleStorage
 
@@ -37,8 +42,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def from_local(base_dir, inst_data=None):
         check.str_param(base_dir, 'base_dir')
         mkdir_p(base_dir)
-        path_components = os.path.abspath(base_dir).split(os.sep)
-        conn_string = 'sqlite:///{}'.format('/'.join(path_components + ['schedules.db']))
+        conn_string = create_db_conn_string(base_dir, 'schedules')
         engine = create_engine(conn_string, poolclass=NullPool)
         engine.execute('PRAGMA journal_mode=WAL;')
         ScheduleStorageSqlMetadata.create_all(engine)

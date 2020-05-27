@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_basic_preset_query_with_presets 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [
             {

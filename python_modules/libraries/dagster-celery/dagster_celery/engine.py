@@ -56,8 +56,6 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
 
     celery_config = pipeline_context.executor_config
 
-    storage = pipeline_context.environment_dict.get('storage')
-
     # https://github.com/dagster-io/dagster/issues/2440
     check.invariant(
         pipeline_context.system_storage_def.is_persistent,
@@ -91,7 +89,7 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
             if result.ready():
                 try:
                     step_events = result.get()
-                except Exception as e:  # pylint: disable=broad-except
+                except Exception:  # pylint: disable=broad-except
                     # We will want to do more to handle the exception here.. maybe subclass Task
                     # Certainly yield an engine or pipeline event
                     step_events = []

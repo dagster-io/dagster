@@ -1,5 +1,8 @@
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
-from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
+from dagster_graphql.implementation.context import (
+    DagsterGraphQLContext,
+    InProcessDagsterEnvironment,
+)
 from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.schema import create_schema
 from dagster_graphql.test.utils import execute_dagster_graphql
@@ -20,15 +23,21 @@ def test_execute_hammer_through_dagit():
 
     execution_manager = SubprocessExecutionManager(instance)
 
-    context = DagsterGraphQLInProcessRepositoryContext(
-        recon_repo=recon_repo, execution_manager=execution_manager, instance=instance
+    context = DagsterGraphQLContext(
+        environments=[
+            InProcessDagsterEnvironment(recon_repo, execution_manager=execution_manager,)
+        ],
+        instance=instance,
     )
 
     executor = SyncExecutor()
 
     variables = {
         'executionParams': {
-            'environmentConfigData': {'storage': {'filesystem': {}}, 'execution': {'dask': {}}},
+            'environmentConfigData': {
+                'storage': {'filesystem': {}},
+                'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
+            },
             'selector': {'name': 'hammer_pipeline'},
             'mode': 'default',
         }
@@ -47,7 +56,7 @@ def test_execute_hammer_through_dagit():
 
     run_id = start_pipeline_result.data['startPipelineExecution']['run']['runId']
 
-    context.execution_manager.join()
+    context.legacy_environment.execution_manager.join()
 
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
 

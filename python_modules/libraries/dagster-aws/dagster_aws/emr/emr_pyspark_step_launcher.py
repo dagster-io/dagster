@@ -1,10 +1,11 @@
 import os
 import pickle
+import time
 
 import boto3
+from botocore.exceptions import ClientError
 from dagster_aws.emr import EmrJobRunner, emr_step_main
 from dagster_aws.emr.utils import build_pyspark_zip
-from dagster_aws.s3.file_manager import S3FileHandle
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 from dagster_spark.configs_spark import spark_config as get_spark_config
 from dagster_spark.utils import flatten_dict, format_for_cli
@@ -203,20 +204,47 @@ class EmrPySparkStepLauncher(StepLauncher):
         emr_step_id = self.emr_job_runner.add_job_flow_steps(log, self.cluster_id, [emr_step_def])[
             0
         ]
-        self.emr_job_runner.wait_for_emr_steps_to_complete(log, self.cluster_id, [emr_step_id])
-        if self.wait_for_logs:
-            self._log_logs_from_s3(log, emr_step_id)
 
-        for event in self.get_step_events(step_context, run_id, step_key):
+        s3 = boto3.resource('s3', region_name=self.region_name)
+        for event in self.wait_for_completion(log, s3, run_id, step_key, emr_step_id):
             log_step_event(step_context, event)
             yield event
 
-    def get_step_events(self, step_context, run_id, step_key):
-        events_file_handle = S3FileHandle(
-            self.staging_bucket, self._artifact_s3_key(run_id, step_key, PICKLED_EVENTS_FILE_NAME),
+        if self.wait_for_logs:
+            self._log_logs_from_s3(log, emr_step_id)
+
+    def wait_for_completion(self, log, s3, run_id, step_key, emr_step_id, check_interval=15):
+        ''' We want to wait for the EMR steps to complete, and while that's happening, we want to
+        yield any events that have been written to S3 for us by the remote process.
+        After the the EMR steps complete, we want a final chance to fetch events before finishing
+        the step.
+        '''
+        done = False
+        all_events = []
+        while not done:
+            time.sleep(check_interval)  # AWS rate-limits us if we poll it too often
+            done = self.emr_job_runner.is_emr_step_complete(log, self.cluster_id, emr_step_id)
+
+            all_events_new = self.read_events(s3, run_id, step_key)
+            if len(all_events_new) > len(all_events):
+                for i in range(len(all_events), len(all_events_new)):
+                    yield all_events_new[i]
+                all_events = all_events_new
+
+    def read_events(self, s3, run_id, step_key):
+        events_s3_obj = s3.Object(  # pylint: disable=no-member
+            self.staging_bucket, self._artifact_s3_key(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
         )
-        events_data = step_context.file_manager.read_data(events_file_handle)
-        return pickle.loads(events_data)
+
+        try:
+            events_data = events_s3_obj.get()['Body'].read()
+            return pickle.loads(events_data)
+        except ClientError as ex:
+            # The file might not be there yet, which is fine
+            if ex.response['Error']['Code'] == 'NoSuchKey':
+                return []
+            else:
+                raise ex
 
     def _log_logs_from_s3(self, log, emr_step_id):
         '''Retrieves the logs from the remote PySpark process that EMR posted to S3 and logs

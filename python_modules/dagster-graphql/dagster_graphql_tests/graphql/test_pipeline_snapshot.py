@@ -10,22 +10,6 @@ from dagster.seven import json, mock
 
 from .setup import noop_pipeline
 
-SNAPSHOT_QUERY = '''
-query PipelineSnapshotQuery($snapshotId: String!) {
-    pipelineSnapshot(snapshotId: $snapshotId) {
-        __typename
-        name
-        pipelineSnapshotId
-        description
-        dagsterTypes { key }
-        solids { name }
-        modes { name }
-        solidHandles { handleID }
-        tags { key value }
-    }
-}
-'''
-
 SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = '''
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
     pipelineSnapshotOrError(snapshotId: $snapshotId) {
@@ -71,23 +55,6 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineName: String!) {
 # makes snapshot tests much easier to debug
 def pretty_dump(data):
     return json.dumps(data, indent=2, separators=(',', ': '))
-
-
-def test_fetch_snapshot_success(graphql_context, snapshot):
-    instance = graphql_context.instance
-    result = execute_pipeline(noop_pipeline, instance=instance)
-    assert result.success
-    run = instance.get_run_by_id(result.run_id)
-    assert run.pipeline_snapshot_id
-
-    result = execute_dagster_graphql(
-        graphql_context, SNAPSHOT_QUERY, {'snapshotId': run.pipeline_snapshot_id}
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['pipelineSnapshot']['__typename'] == 'PipelineSnapshot'
-    snapshot.assert_match(pretty_dump(result.data))
 
 
 def test_fetch_snapshot_or_error_by_snapshot_id_success(graphql_context, snapshot):

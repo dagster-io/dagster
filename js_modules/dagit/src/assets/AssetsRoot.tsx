@@ -1,8 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Select } from "@blueprintjs/select";
-import { NonIdealState, Colors } from "@blueprintjs/core";
-import { Button, MenuItem } from "@blueprintjs/core";
+import { Icon, InputGroup, NonIdealState } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { AssetsRootQuery_assetsOrError_AssetConnection_nodes } from "./types/AssetsRootQuery";
@@ -21,15 +19,11 @@ type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 
 export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
   assetSelector: string;
-}>> = ({ match, history }) => {
+}>> = ({ match }) => {
   const assetName =
     match.params.assetSelector &&
     decodeURIComponent(match.params.assetSelector);
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
-
-  const onSelect = (assetName: string) => {
-    history.push(`/assets/${encodeURIComponent(assetName)}`);
-  };
 
   return (
     <Loading queryResult={queryResult}>
@@ -86,24 +80,11 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
         const assetIsKnown = assetKeys.includes(assetName);
 
         const topNav = (
-          <TabBarContainer>
-            <StringSelect
-              items={assetKeys}
-              itemRenderer={BasicStringRenderer}
-              itemListPredicate={BasicStringPredicate}
-              noResults={<MenuItem disabled={true} text="No results." />}
-              onItemSelect={onSelect}
-            >
-              <Button
-                style={{ minWidth: 200 }}
-                text={assetIsKnown ? assetName : "Select an asset..."}
-                id="playground-select-pipeline"
-                disabled={assetKeys.length === 0}
-                rightIcon="double-caret-vertical"
-                icon="send-to-graph"
-              />
-            </StringSelect>
-          </TabBarContainer>
+          <div style={{ margin: 20 }}>
+            <Link to="/assets">
+              <Icon icon="chevron-left" /> Back to Assets
+            </Link>
+          </div>
         );
 
         if (!assetName) {
@@ -138,51 +119,54 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
   );
 };
 
-const StringSelect = Select.ofType<string>();
-const BasicStringPredicate = (text: string, items: string[]) =>
-  items.filter(i => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
-
-const BasicStringRenderer = (
-  item: string,
-  options: { handleClick: any; modifiers: any }
-) => (
-  <MenuItem
-    key={item}
-    text={item}
-    active={options.modifiers.active}
-    onClick={options.handleClick}
-  />
-);
+const matches = (haystack: string, needle: string) =>
+  needle
+    .toLowerCase()
+    .split(" ")
+    .filter(x => x)
+    .every(word => haystack.toLowerCase().includes(word));
 
 const AssetsTable = ({ assets }: { assets: Asset[] }) => {
+  const [q, setQ] = React.useState<string>("");
   return (
     <div style={{ margin: 30 }}>
       <Header>Assets</Header>
       <div style={{ marginTop: 30 }}>
+        <InputGroup
+          type="text"
+          value={q}
+          small
+          placeholder={`Search asset_keys...`}
+          onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
+          style={{ marginBottom: 20 }}
+        />
         <Legend>
           <LegendColumn>Asset Key</LegendColumn>
           <LegendColumn>Last materialized</LegendColumn>
         </Legend>
-        {assets.map((asset: Asset, idx: number) => {
-          const timestamp = asset.assetMaterializations.length
-            ? new Date(
-                parseInt(
-                  asset.assetMaterializations[0].materializationEvent.timestamp,
-                  10
-                )
-              ).toLocaleString()
-            : "-";
-          return (
-            <RowContainer key={idx}>
-              <RowColumn>
-                <Link to={`/assets/${encodeURIComponent(asset.key)}`}>
-                  {asset.key}
-                </Link>
-              </RowColumn>
-              <RowColumn>{timestamp}</RowColumn>
-            </RowContainer>
-          );
-        })}
+        {assets
+          .filter((asset: Asset) => !q || matches(asset.key, q))
+          .map((asset: Asset, idx: number) => {
+            const timestamp = asset.assetMaterializations.length
+              ? new Date(
+                  parseInt(
+                    asset.assetMaterializations[0].materializationEvent
+                      .timestamp,
+                    10
+                  )
+                ).toLocaleString()
+              : "-";
+            return (
+              <RowContainer key={idx}>
+                <RowColumn>
+                  <Link to={`/assets/${encodeURIComponent(asset.key)}`}>
+                    {asset.key}
+                  </Link>
+                </RowColumn>
+                <RowColumn>{timestamp}</RowColumn>
+              </RowContainer>
+            );
+          })}
       </div>
     </div>
   );
@@ -196,16 +180,6 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
-`;
-const TabBarContainer = styled.div`
-  height: 45px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  border-bottom: 1px solid ${Colors.GRAY5};
-  background: ${Colors.LIGHT_GRAY3};
-  padding: 2px 10px;
-  z-index: 3;
 `;
 
 export const ASSETS_ROOT_QUERY = gql`

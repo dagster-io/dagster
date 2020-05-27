@@ -39,6 +39,29 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
+    instance = graphene_info.context.instance
+    execution_manager_settings = instance.dagit_settings.get('execution_manager')
+    if execution_manager_settings and execution_manager_settings.get('disabled'):
+        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
+
+    # This is a purely migratory codepath that allows use to configure
+    # run launchers to "hijack" the start process. Once the launch-start
+    # unification is complete the entire start code path will be
+    # eliminated, including this.
+    if instance.run_launcher and instance.run_launcher.hijack_start:
+        from .launch_execution import do_launch
+
+        run = do_launch(graphene_info, execution_params, is_reexecuted)
+
+        return graphene_info.schema.type_named('StartPipelineRunSuccess')(
+            run=graphene_info.schema.type_named('PipelineRun')(run)
+        )
+
+    check.invariant(
+        graphene_info.context.legacy_environment.execution_manager,
+        'Must have execution manager configured is you are not using a hijacking run launcher',
+    )
+
     if is_reexecuted:
         # required fields for re-execution
         execution_metadata = check.inst_param(
@@ -47,13 +70,10 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         check.str_param(execution_metadata.root_run_id, 'root_run_id')
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
-    instance = graphene_info.context.instance
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
-
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+        graphene_info,
+        execution_params.selector.pipeline_name,
+        execution_params.selector.solid_subset,
     )
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
@@ -93,7 +113,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     except DagsterRunConflict as exc:
         return graphene_info.schema.type_named('PipelineRunConflict')(exc)
 
-    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
+    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
@@ -117,12 +137,20 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
+    if instance.run_launcher and instance.run_launcher.hijack_start:
+        from .launch_execution import do_launch_for_created_run
+
+        run = do_launch_for_created_run(graphene_info, run_id)
+
+        return graphene_info.schema.type_named('StartPipelineRunSuccess')(
+            run=graphene_info.schema.type_named('PipelineRun')(run)
+        )
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, pipeline_run.selector.name, pipeline_run.selector.solid_subset
+        graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
     )
 
     validated_config = validate_config_from_snap(
@@ -130,13 +158,14 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         external_pipeline.root_config_key_for_mode(pipeline_run.mode),
         pipeline_run.environment_dict,
     )
+
     if not validated_config.success:
         # If the config is invalid, we construct a DagsterInvalidConfigError exception and
         # insert it into the event log. We also return a PipelineConfigValidationInvalid user facing
         # graphql error.
 
         # We currently re-use the engine events machinery to add the error to the event log, but
-        # may need to create a new event type and instance method to handle these erros.
+        # may need to create a new event type and instance method to handle these errors.
         invalid_config_exception = DagsterInvalidConfigError(
             'Error in config for pipeline {}'.format(external_pipeline.name),
             validated_config.errors,
@@ -162,7 +191,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
             external_pipeline, validated_config.errors
         )
 
-    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
+    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)

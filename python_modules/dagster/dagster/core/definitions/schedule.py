@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -12,7 +11,7 @@ from dagster.utils import merge_dicts
 from .mode import DEFAULT_MODE_NAME
 
 
-class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance repository')):
+class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance')):
     '''Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
@@ -21,17 +20,14 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance 
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
-        repository (RepositoryDefinition): The repository that contains the pipeline
-            the schedule is targeting
     '''
 
-    def __new__(cls, instance, repository):
-        from dagster.core.definitions.repository import RepositoryDefinition
+    def __new__(
+        cls, instance,
+    ):
 
         return super(ScheduleExecutionContext, cls).__new__(
-            cls,
-            check.inst_param(instance, 'instance', DagsterInstance),
-            check.inst_param(repository, 'repository', RepositoryDefinition),
+            cls, check.inst_param(instance, 'instance', DagsterInstance),
         )
 
 
@@ -87,7 +83,8 @@ class ScheduleDefinition(object):
         '_environment_dict',
         '_tags',
         '_mode',
-        '_selector',
+        '_pipeline_name',
+        '_solid_subset',
         '_tags_fn',
         '_should_execute',
     ]
@@ -151,7 +148,8 @@ class ScheduleDefinition(object):
         self._tags_fn = tags_fn
         self._should_execute = should_execute
         self._mode = mode
-        self._selector = ExecutionSelector(pipeline_name, solid_subset)
+        self._pipeline_name = pipeline_name
+        self._solid_subset = solid_subset
 
     @property
     def schedule_definition_data(self):
@@ -168,10 +166,6 @@ class ScheduleDefinition(object):
     @property
     def environment_vars(self):
         return self._schedule_definition_data.environment_vars
-
-    @property
-    def selector(self):
-        return self._selector
 
     @property
     def mode(self):
@@ -199,3 +193,11 @@ class ScheduleDefinition(object):
     def should_execute(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)
         return self._should_execute(context)
+
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
+
+    @property
+    def solid_subset(self):
+        return self._solid_subset

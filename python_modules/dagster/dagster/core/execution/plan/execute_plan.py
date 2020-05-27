@@ -185,7 +185,6 @@ def _dagster_event_sequence_for_step(step_context, retries):
                     step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
                 )
             else:
-                attempt_num = prev_attempts + 1
                 yield DagsterEvent.step_retry_event(
                     step_context,
                     StepRetryData(

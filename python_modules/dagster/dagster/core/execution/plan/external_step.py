@@ -4,10 +4,9 @@ import subprocess
 import sys
 
 from dagster import Field, StringSource, check, resource
-from dagster.core.definitions.pointer import FileCodePointer, ModuleCodePointer
+from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
-    ReconstructablePipelineFromRepo,
     ReconstructableRepository,
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
@@ -99,21 +98,10 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
     '''
     recon_pipeline = step_context.pipeline
     if package_dir:
-
         if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
-            recon_pipeline.pointer, FileCodePointer
-        ):
-            recon_pipeline = ReconstructablePipeline(
-                pointer=ModuleCodePointer(
-                    _module_in_package_dir(recon_pipeline.pointer.python_file, package_dir),
-                    recon_pipeline.pointer.fn_name,
-                ),
-                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
-            )
-        elif isinstance(recon_pipeline, ReconstructablePipelineFromRepo) and isinstance(
             recon_pipeline.repository.pointer, FileCodePointer
         ):
-            recon_pipeline = ReconstructablePipelineFromRepo(
+            recon_pipeline = ReconstructablePipeline(
                 repository=ReconstructableRepository(
                     pointer=ModuleCodePointer(
                         _module_in_package_dir(
@@ -139,7 +127,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
 def step_run_ref_to_step_context(step_run_ref):
     pipeline_def = step_run_ref.recon_pipeline.get_definition().subset_for_execution(
-        step_run_ref.pipeline_run.selector.solid_subset
+        step_run_ref.pipeline_run.solid_subset
     )
 
     execution_plan = create_execution_plan(

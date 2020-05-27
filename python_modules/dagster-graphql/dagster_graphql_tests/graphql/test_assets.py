@@ -91,7 +91,7 @@ def asset_repo():
         solid_b(solid_a())
 
     return RepositoryDefinition(
-        'asset_repo', pipeline_defs=[single_asset_pipeline, multi_asset_pipeline]
+        name='asset_repo', pipeline_defs=[single_asset_pipeline, multi_asset_pipeline]
     )
 
 

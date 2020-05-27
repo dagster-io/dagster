@@ -10,7 +10,6 @@ from dagster_graphql.client.util import construct_variables
 from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 
 def check_events_for_failures(events):
@@ -122,14 +121,16 @@ def invoke_steps_within_python_operator(
     )
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
     if instance:
-        instance.get_or_create_run(
+        instance.register_managed_run(
             pipeline_name=pipeline_name,
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
+            solid_subset=None,
             step_keys_to_execute=None,
             tags=None,
-            status=PipelineRunStatus.MANAGED,
+            root_run_id=None,
+            parent_run_id=None,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
         )

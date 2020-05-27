@@ -4,8 +4,10 @@ import logging
 
 import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
+from dagster_graphql.implementation.utils import PipelineSelector
 
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
@@ -18,7 +20,6 @@ from dagster.core.definitions.events import (
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData
@@ -120,8 +121,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     tags = dauphin.non_null_list('PipelineTag')
     rootRunId = dauphin.Field(dauphin.String)
     parentRunId = dauphin.Field(dauphin.String)
-    canCancel = dauphin.NonNull(dauphin.Boolean)
-    executionSelection = dauphin.NonNull('ExecutionSelection')
+    canTerminate = dauphin.NonNull(dauphin.Boolean)
+    assets = dauphin.non_null_list('Asset')
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -130,7 +131,14 @@ class DauphinPipelineRun(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
+        return get_pipeline_reference_or_raise(
+            graphene_info,
+            PipelineSelector.legacy(
+                graphene_info.context,
+                self._pipeline_run.pipeline_name,
+                self._pipeline_run.solid_subset,
+            ),
+        )
 
     def resolve_pipelineSnapshotId(self, _):
         return self._pipeline_run.pipeline_snapshot_id
@@ -193,11 +201,19 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def run_id(self):
         return self.runId
 
-    def resolve_canCancel(self, graphene_info):
-        return graphene_info.context.execution_manager.can_terminate(self.run_id)
+    def resolve_canTerminate(self, graphene_info):
+        legacy_cancel = graphene_info.context.legacy_environment.execution_manager.can_terminate(
+            self.run_id
+        )
+        launcher_cancel = (
+            graphene_info.context.instance.run_launcher.can_terminate(self.run_id)
+            if graphene_info.context.instance.run_launcher
+            else False
+        )
+        return legacy_cancel or launcher_cancel
 
-    def resolve_executionSelection(self, graphene_info):
-        return graphene_info.schema.type_named('ExecutionSelection')(self._pipeline_run.selector)
+    def resolve_assets(self, graphene_info):
+        return get_assets_for_run_id(graphene_info, self.run_id)
 
 
 class DauphinRunGroup(dauphin.ObjectType):
@@ -212,20 +228,6 @@ class DauphinRunGroup(dauphin.ObjectType):
         check.list_param(runs, 'runs', DauphinPipelineRun)
 
         super(DauphinRunGroup, self).__init__(rootRunId=root_run_id, runs=runs)
-
-
-# output version of input type DauphinExecutionSelector
-class DauphinExecutionSelection(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ExecutionSelection'
-
-    name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
-
-    def __init__(self, selector):
-        check.inst_param(selector, 'selector', ExecutionSelector)
-        self.name = selector.name
-        self.solidSubset = selector.solid_subset
 
 
 class DauphinLogLevel(dauphin.Enum):
@@ -554,7 +556,7 @@ class DauphinObjectStoreOperationResult(dauphin.ObjectType):
     op = dauphin.NonNull('ObjectStoreOperationType')
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinMaterialization(dauphin.ObjectType):
@@ -563,7 +565,7 @@ class DauphinMaterialization(dauphin.ObjectType):
         interfaces = (DauphinDisplayableEvent,)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinExpectationResult(dauphin.ObjectType):
@@ -574,7 +576,7 @@ class DauphinExpectationResult(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinTypeCheck(dauphin.ObjectType):
@@ -585,7 +587,7 @@ class DauphinTypeCheck(dauphin.ObjectType):
     success = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinFailureMetadata(dauphin.ObjectType):
@@ -594,7 +596,7 @@ class DauphinFailureMetadata(dauphin.ObjectType):
         interfaces = (DauphinDisplayableEvent,)
 
     def resolve_metadataEntries(self, _graphene_info):
-        return _to_dauphin_metadata_entries(self.metadata_entries)
+        return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
 class DauphinExecutionStepInputEvent(dauphin.ObjectType):

@@ -7,18 +7,14 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 # Telemetry
 
-As an open source project, we collect usage statistics to inform
-development priorities. Telemetry data will motivate projects such as
-adding features in frequently-used parts of the CLI and adding more
-examples in the docs in areas where users encounter more errors.
+As an open source project, we collect usage statistics to better understand how
+users engage with dagster and to inform development priorities. Telemetry data
+will motivate projects such as adding functionality in frequently-used parts
+of the CLI and will help us understand adoption of new features.
 
-For example, we monitor the error rate of `dagster execute pipeline`
-invocations to help us ensure our programming model is intuitive to use
-and to catch docs regressions.
-
-We will not see or store solid definitions (including generated context)
-or pipeline definitions (including modes and resources). We will not see
-or store any data that is processed within solids and pipelines.
+We will not see or store any data that is processed within solids and
+pipelines. We will not see or store solid definitions (including generated context)
+or pipeline definitions (including modes and resources).
 
 The telemetry-instrumented functions are:
 

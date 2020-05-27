@@ -8,6 +8,7 @@ import pytest
 from dagster_k8s_tests.utils import wait_for_job_and_get_logs
 from dagster_test.test_project import test_project_environments_path
 
+from dagster.core.test_utils import create_run_for_test
 from dagster.utils import git_repository_root, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
@@ -49,8 +50,11 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
     )
 
     pipeline_name = 'demo_pipeline_celery'
-    run = dagster_instance.create_run(
-        pipeline_name=pipeline_name, environment_dict=environment_dict, mode='default'
+    run = create_run_for_test(
+        dagster_instance,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode='default',
     )
 
     dagster_instance.launch_run(run.run_id)

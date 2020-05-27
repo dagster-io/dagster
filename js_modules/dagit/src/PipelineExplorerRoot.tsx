@@ -140,14 +140,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           : result.solidHandles;
 
         return (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              flexDirection: "column"
-            }}
-          >
+          <>
             {selector.snapshotId && (
               <SnapshotNotice>
                 You are viewing a historical pipeline snapshot.
@@ -170,7 +163,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
                   .map(s => ({ handleID: s.handleID }))
               }
             />
-          </div>
+          </>
         );
       }}
     </ExplorerSnapshotResolver>

@@ -137,26 +137,32 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
 }
 
 export const ExecutionTabsContainer = styled.div`
-  margin-left: 10px;
+  padding-left: 10px;
+  padding-top: 10px;
   display; flex;
   z-index: 1;
   flex-direction: row;
-  position: relative;
-  top: 3px;
+  border-bottom: 1px solid ${Colors.GRAY5};
 `;
 
 const TabContainer = styled.div<{ active: boolean }>`
-  color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
-
-  padding: 0 9px 3px 9px;
+  position: relative;
+  padding: 0 9px 2px 9px;
   display: inline-block;
-  border-left: 1px solid ${Colors.GRAY4};
+  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
+  color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
   user-select: none;
-  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY1)};
-  border-top: 2px solid ${({ active }) => (active ? "#2965CC" : Colors.GRAY5)};
-  line-height: 33px;
-  height: 40px;
+  line-height: 28px;
+  height: 30px;
+  top: 1px;
 
+  border: 1px solid ${Colors.GRAY5};
+  border-bottom: 1px solid
+    ${({ active }) => (active ? "transparent" : Colors.GRAY5)};
+  border-right: 0;
+  &:last-child {
+    border-right: 1px solid ${Colors.GRAY5};
+  }
   &:hover {
     background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
   }

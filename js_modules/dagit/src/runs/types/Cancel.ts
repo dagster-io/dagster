@@ -7,35 +7,35 @@
 // GraphQL mutation operation: Cancel
 // ====================================================
 
-export interface Cancel_cancelPipelineExecution_PythonError {
+export interface Cancel_terminatePipelineExecution_PythonError {
   __typename: "PythonError";
 }
 
-export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure {
-  __typename: "CancelPipelineExecutionFailure";
+export interface Cancel_terminatePipelineExecution_TerminatePipelineExecutionFailure {
+  __typename: "TerminatePipelineExecutionFailure";
   message: string;
 }
 
-export interface Cancel_cancelPipelineExecution_PipelineRunNotFoundError {
+export interface Cancel_terminatePipelineExecution_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError";
   message: string;
 }
 
-export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess_run {
+export interface Cancel_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  canCancel: boolean;
+  canTerminate: boolean;
 }
 
-export interface Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess {
-  __typename: "CancelPipelineExecutionSuccess";
-  run: Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess_run;
+export interface Cancel_terminatePipelineExecution_TerminatePipelineExecutionSuccess {
+  __typename: "TerminatePipelineExecutionSuccess";
+  run: Cancel_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run;
 }
 
-export type Cancel_cancelPipelineExecution = Cancel_cancelPipelineExecution_PythonError | Cancel_cancelPipelineExecution_CancelPipelineExecutionFailure | Cancel_cancelPipelineExecution_PipelineRunNotFoundError | Cancel_cancelPipelineExecution_CancelPipelineExecutionSuccess;
+export type Cancel_terminatePipelineExecution = Cancel_terminatePipelineExecution_PythonError | Cancel_terminatePipelineExecution_TerminatePipelineExecutionFailure | Cancel_terminatePipelineExecution_PipelineRunNotFoundError | Cancel_terminatePipelineExecution_TerminatePipelineExecutionSuccess;
 
 export interface Cancel {
-  cancelPipelineExecution: Cancel_cancelPipelineExecution;
+  terminatePipelineExecution: Cancel_terminatePipelineExecution;
 }
 
 export interface CancelVariables {

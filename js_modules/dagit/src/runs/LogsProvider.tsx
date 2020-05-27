@@ -3,11 +3,11 @@ import gql from "graphql-tag";
 import * as querystring from "query-string";
 import { ApolloClient } from "apollo-client";
 import { DirectGraphQLSubscription } from "../DirectGraphQLSubscription";
-import { Run } from "./Run";
 import { RunPipelineRunEventFragment } from "./types/RunPipelineRunEventFragment";
 import { PipelineRunStatus } from "../types/globalTypes";
 import { PipelineRunLogsSubscriptionStatusFragment } from "./types/PipelineRunLogsSubscriptionStatusFragment";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
+import { Run } from "./Run";
 import {
   TokenizingFieldValue,
   tokenizedValuesFromString
@@ -60,7 +60,7 @@ export const GetDefaultLogFilter = () => {
 };
 
 export interface LogFilterValue extends TokenizingFieldValue {
-  token?: "step" | "type";
+  token?: "step" | "type" | "query";
 }
 
 export interface LogFilter {
@@ -73,6 +73,7 @@ interface LogsFilterProviderProps {
   client: ApolloClient<any>;
   runId: string;
   filter: LogFilter;
+  selectedSteps: string[];
   children: (props: {
     allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
     filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
@@ -197,7 +198,7 @@ export class LogsProvider extends React.Component<
         status === PipelineRunStatus.FAILURE ||
         status === PipelineRunStatus.SUCCESS
       ) {
-        local.canCancel = false;
+        local.canTerminate = false;
       }
       this.props.client.writeFragment({
         fragmentName: "PipelineRunLogsSubscriptionStatusFragment",
@@ -219,7 +220,7 @@ export class LogsProvider extends React.Component<
       });
     }
 
-    const { filter } = this.props;
+    const { filter, selectedSteps } = this.props;
 
     const filteredNodes = nodes.filter(node => {
       const l = node.__typename === "LogMessageEvent" ? node.level : "EVENT";
@@ -230,6 +231,9 @@ export class LogsProvider extends React.Component<
       return (
         filter.values.length === 0 ||
         filter.values.every(f => {
+          if (f.token === "query") {
+            return node.step && selectedSteps.includes(node.step.key);
+          }
           if (f.token === "step") {
             return node.step && node.step.key === f.value;
           }
@@ -275,6 +279,6 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
     runId
     status
-    canCancel
+    canTerminate
   }
 `;

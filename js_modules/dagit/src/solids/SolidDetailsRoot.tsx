@@ -1,0 +1,94 @@
+import * as React from "react";
+
+import Loading from "../Loading";
+import { RouteComponentProps } from "react-router";
+import gql from "graphql-tag";
+import { useQuery } from "react-apollo";
+import styled from "styled-components/macro";
+import { SolidCard } from "./SolidCard";
+import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
+import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
+import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
+
+export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
+  name: string;
+}>> = props => (
+  <SolidDetailScrollContainer>
+    <UsedSolidDetails
+      name={props.match.params.name}
+      onClickInvocation={({ pipelineName, handleID }) =>
+        props.history.push(
+          `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
+        )
+      }
+    />
+  </SolidDetailScrollContainer>
+);
+
+export const UsedSolidDetails: React.FunctionComponent<{
+  name: string;
+  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+}> = ({ name, onClickInvocation }) => {
+  const queryResult = useQuery<UsedSolidDetailsQuery>(
+    USED_SOLID_DETAILS_QUERY,
+    {
+      variables: { name }
+    }
+  );
+
+  return (
+    <Loading queryResult={queryResult}>
+      {({ usedSolid }) => {
+        if (!usedSolid) {
+          return null;
+        }
+
+        return (
+          <>
+            <SolidCard definition={usedSolid.definition} />
+            <SidebarSolidDefinition
+              definition={usedSolid.definition}
+              showingSubsolids={false}
+              onClickInvocation={onClickInvocation}
+              getInvocations={() => {
+                return usedSolid.invocations.map(i => ({
+                  handleID: i.solidHandle.handleID,
+                  pipelineName: i.pipeline.name
+                }));
+              }}
+            />
+          </>
+        );
+      }}
+    </Loading>
+  );
+};
+
+export const USED_SOLID_DETAILS_QUERY = gql`
+  query UsedSolidDetailsQuery($name: String!) {
+    usedSolid(name: $name) {
+      __typename
+      definition {
+        ...SolidCardSolidDefinitionFragment
+        ...SidebarSolidDefinitionFragment
+      }
+      invocations {
+        __typename
+        pipeline {
+          name
+        }
+        solidHandle {
+          handleID
+        }
+      }
+    }
+  }
+
+  ${SolidCard.fragments.SolidCardSolidDefinitionFragment}
+  ${SidebarSolidDefinition.fragments.SidebarSolidDefinitionFragment}
+`;
+
+export const SolidDetailScrollContainer = styled.div`
+  overflow: scroll;
+  flex: 1;
+`;

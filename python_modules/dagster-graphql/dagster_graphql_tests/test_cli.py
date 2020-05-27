@@ -72,7 +72,7 @@ def test_basic_introspection():
 
 
 def test_basic_pipelines():
-    query = '{ pipelines { nodes { name } } }'
+    query = '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
@@ -86,7 +86,7 @@ def test_basic_pipelines():
 
 
 def test_basic_variables():
-    query = 'query FooBar($pipelineName: String!){ pipeline(params:{name: $pipelineName}){ name} }'
+    query = 'query FooBar($pipelineName: String!){ pipelineOrError(params:{name: $pipelineName}){ ... on Pipeline { name } } }'
     variables = '{"pipelineName": "math"}'
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
@@ -96,7 +96,7 @@ def test_basic_variables():
         assert result.exit_code == 0
 
         result_data = json.loads(result.output)
-        assert result_data['data']['pipeline']['name'] == 'math'
+        assert result_data['data']['pipelineOrError']['name'] == 'math'
 
 
 START_PIPELINE_EXECUTION_QUERY = '''

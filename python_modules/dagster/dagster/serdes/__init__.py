@@ -11,7 +11,7 @@ Why have custom serialization?
 Why not pickle?
 
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
-  (in memory, not human readble, etc) just handle the json case effectively.
+  (in memory, not human readable, etc) just handle the json case effectively.
 '''
 import importlib
 import sys
@@ -121,7 +121,7 @@ def _whitelist_for_serdes(enum_map, tuple_map):
             enum_map[klass.__name__] = klass
         elif issubclass(klass, tuple):
             # only catch this in python 3 dev environments
-            # no need to do backwargs compat since this is
+            # no need to do backwards compat since this is
             # only for development time
             if sys.version_info.major >= 3:
                 _check_serdes_tuple_class_invariants(klass)
@@ -151,7 +151,7 @@ def _pack_value(val, enum_map, tuple_map):
         klass_name = val.__class__.__name__
         check.invariant(
             klass_name in tuple_map,
-            'Can only serialize whitelisted namedtuples, recieved {}'.format(klass_name),
+            'Can only serialize whitelisted namedtuples, received {}'.format(klass_name),
         )
         base_dict = {
             key: _pack_value(value, enum_map, tuple_map) for key, value in val._asdict().items()
@@ -162,7 +162,7 @@ def _pack_value(val, enum_map, tuple_map):
         klass_name = val.__class__.__name__
         check.invariant(
             klass_name in enum_map,
-            'Can only serialize whitelisted Enums, recieved {}'.format(klass_name),
+            'Can only serialize whitelisted Enums, received {}'.format(klass_name),
         )
         return {'__enum__': str(val)}
     if isinstance(val, set):
@@ -257,7 +257,7 @@ def deserialize_json_to_dagster_namedtuple(json_str):
     )
     check.invariant(
         isinstance(dagster_namedtuple, tuple),
-        'Output of deserialized json_str was not a namedtuple. Recevied type {}.'.format(
+        'Output of deserialized json_str was not a namedtuple. Received type {}.'.format(
             type(dagster_namedtuple)
         ),
     )

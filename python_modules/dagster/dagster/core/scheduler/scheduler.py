@@ -69,18 +69,9 @@ class SchedulerDebugInfo(
         )
 
 
-class SchedulerHandle(object):
-    def __init__(
-        self, schedule_defs,
-    ):
-        check.list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
-        self.schedule_defs = schedule_defs
-
-
 def reconcile_scheduler_state(python_path, repository_path, repository, instance):
     '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
     on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
-
     Schedules, where the ScheduleDefinitions list is the source of truth.
 
     If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status

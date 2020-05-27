@@ -16,7 +16,7 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.definitions.executable import InterProcessExecutablePipeline
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.resources_init import (
@@ -103,7 +103,7 @@ class Manager(object):
         check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
         check.dict_param(instance_ref_dict, 'instance_ref_dict')
 
-        pipeline = InterProcessExecutablePipeline.from_dict(executable_dict)
+        pipeline = ReconstructablePipeline.from_dict(executable_dict)
         pipeline_def = pipeline.get_definition()
 
         try:

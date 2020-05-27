@@ -1,24 +1,14 @@
-from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.implementation.external import (
     get_external_pipeline_or_raise,
     get_full_external_pipeline_or_raise,
 )
+from dagster_graphql.implementation.utils import PipelineSelector
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
-
-
-def get_pipeline_snapshot(graphene_info, snapshot_id):
-    check.str_param(snapshot_id, 'snapshot_id')
-    historical_pipeline = graphene_info.context.instance.get_historical_pipeline(snapshot_id)
-    # Check is ok because this is only used for pipelineSnapshot which is for adhoc
-    # In fact we should probably delete all the non OrError fields
-    check.invariant(historical_pipeline, 'Pipeline fetch failed')
-    return DauphinPipelineSnapshot(historical_pipeline)
 
 
 @capture_dauphin_error
@@ -57,12 +47,6 @@ def get_pipeline_or_error(graphene_info, selector):
     return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
-def get_pipeline_or_raise(graphene_info, selector):
-    '''Returns a DauphinPipeline or raises a UserFacingGraphQLError if one cannot be retrieved
-    from the selector, e.g., the pipeline is not present in the loaded repository.'''
-    return get_dauphin_pipeline_from_selector(graphene_info, selector)
-
-
 def get_pipeline_reference_or_raise(graphene_info, selector):
     '''Returns a DauphinPipelineReference or raises a UserFacingGraphQLError if a pipeline
     reference cannot be retrieved from the selector, e.g, a UserFacingGraphQLError that wraps an
@@ -74,7 +58,7 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
     from ..schema.errors import DauphinPipelineNotFoundError, DauphinInvalidSubsetError
 
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
     try:
         return get_dauphin_pipeline_from_selector(graphene_info, selector)
     except UserFacingGraphQLError as exc:
@@ -87,7 +71,9 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
             # UnknownPipeline
             isinstance(exc.dauphin_error, DauphinInvalidSubsetError)
         ):
-            return graphene_info.schema.type_named('UnknownPipeline')(selector.name)
+            return graphene_info.schema.type_named('UnknownPipeline')(
+                selector.pipeline_name, selector.solid_subset
+            )
 
         raise
 
@@ -95,13 +81,8 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
 @capture_dauphin_error
 def get_pipelines_or_error(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    return get_pipelines_or_raise(graphene_info)
-
-
-def get_pipelines_or_raise(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     dauphin_pipelines = list(
-        map(DauphinPipeline, graphene_info.context.get_all_external_pipelines())
+        map(DauphinPipeline, graphene_info.context.legacy_get_all_external_pipelines())
     )
     return graphene_info.schema.type_named('PipelineConnection')(
         nodes=sorted(dauphin_pipelines, key=lambda pipeline: pipeline.name)
@@ -110,30 +91,18 @@ def get_pipelines_or_raise(graphene_info):
 
 def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
-
-    if not isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext):
-        # TODO: Support solid sub selection.
-        check.invariant(
-            not selector.solid_subset,
-            desc="DagsterGraphQLOutOfProcessRepositoryContext doesn't support pipeline sub-selection.",
-        )
+    check.inst_param(selector, 'selector', PipelineSelector)
 
     return DauphinPipeline(
-        get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
+        get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
     )
 
 
 def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', ExecutionSelector)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
-    check.invariant(
-        isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext),
-        'Can only get definition objects in process',
-    )
-
-    pipeline_name = selector.name
+    pipeline_name = selector.pipeline_name
 
     # for error check of pipeline existence
     get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
@@ -144,5 +113,5 @@ def get_reconstructable_pipeline_from_selector(graphene_info, selector):
         return recon_pipeline
 
     # for error checking
-    get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
+    get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
     return recon_pipeline.subset_for_execution(selector.solid_subset)

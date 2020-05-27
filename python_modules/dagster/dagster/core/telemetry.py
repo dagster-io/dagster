@@ -3,13 +3,7 @@ For more information, check out the docs at https://docs.dagster.io/docs/install
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
-In fn `log_action`, we log:
-  action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
-  client_time - Client time
-  elapsed_time - Time elapsed between start of function and end of function call
-  event_id - Unique id for the event
-  instance_id - Unique id for dagster instance
-  metadata - More information i.e. pipeline success (boolean), (see: fn telemetry_wrapper)
+See class TelemetryEntry for logged fields.
 
 For local development:
   Spin up local telemetry server and set DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
@@ -17,13 +11,14 @@ For local development:
 '''
 
 import datetime
+import hashlib
 import json
 import logging
 import os
-import sys
 import time
 import uuid
 import zlib
+from collections import namedtuple
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 
@@ -32,6 +27,9 @@ import requests
 import six
 import yaml
 
+from dagster import check
+from dagster.core.definitions.executable import ExecutablePipeline
+from dagster.core.definitions.reconstructable import EPHEMERAL_NAME, ReconstructablePipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 
@@ -41,6 +39,7 @@ ENABLED_STR = 'enabled'
 DAGSTER_HOME_FALLBACK = '~/.dagster'
 DAGSTER_TELEMETRY_URL = 'http://telemetry.dagster.io/actions'
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
+REPO_STATS_ACTION = 'update_repo_stats'
 
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
 # docs/sections/install/telemetry.rst
@@ -49,6 +48,108 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     'pipeline_launch_command',
     'execute_pipeline',
 }
+
+
+def telemetry_wrapper(f):
+    '''
+    Wrapper around functions that are logged. Will log the function_name, client_time, and
+    elapsed_time, and success.
+    '''
+    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
+        raise DagsterInvariantViolationError(
+            'Attempted to log telemetry for function {name} that is not in telemetry whitelisted '
+            'functions list: {whitelist}.'.format(
+                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
+            )
+        )
+
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        log_pipeline_action(action=f.__name__ + '_started', client_time=start_time)
+        result = f(*args, **kwargs)
+        end_time = datetime.datetime.now()
+        log_pipeline_action(
+            action=f.__name__ + '_ended',
+            client_time=end_time,
+            elapsed_time=end_time - start_time,
+            metadata={'success': getattr(result, 'success', None)},
+        )
+        return result
+
+    return wrap
+
+
+class TelemetryEntry(
+    namedtuple(
+        'TelemetryEntry',
+        'action client_time elapsed_time event_id instance_id pipeline_name_hash num_pipelines_in_repo repo_hash metadata version',
+    )
+):
+    '''
+    Schema for telemetry logs.
+
+    Currently, log entries are coerced to the same schema to enable storing all entries in one DB
+    table with unified schema.
+
+    action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
+    client_time - Client time
+    elapsed_time - Time elapsed between start of function and end of function call
+    event_id - Unique id for the event
+    instance_id - Unique id for dagster instance
+    pipeline_name_hash - Hash of pipeline name, if any
+    repo_hash - Hash of repo name, if any
+    num_pipelines_in_repo - Number of pipelines in repo, if any
+    metadata - More information i.e. pipeline success (boolean)
+    version - Schema version
+
+    If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
+    Otherwise, use ~/.dagster/logs/
+    '''
+
+    def __new__(
+        cls,
+        action,
+        client_time,
+        event_id,
+        instance_id,
+        version,
+        elapsed_time=None,
+        pipeline_name_hash=None,
+        num_pipelines_in_repo=None,
+        repo_hash=None,
+        metadata=None,
+    ):
+        action = check.str_param(action, 'action')
+        client_time = check.str_param(client_time, 'action')
+        elapsed_time = check.opt_str_param(elapsed_time, 'elapsed_time', '')
+        event_id = check.str_param(event_id, 'event_id')
+        instance_id = check.str_param(instance_id, 'instance_id')
+        metadata = check.opt_dict_param(metadata, 'metadata')
+        version = check.str_param(version, 'version')
+
+        if action == REPO_STATS_ACTION:
+            pipeline_name_hash = check.str_param(pipeline_name_hash, 'pipeline_name_hash')
+            num_pipelines_in_repo = check.str_param(num_pipelines_in_repo, 'num_pipelines_in_repo')
+            repo_hash = check.str_param(repo_hash, 'repo_hash')
+        else:
+            pipeline_name_hash = ''
+            num_pipelines_in_repo = ''
+            repo_hash = ''
+
+        return super(TelemetryEntry, cls).__new__(
+            cls,
+            action=action,
+            client_time=client_time,
+            elapsed_time=elapsed_time,
+            event_id=event_id,
+            instance_id=instance_id,
+            pipeline_name_hash=pipeline_name_hash,
+            num_pipelines_in_repo=num_pipelines_in_repo,
+            repo_hash=repo_hash,
+            metadata=metadata,
+            version=version,
+        )
 
 
 def _dagster_home_if_set():
@@ -118,54 +219,111 @@ def _get_telemetry_logger():
     return logger
 
 
-def log_action(action, client_time, elapsed_time=None, metadata=None):
-    '''
-    Log action in logs directory
+def write_telemetry_log_line(log_line):
+    logger = _get_telemetry_logger()
+    logger.info(json.dumps(log_line))
 
-    action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
-    client_time - Client time
-    elapsed_time - Time elapsed between start of function and end of function call
-    event_id - Unique id for the event
-    instance_id - Unique id for dagster instance
-    metadata - More information i.e. pipeline success (boolean), (see: fn telemetry_wrapper)
 
-    If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
-    Otherwise, use ~/.dagster/logs/
-    '''
-    try:
-        dagster_telemetry_enabled = DagsterInstance.get().telemetry_enabled
-        if dagster_telemetry_enabled:
-            logger = _get_telemetry_logger()
-            instance_id = _get_telemetry_instance_id()
-            if instance_id == None:
-                instance_id = _set_telemetry_instance_id()
+def _get_instance_telemetry_info():
+    dagster_telemetry_enabled = _get_instance_telemetry_enabled(DagsterInstance.get())
+    instance_id = None
+    if dagster_telemetry_enabled:
+        instance_id = _get_or_set_instance_id()
+    return (dagster_telemetry_enabled, instance_id)
 
-            logger.info(
-                json.dumps(
-                    {
-                        'action': action,
-                        'client_time': str(client_time),
-                        'elapsed_time': str(elapsed_time),
-                        'event_id': str(uuid.uuid4()),
-                        'instance_id': instance_id,
-                        'metadata': metadata,
-                    }
-                )
-            )
-    except Exception:  # pylint: disable=broad-except
-        pass
+
+def _get_instance_telemetry_enabled(instance):
+    return instance.telemetry_enabled
+
+
+def _get_or_set_instance_id():
+    instance_id = _get_telemetry_instance_id()
+    if instance_id == None:
+        instance_id = _set_telemetry_instance_id()
+    return instance_id
 
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id():
     telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
-    if os.path.exists(telemetry_id_path):
-        with open(telemetry_id_path, 'r') as telemetry_id_file:
-            telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
-            if INSTANCE_ID_STR in telemetry_id_yaml:
-                if isinstance(telemetry_id_yaml[INSTANCE_ID_STR], six.string_types):
-                    return telemetry_id_yaml[INSTANCE_ID_STR]
+    if not os.path.exists(telemetry_id_path):
+        return
+
+    with open(telemetry_id_path, 'r') as telemetry_id_file:
+        telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
+        if INSTANCE_ID_STR in telemetry_id_yaml and isinstance(
+            telemetry_id_yaml[INSTANCE_ID_STR], six.string_types
+        ):
+            return telemetry_id_yaml[INSTANCE_ID_STR]
     return None
+
+
+# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
+def _set_telemetry_instance_id():
+    click.secho(TELEMETRY_TEXT)
+    click.secho(SLACK_PROMPT)
+
+    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
+    instance_id = str(uuid.uuid4())
+
+    try:  # In case we encounter an error while writing to user's file system
+        with open(telemetry_id_path, 'w') as telemetry_id_file:
+            yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
+        return instance_id
+    except Exception:  # pylint: disable=broad-except
+        return '<<unable_to_write_instance_id>>'
+
+
+def hash_name(name):
+    return hashlib.sha256(name.encode('utf-8')).hexdigest()
+
+
+def log_repo_stats(instance, pipeline):
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    if _get_instance_telemetry_enabled(instance):
+        instance_id = _get_or_set_instance_id()
+
+        pipeline_name_hash = hash_name(pipeline.get_definition().name)
+        if isinstance(pipeline, ReconstructablePipeline):
+            repository = pipeline.get_reconstructable_repository().get_definition()
+            repo_hash = hash_name(repository.name)
+            num_pipelines_in_repo = len(repository.pipeline_names)
+        else:
+            repo_hash = hash_name(EPHEMERAL_NAME)
+            num_pipelines_in_repo = 1
+
+        write_telemetry_log_line(
+            TelemetryEntry(
+                action=REPO_STATS_ACTION,
+                client_time=str(datetime.datetime.now()),
+                event_id=str(uuid.uuid4()),
+                instance_id=instance_id,
+                pipeline_name_hash=pipeline_name_hash,
+                num_pipelines_in_repo=str(num_pipelines_in_repo),
+                repo_hash=repo_hash,
+                version='0.1',
+            )._asdict()
+        )
+
+
+def log_pipeline_action(action, client_time, elapsed_time=None, metadata=None):
+    (dagster_telemetry_enabled, instance_id) = _get_instance_telemetry_info()
+
+    if dagster_telemetry_enabled:
+        # Log general statistics
+        write_telemetry_log_line(
+            TelemetryEntry(
+                action=action,
+                client_time=str(client_time),
+                elapsed_time=str(elapsed_time),
+                event_id=str(uuid.uuid4()),
+                instance_id=instance_id,
+                metadata=metadata,
+                version='0.1',
+            )._asdict()
+        )
 
 
 TELEMETRY_TEXT = '''
@@ -193,52 +351,6 @@ SLACK_PROMPT = '''
 ''' % {
     'welcome': click.style('Welcome to Dagster!', bold=True)
 }
-
-
-def _isatty():
-    return sys.stdout.isatty()
-
-
-# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _set_telemetry_instance_id():
-    click.secho(TELEMETRY_TEXT)
-    click.secho(SLACK_PROMPT)
-
-    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
-    instance_id = str(uuid.uuid4())
-    with open(telemetry_id_path, 'w') as telemetry_id_file:
-        yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
-    return instance_id
-
-
-def telemetry_wrapper(f):
-    '''
-    Wrapper around functions that are logged. Will log the function_name, client_time, and
-    elapsed_time.
-    '''
-    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
-        raise DagsterInvariantViolationError(
-            'Attempted to log telemetry for function {name} that is not in telemetry whitelisted '
-            'functions list: {whitelist}.'.format(
-                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
-            )
-        )
-
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        start_time = datetime.datetime.now()
-        log_action(action=f.__name__ + '_started', client_time=start_time)
-        result = f(*args, **kwargs)
-        end_time = datetime.datetime.now()
-        log_action(
-            action=f.__name__ + '_ended',
-            client_time=end_time,
-            elapsed_time=end_time - start_time,
-            metadata={'success': getattr(result, 'success', None)},
-        )
-        return result
-
-    return wrap
 
 
 def upload_logs():

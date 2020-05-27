@@ -50,7 +50,7 @@ from .start_execution import start_pipeline_execution, start_pipeline_reexecutio
 
 
 @capture_dauphin_error
-def cancel_pipeline_execution(graphene_info, run_id):
+def terminate_pipeline_execution(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
 
@@ -63,19 +63,37 @@ def cancel_pipeline_execution(graphene_info, run_id):
     dauphin_run = graphene_info.schema.type_named('PipelineRun')(run)
 
     if run.status != PipelineRunStatus.STARTED:
-        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
+        return graphene_info.schema.type_named('TerminatePipelineExecutionFailure')(
             run=dauphin_run,
             message='Run {run_id} is not in a started state. Current status is {status}'.format(
                 run_id=run.run_id, status=run.status.value
             ),
         )
 
-    if not graphene_info.context.execution_manager.terminate(run_id):
-        return graphene_info.schema.type_named('CancelPipelineExecutionFailure')(
-            run=dauphin_run, message='Unable to terminate run {run_id}'.format(run_id=run.run_id)
-        )
+    can_not_term = graphene_info.schema.type_named('TerminatePipelineExecutionFailure')(
+        run=dauphin_run, message='Unable to terminate run {run_id}'.format(run_id=run.run_id)
+    )
 
-    return graphene_info.schema.type_named('CancelPipelineExecutionSuccess')(dauphin_run)
+    if (
+        graphene_info.context.legacy_environment.execution_manager
+        and graphene_info.context.legacy_environment.execution_manager.can_terminate(run_id)
+    ):
+        if not graphene_info.context.legacy_environment.execution_manager.terminate(run_id):
+            return can_not_term
+
+        return graphene_info.schema.type_named('TerminatePipelineExecutionSuccess')(dauphin_run)
+
+    elif (
+        graphene_info.context.instance.run_launcher
+        and graphene_info.context.instance.run_launcher.can_terminate(run_id)
+    ):
+        if not graphene_info.context.instance.run_launcher.terminate(run_id):
+            return can_not_term
+
+        return graphene_info.schema.type_named('TerminatePipelineExecutionSuccess')(dauphin_run)
+
+    else:
+        return can_not_term
 
 
 @capture_dauphin_error
@@ -151,7 +169,9 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
     external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+        graphene_info,
+        execution_params.selector.pipeline_name,
+        execution_params.selector.solid_subset,
     )
     ensure_valid_config(
         external_pipeline=external_pipeline,
@@ -172,10 +192,11 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
 
-    external_execution_plan = graphene_info.context.get_external_execution_plan(
+    external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=execution_params.environment_dict,
         mode=mode,
+        step_keys_to_execute=None,
     )
 
     if not pipeline_run:
@@ -183,18 +204,23 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         # https://github.com/dagster-io/dagster/issues/1876
         pipeline_run = graphene_info.context.instance.create_run(
             pipeline_name=external_pipeline.name,
-            pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=mode,
+            solid_subset=None,
+            step_keys_to_execute=None,
+            status=None,
             tags=execution_params.execution_metadata.tags or {},
+            root_run_id=None,
+            parent_run_id=None,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         )
 
     ensure_valid_step_keys(external_execution_plan, execution_params.step_keys)
 
     if execution_params.step_keys:
-        external_execution_plan = graphene_info.context.get_external_execution_plan(
+        external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
             external_pipeline=external_pipeline,
             environment_dict=execution_params.environment_dict,
             mode=mode,
@@ -209,7 +235,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     graphene_info.context.instance.add_event_listener(run_id, _on_event_record)
 
-    graphene_info.context.execute_plan(
+    graphene_info.context.legacy_execute_plan(
         external_pipeline=external_pipeline,
         environment_dict=execution_params.environment_dict,
         pipeline_run=pipeline_run,

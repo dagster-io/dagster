@@ -32,7 +32,7 @@ def format_duration(milliseconds):
         seconds = int(milliseconds % (1000 * 60) // (1000))
         return "{minutes}m{seconds}s".format(minutes=minutes, seconds=seconds)
 
-    # Ahove one hour
+    # Above one hour
     else:
         hours = int(milliseconds // (1000 * 60 * 60))
         minutes = int(milliseconds % (1000 * 60 * 60) // (1000 * 60))

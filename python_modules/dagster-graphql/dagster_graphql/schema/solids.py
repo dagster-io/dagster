@@ -1,3 +1,6 @@
+# NOTE: pylint isn't smart enough to figure out what's going on with dauphin
+# pylint: disable=unexpected-keyword-arg, no-value-for-parameter
+
 from dagster_graphql import dauphin
 
 from dagster import check
@@ -257,7 +260,9 @@ class DauphinInputDefinition(dauphin.ObjectType):
         )
 
     def resolve_solid_definition(self, _):
-        return build_dauphin_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+        return build_dauphin_solid_definition(
+            self._represented_pipeline, self._solid_def_snap.name  # pylint: disable=no-member
+        )
 
 
 class DauphinOutputDefinition(dauphin.ObjectType):

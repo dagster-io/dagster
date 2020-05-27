@@ -108,9 +108,19 @@ def rollup_pipeline():
     rollup_data()
 
 
+@solid
+def test_solid(_):
+    return 1
+
+
+@pipeline
+def test_pipeline():
+    test_solid()
+
+
 def define_repo():
     return RepositoryDefinition(
         name='experimental_repository',
-        pipeline_defs=[metrics_pipeline, rollup_pipeline],
+        pipeline_defs=[test_pipeline, metrics_pipeline, rollup_pipeline],
         schedule_defs=define_schedules(),
     )

@@ -38,6 +38,8 @@ interface RunProps {
 
 interface RunState {
   logsFilter: LogFilter;
+  query: string;
+  selectedSteps: string[];
 }
 
 export class Run extends React.Component<RunProps, RunState> {
@@ -48,7 +50,7 @@ export class Run extends React.Component<RunProps, RunState> {
 
         environmentConfigYaml
         runId
-        canCancel
+        canTerminate
         status
         mode
         tags {
@@ -114,7 +116,9 @@ export class Run extends React.Component<RunProps, RunState> {
   };
 
   state: RunState = {
-    logsFilter: GetDefaultLogFilter()
+    logsFilter: GetDefaultLogFilter(),
+    query: "*",
+    selectedSteps: []
   };
 
   onShowStateDetails = (
@@ -135,9 +139,31 @@ export class Run extends React.Component<RunProps, RunState> {
     }
   };
 
+  onSetLogsFilter = (logsFilter: LogFilter) => {
+    this.setState({ logsFilter });
+  };
+
+  onSetQuery = (query: string) => {
+    this.setState({ query });
+
+    // filter the log following the DSL step selection
+    this.setState(prevState => {
+      return {
+        logsFilter: {
+          ...prevState.logsFilter,
+          values: query !== "*" ? [{ token: "query", value: query }] : []
+        }
+      };
+    });
+  };
+
+  onSetSelectedSteps = (selectedSteps: string[]) => {
+    this.setState({ selectedSteps });
+  };
+
   render() {
     const { client, run } = this.props;
-    const { logsFilter } = this.state;
+    const { logsFilter, query, selectedSteps } = this.state;
 
     return (
       <RunContext.Provider value={run}>
@@ -147,6 +173,7 @@ export class Run extends React.Component<RunProps, RunState> {
           client={client}
           runId={run ? run.runId : ""}
           filter={logsFilter}
+          selectedSteps={selectedSteps}
         >
           {({ filteredNodes, allNodes, loaded }) => (
             <ReexecuteWithData
@@ -155,7 +182,11 @@ export class Run extends React.Component<RunProps, RunState> {
               allNodes={allNodes}
               logsLoading={!loaded}
               logsFilter={logsFilter}
-              onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
+              query={query}
+              selectedSteps={selectedSteps}
+              onSetLogsFilter={this.onSetLogsFilter}
+              onSetQuery={this.onSetQuery}
+              onSetSelectedSteps={this.onSetSelectedSteps}
               onShowStateDetails={this.onShowStateDetails}
               getReexecutionVariables={getReexecutionVariables}
             />
@@ -171,7 +202,11 @@ interface ReexecuteWithDataProps {
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: LogFilter;
+  query: string;
+  selectedSteps: string[];
   logsLoading: boolean;
+  onSetQuery: (v: string) => void;
+  onSetSelectedSteps: (v: string[]) => void;
   onSetLogsFilter: (v: LogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
@@ -179,7 +214,8 @@ interface ReexecuteWithDataProps {
   ) => void;
   getReexecutionVariables: (input: {
     run: RunFragment;
-    stepKey?: string;
+    stepKeys?: string[];
+    stepQuery?: string;
     resumeRetry?: boolean;
   }) => StartPipelineReexecutionVariables | undefined;
 }
@@ -190,7 +226,11 @@ const ReexecuteWithData = ({
   filteredNodes,
   logsFilter,
   logsLoading,
+  query,
+  selectedSteps,
   onSetLogsFilter,
+  onSetQuery,
+  onSetSelectedSteps,
   getReexecutionVariables
 }: ReexecuteWithDataProps) => {
   const [startPipelineReexecution] = useMutation(
@@ -200,14 +240,13 @@ const ReexecuteWithData = ({
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const selectedStep =
-    logsFilter.values.find(v => v.token === "step")?.value || null;
-
-  const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
+  const stepQuery = query !== "*" ? query : "";
+  const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
-      stepKey,
+      stepKeys,
+      stepQuery,
       resumeRetry
     });
     const result = await startPipelineReexecution({ variables });
@@ -215,17 +254,47 @@ const ReexecuteWithData = ({
       openInNewWindow: false
     });
   };
-  const onLaunch = async (stepKey?: string, resumeRetry?: boolean) => {
+  const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
-      stepKey,
+      stepKeys,
+      stepQuery,
       resumeRetry
     });
     const result = await launchPipelineReexecution({ variables });
     handleReexecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
     });
+  };
+
+  const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
+    const index = selectedSteps.indexOf(stepKey);
+    let newSelected: string[];
+
+    if (evt.shiftKey) {
+      // shift-click to multi select steps
+      newSelected = [...selectedSteps];
+
+      if (index !== -1) {
+        // deselect the step if already selected
+        newSelected.splice(index, 1);
+      } else {
+        // select the step otherwise
+        newSelected.push(stepKey);
+      }
+    } else {
+      if (selectedSteps.length === 1 && index !== -1) {
+        // deselect the step if already selected
+        newSelected = [];
+      } else {
+        // select the step otherwise
+        newSelected = [stepKey];
+      }
+    }
+
+    onSetSelectedSteps(newSelected);
+    onSetQuery(newSelected.join(", ") || "*");
   };
 
   return (
@@ -256,22 +325,21 @@ const ReexecuteWithData = ({
                     artifactsPersisted={run.executionPlan.artifactsPersisted}
                     onExecute={onExecute}
                     onLaunch={onLaunch}
-                    selectedStep={selectedStep}
-                    selectedStepState={
-                      (selectedStep && metadata.steps[selectedStep]?.state) ||
-                      IStepState.PREPARING
-                    }
+                    selectedSteps={selectedSteps}
+                    selectedStepStates={selectedSteps.map(
+                      selectedStep =>
+                        (selectedStep && metadata.steps[selectedStep]?.state) ||
+                        IStepState.PREPARING
+                    )}
                   />
                 }
                 plan={run.executionPlan}
                 metadata={metadata}
-                selectedStep={selectedStep}
-                onApplyStepFilter={stepKey =>
-                  onSetLogsFilter({
-                    ...logsFilter,
-                    values: [{ token: "step", value: stepKey }]
-                  })
-                }
+                selectedSteps={selectedSteps}
+                onClickStep={onClickStep}
+                onSetSelectedSteps={onSetSelectedSteps}
+                query={query}
+                onSetQuery={onSetQuery}
               />
             ) : (
               <NonIdealState
@@ -286,11 +354,7 @@ const ReexecuteWithData = ({
                 filter={logsFilter}
                 onSetFilter={onSetLogsFilter}
                 steps={Object.keys(metadata.steps)}
-                selectedStep={selectedStep}
-                selectedStepState={
-                  (selectedStep && metadata.steps[selectedStep]?.state) ||
-                  IStepState.PREPARING
-                }
+                metadata={metadata}
               />
               <LogsScrollingTable
                 nodes={filteredNodes}

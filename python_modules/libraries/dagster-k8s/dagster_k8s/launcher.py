@@ -111,7 +111,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job_image=check.str_param(job_image, 'job_image'),
             dagster_home=check.str_param(dagster_home, 'dagster_home'),
             image_pull_policy=check.str_param(image_pull_policy, 'image_pull_policy'),
-            image_pull_secrets=check.opt_list_param(image_pull_secrets, 'image_pull_secrets'),
+            image_pull_secrets=check.opt_list_param(
+                image_pull_secrets, 'image_pull_secrets', of_type=dict
+            ),
             service_account_name=check.str_param(service_account_name, 'service_account_name'),
             instance_config_map=check.str_param(instance_config_map, 'instance_config_map'),
             postgres_password_secret=check.str_param(
@@ -143,7 +145,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run):
+    def launch_run(self, instance, run, external_pipeline=None):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
 

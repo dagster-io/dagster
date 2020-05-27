@@ -5,6 +5,7 @@ import kubernetes
 from dagster import Array, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster import check
+from dagster.config.field_utils import Shape
 from dagster.serdes import whitelist_for_serdes
 
 K8S_JOB_BACKOFF_LIMIT = 4
@@ -126,7 +127,7 @@ class DagsterK8sJobConfig(
                 '"IfNotPresent".',
             ),
             'image_pull_secrets': Field(
-                Array(StringSource),
+                Array(Shape({'name': StringSource})),
                 is_required=False,
                 description='(Advanced) Specifies that Kubernetes should get the credentials from '
                 'the Secrets named in this list.',
@@ -281,7 +282,10 @@ def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None,
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(name=pod_name, labels=dagster_labels),
         spec=kubernetes.client.V1PodSpec(
-            image_pull_secrets=job_config.image_pull_secrets,
+            image_pull_secrets=[
+                kubernetes.client.V1LocalObjectReference(name=x['name'])
+                for x in job_config.image_pull_secrets
+            ],
             service_account_name=job_config.service_account_name,
             restart_policy='Never',
             containers=[job_container],

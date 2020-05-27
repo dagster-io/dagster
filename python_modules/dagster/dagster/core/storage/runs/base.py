@@ -23,7 +23,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         If the run's snapshot ID does not exist raise DagsterSnapshotDoesNotExist
 
         Args:
-            pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
+            pipeline_run (PipelineRun): The run to add.
         '''
 
     @abstractmethod
@@ -31,16 +31,16 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''Update run storage in accordance to a pipeline run related DagsterEvent
 
         Args:
+            run_id (str)
             event (DagsterEvent)
-
         '''
 
     @abstractmethod
     def get_runs(self, filters=None, cursor=None, limit=None):
-        '''Return all the runs present in the storage that match the given filter
+        '''Return all the runs present in the storage that match the given filters.
 
         Args:
-            filter (Optional[PipelineRunsFilter]) -- The
+            filters (Optional[PipelineRunsFilter]) -- The
                 :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
@@ -52,8 +52,40 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_runs_count(self, filters=None):
-        '''Return the number of runs present in the storage that match the given filter
+        '''Return the number of runs present in the storage that match the given filters.
 
+        Args:
+            filters (Optional[PipelineRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                runs
+            cursor (Optional[str]): Starting cursor (run_id) of range of runs
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+
+        Returns:
+            int: The number of runs that match the given filters.
+        '''
+
+    @abstractmethod
+    def get_run_group(self, run_id):
+        '''Get the run group to which a given run belongs.
+        
+        Args:
+            run_id (str): If the corresponding run is the descendant of some root run (i.e., there
+                is a root_run_id on the :py:class:`PipelineRun`), that root run and all of its
+                descendants are returned; otherwise, the group will consist only of the given run
+                (a run that does not descend from any root is its own root).
+
+        Returns:
+            Optional[Tuple[string, List[PipelineRun]]]: If there is a corresponding run group, tuple
+                whose first element is the root_run_id and whose second element is a list of all the
+                descendent runs. Otherwise `None`.
+        '''
+
+    @abstractmethod
+    def get_run_groups(self, filters=None, cursor=None, limit=None):
+        '''Return all of the run groups present in the storage that include rows matching the
+        given filter.
+        
         Args:
             filter (Optional[PipelineRunsFilter]) -- The
                 :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
@@ -62,20 +94,26 @@ class RunStorage(six.with_metaclass(ABCMeta)):
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
-            List[PipelineRun]
+            Dict[Dict[Union[PipelineRun, int]]]: Specifically, a dict of the form
+                ``{'pipeline_run_id': {'runs': [PipelineRun, ...], 'count': int}, ...}``. The
+                instances of :py:class:`~dagster.core.pipeline_run.PipelineRun` returned in this
+                data structure correspond to all of the runs that would have been returned by
+                calling :py:meth:`get_run_groups` with the same arguments, plus their corresponding
+                root runs, if any. The keys of this structure are the run_ids of all of the root
+                runs (a run with no root is its own root). The integer counts are inclusive of all
+                of the root runs' children, including those that would not have been returned by
+                calling :py:meth:`get_run_groups` with the same arguments, but exclusive of the root
+                run itself; i.e., if a run has no children, the count will be 0.
         '''
 
-    @abstractmethod
-    def get_run_group(self, run_id):
-        '''Return a group of runs related to the given run, i.e. the runs shared root_run_id with
-        the given run, including the root run.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Tuple[string, List[PipelineRun]]
-        '''
+        # Note that we could have made the opposite decision here and filtered for root runs
+        # matching a given filter, etc., rather than for child runs; so that asking for the last 5
+        # run groups would give the last 5 roots and their descendants, rather than the last 5
+        # children and their roots. Consider the case where we have just been retrying runs
+        # belonging to a group created long ago; it makes sense to bump these to the top of the
+        # interface rather than burying them deeply paginated down. Note also that this query can
+        # return no more run groups than there are runs in an equivalent call to get_runs, and no
+        # more than 2x total instances of PipelineRun.
 
     @abstractmethod
     def get_run_by_id(self, run_id):

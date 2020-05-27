@@ -12,16 +12,17 @@ import {
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import styled from "styled-components/macro";
-import { SolidCard } from "./SolidCard";
 import {
   SolidsRootQuery,
   SolidsRootQuery_usedSolids
 } from "./types/SolidsRootQuery";
-import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { Colors, NonIdealState } from "@blueprintjs/core";
-import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
 import SolidTypeSignature from "../SolidTypeSignature";
+import {
+  UsedSolidDetails,
+  SolidDetailScrollContainer
+} from "./SolidDetailsRoot";
 import {
   SuggestionProvider,
   TokenizingFieldValue,
@@ -29,7 +30,6 @@ import {
   stringFromValue,
   TokenizingField
 } from "../TokenizingField";
-import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
 
 function flatUniq(arrs: string[][]) {
   const results: { [key: string]: boolean } = {};
@@ -271,45 +271,6 @@ const SolidList: React.FunctionComponent<{
   );
 };
 
-const UsedSolidDetails: React.FunctionComponent<{
-  name: string;
-  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
-}> = ({ name, onClickInvocation }) => {
-  const queryResult = useQuery<UsedSolidDetailsQuery>(
-    USED_SOLID_DETAILS_QUERY,
-    {
-      variables: { name }
-    }
-  );
-
-  return (
-    <Loading queryResult={queryResult}>
-      {({ usedSolid }) => {
-        if (!usedSolid) {
-          return null;
-        }
-
-        return (
-          <>
-            <SolidCard definition={usedSolid.definition} />
-            <SidebarSolidDefinition
-              definition={usedSolid.definition}
-              showingSubsolids={false}
-              onClickInvocation={onClickInvocation}
-              getInvocations={() => {
-                return usedSolid.invocations.map(i => ({
-                  handleID: i.solidHandle.handleID,
-                  pipelineName: i.pipeline.name
-                }));
-              }}
-            />
-          </>
-        );
-      }}
-    </Loading>
-  );
-};
-
 export const SOLIDS_ROOT_QUERY = gql`
   query SolidsRootQuery {
     usedSolids {
@@ -330,30 +291,6 @@ export const SOLIDS_ROOT_QUERY = gql`
   ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
 `;
 
-export const USED_SOLID_DETAILS_QUERY = gql`
-  query UsedSolidDetailsQuery($name: String!) {
-    usedSolid(name: $name) {
-      __typename
-      definition {
-        ...SolidCardSolidDefinitionFragment
-        ...SidebarSolidDefinitionFragment
-      }
-      invocations {
-        __typename
-        pipeline {
-          name
-        }
-        solidHandle {
-          handleID
-        }
-      }
-    }
-  }
-
-  ${SolidCard.fragments.SolidCardSolidDefinitionFragment}
-  ${SidebarSolidDefinition.fragments.SidebarSolidDefinitionFragment}
-`;
-
 const SolidListItem = styled.div<{ selected: boolean }>`
   background: ${({ selected }) => (selected ? Colors.BLUE3 : Colors.WHITE)};
   color: ${({ selected }) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
@@ -368,11 +305,6 @@ const SolidListItem = styled.div<{ selected: boolean }>`
     background: transparent;
     padding: 5px 0 0 0;
   }
-`;
-
-const SolidDetailScrollContainer = styled.div`
-  overflow: scroll;
-  flex: 1;
 `;
 
 const SolidName = styled.div`

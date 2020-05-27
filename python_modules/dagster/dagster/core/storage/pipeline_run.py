@@ -2,6 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 
@@ -100,8 +101,6 @@ class PipelineRun(
         previous_run_id=None,
         selector=None,
     ):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
@@ -190,19 +189,23 @@ class PipelineRun(
     def with_execution_plan_snapshot_id(self, execution_plan_snapshot_id):
         return self._replace(execution_plan_snapshot_id=execution_plan_snapshot_id)
 
+    def get_root_run_id(self):
+        return self.tags.get(ROOT_RUN_ID_TAG)
+
+    def get_parent_run_id(self):
+        return self.tags.get(PARENT_RUN_ID_TAG)
+
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
 
     @property
-    def is_resume_retry(self):
-        return self.tags.get(RESUME_RETRY_TAG) == 'true'
+    def is_success(self):
+        return self.status == PipelineRunStatus.SUCCESS
 
     @property
-    def selector(self):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
-        return ExecutionSelector(name=self.pipeline_name, solid_subset=self.solid_subset)
+    def is_resume_retry(self):
+        return self.tags.get(RESUME_RETRY_TAG) == 'true'
 
     @property
     def previous_run_id(self):
@@ -243,3 +246,35 @@ class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_ids pipeline_nam
     @staticmethod
     def for_partition(partition_set, partition):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+
+
+###################################################################################################
+# GRAVEYARD
+#
+#            -|-
+#             |
+#        _-'~~~~~`-_
+#      .'           '.
+#      |    R I P    |
+#      |             |
+#      |  Execution  |
+#      |  Selector   |
+#      |             |
+#      |             |
+###################################################################################################
+
+
+@whitelist_for_serdes
+class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
+    '''
+    Kept here to maintain loading of PipelineRuns from when it was still alive.
+    '''
+
+    def __new__(cls, name, solid_subset=None):
+        return super(ExecutionSelector, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            solid_subset=None
+            if solid_subset is None
+            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+        )

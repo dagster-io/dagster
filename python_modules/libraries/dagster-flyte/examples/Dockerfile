@@ -14,6 +14,7 @@ RUN ${VENV}/bin/pip install wheel
 
 COPY ./requirements.txt .
 RUN ${VENV}/bin/pip install -r requirements.txt
+RUN ${VENV}/bin/pip install awscli
 
 # This is a script that enables a virtualenv, copy it to a better location
 RUN cp ${VENV}/bin/flytekit_venv /opt/

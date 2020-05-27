@@ -95,7 +95,7 @@ export function applyCreateSession(
     sessions: {
       ...data.sessions,
       [key]: {
-        name: "Workspace",
+        name: "New Run",
         environmentConfigYaml: "",
         mode: null,
         base: null,

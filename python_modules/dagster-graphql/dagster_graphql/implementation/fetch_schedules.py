@@ -1,6 +1,3 @@
-import glob
-import os
-
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
@@ -9,12 +6,18 @@ from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
-from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
+from .utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    PipelineSelector,
+    UserFacingGraphQLError,
+    capture_dauphin_error,
+)
 
 
 @capture_dauphin_error
 def start_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.get_external_repository()
+    external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
 
     schedule = instance.start_schedule(external_repository.name, schedule_name)
@@ -27,7 +30,7 @@ def start_schedule(graphene_info, schedule_name):
 
 @capture_dauphin_error
 def stop_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.get_external_repository()
+    external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
 
     schedule = instance.stop_schedule(external_repository.name, schedule_name)
@@ -40,7 +43,7 @@ def stop_schedule(graphene_info, schedule_name):
 
 @capture_dauphin_error
 def get_scheduler_or_error(graphene_info):
-    external_repository = graphene_info.context.get_external_repository()
+    external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
 
     if not instance.scheduler:
@@ -56,7 +59,7 @@ def get_scheduler_or_error(graphene_info):
 
 @capture_dauphin_error
 def get_schedule_or_error(graphene_info, schedule_name):
-    external_repository = graphene_info.context.get_external_repository()
+    external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
 
     schedule = instance.get_schedule_by_name(external_repository.name, schedule_name)
@@ -69,9 +72,7 @@ def get_schedule_or_error(graphene_info, schedule_name):
 
 
 def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
-    schedule_context = ScheduleExecutionContext(
-        graphene_info.context.instance, graphene_info.context.get_repository_definition()
-    )
+    schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
 
     # Get environment_dict
     with user_code_error_boundary(
@@ -93,11 +94,12 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
     check_tags(pipeline_tags, 'pipeline_tags')
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
-    selector = schedule_def.selector
     mode = schedule_def.mode
 
     return ExecutionParams(
-        selector=selector,
+        selector=PipelineSelector.legacy(
+            graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
+        ),
         environment_dict=environment_dict,
         mode=mode,
         execution_metadata=ExecutionMetadata(tags=tags, run_id=None),
@@ -110,7 +112,7 @@ def get_dagster_schedule_def(graphene_info, schedule_name):
     check.str_param(schedule_name, 'schedule_name')
 
     # TODO: Serialize schedule as ExternalScheduleData and add to ExternalRepositoryData
-    repository = graphene_info.context.get_repository_definition()
+    repository = graphene_info.context.legacy_get_repository_definition()
     schedule_definition = repository.get_schedule_def(schedule_name)
     return schedule_definition
 
@@ -119,7 +121,7 @@ def get_dagster_schedule(graphene_info, schedule_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(schedule_name, 'schedule_name')
 
-    external_repository = graphene_info.context.get_external_repository()
+    external_repository = graphene_info.context.legacy_external_repository
 
     instance = graphene_info.context.instance
     if not instance.scheduler:
@@ -132,10 +134,3 @@ def get_dagster_schedule(graphene_info, schedule_name):
         )
 
     return schedule
-
-
-def get_schedule_attempt_filenames(graphene_info, schedule_name):
-    external_repository = graphene_info.context.get_external_repository()
-    instance = graphene_info.context.instance
-    log_dir = instance.log_path_for_schedule(external_repository.name, schedule_name)
-    return glob.glob(os.path.join(log_dir, "*.result"))

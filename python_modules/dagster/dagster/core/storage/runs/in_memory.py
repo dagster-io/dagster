@@ -177,3 +177,26 @@ class InMemoryRunStorage(RunStorage):
             if curr_run.root_run_id == root_run.run_id:
                 run_group.append(curr_run)
         return (root_run.root_run_id, run_group)
+
+    def get_run_groups(self, filters=None, cursor=None, limit=None):
+        runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
+        run_groups = defaultdict(lambda: {'runs': {}, 'count': 0})
+
+        for run in runs:
+            root_run_id = run.get_root_run_id()
+            if root_run_id is not None:
+                run_groups[root_run_id]['runs'][run.run_id] = run
+            else:
+                run_groups[run.run_id]['runs'][run.run_id] = run
+
+        for root_run_id in run_groups:
+            if root_run_id not in run_groups[root_run_id]['runs']:
+                run_groups[root_run_id]['runs'][root_run_id] = self.get_run_by_id(root_run_id)
+            run_groups[root_run_id]['runs'] = list(run_groups[root_run_id]['runs'].values())
+
+        for run in self.get_runs():
+            root_run_id = run.get_root_run_id() or run.run_id
+            if root_run_id in run_groups:
+                run_groups[root_run_id]['count'] += 1
+
+        return run_groups

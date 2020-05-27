@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots['test_mode_fetch_resources 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         '__typename': 'Pipeline',
         'modes': [
             {
@@ -71,7 +71,7 @@ snapshots['test_mode_fetch_resources 1'] = {
 }
 
 snapshots['test_required_resources 1'] = {
-    'pipeline': {
+    'pipelineOrError': {
         'name': 'required_resource_pipeline',
         'solids': [
             {

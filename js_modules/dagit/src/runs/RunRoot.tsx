@@ -12,8 +12,11 @@ import gql from "graphql-tag";
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
   runId: string;
   pipelineName?: string;
-}>> = props => {
-  const { runId } = props.match.params;
+}>> = props => <RunById runId={props.match.params.runId} />;
+
+export const RunById: React.FunctionComponent<{
+  runId: string;
+}> = ({ runId }) => {
   const client = useApolloClient();
   const { data } = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: "cache-and-network",
