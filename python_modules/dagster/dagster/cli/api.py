@@ -8,10 +8,7 @@ import click
 from dagster import check
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
@@ -112,9 +109,8 @@ def _get_pipeline_run(stream, pipeline_run_json):
         return
 
 
-def _get_recon_pipeline(stream, yaml_path, pipeline_run):
+def _recon_pipeline(stream, recon_repo, pipeline_run):
     try:
-        recon_repo = ReconstructableRepository.from_yaml(yaml_path)
         return _subset(
             recon_repo.get_reconstructable_pipeline(pipeline_run.pipeline_name),
             pipeline_run.solid_subset,
@@ -123,8 +119,10 @@ def _get_recon_pipeline(stream, yaml_path, pipeline_run):
     except:  # pylint: disable=bare-except
         stream.send_error(
             sys.exc_info(),
-            message='Could not load pipeline with yaml_path {path} and name {name}'.format(
-                path=yaml_path, name=pipeline_run.pipeline_name
+            message='Could not load pipeline {name} from CLI args {repo_cli_args} for pipeline run {run_id}'.format(
+                repo_cli_args=recon_repo.get_cli_args(),
+                name=pipeline_run.pipeline_name,
+                run_id=pipeline_run.run_id,
             ),
         )
         return
@@ -134,14 +132,18 @@ def _get_recon_pipeline(stream, yaml_path, pipeline_run):
 # how we want to communicate pipeline targets
 @click.command(name='execute_run')
 @click.argument('output_file', type=click.Path())
-@click.option('--config-yaml', '-y')
+@repository_target_argument
 @click.option('--pipeline-run')
 @click.option('--instance-ref')
-def execute_run_command(output_file, config_yaml, pipeline_run, instance_ref):
-    return _execute_run_command_body(output_file, config_yaml, pipeline_run, instance_ref)
+def execute_run_command(output_file, pipeline_run, instance_ref, **kwargs):
+    recon_repo = recon_repo_for_cli_args(kwargs)
+
+    return _execute_run_command_body(output_file, recon_repo, pipeline_run, instance_ref)
 
 
-def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, instance_ref_json):
+def _execute_run_command_body(
+    output_file, recon_repo, pipeline_run_json, instance_ref_json,
+):
     with ipc_write_stream(output_file) as stream:
         instance = _get_instance(stream, instance_ref_json)
         if not instance:
@@ -158,19 +160,15 @@ def _execute_run_command_body(output_file, config_yaml, pipeline_run_json, insta
             EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
         )
 
-        recon_pipeline = _get_recon_pipeline(stream, config_yaml, pipeline_run)
-        if not recon_pipeline:
-            return
+        recon_pipeline = _recon_pipeline(stream, recon_repo, pipeline_run)
 
         # Perform setup so that termination of the execution will unwind and report to the
         # instance correctly
         setup_interrupt_support()
 
         try:
-
             for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
                 stream.send(event)
-
         except DagsterSubprocessError as err:
             if not all(
                 [

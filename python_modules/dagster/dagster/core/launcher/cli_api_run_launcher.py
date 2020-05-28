@@ -132,11 +132,6 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         env_handle = external_pipeline.handle.repository_handle.location_handle
-        check.param_invariant(
-            env_handle.in_process_origin.repo_yaml,
-            'external_pipeline',
-            'Must come from repo_yaml for now',
-        )
 
         # initialize when the first run happens
         if not self._instance:
@@ -149,7 +144,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = cli_api_execute_run(
             output_file=output_file,
             instance=self._instance,
-            repo_yaml=env_handle.in_process_origin.repo_yaml,
+            repo_cli_args=env_handle.in_process_origin.pointer.get_cli_args(),
             pipeline_run=run,
         )
 
