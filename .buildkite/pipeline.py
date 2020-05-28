@@ -212,7 +212,16 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
     ),
     ModuleBuildSpec('python_modules/dagster'),
-    ModuleBuildSpec('python_modules/dagster-graphql'),
+    ModuleBuildSpec(
+        'python_modules/dagster-graphql',
+        tox_env_suffixes=[
+            '-not_graphql_context_test_suite',
+            '-in_memory_instance_hosted_user_process_env',
+            '-in_memory_instance_out_of_process_env',
+            '-sqlite_instance_hosted_user_process_env',
+            '-sqlite_instance_out_of_process_env',
+        ],
+    ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-airflow',
         env_vars=[
