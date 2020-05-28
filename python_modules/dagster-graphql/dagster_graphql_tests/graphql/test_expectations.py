@@ -4,6 +4,7 @@ from dagster_graphql.test.utils import get_legacy_pipeline_selector
 
 from dagster.utils import file_relative_path
 
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
 
 
@@ -43,64 +44,70 @@ def sanitize(res):
     return res
 
 
-def test_basic_expectations_within_compute_step_events(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, 'pipeline_with_expectations')
-    logs = sync_execute_get_events(
-        context=graphql_context,
-        variables={'executionParams': {'selector': selector, 'mode': 'default',}},
-    )
+class TestExpectations(ExecutingGraphQLContextTestMatrix):
+    def test_basic_expectations_within_compute_step_events(self, graphql_context, snapshot):
+        selector = get_legacy_pipeline_selector(graphql_context, 'pipeline_with_expectations')
+        logs = sync_execute_get_events(
+            context=graphql_context,
+            variables={'executionParams': {'selector': selector, 'mode': 'default'}},
+        )
 
-    emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
-    assert emit_failed_expectation_event['expectationResult']['success'] is False
-    assert emit_failed_expectation_event['expectationResult']['description'] == 'Failure'
-    failed_result_metadata = json.loads(
-        emit_failed_expectation_event['expectationResult']['metadataEntries'][0]['jsonString']
-    )
-    assert emit_failed_expectation_event['expectationResult']['label'] == 'always_false'
+        emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
+        assert emit_failed_expectation_event['expectationResult']['success'] is False
+        assert emit_failed_expectation_event['expectationResult']['description'] == 'Failure'
+        failed_result_metadata = json.loads(
+            emit_failed_expectation_event['expectationResult']['metadataEntries'][0]['jsonString']
+        )
+        assert emit_failed_expectation_event['expectationResult']['label'] == 'always_false'
 
-    assert failed_result_metadata == {'reason': 'Relentless pessimism.'}
+        assert failed_result_metadata == {'reason': 'Relentless pessimism.'}
 
-    emit_successful_expectation_event = get_expectation_result(logs, 'emit_successful_expectation')
+        emit_successful_expectation_event = get_expectation_result(
+            logs, 'emit_successful_expectation'
+        )
 
-    assert emit_successful_expectation_event['expectationResult']['success'] is True
-    assert emit_successful_expectation_event['expectationResult']['description'] == 'Successful'
-    assert emit_successful_expectation_event['expectationResult']['label'] == 'always_true'
-    successful_result_metadata = json.loads(
-        emit_successful_expectation_event['expectationResult']['metadataEntries'][0]['jsonString']
-    )
+        assert emit_successful_expectation_event['expectationResult']['success'] is True
+        assert emit_successful_expectation_event['expectationResult']['description'] == 'Successful'
+        assert emit_successful_expectation_event['expectationResult']['label'] == 'always_true'
+        successful_result_metadata = json.loads(
+            emit_successful_expectation_event['expectationResult']['metadataEntries'][0][
+                'jsonString'
+            ]
+        )
 
-    assert successful_result_metadata == {'reason': 'Just because.'}
+        assert successful_result_metadata == {'reason': 'Just because.'}
 
-    emit_no_metadata = get_expectation_result(logs, 'emit_successful_expectation_no_metadata')
-    assert not emit_no_metadata['expectationResult']['metadataEntries']
+        emit_no_metadata = get_expectation_result(logs, 'emit_successful_expectation_no_metadata')
+        assert not emit_no_metadata['expectationResult']['metadataEntries']
 
-    snapshot.assert_match(sanitize(get_expectation_results(logs, 'emit_failed_expectation')))
-    snapshot.assert_match(sanitize(get_expectation_results(logs, 'emit_successful_expectation')))
-    snapshot.assert_match(
-        sanitize(get_expectation_results(logs, 'emit_successful_expectation_no_metadata'))
-    )
+        snapshot.assert_match(get_expectation_results(logs, 'emit_failed_expectation'))
+        snapshot.assert_match(get_expectation_results(logs, 'emit_successful_expectation'))
+        snapshot.assert_match(
+            get_expectation_results(logs, 'emit_successful_expectation_no_metadata')
+        )
 
-
-def test_basic_input_output_expectations(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world_with_expectations')
-    logs = sync_execute_get_events(
-        context=graphql_context,
-        variables={
-            'executionParams': {
-                'selector': selector,
-                'runConfigData': {
-                    'solids': {
-                        'sum_solid': {
-                            'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+    def test_basic_input_output_expectations(self, graphql_context, snapshot):
+        selector = get_legacy_pipeline_selector(
+            graphql_context, 'csv_hello_world_with_expectations'
+        )
+        logs = sync_execute_get_events(
+            context=graphql_context,
+            variables={
+                'executionParams': {
+                    'selector': selector,
+                    'runConfigData': {
+                        'solids': {
+                            'sum_solid': {
+                                'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
+                            }
                         }
-                    }
-                },
-                'mode': 'default',
-            }
-        },
-    )
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
 
-    expectation_results = get_expectation_results(logs, 'df_expectations_solid')
-    assert len(expectation_results) == 2
+        expectation_results = get_expectation_results(logs, 'df_expectations_solid')
+        assert len(expectation_results) == 2
 
-    snapshot.assert_match(sanitize(expectation_results))
+        snapshot.assert_match(expectation_results)

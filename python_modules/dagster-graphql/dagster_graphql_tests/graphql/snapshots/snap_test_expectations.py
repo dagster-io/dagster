@@ -6,7 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_basic_expectations_within_compute_step_events 1'] = [
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_in_process_start] 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
@@ -30,7 +30,7 @@ snapshots['test_basic_expectations_within_compute_step_events 1'] = [
     }
 ]
 
-snapshots['test_basic_expectations_within_compute_step_events 2'] = [
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_in_process_start] 2'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
@@ -54,7 +54,7 @@ snapshots['test_basic_expectations_within_compute_step_events 2'] = [
     }
 ]
 
-snapshots['test_basic_expectations_within_compute_step_events 3'] = [
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_in_process_start] 3'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
@@ -73,7 +73,517 @@ snapshots['test_basic_expectations_within_compute_step_events 3'] = [
     }
 ]
 
-snapshots['test_basic_input_output_expectations 1'] = [
+snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_in_process_start] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_cli_api_hijack] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'data'
+                }
+            ],
+            'success': False
+        },
+        'level': 'DEBUG',
+        'message': 'Failure',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_cli_api_hijack] 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_cli_api_hijack] 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_cli_api_hijack] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_in_process_start] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'data'
+                }
+            ],
+            'success': False
+        },
+        'level': 'DEBUG',
+        'message': 'Failure',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_in_process_start] 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_in_process_start] 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_subprocess_start] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'data'
+                }
+            ],
+            'success': False
+        },
+        'level': 'DEBUG',
+        'message': 'Failure',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_subprocess_start] 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_subprocess_start] 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_instance_with_sync_hijack] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'data'
+                }
+            ],
+            'success': False
+        },
+        'level': 'DEBUG',
+        'message': 'Failure',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_instance_with_sync_hijack] 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[in_memory_instance_with_sync_hijack] 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_sync_hijack] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Failure',
+            'label': 'always_false',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Relentless pessimism."}',
+                    'label': 'data'
+                }
+            ],
+            'success': False
+        },
+        'level': 'DEBUG',
+        'message': 'Failure',
+        'step': {
+            'key': 'emit_failed_expectation.compute',
+            'solidHandleID': 'emit_failed_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_sync_hijack] 2'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'always_true',
+            'metadataEntries': [
+                {
+                    'description': None,
+                    'jsonString': '{"reason": "Just because."}',
+                    'label': 'data'
+                }
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation.compute',
+            'solidHandleID': 'emit_successful_expectation'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[sqlite_with_sync_hijack] 3'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': 'Successful',
+            'label': 'no_metadata',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Successful',
+        'step': {
+            'key': 'emit_successful_expectation_no_metadata.compute',
+            'solidHandleID': 'emit_successful_expectation_no_metadata'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[in_memory_in_process_start] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_subprocess_start] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[in_memory_instance_with_sync_hijack] 1'] = [
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'some_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation some_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    },
+    {
+        '__typename': 'StepExpectationResultEvent',
+        'expectationResult': {
+            'description': None,
+            'label': 'other_expectation',
+            'metadataEntries': [
+            ],
+            'success': True
+        },
+        'level': 'DEBUG',
+        'message': 'Expectation other_expectation passed',
+        'step': {
+            'key': 'df_expectations_solid.compute',
+            'solidHandleID': 'df_expectations_solid'
+        }
+    }
+]
+
+snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_sync_hijack] 1'] = [
     {
         '__typename': 'StepExpectationResultEvent',
         'expectationResult': {
