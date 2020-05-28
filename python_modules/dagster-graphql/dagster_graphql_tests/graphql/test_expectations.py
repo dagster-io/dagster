@@ -27,23 +27,6 @@ def get_expectation_result(logs, solid_name):
     return expt_results[0]
 
 
-def sanitize(res):
-    if isinstance(res, list):
-        for i in range(len(res)):
-            res[i] = sanitize(res[i])
-        return res
-
-    for k, v in res.items():
-        if k == 'timestamp':
-            res[k] = '*************'
-        if k == 'runId':
-            res[k] = '*******-****-****-****-************'
-        if isinstance(v, dict):
-            res[k] = sanitize(v)
-
-    return res
-
-
 class TestExpectations(ExecutingGraphQLContextTestMatrix):
     def test_basic_expectations_within_compute_step_events(self, graphql_context, snapshot):
         selector = get_legacy_pipeline_selector(graphql_context, 'pipeline_with_expectations')
