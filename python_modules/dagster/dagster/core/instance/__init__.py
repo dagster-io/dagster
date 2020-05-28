@@ -802,6 +802,11 @@ class DagsterInstance:
 
     # Scheduler
 
+    def reconcile_scheduler_state(self, python_path, repository_path, repository):
+        return self._scheduler.reconcile_scheduler_state(
+            self, repository, python_path, repository_path
+        )
+
     def start_schedule(self, repository, schedule_name):
         return self._scheduler.start_schedule(self, repository, schedule_name)
 

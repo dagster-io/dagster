@@ -77,72 +77,110 @@ class SchedulerHandle(object):
         self.schedule_defs = schedule_defs
 
 
-def reconcile_scheduler_state(python_path, repository_path, repository, instance):
-    '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
-    on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
+@whitelist_for_serdes
+class Schedule(
+    namedtuple('Schedule', 'schedule_definition_data status python_path repository_path')
+):
+    def __new__(cls, schedule_definition_data, status, python_path=None, repository_path=None):
 
-    Schedules, where the ScheduleDefinitions list is the source of truth.
+        return super(Schedule, cls).__new__(
+            cls,
+            check.inst_param(
+                schedule_definition_data, 'schedule_definition_data', ScheduleDefinitionData
+            ),
+            check.inst_param(status, 'status', ScheduleStatus),
+            check.opt_str_param(python_path, 'python_path'),
+            check.opt_str_param(repository_path, 'repository_path'),
+        )
 
-    If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
-    ScheduleStatus.STOPPED.
+    @property
+    def name(self):
+        return self.schedule_definition_data.name
 
-    For every previously existing ScheduleDefinition (where schedule_name is the primary key),
-    any changes to the definition are persisted in the corresponding Schedule and the status is
-    left unchanged. The schedule is also restarted to make sure the external artifacts (such
-    as a cron job) are up to date.
+    @property
+    def cron_schedule(self):
+        return self.schedule_definition_data.cron_schedule
 
-    For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
-    the storage and the corresponding Schedule is ended.
-    '''
+    @property
+    def environment_vars(self):
+        return self.schedule_definition_data.environment_vars
 
-    schedules_to_restart = []
-    for schedule_def in repository.schedule_defs:
-        # If a schedule already exists for schedule_def, overwrite bash script and
-        # metadata file
-        existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
-        if existing_schedule:
-            # Keep the status, but replace schedule_def, python_path, and repository_path
-            schedule = Schedule(
-                schedule_def.schedule_definition_data,
-                existing_schedule.status,
-                python_path,
-                repository_path,
-            )
+    def with_status(self, status):
+        check.inst_param(status, 'status', ScheduleStatus)
 
-            instance.update_schedule(repository, schedule)
-            schedules_to_restart.append(schedule)
-        else:
-            schedule = Schedule(
-                schedule_def.schedule_definition_data,
-                ScheduleStatus.STOPPED,
-                python_path,
-                repository_path,
-            )
-
-            instance.add_schedule(repository, schedule)
-
-    # Delete all existing schedules that are not in schedule_defs
-    schedule_def_names = {s.name for s in repository.schedule_defs}
-    existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
-    schedule_names_to_delete = existing_schedule_names - schedule_def_names
-
-    for schedule in schedules_to_restart:
-        # Restart is only needed if the schedule was previously running
-        if schedule.status == ScheduleStatus.RUNNING:
-            instance.stop_schedule(repository, schedule.name)
-            instance.start_schedule(repository, schedule.name)
-
-        if schedule.status == ScheduleStatus.STOPPED:
-            instance.stop_schedule(repository, schedule.name)
-
-    for schedule_name in schedule_names_to_delete:
-        instance.end_schedule(repository, schedule_name)
+        return Schedule(
+            self.schedule_definition_data,
+            status=status,
+            python_path=self.python_path,
+            repository_path=self.repository_path,
+        )
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     '''Abstract base class for a scheduler. This component is responsible for interfacing with
     an external system such as cron to ensure scheduled repeated execution according.
     '''
+
+    def reconcile_scheduler_state(self, instance, repository, python_path, repository_path):
+        '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
+        on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
+
+        Schedules, where the ScheduleDefinitions list is the source of truth.
+
+        If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
+        ScheduleStatus.STOPPED.
+
+        For every previously existing ScheduleDefinition (where schedule_name is the primary key),
+        any changes to the definition are persisted in the corresponding Schedule and the status is
+        left unchanged. The schedule is also restarted to make sure the external artifacts (such
+        as a cron job) are up to date.
+
+        For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
+        the storage and the corresponding Schedule is ended.
+        '''
+
+        schedules_to_restart = []
+        for schedule_def in repository.schedule_defs:
+            # If a schedule already exists for schedule_def, overwrite bash script and
+            # metadata file
+            existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
+            if existing_schedule:
+                # Keep the status, but replace schedule_def, python_path, and repository_path
+                schedule = Schedule(
+                    schedule_def.schedule_definition_data,
+                    existing_schedule.status,
+                    python_path,
+                    repository_path,
+                )
+
+                instance.update_schedule(repository, schedule)
+                schedules_to_restart.append(schedule)
+            else:
+                schedule = Schedule(
+                    schedule_def.schedule_definition_data,
+                    ScheduleStatus.STOPPED,
+                    python_path,
+                    repository_path,
+                )
+
+                instance.add_schedule(repository, schedule)
+
+        # Delete all existing schedules that are not in schedule_defs
+        schedule_def_names = {s.name for s in repository.schedule_defs}
+        existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
+        schedule_names_to_delete = existing_schedule_names - schedule_def_names
+
+        for schedule in schedules_to_restart:
+            # Restart is only needed if the schedule was previously running
+            if schedule.status == ScheduleStatus.RUNNING:
+                self.stop_schedule(instance, repository, schedule.name)
+                self.start_schedule(instance, repository, schedule.name)
+
+            if schedule.status == ScheduleStatus.STOPPED:
+                self.stop_schedule(instance, repository, schedule.name)
+
+        for schedule_name in schedule_names_to_delete:
+            self.end_schedule(instance, repository, schedule_name)
 
     @abc.abstractmethod
     def debug_info(self):
@@ -191,45 +229,6 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
     def get_logs_directory(self, instance, repository, schedule_name):
         '''Get directory that stores logs for schedule
         '''
-
-
-@whitelist_for_serdes
-class Schedule(
-    namedtuple('Schedule', 'schedule_definition_data status python_path repository_path')
-):
-    def __new__(cls, schedule_definition_data, status, python_path=None, repository_path=None):
-
-        return super(Schedule, cls).__new__(
-            cls,
-            check.inst_param(
-                schedule_definition_data, 'schedule_definition_data', ScheduleDefinitionData
-            ),
-            check.inst_param(status, 'status', ScheduleStatus),
-            check.opt_str_param(python_path, 'python_path'),
-            check.opt_str_param(repository_path, 'repository_path'),
-        )
-
-    @property
-    def name(self):
-        return self.schedule_definition_data.name
-
-    @property
-    def cron_schedule(self):
-        return self.schedule_definition_data.cron_schedule
-
-    @property
-    def environment_vars(self):
-        return self.schedule_definition_data.environment_vars
-
-    def with_status(self, status):
-        check.inst_param(status, 'status', ScheduleStatus)
-
-        return Schedule(
-            self.schedule_definition_data,
-            status=status,
-            python_path=self.python_path,
-            repository_path=self.repository_path,
-        )
 
 
 class ScheduleTickStatsSnapshot(

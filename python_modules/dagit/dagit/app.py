@@ -31,7 +31,6 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.snap import ActiveRepositoryData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -237,8 +236,8 @@ def create_app_with_execution_handle(handle, instance, reloader=None):
             handle = context.get_handle()
             python_path = sys.executable
             repository_path = handle.data.repository_yaml
-            reconcile_scheduler_state(
-                python_path, repository_path, repository=repository, instance=instance
+            instance.reconcile_scheduler_state(
+                repository=repository, python_path=python_path, repository_path=repository_path
             )
         else:
             warnings.warn(MISSING_SCHEDULER_WARNING)

@@ -10,7 +10,7 @@ from dagster import ScheduleDefinition, check, file_relative_path
 from dagster.core.definitions import RepositoryDefinition, lambda_solid, pipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.scheduler import Schedule, ScheduleStatus, reconcile_scheduler_state
+from dagster.core.scheduler import Schedule, ScheduleStatus
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -106,11 +106,10 @@ def test_init(restore_cron_tab, repository):  # pylint:disable=unused-argument,r
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Check schedules are saved to disk
@@ -129,22 +128,20 @@ def test_re_init(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Start schedule
         schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
 
         # Re-initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Check schedules are saved to disk
@@ -163,11 +160,10 @@ def test_start_and_stop_schedule(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
@@ -201,11 +197,10 @@ def test_start_schedule_cron_job(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
@@ -243,11 +238,10 @@ def test_start_and_stop_schedule_cron_tab(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Start schedule
@@ -282,11 +276,10 @@ def test_start_and_stop_schedule_cron_tab(
         assert len(cron_jobs) == 2
 
         # Reconcile schedule state, should be in the same state
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 2
@@ -296,11 +289,10 @@ def test_start_and_stop_schedule_cron_tab(
         assert len(cron_jobs) == 3
 
         # Reconcile schedule state, should be in the same state
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 3
@@ -314,11 +306,10 @@ def test_start_and_stop_schedule_cron_tab(
         assert len(cron_jobs) == 0
 
         # Reconcile schedule state, should be in the same state
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         cron_jobs = get_cron_jobs()
         assert len(cron_jobs) == 0
@@ -332,11 +323,10 @@ def test_start_schedule_fails(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
@@ -361,11 +351,10 @@ def test_start_schedule_unsuccessful(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         def do_nothing(*_):
@@ -389,11 +378,10 @@ def test_start_schedule_manual_delete_debug(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
@@ -410,11 +398,10 @@ def test_start_schedule_manual_delete_debug(
         assert len(debug_info.errors) == 1
 
         # Reconcile should fix error
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         debug_info = instance.scheduler_debug_info()
         assert len(debug_info.errors) == 0
@@ -428,11 +415,10 @@ def test_start_schedule_manual_add_debug(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Manually add the schedule from to the crontab
@@ -447,11 +433,10 @@ def test_start_schedule_manual_add_debug(
         assert len(debug_info.errors) == 1
 
         # Reconcile should fix error
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         debug_info = instance.scheduler_debug_info()
         assert len(debug_info.errors) == 0
@@ -465,11 +450,10 @@ def test_start_schedule_manual_duplicate_schedules_add_debug(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
@@ -491,11 +475,10 @@ def test_start_schedule_manual_duplicate_schedules_add_debug(
         assert len(debug_info.errors) == 1
 
         # Reconcile should fix error
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path="fake path",
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
         debug_info = instance.scheduler_debug_info()
         assert len(debug_info.errors) == 0
@@ -509,11 +492,10 @@ def test_stop_schedule_fails(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
@@ -551,11 +533,10 @@ def test_stop_schedule_unsuccessful(
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         def do_nothing(*_):
@@ -579,11 +560,10 @@ def test_wipe(restore_cron_tab, repository):  # pylint:disable=unused-argument,r
         instance = define_scheduler_instance(tempdir)
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Start schedule
@@ -614,11 +594,10 @@ def test_log_directory(
         )
 
         # Initialize scheduler
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '.../repository.yam'),
             repository=repository,
-            instance=instance,
         )
 
         # Start schedule

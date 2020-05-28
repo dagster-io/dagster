@@ -1,17 +1,11 @@
 import os
-import sys
 
 import mock
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import ScheduleDefinition, seven
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.scheduler import (
-    Schedule,
-    ScheduleStatus,
-    get_schedule_change_set,
-    reconcile_scheduler_state,
-)
+from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -74,11 +68,10 @@ def test_get_all_schedules():
 
         # Initialize scheduler
         repository = context.get_repository()
-        reconcile_scheduler_state(
-            python_path=sys.executable,
-            repository_path="",
+        instance.reconcile_scheduler_state(
             repository=repository,
-            instance=instance,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
         )
 
         # Start schedule
