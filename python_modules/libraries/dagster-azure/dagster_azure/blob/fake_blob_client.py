@@ -3,9 +3,9 @@ import random
 from collections import defaultdict
 from contextlib import contextmanager
 
-from azure.core.exceptions import ResourceNotFoundError
-
 from dagster.seven import mock
+
+from .utils import ResourceNotFoundError
 
 
 class FakeBlobServiceClient(object):

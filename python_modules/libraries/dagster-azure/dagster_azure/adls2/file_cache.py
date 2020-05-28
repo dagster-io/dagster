@@ -1,10 +1,8 @@
-from azure.core.exceptions import ResourceNotFoundError
-
 from dagster import Field, Selector, String, StringSource, check, resource
 from dagster.core.storage.file_cache import FileCache
 
 from .file_manager import ADLS2FileHandle
-from .utils import create_adls2_client
+from .utils import ResourceNotFoundError, create_adls2_client
 
 
 class ADLS2FileCache(FileCache):

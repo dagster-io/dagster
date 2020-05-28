@@ -3,12 +3,12 @@ import random
 from collections import defaultdict
 from contextlib import contextmanager
 
-from azure.core.exceptions import ResourceNotFoundError
 from dagster_azure.blob import FakeBlobServiceClient
 
 from dagster.seven import mock
 
 from .resources import ADLS2Resource
+from .utils import ResourceNotFoundError
 
 
 class FakeADLS2Resource(ADLS2Resource):

@@ -2,8 +2,6 @@ import itertools
 import os
 from contextlib import contextmanager
 
-from azure.storage.blob import generate_blob_sas
-
 from dagster import Field, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -15,7 +13,7 @@ from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, Lo
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
 
-from .utils import create_blob_client
+from .utils import create_blob_client, generate_blob_sas
 
 
 class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):

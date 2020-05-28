@@ -3,12 +3,12 @@ import re
 import sys
 from io import BytesIO, StringIO
 
-from azure.core.exceptions import ResourceNotFoundError
-
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
+
+from .utils import ResourceNotFoundError
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
