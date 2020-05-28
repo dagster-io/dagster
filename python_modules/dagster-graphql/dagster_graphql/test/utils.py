@@ -76,12 +76,12 @@ def define_context_for_repository_yaml(path, instance):
 
 def get_legacy_pipeline_selector(graphql_context, pipeline_name, solid_subset=None):
     assert len(graphql_context.repository_locations) == 1
-    environment = graphql_context.repository_locations[0]
-    repositories = environment.get_repositories()
+    repository_location = graphql_context.repository_locations[0]
+    repositories = repository_location.get_repositories()
     assert len(repositories) == 1
     repository = next(iter(repositories.values()))
     return {
-        'environmentName': environment.name,
+        'repositoryLocationName': repository_location.name,
         'repositoryName': repository.name,
         'pipelineName': pipeline_name,
         'solidSubset': solid_subset,

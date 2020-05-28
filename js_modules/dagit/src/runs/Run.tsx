@@ -218,7 +218,7 @@ interface ReexecuteWithDataProps {
     stepKeys?: string[];
     stepQuery?: string;
     resumeRetry?: boolean;
-    environmentName?: string;
+    repositoryLocationName?: string;
     repositoryName?: string;
   }) => StartPipelineReexecutionVariables | undefined;
 }
@@ -254,7 +254,7 @@ const ReexecuteWithData = ({
       stepKeys,
       stepQuery,
       resumeRetry,
-      environmentName: repositoryLocation?.name,
+      repositoryLocationName: repositoryLocation?.name,
       repositoryName: repository?.name
     });
     const result = await startPipelineReexecution({ variables });
@@ -269,7 +269,7 @@ const ReexecuteWithData = ({
       stepKeys,
       stepQuery,
       resumeRetry,
-      environmentName: repositoryLocation?.name,
+      repositoryLocationName: repositoryLocation?.name,
       repositoryName: repository?.name
     });
     const result = await launchPipelineReexecution({ variables });

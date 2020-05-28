@@ -45,7 +45,7 @@ class PipelineSelector(
 
     def to_graphql_input(self):
         return {
-            'environmentName': self.location_name,
+            'repositoryLocationName': self.location_name,
             'repositoryName': self.repository_name,
             'pipelineName': self.pipeline_name,
             'solidSubset': self.solid_subset,
@@ -81,7 +81,7 @@ class PipelineSelector(
         # legacy case
         if data.get('name'):
             check.invariant(
-                data.get('environmentName') is None
+                data.get('repositoryLocationName') is None
                 and data.get('repositoryName') is None
                 and data.get('pipelineName') is None,
                 'Invalid legacy PipelineSelector, contains modern name fields',
@@ -92,12 +92,14 @@ class PipelineSelector(
         # can be removed once DauphinPipelineSelector fields
         # can be made NonNull
         check.invariant(
-            data.get('environmentName') and data.get('repositoryName') and data.get('pipelineName'),
+            data.get('repositoryLocationName')
+            and data.get('repositoryName')
+            and data.get('pipelineName'),
             'Invalid PipelineSelector, must have all name fields',
         )
 
         return cls(
-            location_name=data['environmentName'],
+            location_name=data['repositoryLocationName'],
             repository_name=data['repositoryName'],
             pipeline_name=data['pipelineName'],
             solid_subset=data.get('solidSubset'),

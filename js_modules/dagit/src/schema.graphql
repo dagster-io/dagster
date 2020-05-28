@@ -845,7 +845,7 @@ input PipelineSelector {
   name: String
   pipelineName: String
   repositoryName: String
-  environmentName: String
+  repositoryLocationName: String
   solidSubset: [String!]
 }
 

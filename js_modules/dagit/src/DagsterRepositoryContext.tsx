@@ -44,7 +44,7 @@ export const usePipelineSelector = (
 
   return {
     pipelineName,
-    environmentName: repositoryLocation?.name,
+    repositoryLocationName: repositoryLocation?.name,
     repositoryName: repository?.name,
     solidSubset
   };

@@ -93,7 +93,7 @@ export interface PipelineSelector {
   name?: string | null;
   pipelineName?: string | null;
   repositoryName?: string | null;
-  environmentName?: string | null;
+  repositoryLocationName?: string | null;
   solidSubset?: string[] | null;
 }
 

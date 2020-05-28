@@ -222,7 +222,7 @@ export function getReexecutionVariables(input: {
   stepKeys?: string[];
   stepQuery?: string;
   resumeRetry?: boolean;
-  environmentName?: string;
+  repositoryLocationName?: string;
   repositoryName?: string;
 }) {
   const {
@@ -231,7 +231,7 @@ export function getReexecutionVariables(input: {
     stepKeys,
     resumeRetry,
     stepQuery,
-    environmentName,
+    repositoryLocationName,
     repositoryName
   } = input;
 
@@ -241,9 +241,9 @@ export function getReexecutionVariables(input: {
     }
 
     const selector =
-      environmentName && repositoryName
+      repositoryLocationName && repositoryName
         ? {
-            environmentName,
+            repositoryLocationName,
             repositoryName,
             pipelineName: run.pipeline.name,
             solidSubset: run.pipeline.solids.map(s => s.name)
@@ -561,7 +561,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                   variables: getReexecutionVariables({
                     run,
                     envYaml,
-                    environmentName: repositoryLocation?.name,
+                    repositoryLocationName: repositoryLocation?.name,
                     repositoryName: repository?.name
                   })
                 });

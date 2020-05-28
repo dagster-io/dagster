@@ -682,7 +682,7 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
 
     pipelineName = dauphin.Field(dauphin.String)
     repositoryName = dauphin.Field(dauphin.String)
-    environmentName = dauphin.Field(dauphin.String)
+    repositoryLocationName = dauphin.Field(dauphin.String)
     solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
