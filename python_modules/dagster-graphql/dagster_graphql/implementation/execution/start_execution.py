@@ -141,11 +141,8 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     if instance.run_launcher and instance.run_launcher.hijack_start:
         from .launch_execution import do_launch_for_created_run
 
-        run = do_launch_for_created_run(graphene_info, run_id)
+        return do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked=True)
 
-        return graphene_info.schema.type_named('StartPipelineRunSuccess')(
-            run=graphene_info.schema.type_named('PipelineRun')(run)
-        )
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)

@@ -6,6 +6,7 @@ from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedError
 from dagster.core.events import EngineEventData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -111,9 +112,10 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     )
 
 
-def do_launch_for_created_run(graphene_info, run_id):
+def do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
+    check.bool_param(is_start_that_was_hijacked, 'is_start_that_was_hijacked')
 
     # First retrieve the pipeline run
     instance = graphene_info.context.instance
@@ -129,8 +131,10 @@ def do_launch_for_created_run(graphene_info, run_id):
 
     # Run config validation
     # If there are any config errors, then inject them into the event log
-    validated_config = ensure_valid_config(
-        external_pipeline, pipeline_run.mode, pipeline_run.environment_dict
+    validated_config = validate_config_from_snap(
+        external_pipeline.config_schema_snapshot,
+        external_pipeline.root_config_key_for_mode(pipeline_run.mode),
+        pipeline_run.environment_dict,
     )
 
     if not validated_config.success:
@@ -161,14 +165,22 @@ def do_launch_for_created_run(graphene_info, run_id):
 
         instance.report_run_failed(pipeline_run)
 
-        raise UserFacingGraphQLError(
-            DauphinPipelineConfigValidationInvalid.for_validation_errors(
-                external_pipeline, validated_config.errors
-            )
+        return DauphinPipelineConfigValidationInvalid.for_validation_errors(
+            external_pipeline, validated_config.errors
         )
 
     try:
-        return instance.launch_run(pipeline_run.run_id, external_pipeline)
+        launched_run = instance.launch_run(pipeline_run.run_id, external_pipeline)
+        if is_start_that_was_hijacked:
+            # If this was actually a start, we have to return this to maintain
+            # api compatibility
+            return graphene_info.schema.type_named('StartPipelineRunSuccess')(
+                run=graphene_info.schema.type_named('PipelineRun')(launched_run)
+            )
+        else:
+            return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
+                run=graphene_info.schema.type_named('PipelineRun')(launched_run)
+            )
     except DagsterLaunchFailedError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
         instance.report_engine_event(
@@ -184,8 +196,4 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
 
-    run = do_launch_for_created_run(graphene_info, run_id)
-
-    return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
-    )
+    return do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked=False)

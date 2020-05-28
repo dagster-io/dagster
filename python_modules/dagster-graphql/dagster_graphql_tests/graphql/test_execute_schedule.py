@@ -2,7 +2,7 @@ import time
 import uuid
 
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql_and_finish_runs
 
 from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.scheduler.scheduler import ScheduleTickStatus
@@ -41,13 +41,26 @@ SCHEDULE_TICKS_QUERY = '''
 '''
 
 
+def assert_start_scheduled_execution_success(result):
+    assert result.data['startScheduledExecution']['__typename'] in {
+        'StartPipelineRunSuccess',
+        'LaunchPipelineRunSuccess',
+    }
+
+
 class TestExecuteSchedule(
+    # Event with the test matrices, testing all the variants is still
+    # too slow. Going to focus on the most common prod cases for now
+    # and the things are most relevant to the transition.
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_in_process_start()]
+        context_variants=[
+            GraphQLContextVariant.sqlite_subprocess_start(),
+            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
+        ]
     )
 ):
     def test_just_basic_start_scheduled_execution(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
@@ -55,7 +68,7 @@ class TestExecuteSchedule(
 
         assert not result.errors
         assert result.data
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -70,7 +83,7 @@ class TestExecuteSchedule(
         )
 
     def test_basic_start_scheduled_execution_with_run_launcher(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
@@ -80,7 +93,7 @@ class TestExecuteSchedule(
         assert result.data
 
         # just test existence
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -95,7 +108,7 @@ class TestExecuteSchedule(
         )
 
     def test_basic_start_scheduled_execution_with_environment_dict_fn(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_pipeline_hourly_schedule_with_config_fn'},
@@ -105,7 +118,7 @@ class TestExecuteSchedule(
         assert result.data
 
         # just test existence
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -120,7 +133,7 @@ class TestExecuteSchedule(
         )
 
     def test_start_scheduled_execution_with_should_execute(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_should_execute'},
@@ -132,7 +145,7 @@ class TestExecuteSchedule(
         assert result.data['startScheduledExecution']['__typename'] == 'ScheduledExecutionBlocked'
 
     def test_partition_based_execution(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based'},
@@ -142,7 +155,7 @@ class TestExecuteSchedule(
         assert result.data
 
         # just test existence
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -163,7 +176,7 @@ class TestExecuteSchedule(
             for tag in tags
         )
 
-        result_two = execute_dagster_graphql(
+        result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based'},
@@ -173,7 +186,7 @@ class TestExecuteSchedule(
         assert any(tag['key'] == 'dagster/partition' and tag['value'] == '9' for tag in tags)
 
     def test_partition_based_custom_selector(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based_custom_selector'},
@@ -181,7 +194,7 @@ class TestExecuteSchedule(
 
         assert not result.errors
         assert result.data
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name']
@@ -199,7 +212,7 @@ class TestExecuteSchedule(
             for tag in tags
         )
 
-        result_two = execute_dagster_graphql(
+        result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based_custom_selector'},
@@ -210,7 +223,7 @@ class TestExecuteSchedule(
         assert any(tag['key'] == 'dagster/partition' and tag['value'] == '8' for tag in tags)
 
     def test_partition_based_decorator(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based_decorator'},
@@ -218,7 +231,7 @@ class TestExecuteSchedule(
 
         assert not result.errors
         assert result.data
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
     @pytest.mark.parametrize(
         'schedule_name',
@@ -230,7 +243,7 @@ class TestExecuteSchedule(
         ],
     )
     def test_solid_subset_schedule_decorator(self, schedule_name, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': schedule_name},
@@ -238,7 +251,7 @@ class TestExecuteSchedule(
 
         assert not result.errors
         assert result.data
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         run_id = result.data['startScheduledExecution']['run']['runId']
 
@@ -251,7 +264,7 @@ class TestExecuteSchedule(
         assert execution_step_names == ['return_foo.compute']
 
     def test_partition_based_multi_mode_decorator(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'partition_based_multi_mode_decorator'},
@@ -259,7 +272,7 @@ class TestExecuteSchedule(
 
         assert not result.errors
         assert result.data
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         run_id = result.data['startScheduledExecution']['run']['runId']
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
@@ -281,12 +294,12 @@ class TestExecuteSchedule(
         schedule_def = repository.get_schedule_def("no_config_pipeline_hourly_schedule")
 
         start_time = time.time()
-        execute_dagster_graphql(
+        execute_dagster_graphql_and_finish_runs(
             context, START_SCHEDULED_EXECUTION_QUERY, variables={'scheduleName': schedule_def.name},
         )
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(context, SCHEDULE_TICKS_QUERY)
 
         assert result.data
         schedule_result = next(
@@ -315,14 +328,14 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
-        execute_dagster_graphql(
+        execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_should_execute'},
         )
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
             for x in result.data['scheduler']['runningSchedules']
@@ -342,14 +355,14 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
-        execute_dagster_graphql(
+        execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'should_execute_error_schedule'},
         )
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
             for x in result.data['scheduler']['runningSchedules']
@@ -376,17 +389,17 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tags_error_schedule'},
         )
 
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         run_id = result.data['startScheduledExecution']['run']['runId']
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
             for x in result.data['scheduler']['runningSchedules']
@@ -408,16 +421,16 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'environment_dict_error_schedule'},
         )
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         run_id = result.data['startScheduledExecution']['run']['runId']
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
             for x in result.data['scheduler']['runningSchedules']
@@ -440,12 +453,12 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         reconcile_scheduler_state("", "", repository, instance)
 
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'environment_dict_error_schedule'},
         )
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         run_id = result.data['startScheduledExecution']['run']['runId']
 
         ticks = instance.get_schedule_ticks_by_schedule(
@@ -467,24 +480,24 @@ class TestExecuteSchedule(
             'no_config_should_execute',
             'environment_dict_error_schedule',
         ]:
-            execute_dagster_graphql(
+            execute_dagster_graphql_and_finish_runs(
                 graphql_context,
                 START_SCHEDULED_EXECUTION_QUERY,
                 variables={'scheduleName': scheduleName},
             )
 
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         snapshot.assert_match(result.data['scheduler']['runningSchedules'])
 
     def test_tagged_pipeline_schedule(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tagged_pipeline_schedule'},
         )
 
         assert not result.errors
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
         )
@@ -495,14 +508,14 @@ class TestExecuteSchedule(
         )
 
     def test_tagged_pipeline_override_schedule(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tagged_pipeline_override_schedule'},
         )
 
         assert not result.errors
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
         )
@@ -517,7 +530,7 @@ class TestExecuteSchedule(
         )
 
     def test_tagged_pipeline_scheduled_execution_with_run_launcher(self, graphql_context):
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tagged_pipeline_schedule'},
@@ -527,7 +540,7 @@ class TestExecuteSchedule(
         assert result.data
 
         # just test existence
-        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert_start_scheduled_execution_success(result)
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -543,7 +556,7 @@ class TestExecuteSchedule(
         repository = graphql_context.legacy_get_repository_definition()
         instance = graphql_context.instance
         reconcile_scheduler_state("", "", repository, instance)
-        result = execute_dagster_graphql(
+        result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'invalid_config_schedule'},
@@ -555,7 +568,7 @@ class TestExecuteSchedule(
         )
 
         # Check tick data and stats through gql
-        result = execute_dagster_graphql(graphql_context, SCHEDULE_TICKS_QUERY)
+        result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
             for x in result.data['scheduler']['runningSchedules']

@@ -23,6 +23,7 @@ from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.utils.hosted_user_process import repository_handle_from_recon_repo
 
 
@@ -59,6 +60,7 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
+                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                 )
 
         return MarkedManager(_in_memory_instance, [Marks.in_memory_instance])
@@ -75,6 +77,7 @@ class InstanceManagers:
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
                     run_launcher=ExplodingRunLauncher(),
+                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                 )
 
         return MarkedManager(
@@ -93,6 +96,7 @@ class InstanceManagers:
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
                     run_launcher=SyncInMemoryRunLauncher(hijack_start=True),
+                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                 )
 
         return MarkedManager(
