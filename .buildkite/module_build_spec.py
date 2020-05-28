@@ -11,7 +11,9 @@ from step_builder import StepBuilder  # isort:skip
 
 class ModuleBuildSpec(
     namedtuple(
-        '_ModuleBuildSpec', 'directory env_vars supported_pythons extra_cmds_fn depends_on_fn'
+        '_ModuleBuildSpec',
+        'directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file '
+        'tox_env_suffixes buildkite_label',
     )
 ):
     '''Main spec for testing Dagster Python modules using tox.
@@ -35,6 +37,15 @@ class ModuleBuildSpec(
             argument, which is the Python version being invoked, and returns a list of names of
             other Buildkite build steps this build step should depend on. Defaults to None (no
             dependencies).
+        tox_file (str, optional): The tox file to use. Defaults to None (uses the default tox.ini
+            file).
+        tox_env_suffixes: (List[str], optional): List of additional tox env suffixes to provide
+            when invoking tox. When provided, a separate test run will be invoked per
+            env x env_suffix string. For example, given Python tox version py27, the
+            tox_env_suffixes ["-a", "-b"] will result in running "tox -e py27-a" and "tox -e py27-b"
+            as two build steps. Defaults to None.
+        buildkite_label: (str, optional): Optional label to override what's shown in Buildkite.
+            Defaults to None (uses the package name as the label).
 
     Returns:
         List[dict]: List of test steps
@@ -47,6 +58,9 @@ class ModuleBuildSpec(
         supported_pythons=None,
         extra_cmds_fn=None,
         depends_on_fn=None,
+        tox_file=None,
+        tox_env_suffixes=None,
+        buildkite_label=None,
     ):
         return super(ModuleBuildSpec, cls).__new__(
             cls,
@@ -55,41 +69,56 @@ class ModuleBuildSpec(
             supported_pythons or SupportedPythons,
             extra_cmds_fn,
             depends_on_fn,
+            tox_file,
+            tox_env_suffixes,
+            buildkite_label,
         )
 
     def get_tox_build_steps(self):
-        label = self.directory.split("/")[-1]
+        package = self.buildkite_label or self.directory.split("/")[-1]
         tests = []
 
+        tox_env_suffixes = self.tox_env_suffixes or ['']
+
         for version in self.supported_pythons:
-            coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
-                label=label, version=version
-            )
+            for tox_env_suffix in tox_env_suffixes:
+                label = package + tox_env_suffix
 
-            extra_cmds = self.extra_cmds_fn(version) if self.extra_cmds_fn else []
+                coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
+                    label=label, version=version
+                )
 
-            cmds = extra_cmds + [
-                "cd {directory}".format(directory=self.directory),
+                extra_cmds = self.extra_cmds_fn(version) if self.extra_cmds_fn else []
+
                 # See: https://github.com/dagster-io/dagster/issues/2512
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
-                "mv .coverage {file}".format(file=coverage),
-                "buildkite-agent artifact upload {file}".format(file=coverage),
-            ]
+                tox_file = '-c %s ' % self.tox_file if self.tox_file else ''
+                tox_cmd = 'tox -vv {tox_file}-e {ver}{tox_env_suffix}'.format(
+                    tox_file=tox_file, tox_env_suffix=tox_env_suffix, ver=TOX_MAP[version]
+                )
 
-            step = (
-                StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
-                .run(*cmds)
-                .on_integration_image(version, self.env_vars or [])
-            )
+                cmds = extra_cmds + [
+                    'cd {directory}'.format(directory=self.directory),
+                    tox_cmd,
+                    'mv .coverage {file}'.format(file=coverage),
+                    'buildkite-agent artifact upload {file}'.format(file=coverage),
+                ]
 
-            if self.depends_on_fn:
-                step = step.depends_on(self.depends_on_fn(version))
+                step = (
+                    StepBuilder('{label} tests ({ver})'.format(label=label, ver=TOX_MAP[version]))
+                    .run(*cmds)
+                    .on_integration_image(version, self.env_vars or [])
+                )
 
-            tests.append(step.build())
+                if self.depends_on_fn:
+                    step = step.depends_on(self.depends_on_fn(version))
 
+                tests.append(step.build())
+
+        # We expect the tox file to define a pylint testenv, and we'll construct a separate
+        # buildkite build step for the pylint testenv.
         tests.append(
-            StepBuilder("%s pylint" % label)
-            .run("cd {directory}".format(directory=self.directory), "tox -vv -e pylint")
+            StepBuilder('%s pylint' % package)
+            .run('cd {directory}'.format(directory=self.directory), 'tox -vv -e pylint')
             .on_integration_image(SupportedPython.V3_7)
             .build()
         )

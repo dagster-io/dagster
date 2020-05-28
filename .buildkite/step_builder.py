@@ -64,7 +64,7 @@ class StepBuilder(object):
             else:
                 commands.append(entry)
 
-        self._step["commands"] = map(lambda cmd: "time " + cmd, commands)
+        self._step["commands"] = ["time " + cmd for cmd in commands]
         return self
 
     def _base_docker_settings(self):
