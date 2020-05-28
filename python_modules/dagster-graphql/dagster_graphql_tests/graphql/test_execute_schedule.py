@@ -2,10 +2,12 @@ import time
 import uuid
 
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql_and_finish_runs
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_and_finish_runs,
+)
 
 from dagster import seven
-from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.scheduler.scheduler import ScheduleTickStatus
 
 from .execution_queries import LAUNCH_SCHEDULED_EXECUTION_QUERY
@@ -288,7 +290,11 @@ class TestExecuteSchedule(
 
         repository = context.legacy_get_repository_definition()
 
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
         schedule_def = repository.get_schedule_def("no_config_pipeline_hourly_schedule")
 
         start_time = time.time()
@@ -324,9 +330,12 @@ class TestExecuteSchedule(
 
     def test_tick_skip(self, graphql_context, snapshot):
         instance = graphql_context.instance
-
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -353,7 +362,11 @@ class TestExecuteSchedule(
     def test_should_execute_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -387,7 +400,11 @@ class TestExecuteSchedule(
     def test_tags_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -419,7 +436,11 @@ class TestExecuteSchedule(
     def test_environment_dict_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -451,7 +472,11 @@ class TestExecuteSchedule(
     def test_environment_dict_scheduler_error_serialize_cause(self, graphql_context):
         instance = graphql_context.instance
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -473,7 +498,11 @@ class TestExecuteSchedule(
     def test_query_multiple_schedule_ticks(self, graphql_context, snapshot):
         instance = graphql_context.instance
         repository = graphql_context.legacy_get_repository_definition()
-        reconcile_scheduler_state("", "", repository, instance)
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
 
         for scheduleName in [
             'no_config_pipeline_hourly_schedule',
@@ -553,10 +582,15 @@ class TestExecuteSchedule(
         )
 
     def test_invalid_config_schedule_error(self, graphql_context, snapshot):
-        repository = graphql_context.legacy_get_repository_definition()
         instance = graphql_context.instance
-        reconcile_scheduler_state("", "", repository, instance)
-        result = execute_dagster_graphql_and_finish_runs(
+        repository = graphql_context.legacy_get_repository_definition()
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
+
+        result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'invalid_config_schedule'},

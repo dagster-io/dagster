@@ -9,11 +9,7 @@ import six
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import (
-    ScheduleStatus,
-    get_schedule_change_set,
-    reconcile_scheduler_state,
-)
+from dagster.core.scheduler import ScheduleStatus, get_schedule_change_set
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 
@@ -185,7 +181,9 @@ def execute_up_command(preview, cli_args, print_fn):
         return
 
     try:
-        reconcile_scheduler_state(python_path, repository_path, repository, instance=instance)
+        instance.reconcile_scheduler_state(
+            repository=repository, python_path=python_path, repository_path=repository_path
+        )
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 

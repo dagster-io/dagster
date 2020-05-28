@@ -9,8 +9,9 @@ from dagster_graphql.test.utils import define_context_for_repository_yaml, execu
 from dagster import seven
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import reconcile_scheduler_state
+from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.utils import file_relative_path, script_relative_path
+from dagster.utils.test import FilesystemTestScheduler
 
 
 def no_print(_):
@@ -40,19 +41,21 @@ def test_schedules():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
+        # Patch scheduler and schedule storage.
+        instance._schedule_storage = SqliteScheduleStorage.from_local(  # pylint: disable=protected-access
+            temp_dir
+        )
+        instance._scheduler = FilesystemTestScheduler(temp_dir)  # pylint: disable=protected-access
+
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        # We need to call up on the scheduler handle to persist
-        # state about the schedules to disk before running them.
-        # Note: This dependency will be removed soon.
         repository = context.legacy_get_repository_definition()
-        reconcile_scheduler_state(
+        instance.reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '../'),
             repository=repository,
-            instance=instance,
         )
 
         for schedule_name in [
