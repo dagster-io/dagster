@@ -208,23 +208,9 @@ class RepositoryDefinition(object):
     def partition_set_defs(self):
         return self._partition_set_defs
 
-    def backcompat_add_partition_set_defs(self, partition_set_defs):
-        check.invariant(
-            not self._partition_set_defs,
-            'legacy load path not supported when schedules are defined on the repository',
-        )
-        self._partition_set_defs = partition_set_defs
-
     @property
     def schedule_defs(self):
         return self._schedule_defs
-
-    def backcompat_add_schedule_defs(self, schedule_defs):
-        check.invariant(
-            not self._schedule_defs,
-            'legacy load path not supported when schedules are defined on the repository',
-        )
-        self._schedule_defs = schedule_defs
 
     def get_schedule_def(self, name):
         for schedule_def in self._schedule_defs:
