@@ -1,11 +1,10 @@
-import shlex
-
 from dagster import check
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.serdes.ipc import ipc_read_event_stream, open_ipc_subprocess
+from dagster.seven import xplat_shlex_split
 from dagster.utils import safe_tempfile_path
 
 
@@ -44,7 +43,7 @@ def cli_api_execute_run(output_file, instance, repo_cli_args, pipeline_run):
 
     parts = (
         ['dagster', 'api', 'execute_run', output_file,]
-        + shlex.split(repo_cli_args)
+        + xplat_shlex_split(repo_cli_args)
         + [
             '--instance-ref',
             '{instance_ref}'.format(instance_ref=serialize_dagster_namedtuple(instance.get_ref())),
