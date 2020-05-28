@@ -112,10 +112,9 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     )
 
 
-def do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked):
+def do_launch_for_created_run(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
-    check.bool_param(is_start_that_was_hijacked, 'is_start_that_was_hijacked')
 
     # First retrieve the pipeline run
     instance = graphene_info.context.instance
@@ -171,16 +170,9 @@ def do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked)
 
     try:
         launched_run = instance.launch_run(pipeline_run.run_id, external_pipeline)
-        if is_start_that_was_hijacked:
-            # If this was actually a start, we have to return this to maintain
-            # api compatibility
-            return graphene_info.schema.type_named('StartPipelineRunSuccess')(
-                run=graphene_info.schema.type_named('PipelineRun')(launched_run)
-            )
-        else:
-            return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
-                run=graphene_info.schema.type_named('PipelineRun')(launched_run)
-            )
+        return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
+            run=graphene_info.schema.type_named('PipelineRun')(launched_run)
+        )
     except DagsterLaunchFailedError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
         instance.report_engine_event(
@@ -191,9 +183,4 @@ def do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked)
         # We should return a proper GraphQL error here
         raise
 
-
-def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(run_id, 'run_id')
-
-    return do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked=False)
+    return do_launch_for_created_run(graphene_info, run_id)

@@ -9,15 +9,10 @@ from graphql import parse
 from dagster import check, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
-from .execution_queries import (
-    START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
-    START_PIPELINE_EXECUTION_QUERY,
-    SUBSCRIPTION_QUERY,
-)
+from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
 from .graphql_context_test_suite import (
     EMManagers,
     EnvironmentManagers,
@@ -27,7 +22,7 @@ from .graphql_context_test_suite import (
     Marks,
     make_graphql_context_test_suite,
 )
-from .setup import csv_hello_world, csv_hello_world_solids_config
+from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
 
@@ -407,38 +402,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             assert step_mat_event
             assert len(step_mat_event['materialization']['metadataEntries']) == 1
             assert step_mat_event['materialization']['metadataEntries'][0]['path'] == out_csv_path
-
-    def test_start_pipeline_execution_for_created_run(self, graphql_context):
-        instance = graphql_context.instance
-
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=csv_hello_world, environment_dict=csv_hello_world_solids_config()
-        )
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
-            variables={'runId': pipeline_run.run_id},
-        )
-        assert result.data
-        assert (
-            result.data['startPipelineExecutionForCreatedRun']['__typename']
-            == 'StartPipelineRunSuccess'
-        )
-
-    def test_start_pipeline_execution_for_created_run_not_found(self, graphql_context):
-        run_id = make_new_run_id()
-        result = execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
-            variables={'runId': run_id},
-        )
-
-        assert result.data
-        assert (
-            result.data['startPipelineExecutionForCreatedRun']['__typename']
-            == 'PipelineRunNotFoundError'
-        )
 
 
 @contextmanager

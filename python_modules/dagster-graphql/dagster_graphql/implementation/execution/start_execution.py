@@ -7,10 +7,12 @@ from dagster import DagsterInvalidConfigError, check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
+from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
+from dagster.utils.hosted_user_process import pipeline_def_from_pipeline_handle
 
 from ..external import (
     ensure_valid_config,
@@ -127,21 +129,13 @@ def start_pipeline_execution_for_created_run(graphene_info, run_id):
     below re-usable. The parent function is wrapped in @capture_dauphin_error, which makes it
     difficult to do exception handling.
     '''
-    return _start_pipeline_execution_for_created_run(graphene_info, run_id)
+    return _synchronously_execute_run_within_hosted_user_process(graphene_info, run_id)
 
 
-def _start_pipeline_execution_for_created_run(graphene_info, run_id):
+def _synchronously_execute_run_within_hosted_user_process(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
     instance = graphene_info.context.instance
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
-
-    if instance.run_launcher and instance.run_launcher.hijack_start:
-        from .launch_execution import do_launch_for_created_run
-
-        return do_launch_for_created_run(graphene_info, run_id, is_start_that_was_hijacked=True)
 
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
@@ -189,7 +183,8 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
             external_pipeline, validated_config.errors
         )
 
-    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
+    pipeline_def = pipeline_def_from_pipeline_handle(external_pipeline.handle)
+    execute_run(pipeline_def, pipeline_run, instance)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
