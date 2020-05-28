@@ -40,7 +40,6 @@ install_dev_python_modules:
 				-e python_modules/dagit \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
-				-e python_modules/libraries/dagster-azure \
 				-e python_modules/libraries/dagster-bash \
 				-e python_modules/libraries/dagster-celery \
 				-e python_modules/libraries/dagster-cron \
@@ -66,6 +65,15 @@ install_dev_python_modules:
 				-r bin/requirements.txt \
 				-e examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
+
+
+	# Don't install dagster-azure as part of this target _yet_ - it has a dependency
+	# conflict with dagster-snowflake which causes any import of dagster-snowflake to
+	# fail with an ImportError (e.g. in examples).
+	# Uncomment only when snowflake-connector-python can be installed with optional (or compatible)
+	# Azure dependencies.
+	# See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
+	# pip install -e python_modules/libraries/dagster-azure $(QUIET)
 
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
