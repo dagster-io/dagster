@@ -16,7 +16,10 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
     return DauphinPipelineSnapshot(
-        get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
+        get_full_external_pipeline_or_raise(
+            graphene_info,
+            PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset=None),
+        )
     )
 
 
@@ -85,25 +88,4 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', PipelineSelector)
 
-    return DauphinPipeline(
-        get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
-    )
-
-
-def get_reconstructable_pipeline_from_selector(graphene_info, selector):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(selector, 'selector', PipelineSelector)
-
-    pipeline_name = selector.pipeline_name
-
-    # for error check of pipeline existence
-    get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
-
-    recon_pipeline = graphene_info.context.get_reconstructable_pipeline(pipeline_name)
-
-    if not selector.solid_subset:
-        return recon_pipeline
-
-    # for error checking
-    get_external_pipeline_or_raise(graphene_info, selector.pipeline_name, selector.solid_subset)
-    return recon_pipeline.subset_for_execution(selector.solid_subset)
+    return DauphinPipeline(get_external_pipeline_or_raise(graphene_info, selector))

@@ -18,6 +18,7 @@ from ..external import (
     ensure_valid_config,
     get_external_execution_plan_or_raise,
     get_external_pipeline_or_raise,
+    legacy_get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
 from ..utils import (
@@ -59,11 +60,7 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
             graphene_info.schema.type_named('RunLauncherNotDefinedError')()
         )
 
-    external_pipeline = get_external_pipeline_or_raise(
-        graphene_info,
-        execution_params.selector.pipeline_name,
-        execution_params.selector.solid_subset,
-    )
+    external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
@@ -124,7 +121,7 @@ def do_launch_for_created_run(graphene_info, run_id):
             graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
         )
 
-    external_pipeline = get_external_pipeline_or_raise(
+    external_pipeline = legacy_get_external_pipeline_or_raise(
         graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
     )
 

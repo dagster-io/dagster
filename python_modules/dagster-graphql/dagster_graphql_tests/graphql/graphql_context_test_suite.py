@@ -24,7 +24,6 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.utils.hosted_user_process import repository_handle_from_recon_repo
 
 
 def get_main_recon_repo():
@@ -223,8 +222,8 @@ class EnvironmentManagers:
             '''Goes out of process but same process as host process'''
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
             check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
-            repository_handle = repository_handle_from_recon_repo(recon_repo)
-            yield OutOfProcessRepositoryLocation('test-out-of-process-env', repository_handle)
+
+            yield OutOfProcessRepositoryLocation('test-out-of-process-env', recon_repo.pointer)
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
 

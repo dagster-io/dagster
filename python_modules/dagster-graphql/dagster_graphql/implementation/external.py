@@ -8,44 +8,54 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
 
 
-def get_full_external_pipeline_or_raise(graphene_info, pipeline_name):
+def get_full_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
-    if not graphene_info.context.legacy_has_external_pipeline(pipeline_name):
+    if not graphene_info.context.has_external_pipeline(selector):
         raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+            graphene_info.schema.type_named('PipelineNotFoundError')(selector=selector)
         )
 
-    return graphene_info.context.legacy_get_full_external_pipeline(pipeline_name)
+    return graphene_info.context.get_full_external_pipeline(selector)
 
 
-def get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
+def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(pipeline_name, 'pipeline_name')
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
+    return graphene_info.context.get_external_pipeline(
+        PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset)
+    )
+
+
+def get_external_pipeline_or_raise(graphene_info, selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(selector, 'selector', PipelineSelector)
+
     from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 
-    full_pipeline = get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
+    full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
-    if solid_subset is None:
+    if selector.solid_subset is None:
         return full_pipeline
 
-    for solid_name in solid_subset:
+    for solid_name in selector.solid_subset:
         if not full_pipeline.has_solid_invocation(solid_name):
             raise UserFacingGraphQLError(
                 DauphinInvalidSubsetError(
                     message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
-                        solid_name=solid_name, pipeline_name=pipeline_name
+                        solid_name=solid_name, pipeline_name=selector.pipeline_name
                     ),
                     pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
                 )
             )
     try:
-        return graphene_info.context.legacy_get_external_pipeline(pipeline_name, solid_subset)
+        return graphene_info.context.get_external_pipeline(selector)
     except DagsterInvalidDefinitionError:
         # this handles the case when you construct a subset such that an unsatisfied
         # input cannot be hydrate from config. Current this is only relevant for
@@ -102,7 +112,7 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 def get_external_execution_plan_or_raise(
     graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
 ):
-    full_external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
+    full_external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=environment_dict,
         mode=mode,
@@ -114,7 +124,7 @@ def get_external_execution_plan_or_raise(
 
     ensure_valid_step_keys(full_external_execution_plan, step_keys_to_execute)
 
-    return graphene_info.context.legacy_get_external_execution_plan(
+    return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=environment_dict,
         mode=mode,

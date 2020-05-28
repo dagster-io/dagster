@@ -171,7 +171,6 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
     )
 
     query_result = result.data['executePlan']
-
     assert query_result['__typename'] == 'ExecutePlanSuccess'
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False

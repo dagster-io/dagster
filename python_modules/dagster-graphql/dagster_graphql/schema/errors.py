@@ -17,6 +17,7 @@ from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
 
+from ..implementation.utils import PipelineSelector
 from .config_types import DauphinConfigTypeField
 from .runs import DauphinStepEvent
 
@@ -92,13 +93,18 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         interfaces = (DauphinError,)
 
     pipeline_name = dauphin.NonNull(dauphin.String)
+    repository_name = dauphin.NonNull(dauphin.String)
+    repository_location_name = dauphin.NonNull(dauphin.String)
 
-    def __init__(self, pipeline_name):
+    def __init__(self, selector):
         super(DauphinPipelineNotFoundError, self).__init__()
-        self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self.message = (
-            'Pipeline {pipeline_name} is not present in the currently loaded repository.'
-        ).format(pipeline_name=pipeline_name)
+        check.inst_param(selector, 'selector', PipelineSelector)
+        self.pipeline_name = selector.pipeline_name
+        self.repository_name = selector.repository_name
+        self.repository_location_name = selector.location_name
+        self.message = 'Could not find Pipeline {selector.location_name}.{selector.repository_name}.{selector.pipeline_name}'.format(
+            selector=selector
+        )
 
 
 class DauphinPipelineRunNotFoundError(dauphin.ObjectType):

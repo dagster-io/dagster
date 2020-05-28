@@ -10,18 +10,8 @@ to be the case.
 '''
 
 from dagster import check
-from dagster.core.definitions.reconstructable import (
-    ReconstructableRepository,
-    repository_def_from_pointer,
-)
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    ExternalRepository,
-    InProcessOrigin,
-    LocationHandle,
-    PipelineHandle,
-    RepositoryHandle,
-)
+from dagster.core.definitions.reconstructable import repository_def_from_pointer
+from dagster.core.host_representation import ExternalPipeline, ExternalRepository, PipelineHandle
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -31,57 +21,17 @@ from dagster.core.host_representation.external_data import (
 # we can do this because we only use in a hosted user process
 def pipeline_def_from_pipeline_handle(pipeline_handle):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.location_handle.in_process_origin.pointer
+    pointer = pipeline_handle.repository_handle.location_handle.pointer
     repo_def = repository_def_from_pointer(pointer)
     return repo_def.get_pipeline(pipeline_handle.pipeline_name)
-
-
-def repository_handle_from_recon_repo(recon_repo):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-    repository_name = recon_repo.get_definition().name
-    return RepositoryHandle(
-        repository_name=repository_name,
-        location_handle=LocationHandle(
-            location_name=repository_name + '-location',
-            in_process_origin=InProcessOrigin(
-                pointer=recon_repo.pointer, repo_yaml=recon_repo.yaml_path
-            ),
-        ),
-    )
-
-
-def repository_handle_from_yaml(yaml_path):
-    check.str_param(yaml_path, 'yaml_path')
-    return repository_handle_from_recon_repo(ReconstructableRepository.from_yaml(yaml_path))
-
-
-def external_repo_from_recon_repo(recon_repo):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-    return external_repo_from_def(
-        recon_repo.get_definition(), repository_handle_from_recon_repo(recon_repo)
-    )
 
 
 def external_repo_from_def(repository_def, repository_handle):
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle,)
 
 
-def external_repo_from_yaml(yaml_path):
-    check.str_param(yaml_path, 'yaml_path')
-    return external_repo_from_recon_repo(ReconstructableRepository.from_yaml(yaml_path))
-
-
-def external_repo_from_repository_handle(repository_handle):
-    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
-
-    pointer = repository_handle.location_handle.in_process_origin.pointer
-    repository_def = repository_def_from_pointer(pointer)
-    return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
-
-
-def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset):
+def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset, repository_handle):
     full_pipeline_def = recon_pipeline.get_definition()
-    repository_handle = repository_handle_from_recon_repo(recon_pipeline.repository)
 
     pipeline_def = (
         full_pipeline_def.subset_for_execution(solid_subset) if solid_subset else full_pipeline_def

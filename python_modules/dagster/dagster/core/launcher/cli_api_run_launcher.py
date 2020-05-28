@@ -137,7 +137,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = cli_api_execute_run(
             output_file=output_file,
             instance=self._instance,
-            repo_cli_args=env_handle.in_process_origin.pointer.get_cli_args(),
+            repo_cli_args=env_handle.pointer.get_cli_args(),
             pipeline_run=run,
         )
 

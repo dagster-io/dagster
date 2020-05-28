@@ -14,9 +14,7 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
     check.inst_param(selector, 'selector', PipelineSelector)
     check.opt_str_param(mode, 'mode')
 
-    external_pipeline = get_external_pipeline_or_raise(
-        graphene_info, selector.pipeline_name, selector.solid_subset
-    )
+    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
     if mode is None:
         mode = external_pipeline.get_default_mode_name()

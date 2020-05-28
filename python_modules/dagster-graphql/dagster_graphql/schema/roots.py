@@ -522,9 +522,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
             'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
         )
 
-        external_pipeline = get_full_external_pipeline_or_raise(
-            graphene_info, selector.pipeline_name
-        )
+        external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
         if not external_pipeline.has_preset(preset_name):
             raise UserFacingGraphQLError(

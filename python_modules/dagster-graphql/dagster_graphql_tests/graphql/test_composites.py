@@ -33,7 +33,6 @@ class TestComposites(ReadonlyGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, "composites_pipeline")
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {'selector': selector})
         handle_map = {}
-
         for obj in result.data['pipelineOrError']['solidHandles']:
             handle_map[obj['handleID']] = obj['solid']
 

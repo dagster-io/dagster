@@ -157,7 +157,7 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
 snapshots['test_get_partition_sets_for_pipeline 2'] = {
     'partitionSetsOrError': {
         '__typename': 'PipelineNotFoundError',
-        'message': 'Pipeline invalid_pipeline is not present in the currently loaded repository.'
+        'message': 'Could not find Pipeline <<in_process>>.test.invalid_pipeline'
     }
 }
 

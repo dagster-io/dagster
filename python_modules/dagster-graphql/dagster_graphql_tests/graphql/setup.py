@@ -60,7 +60,6 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
-from dagster.utils.hosted_user_process import repository_handle_from_yaml
 
 
 @input_hydration_config(String)
@@ -99,6 +98,13 @@ def define_test_context(instance):
 
 def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, 'define_repository')
+
+
+def get_main_external_repo():
+    return InProcessRepositoryLocation(
+        ReconstructableRepository.from_yaml(file_relative_path(__file__, 'repo.yaml')),
+        execution_manager=None,
+    ).get_repository('test')
 
 
 def define_test_snapshot_context():
@@ -221,10 +227,6 @@ def define_repository():
         schedule_defs=define_schedules(),
         partition_set_defs=define_partitions(),
     )
-
-
-def get_repository_handle():
-    return repository_handle_from_yaml(file_relative_path(__file__, 'repo.yaml'))
 
 
 @pipeline

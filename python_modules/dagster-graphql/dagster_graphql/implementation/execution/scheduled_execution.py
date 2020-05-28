@@ -22,7 +22,7 @@ from dagster.core.storage.tags import check_tags
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.merger import merge_dicts
 
-from ..external import get_external_pipeline_or_raise
+from ..external import legacy_get_external_pipeline_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
 from ..utils import PipelineSelector, capture_dauphin_error
 from .launch_execution import do_launch_for_created_run
@@ -111,7 +111,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             errors.append(error_data)
 
-        external_pipeline = get_external_pipeline_or_raise(
+        external_pipeline = legacy_get_external_pipeline_or_raise(
             graphene_info, schedule_def.pipeline_name, schedule_def.solid_subset
         )
         pipeline_tags = external_pipeline.tags or {}
@@ -162,7 +162,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
     )
 
     external_execution_plan = (
-        graphene_info.context.legacy_get_external_execution_plan(
+        graphene_info.context.get_external_execution_plan(
             external_pipeline, environment_dict, mode, execution_params.step_keys
         )
         if validation_result.success

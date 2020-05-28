@@ -11,6 +11,10 @@ query CompositesQuery($selector: PipelineSelector!) {
         }
       }
     }
+    ... on PythonError {
+      message
+      stack
+    }
   }
 }
 

@@ -18,6 +18,7 @@ from ..external import (
     ensure_valid_config,
     get_external_execution_plan_or_raise,
     get_external_pipeline_or_raise,
+    legacy_get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
@@ -77,11 +78,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         check.str_param(execution_metadata.root_run_id, 'root_run_id')
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
-    external_pipeline = get_external_pipeline_or_raise(
-        graphene_info,
-        execution_params.selector.pipeline_name,
-        execution_params.selector.solid_subset,
-    )
+    external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
@@ -121,7 +118,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     except DagsterRunConflict as exc:
         return graphene_info.schema.type_named('PipelineRunConflict')(exc)
 
-    graphene_info.context.legacy_execute_pipeline(external_pipeline, pipeline_run)
+    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
@@ -146,7 +143,7 @@ def _synchronously_execute_run_within_hosted_user_process(graphene_info, run_id)
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
-    external_pipeline = get_external_pipeline_or_raise(
+    external_pipeline = legacy_get_external_pipeline_or_raise(
         graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
     )
 

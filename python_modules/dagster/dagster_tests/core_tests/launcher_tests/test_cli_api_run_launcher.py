@@ -4,10 +4,11 @@ from contextlib import contextmanager
 
 from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import LocationHandle, RepositoryHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.utils.hosted_user_process import external_repo_from_yaml
+from dagster.utils.hosted_user_process import external_repo_from_def
 
 
 @solid
@@ -63,7 +64,13 @@ def test_repo_construction():
 
 
 def get_full_external_pipeline(repo_yaml, pipeline_name):
-    return external_repo_from_yaml(repo_yaml).get_full_external_pipeline(pipeline_name)
+    recon_repo = ReconstructableRepository.from_yaml(repo_yaml)
+    repo_def = recon_repo.get_definition()
+    external_repo = external_repo_from_def(
+        repo_def,
+        RepositoryHandle(repo_def.name, LocationHandle('<<MOCK_FOR_TEST>>', recon_repo.pointer),),
+    )
+    return external_repo.get_full_external_pipeline(pipeline_name)
 
 
 def test_successful_run():

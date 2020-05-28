@@ -1,9 +1,8 @@
 from dagster import DagsterInstance, seven
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.test_utils import create_run_for_test
-from dagster.utils.hosted_user_process import external_repo_from_recon_repo
 
-from .setup import create_main_recon_repo
+from .setup import get_main_external_repo
 
 
 def test_sync_run_launcher_from_configurable_class():
@@ -22,7 +21,7 @@ def test_sync_run_launcher_from_configurable_class():
 
 
 def test_sync_run_launcher_run():
-    external_repo = external_repo_from_recon_repo(create_main_recon_repo())
+    external_repo = get_main_external_repo()
     external_pipeline = external_repo.get_full_external_pipeline('noop_pipeline')
 
     with seven.TemporaryDirectory() as temp_dir:

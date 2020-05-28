@@ -4,12 +4,13 @@ import six
 
 from dagster import check
 from dagster.api.snapshot_repository import sync_get_external_repository
+from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
-    PipelineHandle,
+    LocationHandle,
     RepositoryHandle,
 )
 from dagster.core.instance import DagsterInstance
@@ -17,11 +18,12 @@ from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.hosted_user_process import (
     external_pipeline_from_recon_pipeline,
-    external_repo_from_recon_repo,
+    external_repo_from_def,
 )
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
+from .utils import PipelineSelector
 
 
 class DagsterGraphQLContext:
@@ -46,10 +48,52 @@ class DagsterGraphQLContext:
     def repository_locations(self):
         return list(self._repository_locations.values())
 
-    def get_external_pipeline(self, handle, solid_subset):
-        check.inst_param(handle, 'handle', PipelineHandle)
-        return self._repository_locations[handle.location_name].get_external_pipeline(
-            handle, solid_subset
+    def get_external_pipeline(self, selector):
+        check.inst_param(selector, 'selector', PipelineSelector)
+        # We have to grab the pipeline from the location instead of the repository directly
+        # since we may have to request a subset we don't have in memory yet
+        return self._repository_locations[selector.location_name].get_external_pipeline(selector)
+
+    def has_external_pipeline(self, selector):
+        check.inst_param(selector, 'selector', PipelineSelector)
+        if selector.location_name in self._repository_locations:
+            loc = self._repository_locations[selector.location_name]
+            if loc.has_repository(selector.repository_name):
+                return loc.get_repository(selector.repository_name).has_external_pipeline(
+                    selector.pipeline_name
+                )
+
+    def get_full_external_pipeline(self, selector):
+        return (
+            self._repository_locations[selector.location_name]
+            .get_repository(selector.repository_name)
+            .get_full_external_pipeline(selector.pipeline_name)
+        )
+
+    def get_external_execution_plan(
+        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+    ):
+        return self._repository_locations[
+            external_pipeline.handle.location_name
+        ].get_external_execution_plan(
+            external_pipeline=external_pipeline,
+            environment_dict=environment_dict,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+        )
+
+    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+        return self._repository_locations[external_pipeline.handle.location_name].execute_plan(
+            instance=self.instance,
+            external_pipeline=external_pipeline,
+            environment_dict=environment_dict,
+            pipeline_run=pipeline_run,
+            step_keys_to_execute=step_keys_to_execute,
+        )
+
+    def execute_pipeline(self, external_pipeline, pipeline_run):
+        return self._repository_locations[external_pipeline.handle.location_name].execute_pipeline(
+            instance=self.instance, external_pipeline=external_pipeline, pipeline_run=pipeline_run
         )
 
     # Legacy family of methods for assuming one in process location with one repository
@@ -67,38 +111,8 @@ class DagsterGraphQLContext:
         check.invariant(len(repos) == 1, '[legacy] must have only one repository')
         return next(iter(repos.values()))
 
-    def legacy_has_external_pipeline(self, name):
-        check.str_param(name, 'name')
-        return self.legacy_external_repository.has_pipeline(name)
-
-    def legacy_get_full_external_pipeline(self, name):
-        check.str_param(name, 'name')
-        return self.legacy_external_repository.get_full_external_pipeline(name)
-
     def legacy_get_all_external_pipelines(self):
         return self.legacy_external_repository.get_all_external_pipelines()
-
-    def legacy_get_external_pipeline(self, name, solid_subset):
-        return self.legacy_location.get_external_pipeline(
-            PipelineHandle(name, self.legacy_external_repository.handle), solid_subset
-        )
-
-    def legacy_get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        return self.legacy_location.get_external_execution_plan(
-            external_pipeline, environment_dict, mode, step_keys_to_execute
-        )
-
-    def legacy_execute_plan(
-        self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-    ):
-        return self.legacy_location.execute_plan(
-            self.instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-        )
-
-    def legacy_execute_pipeline(self, external_pipeline, pipeline_run):
-        return self.legacy_location.execute_pipeline(self.instance, external_pipeline, pipeline_run)
 
     def legacy_get_repository_definition(self):
         check.invariant(
@@ -145,11 +159,19 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
+    def has_repository(self, name):
+        pass
+
+    @abstractmethod
     def get_repositories(self):
         pass
 
     @abstractproperty
     def name(self):
+        pass
+
+    @abstractproperty
+    def handle(self):
         pass
 
     @abstractmethod
@@ -169,7 +191,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_external_pipeline(self, handle, solid_subset):
+    def get_external_pipeline(self, selector):
         pass
 
 
@@ -177,7 +199,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, recon_repo, execution_manager, reloader=None):
 
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        self._external_repo = external_repo_from_recon_repo(recon_repo)
+        self._handle = LocationHandle(self.name, recon_repo.pointer)
+
+        self._external_repo = external_repo_from_def(
+            recon_repo.get_definition(),
+            RepositoryHandle(recon_repo.get_definition().name, self._handle),
+        )
+
         self._repositories = {self._external_repo.name: self._external_repo}
         self.execution_manager = check.opt_inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
@@ -198,17 +226,32 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def name(self):
         return '<<in_process>>'
 
+    @property
+    def handle(self):
+        return self._handle
+
     def get_repository(self, name):
         return self._repositories[name]
+
+    def has_repository(self, name):
+        return name in self._repositories
 
     def get_repositories(self):
         return self._repositories
 
-    def get_external_pipeline(self, handle, solid_subset):
-        check.inst_param(handle, 'handle', PipelineHandle)
+    def get_external_pipeline(self, selector):
+        check.inst_param(selector, 'selector', PipelineSelector)
+        check.invariant(
+            selector.location_name == self.name,
+            'PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}'.format(
+                self=self, selector=selector
+            ),
+        )
+
         return external_pipeline_from_recon_pipeline(
-            recon_pipeline=self.get_reconstructable_pipeline(handle.pipeline_name),
-            solid_subset=solid_subset,
+            recon_pipeline=self.get_reconstructable_pipeline(selector.pipeline_name),
+            solid_subset=selector.solid_subset,
+            repository_handle=self._external_repo.handle,
         )
 
     def get_external_execution_plan(
@@ -271,15 +314,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
 
 class OutOfProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, name, repository_handle):
-        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
-        check.param_invariant(
-            repository_handle.location_handle.in_process_origin.repo_yaml,
-            'location_handle',
-            'Must have repo_yaml for now because dagster cli api only supports that',
-        )
+    def __init__(self, name, pointer):
+        check.inst_param(pointer, 'pointer', CodePointer)
+        self._handle = LocationHandle(name, pointer)
         self._name = check.str_param(name, 'name')
-        self.external_repository = sync_get_external_repository(repository_handle)
+        self.external_repository = sync_get_external_repository(self._handle)
 
     @property
     def execution_manager(self):
@@ -290,12 +329,19 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
         check.param_invariant(name == self.external_repository.name, 'name')
         return self.external_repository
 
+    def has_repository(self, name):
+        return name == self.external_repository.name
+
     def get_repositories(self):
         return {self.external_repository.name: self.external_repository}
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def handle(self):
+        return self._handle
 
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
@@ -310,5 +356,5 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
     def execute_pipeline(self, instance, external_pipeline, pipeline_run):
         raise NotImplementedError()
 
-    def get_external_pipeline(self, handle, solid_subset):
+    def get_external_pipeline(self, selector):
         raise NotImplementedError()

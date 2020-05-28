@@ -737,6 +737,8 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
 type PipelineNotFoundError implements Error {
   message: String!
   pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
