@@ -48,7 +48,6 @@ export interface ScheduleFragment_stats {
 export interface ScheduleFragment {
   __typename: "RunningSchedule";
   scheduleDefinition: ScheduleFragment_scheduleDefinition;
-  logsPath: string;
   ticks: ScheduleFragment_ticks[];
   runsCount: number;
   runs: ScheduleFragment_runs[];

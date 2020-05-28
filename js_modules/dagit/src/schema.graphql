@@ -1032,7 +1032,6 @@ type RunningSchedule {
   ticks(limit: Int): [ScheduleTick!]!
   ticksCount: Int!
   stats: ScheduleTickStatsSnapshot!
-  logsPath: String!
 }
 
 type RunningScheduleResult {

@@ -32,7 +32,6 @@ import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
-import { copyValue } from "../DomUtils";
 import { titleForRun, RunStatus } from "../runs/RunUtils";
 import PythonErrorInfo from "../PythonErrorInfo";
 
@@ -52,7 +51,6 @@ export const ScheduleRow: React.FunctionComponent<{
   const {
     status,
     scheduleDefinition,
-    logsPath,
     stats,
     ticks,
     runs,
@@ -292,11 +290,6 @@ export const ScheduleRow: React.FunctionComponent<{
                 />
               )}
               <MenuDivider />
-              <MenuItem
-                text="Copy Path to Debug Logs"
-                icon="clipboard"
-                onClick={(e: React.MouseEvent<any>) => copyValue(e, logsPath)}
-              />
             </Menu>
           }
           position={"bottom"}
@@ -319,7 +312,6 @@ export const ScheduleRowFragment = gql`
       mode
       runConfigYaml
     }
-    logsPath
     ticks(limit: $limit) {
       tickId
       status

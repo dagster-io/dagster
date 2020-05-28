@@ -173,7 +173,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
     ticks_count = dauphin.NonNull(dauphin.Int)
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
-    logs_path = dauphin.NonNull(dauphin.String)
 
     def __init__(self, graphene_info, schedule):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)

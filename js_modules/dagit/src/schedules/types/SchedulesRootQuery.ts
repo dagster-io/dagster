@@ -53,7 +53,6 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_stats {
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   __typename: "RunningSchedule";
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
-  logsPath: string;
   ticks: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks[];
   runsCount: number;
   runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];

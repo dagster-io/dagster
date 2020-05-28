@@ -316,7 +316,6 @@ const ScheduleFragment = gql`
       mode
       runConfigYaml
     }
-    logsPath
     ticks(limit: 1) {
       tickId
       status

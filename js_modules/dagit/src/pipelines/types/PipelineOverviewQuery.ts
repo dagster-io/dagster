@@ -349,7 +349,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
   __typename: "RunningSchedule";
   scheduleDefinition: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleDefinition;
-  logsPath: string;
   ticks: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_ticks[];
   runsCount: number;
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs[];

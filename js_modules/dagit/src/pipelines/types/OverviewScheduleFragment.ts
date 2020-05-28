@@ -60,7 +60,6 @@ export interface OverviewScheduleFragment_stats {
 export interface OverviewScheduleFragment {
   __typename: "RunningSchedule";
   scheduleDefinition: OverviewScheduleFragment_scheduleDefinition;
-  logsPath: string;
   ticks: OverviewScheduleFragment_ticks[];
   runsCount: number;
   runs: OverviewScheduleFragment_runs[];
