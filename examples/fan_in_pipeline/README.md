@@ -1,0 +1,32 @@
+---
+title: fan_in_pipeline
+description: Pipeline with Fan-In Dependency
+---
+
+# fan_in_pipeline
+
+This pipeline demonstrates how to create a "fan-in" dependency, which is when a `solid` waits for
+a set of other `solid`s to complete before continuing processing. In this example, `sum_fan_in`
+collects a list of `SolidOutputHandle`s, one for each `return_one` `solid`, which are passed as a
+`List[int]` input to `sum_fan_in`.
+
+In the case where the preceding `solid`s are not of the same type, the `SolidOutputHandle`s can be
+passed into the "fan-in" solid individually (instead of in a `List`).
+
+An example with configurable levels of fan-ins and fan-outs can be found
+[here](https://github.com/dagster-io/dagster/blob/master/examples/dagster_examples/toys/fan_in_fan_out.py).
+
+# Open in Playground
+
+Open up this example in a playground using [Gitpod](https://gitpod.io)
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#EXAMPLE=fan_in_pipeline/https://github.com/dagster-io/dagster)
+
+# Download Manually
+
+Download the example:
+
+```
+curl https://codeload.github.com/dagster-io/dagster/tar.gz/master | tar -xz --strip=2 dagster-master/examples/fan_in_pipeline
+cd fan_in_pipeline
+```
