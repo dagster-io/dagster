@@ -559,10 +559,10 @@ def test_asset_events_error_parsing(conn_string):
         event_log_storage.store_event(event)
 
     with mock.patch(
-        'dagster_postgres.event_log.event_log.logging.warning', side_effect=mock_log,
+        'dagster.core.storage.event_log.sql_event_log.logging.warning', side_effect=mock_log,
     ):
         with mock.patch(
-            'dagster_postgres.event_log.event_log.deserialize_json_to_dagster_namedtuple',
+            'dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple',
             return_value='not_an_event_record',
         ):
 
@@ -575,7 +575,7 @@ def test_asset_events_error_parsing(conn_string):
         _logs = []  # reset logs
 
         with mock.patch(
-            'dagster_postgres.event_log.event_log.deserialize_json_to_dagster_namedtuple',
+            'dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple',
             side_effect=seven.JSONDecodeError('error', '', 0),
         ):
             assert asset_key in set(event_log_storage.get_all_asset_keys())

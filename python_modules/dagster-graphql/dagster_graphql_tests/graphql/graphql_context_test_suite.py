@@ -15,6 +15,7 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
+from dagster.core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
@@ -156,6 +157,23 @@ class InstanceManagers:
             [Marks.sqlite_instance, Marks.cli_api_run_launcher],
         )
 
+    @staticmethod
+    def asset_aware_sqlite_instance():
+        @contextmanager
+        def _sqlite_asset_instance():
+            with seven.TemporaryDirectory() as temp_dir:
+                instance = DagsterInstance(
+                    instance_type=InstanceType.EPHEMERAL,
+                    local_artifact_storage=LocalArtifactStorage(temp_dir),
+                    run_storage=InMemoryRunStorage(),
+                    event_storage=ConsolidatedSqliteEventLogStorage(temp_dir),
+                    compute_log_manager=LocalComputeLogManager(temp_dir),
+                    run_launcher=SyncInMemoryRunLauncher(),
+                )
+                yield instance
+
+        return MarkedManager(_sqlite_asset_instance, [Marks.asset_aware_instance])
+
 
 class EnvironmentManagers:
     @staticmethod
@@ -193,6 +211,9 @@ class Marks:
     # Repository Location marks
     hosted_user_process_env = pytest.mark.hosted_user_process_env
     out_of_process_env = pytest.mark.out_of_process_env
+
+    # Asset-aware sqlite variants
+    asset_aware_instance = pytest.mark.asset_aware_instance
 
     # Common mark to all test suite tests
     graphql_context_test_suite = pytest.mark.graphql_context_test_suite
@@ -338,6 +359,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def asset_aware_sqlite_instance_in_process_env():
+        return GraphQLContextVariant(
+            InstanceManagers.asset_aware_sqlite_instance(),
+            EnvironmentManagers.user_code_in_host_process(),
+            test_id='asset_aware_instance_in_process_env',
+        )
+
+    @staticmethod
     def all_variants():
         '''
         There is a test case that keeps this up-to-date. If you add a static
@@ -353,6 +382,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
+            GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
         ]
 
     @staticmethod

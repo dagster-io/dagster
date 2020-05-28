@@ -187,6 +187,30 @@ def noop_pipeline():
     noop_solid()
 
 
+@solid
+def solid_asset_a(_):
+    yield Materialization(asset_key='a', label='a')
+    yield Output(1)
+
+
+@solid
+def solid_asset_b(_, num):
+    yield Materialization(asset_key='b', label='b')
+    time.sleep(0.1)
+    yield Materialization(asset_key='c', label='c')
+    yield Output(num)
+
+
+@pipeline
+def single_asset_pipeline():
+    solid_asset_a()
+
+
+@pipeline
+def multi_asset_pipeline():
+    solid_asset_b(solid_asset_a())
+
+
 @pipeline
 def pipeline_with_expectations():
     @solid(output_defs=[])
@@ -976,6 +1000,8 @@ def test_repo():
             spew_pipeline,
             tagged_pipeline,
             retry_multi_input_early_terminate_pipeline,
+            single_asset_pipeline,
+            multi_asset_pipeline,
         ]
         + define_schedules()
         + define_partitions()

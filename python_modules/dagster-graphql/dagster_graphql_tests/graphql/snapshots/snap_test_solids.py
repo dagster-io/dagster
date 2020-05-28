@@ -652,6 +652,46 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'solid_asset_a'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'multi_asset_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_asset_a'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'single_asset_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_asset_a'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'solid_asset_b'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'multi_asset_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_asset_b'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'solid_that_gets_tags'
                 },
                 'invocations': [
