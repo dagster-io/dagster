@@ -23,7 +23,6 @@ def test_hijacking_variants(variant):
     assert pytest.mark.hijacking in variant.marks
     with manage_graphql_context(variant) as context:
         assert context.legacy_location.execution_manager is None
-        assert context.instance.run_launcher.hijack_start
 
 
 @pytest.mark.parametrize(

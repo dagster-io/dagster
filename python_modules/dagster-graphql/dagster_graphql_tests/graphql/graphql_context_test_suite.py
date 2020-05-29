@@ -96,7 +96,7 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=SyncInMemoryRunLauncher(hijack_start=True),
+                    run_launcher=SyncInMemoryRunLauncher(),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                 )
 
@@ -163,7 +163,6 @@ class InstanceManagers:
                         'run_launcher': {
                             'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                             'class': 'SyncInMemoryRunLauncher',
-                            'config': {'hijack_start': True},
                         },
                     },
                 )
@@ -190,7 +189,6 @@ class InstanceManagers:
                         'run_launcher': {
                             'module': 'dagster.core.launcher',
                             'class': 'CliApiRunLauncher',
-                            'config': {'hijack_start': True},
                         },
                     },
                 )

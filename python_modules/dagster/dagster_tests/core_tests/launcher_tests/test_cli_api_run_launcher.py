@@ -47,24 +47,10 @@ def define_repository():
     )
 
 
-def _get_config(hijack_start):
-    return (
-        {'run_launcher': {'module': 'dagster.core.launcher', 'class': 'CliApiRunLauncher'}}
-        if hijack_start is None
-        else {
-            'run_launcher': {
-                'module': 'dagster.core.launcher',
-                'class': 'CliApiRunLauncher',
-                'config': {'hijack_start': hijack_start},
-            }
-        }
-    )
-
-
 @contextmanager
-def temp_instance(hijack_start=None):
+def temp_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir, overrides=_get_config(hijack_start),)
+        instance = DagsterInstance.local_temp(temp_dir)
         try:
             yield instance
         finally:
@@ -314,17 +300,6 @@ def test_engine_events():
         assert 'Executing steps in process' in executing_steps.message
         assert 'Finished steps in process' in finished_steps.message
         assert 'Process for pipeline exited' in process_exited.message
-
-
-def test_hijack_start():
-    with temp_instance() as instance:
-        assert not instance.run_launcher.hijack_start
-
-    with temp_instance(hijack_start=False) as instance_explicit_false:
-        assert not instance_explicit_false.run_launcher.hijack_start
-
-    with temp_instance(hijack_start=True) as instance_with_hijack_start:
-        assert instance_with_hijack_start.run_launcher.hijack_start
 
 
 def test_not_initialized():

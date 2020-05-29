@@ -7,8 +7,7 @@ from dagster.utils.hosted_user_process import pipeline_def_from_pipeline_handle
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, hijack_start=False, inst_data=None):
-        self._hijack_start = check.bool_param(hijack_start, 'hijack_start')
+    def __init__(self, inst_data=None):
         self._inst_data = inst_data
         self._repository = None
 
@@ -16,19 +15,13 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    @property
-    def hijack_start(self):
-        return self._hijack_start
-
     @classmethod
     def config_type(cls):
-        return {'hijack_start': bool}
+        return {}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return SyncInMemoryRunLauncher(
-            hijack_start=config_value['hijack_start'], inst_data=inst_data
-        )
+        return SyncInMemoryRunLauncher(inst_data=inst_data)
 
     def launch_run(self, instance, run, external_pipeline=None):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)

@@ -50,7 +50,12 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     # run launchers to "hijack" the start process. Once the launch-start
     # unification is complete the entire start code path will be
     # eliminated, including this.
-    if instance.run_launcher and instance.run_launcher.hijack_start:
+    check.invariant(
+        instance.run_launcher,
+        'Should always be true. '
+        'The reign of the execution manager is over. The time of the run launcher has come.',
+    )
+    if instance.run_launcher:
         from .launch_execution import do_launch
 
         run = do_launch(graphene_info, execution_params, is_reexecuted)

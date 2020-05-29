@@ -72,7 +72,7 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
 
     result_dict = result.to_dict()
 
-    execution_manager.join()
+    context.drain_outstanding_executions()
 
     # Here we detect if this is in fact an error response
     # If so, we iterate over the result_dict and the original result

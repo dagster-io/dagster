@@ -40,14 +40,5 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         the process was alive and was successfully terminated
         '''
 
-    @property
-    def hijack_start(self):
-        '''
-        Indicates whether or not this launcher should hijack the "Start" graphql
-        mutations in dagster-graphql to instead go through the "Launch" code paths.
-        This property is temporary while we perform that migration.
-        '''
-        return False
-
     def join(self):
         pass

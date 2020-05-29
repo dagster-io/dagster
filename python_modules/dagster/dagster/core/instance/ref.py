@@ -149,9 +149,7 @@ class InstanceRef(
             config_value,
             'run_launcher',
             ConfigurableClassData(
-                'dagster.core.launcher.cli_api_run_launcher',
-                'CliApiRunLauncher',
-                yaml.dump({'hijack_start': False}, default_flow_style=False),
+                'dagster.core.launcher.cli_api_run_launcher', 'CliApiRunLauncher', yaml.dump({}),
             ),
         )
 

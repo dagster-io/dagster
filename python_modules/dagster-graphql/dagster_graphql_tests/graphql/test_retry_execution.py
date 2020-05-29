@@ -569,7 +569,6 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
 class TestRetryExecutionSyncOnlyBehavior(
     make_graphql_context_test_suite(
         context_variants=[
-            GraphQLContextVariant.sqlite_in_process_start(),
             GraphQLContextVariant.in_memory_in_process_start(),
             GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
         ]

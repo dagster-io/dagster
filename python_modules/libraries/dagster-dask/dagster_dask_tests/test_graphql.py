@@ -56,7 +56,7 @@ def test_execute_hammer_through_dagit():
 
     run_id = start_pipeline_result.data['startPipelineExecution']['run']['runId']
 
-    context.legacy_location.execution_manager.join()
+    context.drain_outstanding_executions()
 
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
 

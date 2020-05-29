@@ -215,7 +215,6 @@ def test_script_execution(
             'run_launcher': {
                 'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                 'class': 'SyncInMemoryRunLauncher',
-                'config': {'hijack_start': True},
             },
         }
 
