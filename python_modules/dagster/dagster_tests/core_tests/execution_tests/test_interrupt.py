@@ -2,6 +2,8 @@ import os
 import time
 from threading import Thread
 
+import pytest
+
 from dagster import (
     DagsterEventType,
     DagsterSubprocessError,
@@ -80,6 +82,8 @@ def test_interrupt():
         assert DagsterEventType.PIPELINE_FAILURE in results
 
 
+# https://github.com/dagster-io/dagster/issues/1970
+@pytest.mark.skip
 def test_interrupt_multiproc():
     with seven.TemporaryDirectory() as tempdir:
         file_1 = os.path.join(tempdir, 'file_1')
