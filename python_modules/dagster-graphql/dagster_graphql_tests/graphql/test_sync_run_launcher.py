@@ -1,6 +1,5 @@
-from dagster_graphql.test.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-
 from dagster import DagsterInstance, seven
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils.hosted_user_process import external_repo_from_recon_repo
 
@@ -18,7 +17,7 @@ def test_sync_run_launcher_from_configurable_class():
             temp_dir,
             overrides={
                 'run_launcher': {
-                    'module': 'dagster_graphql.test.sync_in_memory_run_launcher',
+                    'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                     'class': 'SyncInMemoryRunLauncher',
                     'config': {'hijack_start': False},
                 }
@@ -32,7 +31,7 @@ def test_sync_run_launcher_from_configurable_class():
             temp_dir,
             overrides={
                 'run_launcher': {
-                    'module': 'dagster_graphql.test.sync_in_memory_run_launcher',
+                    'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                     'class': 'SyncInMemoryRunLauncher',
                     'config': {'hijack_start': True},
                 }
@@ -51,7 +50,7 @@ def test_sync_run_launcher_run():
             temp_dir,
             overrides={
                 'run_launcher': {
-                    'module': 'dagster_graphql.test.sync_in_memory_run_launcher',
+                    'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                     'class': 'SyncInMemoryRunLauncher',
                     'config': {'hijack_start': False},
                 }

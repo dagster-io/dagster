@@ -14,11 +14,11 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
     SynchronousExecutionManager,
 )
 from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
-from dagster_graphql.test.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -160,7 +160,7 @@ class InstanceManagers:
                             'config': {'base_dir': temp_dir},
                         },
                         'run_launcher': {
-                            'module': 'dagster_graphql.test.sync_in_memory_run_launcher',
+                            'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
                             'class': 'SyncInMemoryRunLauncher',
                             'config': {'hijack_start': True},
                         },
