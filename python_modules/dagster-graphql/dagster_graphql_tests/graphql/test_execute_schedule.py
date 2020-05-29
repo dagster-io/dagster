@@ -53,10 +53,7 @@ class TestExecuteSchedule(
     # too slow. Going to focus on the most common prod cases for now
     # and the things are most relevant to the transition.
     make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.sqlite_subprocess_start(),
-            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
-        ]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env()]
     )
 ):
     def test_just_basic_start_scheduled_execution(self, graphql_context):

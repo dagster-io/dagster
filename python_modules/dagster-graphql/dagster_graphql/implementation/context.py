@@ -21,7 +21,6 @@ from dagster.utils.hosted_user_process import (
     external_repo_from_def,
 )
 
-from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
 from .utils import PipelineSelector
 
@@ -127,9 +126,6 @@ class DagsterGraphQLContext:
         Useful for tests contexts when you want to ensure a started run
         has ended in order to verify its results.
         '''
-        if self.legacy_location.execution_manager:
-            self.legacy_location.execution_manager.join()
-
         if self.instance.run_launcher:
             self.instance.run_launcher.join()
 
@@ -187,16 +183,12 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
-        pass
-
-    @abstractmethod
     def get_external_pipeline(self, selector):
         pass
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, recon_repo, execution_manager, reloader=None):
+    def __init__(self, recon_repo, reloader=None):
 
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self._handle = LocationHandle(self.name, recon_repo.pointer)
@@ -207,9 +199,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
         self._repositories = {self._external_repo.name: self._external_repo}
-        self.execution_manager = check.opt_inst_param(
-            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
-        )
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
 
     def get_reconstructable_pipeline(self, name):
@@ -300,18 +289,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
             environment_dict=environment_dict,
         )
 
-    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        self.execution_manager.execute_pipeline(
-            self.get_reconstructable_pipeline(external_pipeline.name).subset_for_execution(
-                pipeline_run.solid_subset
-            ),
-            pipeline_run,
-            instance=instance,
-        )
-
 
 class OutOfProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, name, pointer):
@@ -319,10 +296,6 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
         self._handle = LocationHandle(name, pointer)
         self._name = check.str_param(name, 'name')
         self.external_repository = sync_get_external_repository(self._handle)
-
-    @property
-    def execution_manager(self):
-        return None
 
     def get_repository(self, name):
         check.str_param(name, 'name')

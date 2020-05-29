@@ -34,7 +34,7 @@ mutation($runId: String!) {
 
 class TestRunVariantTermination(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack()]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env()]
     )
 ):
     def test_basic_termination(self, graphql_context):

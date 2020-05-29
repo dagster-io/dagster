@@ -8,11 +8,6 @@ from dagster_graphql.implementation.context import (
     InProcessRepositoryLocation,
     OutOfProcessRepositoryLocation,
 )
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    PipelineExecutionManager,
-    SubprocessExecutionManager,
-    SynchronousExecutionManager,
-)
 from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import check, file_relative_path, seven
@@ -85,26 +80,6 @@ class InstanceManagers:
         )
 
     @staticmethod
-    def in_memory_instance_with_sync_hijack():
-        @contextmanager
-        def _in_memory_instance_with_sync_hijack():
-            with seven.TemporaryDirectory() as temp_dir:
-                yield DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=InMemoryRunStorage(),
-                    event_storage=InMemoryEventLogStorage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=SyncInMemoryRunLauncher(),
-                    schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-                )
-
-        return MarkedManager(
-            _in_memory_instance_with_sync_hijack,
-            [Marks.in_memory_instance, Marks.hijacking, Marks.sync_run_launcher],
-        )
-
-    @staticmethod
     def readonly_sqlite_instance():
         @contextmanager
         def _readonly_sqlite_instance():
@@ -128,28 +103,9 @@ class InstanceManagers:
         return MarkedManager(_readonly_sqlite_instance, [Marks.sqlite_instance, Marks.readonly])
 
     @staticmethod
-    def sqlite_instance():
+    def sqlite_instance_with_sync_run_launcher():
         @contextmanager
         def _sqlite_instance():
-            with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance.local_temp(
-                    temp_dir,
-                    overrides={
-                        'scheduler': {
-                            'module': 'dagster.utils.test',
-                            'class': 'FilesystemTestScheduler',
-                            'config': {'base_dir': temp_dir},
-                        }
-                    },
-                )
-                yield instance
-
-        return MarkedManager(_sqlite_instance, [Marks.sqlite_instance])
-
-    @staticmethod
-    def sqlite_instance_with_sync_hijack():
-        @contextmanager
-        def _sqlite_instance_with_sync_hijack():
             with seven.TemporaryDirectory() as temp_dir:
                 instance = DagsterInstance.local_temp(
                     temp_dir,
@@ -167,13 +123,10 @@ class InstanceManagers:
                 )
                 yield instance
 
-        return MarkedManager(
-            _sqlite_instance_with_sync_hijack,
-            [Marks.sqlite_instance, Marks.hijacking, Marks.sync_run_launcher],
-        )
+        return MarkedManager(_sqlite_instance, [Marks.sqlite_instance, Marks.sync_run_launcher])
 
     @staticmethod
-    def sqlite_instance_with_cli_api_hijack():
+    def sqlite_instance_with_cli_api_run_launcher():
         @contextmanager
         def _sqlite_instance_with_cli_api_hijack():
             with seven.TemporaryDirectory() as temp_dir:
@@ -198,7 +151,7 @@ class InstanceManagers:
 
         return MarkedManager(
             _sqlite_instance_with_cli_api_hijack,
-            [Marks.sqlite_instance, Marks.hijacking, Marks.cli_api_run_launcher],
+            [Marks.sqlite_instance, Marks.cli_api_run_launcher],
         )
 
 
@@ -206,73 +159,36 @@ class EnvironmentManagers:
     @staticmethod
     def user_code_in_host_process():
         @contextmanager
-        def _mgr_fn(recon_repo, execution_manager):
+        def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-            check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
-            yield InProcessRepositoryLocation(
-                recon_repo=recon_repo, execution_manager=execution_manager
-            )
+            yield InProcessRepositoryLocation(recon_repo=recon_repo)
 
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
 
     @staticmethod
     def out_of_process():
         @contextmanager
-        def _mgr_fn(recon_repo, execution_manager):
+        def _mgr_fn(recon_repo):
             '''Goes out of process but same process as host process'''
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-            check.opt_inst_param(execution_manager, 'execution_manager', PipelineExecutionManager)
-
             yield OutOfProcessRepositoryLocation('test-out-of-process-env', recon_repo.pointer)
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
-
-
-class EMManagers:
-    @staticmethod
-    def sync():
-        @contextmanager
-        def _sync_execution_manager(instance):
-            check.inst_param(instance, 'instance', DagsterInstance)
-            yield SynchronousExecutionManager()
-
-        return MarkedManager(
-            _sync_execution_manager, [Marks.legacy_execution_manager, Marks.in_process_start],
-        )
-
-    @staticmethod
-    def subprocess():
-        @contextmanager
-        def _subprocess_execution_manager(instance):
-            check.inst_param(instance, 'instance', DagsterInstance)
-            subprocess_em = SubprocessExecutionManager(instance)
-            try:
-                yield subprocess_em
-            finally:
-                subprocess_em.join()
-
-        return MarkedManager(
-            _subprocess_execution_manager, [Marks.legacy_execution_manager, Marks.subprocess_start],
-        )
 
 
 class Marks:
     # Instance type makes
     in_memory_instance = pytest.mark.in_memory_instance
     sqlite_instance = pytest.mark.sqlite_instance
-    hijacking = pytest.mark.hijacking
+
+    # Run launcher variants
     sync_run_launcher = pytest.mark.sync_run_launcher
     cli_api_run_launcher = pytest.mark.cli_api_run_launcher
     readonly = pytest.mark.readonly
 
-    # Environment marks
+    # Repository Location marks
     hosted_user_process_env = pytest.mark.hosted_user_process_env
     out_of_process_env = pytest.mark.out_of_process_env
-
-    # Execution Manager marks (to be deleted post migration)
-    in_process_start = pytest.mark.in_process_start
-    subprocess_start = pytest.mark.subprocess_start
-    legacy_execution_manager = pytest.mark.legacy_execution_manager
 
     # Common mark to all test suite tests
     graphql_context_test_suite = pytest.mark.graphql_context_test_suite
@@ -307,17 +223,10 @@ class GraphQLContextVariant:
     See InstanceManagers for examples
 
     marked_environment_mgr (MarkedManager): The manager_fn with in
-    must be a contextmanager takes a ReconstructableRepo and a
-    PipelineExecutionManager and yields a RepositoryLocation.
+    must be a contextmanager takes a ReconstructableRepo and
+    yields a RepositoryLocation.
 
     See EnvironmentManagers for examples
-
-    marked_em_mgr (MarkedManager): The manager_fn within it must be a
-    contextmanager that takes a DagsterInstance and yields a PipelineExecutionManager.
-
-    This argument will be deleted once we eliminate PipelineExecutionManager.
-
-    See EMManagers for examples
 
     test_id [Optional] (str): This assigns a test_id to test parameterized with this
     variant. This is highly convenient for running a particular variant across
@@ -333,7 +242,7 @@ class GraphQLContextVariant:
     '''
 
     def __init__(
-        self, marked_instance_mgr, marked_environment_mgr, marked_em_mgr, test_id=None,
+        self, marked_instance_mgr, marked_environment_mgr, test_id=None,
     ):
         self.marked_instance_mgr = check.inst_param(
             marked_instance_mgr, 'marked_instance_mgr', MarkedManager
@@ -341,9 +250,8 @@ class GraphQLContextVariant:
         self.marked_environment_mgr = check.inst_param(
             marked_environment_mgr, 'marked_environment_mgr', MarkedManager
         )
-        self.marked_em_mgr = check.inst_param(marked_em_mgr, 'marked_em_mgr', MarkedManager)
         self.test_id = check.opt_str_param(test_id, 'test_id')
-        self.marks = marked_instance_mgr.marks + marked_environment_mgr.marks + marked_em_mgr.marks
+        self.marks = marked_instance_mgr.marks + marked_environment_mgr.marks
 
     @property
     def instance_mgr(self):
@@ -353,26 +261,16 @@ class GraphQLContextVariant:
     def environment_mgr(self):
         return self.marked_environment_mgr.manager_fn
 
-    @property
-    def em_mgr(self):
-        return self.marked_em_mgr.manager_fn
-
     @staticmethod
-    def in_memory_in_process_start():
+    def in_memory_instance_in_process_env():
+        '''
+        Good for tests with read-only metadata queries. Does not work
+        if you have to go through the run launcher.
+        '''
         return GraphQLContextVariant(
             InstanceManagers.in_memory_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            EMManagers.sync(),
-            test_id='in_memory_in_process_start',
-        )
-
-    @staticmethod
-    def in_memory_instance_with_sync_hijack():
-        return GraphQLContextVariant(
-            InstanceManagers.in_memory_instance_with_sync_hijack(),
-            EnvironmentManagers.user_code_in_host_process(),
-            none_manager(),
-            test_id='in_memory_instance_with_sync_hijack',
+            test_id='in_memory_instance_in_process_env',
         )
 
     @staticmethod
@@ -384,44 +282,23 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.in_memory_instance(),
             EnvironmentManagers.out_of_process(),
-            none_manager(),
             test_id='in_memory_instance_out_of_process_env',
         )
 
     @staticmethod
-    def sqlite_with_sync_hijack():
+    def sqlite_with_sync_run_launcher_in_process_env():
         return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_sync_hijack(),
+            InstanceManagers.sqlite_instance_with_sync_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            none_manager(),
-            test_id='sqlite_with_sync_hijack',
+            test_id='sqlite_with_sync_run_launcher_in_process_env',
         )
 
     @staticmethod
-    def sqlite_with_cli_api_hijack():
+    def sqlite_with_cli_api_run_launcher_in_process_env():
         return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_cli_api_hijack(),
+            InstanceManagers.sqlite_instance_with_cli_api_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            none_manager(),
-            test_id='sqlite_with_cli_api_hijack',
-        )
-
-    @staticmethod
-    def sqlite_in_process_start():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            EMManagers.sync(),
-            test_id='sqlite_in_process_start',
-        )
-
-    @staticmethod
-    def sqlite_subprocess_start():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance(),
-            EnvironmentManagers.user_code_in_host_process(),
-            EMManagers.subprocess(),
-            test_id='sqlite_subprocess_start',
+            test_id='sqlite_with_cli_api_run_launcher_in_process_env',
         )
 
     @staticmethod
@@ -429,7 +306,6 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            none_manager(),
             test_id='readonly_sqlite_instance_in_process_env',
         )
 
@@ -438,7 +314,6 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.out_of_process(),
-            none_manager(),
             test_id='readonly_sqlite_instance_out_of_process_env',
         )
 
@@ -447,7 +322,6 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            none_manager(),
             test_id='readonly_in_memory_instance_in_process_env',
         )
 
@@ -456,7 +330,6 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.out_of_process(),
-            none_manager(),
             test_id='readonly_in_memory_instance_out_of_process_env',
         )
 
@@ -468,13 +341,10 @@ class GraphQLContextVariant:
         list in order for tests to pass.
         '''
         return [
-            GraphQLContextVariant.in_memory_in_process_start(),
+            GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.in_memory_instance_out_of_process_env(),
-            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
-            GraphQLContextVariant.sqlite_in_process_start(),
-            GraphQLContextVariant.sqlite_subprocess_start(),
-            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
-            GraphQLContextVariant.sqlite_with_sync_hijack(),
+            GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
+            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
@@ -482,31 +352,12 @@ class GraphQLContextVariant:
         ]
 
     @staticmethod
-    def all_variants_with_legacy_execution_manager():
-        '''
-        Returns all variants that go through the legacy execution manager
-        in start mutations. One the launch/start consolidation is complete
-        this should be deleted.
-        '''
-        return _variants_with_mark(
-            GraphQLContextVariant.all_variants(), pytest.mark.legacy_execution_manager
-        )
-
-    @staticmethod
-    def all_hijacking_launcher_variants():
-        '''
-        Returns all variants that hijack the start process and instead go
-        to launch code paths. Once launch/start consolidation is complete
-        this will be all the variants where one can launch.
-        '''
-        return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.hijacking)
-
-    @staticmethod
     def all_executing_variants():
-        return (
-            GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-            + GraphQLContextVariant.all_hijacking_launcher_variants()
-        )
+        return [
+            GraphQLContextVariant.in_memory_instance_in_process_env(),
+            GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
+            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
+        ]
 
     @staticmethod
     def all_readonly_variants():
@@ -529,9 +380,8 @@ def _variants_with_mark(variants, mark):
 def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
-        with context_variant.em_mgr(instance) as execution_manager:
-            with context_variant.environment_mgr(recon_repo, execution_manager) as environment:
-                yield DagsterGraphQLContext(instance=instance, locations=[environment])
+        with context_variant.environment_mgr(recon_repo) as environment:
+            yield DagsterGraphQLContext(instance=instance, locations=[environment])
 
 
 class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):

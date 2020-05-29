@@ -14,7 +14,6 @@ from dagster.utils.test import get_temp_file_name
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
 from .graphql_context_test_suite import (
-    EMManagers,
     EnvironmentManagers,
     ExecutingGraphQLContextTestMatrix,
     GraphQLContextVariant,
@@ -420,7 +419,6 @@ class TestExecutePipelineManagerDisabled(
                     sqlite_instance_with_manager_disabled, [Marks.sqlite_instance]
                 ),
                 marked_environment_mgr=EnvironmentManagers.user_code_in_host_process(),
-                marked_em_mgr=EMManagers.sync(),
                 test_id='sqlite_instance_with_disabled_execution_manager',
             )
         ]

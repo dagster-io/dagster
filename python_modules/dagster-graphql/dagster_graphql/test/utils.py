@@ -2,10 +2,6 @@ from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessRepositoryLocation,
 )
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    SubprocessExecutionManager,
-    SynchronousExecutionManager,
-)
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
@@ -45,10 +41,7 @@ def define_context_for_file(python_file, fn_name, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLContext(
         locations=[
-            InProcessRepositoryLocation(
-                ReconstructableRepository.for_file(python_file, fn_name),
-                execution_manager=SynchronousExecutionManager(),
-            )
+            InProcessRepositoryLocation(ReconstructableRepository.for_file(python_file, fn_name))
         ],
         instance=instance,
     )
@@ -58,10 +51,7 @@ def define_subprocess_context_for_file(python_file, fn_name, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLContext(
         locations=[
-            InProcessRepositoryLocation(
-                ReconstructableRepository.for_file(python_file, fn_name),
-                execution_manager=SubprocessExecutionManager(instance),
-            )
+            InProcessRepositoryLocation(ReconstructableRepository.for_file(python_file, fn_name))
         ],
         instance=instance,
     )
@@ -70,12 +60,7 @@ def define_subprocess_context_for_file(python_file, fn_name, instance):
 def define_context_for_repository_yaml(path, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLContext(
-        locations=[
-            InProcessRepositoryLocation(
-                ReconstructableRepository.from_yaml(path),
-                execution_manager=SynchronousExecutionManager(),
-            )
-        ],
+        locations=[InProcessRepositoryLocation(ReconstructableRepository.from_yaml(path))],
         instance=instance,
     )
 

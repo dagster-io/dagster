@@ -13,25 +13,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_co
 def test_readonly_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
-        assert context.legacy_location.execution_manager is None
         assert isinstance(context.instance.run_launcher, ExplodingRunLauncher)
-
-
-@pytest.mark.parametrize('variant', GraphQLContextVariant.all_hijacking_launcher_variants())
-def test_hijacking_variants(variant):
-    assert isinstance(variant, GraphQLContextVariant)
-    assert pytest.mark.hijacking in variant.marks
-    with manage_graphql_context(variant) as context:
-        assert context.legacy_location.execution_manager is None
-
-
-@pytest.mark.parametrize(
-    'variant', GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-)
-def test_legacy_variants(variant):
-    assert isinstance(variant, GraphQLContextVariant)
-    with manage_graphql_context(variant) as context:
-        assert context.legacy_location.execution_manager
 
 
 def get_all_static_functions(klass):
@@ -105,33 +87,3 @@ def test_readonly_marks_filter():
     assert {
         var.test_id for var in GraphQLContextVariant.all_readonly_variants()
     } == readonly_test_ids
-
-
-def test_legacy_execution_manager_marks_filter():
-    legacy_test_ids = {
-        var.test_id
-        for var in [
-            GraphQLContextVariant.sqlite_in_process_start(),
-            GraphQLContextVariant.sqlite_subprocess_start(),
-            GraphQLContextVariant.in_memory_in_process_start(),
-        ]
-    }
-
-    assert {
-        var.test_id for var in GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-    } == legacy_test_ids
-
-
-def test_hijacking_marks_filter():
-    hijacking_test_ids = {
-        var.test_id
-        for var in [
-            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
-            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
-            GraphQLContextVariant.sqlite_with_sync_hijack(),
-        ]
-    }
-
-    assert {
-        var.test_id for var in GraphQLContextVariant.all_hijacking_launcher_variants()
-    } == hijacking_test_ids

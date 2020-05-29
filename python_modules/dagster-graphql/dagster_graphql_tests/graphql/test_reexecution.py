@@ -10,7 +10,7 @@ from .execution_queries import (
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
     START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, csv_hello_world_solids_config_fs_storage
 
 RUN_QUERY = '''
@@ -38,11 +38,7 @@ def sanitize_result_data(result_data):
     return result_data
 
 
-class TestReexecution(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_hijacking_launcher_variants()
-    )
-):
+class TestReexecution(ExecutingGraphQLContextTestMatrix):
     def test_full_pipeline_reexecution_fs_storage(self, graphql_context, snapshot):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         run_id = make_new_run_id()

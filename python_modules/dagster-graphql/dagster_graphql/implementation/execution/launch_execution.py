@@ -109,6 +109,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     )
 
 
+# TODO this and _synchronously_execute_run_within_hosted_user_process should share implementation
 def do_launch_for_created_run(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(run_id, 'run_id')
@@ -179,5 +180,3 @@ def do_launch_for_created_run(graphene_info, run_id):
         # https://github.com/dagster-io/dagster/issues/2508
         # We should return a proper GraphQL error here
         raise
-
-    return do_launch_for_created_run(graphene_info, run_id)

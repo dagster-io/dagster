@@ -11,10 +11,6 @@ from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessRepositoryLocation,
 )
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    QueueingSubprocessExecutionManager,
-    SubprocessExecutionManager,
-)
 from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
@@ -183,31 +179,17 @@ def instantiate_app_with_views(context):
     return app
 
 
-def get_execution_manager(instance):
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('max_concurrent_runs'):
-        return QueueingSubprocessExecutionManager(
-            instance, execution_manager_settings.get('max_concurrent_runs')
-        )
-    return SubprocessExecutionManager(instance)
-
-
 def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.opt_inst_param(reloader, 'reloader', Reloader)
 
-    execution_manager = get_execution_manager(instance)
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
     context = DagsterGraphQLContext(
         instance=instance,
-        locations=[
-            InProcessRepositoryLocation(
-                recon_repo, execution_manager=execution_manager, reloader=reloader,
-            )
-        ],
+        locations=[InProcessRepositoryLocation(recon_repo, reloader=reloader)],
         version=__version__,
     )
 

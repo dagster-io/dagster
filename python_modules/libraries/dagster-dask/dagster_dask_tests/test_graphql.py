@@ -3,7 +3,6 @@ from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessRepositoryLocation,
 )
-from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
 from dagster_graphql.schema import create_schema
 from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 from graphql import graphql
@@ -21,11 +20,8 @@ def test_execute_hammer_through_dagit():
     )
     instance = DagsterInstance.local_temp()
 
-    execution_manager = SubprocessExecutionManager(instance)
-
     context = DagsterGraphQLContext(
-        locations=[InProcessRepositoryLocation(recon_repo, execution_manager=execution_manager,)],
-        instance=instance,
+        locations=[InProcessRepositoryLocation(recon_repo)], instance=instance,
     )
 
     selector = get_legacy_pipeline_selector(context, 'hammer_pipeline')

@@ -568,10 +568,7 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
 
 class TestRetryExecutionSyncOnlyBehavior(
     make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.in_memory_in_process_start(),
-            GraphQLContextVariant.in_memory_instance_with_sync_hijack(),
-        ]
+        context_variants=[GraphQLContextVariant.in_memory_instance_in_process_env()]
     )
 ):
     def test_retry_requires_intermediates_sync_only(self, graphql_context):
@@ -590,10 +587,7 @@ class TestRetryExecutionSyncOnlyBehavior(
 
 class TestRetryExecutionAsyncOnlyBehavior(
     make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.sqlite_subprocess_start(),
-            GraphQLContextVariant.sqlite_with_cli_api_hijack(),
-        ]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env()]
     )
 ):
     def test_retry_requires_intermediates_async_only(self, graphql_context):
@@ -605,12 +599,11 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         assert reexecution_run.is_failure
 
-
-class TestRetryExecutionRequiresAsyncRunLauncher(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack(),]
-    )
-):
+    # class TestRetryExecutionRequiresAsyncRunLauncher(
+    #     make_graphql_context_test_suite(
+    #         context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack(),]
+    #     )
+    # ):
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
         selector = get_legacy_pipeline_selector(

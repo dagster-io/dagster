@@ -27,7 +27,7 @@ def pipeline_def_from_pipeline_handle(pipeline_handle):
 
 
 def external_repo_from_def(repository_def, repository_handle):
-    return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle,)
+    return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 
 def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset, repository_handle):
