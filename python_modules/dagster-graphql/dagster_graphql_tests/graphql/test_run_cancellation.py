@@ -34,7 +34,7 @@ mutation($runId: String!) {
 
 class TestRunVariantTermination(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_subprocess_start()]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack()]
     )
 ):
     def test_basic_termination(self, graphql_context):
@@ -83,8 +83,8 @@ class TestRunVariantTermination(
     def test_terminate_failed(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
         with safe_tempfile_path() as path:
-            old_terminate = graphql_context.legacy_location.execution_manager.terminate
-            graphql_context.legacy_location.execution_manager.terminate = lambda _run_id: False
+            old_terminate = graphql_context.instance.run_launcher.terminate
+            graphql_context.instance.run_launcher.terminate = lambda _run_id: False
             result = execute_dagster_graphql(
                 graphql_context,
                 START_PIPELINE_EXECUTION_QUERY,
@@ -118,7 +118,7 @@ class TestRunVariantTermination(
                 'Unable to terminate run'
             )
 
-            graphql_context.legacy_location.execution_manager.terminate = old_terminate
+            graphql_context.instance.run_launcher.terminate = old_terminate
 
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={'runId': run_id}

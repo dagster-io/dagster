@@ -566,9 +566,6 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
     return retry_one
 
 
-# This behavior differs between synchronous and asynchronous run launchers.
-
-
 class TestRetryExecutionSyncOnlyBehavior(
     make_graphql_context_test_suite(
         context_variants=[
@@ -610,9 +607,9 @@ class TestRetryExecutionAsyncOnlyBehavior(
         assert reexecution_run.is_failure
 
 
-class TestRetryExecutionRequiresSubprocessExecutionManager(
+class TestRetryExecutionRequiresAsyncRunLauncher(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_subprocess_start()]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack(),]
     )
 ):
     def test_retry_early_terminate(self, graphql_context):
@@ -643,7 +640,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
         # Terminate the current pipeline run at the second step
-        graphql_context.legacy_location.execution_manager.terminate(run_id)
+        graphql_context.instance.run_launcher.terminate(run_id)
 
         records = instance.all_logs(run_id)
 
@@ -662,7 +659,7 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
         # Start retry
         new_run_id = make_new_run_id()
 
-        execute_dagster_graphql(
+        execute_dagster_graphql_and_finish_runs(
             graphql_context,
             START_PIPELINE_REEXECUTION_QUERY,
             variables={
@@ -685,9 +682,6 @@ class TestRetryExecutionRequiresSubprocessExecutionManager(
                 }
             },
         )
-        # Wait until the run is finished
-        while graphql_context.legacy_location.execution_manager.is_process_running(new_run_id):
-            pass
 
         retry_records = instance.all_logs(new_run_id)
         # The first step should not run and the other three steps should succeed in retry
