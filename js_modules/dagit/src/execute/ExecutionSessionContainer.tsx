@@ -181,7 +181,19 @@ export default class ExecutionSessionContainer extends React.Component<
         selector: pipelineSelector,
         mode: currentSession.mode,
         executionMetadata: {
-          tags: tags.map(tag => ({ key: tag.key, value: tag.value }))
+          tags: [
+            ...tags.map(tag => ({ key: tag.key, value: tag.value })),
+            // pass solid selection query via tags
+            // clean up https://github.com/dagster-io/dagster/issues/2495
+            ...(currentSession.solidSubsetQuery
+              ? [
+                  {
+                    key: "dagster/solid_selection",
+                    value: currentSession.solidSubsetQuery
+                  }
+                ]
+              : [])
+          ]
         }
       }
     };
