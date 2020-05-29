@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.15
+
+**New**
+
+- Improve dagster scheduler state reconcilation. 
+
 ## 0.7.14
 
 **New**
