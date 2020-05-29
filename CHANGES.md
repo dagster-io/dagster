@@ -11,7 +11,7 @@
 - The `ScheduleExecutionContext` no longer has a repository definition available as a property on the context. If you were previously using it in a schedule definition, inline the repository name instead of retrieving it from the schedule execution context.
 - `@scheduler` and `@repository_partitions` have been removed. Load `ScheduleDefinition`s and `PartitionSetDefinition`s via `RepositoryDefinition` instead.
 
-## 0.7.15
+## 0.7.15 (Latest)
 
 **New**
 
@@ -59,7 +59,7 @@
 - Added user warning for dagster library packages that are out of sync with the core `dagster`
   package.
 
-## 0.7.12 (Latest)
+## 0.7.12 
 
 **Bugfix**
 
