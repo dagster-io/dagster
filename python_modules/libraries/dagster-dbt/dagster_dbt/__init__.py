@@ -2,7 +2,6 @@ import distutils.spawn
 import io
 import os
 import re
-import shlex
 import subprocess
 from collections import namedtuple
 
@@ -20,6 +19,7 @@ from dagster import (
     solid,
 )
 from dagster.core.utils import check_dagster_package_version
+from dagster.seven import xplat_shlex_split
 
 from .version import __version__
 
@@ -126,7 +126,7 @@ def create_dbt_run_solid(project_dir, name=None, profiles_dir=None, dbt_executab
         if profiles_dir:
             cmd += ' --profiles-dir {profiles_dir}'.format(profiles_dir=profiles_dir)
 
-        args = shlex.split(cmd)
+        args = xplat_shlex_split(cmd)
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
 
         # if https://github.com/fishtown-analytics/dbt/issues/1237 gets done
@@ -235,7 +235,7 @@ def create_dbt_test_solid(project_dir, name=None, profiles_dir=None, dbt_executa
         )
         if profiles_dir:
             cmd += ' --profiles-dir {}'.format(profiles_dir)
-        args = shlex.split(cmd)
+        args = xplat_shlex_split(cmd)
         proc = subprocess.Popen(args, stdout=subprocess.PIPE)
         for line in io.TextIOWrapper(proc.stdout, encoding='utf-8'):
             text = line.rstrip()
