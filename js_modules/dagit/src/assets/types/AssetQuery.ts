@@ -17,6 +17,12 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
 
+export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
@@ -25,6 +31,7 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
   runId: string;
+  tags: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_tags[];
   status: PipelineRunStatus;
   pipeline: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_pipeline;
 }
@@ -126,10 +133,6 @@ export interface AssetQuery_assetOrError_Asset_runs_tags {
 
 export interface AssetQuery_assetOrError_Asset_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
-  stepsSucceeded: number;
-  stepsFailed: number;
-  expectations: number;
-  materializations: number;
   startTime: number | null;
   endTime: number | null;
 }

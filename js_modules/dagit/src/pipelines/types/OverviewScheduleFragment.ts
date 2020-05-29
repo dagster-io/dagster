@@ -30,6 +30,12 @@ export interface OverviewScheduleFragment_runs_pipeline {
   name: string;
 }
 
+export interface OverviewScheduleFragment_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface OverviewScheduleFragment_runs_stats_PythonError {
   __typename: "PythonError";
 }
@@ -45,6 +51,7 @@ export interface OverviewScheduleFragment_runs {
   __typename: "PipelineRun";
   runId: string;
   pipeline: OverviewScheduleFragment_runs_pipeline;
+  tags: OverviewScheduleFragment_runs_tags[];
   stats: OverviewScheduleFragment_runs_stats;
   status: PipelineRunStatus;
 }

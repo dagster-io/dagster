@@ -1,11 +1,18 @@
 import LRU from "lru-cache";
+import moment from "moment";
+
 export const DEFAULT_RESULT_NAME = "result";
 
-export function unixTimestampToString(unix: number | null) {
+// This helper is here so that we can swap out Moment in the future as needed and
+// encourage use of the same default format string across the app.
+export function unixTimestampToString(
+  unix: number | null,
+  format = "MMM DD, H:mm A"
+) {
   if (!unix) {
     return null;
   }
-  return new Date(unix * 1000).toLocaleString();
+  return moment(unix * 1000).format(format);
 }
 
 export function debounce<T extends (...args: any[]) => any>(

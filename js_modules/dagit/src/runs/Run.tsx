@@ -166,6 +166,7 @@ export class Run extends React.Component<RunProps, RunState> {
         {run && <RunStatusToPageAttributes run={run} />}
 
         <LogsProvider
+          key={run ? run.runId : ""}
           client={client}
           runId={run ? run.runId : ""}
           filter={logsFilter}
@@ -312,7 +313,9 @@ const ReexecuteWithData = ({
           firstInitialPercent={35}
           firstMinSize={40}
           first={
-            run?.executionPlan ? (
+            logsLoading ? (
+              GaantChart.LoadingState
+            ) : run?.executionPlan ? (
               <GaantChart
                 options={{
                   mode: GaantChartMode.WATERFALL_TIMED
@@ -338,6 +341,7 @@ const ReexecuteWithData = ({
                     )}
                   />
                 }
+                runId={run.runId}
                 plan={run.executionPlan}
                 metadata={metadata}
                 selectedSteps={selectedSteps}

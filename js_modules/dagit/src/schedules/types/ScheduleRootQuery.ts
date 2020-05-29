@@ -31,6 +31,12 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks {
   status: ScheduleTickStatus;
 }
 
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
@@ -39,6 +45,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs {
   __typename: "PipelineRun";
   runId: string;
+  tags: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_tags[];
   pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline;
   status: PipelineRunStatus;
 }

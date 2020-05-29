@@ -2,12 +2,11 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { isEqual } from "lodash";
-import { Colors, Checkbox } from "@blueprintjs/core";
+import { Colors, Checkbox, NonIdealState, Spinner } from "@blueprintjs/core";
 
 import { weakmapMemoize } from "../Util";
 import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { GaantChartTimescale } from "./GaantChartTimescale";
-import { RunFragment } from "../runs/types/RunFragment";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
 import {
@@ -126,12 +125,12 @@ export const toGraphQueryItems = weakmapMemoize(
 interface GaantChartProps {
   selectedSteps: string[];
   query: string;
+  runId: string;
   plan: GaantChartExecutionPlanFragment;
   options?: Partial<GaantChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
   toolbarLeftActions?: React.ReactChild;
-  run?: RunFragment;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelectedSteps: (steps: string[]) => void;
@@ -146,6 +145,8 @@ export class GaantChart extends React.Component<
   GaantChartProps,
   GaantChartState
 > {
+  static LoadingState = (<></>);
+
   static fragments = {
     GaantChartExecutionPlanFragment: gql`
       fragment GaantChartExecutionPlanFragment on ExecutionPlan {
@@ -421,35 +422,40 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     if (lastMeta?.end) highlightedMs.push(lastMeta.end);
   }
 
+  const measurementComplete = viewport.width > 0;
+
   const content = (
     <>
-      {options.mode === GaantChartMode.WATERFALL_TIMED && (
-        <GaantChartTimescale
-          scale={scale}
-          viewport={viewport}
-          layoutSize={layoutSize}
-          startMs={metadata?.firstLogAt || 0}
-          highlightedMs={highlightedMs}
-          nowMs={nowMs}
-        />
-      )}
+      {options.mode === GaantChartMode.WATERFALL_TIMED &&
+        measurementComplete && (
+          <GaantChartTimescale
+            scale={scale}
+            viewport={viewport}
+            layoutSize={layoutSize}
+            startMs={metadata?.firstLogAt || 0}
+            highlightedMs={highlightedMs}
+            nowMs={nowMs}
+          />
+        )}
       <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
         <div
           style={{ position: "relative", ...layoutSize }}
           onMouseOver={onUpdateTooltip}
           onMouseOut={onUpdateTooltip}
         >
-          <GaantChartViewportContents
-            options={options}
-            metadata={metadata || EMPTY_RUN_METADATA}
-            layout={layout}
-            hoveredStep={hoveredStep}
-            focusedSteps={selectedSteps}
-            viewport={viewport}
-            setHoveredNodeName={setHoveredNodeName}
-            onClickStep={props.onClickStep}
-            onDoubleClickStep={props.onDoubleClickStep}
-          />
+          {measurementComplete && (
+            <GaantChartViewportContents
+              options={options}
+              metadata={metadata || EMPTY_RUN_METADATA}
+              layout={layout}
+              hoveredStep={hoveredStep}
+              focusedSteps={selectedSteps}
+              viewport={viewport}
+              setHoveredNodeName={setHoveredNodeName}
+              onClickStep={props.onClickStep}
+              onDoubleClickStep={props.onDoubleClickStep}
+            />
+          )}
         </div>
         {tooltip && (
           <GaantTooltip style={{ left: tooltip.cx, top: tooltip.cy }}>
@@ -861,3 +867,16 @@ const GraphQueryInputContainer = styled.div`
   transform: translateX(-50%);
   white-space: nowrap;
 `;
+
+GaantChart.LoadingState = (
+  <GaantChartContainer>
+    <OptionsContainer></OptionsContainer>
+    <SplitPanelContainer
+      identifier="gaant-split"
+      axis="horizontal"
+      first={<NonIdealState icon={<Spinner size={24} />} />}
+      firstInitialPercent={80}
+      second={<div />}
+    />
+  </GaantChartContainer>
+);

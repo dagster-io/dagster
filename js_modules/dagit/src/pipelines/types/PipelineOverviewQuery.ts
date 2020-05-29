@@ -253,10 +253,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
-  stepsSucceeded: number;
-  stepsFailed: number;
-  expectations: number;
-  materializations: number;
   startTime: number | null;
   endTime: number | null;
 }
@@ -289,8 +285,8 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   mode: string;
   canTerminate: boolean;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags[];
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   status: PipelineRunStatus;
+  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   assets: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets[];
 }
 
@@ -315,6 +311,12 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   name: string;
 }
 
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats_PythonError {
   __typename: "PythonError";
 }
@@ -330,6 +332,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   __typename: "PipelineRun";
   runId: string;
   pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_pipeline;
+  tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_tags[];
   stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats;
   status: PipelineRunStatus;
 }

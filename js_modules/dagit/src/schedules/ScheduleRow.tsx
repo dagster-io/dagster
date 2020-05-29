@@ -319,6 +319,10 @@ export const ScheduleRowFragment = gql`
     runsCount
     runs(limit: 10) {
       runId
+      tags {
+        key
+        value
+      }
       pipeline {
         name
       }
