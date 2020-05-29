@@ -178,6 +178,9 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
                     os.unlink(output_file)
 
     def _get_process(self, run_id):
+        if not self._instance:
+            return None
+
         with self._processes_lock:
             return self._living_process_by_run_id.get(run_id)
 
@@ -217,9 +220,15 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def get_active_run_count(self):
+        if not self._instance:
+            return 0
+
         with self._processes_lock:
             return len(self._living_process_by_run_id)
 
     def is_active(self, run_id):
+        if not self._instance:
+            return False
+
         with self._processes_lock:
             return run_id in self._living_process_by_run_id

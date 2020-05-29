@@ -60,6 +60,7 @@ class InstanceManagers:
                     run_storage=InMemoryRunStorage(),
                     event_storage=InMemoryEventLogStorage(),
                     compute_log_manager=LocalComputeLogManager(temp_dir),
+                    run_launcher=SyncInMemoryRunLauncher(),
                     schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
                 )
 

@@ -6,6 +6,7 @@ from dagster_graphql.test.utils import define_context_for_repository_yaml, execu
 
 from dagster import ScheduleDefinition, seven
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.scheduler import (
     Schedule,
     ScheduleStatus,
@@ -109,6 +110,7 @@ def test_start_stop_schedule():
             compute_log_manager=NoOpComputeLogManager(temp_dir),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
         context = define_context_for_repository_yaml(
@@ -153,6 +155,7 @@ def test_get_all_schedules():
             compute_log_manager=NoOpComputeLogManager(temp_dir),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
         context = define_context_for_repository_yaml(

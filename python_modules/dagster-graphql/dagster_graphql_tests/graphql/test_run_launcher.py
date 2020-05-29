@@ -20,23 +20,6 @@ query RunQuery($runId: ID!) {
 '''
 
 
-class TestMissingRunLauncher(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-    )
-):
-    def test_missing(self, graphql_context):
-        result = execute_dagster_graphql(
-            context=graphql_context,
-            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
-            },
-        )
-
-        assert result.data['launchPipelineExecution']['__typename'] == 'RunLauncherNotDefinedError'
-
-
 class TestBasicLaunch(
     make_graphql_context_test_suite(
         context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack()]

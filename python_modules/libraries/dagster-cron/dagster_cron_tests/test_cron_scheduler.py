@@ -10,6 +10,7 @@ from dagster import ScheduleDefinition, check
 from dagster.core.definitions import RepositoryDefinition, lambda_solid, pipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.scheduler import Schedule, ScheduleStatus, reconcile_scheduler_state
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
@@ -108,6 +109,7 @@ def define_scheduler_instance(tempdir):
         compute_log_manager=NoOpComputeLogManager(tempdir),
         schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
         scheduler=SystemCronScheduler(),
+        run_launcher=SyncInMemoryRunLauncher(),
     )
 
 
@@ -208,6 +210,13 @@ def test_script_execution(
         os.environ["DAGSTER_HOME"] = tempdir
         config = {
             'scheduler': {'module': 'dagster_cron', 'class': 'SystemCronScheduler', 'config': {}},
+            # This needs to synchronously execute to completion when
+            # the generated bash script is invoked
+            'run_launcher': {
+                'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
+                'class': 'SyncInMemoryRunLauncher',
+                'config': {'hijack_start': True},
+            },
         }
 
         with open(os.path.join(tempdir, 'dagster.yaml'), 'w+') as f:

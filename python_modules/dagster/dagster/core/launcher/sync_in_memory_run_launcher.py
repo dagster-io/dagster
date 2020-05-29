@@ -7,7 +7,7 @@ from dagster.utils.hosted_user_process import pipeline_def_from_pipeline_handle
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, hijack_start, inst_data=None):
+    def __init__(self, hijack_start=False, inst_data=None):
         self._hijack_start = check.bool_param(hijack_start, 'hijack_start')
         self._inst_data = inst_data
         self._repository = None

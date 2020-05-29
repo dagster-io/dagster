@@ -1072,3 +1072,79 @@ snapshots['TestExecuteSchedule.test_query_multiple_schedule_ticks[sqlite_subproc
         'ticksCount': 0
     }
 ]
+
+snapshots['TestExecuteSchedule.test_environment_dict_scheduler_error[sqlite_subprocess_start] 1'] = {
+    'scheduleDefinition': {
+        'name': 'environment_dict_error_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
+
+snapshots['TestExecuteSchedule.test_tick_skip[sqlite_subprocess_start] 1'] = {
+    'scheduleDefinition': {
+        'name': 'no_config_should_execute'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 1,
+        'ticksStarted': 0,
+        'ticksSucceeded': 0
+    },
+    'ticks': [
+        {
+            'status': 'SKIPPED',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
+
+snapshots['TestExecuteSchedule.test_should_execute_scheduler_error[sqlite_subprocess_start] 1'] = {
+    'scheduleDefinition': {
+        'name': 'should_execute_error_schedule'
+    },
+    'stats': {
+        'ticksFailed': 1,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 0
+    },
+    'ticks': [
+        {
+            'status': 'FAILURE',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
+
+snapshots['TestExecuteSchedule.test_tags_scheduler_error[sqlite_subprocess_start] 1'] = {
+    'scheduleDefinition': {
+        'name': 'tags_error_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}

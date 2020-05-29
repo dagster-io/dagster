@@ -8,6 +8,7 @@ from moto import mock_s3
 
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
@@ -48,6 +49,7 @@ def test_compute_log_manager(s3_bucket):
             run_storage=run_store,
             event_storage=event_store,
             compute_log_manager=manager,
+            run_launcher=CliApiRunLauncher(),
         )
         result = execute_pipeline(simple, instance=instance)
         compute_steps = [

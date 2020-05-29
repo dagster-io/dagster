@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.hosted_user_process import external_repo_from_yaml
 
@@ -324,3 +325,15 @@ def test_hijack_start():
 
     with temp_instance(hijack_start=True) as instance_with_hijack_start:
         assert instance_with_hijack_start.run_launcher.hijack_start
+
+
+def test_not_initialized():
+    run_launcher = CliApiRunLauncher()
+    run_id = 'dummy'
+
+    assert run_launcher.join() is None
+    assert run_launcher.is_process_running(run_id) is False
+    assert run_launcher.can_terminate(run_id) is False
+    assert run_launcher.terminate(run_id) is False
+    assert run_launcher.get_active_run_count() == 0
+    assert run_launcher.is_active(run_id) is False

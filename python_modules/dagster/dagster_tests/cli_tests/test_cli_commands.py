@@ -46,6 +46,7 @@ from dagster.cli.schedule import (
 from dagster.config.field_utils import Shape
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import RunLauncher
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -667,6 +668,7 @@ def define_scheduler_instance():
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
 
@@ -980,11 +982,9 @@ def backfill_cli_runner_args(execution_args):
     return backfill_args
 
 
-def run_test_backfill(
-    execution_args, expected_count=None, error_message=None, use_run_launcher=True
-):
+def run_test_backfill(execution_args, expected_count=None, error_message=None):
     runner = CliRunner()
-    run_launcher = InMemoryRunLauncher() if use_run_launcher else None
+    run_launcher = InMemoryRunLauncher()
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance(
             instance_type=InstanceType.EPHEMERAL,
@@ -1011,13 +1011,6 @@ def run_test_backfill(
                 assert result.exit_code == 0
                 if expected_count:
                     assert len(run_launcher.queue()) == expected_count
-
-
-def test_backfill_no_run_launcher():
-    args = {'pipeline_name': 'baz'}  # legit partition args
-    run_test_backfill(
-        args, use_run_launcher=False, error_message='A run launcher must be configured'
-    )
 
 
 def test_backfill_no_pipeline():

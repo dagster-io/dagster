@@ -200,7 +200,7 @@ class DagsterInstance:
             schedule_storage, 'schedule_storage', ScheduleStorage
         )
         self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
-        self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
+        self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
         self._telemetry_settings = check.opt_dict_param(telemetry_settings, 'telemetry_settings')
 
@@ -212,6 +212,7 @@ class DagsterInstance:
 
     @staticmethod
     def ephemeral(tempdir=None):
+        from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
@@ -226,6 +227,7 @@ class DagsterInstance:
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
             compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
     @staticmethod

@@ -188,34 +188,3 @@ class TestReexecution(
         )
         assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
         assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
-
-
-class TestRunLauncherMissingForReexecution(
-    make_graphql_context_test_suite(
-        GraphQLContextVariant.all_variants_with_legacy_execution_manager()
-    )
-):
-    def test_pipeline_reexecution_launcher_missing(self, graphql_context):
-        run_id = make_new_run_id()
-        new_run_id = make_new_run_id()
-        selector = get_legacy_pipeline_selector(graphql_context, 'no_config_pipeline')
-
-        result = execute_dagster_graphql(
-            context=graphql_context,
-            query=LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-            variables={
-                'executionParams': {
-                    'selector': selector,
-                    'executionMetadata': {
-                        'runId': new_run_id,
-                        'rootRunId': run_id,
-                        'parentRunId': run_id,
-                    },
-                    'mode': 'default',
-                }
-            },
-        )
-
-        assert (
-            result.data['launchPipelineReexecution']['__typename'] == 'RunLauncherNotDefinedError'
-        )

@@ -12,6 +12,7 @@ from dagster import (
     solid,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -66,6 +67,7 @@ def get_instance(temp_dir):
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
         compute_log_manager=NoOpComputeLogManager(temp_dir),
+        run_launcher=SyncInMemoryRunLauncher(),
     )
 
 

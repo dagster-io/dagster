@@ -276,7 +276,7 @@ def test_start_scheduled_execution_predefined():
 
         assert (
             result_data['data']['startScheduledExecution']['__typename']
-            == 'StartPipelineRunSuccess'
+            == 'LaunchPipelineRunSuccess'
         )
 
 
