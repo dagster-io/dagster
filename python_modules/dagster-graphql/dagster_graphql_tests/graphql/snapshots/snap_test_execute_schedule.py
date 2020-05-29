@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestExecuteSchedule.test_tick_success[sqlite_with_cli_api_hijack] 1'] = {
