@@ -15,7 +15,7 @@
 
 **New**
 
-- Improve dagster scheduler state reconcilation. 
+- Improve dagster scheduler state reconciliation. 
 
 ## 0.7.14
 
