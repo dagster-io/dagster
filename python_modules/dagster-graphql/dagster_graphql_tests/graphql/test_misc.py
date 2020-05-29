@@ -2,7 +2,6 @@ import csv
 from collections import OrderedDict
 
 from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
-from dagster_graphql_tests.graphql.setup import define_repository
 
 from dagster import (
     DependencyDefinition,
@@ -151,30 +150,6 @@ def define_circular_dependency_pipeline():
         ],
         dependencies={'csolid': {'num': DependencyDefinition('csolid')}},
     )
-
-
-def test_pipelines(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context, '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
-    )
-    assert not result.errors
-    assert result.data
-
-    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
-        p.name for p in define_repository().get_all_pipelines()
-    }
-
-
-def test_pipelines_or_error(graphql_context):
-    result = execute_dagster_graphql(
-        graphql_context, '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
-    )
-    assert not result.errors
-    assert result.data
-
-    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
-        p.name for p in define_repository().get_all_pipelines()
-    }
 
 
 def define_test_repository():

@@ -7,21 +7,21 @@
 // GraphQL query operation: RunsSearchSpaceQuery
 // ====================================================
 
-export interface RunsSearchSpaceQuery_pipelinesOrError_PythonError {
-  __typename: "PythonError";
+export interface RunsSearchSpaceQuery_repositoryOrError_PythonError {
+  __typename: "PythonError" | "RepositoryNotFoundError";
 }
 
-export interface RunsSearchSpaceQuery_pipelinesOrError_PipelineConnection_nodes {
+export interface RunsSearchSpaceQuery_repositoryOrError_Repository_pipelines {
   __typename: "Pipeline";
   name: string;
 }
 
-export interface RunsSearchSpaceQuery_pipelinesOrError_PipelineConnection {
-  __typename: "PipelineConnection";
-  nodes: RunsSearchSpaceQuery_pipelinesOrError_PipelineConnection_nodes[];
+export interface RunsSearchSpaceQuery_repositoryOrError_Repository {
+  __typename: "Repository";
+  pipelines: RunsSearchSpaceQuery_repositoryOrError_Repository_pipelines[];
 }
 
-export type RunsSearchSpaceQuery_pipelinesOrError = RunsSearchSpaceQuery_pipelinesOrError_PythonError | RunsSearchSpaceQuery_pipelinesOrError_PipelineConnection;
+export type RunsSearchSpaceQuery_repositoryOrError = RunsSearchSpaceQuery_repositoryOrError_PythonError | RunsSearchSpaceQuery_repositoryOrError_Repository;
 
 export interface RunsSearchSpaceQuery_pipelineRunTags {
   __typename: "PipelineTagAndValues";
@@ -30,6 +30,11 @@ export interface RunsSearchSpaceQuery_pipelineRunTags {
 }
 
 export interface RunsSearchSpaceQuery {
-  pipelinesOrError: RunsSearchSpaceQuery_pipelinesOrError;
+  repositoryOrError: RunsSearchSpaceQuery_repositoryOrError;
   pipelineRunTags: RunsSearchSpaceQuery_pipelineRunTags[];
+}
+
+export interface RunsSearchSpaceQueryVariables {
+  repositoryLocationName: string;
+  repositoryName: string;
 }

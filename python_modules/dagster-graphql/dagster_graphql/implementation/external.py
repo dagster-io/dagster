@@ -141,3 +141,19 @@ def fetch_repository_locations(graphene_info):
             for location in graphene_info.context.repository_locations
         ]
     )
+
+
+@capture_dauphin_error
+def fetch_repository(graphene_info, repository_location_name, repository_name):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+
+    if graphene_info.context.has_repository_location(repository_location_name):
+        repo_loc = graphene_info.context.get_repository_location(repository_location_name)
+        if repo_loc.has_repository(repository_name):
+            return graphene_info.schema.type_named('Repository')(
+                repo_loc.get_repository(repository_name)
+            )
+
+    return graphene_info.schema.type_named('RepositoryNotFoundError')(
+        repository_location_name, repository_name
+    )

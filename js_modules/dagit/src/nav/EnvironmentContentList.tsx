@@ -23,19 +23,30 @@ export const EnvironmentContentList: React.FunctionComponent<{
   tab?: string;
 }> = ({ tab, selector }) => {
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
-  const { repository } = React.useContext(DagsterRepositoryContext);
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
   const pipelineTab = tabForPipelinePathComponent(tab);
   const [q, setQ] = React.useState<string>("");
 
   // Load solids, but only if the user clicks on the Solid option
   const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
-    fetchPolicy: "cache-first"
+    fetchPolicy: "cache-first",
+    skip: !repository || !repositoryLocation,
+    variables: {
+      repositoryLocationName: repositoryLocation?.name,
+      repositoryName: repository?.name
+    }
   });
   React.useEffect(() => {
     if (type === "solids") {
       solids.refetch();
     }
   }, [type, solids]);
+  const usedSolids =
+    solids.data?.repositoryOrError?.__typename === "Repository"
+      ? solids.data.repositoryOrError.usedSolids
+      : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
@@ -86,7 +97,7 @@ export const EnvironmentContentList: React.FunctionComponent<{
         </Items>
       ) : (
         <Items>
-          {solids.data?.usedSolids
+          {usedSolids
             .filter(
               s =>
                 !q ||
@@ -164,16 +175,26 @@ const Item = styled(Link)`
 `;
 
 export const CONTENT_LIST_SOLIDS_QUERY = gql`
-  query ContentListSolidsQuery {
-    usedSolids {
-      __typename
-      definition {
-        name
-      }
-      invocations {
-        __typename
-        pipeline {
-          name
+  query ContentListSolidsQuery(
+    $repositoryName: String!
+    $repositoryLocationName: String!
+  ) {
+    repositoryOrError(
+      repositoryLocationName: $repositoryLocationName
+      repositoryName: $repositoryName
+    ) {
+      ... on Repository {
+        usedSolids {
+          __typename
+          definition {
+            name
+          }
+          invocations {
+            __typename
+            pipeline {
+              name
+            }
+          }
         }
       }
     }

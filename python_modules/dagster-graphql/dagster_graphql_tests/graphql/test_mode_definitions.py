@@ -82,14 +82,6 @@ def execute_modes_query(context, pipeline_name, mode):
     )
 
 
-def get_pipeline(result, name):
-    for pipeline_data in result.data['pipelinesOrError']['nodes']:
-        if pipeline_data['name'] == name:
-            return pipeline_data
-
-    raise Exception('not found')
-
-
 def test_query_multi_mode(graphql_context):
     with pytest.raises(graphql.error.base.GraphQLError):
         execute_modes_query(graphql_context, 'multi_mode_with_resources', mode=None)

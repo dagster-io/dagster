@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.context import RepositoryLocation
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 
 from dagster import check
 from dagster.core.host_representation import ExternalRepository
@@ -35,6 +36,8 @@ class DauphinRepository(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     pipelines = dauphin.non_null_list('Pipeline')
+    usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
+    usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
 
     def resolve_pipelines(self, graphene_info):
         return sorted(
@@ -44,6 +47,12 @@ class DauphinRepository(dauphin.ObjectType):
             ],
             key=lambda pipeline: pipeline.name,
         )
+
+    def resolve_usedSolid(self, _graphene_info, name):
+        return get_solid(self._repository, name)
+
+    def resolve_usedSolids(self, _graphene_info):
+        return get_solids(self._repository)
 
 
 class DauphinRepositoryLocationConnection(dauphin.ObjectType):

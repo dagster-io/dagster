@@ -45,5 +45,5 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_PythonError {
 export type RootRepositoriesQuery_repositoryLocationsOrError = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection | RootRepositoriesQuery_repositoryLocationsOrError_PythonError;
 
 export interface RootRepositoriesQuery {
-  repositoryLocationsOrError: RootRepositoriesQuery_repositoryLocationsOrError | null;
+  repositoryLocationsOrError: RootRepositoriesQuery_repositoryLocationsOrError;
 }

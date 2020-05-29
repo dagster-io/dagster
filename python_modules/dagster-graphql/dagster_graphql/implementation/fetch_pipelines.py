@@ -73,17 +73,6 @@ def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
     )
 
 
-@capture_dauphin_error
-def get_pipelines_or_error(graphene_info):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    dauphin_pipelines = list(
-        map(DauphinPipeline, graphene_info.context.legacy_get_all_external_pipelines())
-    )
-    return graphene_info.schema.type_named('PipelineConnection')(
-        nodes=sorted(dauphin_pipelines, key=lambda pipeline: pipeline.name)
-    )
-
-
 def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', PipelineSelector)

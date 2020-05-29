@@ -47,6 +47,12 @@ class DagsterGraphQLContext:
     def repository_locations(self):
         return list(self._repository_locations.values())
 
+    def get_repository_location(self, name):
+        return self._repository_locations[name]
+
+    def has_repository_location(self, name):
+        return name in self._repository_locations
+
     def get_external_pipeline(self, selector):
         check.inst_param(selector, 'selector', PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly
@@ -109,9 +115,6 @@ class DagsterGraphQLContext:
         repos = self.legacy_location.get_repositories()
         check.invariant(len(repos) == 1, '[legacy] must have only one repository')
         return next(iter(repos.values()))
-
-    def legacy_get_all_external_pipelines(self):
-        return self.legacy_external_repository.get_all_external_pipelines()
 
     def legacy_get_repository_definition(self):
         check.invariant(

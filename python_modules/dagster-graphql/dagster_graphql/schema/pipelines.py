@@ -228,13 +228,6 @@ def _get_solid_handles(represented_pipeline):
     }
 
 
-class DauphinPipelineConnection(dauphin.ObjectType):
-    class Meta(object):
-        name = 'PipelineConnection'
-
-    nodes = dauphin.non_null_list('Pipeline')
-
-
 class DauphinResource(dauphin.ObjectType):
     class Meta(object):
         name = 'Resource'

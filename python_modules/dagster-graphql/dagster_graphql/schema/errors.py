@@ -422,12 +422,6 @@ class DauphinEvaluationStack(dauphin.ObjectType):
         return map(DauphinEvaluationStackEntry.from_native_entry, self._stack.entries)
 
 
-class DauphinPipelinesOrError(dauphin.Union):
-    class Meta(object):
-        name = 'PipelinesOrError'
-        types = ('PipelineConnection', DauphinPythonError)
-
-
 class DauphinExecutionPlanOrError(dauphin.Union):
     class Meta(object):
         name = 'ExecutionPlanOrError'
@@ -646,3 +640,28 @@ class DauphinRepositoryLocationsOrError(dauphin.Union):
     class Meta(object):
         name = 'RepositoryLocationsOrError'
         types = ('RepositoryLocationConnection', DauphinPythonError)
+
+
+class DauphinRepositoryNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RepositoryNotFoundError'
+        interfaces = (DauphinError,)
+
+    repository_name = dauphin.NonNull(dauphin.String)
+    repository_location_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, repository_location_name, repository_name):
+        super(DauphinRepositoryNotFoundError, self).__init__()
+        self.repository_name = check.str_param(repository_name, 'repository_name')
+        self.repository_location_name = check.str_param(
+            repository_location_name, 'repository_location_name'
+        )
+        self.message = 'Could not find Repository {repository_location_name}.{repository_name}'.format(
+            repository_name=repository_name, repository_location_name=repository_location_name
+        )
+
+
+class DauphinRepositoryOrError(dauphin.Union):
+    class Meta(object):
+        name = 'RepositoryOrError'
+        types = (DauphinPythonError, 'Repository', DauphinRepositoryNotFoundError)

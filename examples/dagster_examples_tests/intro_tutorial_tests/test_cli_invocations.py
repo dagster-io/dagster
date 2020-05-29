@@ -17,20 +17,25 @@ from dagster.utils import (
     script_relative_path,
 )
 
-PIPELINES_OR_ERROR_QUERY = '''{
-    pipelinesOrError {
-        __typename
+PIPELINES_OR_ERROR_QUERY = '''
+{
+    repositoryLocationsOrError {
         ... on PythonError {
             message
             stack
         }
-        ... on PipelineConnection {
+        ... on RepositoryLocationConnection {
             nodes {
-                name
+                repositories {
+                    pipelines {
+                        name
+                    }
+                }
             }
         }
     }
-}'''
+}
+'''
 
 
 def path_to_tutorial_file(path):
@@ -47,9 +52,16 @@ def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
     res = client.get('/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY))
     json_res = json.loads(res.data.decode('utf-8'))
     assert 'data' in json_res
-    assert 'pipelinesOrError' in json_res['data']
-    assert 'nodes' in json_res['data']['pipelinesOrError']
-    assert len(json_res['data']['pipelinesOrError']['nodes']) == n_pipelines
+    assert 'repositoryLocationsOrError' in json_res['data']
+    assert 'nodes' in json_res['data']['repositoryLocationsOrError']
+    assert (
+        len(
+            json_res['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0][
+                'pipelines'
+            ]
+        )
+        == n_pipelines
+    )
 
     return res
 

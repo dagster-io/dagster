@@ -402,6 +402,13 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/playground"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/playground"
             onClick={[Function]}
           >
@@ -1040,6 +1047,13 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -5644,6 +5658,13 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -10245,6 +10266,13 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -11976,6 +12004,13 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -16580,6 +16615,13 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -21178,6 +21220,13 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             pyspark_pagerank
+          </a>
+          <a
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            href="/pipeline/simple_lakehouse_pipeline/"
+            onClick={[Function]}
+          >
+            simple_lakehouse_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"

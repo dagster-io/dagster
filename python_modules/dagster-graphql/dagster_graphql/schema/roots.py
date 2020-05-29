@@ -14,6 +14,7 @@ from dagster_graphql.implementation.execution.execute_run_in_process import (
     execute_run_in_graphql_process,
 )
 from dagster_graphql.implementation.external import (
+    fetch_repository,
     fetch_repository_locations,
     get_full_external_pipeline_or_raise,
 )
@@ -26,7 +27,6 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
     get_pipeline_snapshot_or_error_from_pipeline_name,
     get_pipeline_snapshot_or_error_from_snapshot_id,
-    get_pipelines_or_error,
 )
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
@@ -41,7 +41,6 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_or_error,
     get_scheduler_or_error,
 )
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
     resolve_run_config_schema_or_error,
@@ -71,11 +70,17 @@ class DauphinQuery(dauphin.ObjectType):
     version = dauphin.NonNull(dauphin.String)
     reloadSupported = dauphin.NonNull(dauphin.Boolean)
 
-    repositoryLocationsOrError = dauphin.Field('RepositoryLocationsOrError')
+    repositoryLocationsOrError = dauphin.NonNull('RepositoryLocationsOrError')
+
+    repositoryOrError = dauphin.Field(
+        dauphin.NonNull('RepositoryOrError'),
+        repositoryLocationName=dauphin.String(),
+        repositoryName=dauphin.String(),
+    )
+
     pipelineOrError = dauphin.Field(
         dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('PipelineSelector')
     )
-    pipelinesOrError = dauphin.NonNull('PipelinesOrError')
 
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
@@ -121,9 +126,6 @@ class DauphinQuery(dauphin.ObjectType):
         limit=dauphin.Int(),
     )
 
-    usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
-    usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
-
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
@@ -161,6 +163,9 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_repositoryLocationsOrError(self, graphene_info):
         return fetch_repository_locations(graphene_info)
 
+    def resolve_repositoryOrError(self, graphene_info, repositoryLocationName, repositoryName):
+        return fetch_repository(graphene_info, repositoryLocationName, repositoryName)
+
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
         pipeline_name_arg = kwargs.get('activePipelineName')
@@ -196,9 +201,6 @@ class DauphinQuery(dauphin.ObjectType):
             graphene_info,
             PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
         )
-
-    def resolve_pipelinesOrError(self, graphene_info):
-        return get_pipelines_or_error(graphene_info)
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
         filters = kwargs.get('filter')
@@ -236,12 +238,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_runGroupOrError(self, graphene_info, runId):
         return get_run_group(graphene_info, runId)
-
-    def resolve_usedSolid(self, graphene_info, name):
-        return get_solid(graphene_info, name)
-
-    def resolve_usedSolids(self, graphene_info):
-        return get_solids(graphene_info)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(

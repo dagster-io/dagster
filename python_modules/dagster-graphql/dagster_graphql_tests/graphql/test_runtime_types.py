@@ -65,16 +65,20 @@ fragment dagsterTypeFragment on DagsterType {
 }
 
 {
-    pipelinesOrError {
-        ... on PipelineConnection {
-            nodes {
-                name
-                dagsterTypes {
-                    ...dagsterTypeFragment
-                }
+  repositoryLocationsOrError {
+    ... on RepositoryLocationConnection {
+      nodes {
+        repositories {
+          pipelines {
+            name
+            dagsterTypes {
+              ...dagsterTypeFragment
             }
+          }
         }
+      }
     }
+  }
 }
 '''
 

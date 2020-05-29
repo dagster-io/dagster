@@ -713,10 +713,6 @@ type PipelineConfigValidationValid {
   pipelineName: String!
 }
 
-type PipelineConnection {
-  nodes: [Pipeline!]!
-}
-
 interface PipelineEvent {
   pipelineName: String!
 }
@@ -879,8 +875,6 @@ type PipelineSnapshotNotFoundError implements Error {
 
 union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
 
-union PipelinesOrError = PipelineConnection | PythonError
-
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
   runId: String!
   message: String!
@@ -924,9 +918,9 @@ type PythonError implements Error {
 type Query {
   version: String!
   reloadSupported: Boolean!
-  repositoryLocationsOrError: RepositoryLocationsOrError
+  repositoryLocationsOrError: RepositoryLocationsOrError!
+  repositoryOrError(repositoryLocationName: String, repositoryName: String): RepositoryOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipelinesOrError: PipelinesOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineName: String): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
@@ -937,8 +931,6 @@ type Query {
   pipelineRunTags: [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
-  usedSolids: [UsedSolid!]!
-  usedSolid(name: String!): UsedSolid
   isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
@@ -973,6 +965,8 @@ type RegularDagsterType implements DagsterType {
 type Repository {
   name: String!
   pipelines: [Pipeline!]!
+  usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
 }
 
 type RepositoryLocation {
@@ -985,6 +979,14 @@ type RepositoryLocationConnection {
 }
 
 union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
+
+type RepositoryNotFoundError implements Error {
+  message: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 type Resource {
   name: String!

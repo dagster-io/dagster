@@ -40,7 +40,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: TYPE_EXPLORER_CONTAINER_QUERY,
     variables: {
       pipelineSelector: {
-        environmentName: "<<in_process>>",
+        repositoryLocationName: "<<in_process>>",
         repositoryName: "internal-dagit-repository",
         pipelineName: "airline_demo_ingest_pipeline"
       },
@@ -57,7 +57,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: TYPE_LIST_CONTAINER_QUERY,
     variables: {
       pipelineSelector: {
-        environmentName: "<<in_process>>",
+        repositoryLocationName: "<<in_process>>",
         repositoryName: "internal-dagit-repository",
         pipelineName: "airline_demo_ingest_pipeline"
       }
@@ -67,13 +67,20 @@ export const MOCKS: CachedGraphQLRequest[] = [
   {
     name: "SOLIDS_ROOT_QUERY",
     query: SOLIDS_ROOT_QUERY,
-    variables: {},
+    variables: {
+      repositoryLocationName: "<<in_process>>",
+      repositoryName: "internal-dagit-repository"
+    },
     filepath: path.join(__dirname, "__data__", "SOLIDS_ROOT_QUERY.json")
   },
   {
     name: "USED_SOLIDS_DETAILS_QUERY",
     query: USED_SOLID_DETAILS_QUERY,
-    variables: { name: "s3_to_df" },
+    variables: {
+      repositoryLocationName: "<<in_process>>",
+      repositoryName: "internal-dagit-repository",
+      name: "s3_to_df"
+    },
     filepath: path.join(__dirname, "__data__", "USED_SOLID_DETAILS_QUERY.json")
   },
   {
@@ -81,7 +88,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     variables: {
       selector: {
-        environmentName: "<<in_process>>",
+        repositoryLocationName: "<<in_process>>",
         repositoryName: "internal-dagit-repository",
         pipelineName: "airline_demo_ingest_pipeline"
       },

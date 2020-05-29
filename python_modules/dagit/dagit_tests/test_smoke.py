@@ -7,6 +7,26 @@ from dagit import app
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 
+SMOKE_TEST_QUERY = '''
+{
+    repositoryLocationsOrError {
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on RepositoryLocationConnection {
+            nodes {
+                repositories {
+                    pipelines {
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+'''
+
 
 def test_smoke_app():
     flask_app = app.create_app_with_reconstructable_repo(
@@ -17,17 +37,20 @@ def test_smoke_app():
     )
     client = flask_app.test_client()
 
-    result = client.post(
-        '/graphql',
-        data={
-            'query': 'query { pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
-        },
-    )
+    result = client.post('/graphql', data={'query': SMOKE_TEST_QUERY},)
     data = json.loads(result.data.decode('utf-8'))
-    assert len(data['data']['pipelinesOrError']['nodes']) == 2
-    assert {node_data['name'] for node_data in data['data']['pipelinesOrError']['nodes']} == set(
-        ['hello_cereal_pipeline', 'complex_pipeline']
+    assert len(data['data']['repositoryLocationsOrError']['nodes']) == 1
+    assert len(data['data']['repositoryLocationsOrError']['nodes'][0]['repositories']) == 1
+    assert (
+        len(data['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0]['pipelines'])
+        == 2
     )
+    assert {
+        node_data['name']
+        for node_data in data['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0][
+            'pipelines'
+        ]
+    } == set(['hello_cereal_pipeline', 'complex_pipeline'])
 
     result = client.get('/graphql')
     assert result.status_code == 400

@@ -1,19 +1,22 @@
 PRODUCTION_QUERY = '''
 query AppQuery {
-  pipelinesOrError {
-    ... on Error {
+  repositoryLocationsOrError {
+    ... on PythonError {
       message
-      __typename
+      stack
     }
-    ... on PipelineConnection {
+    ... on RepositoryLocationConnection {
       nodes {
-        ...PipelineFragment
-        __typename
+        repositories {
+          pipelines {
+            ...PipelineFragment
+          }
+        }
       }
     }
-    __typename
   }
 }
+
 
 fragment PipelineFragment on Pipeline {
   name
@@ -141,7 +144,7 @@ fragment SolidTypeSignatureFragment on Solid {
 fragment ConfigFieldFragment on ConfigTypeField {
   configType {
     __typename
-    key 
+    key
     description
     ... on CompositeConfigType {
       fields {
@@ -149,7 +152,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
         description
         isOptional
         configType {
-          key 
+          key
           description
           ... on CompositeConfigType {
             fields {
@@ -157,7 +160,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
               description
               isOptional
               configType {
-                key 
+                key
                 description
                 __typename
               }
