@@ -1,3 +1,4 @@
+import os
 from collections import namedtuple
 
 import six
@@ -50,7 +51,8 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
     @classmethod
     def from_yaml(cls, file_path):
         check.str_param(file_path, 'file_path')
-        return cls(pointer=CodePointer.from_yaml(file_path), yaml_path=file_path)
+        absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
+        return cls(pointer=CodePointer.from_yaml(absolute_file_path), yaml_path=absolute_file_path,)
 
 
 @whitelist_for_serdes

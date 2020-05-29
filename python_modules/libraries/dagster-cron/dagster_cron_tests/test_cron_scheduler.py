@@ -3,19 +3,22 @@ import subprocess
 import sys
 
 import pytest
+import yaml
 from dagster_cron import SystemCronScheduler
 
 from dagster import ScheduleDefinition, check
-from dagster.core.definitions import RepositoryDefinition
+from dagster.core.definitions import RepositoryDefinition, lambda_solid, pipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.scheduler import Schedule, ScheduleStatus, reconcile_scheduler_state
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.seven import TemporaryDirectory
+from dagster.utils import file_relative_path
 
 
 @pytest.fixture(scope='function')
@@ -41,6 +44,25 @@ def restore_cron_tab():
         yield
 
         subprocess.check_output(['crontab', crontab_backup])
+
+
+@pytest.fixture(scope='function')
+def unset_dagster_home():
+    old_env = os.getenv('DAGSTER_HOME')
+    if old_env is not None:
+        del os.environ['DAGSTER_HOME']
+    yield
+    if old_env is not None:
+        os.environ['DAGSTER_HOME'] = old_env
+
+
+@pipeline
+def no_config_pipeline():
+    @lambda_solid
+    def return_hello():
+        return 'Hello'
+
+    return return_hello()
 
 
 def define_schedules():
@@ -69,6 +91,12 @@ def define_schedules():
         no_config_pipeline_daily_schedule,
         no_config_pipeline_every_min_schedule,
     ]
+
+
+def define_repository():
+    return RepositoryDefinition(
+        name="test_repository", pipeline_defs=[no_config_pipeline], schedule_defs=define_schedules()
+    )
 
 
 def define_scheduler_instance(tempdir):
@@ -142,6 +170,7 @@ def test_start_and_stop_schedule(
     restore_cron_tab,
 ):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
+
         repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
 
@@ -170,6 +199,43 @@ def test_start_and_stop_schedule(
         assert "{}.{}.sh".format(repository.name, schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules', 'scripts')
         )
+
+
+def test_script_execution(
+    restore_cron_tab, unset_dagster_home
+):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+        os.environ["DAGSTER_HOME"] = tempdir
+        config = {
+            'scheduler': {'module': 'dagster_cron', 'class': 'SystemCronScheduler', 'config': {}},
+        }
+
+        with open(os.path.join(tempdir, 'dagster.yaml'), 'w+') as f:
+            f.write(yaml.dump(config))
+
+        instance = DagsterInstance.get()
+        repository = define_repository()
+
+        # Initialize scheduler
+        reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, './repository.yaml'),
+            repository=repository,
+            instance=instance,
+        )
+
+        instance.start_schedule(repository.name, "no_config_pipeline_every_min_schedule")
+
+        schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
+        script = instance.scheduler._get_bash_script_file_path(  # pylint: disable=protected-access
+            instance, repository.name, schedule_def
+        )
+
+        subprocess.check_output([script], shell=True, env={"DAGSTER_HOME": tempdir})
+
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        assert runs[0].status == PipelineRunStatus.SUCCESS
 
 
 def test_start_schedule_fails(
