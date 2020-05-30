@@ -7,9 +7,9 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, ExecutionPar
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.config.validate import validate_config_from_snap
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import (
+    DagsterLaunchFailedError,
     DagsterUserCodeExecutionError,
     ScheduleExecutionError,
     user_code_error_boundary,
@@ -25,7 +25,11 @@ from dagster.utils.merger import merge_dicts
 from ..external import legacy_get_external_pipeline_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
 from ..utils import PipelineSelector, capture_dauphin_error
-from .launch_execution import do_launch_for_created_run
+from .run_lifecycle import (
+    RunExecutionInfo,
+    create_possibly_invalid_run,
+    get_run_execution_info_for_created_run_or_error,
+)
 
 
 @capture_dauphin_error
@@ -150,53 +154,42 @@ def launch_scheduled_execution(graphene_info, schedule_name):
 def _execute_schedule(graphene_info, external_pipeline, execution_params, errors):
     check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
-    instance = graphene_info.context.instance
-
-    mode, environment_dict = execution_params.mode, execution_params.environment_dict
-
-    validation_result = validate_config_from_snap(
-        external_pipeline.config_schema_snapshot,
-        external_pipeline.root_config_key_for_mode(mode),
-        environment_dict,
-    )
-
-    external_execution_plan = (
-        graphene_info.context.get_external_execution_plan(
-            external_pipeline, environment_dict, mode, execution_params.step_keys
-        )
-        if validation_result.success
-        else None
-    )
-
-    pipeline_run = instance.create_run(
-        pipeline_name=external_pipeline.name,
-        run_id=None,
-        environment_dict=environment_dict,
-        mode=mode,
-        solid_subset=(
-            execution_params.selector.solid_subset
-            if execution_params.selector is not None
-            else None
-        ),
-        step_keys_to_execute=None,
-        status=None,
-        tags=execution_params.execution_metadata.tags,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot
-        if external_execution_plan
-        else None,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+    possibly_invalid_pipeline_run = create_possibly_invalid_run(
+        graphene_info, external_pipeline, execution_params
     )
 
     # Inject errors into event log at this point
     if len(errors) > 0:
         for error in errors:
-            instance.report_engine_event(
-                error.message, pipeline_run, EngineEventData.engine_error(error)
+            graphene_info.context.instance.report_engine_event(
+                error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error)
             )
 
-    result = do_launch_for_created_run(graphene_info, pipeline_run.run_id)
+    run_info_or_error = get_run_execution_info_for_created_run_or_error(
+        graphene_info, possibly_invalid_pipeline_run.run_id
+    )
 
-    return pipeline_run, result
+    if not isinstance(run_info_or_error, RunExecutionInfo):
+        return possibly_invalid_pipeline_run, run_info_or_error
+
+    external_pipeline, pipeline_run = run_info_or_error
+    instance = graphene_info.context.instance
+
+    try:
+        launched_run = instance.launch_run(pipeline_run.run_id, external_pipeline)
+        return (
+            launched_run,
+            graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
+                run=graphene_info.schema.type_named('PipelineRun')(launched_run)
+            ),
+        )
+
+    except DagsterLaunchFailedError:
+        error = serializable_error_info_from_exc_info(sys.exc_info())
+        instance.report_engine_event(
+            error.message, pipeline_run, EngineEventData.engine_error(error),
+        )
+        instance.report_run_failed(pipeline_run)
+        # https://github.com/dagster-io/dagster/issues/2508
+        # We should return a proper GraphQL error here
+        raise

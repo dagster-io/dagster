@@ -4,6 +4,7 @@ import uuid
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql_and_finish_runs
 
+from dagster import seven
 from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.scheduler.scheduler import ScheduleTickStatus
 
@@ -564,7 +565,7 @@ class TestExecuteSchedule(
         assert (
             result.data['launchScheduledExecution']['__typename']
             == 'PipelineConfigValidationInvalid'
-        )
+        ), seven.json.dumps(result.data)
 
         # Check tick data and stats through gql
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)

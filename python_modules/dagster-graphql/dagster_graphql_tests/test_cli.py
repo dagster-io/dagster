@@ -280,7 +280,7 @@ def test_launch_scheduled_execution_predefined():
         assert (
             result_data['data']['launchScheduledExecution']['__typename']
             == 'LaunchPipelineRunSuccess'
-        )
+        ), seven.json.dumps(result_data)
 
 
 def test_logs_in_start_execution_predefined():

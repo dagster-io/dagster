@@ -10,7 +10,10 @@ to be the case.
 '''
 
 from dagster import check
-from dagster.core.definitions.reconstructable import repository_def_from_pointer
+from dagster.core.definitions.reconstructable import (
+    ReconstructableRepository,
+    repository_def_from_pointer,
+)
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository, PipelineHandle
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
@@ -24,6 +27,13 @@ def pipeline_def_from_pipeline_handle(pipeline_handle):
     pointer = pipeline_handle.repository_handle.location_handle.pointer
     repo_def = repository_def_from_pointer(pointer)
     return repo_def.get_pipeline(pipeline_handle.pipeline_name)
+
+
+def recon_pipeline_from_pipeline_handle(pipeline_handle):
+    check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
+    pointer = pipeline_handle.repository_handle.location_handle.pointer
+    recon_repo = ReconstructableRepository(pointer)
+    return recon_repo.get_reconstructable_pipeline(pipeline_handle.pipeline_name)
 
 
 def external_repo_from_def(repository_def, repository_handle):
