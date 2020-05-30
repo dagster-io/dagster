@@ -99,11 +99,11 @@ def test_basic_variables():
         assert result_data['data']['pipelineOrError']['name'] == 'math'
 
 
-START_PIPELINE_EXECUTION_QUERY = '''
+LAUNCH_PIPELINE_EXECUTION_QUERY = '''
 mutation ($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
+    launchPipelineExecution(executionParams: $executionParams) {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -140,7 +140,7 @@ def test_start_execution_text():
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
+            ui, ['-y', repo_path, '-v', variables, '-t', LAUNCH_PIPELINE_EXECUTION_QUERY]
         )
 
         assert result.exit_code == 0
@@ -148,8 +148,8 @@ def test_start_execution_text():
         try:
             result_data = json.loads(result.output.strip('\n').split('\n')[-1])
             assert (
-                result_data['data']['startPipelineExecution']['__typename']
-                == 'StartPipelineRunSuccess'
+                result_data['data']['launchPipelineExecution']['__typename']
+                == 'LaunchPipelineRunSuccess'
             )
         except Exception as e:
             raise Exception('Failed with {} Exception: {}'.format(result.output, e))
@@ -183,7 +183,8 @@ def test_start_execution_file():
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
 
 
@@ -229,8 +230,8 @@ def test_start_execution_save_output():
                 lines = f.readlines()
                 result_data = json.loads(lines[-1])
                 assert (
-                    result_data['data']['startPipelineExecution']['__typename']
-                    == 'StartPipelineRunSuccess'
+                    result_data['data']['launchPipelineExecution']['__typename']
+                    == 'LaunchPipelineRunSuccess'
                 )
 
 
@@ -249,14 +250,15 @@ def test_start_execution_predefined():
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
+            ui, ['-y', repo_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         if not result_data.get('data'):
             raise Exception(result_data)
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
 
 
@@ -300,18 +302,19 @@ def test_logs_in_start_execution_predefined():
 
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
+            ui, ['-y', repo_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
-        run_id = result_data['data']['startPipelineExecution']['run']['runId']
+        run_id = result_data['data']['launchPipelineExecution']['run']['runId']
 
         # allow FS events to flush
         retries = 5
-        while retries != 0 and not instance.has_run(run_id):
+        while retries != 0 and not _is_done(instance, run_id):
             time.sleep(0.333)
             retries -= 1
 
@@ -319,3 +322,7 @@ def test_logs_in_start_execution_predefined():
         run = instance.get_run_by_id(run_id)
 
         assert run.status == PipelineRunStatus.SUCCESS
+
+
+def _is_done(instance, run_id):
+    return instance.has_run(run_id) and instance.get_run_by_id(run_id).is_finished

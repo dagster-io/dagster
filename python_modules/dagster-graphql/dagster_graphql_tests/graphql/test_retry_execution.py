@@ -14,11 +14,10 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
 from .execution_queries import (
+    LAUNCH_PIPELINE_EXECUTION_QUERY,
     LAUNCH_PIPELINE_REEXECUTION_QUERY,
+    LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
     PIPELINE_REEXECUTION_INFO_QUERY,
-    START_PIPELINE_EXECUTION_QUERY,
-    START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-    START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -122,7 +121,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'eventually_successful')
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -132,7 +131,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data['startPipelineExecution']['run']['runId']
+        run_id = result.data['launchPipelineExecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             'pipelineRunLogs'
         ]['messages']
@@ -231,7 +230,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'retry_resource_pipeline')
         result = execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -241,7 +240,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = result.data['startPipelineExecution']['run']['runId']
+        run_id = result.data['launchPipelineExecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
             'messages'
         ]
@@ -275,13 +274,13 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         context = graphql_context
         result = execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': get_retry_multi_execution_params(context, should_fail=True)
             },
         )
 
-        run_id = result.data['startPipelineExecution']['run']['runId']
+        run_id = result.data['launchPipelineExecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
             'messages'
         ]
@@ -339,7 +338,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -350,7 +349,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert (
+            result_one.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        )
 
         expected_value_repr = (
             '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''
@@ -380,7 +381,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -436,7 +437,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         run_id = make_new_run_id()
         execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -451,7 +452,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         new_run_id = make_new_run_id()
         execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -489,7 +490,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -505,7 +506,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -607,7 +608,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
         run_id = make_new_run_id()
         execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',

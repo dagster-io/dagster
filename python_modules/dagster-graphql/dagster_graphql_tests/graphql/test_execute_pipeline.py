@@ -12,7 +12,7 @@ from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
-from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
+from .execution_queries import LAUNCH_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
@@ -23,7 +23,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -37,15 +37,17 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-        assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert uuid.UUID(result.data['launchPipelineExecution']['run']['runId'])
+        assert (
+            result.data['launchPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        )
 
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={'executionParams': {'selector': selector, 'preset': 'test_inline',}},
         )
 
@@ -53,28 +55,30 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
-        assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert uuid.UUID(result.data['launchPipelineExecution']['run']['runId'])
+        assert (
+            result.data['launchPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
+        )
 
     def test_basic_start_pipeline_execution_with_pipeline_def_tags(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'hello_world_with_tags')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={'executionParams': {'selector': selector, 'mode': 'default',},},
         )
 
         assert not result.errors
-        assert result.data['startPipelineExecution']['run']['tags'] == [
+        assert result.data['launchPipelineExecution']['run']['tags'] == [
             {'key': 'tag_key', 'value': 'tag_value'}
         ]
 
         # just test existence
-        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-        assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert uuid.UUID(result.data['launchPipelineExecution']['run']['runId'])
         assert (
-            result.data['startPipelineExecution']['run']['pipeline']['name']
+            result.data['launchPipelineExecution']['run']['pipeline']['name']
             == 'hello_world_with_tags'
         )
 
@@ -83,7 +87,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         with pytest.raises(UserFacingGraphQLError) as exc_info:
             execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {'selector': selector, 'preset': 'undefined_preset',}
                 },
@@ -103,7 +107,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         with pytest.raises(check.CheckError):
             execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {'selector': subset_selector, 'preset': 'test_inline',}
                 },
@@ -113,7 +117,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         with pytest.raises(check.CheckError):
             execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
                         'selector': selector,
@@ -126,7 +130,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         with pytest.raises(check.CheckError):
             execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
                         'selector': selector,
@@ -140,7 +144,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -153,14 +157,15 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert (
-            result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+            result.data['launchPipelineExecution']['__typename']
+            == 'PipelineConfigValidationInvalid'
         )
 
     def test_basis_start_pipeline_not_found_error(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'sjkdfkdjkf')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -174,8 +179,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         # just test existence
-        assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
-        assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
+        assert result.data['launchPipelineExecution']['__typename'] == 'PipelineNotFoundError'
+        assert result.data['launchPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
@@ -326,7 +331,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -341,9 +346,9 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
 
-        run = result.data['startPipelineExecution']['run']
+        run = result.data['launchPipelineExecution']['run']
         run_id = run['runId']
         assert len(run['tags']) > 0
         assert any(

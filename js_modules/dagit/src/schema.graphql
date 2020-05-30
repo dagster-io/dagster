@@ -559,7 +559,6 @@ type ModeNotFoundError implements Error {
 }
 
 type Mutation {
-  startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
   launchScheduledExecution(scheduleName: String!): LaunchScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
@@ -1171,12 +1170,6 @@ type SolidHandle {
 type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
-}
-
-union StartPipelineExecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type StartPipelineRunSuccess {
-  run: PipelineRun!
 }
 
 interface StepEvent {

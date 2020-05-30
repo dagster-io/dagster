@@ -1,4 +1,4 @@
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessRepositoryLocation,
@@ -40,7 +40,7 @@ def test_execute_hammer_through_dagit():
     }
 
     start_pipeline_result = graphql(
-        request_string=START_PIPELINE_EXECUTION_MUTATION,
+        request_string=LAUNCH_PIPELINE_EXECUTION_MUTATION,
         schema=create_schema(),
         context=context,
         variables=variables,
@@ -50,7 +50,7 @@ def test_execute_hammer_through_dagit():
     if start_pipeline_result.errors:
         raise Exception('{}'.format(start_pipeline_result.errors))
 
-    run_id = start_pipeline_result.data['startPipelineExecution']['run']['runId']
+    run_id = start_pipeline_result.data['launchPipelineExecution']['run']['runId']
 
     context.drain_outstanding_executions()
 

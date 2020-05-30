@@ -7,8 +7,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipel
 from dagster.core.utils import make_new_run_id
 
 from .execution_queries import (
-    START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-    START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+    LAUNCH_PIPELINE_EXECUTION_SNAPSHOT_FRIENDLY,
+    LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, csv_hello_world_solids_config_fs_storage
@@ -44,7 +44,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_SNAPSHOT_FRIENDLY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -55,7 +55,9 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert (
+            result_one.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        )
 
         snapshot.assert_match(sanitize_result_data(result_one.data))
 
@@ -64,7 +66,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -89,7 +91,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
         result_one = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_SNAPSHOT_FRIENDLY,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -100,7 +102,9 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert (
+            result_one.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        )
 
         snapshot.assert_match(sanitize_result_data(result_one.data))
 
@@ -109,7 +113,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql(
             graphql_context,
-            START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
             variables={
                 'executionParams': {
                     'selector': selector,

@@ -22,7 +22,6 @@ from .client.query import (
     EXECUTE_RUN_IN_PROCESS_MUTATION,
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_SCHEDULED_EXECUTION_MUTATION,
-    START_PIPELINE_EXECUTION_MUTATION,
 )
 from .implementation.context import DagsterGraphQLContext, InProcessRepositoryLocation
 from .schema import create_schema
@@ -135,7 +134,6 @@ def execute_query_against_remote(host, query, variables):
 
 
 PREDEFINED_QUERIES = {
-    'startPipelineExecution': START_PIPELINE_EXECUTION_MUTATION,
     'executeRunInProcess': EXECUTE_RUN_IN_PROCESS_MUTATION,
     'launchScheduledExecution': LAUNCH_SCHEDULED_EXECUTION_MUTATION,
     'executePlan': EXECUTE_PLAN_MUTATION,

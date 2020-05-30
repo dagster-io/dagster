@@ -440,13 +440,6 @@ class DauphinExecutionPlanOrError(dauphin.Union):
         )
 
 
-class DauphinStartPipelineRunSuccess(dauphin.ObjectType):
-    class Meta(object):
-        name = 'StartPipelineRunSuccess'
-
-    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
-
-
 class DauphinExecuteRunInProcessSuccess(dauphin.ObjectType):
     class Meta(object):
         name = 'ExecuteRunInProcessSuccess'
@@ -491,22 +484,8 @@ pipeline_execution_error_types = (
     DauphinPythonError,
 )
 
-start_pipeline_run_result_types = (DauphinStartPipelineRunSuccess,)
 
 launch_pipeline_run_result_types = (DauphinLaunchPipelineRunSuccess,)
-
-
-class DauphinStartPipelineExecution(dauphin.Interface):
-    class Meta(object):
-        name = 'DauphinStartPipelineExecution'
-
-    message = dauphin.String(required=True)
-
-
-class DauphinStartPipelineExecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartPipelineExecutionResult'
-        types = start_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinExecuteRunInProcessResult(dauphin.Union):

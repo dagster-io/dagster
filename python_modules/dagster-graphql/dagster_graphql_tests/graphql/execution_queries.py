@@ -138,10 +138,10 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
     }
 '''
 
-START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
-    fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
+LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
+    fragment launchPipelineExecutionResultFragment on LaunchPipelineExecutionResult {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -235,17 +235,17 @@ LAUNCH_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
     }
 '''
 
-START_PIPELINE_EXECUTION_QUERY = (
-    START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+LAUNCH_PIPELINE_EXECUTION_QUERY = (
+    LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
     $executionParams: ExecutionParams!
 ) {
-    startPipelineExecution(
+    launchPipelineExecution(
         executionParams: $executionParams
     ) {
-        ...startPipelineExecutionResultFragment
+        ...launchPipelineExecutionResultFragment
     }
 }
 '''
@@ -320,50 +320,7 @@ mutation (
 )
 
 
-START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
-mutation (
-    $executionParams: ExecutionParams!
-) {
-    startPipelineExecution(
-        executionParams: $executionParams
-    ) {
-        __typename
-        ... on StartPipelineRunSuccess {
-            run {
-                pipeline { ...on PipelineReference { name } }
-                tags {
-                    key
-                    value
-                }
-            }
-        }
-        ... on PipelineConfigValidationInvalid {
-            pipelineName
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-        ... on InvalidStepError {
-            invalidStepKey
-        }
-        ... on InvalidOutputError {
-            stepKey
-            invalidOutputName
-        }
-        ... on PythonError {
-            message
-            stack
-            cause {
-                message
-                stack
-            }
-        }
-    }
-}
-'''
-
-START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = '''
+LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = '''
 mutation (
     $executionParams: ExecutionParams!
 ) {
@@ -399,7 +356,50 @@ mutation (
     }
 }
 '''
-
+LAUNCH_PIPELINE_EXECUTION_SNAPSHOT_FRIENDLY = '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  launchPipelineExecution(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipelineName
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on LaunchPipelineRunSuccess {
+      run {
+        status
+        pipeline {
+          name
+        }
+        mode
+      }
+    }
+  }
+}
+'''
 SUBSCRIPTION_QUERY = (
     FRAGMENTS
     + '''

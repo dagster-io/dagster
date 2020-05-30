@@ -89,7 +89,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         response.raise_for_status()
         result = response.json()['data']['executeRunInProcess']
 
-        if result['__typename'] in ['StartPipelineRunSuccess', 'PipelineConfigValidationInvalid']:
+        if result['__typename'] in ['LaunchPipelineRunSuccess', 'PipelineConfigValidationInvalid']:
             return instance.get_run_by_id(run.run_id)
 
         raise DagsterLaunchFailedError(

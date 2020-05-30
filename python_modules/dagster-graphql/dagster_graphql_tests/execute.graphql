@@ -1,7 +1,7 @@
 mutation($executionParams: ExecutionParams!) {
-  startPipelineExecution(executionParams: $executionParams) {
+  launchPipelineExecution(executionParams: $executionParams) {
     __typename
-    ... on StartPipelineRunSuccess {
+    ... on LaunchPipelineRunSuccess {
       run {
         runId
         pipeline {

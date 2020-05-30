@@ -6,7 +6,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipel
 from dagster import execute_pipeline
 from dagster.utils import safe_tempfile_path
 
-from .execution_queries import START_PIPELINE_EXECUTION_QUERY
+from .execution_queries import LAUNCH_PIPELINE_EXECUTION_QUERY
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_CANCELLATION_QUERY = '''
@@ -42,7 +42,7 @@ class TestRunVariantTermination(
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
                         'selector': selector,
@@ -56,8 +56,10 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-            run_id = result.data['startPipelineExecution']['run']['runId']
+            assert (
+                result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+            )
+            run_id = result.data['launchPipelineExecution']['run']['runId']
 
             assert run_id
 
@@ -87,7 +89,7 @@ class TestRunVariantTermination(
             graphql_context.instance.run_launcher.terminate = lambda _run_id: False
             result = execute_dagster_graphql(
                 graphql_context,
-                START_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_QUERY,
                 variables={
                     'executionParams': {
                         'selector': selector,
@@ -101,8 +103,10 @@ class TestRunVariantTermination(
             assert result.data
 
             # just test existence
-            assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-            run_id = result.data['startPipelineExecution']['run']['runId']
+            assert (
+                result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+            )
+            run_id = result.data['launchPipelineExecution']['run']['runId']
             # ensure the execution has happened
             while not os.path.exists(path):
                 time.sleep(0.1)

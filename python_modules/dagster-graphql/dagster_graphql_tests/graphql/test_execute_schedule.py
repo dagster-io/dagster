@@ -44,7 +44,7 @@ SCHEDULE_TICKS_QUERY = '''
 
 def assert_launch_scheduled_execution_success(result):
     assert result.data['launchScheduledExecution']['__typename'] in {
-        'StartPipelineRunSuccess',
+        'LaunchPipelineRunSuccess',
         'LaunchPipelineRunSuccess',
     }
 

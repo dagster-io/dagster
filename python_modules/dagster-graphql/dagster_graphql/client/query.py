@@ -165,50 +165,6 @@ fragment messageEventFragment on MessageEvent {
 )
 
 
-START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
-fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
-	__typename
-	... on InvalidStepError {
-		invalidStepKey
-	}
-	... on InvalidOutputError {
-		stepKey
-		invalidOutputName
-	}
-	... on PipelineConfigValidationInvalid {
-    pipelineName
-		errors {
-			__typename
-			message
-			path
-			reason
-		}
-	}
-	... on PipelineNotFoundError {
-		message
-		pipelineName
-	}
-  ... on PythonError {
-    message
-    stack
-  }
-	... on StartPipelineRunSuccess {
-		run {
-			runId
-			status
-			pipeline {
-				name
-			}
-			runConfigYaml
-			mode
-		}
-	}
-  ... on PipelineRunConflict {
-    message
-  }
-}
-'''
-
 EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT = '''
 fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 	__typename
@@ -249,21 +205,6 @@ fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 	}
 }
 '''
-
-START_PIPELINE_EXECUTION_MUTATION = (
-    '''
-mutation(
-  $executionParams: ExecutionParams!
-) {
-  startPipelineExecution(
-    executionParams: $executionParams,
-  ) {
-    ...startPipelineExecutionResultFragment
-  }
-}
-'''
-    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
-)
 
 EXECUTE_RUN_IN_PROCESS_MUTATION = (
     '''
@@ -497,6 +438,7 @@ mutation(
   }
 }
 '''
+
 
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = '''
 mutation(

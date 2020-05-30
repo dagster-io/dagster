@@ -8,7 +8,6 @@ from dagster_graphql.implementation.execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
     launch_scheduled_execution,
-    start_pipeline_execution,
     terminate_pipeline_execution,
 )
 from dagster_graphql.implementation.execution.execute_run_in_process import (
@@ -351,26 +350,6 @@ class DauphinLaunchScheduledExecutionMutation(dauphin.Mutation):
         return launch_scheduled_execution(graphene_info, schedule_name=scheduleName)
 
 
-class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
-    class Meta(object):
-        name = 'StartPipelineExecutionMutation'
-        description = (
-            'Execute a pipeline run in the python environment '
-            'dagit/dagster-graphql is currently operating in.'
-        )
-
-    class Arguments(object):
-        executionParams = dauphin.NonNull('ExecutionParams')
-
-    Output = dauphin.NonNull('StartPipelineExecutionResult')
-
-    def mutate(self, graphene_info, **kwargs):
-        return start_pipeline_execution(
-            graphene_info,
-            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
-        )
-
-
 class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
     class Meta(object):
         name = 'StartPipelineExecutionForCreatedRunMutation'
@@ -581,7 +560,6 @@ class DauphinMutation(dauphin.ObjectType):
     class Meta(object):
         name = 'Mutation'
 
-    start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     launch_scheduled_execution = DauphinLaunchScheduledExecutionMutation.Field()
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     launch_pipeline_reexecution = DauphinLaunchPipelineReexecutionMutation.Field()
