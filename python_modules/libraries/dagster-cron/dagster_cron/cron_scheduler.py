@@ -217,7 +217,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
             export RUN_DATE=$(date "+%Y%m%dT%H%M%S")
 
-            {dagster_graphql_path} -p startScheduledExecution -v '{variables}' -y "{repo_path}" --output "{result_file}"
+            {dagster_graphql_path} -p launchScheduledExecution -v '{variables}' -y "{repo_path}" --output "{result_file}"
         '''.format(
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,

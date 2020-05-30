@@ -280,11 +280,11 @@ mutation(
     + START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
 )
 
-START_SCHEDULED_EXECUTION_MUTATION = '''
+LAUNCH_SCHEDULED_EXECUTION_MUTATION = '''
 mutation(
   $scheduleName: String!
 ) {
-  startScheduledExecution(
+  launchScheduledExecution(
     scheduleName: $scheduleName,
   ) {
     __typename

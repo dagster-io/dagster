@@ -284,15 +284,14 @@ mutation (
 '''
 )
 
-START_SCHEDULED_EXECUTION_QUERY = (
-    START_PIPELINE_EXECUTION_RESULT_FRAGMENT
-    + LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
+LAUNCH_SCHEDULED_EXECUTION_QUERY = (
+    LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
     $scheduleName: String!
 ) {
-    startScheduledExecution(
+    launchScheduledExecution(
         scheduleName: $scheduleName
     ) {
         ...on ScheduleNotFoundError {
@@ -314,7 +313,6 @@ mutation (
                 stack
             }
         }
-        ...startPipelineExecutionResultFragment
         ...launchPipelineExecutionResultFragment
     }
 }

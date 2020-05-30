@@ -29,7 +29,7 @@ from .launch_execution import do_launch_for_created_run
 
 
 @capture_dauphin_error
-def start_scheduled_execution(graphene_info, schedule_name):
+def launch_scheduled_execution(graphene_info, schedule_name):
     '''
     When a scheduler ticks and needs to run for a given schedule, it issues a
     START_SCHEDULED_EXECUTION mutation with just the schedule name. The mutation is

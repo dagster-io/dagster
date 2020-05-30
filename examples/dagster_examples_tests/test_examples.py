@@ -3,7 +3,7 @@ from __future__ import print_function
 import sys
 
 from click.testing import CliRunner
-from dagster_graphql.client.query import START_SCHEDULED_EXECUTION_MUTATION
+from dagster_graphql.client.query import LAUNCH_SCHEDULED_EXECUTION_MUTATION
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
@@ -61,12 +61,12 @@ def test_schedules():
         ]:
             result = execute_dagster_graphql(
                 context,
-                START_SCHEDULED_EXECUTION_MUTATION,
+                LAUNCH_SCHEDULED_EXECUTION_MUTATION,
                 variables={'scheduleName': schedule_name},
             )
 
             assert not result.errors
             assert result.data
             assert (
-                result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+                result.data['launchScheduledExecution']['__typename'] == 'LaunchPipelineRunSuccess'
             )

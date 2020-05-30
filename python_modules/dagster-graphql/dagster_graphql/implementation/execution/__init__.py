@@ -41,7 +41,7 @@ from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
-from .scheduled_execution import start_scheduled_execution
+from .scheduled_execution import launch_scheduled_execution
 from .start_execution import start_pipeline_execution
 
 

@@ -525,9 +525,9 @@ class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
     message = dauphin.NonNull(dauphin.String)
 
 
-class DauphinStartScheduledExecutionResult(dauphin.Union):
+class DauphinLaunchScheduledExecutionResult(dauphin.Union):
     class Meta(object):
-        name = 'StartScheduledExecutionResult'
+        name = 'LaunchScheduledExecutionResult'
         types = (
             (
                 DauphinScheduleNotFoundError,
