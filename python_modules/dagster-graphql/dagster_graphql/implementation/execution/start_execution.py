@@ -16,11 +16,6 @@ from .launch_execution import do_launch
 
 
 @capture_dauphin_error
-def start_pipeline_reexecution(graphene_info, execution_params):
-    return _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=True)
-
-
-@capture_dauphin_error
 def start_pipeline_execution(graphene_info, execution_params):
     '''This indirection done on purpose to make the logic in the function
     below re-usable. The parent function is wrapped in @capture_dauphin_error, which makes it

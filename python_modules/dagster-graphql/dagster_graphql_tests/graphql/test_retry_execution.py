@@ -14,10 +14,10 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
 from .execution_queries import (
+    LAUNCH_PIPELINE_REEXECUTION_QUERY,
     PIPELINE_REEXECUTION_INFO_QUERY,
     START_PIPELINE_EXECUTION_QUERY,
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
-    START_PIPELINE_REEXECUTION_QUERY,
     START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
 from .graphql_context_test_suite import (
@@ -145,7 +145,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -160,7 +160,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_one.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_one.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             'pipelineRunLogs'
         ]['messages']
@@ -172,7 +172,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -187,7 +187,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_two.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_two.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             'pipelineRunLogs'
         ]['messages']
@@ -200,7 +200,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_three = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -215,7 +215,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_three.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_three.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             'pipelineRunLogs'
         ]['messages']
@@ -250,7 +250,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -264,7 +264,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 }
             },
         )
-        run_id = retry_one.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_one.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
             'messages'
         ]
@@ -294,7 +294,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': get_retry_multi_execution_params(
                     context, should_fail=True, retry_id=run_id
@@ -302,7 +302,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_one.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_one.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
             'messages'
         ]
@@ -315,7 +315,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': get_retry_multi_execution_params(
                     context, should_fail=False, retry_id=run_id
@@ -323,7 +323,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        run_id = retry_two.data['startPipelineReexecution']['run']['runId']
+        run_id = retry_two.data['launchPipelineReexecution']['run']['runId']
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)['pipelineRunLogs'][
             'messages'
         ]
@@ -397,8 +397,8 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        query_result = result_two.data['startPipelineReexecution']
-        assert query_result['__typename'] == 'StartPipelineRunSuccess'
+        query_result = result_two.data['launchPipelineReexecution']
+        assert query_result['__typename'] == 'LaunchPipelineRunSuccess'
 
         result = get_all_logs_for_finished_run_via_subscription(graphql_context, new_run_id)
         logs = result['pipelineRunLogs']['messages']
@@ -522,7 +522,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        query_result = result_two.data['startPipelineReexecution']
+        query_result = result_two.data['launchPipelineReexecution']
         assert query_result['__typename'] == 'InvalidStepError'
         assert query_result['invalidStepKey'] == 'nope'
 
@@ -548,7 +548,7 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
 
     retry_one = execute_dagster_graphql_and_finish_runs(
         graphql_context,
-        START_PIPELINE_REEXECUTION_QUERY,
+        LAUNCH_PIPELINE_REEXECUTION_QUERY,
         variables={
             'executionParams': {
                 'mode': 'default',
@@ -578,10 +578,10 @@ class TestRetryExecutionSyncOnlyBehavior(
         retry_one = _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id)
         assert not retry_one.errors
         assert retry_one.data
-        assert retry_one.data['startPipelineReexecution']['__typename'] == 'PythonError'
+        assert retry_one.data['launchPipelineReexecution']['__typename'] == 'PythonError'
         assert (
             'Cannot perform reexecution with non persistent intermediates manager'
-            in retry_one.data['startPipelineReexecution']['message']
+            in retry_one.data['launchPipelineReexecution']['message']
         )
 
 
@@ -599,11 +599,6 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         assert reexecution_run.is_failure
 
-    # class TestRetryExecutionRequiresAsyncRunLauncher(
-    #     make_graphql_context_test_suite(
-    #         context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack(),]
-    #     )
-    # ):
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
         selector = get_legacy_pipeline_selector(
@@ -653,7 +648,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            START_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
             variables={
                 'executionParams': {
                     'mode': 'default',

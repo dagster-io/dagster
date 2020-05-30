@@ -207,10 +207,10 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
     }
 '''
 
-START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
-    fragment startPipelineReexecutionResultFragment on StartPipelineReexecutionResult {
+LAUNCH_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
+    fragment launchPipelineReexecutionResultFragment on LaunchPipelineReexecutionResult {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -271,17 +271,17 @@ mutation (
 )
 
 
-START_PIPELINE_REEXECUTION_QUERY = (
-    START_PIPELINE_REEXECUTION_RESULT_FRAGMENT
+LAUNCH_PIPELINE_REEXECUTION_QUERY = (
+    LAUNCH_PIPELINE_REEXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
     $executionParams: ExecutionParams!
 ) {
-    startPipelineReexecution(
+    launchPipelineReexecution(
         executionParams: $executionParams
     ) {
-        ...startPipelineReexecutionResultFragment
+        ...launchPipelineReexecutionResultFragment
     }
 }
 '''
@@ -372,11 +372,11 @@ START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = '''
 mutation (
     $executionParams: ExecutionParams!
 ) {
-    startPipelineReexecution(
+    launchPipelineReexecution(
         executionParams: $executionParams
     ) {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 pipeline { ...on PipelineReference { name } }
                 tags {

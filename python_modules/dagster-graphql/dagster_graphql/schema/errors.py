@@ -575,12 +575,6 @@ class DauphinExecutePlanResult(dauphin.Union):
         )
 
 
-class DauphinStartPipelineReexecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartPipelineReexecutionResult'
-        types = start_pipeline_run_result_types + pipeline_execution_error_types
-
-
 class DauphinLaunchPipelineReexecutionResult(dauphin.Union):
     class Meta(object):
         name = 'LaunchPipelineReexecutionResult'

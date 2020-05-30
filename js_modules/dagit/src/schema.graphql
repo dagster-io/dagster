@@ -555,7 +555,6 @@ type Mutation {
   startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
-  startPipelineReexecution(executionParams: ExecutionParams!): StartPipelineReexecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): ScheduleMutationResult!
@@ -1173,8 +1172,6 @@ type SolidInvocationSite {
 union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
 
 union StartPipelineExecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-union StartPipelineReexecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 type StartPipelineRunSuccess {
   run: PipelineRun!

@@ -79,8 +79,8 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        query_result = result_two.data['startPipelineReexecution']
-        assert query_result['__typename'] == 'StartPipelineRunSuccess'
+        query_result = result_two.data['launchPipelineReexecution']
+        assert query_result['__typename'] == 'LaunchPipelineRunSuccess'
         assert query_result['run']['rootRunId'] == run_id
         assert query_result['run']['parentRunId'] == run_id
 
@@ -124,8 +124,8 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        query_result = result_two.data['startPipelineReexecution']
-        assert query_result['__typename'] == 'StartPipelineRunSuccess'
+        query_result = result_two.data['launchPipelineReexecution']
+        assert query_result['__typename'] == 'LaunchPipelineRunSuccess'
         assert query_result['run']['rootRunId'] == run_id
         assert query_result['run']['parentRunId'] == run_id
 
