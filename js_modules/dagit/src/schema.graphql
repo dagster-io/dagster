@@ -454,9 +454,9 @@ interface ISolidDefinition {
   requiredResources: [ResourceRequirement!]!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -552,16 +552,16 @@ type ModeNotFoundError implements Error {
 
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
-  startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
-  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): ScheduleMutationResult!
   stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
   reloadDagit: Boolean!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
+  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
+  startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -1019,10 +1019,6 @@ type RunLauncher {
   name: String!
 }
 
-type RunLauncherNotDefinedError implements Error {
-  message: String!
-}
-
 type RunningSchedule {
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
@@ -1177,7 +1173,7 @@ type StartPipelineRunSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineRunSuccess | LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 interface StepEvent {
   step: ExecutionStep

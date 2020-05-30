@@ -274,6 +274,9 @@ def test_start_scheduled_execution_predefined():
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
 
+        if 'data' not in result_data:
+            raise Exception(result_data)
+
         assert (
             result_data['data']['startScheduledExecution']['__typename']
             == 'LaunchPipelineRunSuccess'

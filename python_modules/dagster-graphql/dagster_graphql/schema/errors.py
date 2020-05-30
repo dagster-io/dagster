@@ -184,16 +184,6 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
         )
 
 
-class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
-    class Meta(object):
-        name = 'RunLauncherNotDefinedError'
-        interfaces = (DauphinError,)
-
-    def __init__(self):
-        super(DauphinRunLauncherNotDefinedError, self).__init__()
-        self.message = 'RunLauncher is not defined for the current instance.'
-
-
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineConfigValidationValid'
@@ -496,10 +486,7 @@ pipeline_execution_error_types = (
 
 start_pipeline_run_result_types = (DauphinStartPipelineRunSuccess,)
 
-launch_pipeline_run_result_types = (
-    DauphinLaunchPipelineRunSuccess,
-    DauphinRunLauncherNotDefinedError,
-)
+launch_pipeline_run_result_types = (DauphinLaunchPipelineRunSuccess,)
 
 
 class DauphinStartPipelineExecution(dauphin.Interface):
@@ -547,7 +534,6 @@ class DauphinStartScheduledExecutionResult(dauphin.Union):
                 DauphinSchedulerNotDefinedError,
                 DauphinScheduledExecutionBlocked,
             )
-            + start_pipeline_run_result_types
             + launch_pipeline_run_result_types
             + pipeline_execution_error_types
         )

@@ -53,12 +53,6 @@ def do_launch(graphene_info, execution_params, is_reexecuted=False):
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
     instance = graphene_info.context.instance
-    run_launcher = instance.run_launcher
-
-    if run_launcher is None:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('RunLauncherNotDefinedError')()
-        )
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
 

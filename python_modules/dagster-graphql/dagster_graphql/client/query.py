@@ -326,18 +326,6 @@ mutation(
         stack
       }
     }
-    ... on StartPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-      }
-    }
-    ... on RunLauncherNotDefinedError {
-      message
-    }
     ... on LaunchPipelineRunSuccess {
       run {
         runId
@@ -471,9 +459,6 @@ mutation(
     executionParams: $executionParams,
   ) {
     __typename
-    ... on RunLauncherNotDefinedError {
-      message
-    }
     ... on InvalidStepError {
       invalidStepKey
     }
@@ -521,9 +506,6 @@ mutation(
     executionParams: $executionParams,
   ) {
     __typename
-    ... on RunLauncherNotDefinedError {
-      message
-    }
     ... on InvalidStepError {
       invalidStepKey
     }

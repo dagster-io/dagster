@@ -582,18 +582,26 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
-    start_pipeline_execution_for_created_run = (
-        DauphinStartPipelineExecutionForCreatedRunMutation.Field()
-    )
     start_scheduled_execution = DauphinStartScheduledExecutionMutation.Field()
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     launch_pipeline_reexecution = DauphinLaunchPipelineReexecutionMutation.Field()
-    execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     reload_dagit = DauphinReloadDagit.Field()
     terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
+
+    # These below are never invoked by tools such as a dagit. They are in the
+    # graphql layer because it was a convenient, pre-existing IPC layer.
+    # so that components like run launchers and integrations with systems
+    # like airflow could invoke runs and subplans across a process boundary.
+    # They will eventually move to our "cli api" or its successor (possibly
+    # grpc).
+
+    execute_plan = DauphinExecutePlan.Field()
+    start_pipeline_execution_for_created_run = (
+        DauphinStartPipelineExecutionForCreatedRunMutation.Field()
+    )
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)

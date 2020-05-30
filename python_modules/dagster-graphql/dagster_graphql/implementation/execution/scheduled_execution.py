@@ -26,7 +26,6 @@ from ..external import legacy_get_external_pipeline_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
 from ..utils import PipelineSelector, capture_dauphin_error
 from .launch_execution import do_launch_for_created_run
-from .start_execution import _synchronously_execute_run_within_hosted_user_process
 
 
 @capture_dauphin_error
@@ -198,13 +197,6 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
                 error.message, pipeline_run, EngineEventData.engine_error(error)
             )
 
-    # Launch run if run launcher is defined
-    run_launcher = graphene_info.context.instance.run_launcher
-    if run_launcher:
-        result = do_launch_for_created_run(graphene_info, pipeline_run.run_id)
-    else:
-        result = _synchronously_execute_run_within_hosted_user_process(
-            graphene_info, pipeline_run.run_id
-        )
+    result = do_launch_for_created_run(graphene_info, pipeline_run.run_id)
 
     return pipeline_run, result

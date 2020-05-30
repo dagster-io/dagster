@@ -93,9 +93,6 @@ fragment stepEventFragment on StepEvent {
 LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
     fragment launchPipelineExecutionResultFragment on LaunchPipelineExecutionResult {
         __typename
-        ... on RunLauncherNotDefinedError {
-            message
-        }
         ... on InvalidStepError {
             invalidStepKey
         }
