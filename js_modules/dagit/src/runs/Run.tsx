@@ -13,10 +13,9 @@ import LogsToolbar from "./LogsToolbar";
 import {
   handleReexecutionResult,
   getReexecutionVariables,
-  START_PIPELINE_REEXECUTION_MUTATION,
   LAUNCH_PIPELINE_REEXECUTION_MUTATION
 } from "./RunUtils";
-import { StartPipelineReexecutionVariables } from "./types/StartPipelineReexecution";
+import { LaunchPipelineReexecutionVariables } from "./types/LaunchPipelineReexecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import { RunContext } from "./RunContext";
 
@@ -216,7 +215,7 @@ interface ReexecuteWithDataProps {
     resumeRetry?: boolean;
     repositoryLocationName?: string;
     repositoryName?: string;
-  }) => StartPipelineReexecutionVariables | undefined;
+  }) => LaunchPipelineReexecutionVariables | undefined;
 }
 
 const ReexecuteWithData = ({
@@ -233,7 +232,7 @@ const ReexecuteWithData = ({
   getReexecutionVariables
 }: ReexecuteWithDataProps) => {
   const [startPipelineReexecution] = useMutation(
-    START_PIPELINE_REEXECUTION_MUTATION
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const [launchPipelineReexecution] = useMutation(
     LAUNCH_PIPELINE_REEXECUTION_MUTATION

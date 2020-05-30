@@ -3,9 +3,7 @@ import * as yaml from "yaml";
 
 import { Colors, Spinner } from "@blueprintjs/core";
 
-import { StartPipelineExecution } from "./types/StartPipelineExecution";
 import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
-import { StartPipelineReexecution } from "./types/StartPipelineReexecution";
 import { LaunchPipelineReexecution } from "./types/LaunchPipelineReexecution";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -69,7 +67,7 @@ export const RUN_STATUS_HOVER_COLORS = {
 export function handleExecutionResult(
   pipelineName: string,
   result: void | {
-    data?: StartPipelineExecution | LaunchPipelineExecution;
+    data?: LaunchPipelineExecution;
   },
   opts: { openInNewWindow: boolean }
 ) {
@@ -78,14 +76,9 @@ export function handleExecutionResult(
     return;
   }
 
-  const obj = (result.data as StartPipelineExecution).startPipelineExecution
-    ? (result.data as StartPipelineExecution).startPipelineExecution
-    : (result.data as LaunchPipelineExecution).launchPipelineExecution;
+  const obj = (result.data as LaunchPipelineExecution).launchPipelineExecution;
 
-  if (
-    obj.__typename === "LaunchPipelineRunSuccess" ||
-    obj.__typename === "StartPipelineRunSuccess"
-  ) {
+  if (obj.__typename === "LaunchPipelineRunSuccess") {
     const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
@@ -112,7 +105,7 @@ export function handleExecutionResult(
 export function handleReexecutionResult(
   pipelineName: string,
   result: void | {
-    data?: StartPipelineReexecution | LaunchPipelineReexecution;
+    data?: LaunchPipelineReexecution;
   },
   opts: { openInNewWindow: boolean }
 ) {
@@ -121,14 +114,10 @@ export function handleReexecutionResult(
     return;
   }
 
-  const obj = (result.data as StartPipelineReexecution).startPipelineReexecution
-    ? (result.data as StartPipelineReexecution).startPipelineReexecution
-    : (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
+  const obj = (result.data as LaunchPipelineReexecution)
+    .launchPipelineReexecution;
 
-  if (
-    obj.__typename === "LaunchPipelineRunSuccess" ||
-    obj.__typename === "StartPipelineRunSuccess"
-  ) {
+  if (obj.__typename === "LaunchPipelineRunSuccess") {
     const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
@@ -313,38 +302,6 @@ const RunStatusDot = styled.div<{ status: IRunStatus; square?: boolean }>`
   }
 `;
 
-export const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
-      __typename
-      ... on StartPipelineRunSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-          tags {
-            key
-            value
-          }
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
-  }
-`;
-
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
@@ -407,40 +364,6 @@ export const CANCEL_MUTATION = gql`
   }
 `;
 
-export const START_PIPELINE_REEXECUTION_MUTATION = gql`
-  mutation StartPipelineReexecution($executionParams: ExecutionParams!) {
-    startPipelineReexecution(executionParams: $executionParams) {
-      __typename
-      ... on StartPipelineRunSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-          tags {
-            key
-            value
-          }
-          rootRunId
-          parentRunId
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
-  }
-`;
-
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
     launchPipelineReexecution(executionParams: $executionParams) {
@@ -478,7 +401,7 @@ export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;
   refetchQueries: { query: DocumentNode; variables: any }[];
 }> = ({ run, refetchQueries }) => {
-  const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
+  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, { refetchQueries });
   const [destroy] = useMutation(DELETE_MUTATION, { refetchQueries });
   const { repositoryLocation, repository } = React.useContext(

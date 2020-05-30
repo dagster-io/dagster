@@ -15,10 +15,8 @@ import { useStorage, ExecutionType } from "../LocalStorage";
 import ExecutionStartButton, { ExecutionButton } from "./ExecutionStartButton";
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  START_PIPELINE_EXECUTION_MUTATION,
   handleExecutionResult
 } from "../runs/RunUtils";
-import { StartPipelineExecutionVariables } from "../runs/types/StartPipelineExecution";
 import { LaunchPipelineExecutionVariables } from "../runs/types/LaunchPipelineExecution";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -35,16 +33,13 @@ const RUN_LAUNCHER_QUERY = gql`
 
 interface PipelineExecutionButtonGroupProps {
   disabled?: boolean;
-  getVariables: () =>
-    | undefined
-    | StartPipelineExecutionVariables
-    | LaunchPipelineExecutionVariables;
+  getVariables: () => undefined | LaunchPipelineExecutionVariables;
   pipelineName: string;
 }
 
 export const PipelineExecutionButtonGroup: React.FunctionComponent<PipelineExecutionButtonGroupProps> = props => {
   const [startPipelineExecution] = useMutation(
-    START_PIPELINE_EXECUTION_MUTATION
+    LAUNCH_PIPELINE_EXECUTION_MUTATION
   );
   const [launchPipelineExecution] = useMutation(
     LAUNCH_PIPELINE_EXECUTION_MUTATION
