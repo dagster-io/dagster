@@ -21,12 +21,7 @@ from ..external import (
     legacy_get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
-from ..utils import (
-    ExecutionMetadata,
-    ExecutionParams,
-    UserFacingGraphQLError,
-    capture_dauphin_error,
-)
+from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
 
 
 @capture_dauphin_error
@@ -112,9 +107,7 @@ def do_launch_for_created_run(graphene_info, run_id):
     instance = graphene_info.context.instance
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
-        )
+        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
     external_pipeline = legacy_get_external_pipeline_or_raise(
         graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
