@@ -9,8 +9,8 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // GraphQL mutation operation: StartPipelineReexecution
 // ====================================================
 
-export interface StartPipelineReexecution_startPipelineReexecution_StartPipelineRunDisabledError {
-  __typename: "StartPipelineRunDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
+export interface StartPipelineReexecution_startPipelineReexecution_InvalidStepError {
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface StartPipelineReexecution_startPipelineReexecution_StartPipelineRunSuccess_run_pipeline {
@@ -59,7 +59,7 @@ export interface StartPipelineReexecution_startPipelineReexecution_PythonError {
   stack: string[];
 }
 
-export type StartPipelineReexecution_startPipelineReexecution = StartPipelineReexecution_startPipelineReexecution_StartPipelineRunDisabledError | StartPipelineReexecution_startPipelineReexecution_StartPipelineRunSuccess | StartPipelineReexecution_startPipelineReexecution_PipelineNotFoundError | StartPipelineReexecution_startPipelineReexecution_PipelineConfigValidationInvalid | StartPipelineReexecution_startPipelineReexecution_PythonError;
+export type StartPipelineReexecution_startPipelineReexecution = StartPipelineReexecution_startPipelineReexecution_InvalidStepError | StartPipelineReexecution_startPipelineReexecution_StartPipelineRunSuccess | StartPipelineReexecution_startPipelineReexecution_PipelineNotFoundError | StartPipelineReexecution_startPipelineReexecution_PipelineConfigValidationInvalid | StartPipelineReexecution_startPipelineReexecution_PythonError;
 
 export interface StartPipelineReexecution {
   startPipelineReexecution: StartPipelineReexecution_startPipelineReexecution;

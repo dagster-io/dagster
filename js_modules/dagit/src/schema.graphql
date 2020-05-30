@@ -1170,21 +1170,17 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
-union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
+union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
 
-union StartPipelineExecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union StartPipelineExecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
-union StartPipelineReexecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type StartPipelineRunDisabledError implements Error {
-  message: String!
-}
+union StartPipelineReexecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 type StartPipelineRunSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineRunSuccess | StartPipelineRunDisabledError | LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineRunSuccess | LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 interface StepEvent {
   step: ExecutionStep

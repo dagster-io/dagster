@@ -9,8 +9,8 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunDisabledError {
-  __typename: "StartPipelineRunDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
+export interface StartPipelineExecution_startPipelineExecution_InvalidStepError {
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_pipeline {
@@ -57,7 +57,7 @@ export interface StartPipelineExecution_startPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_StartPipelineRunDisabledError | StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid | StartPipelineExecution_startPipelineExecution_PythonError;
+export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_InvalidStepError | StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid | StartPipelineExecution_startPipelineExecution_PythonError;
 
 export interface StartPipelineExecution {
   startPipelineExecution: StartPipelineExecution_startPipelineExecution;

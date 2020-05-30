@@ -33,13 +33,8 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    instance = graphene_info.context.instance
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
-
     check.invariant(
-        instance.run_launcher,
+        graphene_info.context.instance.run_launcher,
         'Should always be true. '
         'The reign of the execution manager is over. The time of the run launcher has come.',
     )

@@ -13,14 +13,7 @@ from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
-from .graphql_context_test_suite import (
-    EnvironmentManagers,
-    ExecutingGraphQLContextTestMatrix,
-    GraphQLContextVariant,
-    MarkedManager,
-    Marks,
-    make_graphql_context_test_suite,
-)
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
 
@@ -408,42 +401,6 @@ def sqlite_instance_with_manager_disabled():
     with seven.TemporaryDirectory() as temp_dir:
         yield DagsterInstance.local_temp(
             tempdir=temp_dir, overrides={'dagit': {'execution_manager': {'disabled': True}}}
-        )
-
-
-class TestExecutePipelineManagerDisabled(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant(
-                marked_instance_mgr=MarkedManager(
-                    sqlite_instance_with_manager_disabled, [Marks.sqlite_instance]
-                ),
-                marked_environment_mgr=EnvironmentManagers.user_code_in_host_process(),
-                test_id='sqlite_instance_with_disabled_execution_manager',
-            )
-        ]
-    )
-):
-    def test_start_pipeline_execution_with_start_disabled(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
-        result = execute_dagster_graphql(
-            graphql_context,
-            START_PIPELINE_EXECUTION_QUERY,
-            variables={
-                'executionParams': {
-                    'selector': selector,
-                    'runConfigData': csv_hello_world_solids_config(),
-                    'executionMetadata': {
-                        'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]
-                    },
-                    'mode': 'default',
-                }
-            },
-        )
-
-        assert result.data
-        assert (
-            result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunDisabledError'
         )
 
 

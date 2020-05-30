@@ -96,10 +96,6 @@ export function handleExecutionResult(
     console.log(obj);
     const message = `${obj.message}`;
     showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineRunDisabledError") {
-    const message = `Your instance has been configured to disable local execution.  Please check
-    the run launcher configuration on your dagster instance for more options.`;
-    showCustomAlert({ body: message });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
 
@@ -142,10 +138,6 @@ export function handleReexecutionResult(
   } else if (obj.__typename === "PythonError") {
     console.log(obj);
     const message = `${obj.message}`;
-    showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineRunDisabledError") {
-    const message = `Your instance has been configured to disable local execution.  Please check
-    the run launcher configuration on your dagster instance for more options.`;
     showCustomAlert({ body: message });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
