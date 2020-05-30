@@ -154,12 +154,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job = construct_dagster_graphql_k8s_job(
             self.job_config,
-            args=[
-                '-p',
-                'startPipelineExecutionForCreatedRun',
-                '-v',
-                seven.json.dumps({'runId': run.run_id}),
-            ],
+            args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',

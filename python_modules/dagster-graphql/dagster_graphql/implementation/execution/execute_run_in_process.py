@@ -15,7 +15,6 @@ def execute_run_in_graphql_process(graphene_info, run_id):
 
 
 def _synchronously_execute_run_within_hosted_user_process(graphene_info, run_id):
-
     run_info_or_error = get_run_execution_info_for_created_run_or_error(graphene_info, run_id)
 
     if not isinstance(run_info_or_error, RunExecutionInfo):
@@ -25,7 +24,6 @@ def _synchronously_execute_run_within_hosted_user_process(graphene_info, run_id)
     external_pipeline, pipeline_run = run_info_or_error
     recon_pipeline = recon_pipeline_from_pipeline_handle(external_pipeline.handle)
     execute_run(recon_pipeline, pipeline_run, graphene_info.context.instance)
-
     return graphene_info.schema.type_named('ExecuteRunInProcessSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )

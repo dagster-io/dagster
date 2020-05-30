@@ -241,6 +241,12 @@ type ExecutePlanSuccess {
   rawEventRecords: [String!]!
 }
 
+union ExecuteRunInProcessResult = ExecuteRunInProcessSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
+
+type ExecuteRunInProcessSuccess {
+  run: PipelineRun!
+}
+
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
@@ -563,7 +569,7 @@ type Mutation {
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
+  executeRunInProcess(runId: String!): ExecuteRunInProcessResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -1166,8 +1172,6 @@ type SolidInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
 }
-
-union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
 
 union StartPipelineExecutionResult = StartPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 

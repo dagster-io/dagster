@@ -34,10 +34,7 @@ def test_k8s_run_launcher_default(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineRunSuccess'
-    )
+    assert result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
 
 
 @pytest.mark.integration
@@ -72,10 +69,7 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineRunSuccess'
-    )
+    assert result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
 
 
 @pytest.mark.integration
@@ -93,12 +87,10 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'PipelineConfigValidationInvalid'
-    )
-    assert len(result['data']['startPipelineExecutionForCreatedRun']['errors']) == 2
+    assert result['data']['executeRunInProcess']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert len(result['data']['executeRunInProcess']['errors']) == 2
 
-    assert set(
-        error['reason'] for error in result['data']['startPipelineExecutionForCreatedRun']['errors']
-    ) == {'FIELD_NOT_DEFINED', 'MISSING_REQUIRED_FIELD',}
+    assert set(error['reason'] for error in result['data']['executeRunInProcess']['errors']) == {
+        'FIELD_NOT_DEFINED',
+        'MISSING_REQUIRED_FIELD',
+    }

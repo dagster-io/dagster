@@ -209,8 +209,8 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 }
 '''
 
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
-fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
+EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT = '''
+fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 	__typename
 	... on InvalidStepError {
 		invalidStepKey
@@ -236,7 +236,7 @@ fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecu
     message
     stack
   }
-	... on StartPipelineRunSuccess {
+	... on ExecuteRunInProcessSuccess {
 		run {
 			runId
 			status
@@ -265,19 +265,19 @@ mutation(
     + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
 )
 
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION = (
+EXECUTE_RUN_IN_PROCESS_MUTATION = (
     '''
 mutation(
   $runId: String!
 ) {
-  startPipelineExecutionForCreatedRun(
+  executeRunInProcess(
     runId: $runId,
   ) {
-    ...startPipelineExecutionForCreatedRunResultFragment
+    ...executeRunInProcessResultFragment
   }
 }
 '''
-    + START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
+    + EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT
 )
 
 LAUNCH_SCHEDULED_EXECUTION_MUTATION = '''

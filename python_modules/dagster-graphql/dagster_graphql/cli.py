@@ -19,9 +19,9 @@ from dagster.utils.log import get_stack_trace_array
 
 from .client.query import (
     EXECUTE_PLAN_MUTATION,
+    EXECUTE_RUN_IN_PROCESS_MUTATION,
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_SCHEDULED_EXECUTION_MUTATION,
-    START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION,
     START_PIPELINE_EXECUTION_MUTATION,
 )
 from .implementation.context import DagsterGraphQLContext, InProcessRepositoryLocation
@@ -136,7 +136,7 @@ def execute_query_against_remote(host, query, variables):
 
 PREDEFINED_QUERIES = {
     'startPipelineExecution': START_PIPELINE_EXECUTION_MUTATION,
-    'startPipelineExecutionForCreatedRun': START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION,
+    'executeRunInProcess': EXECUTE_RUN_IN_PROCESS_MUTATION,
     'launchScheduledExecution': LAUNCH_SCHEDULED_EXECUTION_MUTATION,
     'executePlan': EXECUTE_PLAN_MUTATION,
     'launchPipelineExecution': LAUNCH_PIPELINE_EXECUTION_MUTATION,

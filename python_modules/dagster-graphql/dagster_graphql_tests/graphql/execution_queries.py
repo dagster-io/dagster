@@ -170,10 +170,10 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
 '''
 
 
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
-    fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
+EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT = '''
+    fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on ExecuteRunInProcessSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -251,17 +251,17 @@ mutation (
 '''
 )
 
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY = (
-    START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
+EXECUTE_RUN_IN_PROCESS_QUERY = (
+    EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT
     + '''
 
 mutation (
     $runId: String!
 ) {
-    startPipelineExecutionForCreatedRun(
+    executeRunInProcess(
         runId: $runId
     ) {
-        ...startPipelineExecutionForCreatedRunResultFragment
+        ...executeRunInProcessResultFragment
     }
 }
 '''

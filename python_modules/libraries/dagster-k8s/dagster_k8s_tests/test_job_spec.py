@@ -38,7 +38,7 @@ spec:
       containers:
       - args:
         - -p
-        - startPipelineExecutionForCreatedRun
+        - executeRunInProcess
         - -v
         - '{{"runId": "{run_id}"}}'
         command:
@@ -90,12 +90,7 @@ def test_valid_job_format(run_launcher):
     pod_name = 'dagster-run-%s' % run.run_id
     job = construct_dagster_graphql_k8s_job(
         run_launcher.job_config,
-        args=[
-            '-p',
-            'startPipelineExecutionForCreatedRun',
-            '-v',
-            seven.json.dumps({'runId': run.run_id}),
-        ],
+        args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
         job_name=job_name,
         pod_name=pod_name,
         component='runmaster',
@@ -131,10 +126,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineRunSuccess'
-    )
+    assert result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
 
 
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
@@ -151,12 +143,10 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'PipelineConfigValidationInvalid'
-    )
-    assert len(result['data']['startPipelineExecutionForCreatedRun']['errors']) == 2
+    assert result['data']['executeRunInProcess']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert len(result['data']['executeRunInProcess']['errors']) == 2
 
-    assert set(
-        error['reason'] for error in result['data']['startPipelineExecutionForCreatedRun']['errors']
-    ) == {'FIELD_NOT_DEFINED', 'MISSING_REQUIRED_FIELD',}
+    assert set(error['reason'] for error in result['data']['executeRunInProcess']['errors']) == {
+        'FIELD_NOT_DEFINED',
+        'MISSING_REQUIRED_FIELD',
+    }

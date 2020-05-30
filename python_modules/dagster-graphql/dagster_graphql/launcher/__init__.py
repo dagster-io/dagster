@@ -3,7 +3,7 @@ from future.standard_library import install_aliases  # isort:skip
 install_aliases()  # isort:skip
 
 import requests
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION
+from dagster_graphql.client.query import EXECUTE_RUN_IN_PROCESS_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
@@ -81,13 +81,13 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         response = requests.post(
             urljoin(self._address, '/graphql'),
             params={
-                'query': START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION,
+                'query': EXECUTE_RUN_IN_PROCESS_MUTATION,
                 'variables': seven.json.dumps(variables),
             },
             timeout=self._timeout,
         )
         response.raise_for_status()
-        result = response.json()['data']['startPipelineExecutionForCreatedRun']
+        result = response.json()['data']['executeRunInProcess']
 
         if result['__typename'] in ['StartPipelineRunSuccess', 'PipelineConfigValidationInvalid']:
             return instance.get_run_by_id(run.run_id)

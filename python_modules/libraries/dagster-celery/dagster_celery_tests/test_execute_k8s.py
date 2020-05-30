@@ -65,7 +65,4 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
 
     assert not result.get('errors')
     assert result['data']
-    assert (
-        result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineRunSuccess'
-    )
+    assert result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'

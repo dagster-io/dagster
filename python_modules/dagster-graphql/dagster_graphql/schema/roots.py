@@ -11,8 +11,8 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
     terminate_pipeline_execution,
 )
-from dagster_graphql.implementation.execution.start_execution import (
-    start_pipeline_execution_for_created_run,
+from dagster_graphql.implementation.execution.execute_run_in_process import (
+    execute_run_in_graphql_process,
 )
 from dagster_graphql.implementation.external import (
     fetch_repository_locations,
@@ -371,7 +371,7 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
         )
 
 
-class DauphinStartPipelineExecutionForCreatedRunMutation(dauphin.Mutation):
+class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
     class Meta(object):
         name = 'StartPipelineExecutionForCreatedRunMutation'
         description = (
@@ -382,10 +382,10 @@ class DauphinStartPipelineExecutionForCreatedRunMutation(dauphin.Mutation):
     class Arguments(object):
         run_id = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull('StartPipelineExecutionForCreatedRunResult')
+    Output = dauphin.NonNull('ExecuteRunInProcessResult')
 
     def mutate(self, graphene_info, run_id):
-        return start_pipeline_execution_for_created_run(graphene_info, run_id=run_id)
+        return execute_run_in_graphql_process(graphene_info, run_id=run_id)
 
 
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
@@ -599,9 +599,7 @@ class DauphinMutation(dauphin.ObjectType):
     # grpc).
 
     execute_plan = DauphinExecutePlan.Field()
-    start_pipeline_execution_for_created_run = (
-        DauphinStartPipelineExecutionForCreatedRunMutation.Field()
-    )
+    execute_run_in_process = DauphinExecuteRunInProcessMutation.Field()
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)

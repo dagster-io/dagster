@@ -447,6 +447,13 @@ class DauphinStartPipelineRunSuccess(dauphin.ObjectType):
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
+class DauphinExecuteRunInProcessSuccess(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ExecuteRunInProcessSuccess'
+
+    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
+
+
 class DauphinLaunchPipelineRunSuccess(dauphin.ObjectType):
     class Meta(object):
         name = 'LaunchPipelineRunSuccess'
@@ -502,11 +509,11 @@ class DauphinStartPipelineExecutionResult(dauphin.Union):
         types = start_pipeline_run_result_types + pipeline_execution_error_types
 
 
-class DauphinStartPipelineExecutionForCreatedRunResult(dauphin.Union):
+class DauphinExecuteRunInProcessResult(dauphin.Union):
     class Meta(object):
-        name = 'StartPipelineExecutionForCreatedRunResult'
+        name = 'ExecuteRunInProcessResult'
         types = (
-            start_pipeline_run_result_types
+            (DauphinExecuteRunInProcessSuccess,)
             + pipeline_execution_error_types
             + (DauphinPipelineRunNotFoundError,)
         )
