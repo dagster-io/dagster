@@ -118,7 +118,7 @@ class CeleryK8sJobConfig(
         load_incluster_config=False,
         kubeconfig_file=None,
     ):
-        from dagster_k8s.job import DagsterK8sJobConfig
+        from dagster_k8s import DagsterK8sJobConfig
 
         if load_incluster_config:
             check.invariant(

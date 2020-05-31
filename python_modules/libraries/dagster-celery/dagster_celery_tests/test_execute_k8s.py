@@ -35,12 +35,8 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
             'execution': {
                 'celery-k8s': {
                     'config': {
-                        'broker': {'env': 'DAGSTER_K8S_CELERY_BROKER'},
-                        'backend': {'env': 'DAGSTER_K8S_CELERY_BACKEND'},
                         'job_image': dagster_docker_image,
                         'job_namespace': helm_namespace,
-                        'instance_config_map': 'dagster-instance',
-                        'postgres_password_secret': 'dagster-postgresql-secret',
                         'image_pull_policy': 'Always',
                         'env_config_maps': ['dagster-pipeline-env'],
                     }
