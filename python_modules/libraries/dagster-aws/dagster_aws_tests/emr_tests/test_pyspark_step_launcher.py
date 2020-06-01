@@ -1,4 +1,4 @@
-from dagster_aws.emr.emr_pyspark_step_launcher import EmrPySparkStepLauncher
+from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher
 
 from dagster.seven import mock
 
@@ -9,7 +9,7 @@ EVENTS = [object(), object(), object()]
     'dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete', side_effect=[False, False, True]
 )
 @mock.patch(
-    'dagster_aws.emr.emr_pyspark_step_launcher.EmrPySparkStepLauncher.read_events',
+    'dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events',
     side_effect=[EVENTS[0:1], [], EVENTS[0:3]],
 )
 def test_wait_for_completion(_mock_is_emr_step_complete, _mock_read_events):

@@ -1,6 +1,6 @@
 '''Pipeline definitions for the airline_demo.
 '''
-from dagster_aws.emr.emr_pyspark_step_launcher import emr_pyspark_step_launcher
+from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_aws.s3 import (
     S3FileHandle,
     file_handle_to_s3,

@@ -4,7 +4,7 @@ import sys
 
 import pytest
 from dagster_aws.emr import EmrJobRunner
-from dagster_aws.emr.emr_pyspark_step_launcher import emr_pyspark_step_launcher
+from dagster_aws.emr.pyspark_step_launcher import emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
