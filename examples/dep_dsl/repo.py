@@ -58,5 +58,5 @@ def define_dep_dsl_pipeline():
 
 def define_repository():
     return RepositoryDefinition(
-        name="my_repository", pipeline_dict={'some_example': define_dep_dsl_pipeline}
+        name='my_repository', pipeline_dict={'some_example': define_dep_dsl_pipeline}
     )
