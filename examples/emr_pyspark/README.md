@@ -5,8 +5,8 @@ description: Example of running a PySpark solid in EMR
 
 # Submitting PySpark solids on EMR
 
-This example demonstrates how to have a solid run as a Spark step on an EMR cluster.  In it, the
-`hello` solid will be executed on EMR.
+This example demonstrates how to have a solid run as a Spark step on an EMR cluster.  In it, each
+of the three solids will be executed as a separate EMR step on the same EMR cluster.
 
 It accomplishes this by using the `emr_pyspark_step_launcher`, which knows how to launch an EMR step
 that runs the contents of a solid.  The example defines a mode that links the resource key
