@@ -16,6 +16,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
@@ -53,7 +54,7 @@ def synthesize_events(solids_fn, run_id=None):
         a_pipe, run_id=run_id, environment_dict={'loggers': {'callback': {}, 'console': {}}}
     )
 
-    result = execute_run(a_pipe, pipeline_run, instance)
+    result = execute_run(InMemoryExecutablePipeline(a_pipe), pipeline_run, instance)
 
     assert result.success
 

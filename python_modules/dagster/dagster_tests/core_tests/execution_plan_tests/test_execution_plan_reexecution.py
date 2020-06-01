@@ -9,6 +9,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -198,7 +199,9 @@ def test_pipeline_step_key_subset_execution():
         root_run_id=result.run_id,
     )
 
-    pipeline_reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
+    pipeline_reexecution_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+    )
 
     assert pipeline_reexecution_result.success
 

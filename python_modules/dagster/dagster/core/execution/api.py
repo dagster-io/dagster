@@ -91,7 +91,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (ExecutablePipeline): The pipeline to execute.
         pipeline_run (PipelineRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -100,14 +100,21 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
-    pipeline, pipeline_def = _check_pipeline(pipeline)
+    if isinstance(pipeline, PipelineDefinition):
+        raise DagsterInvariantViolationError(
+            'execute_run requires an ExecutablePipeline but received a PipelineDefinition '
+            'directly instead. To support hand-off to other processes provide a '
+            'ReconstructablePipeline which can be done using reconstructable(). For in '
+            'process only execution you can use InMemoryExecutablePipeline.'
+        )
 
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
+    pipeline_def = pipeline.get_definition()
     if pipeline_run.solid_subset:
-        pipeline_def = pipeline.get_definition()
         if isinstance(pipeline_def, PipelineSubsetForExecution):
             check.invariant(
                 len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
@@ -187,13 +194,13 @@ def execute_pipeline_iterator(
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (inlcuding names of solid invocations). For example:
+            selection queries (including names of solid invocations). For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
                 (downstream dependencies) within 3 levels down.
             - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -262,13 +269,13 @@ def execute_pipeline(
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
         solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (inlcuding names of solid invocations). For example:
+            selection queries (including names of solid invocations). For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
                 (downstream dependencies) within 3 levels down.
             - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
