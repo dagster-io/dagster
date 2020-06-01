@@ -155,7 +155,7 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
 DataFrame = PythonObjectDagsterType(
     python_type=NativeSparkDataFrame,
     name='PySparkDataFrame',
-    description='A Pyspark data frame.',
+    description='A PySpark data frame.',
     auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
     output_materialization_config=spark_df_output_schema,
 )

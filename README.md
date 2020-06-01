@@ -120,7 +120,7 @@ Dagster works with the tools and systems that you're already using with your dat
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987976-5ccc5700-7a3d-11e9-9fa5-1a51299b1ccb.png"></td>
 			<td style="border-left: 0px"> <b>Apache Spark</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-spark" />dagster-spark</a> &middot; <a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark" />dagster-pyspark</a>
-			<br />Libraries for interacting with Apache Spark and Pyspark.
+			<br />Libraries for interacting with Apache Spark and PySpark.
 			</td>
 		</tr>
 		<tr>
