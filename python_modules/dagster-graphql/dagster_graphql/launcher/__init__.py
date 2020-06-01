@@ -8,6 +8,7 @@ from requests import RequestException
 
 from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -74,9 +75,15 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             )
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         self.validate()
-        variables = {'runId': run.run_id}
+
+        variables = {
+            'repositoryLocationName': external_pipeline.handle.location_name,
+            'repositoryName': external_pipeline.handle.repository_name,
+            'runId': run.run_id,
+        }
         response = requests.post(
             urljoin(self._address, '/graphql'),
             params={

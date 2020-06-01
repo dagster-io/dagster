@@ -15,9 +15,10 @@ from dagster.utils.error import SerializableErrorInfo
 from ..external import (
     ensure_valid_config,
     get_external_execution_plan_or_raise,
-    legacy_get_external_pipeline_or_raise,
+    get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
+from ..utils import PipelineSelector
 
 
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
@@ -98,13 +99,17 @@ def create_possibly_invalid_run(
 RunExecutionInfo = namedtuple('_RunExecutionInfo', 'external_pipeline pipeline_run')
 
 
-def get_run_execution_info_for_created_run_or_error(graphene_info, run_id):
+def get_run_execution_info_for_created_run_or_error(
+    graphene_info, repository_location_name, repository_name, run_id
+):
     '''
     Previously created run could either be created in a different process *or*
     during the launchScheduledRun call where we want to have a record of
     a run the was created but have invalid configuration
     '''
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.str_param(repository_location_name, 'repository_location_name')
+    check.str_param(repository_name, 'repository_name')
     check.str_param(run_id, 'run_id')
 
     instance = graphene_info.context.instance
@@ -113,8 +118,14 @@ def get_run_execution_info_for_created_run_or_error(graphene_info, run_id):
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
-    external_pipeline = legacy_get_external_pipeline_or_raise(
-        graphene_info, pipeline_run.pipeline_name, pipeline_run.solid_subset
+    external_pipeline = get_external_pipeline_or_raise(
+        graphene_info,
+        PipelineSelector(
+            location_name=repository_location_name,
+            repository_name=repository_name,
+            pipeline_name=pipeline_run.pipeline_name,
+            solid_subset=pipeline_run.solid_subset,
+        ),
     )
 
     validated_config = validate_config_from_snap(

@@ -6,7 +6,10 @@ import sys
 
 import pytest
 from dagster_k8s_tests.utils import wait_for_job_and_get_logs
-from dagster_test.test_project import test_project_environments_path
+from dagster_test.test_project import (
+    get_test_project_external_pipeline,
+    test_project_environments_path,
+)
 
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import git_repository_root, merge_dicts
@@ -53,7 +56,7 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
         mode='default',
     )
 
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
 
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace

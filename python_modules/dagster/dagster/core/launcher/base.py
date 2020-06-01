@@ -5,7 +5,7 @@ import six
 
 class RunLauncher(six.with_metaclass(ABCMeta)):
     @abstractmethod
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         '''Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.

@@ -2,7 +2,10 @@ import os
 
 import pytest
 from dagster_k8s import get_celery_engine_config
-from dagster_test.test_project import test_project_environments_path
+from dagster_test.test_project import (
+    get_test_project_external_pipeline,
+    test_project_environments_path,
+)
 
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
@@ -26,7 +29,7 @@ def test_k8s_run_launcher_default(dagster_instance, helm_namespace):
         mode='default',
     )
 
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
 
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
@@ -62,7 +65,7 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
         mode='default',
     )
 
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
@@ -80,7 +83,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
         dagster_instance, pipeline_name=pipeline_name, environment_dict=environment_dict
     )
 
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )

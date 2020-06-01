@@ -3,6 +3,7 @@ import kubernetes
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -147,16 +148,28 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
 
         job = construct_dagster_graphql_k8s_job(
             self.job_config,
-            args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
+            args=[
+                '-p',
+                'executeRunInProcess',
+                '-v',
+                seven.json.dumps(
+                    {
+                        'runId': run.run_id,
+                        'repositoryName': external_pipeline.handle.repository_name,
+                        'repositoryLocationName': external_pipeline.handle.location_name,
+                    }
+                ),
+            ],
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',
@@ -309,7 +322,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         try:
             from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY
         except ImportError:
@@ -346,7 +359,18 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job = construct_dagster_graphql_k8s_job(
             job_config,
-            args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id})],
+            args=[
+                '-p',
+                'executeRunInProcess',
+                '-v',
+                seven.json.dumps(
+                    {
+                        'runId': run.run_id,
+                        'repositoryName': external_pipeline.handle.repository_name,
+                        'repositoryLocationName': external_pipeline.handle.location_name,
+                    }
+                ),
+            ],
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',

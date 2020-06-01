@@ -567,7 +567,7 @@ type Mutation {
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  executeRunInProcess(runId: String!): ExecuteRunInProcessResult!
+  executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {

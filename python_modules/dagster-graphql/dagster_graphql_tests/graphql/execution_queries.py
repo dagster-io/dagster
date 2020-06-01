@@ -256,9 +256,13 @@ EXECUTE_RUN_IN_PROCESS_QUERY = (
     + '''
 
 mutation (
+    $repositoryLocationName: String!
+    $repositoryName: String!
     $runId: String!
 ) {
     executeRunInProcess(
+        repositoryLocationName: $repositoryLocationName
+        repositoryName: $repositoryName
         runId: $runId
     ) {
         ...executeRunInProcessResultFragment

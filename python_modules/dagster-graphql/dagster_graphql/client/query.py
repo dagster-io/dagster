@@ -209,10 +209,14 @@ fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 EXECUTE_RUN_IN_PROCESS_MUTATION = (
     '''
 mutation(
+  $repositoryLocationName: String!
+  $repositoryName: String!
   $runId: String!
 ) {
   executeRunInProcess(
-    runId: $runId,
+    repositoryLocationName: $repositoryLocationName
+    repositoryName: $repositoryName
+    runId: $runId
   ) {
     ...executeRunInProcessResultFragment
   }

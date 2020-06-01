@@ -23,7 +23,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         recon_pipeline = recon_pipeline_from_pipeline_handle(external_pipeline.handle)
         execute_run(recon_pipeline, run, instance)

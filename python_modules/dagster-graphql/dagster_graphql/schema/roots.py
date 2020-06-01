@@ -343,7 +343,7 @@ class DauphinLaunchScheduledExecutionMutation(dauphin.Mutation):
 
 class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
     class Meta(object):
-        name = 'StartPipelineExecutionForCreatedRunMutation'
+        name = 'ExecuteRunInProcessMutation'
         description = (
             'Execute a pipeline run in the python environment '
             'dagit/dagster-graphql is currently operating in.'
@@ -351,11 +351,18 @@ class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
 
     class Arguments(object):
         run_id = dauphin.NonNull(dauphin.String)
+        repositoryName = dauphin.NonNull(dauphin.String)
+        repositoryLocationName = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('ExecuteRunInProcessResult')
 
-    def mutate(self, graphene_info, run_id):
-        return execute_run_in_graphql_process(graphene_info, run_id=run_id)
+    def mutate(self, graphene_info, run_id, repositoryLocationName, repositoryName):
+        return execute_run_in_graphql_process(
+            graphene_info,
+            repository_location_name=repositoryLocationName,
+            repository_name=repositoryName,
+            run_id=run_id,
+        )
 
 
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):

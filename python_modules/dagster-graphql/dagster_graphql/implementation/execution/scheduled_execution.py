@@ -166,7 +166,10 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
             )
 
     run_info_or_error = get_run_execution_info_for_created_run_or_error(
-        graphene_info, possibly_invalid_pipeline_run.run_id
+        graphene_info,
+        run_id=possibly_invalid_pipeline_run.run_id,
+        repository_location_name=external_pipeline.handle.location_name,
+        repository_name=external_pipeline.handle.repository_name,
     )
 
     if not isinstance(run_info_or_error, RunExecutionInfo):

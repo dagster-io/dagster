@@ -836,7 +836,7 @@ class DagsterInstance:
 
     # Run launcher
 
-    def launch_run(self, run_id, external_pipeline=None):
+    def launch_run(self, run_id, external_pipeline):
         '''Launch a pipeline run.
 
         This method delegates to the ``RunLauncher``, if any, configured on the instance, and will

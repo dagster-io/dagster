@@ -15,7 +15,7 @@ from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_
 from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
 from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -393,7 +393,16 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         tags=run_tags,
     )
 
-    return instance.launch_run(pipeline_run.run_id)
+    recon_repo = pipeline.get_reconstructable_repository()
+
+    repo_location = InProcessRepositoryLocation(recon_repo)
+    external_pipeline = (
+        repo_location.get_repository(recon_repo.get_definition().name).get_full_external_pipeline(
+            pipeline.get_definition().name
+        ),
+    )
+
+    return instance.launch_run(pipeline_run.run_id, external_pipeline)
 
 
 @click.command(
@@ -505,17 +514,6 @@ def validate_partition_slice(partitions, name, value):
     return index if is_start else index + 1
 
 
-def get_partition_sets_for_handle(handle):
-    check.inst_param(handle, 'handle', ReconstructableRepository)
-    repo = handle.get_definition()
-
-    return repo.partition_set_defs + [
-        schedule_def.get_partition_set()
-        for schedule_def in repo.schedule_defs
-        if isinstance(schedule_def, PartitionScheduleDefinition)
-    ]
-
-
 @click.command(
     name='backfill',
     help='Backfill a partitioned pipeline.\n\n{instructions}'.format(
@@ -569,8 +567,8 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             pipeline_name = pipeline_name[0]
 
     instance = instance or DagsterInstance.get()
-    handle = recon_repo_for_cli_args(repo_args)
-    repository = handle.get_definition()
+    recon_repo = recon_repo_for_cli_args(repo_args)
+    repo_def = recon_repo.get_definition()
     noprompt = cli_args.get('noprompt')
 
     # check run launcher
@@ -588,19 +586,27 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
         raise click.UsageError('No pipeline specified')
     if not pipeline_name:
         pipeline_name = click.prompt(
-            'Select a pipeline to backfill: {}'.format(', '.join(repository.pipeline_names))
+            'Select a pipeline to backfill: {}'.format(', '.join(repo_def.pipeline_names))
         )
-    repository = handle.get_definition()
-    if not repository.has_pipeline(pipeline_name):
+    if not repo_def.has_pipeline(pipeline_name):
         raise click.UsageError('No pipeline found named `{}`'.format(pipeline_name))
 
-    pipeline = repository.get_pipeline(pipeline_name)
+    pipeline_def = repo_def.get_pipeline(pipeline_name)
 
     # Resolve partition set
-    all_partition_sets = get_partition_sets_for_handle(handle)
-    pipeline_partition_sets = [x for x in all_partition_sets if x.pipeline_name == pipeline.name]
+    all_partition_sets = repo_def.partition_set_defs + [
+        schedule_def.get_partition_set()
+        for schedule_def in repo_def.schedule_defs
+        if isinstance(schedule_def, PartitionScheduleDefinition)
+    ]
+
+    pipeline_partition_sets = [
+        x for x in all_partition_sets if x.pipeline_name == pipeline_def.name
+    ]
     if not pipeline_partition_sets:
-        raise click.UsageError('No partition sets found for pipeline `{}`'.format(pipeline.name))
+        raise click.UsageError(
+            'No partition sets found for pipeline `{}`'.format(pipeline_def.name)
+        )
     partition_set_name = cli_args.get('partition_set')
     if not partition_set_name:
         if len(pipeline_partition_sets) == 1:
@@ -621,9 +627,15 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     partitions = gen_partitions_from_args(partition_set, cli_args)
 
     # Print backfill info
-    print_fn('\n     Pipeline: {}'.format(pipeline.name))
+    print_fn('\n     Pipeline: {}'.format(pipeline_def.name))
     print_fn('Partition set: {}'.format(partition_set.name))
     print_fn('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
+
+    # This whole CLI tool should move to more of a "host process" model - but this is how we start
+    repo_location = InProcessRepositoryLocation(recon_repo)
+    external_pipeline = (
+        repo_location.get_repository(repo_def.name).get_full_external_pipeline(pipeline_name),
+    )
 
     # Confirm and launch
     if noprompt or click.confirm(
@@ -639,13 +651,14 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
 
         for partition in partitions:
             run = instance.create_run_for_pipeline(
-                pipeline_def=pipeline,
+                pipeline_def=pipeline_def,
                 mode=partition_set.mode,
                 solid_subset=partition_set.solid_subset,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
-            instance.launch_run(run.run_id)
+
+            instance.launch_run(run.run_id, external_pipeline)
             # Remove once we can handle synchronous execution... currently limited by sqlite
             time.sleep(0.1)
 

@@ -2,7 +2,11 @@ import os
 
 import yaml
 from dagster_k8s import construct_dagster_graphql_k8s_job
-from dagster_test.test_project import test_project_docker_image, test_project_environments_path
+from dagster_test.test_project import (
+    get_test_project_external_pipeline,
+    test_project_docker_image,
+    test_project_environments_path,
+)
 
 from dagster import __version__ as dagster_version
 from dagster import seven
@@ -119,7 +123,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
         mode='default',
     )
 
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
@@ -135,8 +139,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     run = create_run_for_test(
         dagster_instance, pipeline_name=pipeline_name, environment_dict=environment_dict
     )
-
-    dagster_instance.launch_run(run.run_id)
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )

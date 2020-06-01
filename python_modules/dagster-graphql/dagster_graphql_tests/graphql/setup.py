@@ -114,6 +114,14 @@ def define_test_snapshot_context():
     )
 
 
+def main_repo_location_name():
+    return '<<in_process>>'
+
+
+def main_repo_name():
+    return 'test_repo'
+
+
 @lambda_solid(
     input_defs=[InputDefinition('num', PoorMansDataFrame)],
     output_def=OutputDefinition(PoorMansDataFrame),
