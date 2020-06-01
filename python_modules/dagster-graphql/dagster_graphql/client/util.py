@@ -1,9 +1,3 @@
-from dagster_graphql.implementation.utils import (
-    ExecutionMetadata,
-    ExecutionParams,
-    PipelineSelector,
-)
-
 from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
 from dagster.core.definitions.events import PythonArtifactMetadataEntryData
@@ -24,7 +18,6 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
     UserFailureData,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.error import SerializableErrorInfo
 
 HANDLED_EVENTS = {
@@ -211,23 +204,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         step_kind_value=step_kind_value,
         logging_tags=None,
         event_specific_data=event_specific_data,
-    )
-
-
-def execution_params_from_pipeline_run(context, run):
-    check.inst_param(run, 'run', PipelineRun)
-
-    return ExecutionParams(
-        mode=run.mode,
-        step_keys=run.step_keys_to_execute,
-        environment_dict=run.environment_dict,
-        selector=PipelineSelector.legacy(context, run.pipeline_name, run.solid_subset),
-        execution_metadata=ExecutionMetadata(
-            run_id=run.run_id,
-            tags=run.tags,
-            root_run_id=run.root_run_id,
-            parent_run_id=run.parent_run_id,
-        ),
     )
 
 

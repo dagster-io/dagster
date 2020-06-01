@@ -4,7 +4,6 @@ install_aliases()  # isort:skip
 
 import requests
 from dagster_graphql.client.query import EXECUTE_RUN_IN_PROCESS_MUTATION
-from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
 from dagster import Bool, Field, check, seven
