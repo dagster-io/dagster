@@ -293,6 +293,10 @@ class SolidExecutionResult(object):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
     @property
+    def step_events(self):
+        return self.compute_step_events
+
+    @property
     def materializations_during_compute(self):
         '''List[Materialization]: All materializations yielded by the solid.'''
         return [
