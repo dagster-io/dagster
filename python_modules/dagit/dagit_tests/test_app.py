@@ -186,6 +186,7 @@ def test_dagit_logs(
                             'pipeline_name_hash',
                             'num_pipelines_in_repo',
                             'repo_hash',
+                            'python_version',
                             'metadata',
                             'version',
                         ]

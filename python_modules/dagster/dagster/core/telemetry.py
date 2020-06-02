@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import sys
 import time
 import uuid
 import zlib
@@ -45,6 +46,7 @@ DAGSTER_TELEMETRY_URL = 'http://telemetry.dagster.io/actions'
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = 'update_repo_stats'
 START_DAGIT_WEBSERVER = 'start_dagit_webserver'
+TELEMETRY_VERSION = '0.2'
 
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
 # docs/next/src/pages/docs/install/telemetry.mdx
@@ -85,10 +87,16 @@ def telemetry_wrapper(f):
     return wrap
 
 
+def get_python_version():
+    version = sys.version_info
+    return "{}.{}.{}".format(version.major, version.minor, version.micro)
+
+
 class TelemetryEntry(
     namedtuple(
         'TelemetryEntry',
-        'action client_time elapsed_time event_id instance_id pipeline_name_hash num_pipelines_in_repo repo_hash metadata version',
+        'action client_time elapsed_time event_id instance_id pipeline_name_hash '
+        'num_pipelines_in_repo repo_hash python_version metadata version',
     )
 ):
     '''
@@ -103,6 +111,7 @@ class TelemetryEntry(
     event_id - Unique id for the event
     instance_id - Unique id for dagster instance
     pipeline_name_hash - Hash of pipeline name, if any
+    python_version - Python version
     repo_hash - Hash of repo name, if any
     num_pipelines_in_repo - Number of pipelines in repo, if any
     metadata - More information i.e. pipeline success (boolean)
@@ -118,7 +127,6 @@ class TelemetryEntry(
         client_time,
         event_id,
         instance_id,
-        version,
         elapsed_time=None,
         pipeline_name_hash=None,
         num_pipelines_in_repo=None,
@@ -131,7 +139,6 @@ class TelemetryEntry(
         event_id = check.str_param(event_id, 'event_id')
         instance_id = check.str_param(instance_id, 'instance_id')
         metadata = check.opt_dict_param(metadata, 'metadata')
-        version = check.str_param(version, 'version')
 
         if action == UPDATE_REPO_STATS:
             pipeline_name_hash = check.str_param(pipeline_name_hash, 'pipeline_name_hash')
@@ -152,8 +159,9 @@ class TelemetryEntry(
             pipeline_name_hash=pipeline_name_hash,
             num_pipelines_in_repo=num_pipelines_in_repo,
             repo_hash=repo_hash,
+            python_version=get_python_version(),
             metadata=metadata,
-            version=version,
+            version=TELEMETRY_VERSION,
         )
 
 
@@ -317,7 +325,6 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
                 num_pipelines_in_repo=str(num_pipelines_in_repo),
                 repo_hash=repo_hash,
                 metadata={'source': source},
-                version='0.1',
             )._asdict()
         )
 
@@ -335,7 +342,6 @@ def log_action(action, client_time=datetime.datetime.now(), elapsed_time=None, m
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata=metadata,
-                version='0.1',
             )._asdict()
         )
 
