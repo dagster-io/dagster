@@ -75,7 +75,10 @@ export const RegExps = {
   DICT_COLON: /^:\s*/,
   // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
+  // same as above, but to avoid clasifiyng "a" as a sub-dict in "value: a:b", we require whitespace after the colon
+  DICT_KEY_IN_VALUE: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:\s+)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
+  UNQUOTED_STRING: /^.*$/,
   // eslint-disable-next-line no-useless-escape
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
   // eslint-disable-next-line no-useless-escape
@@ -249,7 +252,7 @@ CodeMirror.defineMode("yaml", () => {
         }
 
         // Child dicts can start within a value if the user is creating a list
-        const match = stream.match(RegExps.DICT_KEY);
+        const match = stream.match(RegExps.DICT_KEY_IN_VALUE);
         if (match) {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
@@ -262,6 +265,12 @@ CodeMirror.defineMode("yaml", () => {
           result = "atom";
         }
 
+        // "In YAML, you can write a string without quotes, if it doesn't have a special meaning.",
+        // so if we can't match the content to any other type and we are inValue, we make it a string.
+        // http://blogs.perl.org/users/tinita/2018/03/strings-in-yaml---to-quote-or-not-to-quote.html
+        if (!result && stream.match(RegExps.UNQUOTED_STRING)) {
+          result = "string";
+        }
         stream.eatSpace();
 
         // If after consuming the value and trailing spaces we're at the end of the
