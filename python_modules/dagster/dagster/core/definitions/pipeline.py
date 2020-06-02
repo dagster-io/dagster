@@ -419,8 +419,8 @@ class PipelineDefinition(IContainSolids):
         check.str_param(name, 'name')
         return name in self._all_solid_defs
 
-    def subset_for_execution(self, solid_subset):
-        return self if solid_subset is None else _subset_for_execution(self, solid_subset)
+    def get_pipeline_subset_def(self, solid_subset):
+        return self if solid_subset is None else _get_pipeline_subset_def(self, solid_subset)
 
     def get_presets(self):
         return list(self._preset_dict.values())
@@ -476,7 +476,7 @@ class PipelineDefinition(IContainSolids):
         return None
 
 
-class PipelineSubsetForExecution(PipelineDefinition):
+class PipelineSubsetDefinition(PipelineDefinition):
     @property
     def solid_subset(self):
         return list(self._solid_dict.keys())
@@ -492,7 +492,7 @@ class PipelineSubsetForExecution(PipelineDefinition):
     def is_subset_pipeline(self):
         return True
 
-    def subset_for_execution(self, solid_subset):
+    def get_pipeline_subset_def(self, solid_subset):
         raise DagsterInvariantViolationError('Pipeline subsets may not be subset again.')
 
 
@@ -500,7 +500,7 @@ def _dep_key_of(solid):
     return SolidInvocation(solid.definition.name, solid.name)
 
 
-def _subset_for_execution(pipeline_def, solid_names):
+def _get_pipeline_subset_def(pipeline_def, solid_names):
     '''
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solid_names.
@@ -543,7 +543,7 @@ def _subset_for_execution(pipeline_def, solid_names):
                 )
 
     try:
-        sub_pipeline_def = PipelineSubsetForExecution(
+        sub_pipeline_def = PipelineSubsetDefinition(
             name=pipeline_def.name,  # should we change the name for subsetted pipeline?
             solid_defs=list({solid.definition for solid in solids}),
             mode_defs=pipeline_def.mode_definitions,

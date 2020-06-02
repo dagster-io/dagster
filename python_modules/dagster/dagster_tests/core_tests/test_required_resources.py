@@ -145,7 +145,7 @@ def test_solid_subset_strict_resources():
     selective_init_test_pipeline = get_resource_init_pipeline(resources_initted)
 
     result = execute_pipeline(
-        selective_init_test_pipeline.subset_for_execution(['consumes_resource_b'])
+        selective_init_test_pipeline.get_pipeline_subset_def(['consumes_resource_b'])
     )
     assert result.success
 
@@ -178,7 +178,7 @@ def test_solid_subset_with_aliases_strict_resources():
         consumes_resource_a.alias('alias_for_a')()
         consumes_resource_b()
 
-    result = execute_pipeline(selective_init_test_pipeline.subset_for_execution(['alias_for_a']))
+    result = execute_pipeline(selective_init_test_pipeline.get_pipeline_subset_def(['alias_for_a']))
     assert result.success
 
     assert set(resources_initted.keys()) == {'a'}
@@ -233,7 +233,7 @@ def test_solid_subset_strict_resources_within_composite():
     resources_initted = {}
 
     result = execute_pipeline(
-        create_composite_solid_pipeline(resources_initted).subset_for_execution(['wraps_b'])
+        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def(['wraps_b'])
     )
     assert result.success
 
@@ -263,7 +263,7 @@ def test_unknown_resource_composite_error():
 
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
-            create_composite_solid_pipeline(resources_initted).subset_for_execution(
+            create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def(
                 ['wraps_b_error']
             )
         )

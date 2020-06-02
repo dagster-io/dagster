@@ -33,7 +33,7 @@ def get_external_pipeline_subset_result(recon_pipeline, solid_subset):
     definition = recon_pipeline.get_definition()
     if solid_subset:
         try:
-            definition = definition.subset_for_execution(solid_subset)
+            definition = definition.get_pipeline_subset_def(solid_subset)
         except DagsterInvalidSubsetError:
             return ExternalPipelineSubsetResult(
                 success=False, error=serializable_error_info_from_exc_info(sys.exc_info())

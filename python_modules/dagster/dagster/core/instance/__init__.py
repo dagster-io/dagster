@@ -12,7 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -467,7 +467,7 @@ class DagsterInstance:
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         if solid_subset:
-            if isinstance(pipeline_def, PipelineSubsetForExecution):
+            if isinstance(pipeline_def, PipelineSubsetDefinition):
                 check.invariant(
                     len(solid_subset) == len(pipeline_def.solid_subset)
                     and set(solid_subset) == set(pipeline_def.solid_subset),
@@ -478,7 +478,7 @@ class DagsterInstance:
                     ),
                 )
             else:
-                pipeline_def = pipeline_def.subset_for_execution(solid_subset=solid_subset)
+                pipeline_def = pipeline_def.get_pipeline_subset_def(solid_subset=solid_subset)
 
         if execution_plan is None:
             execution_plan = create_execution_plan(

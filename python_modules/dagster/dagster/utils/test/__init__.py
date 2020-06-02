@@ -169,7 +169,7 @@ def execute_solids_within_pipeline(
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
 
-    sub_pipeline = pipeline_def.subset_for_execution(solid_names)
+    sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(
         stubbed_pipeline,

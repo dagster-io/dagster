@@ -44,7 +44,9 @@ def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset, reposito
     full_pipeline_def = recon_pipeline.get_definition()
 
     pipeline_def = (
-        full_pipeline_def.subset_for_execution(solid_subset) if solid_subset else full_pipeline_def
+        full_pipeline_def.get_pipeline_subset_def(solid_subset)
+        if solid_subset
+        else full_pipeline_def
     )
 
     return ExternalPipeline(

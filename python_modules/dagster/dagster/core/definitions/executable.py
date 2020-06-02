@@ -27,7 +27,7 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
 
         if self._pipeline_def.is_subset_pipeline:
             return InMemoryExecutablePipeline(
-                self._pipeline_def.parent_pipeline_def.subset_for_execution(solid_subset)
+                self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solid_subset)
             )
 
-        return InMemoryExecutablePipeline(self._pipeline_def.subset_for_execution(solid_subset))
+        return InMemoryExecutablePipeline(self._pipeline_def.get_pipeline_subset_def(solid_subset))

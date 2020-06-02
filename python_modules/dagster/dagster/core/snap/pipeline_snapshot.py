@@ -17,7 +17,7 @@ from dagster.config.snap import (
     ConfigSchemaSnapshot,
     ConfigTypeSnap,
 )
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.serdes import deserialize_value, whitelist_for_serdes
 
 from .config_types import build_config_schema_snapshot
@@ -91,7 +91,7 @@ class PipelineSnapshot(
     def from_pipeline_def(cls, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         lineage = None
-        if isinstance(pipeline_def, PipelineSubsetForExecution):
+        if isinstance(pipeline_def, PipelineSubsetDefinition):
             lineage = PipelineSnapshotLineage(
                 create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)

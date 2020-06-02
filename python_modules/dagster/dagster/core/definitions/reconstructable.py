@@ -81,7 +81,7 @@ class ReconstructablePipeline(
         return (
             self.repository.get_definition()
             .get_pipeline(self.pipeline_name)
-            .subset_for_execution(self.solid_subset)
+            .get_pipeline_subset_def(self.solid_subset)
         )
 
     def get_reconstructable_repository(self):

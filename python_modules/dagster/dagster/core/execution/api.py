@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
-from dagster.core.definitions.pipeline import PipelineSubsetForExecution
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -45,7 +45,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
 
     if pipeline_run.solid_subset:
         pipeline_def = pipeline.get_definition()
-        if isinstance(pipeline_def, PipelineSubsetForExecution):
+        if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
                 and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
@@ -108,7 +108,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
     pipeline_def = pipeline.get_definition()
     if pipeline_run.solid_subset:
-        if isinstance(pipeline_def, PipelineSubsetForExecution):
+        if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
                 and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
@@ -120,7 +120,6 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
             )
         else:
             pipeline = pipeline.subset_for_execution(pipeline_run.solid_subset)
-            pipeline_def = pipeline.get_definition()
 
     execution_plan = create_execution_plan(
         pipeline,
@@ -142,7 +141,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     pipeline_context = _execute_run_iterable.pipeline_context
 
     return PipelineExecutionResult(
-        pipeline_def,
+        pipeline.get_definition(),
         pipeline_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(
@@ -202,7 +201,6 @@ def execute_pipeline_iterator(
     '''
     (
         pipeline,
-        pipeline_def,
         environment_dict,
         instance,
         mode,
@@ -219,7 +217,7 @@ def execute_pipeline_iterator(
     )
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
+        pipeline_def=pipeline.get_definition(),
         environment_dict=environment_dict,
         mode=mode,
         solid_subset=solid_subset,
@@ -280,7 +278,6 @@ def execute_pipeline(
     '''
     (
         pipeline,
-        pipeline_def,
         environment_dict,
         instance,
         mode,
@@ -299,7 +296,7 @@ def execute_pipeline(
     log_repo_stats(instance=instance, pipeline=pipeline, source='execute_pipeline')
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
+        pipeline_def=pipeline.get_definition(),
         environment_dict=environment_dict,
         mode=mode,
         solid_subset=solid_subset,
@@ -360,12 +357,14 @@ def _check_pipeline(pipeline):
         pipeline = InMemoryExecutablePipeline(pipeline)
 
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    pipeline_def = pipeline.get_definition()
-    return pipeline, pipeline_def
+    return pipeline
 
 
 def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
-    pipeline, pipeline_def = _check_pipeline(pipeline)
+    pipeline = _check_pipeline(pipeline)
+    pipeline_def = pipeline.get_definition()
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -489,7 +488,10 @@ class _ExecuteRunWithPlanIterable(object):
 def _check_execute_pipeline_args(
     pipeline, environment_dict, mode, preset, tags, solid_subset, instance
 ):
-    pipeline, pipeline_def = _check_pipeline(pipeline)
+    pipeline = _check_pipeline(pipeline)
+    pipeline_def = pipeline.get_definition()
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.opt_str_param(mode, 'mode')
     check.opt_str_param(preset, 'preset')
@@ -573,13 +575,11 @@ def _check_execute_pipeline_args(
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
+    # generate pipeline subset from the given solid_subset
     if solid_subset:
         pipeline = pipeline.subset_for_execution(solid_subset)
-        pipeline_def = pipeline.get_definition()
-    else:
-        solid_subset = pipeline_def.solid_subset
 
-    return (pipeline, pipeline_def, environment_dict, instance, mode, tags, solid_subset)
+    return (pipeline, environment_dict, instance, mode, tags, solid_subset)
 
 
 def _check_parent_run(instance, run_id):
