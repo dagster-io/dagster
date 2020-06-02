@@ -16,7 +16,6 @@ from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
 from .app import create_app_with_reconstructable_repo
-from .reloader import DagitReloader
 from .version import __version__
 
 
@@ -81,16 +80,6 @@ DEFAULT_DAGIT_PORT = 3000
     type=click.Path(),
 )
 @click.option(
-    '--reload-trigger',
-    help=(
-        "Optional file path being monitored by a parent process that dagit-cli can touch to "
-        "re-launch itself."
-    ),
-    default=None,
-    hidden=True,
-    type=click.Path(),
-)
-@click.option(
     '--workdir',
     help=(
         "Set this to change the working directory before invoking dagit. Intended to support "
@@ -101,7 +90,7 @@ DEFAULT_DAGIT_PORT = 3000
     type=click.Path(),
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, storage_fallback, reload_trigger, workdir, **kwargs):
+def ui(host, port, storage_fallback, workdir, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -118,26 +107,25 @@ def ui(host, port, storage_fallback, reload_trigger, workdir, **kwargs):
 
     if workdir is not None:
         with pushd(workdir):
-            host_dagit_ui(host, port, storage_fallback, reload_trigger, port_lookup, **kwargs)
+            host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
     else:
-        host_dagit_ui(host, port, storage_fallback, reload_trigger, port_lookup, **kwargs)
+        host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
 
 
-def host_dagit_ui(host, port, storage_fallback, reload_trigger=None, port_lookup=True, **kwargs):
+def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):
     return host_dagit_ui_with_reconstructable_repo(
-        recon_repo_for_cli_args(kwargs), host, port, storage_fallback, reload_trigger, port_lookup
+        recon_repo_for_cli_args(kwargs), host, port, storage_fallback, port_lookup
     )
 
 
 def host_dagit_ui_with_reconstructable_repo(
-    recon_repo, host, port, storage_fallback, reload_trigger=None, port_lookup=True
+    recon_repo, host, port, storage_fallback, port_lookup=True
 ):
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
 
     instance = DagsterInstance.get(storage_fallback)
-    reloader = DagitReloader(reload_trigger=reload_trigger)
 
-    app = create_app_with_reconstructable_repo(recon_repo, instance, reloader)
+    app = create_app_with_reconstructable_repo(recon_repo, instance)
 
     start_server(host, port, app, port_lookup)
 
