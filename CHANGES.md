@@ -10,12 +10,13 @@
   `dagster pipeline backfill my_pipeline --tags '{ "dagster-celery/run_priority": 3 }'`
 - The `ScheduleExecutionContext` no longer has a repository definition available as a property on the context. If you were previously using it in a schedule definition, inline the repository name instead of retrieving it from the schedule execution context.
 - `@scheduler` and `@repository_partitions` have been removed. Load `ScheduleDefinition`s and `PartitionSetDefinition`s via `RepositoryDefinition` instead.
+- The python function `execute_partition_set` has been removed.
 
 ## 0.7.15 (Latest)
 
 **New**
 
-- Improve dagster scheduler state reconciliation. 
+- Improve dagster scheduler state reconciliation.
 
 ## 0.7.14
 
@@ -25,7 +26,7 @@
   the previous pipeline failed or not.
 - Added a search filter for the root Assets page
 - Adds tooltip explanations for disabled run actions
-- The last output of the cron job command created by the scheduler is now stored in a file. A new `dagster schedule logs {schedule_name}` command will show the log file for a given schedule. This helps uncover errors like missing environment variables and import errors. 
+- The last output of the cron job command created by the scheduler is now stored in a file. A new `dagster schedule logs {schedule_name}` command will show the log file for a given schedule. This helps uncover errors like missing environment variables and import errors.
 - The dagit schedule page will now show inconsistency errors between schedule state and the cron tab that were previously only displayed by the `dagster schedule debug` command. As before, these errors can be resolve using `dagster schedule up`
 
 **Bugfix**
@@ -34,7 +35,7 @@
 - Fixes an issue with initializing K8sRunLauncher when configured via `dagster.yaml`
 - Fixes a race condition in Airflow injection logic that happens when multiple Operators try to
   create PipelineRun entries simultaneously.
-- Fixed an issue with schedules that had invalid config not logging the appropriate error. 
+- Fixed an issue with schedules that had invalid config not logging the appropriate error.
 
 ## 0.7.13
 
@@ -59,7 +60,7 @@
 - Added user warning for dagster library packages that are out of sync with the core `dagster`
   package.
 
-## 0.7.12 
+## 0.7.12
 
 **Bugfix**
 

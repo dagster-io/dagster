@@ -1,12 +1,5 @@
-import time
-
 from dagster import check
-from dagster.core.definitions import (
-    ExecutablePipeline,
-    PartitionSetDefinition,
-    PipelineDefinition,
-    SystemStorageData,
-)
+from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.pipeline import PipelineSubsetForExecution
 from dagster.core.errors import DagsterInvariantViolationError
@@ -20,7 +13,7 @@ from dagster.core.selector import parse_solid_subset
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
+from dagster.core.utils import str_format_list
 from dagster.utils import merge_dicts
 
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
@@ -359,44 +352,6 @@ def execute_plan(
             retries=retries,
         )
     )
-
-
-def execute_partition_set(partition_set, partition_filter, instance=None):
-    '''Programatically perform a backfill over a partition set
-
-    Arguments:
-        partition_set (PartitionSet): The base partition set to run the backfill over
-        partition_filter (Callable[[List[Partition]]], List[Partition]): A function that takes
-            a list of partitions and returns a filtered list of partitions to run the backfill
-            over.
-        instance (DagsterInstance): The instance to use to perform the backfill
-    '''
-    check.inst_param(partition_set, 'partition_set', PartitionSetDefinition)
-    check.callable_param(partition_filter, 'partition_filter')
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    candidate_partitions = partition_set.get_partitions()
-    partitions = partition_filter(candidate_partitions)
-
-    instance = instance or DagsterInstance.ephemeral()
-
-    for partition in partitions:
-        run = PipelineRun(
-            pipeline_name=partition_set.pipeline_name,
-            run_id=make_new_run_id(),
-            environment_dict=partition_set.environment_dict_for_partition(partition),
-            mode='default',
-            tags=merge_dicts(
-                PipelineRun.tags_for_backfill_id(make_new_backfill_id()),
-                partition_set.tags_for_partition(partition),
-            ),
-            status=PipelineRunStatus.NOT_STARTED,
-        )
-
-        # Remove once we can handle synchronous execution... currently limited by sqlite
-        time.sleep(0.1)
-
-        instance.launch_run(run.run_id)
 
 
 def _check_pipeline(pipeline):
