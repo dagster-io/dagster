@@ -39,6 +39,13 @@ class DagsterInvalidDefinitionError(DagsterError):
     '''Indicates that the rules for a definition have been violated by the user.'''
 
 
+class DagsterInvalidSubsetError(DagsterError):
+    '''Indicates that a subset of a pipeline is invalid because either:
+        - One or more solids in the specified subset do not exist on the pipeline.'
+        - The subset produces an invalid pipeline.
+    '''
+
+
 CONFIG_ERROR_VERBIAGE = '''
 This value can be a:
     - Field

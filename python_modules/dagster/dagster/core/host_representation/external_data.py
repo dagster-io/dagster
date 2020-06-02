@@ -11,6 +11,7 @@ from dagster import check
 from dagster.core.definitions import PipelineDefinition, PresetDefinition, RepositoryDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
@@ -41,6 +42,21 @@ class ExternalRepositoryData(namedtuple('_ExternalRepositoryData', 'name externa
                 return external_pipeline_data
 
         check.failed('Could not find active pipeline data named ' + name)
+
+
+@whitelist_for_serdes
+class ExternalPipelineSubsetResult(
+    namedtuple('_ExternalPipelineSubsetResult', 'success error external_pipeline_data')
+):
+    def __new__(cls, success, error=None, external_pipeline_data=None):
+        return super(ExternalPipelineSubsetResult, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            external_pipeline_data=check.opt_inst_param(
+                external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
+            ),
+        )
 
 
 @whitelist_for_serdes

@@ -9,6 +9,7 @@ that have been persisted. e.g. HistoricalPipeline
 from .external import ExternalExecutionPlan, ExternalPipeline, ExternalRepository
 from .external_data import (
     ExternalPipelineData,
+    ExternalPipelineSubsetResult,
     ExternalPresetData,
     ExternalRepositoryData,
     external_pipeline_data_from_def,

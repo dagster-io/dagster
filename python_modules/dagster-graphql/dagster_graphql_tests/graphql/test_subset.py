@@ -1,5 +1,7 @@
 import re
+import sys
 
+import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
@@ -57,6 +59,7 @@ def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_conte
     assert '"nope" does not exist' in result.data['runConfigSchemaOrError']['message']
 
 
+@pytest.mark.skipif(sys.version_info.major < 3, reason='Exception cause only available on py3+')
 def test_pipeline_with_invalid_definition_error(graphql_context):
     selector = get_legacy_pipeline_selector(
         graphql_context, 'pipeline_with_invalid_definition_error', ['fail_subset']
@@ -67,9 +70,10 @@ def test_pipeline_with_invalid_definition_error(graphql_context):
     assert not result.errors
     assert result.data
     assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
+
     assert re.match(
         (
-            r'.*DagsterInvalidDefinitionError[\s\S]*'
+            r'.*DagsterInvalidSubsetError[\s\S]*'
             r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
         ),
         result.data['runConfigSchemaOrError']['message'],

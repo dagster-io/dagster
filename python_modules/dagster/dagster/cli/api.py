@@ -10,13 +10,14 @@ from dagster import check
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
+from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.instance import DagsterInstance
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
@@ -34,25 +35,38 @@ def repository_snapshot_command(output_file, **kwargs):
     ipc_write_unary_response(output_file, external_repository_data_from_def(definition))
 
 
-@click.command(name='pipeline', help='Return the snapshot for the given pipeline')
+@click.command(
+    name='pipeline_subset', help='Return ExternalPipelineSubsetResult for the given pipeline'
+)
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
 @pipeline_target_command
 @click.option('--solid-subset', '-s', help="JSON encoded list of solids")
-def pipeline_snapshot_command(output_file, solid_subset, **kwargs):
+def pipeline_subset_snapshot_command(output_file, solid_subset, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
     definition = recon_pipeline.get_definition()
-
     if solid_subset:
-        definition = definition.subset_for_execution(json.loads(solid_subset))
+        try:
+            definition = definition.subset_for_execution(json.loads(solid_subset))
+        except DagsterInvalidSubsetError:
+            return ipc_write_unary_response(
+                output_file,
+                ExternalPipelineSubsetResult(
+                    success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
 
-    ipc_write_unary_response(output_file, external_pipeline_data_from_def(definition))
+    external_pipeline_data = external_pipeline_data_from_def(definition)
+    ipc_write_unary_response(
+        output_file,
+        ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data),
+    )
 
 
 def create_snapshot_cli_group():
     group = click.Group(name="snapshot")
     group.add_command(repository_snapshot_command)
-    group.add_command(pipeline_snapshot_command)
+    group.add_command(pipeline_subset_snapshot_command)
     return group
 
 

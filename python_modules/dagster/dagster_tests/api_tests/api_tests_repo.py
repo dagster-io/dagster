@@ -1,6 +1,17 @@
 import string
 
-from dagster import PartitionSetDefinition, ScheduleDefinition, lambda_solid, pipeline, repository
+from dagster import (
+    InputDefinition,
+    Int,
+    OutputDefinition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    lambda_solid,
+    pipeline,
+    repository,
+    solid,
+    usable_as_dagster_type,
+)
 
 
 @lambda_solid
@@ -25,6 +36,26 @@ def baz_pipeline():
 
 def define_foo_pipeline():
     return foo_pipeline
+
+
+@pipeline(name="bar")
+def bar_pipeline():
+    @usable_as_dagster_type(name='InputTypeWithoutHydration')
+    class InputTypeWithoutHydration(int):
+        pass
+
+    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    def one(_):
+        return 1
+
+    @solid(
+        input_defs=[InputDefinition('some_input', InputTypeWithoutHydration)],
+        output_defs=[OutputDefinition(Int)],
+    )
+    def fail_subset(_, some_input):
+        return some_input
+
+    return fail_subset(one())
 
 
 def define_bar_schedules():
@@ -54,7 +85,11 @@ def define_baz_partitions():
 @repository
 def bar_repo():
     return {
-        'pipelines': {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        'pipelines': {
+            'foo': define_foo_pipeline,
+            'bar': lambda: bar_pipeline,
+            'baz': lambda: baz_pipeline,
+        },
         'schedules': define_bar_schedules(),
         'partition_sets': define_baz_partitions(),
     }

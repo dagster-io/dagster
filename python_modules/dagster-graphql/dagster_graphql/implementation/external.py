@@ -4,7 +4,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -54,17 +54,17 @@ def get_external_pipeline_or_raise(graphene_info, selector):
                     pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
                 )
             )
+
     try:
         return graphene_info.context.get_external_pipeline(selector)
-    except DagsterInvalidDefinitionError:
-        # this handles the case when you construct a subset such that an unsatisfied
-        # input cannot be hydrate from config. Current this is only relevant for
-        # the in-process case. Once we add the out-of-process we will communicate
-        # this error through the communication channel and change what exception
-        # is thrown
+    except DagsterInvalidSubsetError:
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise UserFacingGraphQLError(
             DauphinInvalidSubsetError(
-                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
+                message="{message}\n{cause_message}".format(
+                    message=error_info.message,
+                    cause_message=error_info.cause.message if error_info.cause else "",
+                ),
                 pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
             )
         )
