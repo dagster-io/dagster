@@ -1,16 +1,17 @@
+import os
 import pytest
 
 
 @pytest.fixture(scope='session')
 def storage_account():
-    yield 'dagsterdatabrickstests'
+    yield 'elementldevstorage'
 
 
 @pytest.fixture(scope='session')
 def file_system():
-    yield 'dagster-databricks-tests'
+    yield 'dagster-azure-tests'
 
 
 @pytest.fixture(scope='session')
 def credential():
-    yield 'super-secret-creds'
+    yield os.environ.get('AZURE_STORAGE_ACCOUNT_KEY')
