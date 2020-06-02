@@ -197,7 +197,25 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
-        raise NotImplementedError()
+        from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan
+
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.dict_param(environment_dict, 'environment_dict')
+        check.str_param(mode, 'mode')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+        execution_plan_snapshot = sync_get_external_execution_plan(
+            pipeline_handle=external_pipeline.handle,
+            solid_subset=external_pipeline.solid_subset,
+            environment_dict=environment_dict,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+            snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+        )
+
+        return ExternalExecutionPlan(
+            execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=external_pipeline,
+        )
 
     def execute_plan(
         self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute

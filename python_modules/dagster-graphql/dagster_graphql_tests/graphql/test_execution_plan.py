@@ -9,6 +9,7 @@ from dagster.core.storage.intermediates_manager import IntermediateStoreIntermed
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 from .setup import (
     PoorMansDataFrame,
     csv_hello_world,
@@ -419,32 +420,35 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
     )
 
 
-def test_invalid_config_fetch_execute_plan(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
-    result = execute_dagster_graphql(
-        graphql_context,
-        EXECUTION_PLAN_QUERY,
-        variables={
-            'pipeline': selector,
-            'runConfigData': {
-                'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
+class TestExecutionPlan(ReadonlyGraphQLContextTestMatrix):
+    def test_invalid_config_fetch_execute_plan(self, graphql_context, snapshot):
+        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        result = execute_dagster_graphql(
+            graphql_context,
+            EXECUTION_PLAN_QUERY,
+            variables={
+                'pipeline': selector,
+                'runConfigData': {
+                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
+                },
+                'mode': 'default',
             },
-            'mode': 'default',
-        },
-    )
+        )
 
-    assert not result.errors
-    assert result.data
-    assert result.data['executionPlanOrError']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert len(result.data['executionPlanOrError']['errors']) == 1
-    assert (
-        'Invalid scalar at path root:solids:sum_solid:inputs:num'
-        in result.data['executionPlanOrError']['errors'][0]['message']
-    )
-    result.data['executionPlanOrError']['errors'][0][
-        'message'
-    ] = 'Invalid scalar at path root:solids:sum_solid:inputs:num'
-    snapshot.assert_match(result.data)
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['executionPlanOrError']['__typename'] == 'PipelineConfigValidationInvalid'
+        )
+        assert len(result.data['executionPlanOrError']['errors']) == 1
+        assert (
+            'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            in result.data['executionPlanOrError']['errors'][0]['message']
+        )
+        result.data['executionPlanOrError']['errors'][0][
+            'message'
+        ] = 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+        snapshot.assert_match(result.data)
 
 
 def test_invalid_config_execute_plan(graphql_context, snapshot):

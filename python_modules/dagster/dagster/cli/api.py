@@ -12,13 +12,14 @@ from dagster.cli.pipeline import pipeline_target_command, repository_target_argu
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import execute_run_iterator
+from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -71,10 +72,45 @@ def pipeline_subset_snapshot_command(output_file, solid_subset, **kwargs):
     )
 
 
+@click.command(name='execution_plan', help='Create an execution plan and return its snapshot')
+@click.argument('output_file', type=click.Path())
+@repository_target_argument
+@pipeline_target_command
+@click.option('--solid-subset', help="JSON encoded list of solids")
+@click.option('--environment-dict', help="JSON encoded environment_dict")
+@click.option('--mode', help="mode")
+@click.option('--step-keys-to-execute', help="JSON encoded step_keys_to_execute")
+@click.option('--snapshot-id', help="Snapshot ID")
+def execution_plan_snapshot_command(
+    output_file, solid_subset, environment_dict, mode, step_keys_to_execute, snapshot_id, **kwargs
+):
+    recon_pipeline = recon_pipeline_for_cli_args(kwargs)
+
+    environment_dict = json.loads(environment_dict)
+    if step_keys_to_execute:
+        step_keys_to_execute = json.loads(step_keys_to_execute)
+    if solid_subset:
+        solid_subset = json.loads(solid_subset)
+        recon_pipeline = recon_pipeline.subset_for_execution(solid_subset)
+
+    execution_plan_snapshot = snapshot_from_execution_plan(
+        create_execution_plan(
+            pipeline=recon_pipeline,
+            environment_dict=environment_dict,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+        ),
+        snapshot_id,
+    )
+
+    ipc_write_unary_response(output_file, execution_plan_snapshot)
+
+
 def create_snapshot_cli_group():
     group = click.Group(name="snapshot")
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
+    group.add_command(execution_plan_snapshot_command)
     return group
 
 
