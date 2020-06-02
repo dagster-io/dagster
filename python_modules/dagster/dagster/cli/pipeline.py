@@ -372,7 +372,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
     pipeline = recon_pipeline_for_cli_args(kwargs)
 
     instance = DagsterInstance.get()
-    log_repo_stats(instance=instance, pipeline=pipeline)
+    log_repo_stats(instance=instance, pipeline=pipeline, source='pipeline_launch_command')
 
     if preset_name:
         if env:

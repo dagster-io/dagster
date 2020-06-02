@@ -29,7 +29,11 @@ import yaml
 
 from dagster import check
 from dagster.core.definitions.executable import ExecutablePipeline
-from dagster.core.definitions.reconstructable import EPHEMERAL_NAME, ReconstructablePipeline
+from dagster.core.definitions.reconstructable import (
+    EPHEMERAL_NAME,
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 
@@ -39,10 +43,11 @@ ENABLED_STR = 'enabled'
 DAGSTER_HOME_FALLBACK = '~/.dagster'
 DAGSTER_TELEMETRY_URL = 'http://telemetry.dagster.io/actions'
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
-REPO_STATS_ACTION = 'update_repo_stats'
+UPDATE_REPO_STATS = 'update_repo_stats'
+START_DAGIT_WEBSERVER = 'start_dagit_webserver'
 
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
-# docs/sections/install/telemetry.rst
+# docs/next/src/pages/docs/install/telemetry.mdx
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     'pipeline_execute_command',
     'pipeline_launch_command',
@@ -66,10 +71,10 @@ def telemetry_wrapper(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         start_time = datetime.datetime.now()
-        log_pipeline_action(action=f.__name__ + '_started', client_time=start_time)
+        log_action(action=f.__name__ + '_started', client_time=start_time)
         result = f(*args, **kwargs)
         end_time = datetime.datetime.now()
-        log_pipeline_action(
+        log_action(
             action=f.__name__ + '_ended',
             client_time=end_time,
             elapsed_time=end_time - start_time,
@@ -128,7 +133,7 @@ class TelemetryEntry(
         metadata = check.opt_dict_param(metadata, 'metadata')
         version = check.str_param(version, 'version')
 
-        if action == REPO_STATS_ACTION:
+        if action == UPDATE_REPO_STATS:
             pipeline_name_hash = check.str_param(pipeline_name_hash, 'pipeline_name_hash')
             num_pipelines_in_repo = check.str_param(num_pipelines_in_repo, 'num_pipelines_in_repo')
             repo_hash = check.str_param(repo_hash, 'repo_hash')
@@ -278,37 +283,46 @@ def hash_name(name):
     return hashlib.sha256(name.encode('utf-8')).hexdigest()
 
 
-def log_repo_stats(instance, pipeline):
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+def log_repo_stats(instance, source, pipeline=None, repo=None):
     check.inst_param(instance, 'instance', DagsterInstance)
+    check.str_param(source, 'source')
+    check.opt_inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    check.opt_inst_param(repo, 'repo', ReconstructableRepository)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = _get_or_set_instance_id()
 
-        pipeline_name_hash = hash_name(pipeline.get_definition().name)
         if isinstance(pipeline, ReconstructablePipeline):
+            pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repository = pipeline.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.pipeline_names)
+        elif isinstance(repo, ReconstructableRepository):
+            pipeline_name_hash = ''
+            repository = repo.get_definition()
+            repo_hash = hash_name(repository.name)
+            num_pipelines_in_repo = len(repository.pipeline_names)
         else:
+            pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repo_hash = hash_name(EPHEMERAL_NAME)
             num_pipelines_in_repo = 1
 
         write_telemetry_log_line(
             TelemetryEntry(
-                action=REPO_STATS_ACTION,
+                action=UPDATE_REPO_STATS,
                 client_time=str(datetime.datetime.now()),
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 pipeline_name_hash=pipeline_name_hash,
                 num_pipelines_in_repo=str(num_pipelines_in_repo),
                 repo_hash=repo_hash,
+                metadata={'source': source},
                 version='0.1',
             )._asdict()
         )
 
 
-def log_pipeline_action(action, client_time, elapsed_time=None, metadata=None):
+def log_action(action, client_time=datetime.datetime.now(), elapsed_time=None, metadata=None):
     (dagster_telemetry_enabled, instance_id) = _get_instance_telemetry_info()
 
     if dagster_telemetry_enabled:

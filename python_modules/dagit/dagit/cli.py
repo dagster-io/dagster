@@ -13,7 +13,7 @@ from dagster.cli.pipeline import repository_target_argument
 from dagster.cli.workspace import Workspace, load_workspace_from_yaml_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.telemetry import upload_logs
+from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
 from .app import create_app_from_workspace, create_app_with_reconstructable_repo
@@ -138,6 +138,8 @@ def host_dagit_ui_with_reconstructable_repo(
 
     instance = DagsterInstance.get(storage_fallback)
 
+    log_repo_stats(instance=instance, repo=recon_repo, source='dagit')
+
     app = create_app_with_reconstructable_repo(recon_repo, instance)
 
     start_server(host, port, app, port_lookup)
@@ -151,6 +153,8 @@ def start_server(host, port, app, port_lookup, port_lookup_attempts=0):
             host=host, port=port, pid=os.getpid()
         )
     )
+
+    log_action(START_DAGIT_WEBSERVER)
 
     try:
         thread = threading.Thread(target=upload_logs, args=())

@@ -10,7 +10,7 @@ from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import EPHEMERAL_NAME
 from dagster.core.instance import DagsterInstance
-from dagster.core.telemetry import REPO_STATS_ACTION, get_dir_from_dagster_home, hash_name
+from dagster.core.telemetry import UPDATE_REPO_STATS, get_dir_from_dagster_home, hash_name
 from dagster.core.test_utils import environ
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
@@ -56,7 +56,7 @@ def test_dagster_telemetry_enabled(caplog):
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
-                    if message.get('action') == REPO_STATS_ACTION:
+                    if message.get('action') == UPDATE_REPO_STATS:
                         assert message.get('pipeline_name_hash') == hash_name(
                             'hello_cereal_pipeline'
                         )
@@ -111,7 +111,7 @@ def test_dagster_telemetry_unset(caplog):
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
-                    if message.get('action') == REPO_STATS_ACTION:
+                    if message.get('action') == UPDATE_REPO_STATS:
                         assert message.get('pipeline_name_hash') == hash_name(pipeline_name)
                         assert message.get('num_pipelines_in_repo') == str(1)
                         assert message.get('repo_hash') == hash_name(EPHEMERAL_NAME)
@@ -149,7 +149,7 @@ def test_repo_stats(caplog):
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
-                    if message.get('action') == REPO_STATS_ACTION:
+                    if message.get('action') == UPDATE_REPO_STATS:
                         assert message.get('pipeline_name_hash') == hash_name(pipeline_name)
                         assert message.get('num_pipelines_in_repo') == str(4)
                         assert message.get('repo_hash') == hash_name('dagster_test_repository')

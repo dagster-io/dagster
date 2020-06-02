@@ -296,7 +296,7 @@ def execute_pipeline(
         instance=instance,
     )
 
-    log_repo_stats(instance=instance, pipeline=pipeline)
+    log_repo_stats(instance=instance, pipeline=pipeline, source='execute_pipeline')
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
