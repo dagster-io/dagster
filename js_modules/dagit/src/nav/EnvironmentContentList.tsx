@@ -88,6 +88,10 @@ export const EnvironmentContentList: React.FunctionComponent<{
             .map(p => (
               <Item
                 key={p}
+                data-tooltip={p}
+                data-tooltip-style={
+                  p === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
+                }
                 className={p === selector ? "selected" : ""}
                 to={`/pipeline/${p}/${pipelineTab.pathComponent}`}
               >
@@ -173,6 +177,32 @@ const Item = styled(Link)`
     color: ${Colors.WHITE} !important;
   }
 `;
+
+const BaseTooltipStyle = {
+  fontSize: 13,
+  padding: 3,
+  paddingRight: 7,
+  left: 9,
+  top: 5,
+  color: Colors.WHITE,
+  background: Colors.DARK_GRAY1,
+  transform: "none",
+  border: 0,
+  borderRadius: 4
+};
+
+const ItemTooltipStyle = JSON.stringify({
+  ...BaseTooltipStyle,
+  color: Colors.WHITE,
+  background: Colors.DARK_GRAY1
+});
+
+const SelectedItemTooltipStyle = JSON.stringify({
+  ...BaseTooltipStyle,
+  color: Colors.WHITE,
+  background: Colors.BLACK,
+  fontWeight: 600
+});
 
 export const CONTENT_LIST_SOLIDS_QUERY = gql`
   query ContentListSolidsQuery(

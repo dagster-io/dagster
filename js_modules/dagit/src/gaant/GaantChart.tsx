@@ -306,7 +306,6 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps, onMoveToViewport } = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
-  const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
   const { options, metadata, selectedSteps } = props;
 
@@ -386,26 +385,6 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     onMoveToViewport({ left: x, top: y }, true);
   }, [selectedSteps]); // eslint-disable-line
 
-  const onUpdateTooltip = (e: React.MouseEvent<any>) => {
-    if (!(e.target instanceof HTMLElement)) return;
-    const tooltippedEl = e.target.closest("[data-tooltip-text]");
-    const text =
-      tooltippedEl &&
-      tooltippedEl instanceof HTMLElement &&
-      tooltippedEl.dataset.tooltipText;
-
-    if (text && (!tooltip || tooltip.text !== text)) {
-      const bounds = tooltippedEl!.getBoundingClientRect();
-      setTooltip({
-        text,
-        cx: bounds.left,
-        cy: bounds.bottom
-      });
-    } else if (!text && tooltip) {
-      setTooltip(null);
-    }
-  };
-
   const highlightedMs: number[] = [];
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
@@ -438,11 +417,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           />
         )}
       <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
-        <div
-          style={{ position: "relative", ...layoutSize }}
-          onMouseOver={onUpdateTooltip}
-          onMouseOut={onUpdateTooltip}
-        >
+        <div style={{ position: "relative", ...layoutSize }}>
           {measurementComplete && (
             <GaantChartViewportContents
               options={options}
@@ -457,11 +432,6 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
             />
           )}
         </div>
-        {tooltip && (
-          <GaantTooltip style={{ left: tooltip.cx, top: tooltip.cy }}>
-            {tooltip.text}
-          </GaantTooltip>
-        )}
       </div>
 
       <GraphQueryInputContainer>
@@ -578,7 +548,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     items.push(
       <div
         key={box.key}
-        data-tooltip-text={
+        data-tooltip={
           box.width < box.node.name.length * 5 ? box.node.name : undefined
         }
         onClick={(evt: React.MouseEvent<any>) =>
@@ -619,7 +589,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         items.push(
           <div
             key={idx}
-            data-tooltip-text={marker.key}
+            data-tooltip={marker.key}
             className={`
             chart-element
             ${useDot ? "marker-dot" : "marker-whiskers"}`}
@@ -828,16 +798,6 @@ const GaantChartContainer = styled.div`
   }
 `;
 
-const GaantTooltip = styled.div`
-  position: fixed;
-  font-size: 11px;
-  padding: 3px;
-  color: #a88860;
-  background: #fffaf5;
-  border: 1px solid #dbc5ad;
-  transform: translate(5px, 5px);
-  z-index: 100;
-`;
 const OptionsContainer = styled.div`
   min-height: 40px;
   display: flex;

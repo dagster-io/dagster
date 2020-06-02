@@ -383,6 +383,8 @@ const Item = styled.div<{
   margin: 3px;
   transition: background 150ms linear, color 150ms linear;
   cursor: ${({ state }) => (state === "present" ? "default" : "not-allowed")};
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
     transition: none;

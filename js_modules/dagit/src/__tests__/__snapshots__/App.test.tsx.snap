@@ -303,6 +303,8 @@ exports[`renders execution 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/playground"
             onClick={[Function]}
           >
@@ -310,6 +312,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/playground"
             onClick={[Function]}
           >
@@ -317,6 +321,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/playground"
             onClick={[Function]}
           >
@@ -324,6 +330,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/playground"
             onClick={[Function]}
           >
@@ -331,6 +339,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/playground"
             onClick={[Function]}
           >
@@ -338,6 +348,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/playground"
             onClick={[Function]}
           >
@@ -345,6 +357,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/playground"
             onClick={[Function]}
           >
@@ -352,6 +366,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/playground"
             onClick={[Function]}
           >
@@ -359,6 +375,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/playground"
             onClick={[Function]}
           >
@@ -366,6 +384,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/playground"
             onClick={[Function]}
           >
@@ -373,6 +393,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/playground"
             onClick={[Function]}
           >
@@ -380,6 +402,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/playground"
             onClick={[Function]}
           >
@@ -387,6 +411,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/playground"
             onClick={[Function]}
           >
@@ -394,6 +420,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/playground"
             onClick={[Function]}
           >
@@ -401,6 +429,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/playground"
             onClick={[Function]}
           >
@@ -408,6 +438,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/playground"
             onClick={[Function]}
           >
@@ -415,6 +447,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/playground"
             onClick={[Function]}
           >
@@ -422,6 +456,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/playground"
             onClick={[Function]}
           >
@@ -429,6 +465,8 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/playground"
             onClick={[Function]}
           >
@@ -451,6 +489,7 @@ exports[`renders execution 1`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -459,12 +498,12 @@ exports[`renders execution 1`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -494,7 +533,7 @@ exports[`renders execution 1`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -524,7 +563,7 @@ exports[`renders execution 1`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -644,6 +683,7 @@ exports[`renders execution 1`] = `
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -950,6 +990,8 @@ exports[`renders pipeline page 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -957,6 +999,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -964,6 +1008,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -971,6 +1017,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -978,6 +1026,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -985,6 +1035,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -992,6 +1044,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -999,6 +1053,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -1006,6 +1062,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -1013,6 +1071,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -1020,6 +1080,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -1027,6 +1089,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -1034,6 +1098,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -1041,6 +1107,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -1048,6 +1116,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -1055,6 +1125,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -1062,6 +1134,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -1069,6 +1143,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -1076,6 +1152,8 @@ exports[`renders pipeline page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -1098,6 +1176,7 @@ exports[`renders pipeline page 1`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -1106,12 +1185,12 @@ exports[`renders pipeline page 1`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -1141,7 +1220,7 @@ exports[`renders pipeline page 1`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -1171,7 +1250,7 @@ exports[`renders pipeline page 1`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -1223,7 +1302,7 @@ exports[`renders pipeline page 1`] = `
         }
       >
         <div
-          className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+          className="PipelineExplorer__PathOverlay-sc-188h86i-3 hMJwIL"
           style={
             Object {
               "background": "rgba(255, 255, 255, 0.4)",
@@ -1231,7 +1310,7 @@ exports[`renders pipeline page 1`] = `
           }
         >
           <span
-            className="bp3-popover-wrapper"
+            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
           >
             <span
               className="bp3-popover-target"
@@ -1504,6 +1583,8 @@ exports[`renders pipeline page 1`] = `
                 opacity={0.55}
               />
               <g
+                data-tooltip="april_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -1796,6 +1877,8 @@ join_q2_data:april_data
                 
               </g>
               <g
+                data-tooltip="download_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -1993,6 +2076,8 @@ ingest_q2_sfo_weather:csv_file_handle
                 </text>
               </g>
               <g
+                data-tooltip="ingest_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -2159,6 +2244,8 @@ process_sfo_weather_data:sfo_weather_data
                 </g>
               </g>
               <g
+                data-tooltip="join_q2_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -2587,6 +2674,8 @@ load_q2_on_time_data:data_frame
                 </text>
               </g>
               <g
+                data-tooltip="june_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -2879,6 +2968,8 @@ join_q2_data:june_data
                 
               </g>
               <g
+                data-tooltip="load_q2_on_time_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -3093,6 +3184,8 @@ join_q2_data:result
                 </text>
               </g>
               <g
+                data-tooltip="load_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -3307,6 +3400,8 @@ process_sfo_weather_data:result
                 </text>
               </g>
               <g
+                data-tooltip="master_cord_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -3599,6 +3694,8 @@ join_q2_data:master_cord_data
                 
               </g>
               <g
+                data-tooltip="may_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -3891,6 +3988,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_coupon_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -4180,6 +4279,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_market_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -4469,6 +4570,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_ticket_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -4758,6 +4861,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_sfo_weather_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -5251,6 +5356,7 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -5557,6 +5663,8 @@ exports[`renders pipeline solid page 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -5564,6 +5672,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -5571,6 +5681,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -5578,6 +5690,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -5585,6 +5699,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -5592,6 +5708,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -5599,6 +5717,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -5606,6 +5726,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -5613,6 +5735,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -5620,6 +5744,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -5627,6 +5753,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -5634,6 +5762,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -5641,6 +5771,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -5648,6 +5780,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -5655,6 +5789,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -5662,6 +5798,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -5669,6 +5807,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -5676,6 +5816,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -5683,6 +5825,8 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -5705,6 +5849,7 @@ exports[`renders pipeline solid page 1`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -5713,12 +5858,12 @@ exports[`renders pipeline solid page 1`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -5748,7 +5893,7 @@ exports[`renders pipeline solid page 1`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -5778,7 +5923,7 @@ exports[`renders pipeline solid page 1`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -5830,7 +5975,7 @@ exports[`renders pipeline solid page 1`] = `
         }
       >
         <div
-          className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+          className="PipelineExplorer__PathOverlay-sc-188h86i-3 hMJwIL"
           style={
             Object {
               "background": "rgba(255, 255, 255, 0.4)",
@@ -5838,7 +5983,7 @@ exports[`renders pipeline solid page 1`] = `
           }
         >
           <span
-            className="bp3-popover-wrapper"
+            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
           >
             <span
               className="bp3-popover-target"
@@ -6111,6 +6256,8 @@ exports[`renders pipeline solid page 1`] = `
                 opacity={0.55}
               />
               <g
+                data-tooltip="april_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -6403,6 +6550,8 @@ join_q2_data:april_data
                 
               </g>
               <g
+                data-tooltip="download_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -6600,6 +6749,8 @@ ingest_q2_sfo_weather:csv_file_handle
                 </text>
               </g>
               <g
+                data-tooltip="ingest_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -6766,6 +6917,8 @@ process_sfo_weather_data:sfo_weather_data
                 </g>
               </g>
               <g
+                data-tooltip="join_q2_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -7194,6 +7347,8 @@ load_q2_on_time_data:data_frame
                 </text>
               </g>
               <g
+                data-tooltip="june_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -7486,6 +7641,8 @@ join_q2_data:june_data
                 
               </g>
               <g
+                data-tooltip="load_q2_on_time_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -7700,6 +7857,8 @@ join_q2_data:result
                 </text>
               </g>
               <g
+                data-tooltip="load_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -7914,6 +8073,8 @@ process_sfo_weather_data:result
                 </text>
               </g>
               <g
+                data-tooltip="master_cord_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -8206,6 +8367,8 @@ join_q2_data:master_cord_data
                 
               </g>
               <g
+                data-tooltip="may_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -8498,6 +8661,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_coupon_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -8787,6 +8952,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_market_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -9076,6 +9243,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_ticket_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -9365,6 +9534,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_sfo_weather_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -9858,6 +10029,7 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -10164,6 +10336,8 @@ exports[`renders solids explorer 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -10171,6 +10345,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -10178,6 +10354,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -10185,6 +10363,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -10192,6 +10372,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -10199,6 +10381,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -10206,6 +10390,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -10213,6 +10399,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -10220,6 +10408,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -10227,6 +10417,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -10234,6 +10426,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -10241,6 +10435,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -10248,6 +10444,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -10255,6 +10453,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -10262,6 +10462,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -10269,6 +10471,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -10276,6 +10480,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -10283,6 +10489,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -10290,6 +10498,8 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -10339,7 +10549,7 @@ exports[`renders solids explorer 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 kMfsYz"
+                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eDKGJi"
                 onBlur={[Function]}
                 onClick={[Function]}
               >
@@ -10431,6 +10641,8 @@ exports[`renders solids explorer 1`] = `
             width={370}
           >
             <g
+              data-tooltip="s3_to_df"
+              data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
               onClick={[Function]}
               onDoubleClick={[Function]}
             >
@@ -11331,10 +11543,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="april_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11366,10 +11580,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="june_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11401,10 +11617,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="master_cord_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11436,10 +11654,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="may_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11471,10 +11691,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="process_q2_coupon_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11483,10 +11705,12 @@ more detail.
                         process_q2_coupon_data
                       </div>
                       <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 6,
+                            "marginLeft": 6,
                             "paddingRight": 15,
                           }
                         }
@@ -11518,10 +11742,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="process_q2_market_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11530,10 +11756,12 @@ more detail.
                         process_q2_market_data
                       </div>
                       <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 6,
+                            "marginLeft": 6,
                             "paddingRight": 15,
                           }
                         }
@@ -11565,10 +11793,12 @@ more detail.
                       }
                     >
                       <div
+                        data-tooltip="process_q2_ticket_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
-                            "paddingLeft": 0,
+                            "marginLeft": 0,
                             "paddingRight": 15,
                           }
                         }
@@ -11577,10 +11807,12 @@ more detail.
                         process_q2_ticket_data
                       </div>
                       <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 6,
+                            "marginLeft": 6,
                             "paddingRight": 15,
                           }
                         }
@@ -11598,6 +11830,7 @@ more detail.
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -11904,6 +12137,8 @@ exports[`renders type page 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -11911,6 +12146,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -11918,6 +12155,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -11925,6 +12164,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -11932,6 +12173,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -11939,6 +12182,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -11946,6 +12191,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -11953,6 +12200,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -11960,6 +12209,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -11967,6 +12218,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -11974,6 +12227,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -11981,6 +12236,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -11988,6 +12245,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -11995,6 +12254,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -12002,6 +12263,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -12009,6 +12272,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -12016,6 +12281,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -12023,6 +12290,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -12030,6 +12299,8 @@ exports[`renders type page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -12052,6 +12323,7 @@ exports[`renders type page 1`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -12060,12 +12332,12 @@ exports[`renders type page 1`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -12095,7 +12367,7 @@ exports[`renders type page 1`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -12125,7 +12397,7 @@ exports[`renders type page 1`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -12177,7 +12449,7 @@ exports[`renders type page 1`] = `
         }
       >
         <div
-          className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+          className="PipelineExplorer__PathOverlay-sc-188h86i-3 hMJwIL"
           style={
             Object {
               "background": "rgba(255, 255, 255, 0.4)",
@@ -12185,7 +12457,7 @@ exports[`renders type page 1`] = `
           }
         >
           <span
-            className="bp3-popover-wrapper"
+            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
           >
             <span
               className="bp3-popover-target"
@@ -12458,6 +12730,8 @@ exports[`renders type page 1`] = `
                 opacity={0.55}
               />
               <g
+                data-tooltip="april_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -12750,6 +13024,8 @@ join_q2_data:april_data
                 
               </g>
               <g
+                data-tooltip="download_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -12947,6 +13223,8 @@ ingest_q2_sfo_weather:csv_file_handle
                 </text>
               </g>
               <g
+                data-tooltip="ingest_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -13113,6 +13391,8 @@ process_sfo_weather_data:sfo_weather_data
                 </g>
               </g>
               <g
+                data-tooltip="join_q2_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -13541,6 +13821,8 @@ load_q2_on_time_data:data_frame
                 </text>
               </g>
               <g
+                data-tooltip="june_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -13833,6 +14115,8 @@ join_q2_data:june_data
                 
               </g>
               <g
+                data-tooltip="load_q2_on_time_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -14047,6 +14331,8 @@ join_q2_data:result
                 </text>
               </g>
               <g
+                data-tooltip="load_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -14261,6 +14547,8 @@ process_sfo_weather_data:result
                 </text>
               </g>
               <g
+                data-tooltip="master_cord_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -14553,6 +14841,8 @@ join_q2_data:master_cord_data
                 
               </g>
               <g
+                data-tooltip="may_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -14845,6 +15135,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_coupon_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -15134,6 +15426,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_market_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -15423,6 +15717,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_ticket_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -15712,6 +16008,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_sfo_weather_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -16205,6 +16503,7 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -16511,6 +16810,8 @@ exports[`renders type page 2`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -16518,6 +16819,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -16525,6 +16828,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -16532,6 +16837,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -16539,6 +16846,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -16546,6 +16855,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -16553,6 +16864,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -16560,6 +16873,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -16567,6 +16882,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -16574,6 +16891,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -16581,6 +16900,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -16588,6 +16909,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -16595,6 +16918,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -16602,6 +16927,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -16609,6 +16936,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -16616,6 +16945,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -16623,6 +16954,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -16630,6 +16963,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -16637,6 +16972,8 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -16659,6 +16996,7 @@ exports[`renders type page 2`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -16667,12 +17005,12 @@ exports[`renders type page 2`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -16702,7 +17040,7 @@ exports[`renders type page 2`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -16732,7 +17070,7 @@ exports[`renders type page 2`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -16784,7 +17122,7 @@ exports[`renders type page 2`] = `
         }
       >
         <div
-          className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+          className="PipelineExplorer__PathOverlay-sc-188h86i-3 hMJwIL"
           style={
             Object {
               "background": "rgba(255, 255, 255, 0.4)",
@@ -16792,7 +17130,7 @@ exports[`renders type page 2`] = `
           }
         >
           <span
-            className="bp3-popover-wrapper"
+            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
           >
             <span
               className="bp3-popover-target"
@@ -17065,6 +17403,8 @@ exports[`renders type page 2`] = `
                 opacity={0.55}
               />
               <g
+                data-tooltip="april_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -17357,6 +17697,8 @@ join_q2_data:april_data
                 
               </g>
               <g
+                data-tooltip="download_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -17554,6 +17896,8 @@ ingest_q2_sfo_weather:csv_file_handle
                 </text>
               </g>
               <g
+                data-tooltip="ingest_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -17720,6 +18064,8 @@ process_sfo_weather_data:sfo_weather_data
                 </g>
               </g>
               <g
+                data-tooltip="join_q2_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -18148,6 +18494,8 @@ load_q2_on_time_data:data_frame
                 </text>
               </g>
               <g
+                data-tooltip="june_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -18440,6 +18788,8 @@ join_q2_data:june_data
                 
               </g>
               <g
+                data-tooltip="load_q2_on_time_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -18654,6 +19004,8 @@ join_q2_data:result
                 </text>
               </g>
               <g
+                data-tooltip="load_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -18868,6 +19220,8 @@ process_sfo_weather_data:result
                 </text>
               </g>
               <g
+                data-tooltip="master_cord_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -19160,6 +19514,8 @@ join_q2_data:master_cord_data
                 
               </g>
               <g
+                data-tooltip="may_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -19452,6 +19808,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_coupon_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -19741,6 +20099,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_market_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -20030,6 +20390,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_ticket_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -20319,6 +20681,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_sfo_weather_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -20812,6 +21176,7 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;
 
@@ -21118,6 +21483,8 @@ exports[`renders without error 1`] = `
         >
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM selected"
+            data-tooltip="airline_demo_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -21125,6 +21492,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="airline_demo_warehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
             onClick={[Function]}
           >
@@ -21132,6 +21501,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="composition"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
             onClick={[Function]}
           >
@@ -21139,6 +21510,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="daily_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
             onClick={[Function]}
           >
@@ -21146,6 +21519,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="error_monster"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
             onClick={[Function]}
           >
@@ -21153,6 +21528,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="event_ingest_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
             onClick={[Function]}
           >
@@ -21160,6 +21537,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="generate_training_set_and_train_model"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
             onClick={[Function]}
           >
@@ -21167,6 +21546,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="jaffle_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/jaffle_pipeline/"
             onClick={[Function]}
           >
@@ -21174,6 +21555,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="log_spew"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
             onClick={[Function]}
           >
@@ -21181,6 +21564,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="longitudinal_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
             onClick={[Function]}
           >
@@ -21188,6 +21573,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="many_events"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
             onClick={[Function]}
           >
@@ -21195,6 +21582,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
             onClick={[Function]}
           >
@@ -21202,6 +21591,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pandas_hello_world_pipeline_with_read_csv"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
             onClick={[Function]}
           >
@@ -21209,6 +21600,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="pyspark_pagerank"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pyspark_pagerank/"
             onClick={[Function]}
           >
@@ -21216,6 +21609,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_lakehouse_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
             onClick={[Function]}
           >
@@ -21223,6 +21618,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="simple_pyspark_sfo_weather_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
             onClick={[Function]}
           >
@@ -21230,6 +21627,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="sleepy_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
             onClick={[Function]}
           >
@@ -21237,6 +21636,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="stdout_spew_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
             onClick={[Function]}
           >
@@ -21244,6 +21645,8 @@ exports[`renders without error 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
+            data-tooltip="unreliable_pipeline"
+            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
             onClick={[Function]}
           >
@@ -21266,6 +21669,7 @@ exports[`renders without error 1`] = `
         "display": "flex",
         "flexDirection": "column",
         "height": "100%",
+        "minWidth": 0,
         "width": "100%",
       }
     }
@@ -21274,12 +21678,12 @@ exports[`renders without error 1`] = `
       className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 dHzHcx"
+        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
       >
         airline_demo_ingest_pipeline
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -21309,7 +21713,7 @@ exports[`renders without error 1`] = `
         Overview
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dRZHub"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
         onClick={[Function]}
       >
         <span
@@ -21339,7 +21743,7 @@ exports[`renders without error 1`] = `
         Definition
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 iGbuRE"
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
         onClick={[Function]}
       >
         <span
@@ -21391,7 +21795,7 @@ exports[`renders without error 1`] = `
         }
       >
         <div
-          className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+          className="PipelineExplorer__PathOverlay-sc-188h86i-3 hMJwIL"
           style={
             Object {
               "background": "rgba(255, 255, 255, 0.4)",
@@ -21399,7 +21803,7 @@ exports[`renders without error 1`] = `
           }
         >
           <span
-            className="bp3-popover-wrapper"
+            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
           >
             <span
               className="bp3-popover-target"
@@ -21672,6 +22076,8 @@ exports[`renders without error 1`] = `
                 opacity={0.55}
               />
               <g
+                data-tooltip="april_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -21964,6 +22370,8 @@ join_q2_data:april_data
                 
               </g>
               <g
+                data-tooltip="download_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -22161,6 +22569,8 @@ ingest_q2_sfo_weather:csv_file_handle
                 </text>
               </g>
               <g
+                data-tooltip="ingest_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -22327,6 +22737,8 @@ process_sfo_weather_data:sfo_weather_data
                 </g>
               </g>
               <g
+                data-tooltip="join_q2_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -22755,6 +23167,8 @@ load_q2_on_time_data:data_frame
                 </text>
               </g>
               <g
+                data-tooltip="june_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -23047,6 +23461,8 @@ join_q2_data:june_data
                 
               </g>
               <g
+                data-tooltip="load_q2_on_time_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -23261,6 +23677,8 @@ join_q2_data:result
                 </text>
               </g>
               <g
+                data-tooltip="load_q2_sfo_weather"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -23475,6 +23893,8 @@ process_sfo_weather_data:result
                 </text>
               </g>
               <g
+                data-tooltip="master_cord_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -23767,6 +24187,8 @@ join_q2_data:master_cord_data
                 
               </g>
               <g
+                data-tooltip="may_on_time_s3_to_df"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -24059,6 +24481,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_coupon_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -24348,6 +24772,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_market_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -24637,6 +25063,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_q2_ticket_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -24926,6 +25354,8 @@ join_q2_data:may_data
                 
               </g>
               <g
+                data-tooltip="process_sfo_weather_data"
+                data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
                 onClick={[Function]}
                 onDoubleClick={[Function]}
               >
@@ -25419,5 +25849,6 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
   </div>
+  <span />
 </div>
 `;

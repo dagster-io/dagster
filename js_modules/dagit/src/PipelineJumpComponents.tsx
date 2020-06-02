@@ -6,6 +6,7 @@ import gql from "graphql-tag";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
 import { ShortcutHandler } from "./ShortcutHandler";
 import { DagsterRepositoryContext } from "./DagsterRepositoryContext";
+import styled from "styled-components/macro";
 
 interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
@@ -40,7 +41,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
         shortcutLabel={`⌥S`}
         shortcutFilter={e => e.keyCode === 83 && e.altKey}
       >
-        <StringSelect
+        <StringSelectNoIntrinsicWidth
           ref={this.select}
           items={solids.map(s => s.name)}
           itemRenderer={BasicStringRenderer}
@@ -52,7 +53,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
             text={selectedSolid ? selectedSolid.name : "Select a Solid..."}
             rightIcon="double-caret-vertical"
           />
-        </StringSelect>
+        </StringSelectNoIntrinsicWidth>
       </ShortcutHandler>
     );
   }
@@ -84,7 +85,7 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
       >
         <DagsterRepositoryContext.Consumer>
           {context => (
-            <StringSelect
+            <StringSelectNoIntrinsicWidth
               ref={this.select}
               items={context.repository?.pipelines.map(x => x.name) || []}
               itemRenderer={BasicStringRenderer}
@@ -99,7 +100,7 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
                 rightIcon="double-caret-vertical"
                 icon="send-to-graph"
               />
-            </StringSelect>
+            </StringSelectNoIntrinsicWidth>
           )}
         </DagsterRepositoryContext.Consumer>
       </ShortcutHandler>
@@ -107,7 +108,27 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
   }
 }
 
-const StringSelect = Select.ofType<string>();
+// By default, Blueprint's Select component has an intrinsic size determined by the length of
+// it's content, which in our case can be wildly long and unruly. Giving the Select a min-width
+// of 0px and adding "width" rules to all nested <divs> that are a function of the parent (eg: 100%)
+// tells the layout engine that this can be assigned a width by it's container. This allows
+// us to make the Select "as wide as the layout allows" and have it truncate first.
+//
+const StringSelectNoIntrinsicWidth = styled(Select.ofType<string>())`
+  min-width: 0;
+
+  & .bp3-popover-target {
+    width: 100%;
+  }
+  & .bp3-button {
+    max-width: 100%;
+  }
+  & .bp3-button-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`;
 
 const BasicStringPredicate = (text: string, items: string[]) =>
   items.filter(i => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);

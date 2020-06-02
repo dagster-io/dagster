@@ -36,6 +36,10 @@ const FOCUSED_STYLE = {
   fill: "rgba(59, 141, 227, 0.2)",
   dashed: false
 };
+const TOOLTIP_STYLE = JSON.stringify({
+  top: -20,
+  left: 5
+});
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
@@ -290,6 +294,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       <g
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
+        data-tooltip={invocation ? invocation.name : definition.name}
+        data-tooltip-style={TOOLTIP_STYLE}
         opacity={dim ? 0.3 : undefined}
       >
         {selected

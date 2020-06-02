@@ -16,7 +16,7 @@
     </g>
   </g>
   <g opacity="0.55"></g>
-  <g>
+  <g data-tooltip="add_four" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="94" y="124" width="382" height="99" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="97" y="127" width="376" height="93" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="100" y="130" width="370" height="87" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="165.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" height="16" dominant-baseline="hanging">add_four</text>
@@ -39,7 +39,7 @@
     <g></g>
     <rect x="414.9200000000001" y="207" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(248, 75%, 50%)" x="418.9200000000001" y="210" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" height="14" dominant-baseline="hanging">Expand</text>
   </g>
-  <g>
+  <g data-tooltip="div_four" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="94" y="518" width="382" height="99" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="97" y="521" width="376" height="93" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="100" y="524" width="370" height="87" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="559.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" height="16" dominant-baseline="hanging">div_four</text>
@@ -62,7 +62,7 @@
     <g></g>
     <rect x="414.9200000000001" y="601" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(248, 75%, 50%)" x="418.9200000000001" y="604" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" height="14" dominant-baseline="hanging">Expand</text>
   </g>
-  <g>
+  <g data-tooltip="int_to_float" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="100" y="327" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="362.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="119.03999999999999" height="16" dominant-baseline="hanging">int_to_float</text>
     <g>
       <title>num: Int

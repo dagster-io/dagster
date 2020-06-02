@@ -323,7 +323,7 @@ const PathOverlay = styled.div`
   z-index: 2;
   padding: 7px;
   padding-left: 10px;
-  max-width: 80%;
+  max-width: calc(100% - 250px);
   display: inline-flex;
   align-items: center;
   position: absolute;
