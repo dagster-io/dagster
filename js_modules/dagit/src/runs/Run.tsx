@@ -232,9 +232,6 @@ const ReexecuteWithData = ({
   onSetSelectedSteps,
   getReexecutionVariables
 }: ReexecuteWithDataProps) => {
-  const [startPipelineReexecution] = useMutation(
-    LAUNCH_PIPELINE_REEXECUTION_MUTATION
-  );
   const [launchPipelineReexecution] = useMutation(
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
@@ -243,21 +240,6 @@ const ReexecuteWithData = ({
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== "*" ? query : "";
-  const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
-    if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getReexecutionVariables({
-      run,
-      stepKeys,
-      stepQuery,
-      resumeRetry,
-      repositoryLocationName: repositoryLocation?.name,
-      repositoryName: repository?.name
-    });
-    const result = await startPipelineReexecution({ variables });
-    handleReexecutionResult(run.pipeline.name, result, {
-      openInNewWindow: false
-    });
-  };
   const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
@@ -331,7 +313,6 @@ const ReexecuteWithData = ({
                     run={run}
                     executionPlan={run.executionPlan}
                     artifactsPersisted={run.executionPlan.artifactsPersisted}
-                    onExecute={onExecute}
                     onLaunch={onLaunch}
                     selectedSteps={selectedSteps}
                     selectedStepStates={selectedSteps.map(
