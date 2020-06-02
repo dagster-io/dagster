@@ -45,7 +45,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-dbt \
-				-e python_modules/libraries/dagster-flyte \
 				-e python_modules/libraries/dagster-gcp \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \
@@ -64,18 +63,15 @@ install_dev_python_modules:
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
+				-e examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
 	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
-	# This fails on Python 3.8 because TensorFlow is missing
-	-pip install -e examples[full] $(QUIET)
-
-	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
+	# NOTE: These installations will fail for Python 2.7 (Flyte and Dask don't work w/ py27)
+	-pip install -e python_modules/libraries/dagster-flyte $(QUIET)
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
-
-	# This fails on py2
-	-pip install -r .read-the-docs-requirements.txt
+	-pip install -r docs-requirements.txt
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules

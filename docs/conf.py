@@ -50,7 +50,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'nbsphinx',
     'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.images',
 ]
 
 # https://stackoverflow.com/a/54843636/324449

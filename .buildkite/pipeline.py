@@ -415,7 +415,7 @@ def next_docs_build_tests():
             .run(
                 "pip install -r bin/requirements.txt -qqq",
                 "pip install -r bin/dev-requirements.txt -qqq",
-                "pip install -r .read-the-docs-requirements.txt -qqq",
+                "pip install -r docs-requirements.txt -qqq",
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs",
                 "make buildnext",
@@ -430,7 +430,7 @@ def next_docs_build_tests():
             .run(
                 "pip install -r bin/requirements.txt -qqq",
                 "pip install -r bin/dev-requirements.txt -qqq",
-                "pip install -r .read-the-docs-requirements.txt -qqq",
+                "pip install -r docs-requirements.txt -qqq",
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs",
                 "make buildnext",
@@ -489,7 +489,7 @@ if __name__ == "__main__":
         .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
         StepBuilder("docs snapshot test")
         .run(
-            "pip install -r .read-the-docs-requirements.txt -qqq",
+            "pip install -r docs-requirements.txt -qqq",
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
             "pip install -e python_modules/libraries/dagstermill -qqq",
