@@ -11,4 +11,4 @@ from dagster import Field, StringSource, resource
     description='This resource is for connecting to Twilio',
 )
 def twilio_resource(context):
-    return Client(*context.resource_config.values())
+    return Client(context.resource_config['account_sid'], context.resource_config['auth_token'])
