@@ -3,6 +3,7 @@ import time
 import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
+from dagster.core.definitions.repository import RepositoryData
 from dagster.core.scheduler import Schedule, ScheduleDefinitionData, ScheduleStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
 from dagster.utils.error import SerializableErrorInfo
@@ -42,7 +43,9 @@ class TestScheduleStorage:
     def test_basic_schedule_storage(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_schedule(repository.name, schedule)
         schedules = storage.all_schedules(repository.name)
@@ -55,7 +58,9 @@ class TestScheduleStorage:
     def test_add_multiple_schedules(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
         schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
         schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
@@ -74,7 +79,9 @@ class TestScheduleStorage:
     def test_get_schedule_by_name(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         storage.add_schedule(repository.name, self.build_schedule("my_schedule", "* * * * *"))
         schedule = storage.get_schedule_by_name(repository.name, "my_schedule")
 
@@ -83,7 +90,9 @@ class TestScheduleStorage:
     def test_get_schedule_by_name_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         storage.add_schedule(repository.name, self.build_schedule("my_schedule", "* * * * *"))
         schedule = storage.get_schedule_by_name(repository.name, "fake_schedule")
 
@@ -92,7 +101,9 @@ class TestScheduleStorage:
     def test_update_schedule(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_schedule(repository.name, schedule)
 
@@ -109,7 +120,9 @@ class TestScheduleStorage:
     def test_update_schedule_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
@@ -118,7 +131,9 @@ class TestScheduleStorage:
     def test_delete_schedule(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_schedule(repository.name, schedule)
         storage.delete_schedule(repository.name, schedule)
@@ -129,7 +144,9 @@ class TestScheduleStorage:
     def test_delete_schedule_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
@@ -138,7 +155,9 @@ class TestScheduleStorage:
     def test_add_schedule_with_same_name(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_schedule(repository.name, schedule)
 
@@ -151,7 +170,9 @@ class TestScheduleStorage:
     def test_create_tick(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         current_time = time.time()
         tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
         assert tick.tick_id == 1
@@ -170,7 +191,9 @@ class TestScheduleStorage:
     def test_update_tick_to_success(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         current_time = time.time()
         tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
 
@@ -193,7 +216,9 @@ class TestScheduleStorage:
     def test_update_tick_to_skip(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         current_time = time.time()
         tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
 
@@ -216,7 +241,9 @@ class TestScheduleStorage:
     def test_update_tick_to_failure(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         current_time = time.time()
         tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
 
@@ -242,7 +269,9 @@ class TestScheduleStorage:
     def test_get_schedule_stats(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
+        repository = RepositoryDefinition(
+            name="repository_name", repository_data=RepositoryData.from_list([])
+        )
         current_time = time.time()
 
         error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")

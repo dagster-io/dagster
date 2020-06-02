@@ -36,7 +36,6 @@ from dagster import (
     PartitionSetDefinition,
     PresetDefinition,
     PythonObjectDagsterType,
-    RepositoryDefinition,
     ScheduleDefinition,
     String,
     check,
@@ -49,6 +48,7 @@ from dagster import (
     monthly_schedule,
     output_materialization_config,
     pipeline,
+    repository,
     resource,
     solid,
     usable_as_dagster_type,
@@ -87,22 +87,22 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 def define_test_subprocess_context(instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    return define_subprocess_context_for_file(__file__, "define_repository", instance)
+    return define_subprocess_context_for_file(__file__, "test_repo", instance)
 
 
 def define_test_context(instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    return define_context_for_file(__file__, "define_repository", instance)
+    return define_context_for_file(__file__, "test_repo", instance)
 
 
 def create_main_recon_repo():
-    return ReconstructableRepository.for_file(__file__, 'define_repository')
+    return ReconstructableRepository.for_file(__file__, 'test_repo')
 
 
 def get_main_external_repo():
     return InProcessRepositoryLocation(
         ReconstructableRepository.from_yaml(file_relative_path(__file__, 'repo.yaml')),
-    ).get_repository('test')
+    ).get_repository('test_repo')
 
 
 def define_test_snapshot_context():
@@ -183,44 +183,6 @@ def noop_solid(_):
 @pipeline
 def noop_pipeline():
     noop_solid()
-
-
-def define_repository():
-    return RepositoryDefinition(
-        name='test',
-        pipeline_defs=[
-            composites_pipeline,
-            csv_hello_world,
-            csv_hello_world_df_input,
-            csv_hello_world_two,
-            csv_hello_world_with_expectations,
-            hello_world_with_tags,
-            eventually_successful,
-            infinite_loop_pipeline,
-            materialization_pipeline,
-            more_complicated_config,
-            more_complicated_nested_config,
-            multi_mode_with_loggers,
-            multi_mode_with_resources,
-            naughty_programmer_pipeline,
-            noop_pipeline,
-            pipeline_with_invalid_definition_error,
-            no_config_pipeline,
-            no_config_chain_pipeline,
-            pipeline_with_enum_config,
-            pipeline_with_expectations,
-            pipeline_with_list,
-            required_resource_pipeline,
-            retry_resource_pipeline,
-            retry_multi_output_pipeline,
-            scalar_output_pipeline,
-            spew_pipeline,
-            tagged_pipeline,
-            retry_multi_input_early_terminate_pipeline,
-        ],
-        schedule_defs=define_schedules(),
-        partition_set_defs=define_partitions(),
-    )
 
 
 @pipeline
@@ -978,3 +940,41 @@ def define_partitions():
     )
 
     return [integer_set, enum_set]
+
+
+@repository
+def test_repo():
+    return (
+        [
+            composites_pipeline,
+            csv_hello_world,
+            csv_hello_world_df_input,
+            csv_hello_world_two,
+            csv_hello_world_with_expectations,
+            hello_world_with_tags,
+            eventually_successful,
+            infinite_loop_pipeline,
+            materialization_pipeline,
+            more_complicated_config,
+            more_complicated_nested_config,
+            multi_mode_with_loggers,
+            multi_mode_with_resources,
+            naughty_programmer_pipeline,
+            noop_pipeline,
+            pipeline_with_invalid_definition_error,
+            no_config_pipeline,
+            no_config_chain_pipeline,
+            pipeline_with_enum_config,
+            pipeline_with_expectations,
+            pipeline_with_list,
+            required_resource_pipeline,
+            retry_resource_pipeline,
+            retry_multi_output_pipeline,
+            scalar_output_pipeline,
+            spew_pipeline,
+            tagged_pipeline,
+            retry_multi_input_early_terminate_pipeline,
+        ]
+        + define_schedules()
+        + define_partitions()
+    )

@@ -1,5 +1,6 @@
-from dagster import RepositoryDefinition
+from dagster import repository
 
 
-def define_demo_repo():
-    return RepositoryDefinition(name='demo_repo')
+@repository
+def demo_repo():
+    return []

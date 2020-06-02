@@ -108,16 +108,15 @@ Great! Now we can wrap this up in a pipeline and repository, then open
 the repository in dagit to execute the pipeline.
 
 ```{.python}
-from dagster import pipeline, RepositoryDefinition
+from dagster import pipeline, repository
 
 @pipeline
 def compute_total_stock_volume():
     sum_volume(query_historical_stock_data())
 
-def define_repo():
-    return RepositoryDefinition(
-        name='partitioning-tutorial', pipeline_defs=[compute_total_stock_volume]
-    )
+@repository
+def partitioning_tutorial():
+    return [compute_total_stock_volume]
 ```
 
 ![pipeline.png](/assets/images/learn/guides/partitioning/pipeline.png)

@@ -1,4 +1,4 @@
-from dagster import ModeDefinition, PresetDefinition, RepositoryDefinition, pipeline, solid
+from dagster import ModeDefinition, PresetDefinition, pipeline, repository, solid
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -28,8 +28,11 @@ def a_pipeline():
 
 
 def test_external_repository_data(snapshot):
-    rep_def = RepositoryDefinition(name='repo', pipeline_defs=[a_pipeline])
-    snapshot.assert_match(serialize_pp(external_repository_data_from_def(rep_def)))
+    @repository
+    def repo():
+        return [a_pipeline]
+
+    snapshot.assert_match(serialize_pp(external_repository_data_from_def(repo)))
 
 
 def test_external_pipeline_data(snapshot):

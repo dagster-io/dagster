@@ -18,9 +18,9 @@ from dagster import (
 
 
 def test_define_repo():
-    from dagster_examples.toys.repo import define_repo
+    from dagster_examples.toys.repo import toys_repository
 
-    assert define_repo()
+    assert toys_repository
 
 
 def test_many_events_pipeline():

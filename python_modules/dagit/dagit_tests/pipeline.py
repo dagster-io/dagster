@@ -1,11 +1,4 @@
-from dagster import (
-    InputDefinition,
-    Int,
-    OutputDefinition,
-    RepositoryDefinition,
-    lambda_solid,
-    pipeline,
-)
+from dagster import InputDefinition, Int, OutputDefinition, lambda_solid, pipeline, repository
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -23,5 +16,6 @@ def math():
     return mult_two(num=add_one())
 
 
-def define_repository():
-    return RepositoryDefinition(name='test', pipeline_defs=[math])
+@repository
+def test_repository():
+    return [math]

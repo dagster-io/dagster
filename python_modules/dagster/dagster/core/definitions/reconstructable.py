@@ -200,7 +200,7 @@ def pipeline_def_from_pointer(pointer):
 
 def repository_def_from_pointer(pointer):
     from .pipeline import PipelineDefinition
-    from .repository import RepositoryDefinition
+    from .repository import RepositoryData, RepositoryDefinition
 
     target = pointer.load_target()
 
@@ -212,7 +212,9 @@ def repository_def_from_pointer(pointer):
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, PipelineDefinition):
         # consider including pipeline name in generated repo name
-        repo_def = RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[target])
+        repo_def = RepositoryDefinition(
+            name=EPHEMERAL_NAME, repository_data=RepositoryData.from_list([target])
+        )
     elif isinstance(target, RepositoryDefinition):
         repo_def = target
     else:

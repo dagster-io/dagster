@@ -14,11 +14,11 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
-    RepositoryDefinition,
     String,
     default_executors,
     lambda_solid,
     pipeline,
+    repository,
     solid,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
@@ -160,13 +160,19 @@ def define_large_pipeline_celery():
 def define_demo_execution_repo():
     from .schedules import define_schedules
 
-    return RepositoryDefinition(
-        name='demo_execution_repo',
-        pipeline_dict={
-            'demo_pipeline_celery': define_demo_pipeline_celery,
-            'large_pipeline_celery': define_large_pipeline_celery,
-            'long_running_pipeline_celery': define_long_running_pipeline_celery,
-        },
-        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],
-        schedule_defs=define_schedules(),
-    )
+    @repository
+    def demo_execution_repo():
+        return {
+            'pipelines': {
+                'demo_pipeline_celery': define_demo_pipeline_celery,
+                'large_pipeline_celery': define_large_pipeline_celery,
+                'long_running_pipeline_celery': define_long_running_pipeline_celery,
+                'optional_outputs': optional_outputs,
+                'demo_pipeline': demo_pipeline,
+                'demo_pipeline_gcs': demo_pipeline_gcs,
+                'demo_error_pipeline': demo_error_pipeline,
+            },
+            'schedules': define_schedules(),
+        }
+
+    return demo_execution_repo

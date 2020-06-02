@@ -1,13 +1,13 @@
-from dagster import RepositoryDefinition
+from dagster import repository
 
 from .pipelines import define_airline_demo_ingest_pipeline, define_airline_demo_warehouse_pipeline
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='airline_demo_repo',
-        pipeline_dict={
+@repository
+def airline_demo_repo():
+    return {
+        'pipelines': {
             'airline_demo_ingest_pipeline': define_airline_demo_ingest_pipeline,
             'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,
-        },
-    )
+        }
+    }

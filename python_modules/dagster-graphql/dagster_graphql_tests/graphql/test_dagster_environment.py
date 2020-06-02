@@ -6,6 +6,6 @@ from dagster.utils import file_relative_path
 
 def test_dagster_out_of_process_environment():
     env = OutOfProcessRepositoryLocation(
-        'test', FileCodePointer(file_relative_path(__file__, 'setup.py'), 'define_repository'),
+        'test', FileCodePointer(file_relative_path(__file__, 'setup.py'), 'test_repo'),
     )
-    assert env.get_repository('test')
+    assert env.get_repository('test_repo')

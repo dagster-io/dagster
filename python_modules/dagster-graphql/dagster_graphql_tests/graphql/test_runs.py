@@ -6,7 +6,7 @@ from dagster_graphql.test.utils import (
     get_legacy_pipeline_selector,
 )
 
-from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
+from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
@@ -229,9 +229,11 @@ def get_repo_at_time_1():
     def foo_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, foo_pipeline]
+
+    return evolving_repo
 
 
 def get_repo_at_time_2():
@@ -252,9 +254,11 @@ def get_repo_at_time_2():
     def bar_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, bar_pipeline]
+
+    return evolving_repo
 
 
 def test_runs_over_time():

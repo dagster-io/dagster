@@ -8,12 +8,15 @@ from .repo import optional_outputs
 
 def define_schedules():
     @daily_schedule(
-        pipeline_name=optional_outputs.name, start_date=datetime.datetime(2020, 1, 1),
+        name='daily_optional_outputs',
+        pipeline_name=optional_outputs.name,
+        start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_optional_outputs(_date):
         return {}
 
     @schedule(
+        name='frequent_large_pipe',
         pipeline_name='large_pipeline_celery',
         cron_schedule='*/5 * * * *',
         environment_vars={
@@ -41,4 +44,7 @@ def define_schedules():
         cfg['storage'] = {'s3': {'config': {'s3_bucket': 'dagster-scratch-80542c2'}}}
         return cfg
 
-    return [daily_optional_outputs, frequent_large_pipe]
+    return {
+        'daily_optional_outputs': daily_optional_outputs,
+        'frequent_large_pipe': frequent_large_pipe,
+    }

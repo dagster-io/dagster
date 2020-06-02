@@ -377,7 +377,7 @@ def test_make_repo(
             result = execute_pipeline(pipeline)
             assert result.success
 
-        assert repo.pipeline_names == set(expected_pipeline_names)
+        assert set(repo.pipeline_names) == set(expected_pipeline_names)
 
 
 test_airflow_example_dags_inputs = [
@@ -436,4 +436,4 @@ def test_airflow_example_dags(
         if pipeline_name not in exclude_from_execution_tests:
             result = execute_pipeline(pipeline)
             assert result.success
-    assert repo.pipeline_names == set(expected_pipeline_names)
+    assert set(repo.pipeline_names) == set(expected_pipeline_names)

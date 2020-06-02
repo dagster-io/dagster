@@ -10,10 +10,10 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     PythonObjectDagsterType,
-    RepositoryDefinition,
     SolidDefinition,
     input_hydration_config,
     output_materialization_config,
+    repository,
 )
 
 from .production_query import PRODUCTION_QUERY
@@ -152,10 +152,9 @@ def define_circular_dependency_pipeline():
     )
 
 
-def define_test_repository():
-    return RepositoryDefinition(
-        name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
-    )
+@repository
+def test_repository():
+    return {'pipelines': {'pipeline': define_circular_dependency_pipeline}}
 
 
 def test_pipeline_or_error_by_name(graphql_context):

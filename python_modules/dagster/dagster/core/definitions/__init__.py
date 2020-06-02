@@ -6,6 +6,7 @@ from .decorators import (
     lambda_solid,
     monthly_schedule,
     pipeline,
+    repository,
     schedule,
     solid,
     weekly_schedule,

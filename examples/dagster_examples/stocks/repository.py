@@ -1,6 +1,6 @@
 import requests
 
-from dagster import InputDefinition, RepositoryDefinition, pipeline, solid
+from dagster import InputDefinition, pipeline, repository, solid
 
 from .schedules import define_schedules
 from .simple_partitions import define_partitions
@@ -40,10 +40,6 @@ def compute_total_stock_volume():
     sum_volume(query_historical_stock_data())
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='partitioning-tutorial',
-        pipeline_defs=[compute_total_stock_volume],
-        schedule_defs=define_schedules(),
-        partition_set_defs=define_partitions(),
-    )
+@repository
+def partitioning_tutorial():
+    return [compute_total_stock_volume] + define_schedules() + define_partitions()

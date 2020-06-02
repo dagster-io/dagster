@@ -1,12 +1,6 @@
 import string
 
-from dagster import (
-    PartitionSetDefinition,
-    RepositoryDefinition,
-    ScheduleDefinition,
-    lambda_solid,
-    pipeline,
-)
+from dagster import PartitionSetDefinition, ScheduleDefinition, lambda_solid, pipeline, repository
 
 
 @lambda_solid
@@ -34,19 +28,19 @@ def define_foo_pipeline():
 
 
 def define_bar_schedules():
-    return [
-        ScheduleDefinition(
+    return {
+        'foo_schedule': ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
             pipeline_name="test_pipeline",
             environment_dict={},
         )
-    ]
+    }
 
 
 def define_baz_partitions():
-    return [
-        PartitionSetDefinition(
+    return {
+        'baz_partitions': PartitionSetDefinition(
             name='baz_partitions',
             pipeline_name='baz',
             partition_fn=lambda: string.ascii_lowercase,
@@ -54,13 +48,13 @@ def define_baz_partitions():
                 'solids': {'do_input': {'inputs': {'x': {'value': partition}}}}
             },
         )
-    ]
+    }
 
 
+@repository
 def bar_repo():
-    return RepositoryDefinition(
-        name='bar',
-        pipeline_dict={'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
-        schedule_defs=define_bar_schedules(),
-        partition_set_defs=define_baz_partitions(),
-    )
+    return {
+        'pipelines': {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        'schedules': define_bar_schedules(),
+        'partition_sets': define_baz_partitions(),
+    }

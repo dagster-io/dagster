@@ -11,7 +11,9 @@ def define_examples_context():
     return DagsterGraphQLContext(
         locations=[
             InProcessRepositoryLocation(
-                ReconstructableRepository.for_module('dagster_examples', 'define_demo_repo'),
+                ReconstructableRepository.for_module(
+                    'dagster_examples', 'define_internal_dagit_repository'
+                ),
             )
         ],
         instance=DagsterInstance.ephemeral(),

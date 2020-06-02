@@ -4,10 +4,10 @@ import datetime
 
 from dagster import (
     PresetDefinition,
-    RepositoryDefinition,
     daily_schedule,
     hourly_schedule,
     pipeline,
+    repository,
     schedule,
     solid,
 )
@@ -118,9 +118,6 @@ def test_pipeline():
     test_solid()
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='experimental_repository',
-        pipeline_defs=[test_pipeline, metrics_pipeline, rollup_pipeline],
-        schedule_defs=define_schedules(),
-    )
+@repository
+def experimental_repository():
+    return [test_pipeline, metrics_pipeline, rollup_pipeline] + define_schedules()

@@ -12,11 +12,11 @@ from click.testing import CliRunner
 from dagster import (
     DagsterInvariantViolationError,
     PartitionSetDefinition,
-    RepositoryDefinition,
     ScheduleDefinition,
     check,
     lambda_solid,
     pipeline,
+    repository,
     seven,
     solid,
 )
@@ -85,13 +85,37 @@ def baz_pipeline():
     do_input()
 
 
-def define_bar_repo():
-    return RepositoryDefinition(
-        name='bar',
-        pipeline_dict={'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
-        schedule_defs=define_bar_schedules(),
-        partition_set_defs=define_baz_partitions(),
-    )
+def define_bar_schedules():
+    return {
+        'foo_schedule': ScheduleDefinition(
+            "foo_schedule",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            environment_dict={},
+        )
+    }
+
+
+def define_baz_partitions():
+    return {
+        'baz_partitions': PartitionSetDefinition(
+            name='baz_partitions',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            environment_dict_fn_for_partition=lambda partition: {
+                'solids': {'do_input': {'inputs': {'x': {'value': partition}}}}
+            },
+        )
+    }
+
+
+@repository
+def bar():
+    return {
+        'pipelines': {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        'schedules': define_bar_schedules(),
+        'partition_sets': define_baz_partitions(),
+    }
 
 
 @solid
@@ -122,14 +146,14 @@ def test_list_command():
             'repository_yaml': None,
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
-            'fn_name': 'define_bar_repo',
+            'fn_name': 'bar',
         },
         no_print,
     )
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'define_bar_repo'],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'bar'],
     )
 
     assert result.exit_code == 0
@@ -153,13 +177,14 @@ def test_list_command():
             'repository_yaml': None,
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'define_repo',
+            'fn_name': 'hello_cereal_repository',
         },
         no_print,
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo']
+        pipeline_list_command,
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_repository'],
     )
     assert result.exit_code == 0
     assert result.output == (
@@ -212,14 +237,21 @@ def test_list_command():
                 'repository_yaml': None,
                 'python_file': 'foo.py',
                 'module_name': 'dagster_examples.intro_tutorial.repos',
-                'fn_name': 'define_repo',
+                'fn_name': 'hello_cereal_repository',
             },
             no_print,
         )
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', 'foo.py', '-m', 'dagster_examples.intro_tutorial.repos', '-n', 'define_repo'],
+        [
+            '-f',
+            'foo.py',
+            '-m',
+            'dagster_examples.intro_tutorial.repos',
+            '-n',
+            'hello_cereal_repository',
+        ],
     )
     assert result.exit_code == 2
 
@@ -275,14 +307,14 @@ def valid_execute_args():
             'pipeline_name': ('foo',),
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
-            'fn_name': 'define_bar_repo',
+            'fn_name': 'bar',
         },
         {
             'repository_yaml': None,
             'pipeline_name': ('hello_cereal_pipeline',),
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'define_repo',
+            'fn_name': 'hello_cereal_repository',
         },
         {
             'repository_yaml': None,
@@ -312,18 +344,12 @@ def valid_cli_args():
     return [
         ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo'],
         ['-y', file_relative_path(__file__, 'repository_module.yaml'), 'hello_cereal_pipeline'],
-        [
-            '-f',
-            file_relative_path(__file__, 'test_cli_commands.py'),
-            '-n',
-            'define_bar_repo',
-            'foo',
-        ],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'bar', 'foo',],
         [
             '-m',
             'dagster_examples.intro_tutorial.repos',
             '-n',
-            'define_repo',
+            'hello_cereal_repository',
             'hello_cereal_pipeline',
         ],
         ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_pipeline'],
@@ -354,7 +380,7 @@ def test_print_command():
             '-f',
             file_relative_path(__file__, 'test_cli_commands.py'),
             '-n',
-            'define_bar_repo',
+            'bar',
             'baz',
         ],
     )
@@ -646,17 +672,6 @@ def test_run_wipe_incorrect_delete_message():
     assert result.exit_code == 0
 
 
-def define_bar_schedules():
-    return [
-        ScheduleDefinition(
-            "foo_schedule",
-            cron_schedule="* * * * *",
-            pipeline_name="test_pipeline",
-            environment_dict={},
-        )
-    ]
-
-
 @pytest.fixture(name="scheduler_instance")
 def define_scheduler_instance():
     with seven.TemporaryDirectory() as temp_dir:
@@ -942,19 +957,6 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         check.not_implemented('Termintation not supported')
-
-
-def define_baz_partitions():
-    return [
-        PartitionSetDefinition(
-            name='baz_partitions',
-            pipeline_name='baz',
-            partition_fn=lambda: string.ascii_lowercase,
-            environment_dict_fn_for_partition=lambda partition: {
-                'solids': {'do_input': {'inputs': {'x': {'value': partition}}}}
-            },
-        )
-    ]
 
 
 def backfill_execute_args(execution_args):

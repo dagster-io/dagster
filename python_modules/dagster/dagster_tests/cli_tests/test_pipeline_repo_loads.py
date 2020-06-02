@@ -2,8 +2,8 @@ import pytest
 
 from dagster.cli.load_handle import UsageError, recon_pipeline_for_cli_args
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster.core.definitions import PipelineDefinition, RepositoryDefinition
-from dagster.core.definitions.decorators import lambda_solid
+from dagster.core.definitions import PipelineDefinition
+from dagster.core.definitions.decorators import lambda_solid, repository
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.utils import file_relative_path
 
@@ -103,7 +103,7 @@ def test_yaml_file():
     assert isinstance(recon_pipeline, ReconstructablePipeline)
 
     assert recon_pipeline.repository.pointer == ModuleCodePointer(
-        'dagster_examples.intro_tutorial.repos', 'define_repo'
+        'dagster_examples.intro_tutorial.repos', 'hello_cereal_repository'
     )
 
     with pytest.raises(UsageError):
@@ -118,7 +118,7 @@ def test_yaml_file():
 
 def test_load_from_repository_file():
     recon_pipeline = recon_pipeline_for_cli_args(
-        {'pipeline_name': 'foo', 'python_file': __file__, 'fn_name': 'define_bar_repo'}
+        {'pipeline_name': 'foo', 'python_file': __file__, 'fn_name': 'bar_repo'}
     )
     pipeline_def = recon_pipeline.get_definition()
 
@@ -131,7 +131,7 @@ def test_load_from_repository_module():
         {
             'module_name': 'dagster_examples.intro_tutorial.repos',
             'pipeline_name': 'hello_cereal_pipeline',
-            'fn_name': 'define_repo',
+            'fn_name': 'hello_cereal_repository',
         }
     )
     pipeline_def = recon_pipeline.get_definition()
@@ -194,5 +194,6 @@ def define_foo_pipeline():
     return PipelineDefinition(name='foo', solid_defs=[do_something])
 
 
-def define_bar_repo():
-    return RepositoryDefinition(name='bar', pipeline_dict={'foo': define_foo_pipeline})
+@repository
+def bar_repo():
+    return {'pipelines': {'foo': define_foo_pipeline}}

@@ -7,7 +7,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
-    RepositoryDefinition,
+    repository,
     resource,
     solid,
 )
@@ -97,21 +97,20 @@ def define_multi_mode_with_resources_pipeline():
     )
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name='dagster_test_repository',
-        pipeline_defs=[
-            define_empty_pipeline(),
-            define_single_mode_pipeline(),
-            define_multi_mode_pipeline(),
-            define_multi_mode_with_resources_pipeline(),
-        ],
-    )
+@repository
+def dagster_test_repository():
+    return [
+        define_empty_pipeline(),
+        define_single_mode_pipeline(),
+        define_multi_mode_pipeline(),
+        define_multi_mode_with_resources_pipeline(),
+    ]
 
 
 def test_repository_construction():
-    assert define_repository()
+    assert dagster_test_repository
 
 
-def test_empty_repo():
-    return RepositoryDefinition(name='empty_repository', pipeline_defs=[])
+@repository
+def empty_repository():
+    return []

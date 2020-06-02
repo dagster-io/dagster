@@ -41,7 +41,14 @@ def _get_partition_sets(graphene_info, pipeline_name):
 
     return [
         graphene_info.schema.type_named('PartitionSet')(partition_set)
-        for partition_set in matching_partition_sets
+        for partition_set in sorted(
+            matching_partition_sets,
+            key=lambda partition_set: (
+                partition_set.pipeline_name,
+                partition_set.mode,
+                partition_set.name,
+            ),
+        )
     ]
 
 

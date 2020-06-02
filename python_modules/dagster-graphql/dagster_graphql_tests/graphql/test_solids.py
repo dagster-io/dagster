@@ -4,7 +4,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 def all_solids_query():
     return '''
     {
-        repositoryOrError(repositoryLocationName: "<<in_process>>", repositoryName: "test") {
+        repositoryOrError(repositoryLocationName: "<<in_process>>", repositoryName: "test_repo") {
            ... on Repository {
                 usedSolids {
                     __typename
@@ -20,7 +20,7 @@ def all_solids_query():
 def get_solid_query_exists():
     return '''
     {
-        repositoryOrError(repositoryLocationName: "<<in_process>>", repositoryName: "test") {
+        repositoryOrError(repositoryLocationName: "<<in_process>>", repositoryName: "test_repo") {
             ... on Repository {
                 usedSolid(name: "sum_solid") {
                     definition { name }

@@ -2,7 +2,7 @@ import os
 import time
 from contextlib import contextmanager
 
-from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
+from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import LocationHandle, RepositoryHandle
 from dagster.core.instance import DagsterInstance
@@ -42,10 +42,35 @@ def sleepy_pipeline():
     sleepy_solid()
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name='nope', pipeline_defs=[noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
-    )
+@solid
+def return_one(_):
+    return 1
+
+
+@solid
+def multiply_by_2(_, num):
+    return num * 2
+
+
+@solid
+def multiply_by_3(_, num):
+    return num * 3
+
+
+@solid
+def add(_, num1, num2):
+    return num1 + num2
+
+
+@pipeline
+def math_diamond():
+    one = return_one()
+    add(multiply_by_2(one), multiply_by_3(one))
+
+
+@repository
+def nope():
+    return [noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
 
 
 @contextmanager
@@ -185,32 +210,6 @@ def _message_exists(event_records, message_text):
             return True
 
     return False
-
-
-@solid
-def return_one(_):
-    return 1
-
-
-@solid
-def multiply_by_2(_, num):
-    return num * 2
-
-
-@solid
-def multiply_by_3(_, num):
-    return num * 3
-
-
-@solid
-def add(_, num1, num2):
-    return num1 + num2
-
-
-@pipeline
-def math_diamond():
-    one = return_one()
-    add(multiply_by_2(one), multiply_by_3(one))
 
 
 def test_single_solid_subset_execution():

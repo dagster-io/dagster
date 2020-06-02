@@ -5,9 +5,9 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     PipelineDefinition,
-    RepositoryDefinition,
     SolidDefinition,
     lambda_solid,
+    repository,
 )
 
 
@@ -28,15 +28,17 @@ def create_single_node_pipeline(name, called):
 
 def test_repo_lazy_definition():
     called = defaultdict(int)
-    repo = RepositoryDefinition(
-        name='some_repo',
-        pipeline_dict={
-            'foo': lambda: create_single_node_pipeline('foo', called),
-            'bar': lambda: create_single_node_pipeline('bar', called),
-        },
-    )
 
-    foo_pipeline = repo.get_pipeline('foo')
+    @repository
+    def lazy_repo():
+        return {
+            'pipelines': {
+                'foo': lambda: create_single_node_pipeline('foo', called),
+                'bar': lambda: create_single_node_pipeline('bar', called),
+            }
+        }
+
+    foo_pipeline = lazy_repo.get_pipeline('foo')
     assert isinstance(foo_pipeline, PipelineDefinition)
     assert foo_pipeline.name == 'foo'
 
@@ -44,7 +46,7 @@ def test_repo_lazy_definition():
     assert called['foo'] == 1
     assert 'bar' not in called
 
-    bar_pipeline = repo.get_pipeline('bar')
+    bar_pipeline = lazy_repo.get_pipeline('bar')
     assert isinstance(bar_pipeline, PipelineDefinition)
     assert bar_pipeline.name == 'bar'
 
@@ -53,19 +55,19 @@ def test_repo_lazy_definition():
     assert 'bar' in called
     assert called['bar'] == 1
 
-    foo_pipeline = repo.get_pipeline('foo')
+    foo_pipeline = lazy_repo.get_pipeline('foo')
     assert isinstance(foo_pipeline, PipelineDefinition)
     assert foo_pipeline.name == 'foo'
 
     assert 'foo' in called
     assert called['foo'] == 1
 
-    pipelines = repo.get_all_pipelines()
+    pipelines = lazy_repo.get_all_pipelines()
 
     assert set(['foo', 'bar']) == {pipeline.name for pipeline in pipelines}
 
-    assert repo.solid_def_named('foo_solid').name == 'foo_solid'
-    assert repo.solid_def_named('bar_solid').name == 'bar_solid'
+    assert lazy_repo.solid_def_named('foo_solid').name == 'foo_solid'
+    assert lazy_repo.solid_def_named('bar_solid').name == 'bar_solid'
 
 
 def test_dupe_solid_repo_definition():
@@ -77,54 +79,57 @@ def test_dupe_solid_repo_definition():
     def noop2():
         pass
 
-    repo = RepositoryDefinition(
-        name='error_repo',
-        pipeline_dict={
-            'first': lambda: PipelineDefinition(name='first', solid_defs=[noop]),
-            'second': lambda: PipelineDefinition(name='second', solid_defs=[noop2]),
-        },
-    )
+    @repository
+    def error_repo():
+        return {
+            'pipelines': {
+                'first': lambda: PipelineDefinition(name='first', solid_defs=[noop]),
+                'second': lambda: PipelineDefinition(name='second', solid_defs=[noop2]),
+            }
+        }
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        repo.get_all_pipelines()
+        error_repo.get_all_pipelines()
 
     assert str(exc_info.value) == (
-        'You have defined two solid definitions named "same" in repository '
-        '"error_repo". Solid definition names must be unique within a '
-        'repository. The solid definition has been defined '
-        'in pipeline "first" and it has been defined again '
-        'in pipeline "second."'
+        'Duplicate solids found in repository with name \'same\'. Solid definition names must be '
+        'unique within a repository. Solid is defined in pipeline \'first\' and in pipeline '
+        '\'second\'.'
     )
 
 
 def test_non_lazy_pipeline_dict():
     called = defaultdict(int)
-    repo = RepositoryDefinition(
-        name='some_repo',
-        pipeline_defs=[
+
+    @repository
+    def some_repo():
+        return [
             create_single_node_pipeline('foo', called),
             create_single_node_pipeline('bar', called),
-        ],
-    )
+        ]
 
-    assert repo.get_pipeline('foo').name == 'foo'
-    assert repo.get_pipeline('bar').name == 'bar'
+    assert some_repo.get_pipeline('foo').name == 'foo'
+    assert some_repo.get_pipeline('bar').name == 'bar'
 
 
 def test_conflict():
     called = defaultdict(int)
-    with pytest.raises(Exception, match='Duplicate pipelines named foo'):
-        RepositoryDefinition(
-            name='some_repo',
-            pipeline_defs=[create_single_node_pipeline('foo', called)],
-            pipeline_dict={'foo': lambda: create_single_node_pipeline('foo', called)},
-        )
+    with pytest.raises(Exception, match='Duplicate pipeline definition found for pipeline foo'):
+
+        @repository
+        def _some_repo():
+            return [
+                create_single_node_pipeline('foo', called),
+                create_single_node_pipeline('foo', called),
+            ]
 
 
 def test_key_mismatch():
     called = defaultdict(int)
-    repo = RepositoryDefinition(
-        name='some_repo', pipeline_dict={'foo': lambda: create_single_node_pipeline('bar', called)}
-    )
-    with pytest.raises(Exception, match='Name does not match'):
-        repo.get_pipeline('foo')
+
+    @repository
+    def some_repo():
+        return {'pipelines': {'foo': lambda: create_single_node_pipeline('bar', called)}}
+
+    with pytest.raises(Exception, match='name in PipelineDefinition does not match'):
+        some_repo.get_pipeline('foo')

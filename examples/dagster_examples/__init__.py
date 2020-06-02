@@ -1,3 +1,6 @@
+from dagster import repository
+
+
 def get_toys_pipelines():
     from dagster_examples.toys.error_monster import error_monster
     from dagster_examples.toys.sleepy import sleepy_pipeline
@@ -72,23 +75,25 @@ def get_bay_bikes_pipelines():
     return [generate_training_set_and_train_model, daily_weather_pipeline]
 
 
-def define_demo_repo():
+def define_internal_dagit_repository():
+
     # Lazy import here to prevent deps issues
-    from dagster import RepositoryDefinition
-    from .schedules import get_bay_bikes_schedules, get_toys_schedules
+    @repository
+    def internal_dagit_repository():
+        from .schedules import get_bay_bikes_schedules, get_toys_schedules
 
-    pipeline_defs = (
-        get_airline_demo_pipelines()
-        + get_bay_bikes_pipelines()
-        + get_event_pipelines()
-        + get_jaffle_pipelines()
-        + get_pyspark_pipelines()
-        + get_lakehouse_pipelines()
-        + get_toys_pipelines()
-    )
+        pipeline_defs = (
+            get_airline_demo_pipelines()
+            + get_bay_bikes_pipelines()
+            + get_event_pipelines()
+            + get_jaffle_pipelines()
+            + get_pyspark_pipelines()
+            + get_lakehouse_pipelines()
+            + get_toys_pipelines()
+        )
 
-    return RepositoryDefinition(
-        name='internal-dagit-repository',
-        pipeline_defs=pipeline_defs,
-        schedule_defs=get_bay_bikes_schedules() + get_toys_schedules(),
-    )
+        schedule_defs = get_bay_bikes_schedules() + get_toys_schedules()
+
+        return pipeline_defs + schedule_defs
+
+    return internal_dagit_repository

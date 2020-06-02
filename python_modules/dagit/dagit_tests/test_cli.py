@@ -22,14 +22,14 @@ def test_invoke_ui_with_port_taken(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(
         ui,
-        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'test_repository'],
         input="n\n",
     )
     assert result.exception
 
     result = runner.invoke(
         ui,
-        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'test_repository'],
         input="y\n",
     )
     assert ':3001' in result.output
