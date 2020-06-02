@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps, Redirect } from "react-router-dom";
 import { NonIdealState, IconName, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "./Loading";
@@ -14,7 +14,8 @@ import {
 } from "./types/PipelineExplorerRootQuery";
 import {
   explorerPathFromString,
-  PipelineExplorerPath
+  PipelineExplorerPath,
+  explorerPathToString
 } from "./PipelinePathUtils";
 import styled from "styled-components/macro";
 
@@ -138,10 +139,30 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
         if (result.__typename === "NonIdealState") {
           return <NonIdealState {...result} />;
         }
-        const parentSolidHandle = result.solidHandle;
+        const parentHandle = result.solidHandle;
         const displayedHandles = options.explodeComposites
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
+
+        const selectedHandle = displayedHandles.find(
+          h => h.solid.name === selectedName
+        );
+
+        // Run a few assertions on the state of the world and redirect the user
+        // back to safety if they've landed in an invalid place. Note that we can
+        // pop one layer at a time and this renders recursively until we reach a
+        // valid parent.
+        const invalidSelection = selectedName && !selectedHandle;
+        const invalidParent =
+          parentHandle &&
+          parentHandle.solid.definition.__typename !==
+            "CompositeSolidDefinition";
+
+        if (invalidSelection || invalidParent) {
+          const n = { ...explorerPath };
+          n.pathSolids = n.pathSolids.slice(0, n.pathSolids.length - 1);
+          return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
+        }
 
         return (
           <>
@@ -157,10 +178,8 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
               history={props.history}
               pipeline={result}
               handles={displayedHandles}
-              parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
-              selectedHandle={displayedHandles.find(
-                h => h.solid.name === selectedName
-              )}
+              parentHandle={parentHandle ? parentHandle : undefined}
+              selectedHandle={selectedHandle}
               getInvocations={definitionName =>
                 displayedHandles
                   .filter(s => s.solid.definition.name === definitionName)
