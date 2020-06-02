@@ -17,7 +17,6 @@ import { CellTruncationProvider } from "./CellTruncationProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { setHighlightedGaantChartTime } from "../gaant/GaantChart";
 import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
-import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { isEqual } from "apollo-utilities";
 import { IRunMetadataDict } from "../RunMetadataProvider";
@@ -126,63 +125,40 @@ export class Structured extends React.Component<
     `
   };
 
-  state = {
-    expanded: false
-  };
-
   onExpand = () => {
-    this.setState({ expanded: true });
-  };
-
-  onCollapse = () => {
-    this.setState({ expanded: false });
-  };
-
-  renderExpanded() {
     const { node, metadata } = this.props;
-    const { expanded } = this.state;
-    if (!expanded) {
-      return null;
-    }
 
     if (node.__typename === "ExecutionStepFailureEvent") {
-      return (
-        <InfoModal title="Error" onRequestClose={this.onCollapse}>
+      showCustomAlert({
+        title: "Error",
+        body: (
           <PythonErrorInfo
             error={node.error}
             failureMetadata={node.failureMetadata}
           />
-        </InfoModal>
-      );
+        )
+      });
+    } else if (node.__typename === "PipelineInitFailureEvent") {
+      showCustomAlert({
+        title: "Error",
+        body: <PythonErrorInfo error={node.error} />
+      });
+    } else if (node.__typename === "EngineEvent" && node.engineError) {
+      showCustomAlert({
+        title: "Error",
+        body: <PythonErrorInfo error={node.engineError} />
+      });
+    } else {
+      showCustomAlert({
+        title: (node.step && node.step.key) || "Info",
+        body: (
+          <StructuredContent>
+            <LogsRowStructuredContent node={node} metadata={metadata} />
+          </StructuredContent>
+        )
+      });
     }
-
-    if (node.__typename === "PipelineInitFailureEvent") {
-      return (
-        <InfoModal title="Error" onRequestClose={this.onCollapse}>
-          <PythonErrorInfo error={node.error} />
-        </InfoModal>
-      );
-    }
-
-    if (node.__typename === "EngineEvent" && node.engineError) {
-      return (
-        <InfoModal title="Error" onRequestClose={this.onCollapse}>
-          <PythonErrorInfo error={node.engineError} />
-        </InfoModal>
-      );
-    }
-
-    return (
-      <InfoModal
-        title={(node.step && node.step.key) || undefined}
-        onRequestClose={this.onCollapse}
-      >
-        <StructuredContent>
-          <LogsRowStructuredContent node={node} metadata={metadata} />
-        </StructuredContent>
-      </InfoModal>
-    );
-  }
+  };
 
   render() {
     return (
@@ -191,7 +167,6 @@ export class Structured extends React.Component<
           node={this.props.node}
           metadata={this.props.metadata}
         />
-        {this.renderExpanded()}
       </CellTruncationProvider>
     );
   }
