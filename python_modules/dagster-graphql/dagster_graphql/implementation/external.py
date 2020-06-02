@@ -5,10 +5,14 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
+from dagster.core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+    PipelineSelector,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
 
 
 def get_full_external_pipeline_or_raise(graphene_info, selector):
@@ -29,7 +33,7 @@ def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_su
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     return graphene_info.context.get_external_pipeline(
-        PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset)
+        legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset)
     )
 
 

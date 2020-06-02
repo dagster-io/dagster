@@ -9,9 +9,9 @@ from dagster.utils import merge_dicts
 from .utils import (
     ExecutionMetadata,
     ExecutionParams,
-    PipelineSelector,
     UserFacingGraphQLError,
     capture_dauphin_error,
+    legacy_pipeline_selector,
 )
 
 
@@ -97,7 +97,7 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
     mode = schedule_def.mode
 
     return ExecutionParams(
-        selector=PipelineSelector.legacy(
+        selector=legacy_pipeline_selector(
             graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
         ),
         environment_dict=environment_dict,

@@ -18,4 +18,10 @@ from .external_data import (
 from .handle import LocationHandle, PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .pipeline_index import PipelineIndex
+from .repository_location import (
+    InProcessRepositoryLocation,
+    OutOfProcessRepositoryLocation,
+    RepositoryLocation,
+)
 from .represented import RepresentedPipeline
+from .selector import PipelineSelector

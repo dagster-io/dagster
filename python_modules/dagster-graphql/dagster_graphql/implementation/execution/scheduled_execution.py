@@ -24,7 +24,7 @@ from dagster.utils.merger import merge_dicts
 
 from ..external import legacy_get_external_pipeline_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
-from ..utils import PipelineSelector, capture_dauphin_error
+from ..utils import capture_dauphin_error, legacy_pipeline_selector
 from .run_lifecycle import (
     RunExecutionInfo,
     create_possibly_invalid_run,
@@ -124,7 +124,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
         mode = schedule_def.mode
 
         execution_params = ExecutionParams(
-            selector=PipelineSelector.legacy(
+            selector=legacy_pipeline_selector(
                 graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
             ),
             environment_dict=environment_dict,

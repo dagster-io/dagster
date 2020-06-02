@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 
 from .external import get_full_external_pipeline_or_raise
-from .utils import PipelineSelector, capture_dauphin_error
+from .utils import capture_dauphin_error, legacy_pipeline_selector
 
 
 @capture_dauphin_error
@@ -29,7 +29,7 @@ def _get_partition_sets(graphene_info, pipeline_name):
 
         external_pipeline = get_full_external_pipeline_or_raise(
             graphene_info,
-            PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset=None),
+            legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset=None),
         )
 
         matching_partition_sets = filter(

@@ -3,15 +3,15 @@ from contextlib import contextmanager
 
 import pytest
 import six
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessRepositoryLocation,
-    OutOfProcessRepositoryLocation,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import (
+    InProcessRepositoryLocation,
+    OutOfProcessRepositoryLocation,
+)
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage

@@ -47,8 +47,8 @@ from dagster_graphql.implementation.run_config_schema import (
 )
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
-    PipelineSelector,
     UserFacingGraphQLError,
+    pipeline_selector_from_graphql,
 )
 
 from dagster import check
@@ -194,8 +194,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(
-            graphene_info,
-            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['params']),
+            graphene_info, pipeline_selector_from_graphql(graphene_info.context, kwargs['params']),
         )
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
@@ -238,7 +237,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
             graphene_info,
-            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
+            pipeline_selector_from_graphql(graphene_info.context, pipeline),
             kwargs.get('runConfigData'),
             kwargs.get('mode'),
         )
@@ -246,7 +245,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_executionPlanOrError(self, graphene_info, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
-            PipelineSelector.from_graphql_input(graphene_info.context, pipeline),
+            pipeline_selector_from_graphql(graphene_info.context, pipeline),
             kwargs.get('runConfigData'),
             kwargs.get('mode'),
         )
@@ -254,7 +253,7 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_runConfigSchemaOrError(self, graphene_info, **kwargs):
         return resolve_run_config_schema_or_error(
             graphene_info,
-            PipelineSelector.from_graphql_input(graphene_info.context, kwargs['selector']),
+            pipeline_selector_from_graphql(graphene_info.context, kwargs['selector']),
             kwargs.get('mode'),
         )
 
@@ -452,7 +451,7 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 def create_execution_params(graphene_info, graphql_execution_params):
 
     preset_name = graphql_execution_params.get('preset')
-    selector = PipelineSelector.from_graphql_input(
+    selector = pipeline_selector_from_graphql(
         graphene_info.context, graphql_execution_params['selector']
     )
     if preset_name:
@@ -498,9 +497,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 
 def execution_params_from_graphql(context, graphql_execution_params):
     return ExecutionParams(
-        selector=PipelineSelector.from_graphql_input(
-            context, graphql_execution_params.get('selector')
-        ),
+        selector=pipeline_selector_from_graphql(context, graphql_execution_params.get('selector')),
         environment_dict=graphql_execution_params.get('runConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(

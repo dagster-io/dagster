@@ -2,6 +2,7 @@ import sys
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.host_representation import PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -29,81 +30,52 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-class PipelineSelector(
-    namedtuple('_PipelineSelector', 'location_name repository_name pipeline_name solid_subset')
-):
-    def __new__(
-        cls, location_name, repository_name, pipeline_name, solid_subset,
-    ):
-        return super(PipelineSelector, cls).__new__(
-            cls,
-            location_name=check.str_param(location_name, 'location_name'),
-            repository_name=check.str_param(repository_name, 'repository_name'),
-            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
-        )
+def legacy_pipeline_selector(context, name, solid_subset):
+    from dagster_graphql.implementation.context import DagsterGraphQLContext
 
-    def to_graphql_input(self):
-        return {
-            'repositoryLocationName': self.location_name,
-            'repositoryName': self.repository_name,
-            'pipelineName': self.pipeline_name,
-            'solidSubset': self.solid_subset,
-        }
+    check.inst_param(context, 'context', DagsterGraphQLContext)
 
-    def with_solid_subset(self, solid_subset):
+    return PipelineSelector(
+        location_name=context.legacy_location.name,
+        repository_name=context.legacy_external_repository.name,
+        pipeline_name=name,
+        solid_subset=solid_subset,
+    )
+
+
+def pipeline_selector_from_graphql(context, data):
+    from dagster_graphql.implementation.context import DagsterGraphQLContext
+
+    check.inst_param(context, 'context', DagsterGraphQLContext)
+
+    # legacy case
+    if data.get('name'):
         check.invariant(
-            self.solid_subset is None, 'Can not invoke with_solid_subset if one is already set'
-        )
-        return PipelineSelector(
-            self.location_name, self.repository_name, self.pipeline_name, solid_subset
-        )
-
-    @classmethod
-    def legacy(cls, context, name, solid_subset):
-        from dagster_graphql.implementation.context import DagsterGraphQLContext
-
-        check.inst_param(context, 'context', DagsterGraphQLContext)
-
-        return cls(
-            location_name=context.legacy_location.name,
-            repository_name=context.legacy_external_repository.name,
-            pipeline_name=name,
-            solid_subset=solid_subset,
+            data.get('repositoryLocationName') is None
+            and data.get('repositoryName') is None
+            and data.get('pipelineName') is None,
+            'Invalid legacy PipelineSelector, contains modern name fields',
         )
 
-    @classmethod
-    def from_graphql_input(cls, context, data):
-        from dagster_graphql.implementation.context import DagsterGraphQLContext
-
-        check.inst_param(context, 'context', DagsterGraphQLContext)
-
-        # legacy case
-        if data.get('name'):
-            check.invariant(
-                data.get('repositoryLocationName') is None
-                and data.get('repositoryName') is None
-                and data.get('pipelineName') is None,
-                'Invalid legacy PipelineSelector, contains modern name fields',
-            )
-
-            return cls.legacy(context, name=data['name'], solid_subset=data.get('solidSubset'),)
-
-        # can be removed once DauphinPipelineSelector fields
-        # can be made NonNull
-        check.invariant(
-            data.get('repositoryLocationName')
-            and data.get('repositoryName')
-            and data.get('pipelineName'),
-            'Invalid PipelineSelector, must have all name fields',
+        return legacy_pipeline_selector(
+            context, name=data['name'], solid_subset=data.get('solidSubset'),
         )
 
-        return cls(
-            location_name=data['repositoryLocationName'],
-            repository_name=data['repositoryName'],
-            pipeline_name=data['pipelineName'],
-            solid_subset=data.get('solidSubset'),
-        )
+    # can be removed once DauphinPipelineSelector fields
+    # can be made NonNull
+    check.invariant(
+        data.get('repositoryLocationName')
+        and data.get('repositoryName')
+        and data.get('pipelineName'),
+        'Invalid PipelineSelector, must have all name fields',
+    )
+
+    return PipelineSelector(
+        location_name=data['repositoryLocationName'],
+        repository_name=data['repositoryName'],
+        pipeline_name=data['pipelineName'],
+        solid_subset=data.get('solidSubset'),
+    )
 
 
 class ExecutionParams(

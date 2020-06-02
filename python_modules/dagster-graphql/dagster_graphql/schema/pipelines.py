@@ -2,13 +2,16 @@ from __future__ import absolute_import
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
-from dagster.core.host_representation import ExternalPresetData, RepresentedPipeline
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    ExternalPresetData,
+    RepresentedPipeline,
+)
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
