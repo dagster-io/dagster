@@ -2,6 +2,10 @@ import sys
 import warnings
 from contextlib import closing, contextmanager
 
+from dagster import check, resource
+
+from .configs import define_snowflake_config
+
 try:
     import snowflake.connector
 except ImportError:
@@ -15,9 +19,7 @@ except ImportError:
     warnings.warn(msg)
     raise
 
-from dagster import check, resource
 
-from .configs import define_snowflake_config
 
 
 class SnowflakeConnection(object):
