@@ -1,16 +1,12 @@
-import sys
-
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
     PipelineSelector,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
 
@@ -32,7 +28,7 @@ def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_su
     check.str_param(pipeline_name, 'pipeline_name')
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    return graphene_info.context.get_external_pipeline(
+    return graphene_info.context.get_subset_external_pipeline(
         legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset)
     )
 
@@ -59,19 +55,7 @@ def get_external_pipeline_or_raise(graphene_info, selector):
                 )
             )
 
-    try:
-        return graphene_info.context.get_external_pipeline(selector)
-    except DagsterInvalidSubsetError:
-        error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        raise UserFacingGraphQLError(
-            DauphinInvalidSubsetError(
-                message="{message}\n{cause_message}".format(
-                    message=error_info.message,
-                    cause_message=error_info.cause.message if error_info.cause else "",
-                ),
-                pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
-            )
-        )
+    return graphene_info.context.get_subset_external_pipeline(selector)
 
 
 def ensure_valid_config(external_pipeline, mode, environment_dict):

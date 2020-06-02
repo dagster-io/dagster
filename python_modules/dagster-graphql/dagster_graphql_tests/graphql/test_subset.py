@@ -4,6 +4,8 @@ import sys
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
 query EnvironmentQuery($selector: PipelineSelector!){
     runConfigSchemaOrError(selector: $selector) {
@@ -47,34 +49,34 @@ def types_dict_of_result(subset_result, top_key):
     }
 
 
-def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
-    result = execute_dagster_graphql(
-        graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
-    )
+class TestSolidSubsets(ReadonlyGraphQLContextTestMatrix):
+    def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(self, graphql_context):
+        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
+        result = execute_dagster_graphql(
+            graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
+        )
 
-    assert not result.errors
-    assert result.data
-    assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
-    assert '"nope" does not exist' in result.data['runConfigSchemaOrError']['message']
+        assert not result.errors
+        assert result.data
+        assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
+        assert '"nope" does not exist' in result.data['runConfigSchemaOrError']['message']
 
+    @pytest.mark.skipif(sys.version_info.major < 3, reason='Exception cause only available on py3+')
+    def test_pipeline_with_invalid_definition_error(self, graphql_context):
+        selector = get_legacy_pipeline_selector(
+            graphql_context, 'pipeline_with_invalid_definition_error', ['fail_subset']
+        )
+        result = execute_dagster_graphql(
+            graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
 
-@pytest.mark.skipif(sys.version_info.major < 3, reason='Exception cause only available on py3+')
-def test_pipeline_with_invalid_definition_error(graphql_context):
-    selector = get_legacy_pipeline_selector(
-        graphql_context, 'pipeline_with_invalid_definition_error', ['fail_subset']
-    )
-    result = execute_dagster_graphql(
-        graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
-    )
-    assert not result.errors
-    assert result.data
-    assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
-
-    assert re.match(
-        (
-            r'.*DagsterInvalidSubsetError[\s\S]*'
-            r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
-        ),
-        result.data['runConfigSchemaOrError']['message'],
-    )
+        assert re.match(
+            (
+                r'.*DagsterInvalidSubsetError[\s\S]*'
+                r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
+            ),
+            result.data['runConfigSchemaOrError']['message'],
+        )

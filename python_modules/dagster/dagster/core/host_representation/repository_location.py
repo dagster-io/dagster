@@ -12,13 +12,11 @@ from dagster.core.host_representation import (
     LocationHandle,
     RepositoryHandle,
 )
+from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import snapshot_from_execution_plan
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils.hosted_user_process import (
-    external_pipeline_from_recon_pipeline,
-    external_repo_from_def,
-)
+from dagster.utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 
@@ -76,7 +74,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_external_pipeline(self, selector):
+    def get_subset_external_pipeline_result(self, selector):
         pass
 
 
@@ -116,7 +114,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_repositories(self):
         return self._repositories
 
-    def get_external_pipeline(self, selector):
+    def get_subset_external_pipeline_result(self, selector):
         check.inst_param(selector, 'selector', PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -125,10 +123,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        return external_pipeline_from_recon_pipeline(
-            recon_pipeline=self.get_reconstructable_pipeline(selector.pipeline_name),
-            solid_subset=selector.solid_subset,
-            repository_handle=self._external_repo.handle,
+        from dagster.cli.api import get_external_pipeline_subset_result
+
+        return get_external_pipeline_subset_result(
+            self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_subset
         )
 
     def get_external_execution_plan(
@@ -219,5 +217,16 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
     def execute_pipeline(self, instance, external_pipeline, pipeline_run):
         raise NotImplementedError()
 
-    def get_external_pipeline(self, selector):
-        raise NotImplementedError()
+    def get_subset_external_pipeline_result(self, selector):
+        from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset
+
+        check.inst_param(selector, 'selector', PipelineSelector)
+        check.invariant(
+            selector.location_name == self.name,
+            'PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}'.format(
+                self=self, selector=selector
+            ),
+        )
+
+        pipeline_handle = PipelineHandle(selector.pipeline_name, self.external_repository.handle)
+        return sync_get_external_pipeline_subset(pipeline_handle, selector.solid_subset)

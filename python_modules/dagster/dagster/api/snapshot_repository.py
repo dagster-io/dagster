@@ -1,5 +1,3 @@
-import subprocess
-
 from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
@@ -11,6 +9,8 @@ from dagster.serdes.ipc import read_unary_response
 from dagster.seven import xplat_shlex_split
 from dagster.utils.temp_file import get_temp_file_name
 
+from .utils import execute_command_in_subprocess
+
 
 def sync_get_external_repository(location_handle):
     check.inst_param(location_handle, 'location_handle', LocationHandle)
@@ -20,8 +20,8 @@ def sync_get_external_repository(location_handle):
         parts = ['dagster', 'api', 'snapshot', 'repository', output_file] + xplat_shlex_split(
             location_handle.pointer.get_cli_args()
         )
-        returncode = subprocess.check_call(parts)
-        check.invariant(returncode == 0, 'dagster api cli invocation did not complete successfully')
+
+        execute_command_in_subprocess(parts)
 
         external_repository_data = read_unary_response(output_file)
         check.inst(external_repository_data, ExternalRepositoryData)

@@ -23,6 +23,25 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 
+# Helpers
+
+
+def get_external_pipeline_subset_result(recon_pipeline, solid_subset):
+    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
+
+    definition = recon_pipeline.get_definition()
+    if solid_subset:
+        try:
+            definition = definition.subset_for_execution(solid_subset)
+        except DagsterInvalidSubsetError:
+            return ExternalPipelineSubsetResult(
+                success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
+            )
+
+    external_pipeline_data = external_pipeline_data_from_def(definition)
+    return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
+
+
 # Snapshot CLI
 
 
@@ -44,22 +63,11 @@ def repository_snapshot_command(output_file, **kwargs):
 @click.option('--solid-subset', '-s', help="JSON encoded list of solids")
 def pipeline_subset_snapshot_command(output_file, solid_subset, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
-    definition = recon_pipeline.get_definition()
     if solid_subset:
-        try:
-            definition = definition.subset_for_execution(json.loads(solid_subset))
-        except DagsterInvalidSubsetError:
-            return ipc_write_unary_response(
-                output_file,
-                ExternalPipelineSubsetResult(
-                    success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-            )
+        solid_subset = json.loads(solid_subset)
 
-    external_pipeline_data = external_pipeline_data_from_def(definition)
     ipc_write_unary_response(
-        output_file,
-        ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data),
+        output_file, get_external_pipeline_subset_result(recon_pipeline, solid_subset)
     )
 
 
