@@ -4,7 +4,7 @@ from dagster.core.selector.subset_selector import (
     Traverser,
     generate_dep_graph,
     parse_clause,
-    parse_solid_subset,
+    parse_solid_selection,
 )
 
 
@@ -48,15 +48,15 @@ def test_generate_dep_graph():
         'upstream': {
             'return_one': set(),
             'return_two': set(),
-            'add_nums': set(['return_one', 'return_two']),
-            'multiply_two': set(['add_nums']),
-            'add_one': set(['multiply_two']),
+            'add_nums': {'return_one', 'return_two'},
+            'multiply_two': {'add_nums'},
+            'add_one': {'multiply_two'},
         },
         'downstream': {
-            'return_one': set(['add_nums']),
-            'return_two': set(['add_nums']),
-            'add_nums': set(['multiply_two']),
-            'multiply_two': set(['add_one']),
+            'return_one': {'add_nums'},
+            'return_two': {'add_nums'},
+            'add_nums': {'multiply_two'},
+            'multiply_two': {'add_one'},
             'add_one': set(),
         },
     }
@@ -67,12 +67,14 @@ def test_traverser():
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name='return_one', depth=1) == set()
-    assert traverser.fetch_downstream(item_name='return_one', depth=1) == set(['add_nums'])
+    assert traverser.fetch_downstream(item_name='return_one', depth=1) == {'add_nums'}
     assert traverser.fetch_upstream(item_name='multiply_two', depth=0) == set()
-    assert traverser.fetch_upstream(item_name='multiply_two', depth=2) == set(
-        ['add_nums', 'return_one', 'return_two'],
-    )
-    assert traverser.fetch_downstream(item_name='multiply_two', depth=2) == set(['add_one'])
+    assert traverser.fetch_upstream(item_name='multiply_two', depth=2) == {
+        'add_nums',
+        'return_one',
+        'return_two',
+    }
+    assert traverser.fetch_downstream(item_name='multiply_two', depth=2) == {'add_one'}
 
 
 def test_traverser_invalid():
@@ -94,37 +96,37 @@ def test_parse_clause_invalid():
     assert parse_clause('1+some_solid') == None
 
 
-def test_parse_solid_subset_single():
-    solid_subset_single = parse_solid_subset(foo_pipeline, ['add_nums'])
+def test_parse_solid_selection_single():
+    solid_subset_single = parse_solid_selection(foo_pipeline, ['add_nums'])
     assert len(solid_subset_single) == 1
-    assert solid_subset_single == ['add_nums']
+    assert solid_subset_single == {'add_nums'}
 
-    solid_subset_star = parse_solid_subset(foo_pipeline, ['add_nums*'])
+    solid_subset_star = parse_solid_selection(foo_pipeline, ['add_nums*'])
     assert len(solid_subset_star) == 3
-    assert set(solid_subset_star) == set(['add_nums', 'multiply_two', 'add_one'])
+    assert set(solid_subset_star) == {'add_nums', 'multiply_two', 'add_one'}
 
-    solid_subset_both = parse_solid_subset(foo_pipeline, ['*add_nums+'])
+    solid_subset_both = parse_solid_selection(foo_pipeline, ['*add_nums+'])
     assert len(solid_subset_both) == 4
-    assert set(solid_subset_both) == set(['return_one', 'return_two', 'add_nums', 'multiply_two'])
+    assert set(solid_subset_both) == {'return_one', 'return_two', 'add_nums', 'multiply_two'}
 
 
-def test_parse_solid_subset_multi():
-    solid_subset_multi_disjoint = parse_solid_subset(foo_pipeline, ['return_one', 'add_nums+'])
+def test_parse_solid_selection_multi():
+    solid_subset_multi_disjoint = parse_solid_selection(foo_pipeline, ['return_one', 'add_nums+'])
     assert len(solid_subset_multi_disjoint) == 3
-    assert set(solid_subset_multi_disjoint) == set(['return_one', 'add_nums', 'multiply_two'])
+    assert set(solid_subset_multi_disjoint) == {'return_one', 'add_nums', 'multiply_two'}
 
-    solid_subset_multi_overlap = parse_solid_subset(foo_pipeline, ['*add_nums', 'return_one+'])
+    solid_subset_multi_overlap = parse_solid_selection(foo_pipeline, ['*add_nums', 'return_one+'])
     assert len(solid_subset_multi_overlap) == 3
-    assert set(solid_subset_multi_overlap) == set(['return_one', 'return_two', 'add_nums'])
+    assert set(solid_subset_multi_overlap) == {'return_one', 'return_two', 'add_nums'}
 
-    solid_subset_multi_with_invalid = parse_solid_subset(foo_pipeline, ['*add_nums', 'a'])
+    solid_subset_multi_with_invalid = parse_solid_selection(foo_pipeline, ['*add_nums', 'a'])
     assert len(solid_subset_multi_with_invalid) == 3
-    assert set(solid_subset_multi_with_invalid) == set(['return_one', 'return_two', 'add_nums'])
+    assert set(solid_subset_multi_with_invalid) == {'return_one', 'return_two', 'add_nums'}
 
 
-def test_parse_solid_subset_invalid():
-    result = parse_solid_subset(foo_pipeline, ['1+some_solid'])
-    assert result == []
+def test_parse_solid_selection_invalid():
+    result = parse_solid_selection(foo_pipeline, ['1+some_solid'])
+    assert result == set()
 
-    result_comma = parse_solid_subset(foo_pipeline, ['some,solid'])
-    assert result_comma == []
+    result_comma = parse_solid_selection(foo_pipeline, ['some,solid'])
+    assert result_comma == set()

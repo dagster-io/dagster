@@ -133,3 +133,12 @@ def test_reconstructable_cli_args():
     )
     recon_module = ReconstructableRepository.for_module('foo_module', 'bar_function')
     assert recon_module.get_cli_args() == '-m foo_module -n bar_function'
+
+
+def test_solid_subset():
+    recon_pipe = reconstructable(get_the_pipeline)
+    sub_pipe_full = recon_pipe.subset_for_execution(['the_solid'])
+    assert sub_pipe_full.solids_to_execute == {'the_solid'}
+
+    sub_pipe_unresolved = recon_pipe.subset_for_execution(['the_solid+'])
+    assert sub_pipe_unresolved.solids_to_execute == {'the_solid'}

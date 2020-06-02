@@ -146,7 +146,7 @@ def execute_solids_within_pipeline(
 
     Args:
         pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
-        solid_name (str): The name of the solid, or the aliased solid, to execute.
+        solid_names (FrozenSet[str]): A set of the solid names, or the aliased solids, to execute.
         inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
             dicts of input names to input values, used to pass input values to the solids directly.
             You may also use the ``environment_dict`` to configure any inputs that are configurable.
@@ -166,7 +166,7 @@ def execute_solids_within_pipeline(
         executing the solids, keyed by solid name.
     '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.list_param(solid_names, 'solid_names', of_type=str)
+    check.set_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
 
     sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
@@ -220,7 +220,7 @@ def execute_solid_within_pipeline(
     '''
     return execute_solids_within_pipeline(
         pipeline_def,
-        solid_names=[solid_name],
+        solid_names={solid_name},
         inputs={solid_name: inputs} if inputs else None,
         environment_dict=environment_dict,
         mode=mode,
@@ -241,7 +241,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
         run_id=run_id,
         environment_dict=None,
         mode=None,
-        solid_subset=None,
+        solids_to_execute=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,

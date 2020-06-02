@@ -21,7 +21,7 @@ def _get_partition_sets(graphene_info, pipeline_name):
 
         external_pipeline = get_full_external_pipeline_or_raise(
             graphene_info,
-            legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset=None),
+            legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_selection=None),
         )
 
         matching_partition_sets = filter(

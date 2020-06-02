@@ -66,7 +66,7 @@ def test_execution_plan_with_subset_snapshot_api():
         environment_dict={'solids': {'do_input': {'inputs': {'x': {'value': "test"}}}}},
         mode="default",
         snapshot_id="12345",
-        solid_subset=["do_input"],
+        solid_selection=["do_input"],
     )
 
     assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)

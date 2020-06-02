@@ -18,11 +18,11 @@ def sync_get_external_execution_plan(
     environment_dict,
     mode,
     snapshot_id,
-    solid_subset=None,
+    solid_selection=None,
     step_keys_to_execute=None,
 ):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
     check.dict_param(environment_dict, 'environment_dict')
     check.str_param(mode, 'mode')
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -57,9 +57,11 @@ def sync_get_external_execution_plan(
             ]
         )
 
-        if solid_subset:
+        if solid_selection:
             parts.append(
-                '--solid-subset={solid_subset}'.format(solid_subset=json.dumps(solid_subset))
+                '--solid-subset={solid_selection}'.format(
+                    solid_selection=json.dumps(solid_selection)
+                )
             )
 
         if step_keys_to_execute:

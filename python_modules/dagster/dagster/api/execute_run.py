@@ -10,7 +10,7 @@ from dagster.utils import safe_tempfile_path
 
 # mostly for test
 def sync_cli_api_execute_run(
-    instance, repo_cli_args, pipeline_name, environment_dict, mode, solid_subset
+    instance, repo_cli_args, pipeline_name, environment_dict, mode, solids_to_execute
 ):
     with safe_tempfile_path() as output_file_path:
         pipeline_run = instance.create_run(
@@ -18,7 +18,7 @@ def sync_cli_api_execute_run(
             run_id=None,
             environment_dict=environment_dict,
             mode=mode,
-            solid_subset=solid_subset,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=None,
             status=None,
             tags=None,

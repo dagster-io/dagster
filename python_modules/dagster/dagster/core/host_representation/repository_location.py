@@ -124,7 +124,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         from dagster.cli.api import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
-            self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_subset
+            self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_selection
         )
 
     def get_external_execution_plan(
@@ -140,7 +140,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
                 create_execution_plan(
                     pipeline=self.get_reconstructable_pipeline(
                         external_pipeline.name
-                    ).subset_for_execution(external_pipeline.solid_subset),
+                    ).subset_for_execution_from_existing_pipeline(
+                        external_pipeline.solids_to_execute
+                    ),
                     environment_dict=environment_dict,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
@@ -211,7 +213,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
         execution_plan_snapshot = sync_get_external_execution_plan(
             pipeline_handle=external_pipeline.handle,
-            solid_subset=external_pipeline.solid_subset,
+            solid_selection=external_pipeline.solid_selection,
             environment_dict=environment_dict,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
@@ -243,4 +245,4 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
         external_repository = self.external_repositories[selector.repository_name]
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
-        return sync_get_external_pipeline_subset(pipeline_handle, selector.solid_subset)
+        return sync_get_external_pipeline_subset(pipeline_handle, selector.solid_selection)

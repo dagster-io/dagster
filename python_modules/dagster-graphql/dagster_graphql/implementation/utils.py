@@ -30,7 +30,7 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def legacy_pipeline_selector(context, name, solid_subset):
+def legacy_pipeline_selector(context, name, solid_selection):
     from dagster_graphql.implementation.context import DagsterGraphQLContext
 
     check.inst_param(context, 'context', DagsterGraphQLContext)
@@ -39,7 +39,7 @@ def legacy_pipeline_selector(context, name, solid_subset):
         location_name=context.legacy_location.name,
         repository_name=context.legacy_external_repository.name,
         pipeline_name=name,
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
     )
 
 
@@ -58,7 +58,7 @@ def pipeline_selector_from_graphql(context, data):
         )
 
         return legacy_pipeline_selector(
-            context, name=data['name'], solid_subset=data.get('solidSubset'),
+            context, name=data['name'], solid_selection=data.get('solidSubset'),
         )
 
     # can be removed once DauphinPipelineSelector fields
@@ -74,7 +74,7 @@ def pipeline_selector_from_graphql(context, data):
         location_name=data['repositoryLocationName'],
         repository_name=data['repositoryName'],
         pipeline_name=data['pipelineName'],
-        solid_subset=data.get('solidSubset'),
+        solid_selection=data.get('solidSubset'),
     )
 
 

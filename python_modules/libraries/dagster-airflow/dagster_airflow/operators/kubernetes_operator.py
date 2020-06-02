@@ -176,7 +176,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                         run_id=self.run_id,
                         environment_dict=self.environment_dict,
                         mode=self.mode,
-                        solid_subset=None,
+                        solids_to_execute=None,
                         step_keys_to_execute=None,
                         tags=None,
                         root_run_id=None,

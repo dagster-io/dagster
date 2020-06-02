@@ -157,7 +157,7 @@ class DauphinIPipelineSnapshotMixin(object):
         ]
 
     def resolve_solidSubset(self, _graphene_info):
-        return self.get_represented_pipeline().solid_subset
+        return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
         runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)

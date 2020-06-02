@@ -59,10 +59,11 @@ def get_pipeline_reference_or_raise(graphene_info, pipeline_run):
     reference cannot be retrieved based on the run, e.g, a UserFacingGraphQLError that wraps an
     InvalidSubsetError.'''
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    solid_subset = list(pipeline_run.solids_to_execute) if pipeline_run.solids_to_execute else None
 
     if pipeline_run.pipeline_snapshot_id is None:
         return graphene_info.schema.type_named('UnknownPipeline')(
-            pipeline_run.pipeline_name, pipeline_run.solid_subset
+            pipeline_run.pipeline_name, solid_subset
         )
 
     return _get_dauphin_pipeline_snapshot_from_instance(

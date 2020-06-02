@@ -159,7 +159,7 @@ def test_works_in_memory():
     assert execute_pipeline(passing_pipeline, environment_dict).success
 
 
-def _external_pipeline_from_def(pipeline_def, solid_subset=None):
+def _external_pipeline_from_def(pipeline_def, solid_selection=None):
     recon_pipeline = reconstructable(pipeline_def)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
@@ -171,19 +171,19 @@ def _external_pipeline_from_def(pipeline_def, solid_subset=None):
     )
     return external_pipeline_from_recon_pipeline(
         reconstructable(pipeline_def),
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
         repository_handle=repository_handle,
     )
 
 
-def _execute_in_launcher(instance, pipeline_def, environment_dict, solid_subset=None):
+def _execute_in_launcher(instance, pipeline_def, environment_dict, solid_selection=None):
     created_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, environment_dict=environment_dict
     )
 
     run = instance.launch_run(
         created_pipeline_run.run_id,
-        _external_pipeline_from_def(pipeline_def, solid_subset=solid_subset),
+        _external_pipeline_from_def(pipeline_def, solid_selection=solid_selection),
     )
 
     instance.run_launcher.join()

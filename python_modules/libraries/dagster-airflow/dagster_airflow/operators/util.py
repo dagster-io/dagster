@@ -127,7 +127,7 @@ def invoke_steps_within_python_operator(
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
-            solid_subset=None,
+            solids_to_execute=None,
             step_keys_to_execute=None,
             tags=None,
             root_run_id=None,

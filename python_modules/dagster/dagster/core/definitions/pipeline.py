@@ -7,6 +7,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import rename_warning
 
 from .dependency import (
@@ -419,8 +420,10 @@ class PipelineDefinition(IContainSolids):
         check.str_param(name, 'name')
         return name in self._all_solid_defs
 
-    def get_pipeline_subset_def(self, solid_subset):
-        return self if solid_subset is None else _get_pipeline_subset_def(self, solid_subset)
+    def get_pipeline_subset_def(self, solids_to_execute):
+        return (
+            self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
+        )
 
     def get_presets(self):
         return list(self._preset_dict.values())
@@ -472,13 +475,20 @@ class PipelineDefinition(IContainSolids):
         return None
 
     @property
-    def solid_subset(self):
+    def solids_to_execute(self):
         return None
 
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solid_subset(self):
+    def solids_to_execute(self):
+        return frozenset(self._solid_dict.keys())
+
+    @property
+    def solid_selection(self):
+        # we currently don't pass the real solid_selection (the solid query list) down here.
+        # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
+        # to a list
         return list(self._solid_dict.keys())
 
     @property
@@ -492,7 +502,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
     def is_subset_pipeline(self):
         return True
 
-    def get_pipeline_subset_def(self, solid_subset):
+    def get_pipeline_subset_def(self, solids_to_execute):
         raise DagsterInvariantViolationError('Pipeline subsets may not be subset again.')
 
 
@@ -500,16 +510,16 @@ def _dep_key_of(solid):
     return SolidInvocation(solid.definition.name, solid.name)
 
 
-def _get_pipeline_subset_def(pipeline_def, solid_names):
+def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
     '''
     Build a pipeline which is a subset of another pipeline.
-    Only includes the solids which are in solid_names.
+    Only includes the solids which are in solids_to_execute.
     '''
 
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.list_param(solid_names, 'solid_names', of_type=str)
+    check.set_param(solids_to_execute, 'solids_to_execute', of_type=str)
 
-    for solid_name in solid_names:
+    for solid_name in solids_to_execute:
         if not pipeline_def.has_solid_named(solid_name):
             raise DagsterInvalidSubsetError(
                 'Pipeline {pipeline_name} has no solid named {name}.'.format(
@@ -517,16 +527,14 @@ def _get_pipeline_subset_def(pipeline_def, solid_names):
                 ),
             )
 
-    solids = list(map(pipeline_def.solid_named, solid_names))
+    solids = list(map(pipeline_def.solid_named, solids_to_execute))
     deps = {_dep_key_of(solid): {} for solid in solids}
-
-    solid_name_set = set(solid_names)
 
     for solid in solids:
         for input_handle in solid.input_handles():
             if pipeline_def.dependency_structure.has_singular_dep(input_handle):
                 output_handle = pipeline_def.dependency_structure.get_singular_dep(input_handle)
-                if output_handle.solid.name in solid_name_set:
+                if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
@@ -538,7 +546,7 @@ def _get_pipeline_subset_def(pipeline_def, solid_names):
                             solid=output_handle.solid.name, output=output_handle.output_def.name
                         )
                         for output_handle in output_handles
-                        if output_handle.solid.name in solid_name_set
+                        if output_handle.solid.name in solids_to_execute
                     ]
                 )
 
@@ -558,8 +566,9 @@ def _get_pipeline_subset_def(pipeline_def, solid_names):
         # we re-raise a DagsterInvalidSubsetError.
         six.raise_from(
             DagsterInvalidSubsetError(
-                "The attempted subset {solid_subset} for pipeline {pipeline_name} results in an invalid pipeline".format(
-                    solid_subset=str(solid_names), pipeline_name=pipeline_def.name
+                "The attempted subset {solids_to_execute} for pipeline {pipeline_name} results in an invalid pipeline".format(
+                    solids_to_execute=str_format_set(solids_to_execute),
+                    pipeline_name=pipeline_def.name,
                 )
             ),
             exc,

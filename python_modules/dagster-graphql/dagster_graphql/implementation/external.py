@@ -41,10 +41,10 @@ def get_external_pipeline_or_raise(graphene_info, selector):
 
     full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
-    if selector.solid_subset is None:
+    if selector.solid_selection is None:
         return full_pipeline
 
-    for solid_name in selector.solid_subset:
+    for solid_name in selector.solid_selection:
         if not full_pipeline.has_solid_invocation(solid_name):
             raise UserFacingGraphQLError(
                 DauphinInvalidSubsetError(

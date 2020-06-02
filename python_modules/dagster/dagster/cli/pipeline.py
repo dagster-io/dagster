@@ -390,7 +390,9 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
     # FIXME need to check the env against environment_dict
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
-        solid_subset=preset.solid_subset if preset else None,
+        solids_to_execute=frozenset(preset.solid_subset)
+        if preset and preset.solid_subset
+        else None,
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,
@@ -656,7 +658,9 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             run = instance.create_run_for_pipeline(
                 pipeline_def=pipeline_def,
                 mode=partition_set.mode,
-                solid_subset=partition_set.solid_subset,
+                solids_to_execute=frozenset(partition_set.solid_subset)
+                if partition_set and partition_set.solid_subset
+                else None,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )

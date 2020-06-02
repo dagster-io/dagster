@@ -61,7 +61,7 @@ class PipelineRun(
     namedtuple(
         '_PipelineRun',
         (
-            'pipeline_name run_id environment_dict mode solid_subset '
+            'pipeline_name run_id environment_dict mode solid_selection solids_to_execute '
             'step_keys_to_execute status tags root_run_id parent_run_id '
             'pipeline_snapshot_id execution_plan_snapshot_id'
         ),
@@ -82,13 +82,15 @@ class PipelineRun(
     # * added execution_plan_snapshot_id
     # * removed selector
     # * added solid_subset
+    # * renamed solid_subset -> solid_selection, added solids_to_execute
     def __new__(
         cls,
         pipeline_name=None,
         run_id=None,
         environment_dict=None,
         mode=None,
-        solid_subset=None,
+        solid_selection=None,
+        solids_to_execute=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -100,8 +102,14 @@ class PipelineRun(
         # see https://github.com/dagster-io/dagster/issues/2372 for explanation
         previous_run_id=None,
         selector=None,
+        solid_subset=None,
     ):
-        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        # a frozenset which contains the names of the solids to execute
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        # a list of solid queries provided by the user
+        # possible to be None when only solids_to_execute is set by the user directly
+        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         check.opt_str_param(root_run_id, 'root_run_id')
@@ -140,16 +148,24 @@ class PipelineRun(
                 pipeline_name = selector.name
 
             check.invariant(
-                solid_subset is None or selector.solid_subset == solid_subset,
+                solids_to_execute is None or set(selector.solid_subset) == solids_to_execute,
                 (
-                    'Conflicting solid_subset {solid_subset} in arguments to PipelineRun: '
+                    'Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: '
                     'selector was passed with subset {selector_subset}'.format(
-                        solid_subset=solid_subset, selector_subset=selector.solid_subset
+                        solids_to_execute=solids_to_execute, selector_subset=selector.solid_subset
                     )
                 ),
             )
-            if solid_subset is None:
-                solid_subset = selector.solid_subset
+            # for old runs that only have selector but no solids_to_execute
+            if solids_to_execute is None:
+                solids_to_execute = (
+                    frozenset(selector.solid_subset) if selector.solid_subset else None
+                )
+
+        # for old runs that specified list-type solid_subset
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        if solid_subset:
+            solids_to_execute = frozenset(solid_subset)
         # ----------------------------------------------------------------------------------------
 
         return super(PipelineRun, cls).__new__(
@@ -160,7 +176,8 @@ class PipelineRun(
                 environment_dict, 'environment_dict', key_type=str
             ),
             mode=check.opt_str_param(mode, 'mode'),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
                 status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED

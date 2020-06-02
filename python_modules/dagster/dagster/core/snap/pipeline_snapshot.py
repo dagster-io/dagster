@@ -93,10 +93,11 @@ class PipelineSnapshot(
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             lineage = PipelineSnapshotLineage(
-                create_pipeline_snapshot_id(
+                parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
                 ),
-                pipeline_def.solid_subset,
+                solid_selection=pipeline_def.solid_selection,
+                solids_to_execute=pipeline_def.solids_to_execute,
             )
 
         return PipelineSnapshot(
@@ -278,13 +279,13 @@ def construct_config_type_from_snap(config_type_snap, config_snap_map):
 
 @whitelist_for_serdes
 class PipelineSnapshotLineage(
-    namedtuple('_PipelineSnapshotLineage', 'parent_snapshot_id solid_subset',)
+    namedtuple('_PipelineSnapshotLineage', 'parent_snapshot_id solid_selection solids_to_execute',)
 ):
-    def __new__(
-        cls, parent_snapshot_id, solid_subset,
-    ):
+    def __new__(cls, parent_snapshot_id, solid_selection=None, solids_to_execute=None):
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
             cls,
             check.str_param(parent_snapshot_id, parent_snapshot_id),
-            check.opt_list_param(solid_subset, 'solid_subset', str),
+            solid_selection,
+            solids_to_execute,
         )

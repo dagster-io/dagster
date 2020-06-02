@@ -40,14 +40,12 @@ def external_repo_from_def(repository_def, repository_handle):
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
 
 
-def external_pipeline_from_recon_pipeline(recon_pipeline, solid_subset, repository_handle):
-    full_pipeline_def = recon_pipeline.get_definition()
-
-    pipeline_def = (
-        full_pipeline_def.get_pipeline_subset_def(solid_subset)
-        if solid_subset
-        else full_pipeline_def
-    )
+def external_pipeline_from_recon_pipeline(recon_pipeline, solid_selection, repository_handle):
+    if solid_selection:
+        sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
+        pipeline_def = sub_pipeline.get_definition()
+    else:
+        pipeline_def = recon_pipeline.get_definition()
 
     return ExternalPipeline(
         external_pipeline_data_from_def(pipeline_def), repository_handle=repository_handle,

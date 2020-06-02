@@ -44,7 +44,9 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
-        solid_subset=execution_params.selector.solid_subset,
+        solids_to_execute=frozenset(execution_params.selector.solid_selection)
+        if execution_params.selector.solid_selection
+        else None,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute,
@@ -82,7 +84,9 @@ def create_possibly_invalid_run(
         run_id=None,
         environment_dict=environment_dict,
         mode=mode,
-        solid_subset=external_pipeline.solid_subset,
+        solids_to_execute=frozenset(execution_params.selector.solid_selection)
+        if execution_params.selector.solid_selection
+        else None,
         step_keys_to_execute=step_keys,
         status=None,
         tags=merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags),
@@ -124,7 +128,9 @@ def get_run_execution_info_for_created_run_or_error(
             location_name=repository_location_name,
             repository_name=repository_name,
             pipeline_name=pipeline_run.pipeline_name,
-            solid_subset=pipeline_run.solid_subset,
+            solid_selection=list(pipeline_run.solids_to_execute)
+            if pipeline_run.solids_to_execute
+            else None,
         ),
     )
 

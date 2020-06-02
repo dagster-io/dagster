@@ -223,7 +223,7 @@ def test_single_solid_subset_execution():
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, environment_dict=None, solid_subset=['return_one']
+            pipeline_def=math_diamond, environment_dict=None, solids_to_execute={'return_one'}
         )
         run_id = pipeline_run.run_id
 
@@ -234,7 +234,6 @@ def test_single_solid_subset_execution():
         launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
         launcher.join()
-
         finished_pipeline_run = instance.get_run_by_id(run_id)
 
         event_records = instance.all_logs(run_id)
@@ -253,7 +252,7 @@ def test_multi_solid_subset_execution():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=math_diamond,
             environment_dict=None,
-            solid_subset=['return_one', 'multiply_by_2'],
+            solids_to_execute={'return_one', 'multiply_by_2'},
         )
         run_id = pipeline_run.run_id
 

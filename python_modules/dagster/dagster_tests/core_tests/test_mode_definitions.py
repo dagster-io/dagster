@@ -234,7 +234,7 @@ def test_subset_with_mode_definitions():
     assert called == {'a': 1, 'b': 1}
 
     assert (
-        execute_solids_within_pipeline(pipeline_def, solid_names=['requires_a'])[
+        execute_solids_within_pipeline(pipeline_def, solid_names={'requires_a'})[
             'requires_a'
         ].success
         is True

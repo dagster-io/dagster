@@ -478,8 +478,8 @@ def create_execution_params(graphene_info, graphql_execution_params):
         )
 
         check.invariant(
-            not selector.solid_subset,
-            'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
+            not selector.solid_selection,
+            'Invalid ExecutionParams. Cannot define selector.solid_selection when using preset',
         )
 
         external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
@@ -494,7 +494,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         preset = external_pipeline.get_preset(preset_name)
 
         return ExecutionParams(
-            selector=selector.with_solid_subset(preset.solid_subset),
+            selector=selector.with_solid_selection(preset.solid_subset),
             environment_dict=preset.environment_dict,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(

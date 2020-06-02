@@ -2,10 +2,22 @@ import re
 
 import pytest
 
-from dagster import DagsterInvariantViolationError, execute_pipeline, execute_pipeline_iterator
+from dagster import execute_pipeline, execute_pipeline_iterator
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.test_utils import step_output_event_filter
 
 from .test_subset_selector import foo_pipeline
+
+
+def test_subset_for_execution():
+    pipeline = InMemoryExecutablePipeline(foo_pipeline)
+    sub_pipeline = pipeline.subset_for_execution(['*add_nums'])
+    assert sub_pipeline.solid_selection == ['*add_nums']
+    assert sub_pipeline.solids_to_execute == {'add_nums', 'return_one', 'return_two'}
+
+    result = execute_pipeline(sub_pipeline)
+    assert result.success
 
 
 def test_execute_pipeline_with_solid_subset_single_clause():
@@ -56,9 +68,11 @@ def test_execute_pipeline_with_solid_subset_invalid():
     invalid_input = ['return_one,return_two']
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterInvalidSubsetError,
         match=re.escape(
-            'No qualified solid subset found for solid_subset={input}'.format(input=invalid_input)
+            'No qualified solids to execute found for solid_selection={input}'.format(
+                input=invalid_input
+            )
         ),
     ):
         execute_pipeline(foo_pipeline, solid_subset=invalid_input)

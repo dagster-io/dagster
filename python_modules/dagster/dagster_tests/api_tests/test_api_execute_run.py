@@ -18,7 +18,7 @@ def test_execute_run_api():
                 pipeline_name='foo',
                 environment_dict={},
                 mode='default',
-                solid_subset=None,
+                solids_to_execute=None,
             )
         ]
 

@@ -43,7 +43,7 @@ def test_pipeline_with_valid_subset_snapshot_api():
     pipeline_handle = get_foo_pipeline_handle()
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
-        pipeline_handle, solid_subset=["do_something"]
+        pipeline_handle, solid_selection=["do_something"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
     assert external_pipeline_subset_result.success == True
@@ -54,12 +54,12 @@ def test_pipeline_with_invalid_subset_snapshot_api():
     pipeline_handle = get_foo_pipeline_handle()
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
-        pipeline_handle, solid_subset=["invalid_solid"]
+        pipeline_handle, solid_selection=["invalid_solid"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
     assert external_pipeline_subset_result.success == False
     assert (
-        "Pipeline foo has no solid named invalid_solid"
+        "No qualified solids to execute found for solid_selection"
         in external_pipeline_subset_result.error.message
     )
 
@@ -69,7 +69,7 @@ def test_pipeline_with_invalid_definition_snapshot_api():
     pipeline_handle = PipelineHandle('bar', get_bar_repo_handle())
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
-        pipeline_handle, solid_subset=["fail_subset"]
+        pipeline_handle, solid_selection=["fail_subset"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
     assert external_pipeline_subset_result.success == False

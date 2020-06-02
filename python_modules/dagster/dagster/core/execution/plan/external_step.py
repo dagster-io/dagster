@@ -111,7 +111,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
                     ),
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
-                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
+                solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
     return StepRunRef(
@@ -127,7 +127,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
 def step_run_ref_to_step_context(step_run_ref):
     pipeline_def = step_run_ref.recon_pipeline.get_definition().get_pipeline_subset_def(
-        step_run_ref.pipeline_run.solid_subset
+        step_run_ref.pipeline_run.solids_to_execute
     )
 
     execution_plan = create_execution_plan(

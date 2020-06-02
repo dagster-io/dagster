@@ -330,7 +330,7 @@ def test_pipeline_subset():
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def.get_pipeline_subset_def(['add_one']), environment_dict=env_config
+        pipeline_def.get_pipeline_subset_def({'add_one'}), environment_dict=env_config
     )
 
     assert subset_result.success
@@ -386,8 +386,8 @@ def test_pipeline_subset_of_subset():
     assert len(pipeline_result.solid_result_list) == 4
     assert pipeline_result.result_for_solid('add_one_a').output_value() == 2
 
-    subset_pipeline_def = pipeline_def.get_pipeline_subset_def(['add_one_a', 'return_one_a'])
-    subset_result = execute_pipeline(subset_pipeline_def)
+    subset_pipeline = pipeline_def.get_pipeline_subset_def({'add_one_a', 'return_one_a'})
+    subset_result = execute_pipeline(subset_pipeline)
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 2
     assert subset_result.result_for_solid('add_one_a').output_value() == 2
@@ -395,12 +395,12 @@ def test_pipeline_subset_of_subset():
     with pytest.raises(
         DagsterInvariantViolationError, match='Pipeline subsets may not be subset again.'
     ):
-        subset_pipeline_def.get_pipeline_subset_def(['add_one_a'])
+        subset_pipeline.get_pipeline_subset_def({'add_one_a'})
 
     with pytest.raises(
         DagsterInvariantViolationError, match='Pipeline subsets may not be subset again.'
     ):
-        subset_pipeline_def.get_pipeline_subset_def(['add_one_a', 'return_one_a'])
+        subset_pipeline.get_pipeline_subset_def({'add_one_a', 'return_one_a'})
 
 
 def test_pipeline_subset_with_multi_dependency():
@@ -431,14 +431,14 @@ def test_pipeline_subset_with_multi_dependency():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
-    subset_result = execute_pipeline(pipeline_def.get_pipeline_subset_def(['noop']))
+    subset_result = execute_pipeline(pipeline_def.get_pipeline_subset_def({'noop'}))
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
     subset_result = execute_pipeline(
-        pipeline_def.get_pipeline_subset_def(['return_one', 'return_two', 'noop'])
+        pipeline_def.get_pipeline_subset_def({'return_one', 'return_two', 'noop'})
     )
 
     assert subset_result.success
@@ -506,12 +506,12 @@ def define_three_part_pipeline():
 
 
 def define_created_disjoint_three_part_pipeline():
-    return define_three_part_pipeline().get_pipeline_subset_def(['add_one', 'add_three'])
+    return define_three_part_pipeline().get_pipeline_subset_def({'add_one', 'add_three'})
 
 
 def test_pipeline_disjoint_subset():
     disjoint_pipeline = define_three_part_pipeline().get_pipeline_subset_def(
-        ['add_one', 'add_three']
+        {'add_one', 'add_three'}
     )
     assert len(disjoint_pipeline.solids) == 2
 
@@ -781,7 +781,7 @@ def test_reexecution_fs_storage_with_subset():
         environment_dict=environment_dict,
         parent_run_id=pipeline_result_subset.run_id,
         root_run_id=pipeline_result_subset.run_id,
-        solid_subset=['return_one'],
+        solids_to_execute={'return_one'},
         step_keys_to_execute=['return_one.compute'],
     )
 
@@ -804,7 +804,7 @@ def test_reexecution_fs_storage_with_subset():
             environment_dict=environment_dict,
             parent_run_id=pipeline_result_subset.run_id,
             root_run_id=pipeline_result_subset.run_id,
-            solid_subset=['return_one'],
+            solids_to_execute={'return_one'},
             step_keys_to_execute=['add_one.compute'],
         )
 
@@ -813,7 +813,7 @@ def test_reexecution_fs_storage_with_subset():
         environment_dict=environment_dict,
         parent_run_id=reexecution_result.run_id,
         root_run_id=reexecution_result.run_id,
-        solid_subset=['return_one'],
+        solids_to_execute={'return_one'},
         step_keys_to_execute=['return_one.compute'],
     )
 
@@ -834,7 +834,7 @@ def test_reexecution_fs_storage_with_subset():
             environment_dict=environment_dict,
             parent_run_id=reexecution_result.run_id,
             root_run_id=reexecution_result.run_id,
-            solid_subset=['return_one'],
+            solids_to_execute={'return_one'},
             step_keys_to_execute=['add_one.compute'],
         )
 
@@ -976,7 +976,7 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert set(pipe.get_pipeline_subset_def(['def_two']).solid_subset) == {'def_two'}
+    assert pipe.get_pipeline_subset_def({'def_two'}).solids_to_execute == {'def_two'}
 
 
 def test_default_run_id():

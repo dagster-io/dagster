@@ -27,17 +27,19 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 # Helpers
 
 
-def get_external_pipeline_subset_result(recon_pipeline, solid_subset):
+def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
     check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
 
-    definition = recon_pipeline.get_definition()
-    if solid_subset:
+    if solid_selection:
         try:
-            definition = definition.get_pipeline_subset_def(solid_subset)
+            sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
+            definition = sub_pipeline.get_definition()
         except DagsterInvalidSubsetError:
             return ExternalPipelineSubsetResult(
                 success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
             )
+    else:
+        definition = recon_pipeline.get_definition()
 
     external_pipeline_data = external_pipeline_data_from_def(definition)
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
@@ -120,12 +122,6 @@ snapshot_cli = create_snapshot_cli_group()
 # Execution CLI
 
 
-def _subset(recon_pipeline, solid_subset):
-    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return recon_pipeline.subset_for_execution(solid_subset) if solid_subset else recon_pipeline
-
-
 def _get_instance(stream, instance_ref_json):
     try:
         return DagsterInstance.from_ref(deserialize_json_to_dagster_namedtuple(instance_ref_json))
@@ -170,9 +166,9 @@ def _get_pipeline_run(stream, pipeline_run_json):
 
 def _recon_pipeline(stream, recon_repo, pipeline_run):
     try:
-        return _subset(
-            recon_repo.get_reconstructable_pipeline(pipeline_run.pipeline_name),
-            pipeline_run.solid_subset,
+        recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_run.pipeline_name)
+        return recon_pipeline.subset_for_execution_from_existing_pipeline(
+            pipeline_run.solids_to_execute
         )
 
     except:  # pylint: disable=bare-except

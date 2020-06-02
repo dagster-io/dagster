@@ -10,7 +10,8 @@ from dagster.core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_previous_stack_frame,
 )
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
 
@@ -60,41 +61,83 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 
 @whitelist_for_serdes
 class ReconstructablePipeline(
-    namedtuple('_ReconstructablePipeline', 'repository pipeline_name frozen_solid_subset'),
+    namedtuple(
+        '_ReconstructablePipeline',
+        'repository pipeline_name solid_selection_str solids_to_execute',
+    ),
     ExecutablePipeline,
 ):
-    def __new__(cls, repository, pipeline_name, frozen_solid_subset=None):
-        check.opt_inst_param(frozen_solid_subset, 'frozen_solid_subset', frozenset)
+    def __new__(
+        cls, repository, pipeline_name, solid_selection_str=None, solids_to_execute=None,
+    ):
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
             repository=check.inst_param(repository, 'repository', ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            frozen_solid_subset=frozen_solid_subset,
+            solid_selection_str=check.opt_str_param(solid_selection_str, 'solid_selection_str'),
+            solids_to_execute=solids_to_execute,
         )
 
     @property
-    def solid_subset(self):
-        return list(self.frozen_solid_subset) if self.frozen_solid_subset is not None else None
+    def solid_selection(self):
+        return seven.json.loads(self.solid_selection_str)
 
     @lru_cache(maxsize=1)
     def get_definition(self):
         return (
             self.repository.get_definition()
             .get_pipeline(self.pipeline_name)
-            .get_pipeline_subset_def(self.solid_subset)
+            .get_pipeline_subset_def(self.solids_to_execute)
         )
+
+    def _resolve_solid_selection(self, solid_selection):
+        # resolve a list of solid selection queries to a frozenset of qualified solid names
+        # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
+        check.list_param(solid_selection, 'solid_selection', of_type=str)
+        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
+        if len(solids_to_execute) == 0:
+            raise DagsterInvalidSubsetError(
+                'No qualified solids to execute found for solid_selection={requested}'.format(
+                    requested=solid_selection
+                )
+            )
+        return solids_to_execute
 
     def get_reconstructable_repository(self):
         return self.repository
 
-    def subset_for_execution(self, solid_subset):
-        pipe = ReconstructablePipeline(
-            self.repository,
-            self.pipeline_name,
-            frozenset(solid_subset) if solid_subset is not None else None,
-        )
+    def _subset_for_execution(self, solids_to_execute, solid_selection=None):
+        if solids_to_execute:
+            pipe = ReconstructablePipeline(
+                repository=self.repository,
+                pipeline_name=self.pipeline_name,
+                solid_selection_str=seven.json.dumps(solid_selection),
+                solids_to_execute=frozenset(solids_to_execute),
+            )
+        else:
+            pipe = ReconstructablePipeline(
+                repository=self.repository, pipeline_name=self.pipeline_name,
+            )
+
         pipe.get_definition()  # verify the subset is correct
         return pipe
+
+    def subset_for_execution(self, solid_selection):
+        # take a list of solid queries and resolve the queries to names of solids to execute
+        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+        solids_to_execute = (
+            self._resolve_solid_selection(solid_selection) if solid_selection else None
+        )
+
+        return self._subset_for_execution(solids_to_execute, solid_selection)
+
+    def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
+        # take a frozenset of resolved solid names from an existing pipeline
+        # so there's no need to parse the selection
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+
+        return self._subset_for_execution(solids_to_execute)
 
     def describe(self):
         return '"{name}" in repository ({repo})'.format(

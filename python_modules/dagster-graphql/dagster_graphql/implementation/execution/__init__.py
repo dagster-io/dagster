@@ -189,7 +189,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=mode,
-            solid_subset=None,
+            solids_to_execute=None,
             step_keys_to_execute=None,
             status=None,
             tags=execution_params.execution_metadata.tags or {},

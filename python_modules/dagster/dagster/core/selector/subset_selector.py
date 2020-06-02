@@ -145,7 +145,7 @@ def _clause_to_subset(traverser, graph, clause):
     return subset_list
 
 
-def parse_solid_subset(pipeline_def, solid_subset):
+def parse_solid_selection(pipeline_def, solid_selection):
     '''Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a list of the qualified solid names.
 
@@ -165,21 +165,21 @@ def parse_solid_subset(pipeline_def, solid_subset):
 
     Args:
         pipeline_def (PipelineDefinition): the pipeline to execute.
-        solid_subset (List[str]): a list of the solid selection queries (including single solid
+        solid_selection (List[str]): a list of the solid selection queries (including single solid
             names) to execute.
 
     Returns:
-        final_solid_subset (List[str]): a list of qualified deduplicated solid names,
-            empty if no qualified subset selected.
+        FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
+            subset selected.
     '''
-    check.list_param(solid_subset, 'solid_subset', of_type=str)
+    check.list_param(solid_selection, 'solid_selection', of_type=str)
 
     graph = generate_dep_graph(pipeline_def)
     traverser = Traverser(graph=graph)
-    solid_subset_set = set()
+    solids_set = set()
 
     # loop over clauses
-    for clause in solid_subset:
-        solid_subset_set.update(_clause_to_subset(traverser, graph, clause))
+    for clause in solid_selection:
+        solids_set.update(_clause_to_subset(traverser, graph, clause))
 
-    return list(solid_subset_set)
+    return frozenset(solids_set)

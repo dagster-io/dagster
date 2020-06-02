@@ -107,9 +107,17 @@ class ExternalPipeline(RepresentedPipeline):
         self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
 
     @property
-    def solid_subset(self):
+    def solid_selection(self):
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_subset
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
+    def solids_to_execute(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )

@@ -13,9 +13,9 @@ from dagster.utils.temp_file import get_temp_file_name
 from .utils import execute_command_in_subprocess
 
 
-def sync_get_external_pipeline_subset(pipeline_handle, solid_subset=None):
+def sync_get_external_pipeline_subset(pipeline_handle, solid_selection=None):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
 
     location_handle = pipeline_handle.repository_handle.repository_location_handle
     check.param_invariant(
@@ -38,9 +38,11 @@ def sync_get_external_pipeline_subset(pipeline_handle, solid_subset=None):
             + [pipeline_handle.pipeline_name]
         )
 
-        if solid_subset:
+        if solid_selection:
             parts.append(
-                '--solid-subset={solid_subset}'.format(solid_subset=json.dumps(solid_subset))
+                '--solid-subset={solid_selection}'.format(
+                    solid_selection=json.dumps(solid_selection)
+                )
             )
 
         execute_command_in_subprocess(parts)

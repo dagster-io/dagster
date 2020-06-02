@@ -24,7 +24,7 @@ def test_unlink_swallow_errors():
 
 def test_execute_isolated_solids_with_bad_solid_names():
     with pytest.raises(DagsterInvariantViolationError, match='but that solid was not found'):
-        execute_solids_within_pipeline(PipelineDefinition([]), [], {'foo': {'bar': 'baz'}})
+        execute_solids_within_pipeline(PipelineDefinition([]), set(), {'foo': {'bar': 'baz'}})
 
 
 def test_typing_invalid():

@@ -452,12 +452,13 @@ class DagsterInstance:
         run_id=None,
         environment_dict=None,
         mode=None,
-        solid_subset=None,
+        solids_to_execute=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
         root_run_id=None,
         parent_run_id=None,
+        solid_selection=None,
     ):
         from dagster.core.execution.api import create_execution_plan
         from dagster.core.execution.plan.plan import ExecutionPlan
@@ -466,19 +467,30 @@ class DagsterInstance:
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        if solid_subset:
+        # note that solids_to_execute is required to execute the solid subset, which is the
+        # frozenset version of the previous solid_subset.
+        # solid_selection is not required and will not be converted to solids_to_execute here.
+        # i.e. this function doesn't handle solid queries.
+        # solid_selection is only used to pass the user queries further down.
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+
+        if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):
+                # for the case when pipeline_def is created by ExecutablePipeline or ExternalPipeline
                 check.invariant(
-                    len(solid_subset) == len(pipeline_def.solid_subset)
-                    and set(solid_subset) == set(pipeline_def.solid_subset),
-                    'Cannot create a PipelineRun from pipeline subset {pipeline_solid_subset} that '
-                    'conflicts with solid_subset arg {solid_subset}'.format(
-                        pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
-                        solid_subset=str_format_list(solid_subset),
+                    solids_to_execute == pipeline_def.solids_to_execute,
+                    'Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} '
+                    'that conflicts with solids_to_execute arg {solids_to_execute}'.format(
+                        pipeline_solids_to_execute=str_format_list(pipeline_def.solids_to_execute),
+                        solids_to_execute=str_format_list(solids_to_execute),
                     ),
                 )
             else:
-                pipeline_def = pipeline_def.get_pipeline_subset_def(solid_subset=solid_subset)
+                # for cases when `create_run_for_pipeline` is directly called
+                pipeline_def = pipeline_def.get_pipeline_subset_def(
+                    solids_to_execute=solids_to_execute
+                )
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
@@ -493,7 +505,8 @@ class DagsterInstance:
             run_id=run_id,
             environment_dict=environment_dict,
             mode=check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name()),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -512,7 +525,7 @@ class DagsterInstance:
         run_id,
         environment_dict,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         status,
         tags,
@@ -521,6 +534,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        solid_selection=None,
     ):
 
         # https://github.com/dagster-io/dagster/issues/2403
@@ -533,7 +547,8 @@ class DagsterInstance:
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -606,7 +621,7 @@ class DagsterInstance:
         run_id,
         environment_dict,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         status,
         tags,
@@ -615,13 +630,16 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        solid_selection=None,
     ):
+
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -639,7 +657,7 @@ class DagsterInstance:
         run_id,
         environment_dict,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         tags,
         root_run_id,
@@ -647,6 +665,7 @@ class DagsterInstance:
         pipeline_snapshot,
         execution_plan_snapshot,
         parent_pipeline_snapshot,
+        solid_selection=None,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -664,7 +683,8 @@ class DagsterInstance:
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=PipelineRunStatus.MANAGED,
             tags=tags,

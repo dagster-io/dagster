@@ -96,7 +96,7 @@ class DagsterFlyteCompiler:
             run_id=self.execution_plan.pipeline_def.display_name,
             environment_dict=self.environment_dict,
             mode=None,
-            solid_subset=None,
+            solids_to_execute=None,
             step_keys_to_execute=None,
             status=None,
             tags=None,
