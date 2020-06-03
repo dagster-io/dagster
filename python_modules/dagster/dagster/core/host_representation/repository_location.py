@@ -9,8 +9,8 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
-    LocationHandle,
     RepositoryHandle,
+    RepositoryLocationHandle,
 )
 from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.instance import DagsterInstance
@@ -57,10 +57,6 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     def name(self):
         pass
 
-    @abstractproperty
-    def handle(self):
-        pass
-
     @abstractmethod
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
@@ -82,7 +78,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, recon_repo):
 
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        self._handle = LocationHandle.create_in_process_location(recon_repo.pointer)
+        self._handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
 
         self._external_repo = external_repo_from_def(
             recon_repo.get_definition(),
@@ -100,10 +96,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
     @property
     def name(self):
         return self._handle.location_name
-
-    @property
-    def handle(self):
-        return self._handle
 
     def get_repository(self, name):
         return self._repositories[name]
@@ -181,7 +173,9 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
         from dagster.api.snapshot_repository import sync_get_external_repository
 
         check.inst_param(pointer, 'pointer', CodePointer)
-        self._handle = LocationHandle(name, pointer)
+        self._handle = RepositoryLocationHandle.create_out_of_process_location(
+            location_name=name, pointer=pointer
+        )
         self._name = check.str_param(name, 'name')
         self.external_repository = sync_get_external_repository(self._handle)
 
@@ -199,10 +193,6 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
     @property
     def name(self):
         return self._name
-
-    @property
-    def handle(self):
-        return self._handle
 
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute

@@ -13,25 +13,50 @@ from dagster.core.code_pointer import CodePointer
 IN_PROCESS_NAME = '<<in_process>>'
 
 
-class LocationHandle(namedtuple('_LocationHandle', 'location_name pointer')):
+class RepositoryLocationHandle:
+    @staticmethod
+    def create_in_process_location(pointer):
+        return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, pointer)
+
+    @staticmethod
+    def create_out_of_process_location(location_name, pointer):
+        return OutOfProcessRepositoryLocationHandle(location_name, pointer)
+
+
+class InProcessRepositoryLocationHandle(
+    namedtuple('_InProcessRepositoryLocationHandle', 'location_name pointer'),
+    RepositoryLocationHandle,
+):
     def __new__(cls, location_name, pointer):
-        return super(LocationHandle, cls).__new__(
+        return super(InProcessRepositoryLocationHandle, cls).__new__(
             cls,
             check.str_param(location_name, 'location_name'),
             check.inst_param(pointer, 'pointer', CodePointer),
         )
 
-    @staticmethod
-    def create_in_process_location(pointer):
-        return LocationHandle(IN_PROCESS_NAME, pointer)
+
+class OutOfProcessRepositoryLocationHandle(
+    namedtuple('_OutOfProcessRepositoryLocationHandle', 'location_name pointer'),
+    RepositoryLocationHandle,
+):
+    def __new__(cls, location_name, pointer):
+        return super(OutOfProcessRepositoryLocationHandle, cls).__new__(
+            cls,
+            check.str_param(location_name, 'location_name'),
+            check.inst_param(pointer, 'pointer', CodePointer),
+        )
 
 
-class RepositoryHandle(namedtuple('_RepositoryHandle', 'repository_name location_handle')):
-    def __new__(cls, repository_name, location_handle):
+class RepositoryHandle(
+    namedtuple('_RepositoryHandle', 'repository_name repository_location_handle')
+):
+    def __new__(cls, repository_name, repository_location_handle):
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, 'repository_name'),
-            check.inst_param(location_handle, 'location_handle', LocationHandle),
+            check.inst_param(
+                repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
+            ),
         )
 
 
@@ -52,4 +77,4 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
 
     @property
     def location_name(self):
-        return self.repository_handle.location_handle.location_name
+        return self.repository_handle.repository_location_handle.location_name

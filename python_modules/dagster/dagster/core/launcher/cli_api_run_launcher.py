@@ -124,7 +124,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        env_handle = external_pipeline.handle.repository_handle.location_handle
+        env_handle = external_pipeline.handle.repository_handle.repository_location_handle
 
         # initialize when the first run happens
         if not self._instance:

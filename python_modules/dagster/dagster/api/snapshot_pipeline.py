@@ -14,7 +14,7 @@ def sync_get_external_pipeline_subset(pipeline_handle, solid_subset=None):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    location_handle = pipeline_handle.repository_handle.location_handle
+    location_handle = pipeline_handle.repository_handle.repository_location_handle
 
     with get_temp_file_name() as output_file:
         parts = (

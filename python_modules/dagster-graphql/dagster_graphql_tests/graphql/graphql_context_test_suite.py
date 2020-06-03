@@ -173,7 +173,9 @@ class EnvironmentManagers:
         def _mgr_fn(recon_repo):
             '''Goes out of process but same process as host process'''
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-            yield OutOfProcessRepositoryLocation('test-out-of-process-env', recon_repo.pointer)
+            yield OutOfProcessRepositoryLocation(
+                name='test-out-of-process-env', pointer=recon_repo.pointer
+            )
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
 

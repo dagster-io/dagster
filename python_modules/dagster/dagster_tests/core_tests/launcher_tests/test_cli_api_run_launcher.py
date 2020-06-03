@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import LocationHandle, RepositoryHandle
+from dagster.core.host_representation import RepositoryHandle, RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -93,7 +93,9 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     repo_def = recon_repo.get_definition()
     external_repo = external_repo_from_def(
         repo_def,
-        RepositoryHandle(repo_def.name, LocationHandle('<<MOCK_FOR_TEST>>', recon_repo.pointer),),
+        RepositoryHandle(
+            repo_def.name, RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
+        ),
     )
     return external_repo.get_full_external_pipeline(pipeline_name)
 
