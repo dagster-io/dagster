@@ -3,6 +3,15 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 
+# This is a hard-coded name for the special "in-process" location.
+# This is typically only used for test, although we may allow
+# users to load user code into a host process as well. We want
+# to encourage the user code to be in user processes as much
+# as possible since that it how this system will be used in prod.
+# We used a hard-coded name so that we don't have to create
+# made up names for this case.
+IN_PROCESS_NAME = '<<in_process>>'
+
 
 class LocationHandle(namedtuple('_LocationHandle', 'location_name pointer')):
     def __new__(cls, location_name, pointer):
@@ -11,6 +20,10 @@ class LocationHandle(namedtuple('_LocationHandle', 'location_name pointer')):
             check.str_param(location_name, 'location_name'),
             check.inst_param(pointer, 'pointer', CodePointer),
         )
+
+    @staticmethod
+    def create_in_process_location(pointer):
+        return LocationHandle(IN_PROCESS_NAME, pointer)
 
 
 class RepositoryHandle(namedtuple('_RepositoryHandle', 'repository_name location_handle')):

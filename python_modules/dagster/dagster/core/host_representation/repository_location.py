@@ -84,7 +84,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, recon_repo):
 
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        self._handle = LocationHandle(self.name, recon_repo.pointer)
+        self._handle = LocationHandle.create_in_process_location(recon_repo.pointer)
 
         self._external_repo = external_repo_from_def(
             recon_repo.get_definition(),
@@ -101,7 +101,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
     @property
     def name(self):
-        return '<<in_process>>'
+        return self._handle.location_name
 
     @property
     def handle(self):
