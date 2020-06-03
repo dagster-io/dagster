@@ -760,6 +760,10 @@ if __name__ == "__main__":
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
+        StepBuilder("Validate Library Docs")
+        .run('python .buildkite/scripts/check_library_docs.py')
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
 
     steps += airline_demo_tests()
