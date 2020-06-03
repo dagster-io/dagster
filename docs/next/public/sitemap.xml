@@ -46,7 +46,15 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_datadog</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_gcp</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_github</loc>
   </url>
 
   <url>
@@ -54,7 +62,47 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_pagerduty</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_pandas</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_papertrail</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_postgres</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_prometheus</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_pyspark</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_slack</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_snowflake</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_spark</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_ssh</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_twilio</loc>
   </url>
 
   <url>
