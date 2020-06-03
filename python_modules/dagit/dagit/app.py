@@ -7,10 +7,7 @@ import uuid
 import warnings
 
 import nbformat
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessRepositoryLocation,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Flask, jsonify, redirect, request, send_file
@@ -22,8 +19,17 @@ from nbconvert import HTMLExporter
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
+from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.host_representation import (
+    InProcessRepositoryLocation,
+    OutOfProcessRepositoryLocation,
+)
+from dagster.core.host_representation.handle import (
+    InProcessRepositoryLocationHandle,
+    OutOfProcessRepositoryLocationHandle,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -177,6 +183,37 @@ def instantiate_app_with_views(context):
     app.register_error_handler(404, index_view)
     CORS(app)
     return app
+
+
+def create_app_from_workspace(workspace, instance):
+    check.inst_param(workspace, 'workspace', Workspace)
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    warn_if_compute_logs_disabled()
+
+    print('Loading repository...')
+
+    locations = []
+    for repository_location_handle in workspace.repository_location_handles:
+        if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
+            # will need to change for multi repo
+            recon_repo = ReconstructableRepository(repository_location_handle.pointer)
+            locations.append(InProcessRepositoryLocation(recon_repo))
+        elif isinstance(repository_location_handle, OutOfProcessRepositoryLocationHandle):
+            locations.append(
+                OutOfProcessRepositoryLocation(
+                    name=repository_location_handle.location_name,
+                    pointer=repository_location_handle.pointer,
+                )
+            )
+        else:
+            check.failed('{} unsupported'.format(repository_location_handle))
+
+    context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
+
+    # Skip interacting with scheduler in this codepath
+
+    return instantiate_app_with_views(context)
 
 
 def create_app_with_reconstructable_repo(recon_repo, instance):

@@ -1,8 +1,9 @@
 import pytest
 from dagit.app import create_app_with_reconstructable_repo
-from dagit.cli import host_dagit_ui_with_reconstructable_repo
+from dagit.cli import host_dagit_ui_with_reconstructable_repo, host_dagit_ui_with_workspace
 
 from dagster import seven
+from dagster.cli.workspace import load_workspace_from_yaml_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.seven import mock
@@ -63,7 +64,16 @@ def test_index_view():
     assert b'You need to enable JavaScript to run this app' in res.data
 
 
-def test_successful_host_dagit_ui():
+def test_successful_host_dagit_ui_from_workspace():
+    with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+
+        host_dagit_ui_with_workspace(
+            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
+        )
+
+
+def test_successful_host_dagit_ui_from_legacy_repository():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
         recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
             file_relative_path(__file__, './repository.yaml')

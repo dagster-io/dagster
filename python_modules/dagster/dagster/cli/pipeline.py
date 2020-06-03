@@ -56,6 +56,9 @@ def repository_target_argument(f):
     return apply_click_params(
         f,
         click.option(
+            '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
+        ),
+        click.option(
             '--repository-yaml',
             '-y',
             type=click.Path(exists=True),

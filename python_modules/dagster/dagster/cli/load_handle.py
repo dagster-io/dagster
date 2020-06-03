@@ -100,6 +100,9 @@ def recon_repo_for_cli_args(kwargs):
     check.dict_param(kwargs, 'kwargs')
     _cli_load_invariant(kwargs.get('pipeline_name') is None)
 
+    if kwargs.get('workspace'):
+        check.not_implemented('Workspace not supported yet in this cli command')
+
     if kwargs.get('repository_yaml') or all_none(kwargs):
         _cli_load_invariant(kwargs.get('module_name') is None)
         _cli_load_invariant(kwargs.get('python_file') is None)

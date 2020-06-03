@@ -10,12 +10,13 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.pipeline import repository_target_argument
+from dagster.cli.workspace import Workspace, load_workspace_from_yaml_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
-from .app import create_app_with_reconstructable_repo
+from .app import create_app_from_workspace, create_app_with_reconstructable_repo
 from .version import __version__
 
 
@@ -111,9 +112,23 @@ def ui(host, port, storage_fallback, workdir, **kwargs):
 
 
 def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):
-    return host_dagit_ui_with_reconstructable_repo(
-        recon_repo_for_cli_args(kwargs), host, port, storage_fallback, port_lookup
-    )
+    if kwargs.get('workspace'):
+        workspace = load_workspace_from_yaml_path(kwargs.get('workspace'))
+        return host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup)
+    else:
+        return host_dagit_ui_with_reconstructable_repo(
+            recon_repo_for_cli_args(kwargs), host, port, storage_fallback, port_lookup
+        )
+
+
+def host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup=True):
+    check.inst_param(workspace, 'workspace', Workspace)
+
+    instance = DagsterInstance.get(storage_fallback)
+
+    app = create_app_from_workspace(workspace, instance)
+
+    start_server(host, port, app, port_lookup)
 
 
 def host_dagit_ui_with_reconstructable_repo(
