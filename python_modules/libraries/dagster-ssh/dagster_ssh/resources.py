@@ -6,7 +6,7 @@ from paramiko.config import SSH_PORT
 from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import Field, check, resource
+from dagster import Field, StringSource, check, resource
 from dagster.utils import merge_dicts
 
 
@@ -174,7 +174,9 @@ class SSHResource(object):
 
 @resource(
     {
-        'remote_host': Field(str, description='remote host to connect', is_required=True),
+        'remote_host': Field(
+            StringSource, description='remote host to connect to', is_required=True
+        ),
         'remote_port': Field(
             int,
             description='port of remote host to connect (Default is paramiko SSH_PORT)',
@@ -182,18 +184,22 @@ class SSHResource(object):
             default_value=SSH_PORT,
         ),
         'username': Field(
-            str, description='username to connect to the remote_host', is_required=False
+            StringSource, description='username to connect to the remote_host', is_required=False
         ),
         'password': Field(
-            str,
+            StringSource,
             description='password of the username to connect to the remote_host',
             is_required=False,
         ),
         'key_file': Field(
-            str, description='key file to use to connect to the remote_host.', is_required=False
+            StringSource,
+            description='key file to use to connect to the remote_host.',
+            is_required=False,
         ),
         'key_string': Field(
-            str, description='key string to use to connect to remote_host', is_required=False
+            StringSource,
+            description='key string to use to connect to remote_host',
+            is_required=False,
         ),
         'timeout': Field(
             int,

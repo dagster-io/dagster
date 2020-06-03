@@ -1,6 +1,6 @@
 from datadog import DogStatsd, initialize, statsd
 
-from dagster import Field, resource
+from dagster import Field, StringSource, resource
 
 
 class DataDogResource:
@@ -74,8 +74,8 @@ class DataDogResource:
 
 @resource(
     {
-        'api_key': Field(str, description='Datadog API key'),
-        'app_key': Field(str, description='Datadog application key'),
+        'api_key': Field(StringSource, description='Datadog API key'),
+        'app_key': Field(StringSource, description='Datadog application key'),
     },
     description='This resource is for publishing to DataDog',
 )
