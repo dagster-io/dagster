@@ -21,6 +21,7 @@ from dagster.utils.hosted_user_process import (
     external_repo_from_def,
 )
 
+from .reloader import Reloader
 from .utils import PipelineSelector
 
 
@@ -190,7 +191,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, recon_repo):
+    def __init__(self, recon_repo, reloader=None):
 
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self._handle = LocationHandle(self.name, recon_repo.pointer)
@@ -201,12 +202,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
         self._repositories = {self._external_repo.name: self._external_repo}
+        self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
 
     def get_reconstructable_pipeline(self, name):
         return self._recon_repo.get_reconstructable_pipeline(name)
 
     def get_reconstructable_repository(self):
         return self._recon_repo
+
+    @property
+    def is_reload_supported(self):
+        return self.reloader and self.reloader.is_reload_supported
 
     @property
     def name(self):

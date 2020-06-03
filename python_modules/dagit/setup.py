@@ -74,7 +74,9 @@ def _do_setup(name='dagit'):
             # notebooks support
             'nbconvert>=5.4.0',
         ],
-        entry_points={'console_scripts': ['dagit-cli = dagit.cli:main', 'dagit = dagit.cli:main']},
+        entry_points={
+            'console_scripts': ['dagit-cli = dagit.cli:main', 'dagit = dagit.dagit:main']
+        },
     )
 
 
