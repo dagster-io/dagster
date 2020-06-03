@@ -245,7 +245,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-azure',
-        env_vars=['AZURE_DATA_LAKE_STORAGE_KEY', 'AZURE_STORAGE_ACCOUNT_KEY'],
+        env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-celery',
