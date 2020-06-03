@@ -141,6 +141,10 @@
         "path": "/docs/apidocs/libraries/dagster_aws"
       },
       {
+        "name": "Azure (dagster_azure)",
+        "path": "/docs/apidocs/libraries/dagster_azure"
+      },
+      {
         "name": "Bash (dagster_bash)",
         "path": "/docs/apidocs/libraries/dagster_bash"
       },

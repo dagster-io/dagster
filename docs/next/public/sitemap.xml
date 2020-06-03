@@ -30,6 +30,10 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_azure</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_bash</loc>
   </url>
 
