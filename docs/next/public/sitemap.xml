@@ -54,6 +54,14 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_dbt</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_flyte</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_gcp</loc>
   </url>
 
@@ -111,6 +119,10 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagstermill</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/lakehouse</loc>
   </url>
 
   <url>

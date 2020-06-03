@@ -284,7 +284,7 @@ def define_dagstermill_solid(
         notebook_path (str): Path to the backing notebook.
         input_defs (Optional[List[InputDefinition]]): The solid's inputs.
         output_defs (Optional[List[OutputDefinition]]): The solid's outputs. Your notebook should
-            call :py:function:`~dagstermill.yield_result` to yield each of these outputs.
+            call :py:func:`~dagstermill.yield_result` to yield each of these outputs.
         required_resource_keys (Optional[Set[str]]): The string names of any required resources.
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in

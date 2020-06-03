@@ -13,20 +13,6 @@ The docs for `{library}` can be found
 [here](https://docs.dagster.io/docs/apidocs/libraries/{library_underscore}).
 '''.strip()
 
-# Skip these for now, will need to come back and fix
-WHITELIST_LIBRARY_README_CONTENTS = [
-    'dagster-flyte',
-    'dagster-github',
-    'dagster-k8s',
-    'dagster-pagerduty',
-    'dagster-papertrail',
-    'dagster-slack',
-    'dagster-snowflake',
-]
-
-# Skip these for now
-WHITELIST_API_DOCS = ['dagster-flyte', 'lakehouse', 'dagster-dbt']
-
 
 def git_repo_root():
     return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
@@ -60,9 +46,6 @@ def check_readme_contents(readme_file, library_name):
     '''Ensure README.md files have standardized contents. Some files are whitelisted until we have
     time to migrate their content to the API docs RST.
     '''
-    if library_name in WHITELIST_LIBRARY_README_CONTENTS:
-        return
-
     expected = EXPECTED_LIBRARY_README_CONTENTS.format(
         library=library_name, library_underscore=library_name.replace('-', '_')
     )
@@ -79,9 +62,6 @@ def check_readme_contents(readme_file, library_name):
 
 
 def check_api_docs(library_name):
-    if library_name in WHITELIST_API_DOCS:
-        return
-
     api_docs_root = os.path.join(git_repo_root(), 'docs', 'sections', 'api', 'apidocs', 'libraries')
     underscore_name = library_name.replace('-', '_')
     if not os.path.exists(os.path.join(api_docs_root, '%s.rst' % underscore_name)):
@@ -102,15 +82,8 @@ def main():
 
         check_api_docs(library_name)
 
-    print(
-        ':white_check_mark: All README.md contents exist and validated! Skipped validating:\n%s'
-        % '\n'.join(WHITELIST_LIBRARY_README_CONTENTS)
-    )
-
-    print(
-        '\n\n:white_check_mark: All API docs exist! Skipped validating:\n%s'
-        % '\n'.join(WHITELIST_API_DOCS)
-    )
+    print(':white_check_mark: All README.md contents exist and content validated!')
+    print(':white_check_mark: All API docs exist!')
 
 
 if __name__ == "__main__":
