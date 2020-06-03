@@ -31,7 +31,7 @@ setup(
             'dagster-snowflake',
             # These two packages, descartes and geopandas, are used in the airline demo notebooks
             'descartes',
-            'geopandas',
+            'geopandas; "win" not in sys_platform',
             'google-api-python-client',
             'google-cloud-storage',
             'keras',
