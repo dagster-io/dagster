@@ -22,7 +22,9 @@ from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import Sqlite
 
 
 def get_main_recon_repo():
-    return ReconstructableRepository.from_yaml(file_relative_path(__file__, 'repo.yaml'))
+    return ReconstructableRepository.from_legacy_repository_yaml(
+        file_relative_path(__file__, 'repo.yaml')
+    )
 
 
 class MarkedManager:

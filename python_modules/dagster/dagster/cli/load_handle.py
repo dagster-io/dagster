@@ -56,9 +56,9 @@ def recon_pipeline_for_cli_args(kwargs):
             'Expected to use file "{}" to load repository but it does not exist. '
             'Verify your current working directory or CLI arguments.'.format(repo_yaml),
         )
-        return ReconstructableRepository.from_yaml(repo_yaml).get_reconstructable_pipeline(
-            pipeline_name
-        )
+        return ReconstructableRepository.from_legacy_repository_yaml(
+            repo_yaml
+        ).get_reconstructable_pipeline(pipeline_name)
 
     # Pipeline from repository python file
     elif kwargs.get('python_file') and kwargs.get('fn_name') and pipeline_name:
@@ -114,7 +114,7 @@ def recon_repo_for_cli_args(kwargs):
             'Expected to use file "{}" to load repository but it does not exist. '
             'Verify your current working directory or CLI arguments.'.format(repo_yaml),
         )
-        return ReconstructableRepository.from_yaml(repo_yaml)
+        return ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     elif kwargs.get('module_name') and kwargs.get('fn_name'):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('python_file') is None)

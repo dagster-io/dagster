@@ -101,7 +101,9 @@ def create_main_recon_repo():
 
 def get_main_external_repo():
     return InProcessRepositoryLocation(
-        ReconstructableRepository.from_yaml(file_relative_path(__file__, 'repo.yaml')),
+        ReconstructableRepository.from_legacy_repository_yaml(
+            file_relative_path(__file__, 'repo.yaml')
+        ),
     ).get_repository('test_repo')
 
 

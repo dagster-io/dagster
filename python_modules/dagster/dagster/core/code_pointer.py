@@ -24,7 +24,7 @@ class CodePointer(six.with_metaclass(ABCMeta)):
         pass
 
     @staticmethod
-    def from_yaml(file_path):
+    def from_legacy_repository_yaml(file_path):
         check.str_param(file_path, 'file_path')
         config = load_yaml_from_path(file_path)
         repository_config = check.dict_elem(config, 'repository')

@@ -10,7 +10,7 @@ from dagster.utils import file_relative_path
 
 
 def test_create_app_with_reconstructable_repo():
-    recon_repo = ReconstructableRepository.from_yaml(
+    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
         file_relative_path(__file__, './repository.yaml')
     )
     assert create_app_with_reconstructable_repo(recon_repo, DagsterInstance.ephemeral())
@@ -20,7 +20,9 @@ def test_notebook_view():
     notebook_path = file_relative_path(__file__, 'render_uuid_notebook.ipynb')
 
     with create_app_with_reconstructable_repo(
-        ReconstructableRepository.from_yaml(file_relative_path(__file__, './repository.yaml')),
+        ReconstructableRepository.from_legacy_repository_yaml(
+            file_relative_path(__file__, './repository.yaml')
+        ),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/dagit/notebook?path={}'.format(notebook_path))
@@ -32,7 +34,9 @@ def test_notebook_view():
 
 def test_index_view():
     with create_app_with_reconstructable_repo(
-        ReconstructableRepository.from_yaml(file_relative_path(__file__, './repository.yaml')),
+        ReconstructableRepository.from_legacy_repository_yaml(
+            file_relative_path(__file__, './repository.yaml')
+        ),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/')
@@ -43,7 +47,7 @@ def test_index_view():
 
 def test_successful_host_dagit_ui():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_yaml(
+        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
             file_relative_path(__file__, './repository.yaml')
         )
         host_dagit_ui_with_reconstructable_repo(
@@ -72,7 +76,7 @@ def test_unknown_error():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_yaml(
+        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
             file_relative_path(__file__, './repository.yaml')
         )
         with pytest.raises(AnException):
@@ -88,7 +92,7 @@ def test_port_collision():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_yaml(
+        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
             file_relative_path(__file__, './repository.yaml')
         )
         with pytest.raises(Exception) as exc_info:

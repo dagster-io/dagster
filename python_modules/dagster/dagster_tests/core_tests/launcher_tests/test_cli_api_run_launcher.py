@@ -85,11 +85,11 @@ def temp_instance():
 
 def test_repo_construction():
     repo_yaml = file_relative_path(__file__, 'repo.yaml')
-    assert ReconstructableRepository.from_yaml(repo_yaml).get_definition()
+    assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
 
 
 def get_full_external_pipeline(repo_yaml, pipeline_name):
-    recon_repo = ReconstructableRepository.from_yaml(repo_yaml)
+    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     repo_def = recon_repo.get_definition()
     external_repo = external_repo_from_def(
         repo_def,

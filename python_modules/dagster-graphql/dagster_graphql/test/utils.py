@@ -60,7 +60,9 @@ def define_subprocess_context_for_file(python_file, fn_name, instance):
 def define_context_for_repository_yaml(path, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLContext(
-        locations=[InProcessRepositoryLocation(ReconstructableRepository.from_yaml(path))],
+        locations=[
+            InProcessRepositoryLocation(ReconstructableRepository.from_legacy_repository_yaml(path))
+        ],
         instance=instance,
     )
 
