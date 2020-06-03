@@ -226,23 +226,15 @@ export function getReexecutionVariables(input: {
       return undefined;
     }
 
-    const selector =
-      repositoryLocationName && repositoryName
-        ? {
-            repositoryLocationName,
-            repositoryName,
-            pipelineName: run.pipeline.name,
-            solidSelection: run.pipeline.solidSelection
-          }
-        : {
-            name: run.pipeline.name,
-            solidSelection: run.pipeline.solidSelection
-          };
-
     const executionParams = {
       mode: run.mode,
       runConfigData: yaml.parse(run.runConfigYaml),
-      selector
+      selector: {
+        repositoryLocationName,
+        repositoryName,
+        pipelineName: run.pipeline.name,
+        solidSelection: run.pipeline.solidSelection
+      }
     };
 
     // subset re-execution
@@ -265,12 +257,15 @@ export function getReexecutionVariables(input: {
     if (!envYaml) {
       return undefined;
     }
+
     return {
       executionParams: {
         mode: run.mode,
         runConfigData: yaml.parse(envYaml),
         selector: {
-          name: run.pipeline.name,
+          repositoryLocationName,
+          repositoryName,
+          pipelineName: run.pipeline.name,
           solidSelection: run.pipeline.solidSelection
         },
         executionMetadata: getExecutionMetadata(run)
@@ -278,6 +273,7 @@ export function getReexecutionVariables(input: {
     };
   }
 }
+
 export const RunStatusWithStats: React.SFC<RunStatusProps & {
   runId: string;
 }> = ({ runId, ...rest }) => (
