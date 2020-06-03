@@ -28,3 +28,6 @@ def create_blob_client(storage_account, credential):
     if hasattr(credential, "account_key"):
         credential = credential.account_key
     return BlobServiceClient(account_url, credential)
+
+
+__all__ = ['create_blob_client', 'generate_blob_sas', 'BlobServiceClient', 'ResourceNotFoundError']
