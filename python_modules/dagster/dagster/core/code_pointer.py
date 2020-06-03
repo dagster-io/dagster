@@ -48,11 +48,11 @@ class CodePointer(six.with_metaclass(ABCMeta)):
             CodePointer.from_module(module_name, fn_name)
             if module_name
             # rebase file in config off of the path in the config file
-            else CodePointer.from_python_file(_rebase_file(file_name, file_path), fn_name)
+            else CodePointer.from_python_file(rebase_file(file_name, file_path), fn_name)
         )
 
 
-def _rebase_file(relative_path_in_file, file_path_resides_in):
+def rebase_file(relative_path_in_file, file_path_resides_in):
     '''
     In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.

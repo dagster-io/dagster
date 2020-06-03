@@ -1,0 +1,3 @@
+repository:
+  file: test_hello_world_workspace.py
+  fn: hello_world_repository
