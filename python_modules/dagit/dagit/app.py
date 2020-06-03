@@ -13,7 +13,7 @@ from dagster_graphql.implementation.context import (
 )
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, redirect, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -156,6 +156,7 @@ def instantiate_app_with_views(context):
             context=context,
         ),
     )
+    app.add_url_rule('/graphiql', 'graphiql', lambda: redirect('/graphql', 301))
     sockets.add_url_rule(
         '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
