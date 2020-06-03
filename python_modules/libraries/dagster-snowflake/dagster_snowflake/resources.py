@@ -20,8 +20,6 @@ except ImportError:
     raise
 
 
-
-
 class SnowflakeConnection(object):
     def __init__(self, context):  # pylint: disable=too-many-locals
         # Extract parameters from resource config. Note that we can't pass None values to
