@@ -564,7 +564,6 @@ type Mutation {
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   startSchedule(scheduleName: String!): ScheduleMutationResult!
   stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
-  reloadDagit: Boolean!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
@@ -917,7 +916,6 @@ type PythonError implements Error {
 
 type Query {
   version: String!
-  reloadSupported: Boolean!
   repositoryLocationsOrError: RepositoryLocationsOrError!
   repositoryOrError(repositoryLocationName: String, repositoryName: String): RepositoryOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!

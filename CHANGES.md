@@ -11,6 +11,7 @@
 - The `ScheduleExecutionContext` no longer has a repository definition available as a property on the context. If you were previously using it in a schedule definition, inline the repository name instead of retrieving it from the schedule execution context.
 - `@scheduler` and `@repository_partitions` have been removed. Load `ScheduleDefinition`s and `PartitionSetDefinition`s via `RepositoryDefinition` instead.
 - The python function `execute_partition_set` has been removed.
+- `dagit-cli` has been removed and `dagit` is now the only console entrypoint.
 
 ## 0.7.15 (Latest)
 

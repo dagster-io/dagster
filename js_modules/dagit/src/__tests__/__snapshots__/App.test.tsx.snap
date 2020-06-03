@@ -201,7 +201,6 @@ exports[`renders execution 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -849,7 +848,6 @@ exports[`renders pipeline page 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -5457,7 +5455,6 @@ exports[`renders pipeline solid page 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -10065,7 +10062,6 @@ exports[`renders solids explorer 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -11806,7 +11802,6 @@ exports[`renders type page 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -16414,7 +16409,6 @@ exports[`renders type page 2`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={
@@ -21022,7 +21016,6 @@ exports[`renders without error 1`] = `
           </div>
           Repository
         </div>
-        <span />
       </div>
       <div
         style={

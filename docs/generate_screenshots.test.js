@@ -13,7 +13,7 @@ const screenshotPath = (pathFragment) =>
 
 const runDagit = async (args, port) => {
   dagit = spawn(
-    "dagit-cli",
+    "dagit",
     args.concat([
       "--workdir",
       "../examples/dagster_examples/intro_tutorial/",

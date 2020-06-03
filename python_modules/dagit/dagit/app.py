@@ -11,7 +11,6 @@ from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
     InProcessRepositoryLocation,
 )
-from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Flask, jsonify, request, send_file
@@ -179,18 +178,15 @@ def instantiate_app_with_views(context):
     return app
 
 
-def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
+def create_app_with_reconstructable_repo(recon_repo, instance):
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.opt_inst_param(reloader, 'reloader', Reloader)
 
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
     context = DagsterGraphQLContext(
-        instance=instance,
-        locations=[InProcessRepositoryLocation(recon_repo, reloader=reloader)],
-        version=__version__,
+        instance=instance, locations=[InProcessRepositoryLocation(recon_repo)], version=__version__,
     )
 
     # Automatically initialize scheduler everytime Dagit loads
