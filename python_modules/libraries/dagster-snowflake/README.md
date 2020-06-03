@@ -8,6 +8,8 @@ Presently, it provides two solids for interacting with Snowflake, `SnowflakeSoli
 
 Both of these solids depend on `snowflake_resource`, which is a Dagster resource for configuring Snowflake connections.
 
+**This package is incompatible with dagster-azure!** This is due to a version mismatch between the underlying azure-storage-blob package (dagster-snowflake has a transitive dependency on an older version, via snowflake-connector-python); dagster-azure requires a new version of the Azure packages.
+
 ## Getting Started
 
 To use this library, you should first ensure that you have an appropriate [Snowflake user](https://docs.snowflake.net/manuals/user-guide/admin-user-management.html) configured to access your data warehouse.

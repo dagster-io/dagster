@@ -244,6 +244,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPythonsNo38,
     ),
     ModuleBuildSpec(
+        'python_modules/libraries/dagster-azure',
+        env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
+    ),
+    ModuleBuildSpec(
         'python_modules/libraries/dagster-celery',
         env_vars=['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
         extra_cmds_fn=celery_extra_cmds_fn,

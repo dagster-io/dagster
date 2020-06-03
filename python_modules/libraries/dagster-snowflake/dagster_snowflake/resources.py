@@ -1,11 +1,23 @@
 import sys
+import warnings
 from contextlib import closing, contextmanager
-
-import snowflake.connector
 
 from dagster import check, resource
 
 from .configs import define_snowflake_config
+
+try:
+    import snowflake.connector
+except ImportError:
+    msg = (
+        "Could not import snowflake.connector. This could mean you have an incompatible version "
+        "of azure-storage-blob installed. dagster-snowflake requires azure-storage-blob<12.0.0; "
+        "this conflicts with dagster-azure which requires azure-storage-blob~=12.0.0 and is "
+        "incompatible with dagster-snowflake. Please uninstall dagster-azure and reinstall "
+        "dagster-snowflake to fix this error."
+    )
+    warnings.warn(msg)
+    raise
 
 
 class SnowflakeConnection(object):
