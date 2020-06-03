@@ -481,9 +481,7 @@ def test_permissive_dict_with_fields():
 
 def test_scalar_or_dict():
 
-    int_or_dict = ScalarUnion(
-        scalar_type=resolve_to_config_type(int), non_scalar_type=Shape({'a_string': str})
-    )
+    int_or_dict = ScalarUnion(scalar_type=int, non_scalar_schema=Shape({'a_string': str}))
 
     assert validate_config(int_or_dict, 2).success
     assert not validate_config(int_or_dict, '2').success
@@ -498,8 +496,7 @@ def test_scalar_or_dict():
 
 def test_scalar_or_selector():
     int_or_selector = ScalarUnion(
-        scalar_type=resolve_to_config_type(int),
-        non_scalar_type=Selector({'a_string': str, 'an_int': int}),
+        scalar_type=int, non_scalar_schema=Selector({'a_string': str, 'an_int': int}),
     )
 
     assert validate_config(int_or_selector, 2).success
@@ -516,9 +513,7 @@ def test_scalar_or_selector():
 
 
 def test_scalar_or_list():
-    int_or_list = ScalarUnion(
-        scalar_type=resolve_to_config_type(int), non_scalar_type=resolve_to_config_type([str])
-    )
+    int_or_list = ScalarUnion(scalar_type=int, non_scalar_schema=resolve_to_config_type([str]))
 
     assert validate_config(int_or_list, 2).success
     assert not validate_config(int_or_list, '2').success
@@ -532,11 +527,7 @@ def test_scalar_or_list():
 
 def test_list_of_scalar_or_dict():
     int_or_dict_list = resolve_to_config_type(
-        [
-            ScalarUnion(
-                scalar_type=resolve_to_config_type(int), non_scalar_type=Shape({'a_string': str})
-            )
-        ]
+        [ScalarUnion(scalar_type=int, non_scalar_schema=Shape({'a_string': str}))]
     )
 
     assert validate_config(int_or_dict_list, []).success

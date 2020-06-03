@@ -59,7 +59,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     @input_hydration_config(
         ScalarUnion(
             scalar_type=config_scalar_type,
-            non_scalar_type=define_typed_input_schema_dict(config_scalar_type),
+            non_scalar_schema=define_typed_input_schema_dict(config_scalar_type),
         )
     )
     def _builtin_input_schema(_context, value):

@@ -4,7 +4,7 @@ import six
 
 from dagster import check
 
-from .config_type import ConfigIntInstance, ConfigStringInstance, ScalarUnion
+from .config_type import ScalarUnion
 from .errors import PostProcessingError
 from .field_utils import Selector
 
@@ -28,9 +28,7 @@ def _ensure_env_variable(var):
 class StringSourceType(ScalarUnion):
     def __init__(self):
         super(StringSourceType, self).__init__(
-            scalar_type=ConfigStringInstance,
-            non_scalar_type=Selector({'env': str}),
-            _key='StringSourceType',
+            scalar_type=str, non_scalar_schema=Selector({'env': str}), _key='StringSourceType',
         )
 
     def post_process(self, value):
@@ -47,9 +45,7 @@ class StringSourceType(ScalarUnion):
 class IntSourceType(ScalarUnion):
     def __init__(self):
         super(IntSourceType, self).__init__(
-            scalar_type=ConfigIntInstance,
-            non_scalar_type=Selector({'env': str}),
-            _key='IntSourceType',
+            scalar_type=int, non_scalar_schema=Selector({'env': str}), _key='IntSourceType',
         )
 
     def post_process(self, value):
