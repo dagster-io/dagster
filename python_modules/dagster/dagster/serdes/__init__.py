@@ -363,8 +363,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
     This same pattern should eventually be viable for other system components, e.g. engines.
 
-    The ConfigurableClass mixin provides the necessary hooks for classes to be instantiated from
-    an instance of ConfigurableClassData.
+    The ``ConfigurableClass`` mixin provides the necessary hooks for classes to be instantiated from
+    an instance of ``ConfigurableClassData``.
 
     Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
     type such as:
@@ -386,7 +386,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
-        serialized in an instance of ConfigurableClassData.
+        serialized in an instance of ``ConfigurableClassData``.
         '''
 
     @staticmethod
@@ -398,7 +398,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
-                `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.
+                ``value`` attribute of a
+                :py:class:`~dagster.core.types.evaluator.evaluation.EvaluateValueResult`.
 
 
         A common pattern is for the implementation to align the config_value with the signature
