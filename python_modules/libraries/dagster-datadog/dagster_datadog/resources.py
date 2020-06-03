@@ -3,15 +3,46 @@ from datadog import DogStatsd, initialize, statsd
 from dagster import Field, resource
 
 
-class DataDogResource(object):
-    '''DataDogResource
-
-    This resource is a thin wrapper over the dogstatsd library:
+class DataDogResource:
+    '''This resource is a thin wrapper over the dogstatsd library:
 
     https://datadogpy.readthedocs.io/en/latest/#datadog-dogstatsd-module
 
     As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
     DataDog documentation above for how to use this resource.
+
+    Examples:
+
+        .. code-block:: python
+
+            @solid(required_resource_keys={'datadog'})
+            def datadog_solid(context):
+                context.resources.datadog.event('Man down!', 'This server needs assistance.')
+                context.resources.datadog.gauge('users.online', 1001, tags=["protocol:http"])
+                context.resources.datadog.increment('page.views')
+                context.resources.datadog.decrement('page.views')
+                context.resources.datadog.histogram('album.photo.count', 26, tags=["gender:female"])
+                context.resources.datadog.distribution('album.photo.count', 26, tags=["color:blue"])
+                context.resources.datadog.set('visitors.uniques', 999, tags=["browser:ie"])
+                context.resources.datadog.service_check('svc.check_name', context.resources.datadog.WARNING)
+                context.resources.datadog.timing("query.response.time", 1234)
+
+                # Use timed decorator
+                @context.resources.datadog.timed('run_fn')
+                def run_fn():
+                    pass
+
+                run_fn()
+
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={'datadog': datadog_resource})])
+            def dd_pipeline():
+                datadog_solid()
+
+            result = execute_pipeline(
+                dd_pipeline,
+                {'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}},
+            )
+
     '''
 
     # Mirroring levels from the dogstatsd library

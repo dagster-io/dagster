@@ -1,4 +1,4 @@
 # dagster-ssh
 
-##Introduction
-This library provides an integration with SSH and SFTP.
+The docs for `dagster-ssh` can be found
+[here](https://docs.dagster.io/docs/apidocs/libraries/dagster_ssh).
