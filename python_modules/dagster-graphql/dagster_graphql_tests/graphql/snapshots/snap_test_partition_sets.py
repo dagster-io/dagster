@@ -12,13 +12,13 @@ snapshots['test_get_all_partition_sets 1'] = {
         'results': [
             {
                 'mode': 'foo_mode',
-                'name': 'multi_mode_with_loggers_daily',
+                'name': 'partition_based_multi_mode_decorator_partitions',
                 'pipelineName': 'multi_mode_with_loggers',
                 'solidSubset': None
             },
             {
                 'mode': 'default',
-                'name': 'no_config_chain_pipeline_daily',
+                'name': 'solid_subset_daily_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
                 'solidSubset': [
                     'return_foo'
@@ -26,7 +26,7 @@ snapshots['test_get_all_partition_sets 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'no_config_chain_pipeline_hourly',
+                'name': 'solid_subset_hourly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
                 'solidSubset': [
                     'return_foo'
@@ -34,7 +34,7 @@ snapshots['test_get_all_partition_sets 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'no_config_chain_pipeline_monthly',
+                'name': 'solid_subset_monthly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
                 'solidSubset': [
                     'return_foo'
@@ -42,11 +42,17 @@ snapshots['test_get_all_partition_sets 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'no_config_chain_pipeline_weekly',
+                'name': 'solid_subset_weekly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
                 'solidSubset': [
                     'return_foo'
                 ]
+            },
+            {
+                'mode': 'default',
+                'name': 'environment_dict_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
             },
             {
                 'mode': 'default',
@@ -58,25 +64,7 @@ snapshots['test_get_all_partition_sets 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
+                'name': 'partition_based_decorator_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSubset': None
             },
@@ -88,7 +76,13 @@ snapshots['test_get_all_partition_sets 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'scheduled_integer_partitions',
+                'name': 'should_execute_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'tags_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSubset': None
             },
@@ -108,6 +102,12 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
         'results': [
             {
                 'mode': 'default',
+                'name': 'environment_dict_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
                 'name': 'integer_partition',
                 'pipelineName': 'no_config_pipeline',
                 'solidSubset': [
@@ -116,25 +116,7 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
+                'name': 'partition_based_decorator_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSubset': None
             },
@@ -146,7 +128,13 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
             },
             {
                 'mode': 'default',
-                'name': 'scheduled_integer_partitions',
+                'name': 'should_execute_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'tags_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSubset': None
             }

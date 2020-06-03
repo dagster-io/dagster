@@ -8,20 +8,42 @@ for that.
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition, PresetDefinition, RepositoryDefinition
+from dagster.core.definitions import (
+    PartitionSetDefinition,
+    PipelineDefinition,
+    PresetDefinition,
+    RepositoryDefinition,
+    ScheduleDefinition,
+)
+from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
-class ExternalRepositoryData(namedtuple('_ExternalRepositoryData', 'name external_pipeline_datas')):
-    def __new__(cls, name, external_pipeline_datas):
+class ExternalRepositoryData(
+    namedtuple(
+        '_ExternalRepositoryData',
+        'name external_pipeline_datas external_schedule_datas external_partition_set_datas',
+    )
+):
+    def __new__(
+        cls, name, external_pipeline_datas, external_schedule_datas, external_partition_set_datas
+    ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             external_pipeline_datas=check.list_param(
                 external_pipeline_datas, 'external_pipeline_datas', of_type=ExternalPipelineData
+            ),
+            external_schedule_datas=check.list_param(
+                external_schedule_datas, 'external_schedule_datas', of_type=ExternalScheduleData
+            ),
+            external_partition_set_datas=check.list_param(
+                external_partition_set_datas,
+                'external_parition_set_datas',
+                of_type=ExternalPartitionSetData,
             ),
         )
 
@@ -41,7 +63,25 @@ class ExternalRepositoryData(namedtuple('_ExternalRepositoryData', 'name externa
             if external_pipeline_data.name == name:
                 return external_pipeline_data
 
-        check.failed('Could not find active pipeline data named ' + name)
+        check.failed('Could not find external pipeline data named ' + name)
+
+    def get_external_schedule_data(self, name):
+        check.str_param(name, 'name')
+
+        for external_schedule_data in self.external_schedule_datas:
+            if external_schedule_data.name == name:
+                return external_schedule_data
+
+        check.failed('Could not find external schedule data named ' + name)
+
+    def get_external_partition_set_data(self, name):
+        check.str_param(name, 'name')
+
+        for external_partition_set_data in self.external_partition_set_datas:
+            if external_partition_set_data.name == name:
+                return external_partition_set_data
+
+        check.failed('Could not find external parition set data named ' + name)
 
 
 @whitelist_for_serdes
@@ -90,10 +130,42 @@ class ExternalPresetData(
             cls,
             name=check.str_param(name, 'name'),
             environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
-            solid_subset=check.list_param(solid_subset, 'solid_subset', of_type=str)
-            if solid_subset is not None
-            else None,
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
             mode=check.str_param(mode, 'mode'),
+        )
+
+
+@whitelist_for_serdes
+class ExternalScheduleData(
+    namedtuple(
+        '_ExternalScheduleData',
+        'name cron_schedule pipeline_name solid_subset mode partition_set_name',
+    )
+):
+    def __new__(cls, name, cron_schedule, pipeline_name, solid_subset, mode, partition_set_name):
+        return super(ExternalScheduleData, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            cron_schedule=check.str_param(cron_schedule, 'cron_schedule'),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
+            mode=check.opt_str_param(mode, 'mode'),
+            partition_set_name=check.opt_str_param(partition_set_name, 'partition_set_name'),
+        )
+
+
+@whitelist_for_serdes
+class ExternalPartitionSetData(
+    namedtuple('_ExternalPartitionSetData', 'name partition_names pipeline_name solid_subset mode')
+):
+    def __new__(cls, name, partition_names, pipeline_name, solid_subset, mode):
+        return super(ExternalPartitionSetData, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            partition_names=check.list_param(partition_names, 'parition_names', str),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
+            mode=check.opt_str_param(mode, 'mode'),
         )
 
 
@@ -105,6 +177,14 @@ def external_repository_data_from_def(repository_def):
         external_pipeline_datas=sorted(
             list(map(external_pipeline_data_from_def, repository_def.get_all_pipelines())),
             key=lambda pd: pd.name,
+        ),
+        external_schedule_datas=sorted(
+            list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
+            key=lambda sd: sd.name,
+        ),
+        external_partition_set_datas=sorted(
+            list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
+            key=lambda psd: psd.name,
         ),
     )
 
@@ -119,6 +199,31 @@ def external_pipeline_data_from_def(pipeline_def):
             list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
             key=lambda pd: pd.name,
         ),
+    )
+
+
+def external_schedule_data_from_def(schedule_def):
+    check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
+    return ExternalScheduleData(
+        name=schedule_def.name,
+        cron_schedule=schedule_def.cron_schedule,
+        pipeline_name=schedule_def.pipeline_name,
+        solid_subset=schedule_def.solid_subset,
+        mode=schedule_def.mode,
+        partition_set_name=schedule_def.get_partition_set().name
+        if isinstance(schedule_def, PartitionScheduleDefinition)
+        else None,
+    )
+
+
+def external_partition_set_data_from_def(partition_set_def):
+    check.inst_param(partition_set_def, 'partition_set_def', PartitionSetDefinition)
+    return ExternalPartitionSetData(
+        name=partition_set_def.name,
+        partition_names=partition_set_def.get_partition_names(),
+        pipeline_name=partition_set_def.pipeline_name,
+        solid_subset=partition_set_def.solid_subset,
+        mode=partition_set_def.mode,
     )
 
 

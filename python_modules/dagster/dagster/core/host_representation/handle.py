@@ -78,3 +78,37 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
     @property
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
+
+
+class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_handle')):
+    def __new__(cls, schedule_name, repository_handle):
+        return super(ScheduleHandle, cls).__new__(
+            cls,
+            check.str_param(schedule_name, 'schedule_name'),
+            check.inst_param(repository_handle, 'repository_handle', RepositoryHandle),
+        )
+
+    @property
+    def repository_name(self):
+        return self.repository_handle.repository_name
+
+    @property
+    def location_name(self):
+        return self.repository_handle.location_handle.location_name
+
+
+class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):
+    def __new__(cls, partition_set_name, repository_handle):
+        return super(PartitionSetHandle, cls).__new__(
+            cls,
+            check.str_param(partition_set_name, 'partition_set_name'),
+            check.inst_param(repository_handle, 'repository_handle', RepositoryHandle),
+        )
+
+    @property
+    def repository_name(self):
+        return self.repository_handle.repository_name
+
+    @property
+    def location_name(self):
+        return self.repository_handle.location_handle.location_name

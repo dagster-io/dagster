@@ -4,8 +4,13 @@ from dagster import check
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
-from .external_data import ExternalPipelineData, ExternalRepositoryData
-from .handle import PipelineHandle, RepositoryHandle
+from .external_data import (
+    ExternalPartitionSetData,
+    ExternalPipelineData,
+    ExternalRepositoryData,
+    ExternalScheduleData,
+)
+from .handle import PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -48,6 +53,17 @@ class ExternalRepository:
 
     def has_external_pipeline(self, pipeline_name):
         return pipeline_name in self._pipeline_index_map
+
+    def get_external_schedule(self, schedule_name):
+        return ExternalSchedule(
+            self.external_repository_data.get_external_schedule_data(schedule_name), self._handle
+        )
+
+    def get_external_partition_set(self, partition_set_name):
+        return ExternalPartitionSet(
+            self.external_repository_data.get_external_partition_set_data(partition_set_name),
+            self._handle,
+        )
 
     def get_full_external_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
@@ -231,3 +247,23 @@ class ExternalExecutionPlan:
             ]
 
         return self._topological_step_levels
+
+
+class ExternalSchedule:
+    def __init__(self, external_schedule_data, handle):
+        self._external_schedule_data = check.inst_param(
+            external_schedule_data, 'external_schedule_data', ExternalScheduleData
+        )
+        self._handle = ScheduleHandle(
+            self._external_schedule_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+        )
+
+
+class ExternalPartitionSet:
+    def __init__(self, external_partition_set_data, handle):
+        self._external_partition_set_data = check.inst_param(
+            external_partition_set_data, 'external_partition_set_data', ExternalPartitionSetData
+        )
+        self._handle = PartitionSetHandle(
+            external_partition_set_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+        )

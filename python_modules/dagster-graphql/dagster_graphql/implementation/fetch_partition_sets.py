@@ -1,7 +1,6 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionScheduleDefinition
 
 from .external import get_full_external_pipeline_or_raise
 from .utils import capture_dauphin_error, legacy_pipeline_selector
@@ -14,16 +13,8 @@ def get_partition_sets_or_error(graphene_info, pipeline_name):
     )
 
 
-def _partitions_from_repo(repo_def):
-    return repo_def.partition_set_defs + [
-        schedule_def.get_partition_set()
-        for schedule_def in repo_def.schedule_defs
-        if isinstance(schedule_def, PartitionScheduleDefinition)
-    ]
-
-
 def _get_partition_sets(graphene_info, pipeline_name):
-    partition_sets = _partitions_from_repo(graphene_info.context.legacy_get_repository_definition())
+    partition_sets = graphene_info.context.legacy_get_repository_definition().partition_set_defs
 
     if pipeline_name:
 
@@ -55,7 +46,7 @@ def _get_partition_sets(graphene_info, pipeline_name):
 @capture_dauphin_error
 def get_partition_set(graphene_info, partition_set_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    partition_sets = _partitions_from_repo(graphene_info.context.legacy_get_repository_definition())
+    partition_sets = graphene_info.context.legacy_get_repository_definition().partition_set_defs
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
             return graphene_info.schema.type_named('PartitionSet')(partition_set)

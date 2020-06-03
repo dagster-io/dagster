@@ -89,6 +89,7 @@ def monthly_schedule(
     mode="default",
     should_execute=None,
     environment_vars=None,
+    end_date=None,
 ):
     '''Create a schedule that runs monthly.
 
@@ -118,9 +119,11 @@ def monthly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
@@ -141,7 +144,9 @@ def monthly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
 
-    partition_fn = date_partition_range(start_date, delta=relativedelta(months=1), fmt="%Y-%m")
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta=relativedelta(months=1), fmt="%Y-%m"
+    )
 
     def inner(fn):
         check.callable_param(fn, 'fn')
@@ -153,7 +158,7 @@ def monthly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_monthly'.format(pipeline_name),
+            name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
@@ -183,6 +188,7 @@ def weekly_schedule(
     mode="default",
     should_execute=None,
     environment_vars=None,
+    end_date=None,
 ):
     '''Create a schedule that runs weekly.
 
@@ -212,9 +218,11 @@ def weekly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
@@ -235,7 +243,9 @@ def weekly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
     )
 
-    partition_fn = date_partition_range(start_date, delta=relativedelta(weeks=1), fmt="%Y-%m-%d")
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta=relativedelta(weeks=1), fmt="%Y-%m-%d"
+    )
 
     def inner(fn):
         check.callable_param(fn, 'fn')
@@ -247,7 +257,7 @@ def weekly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_weekly'.format(pipeline_name),
+            name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
@@ -276,6 +286,7 @@ def daily_schedule(
     mode="default",
     should_execute=None,
     environment_vars=None,
+    end_date=None,
 ):
     '''Create a schedule that runs daily.
 
@@ -303,9 +314,11 @@ def daily_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
@@ -318,7 +331,7 @@ def daily_schedule(
         minute=execution_time.minute, hour=execution_time.hour
     )
 
-    partition_fn = date_partition_range(start_date)
+    partition_fn = date_partition_range(start_date, end=end_date)
 
     def inner(fn):
         check.callable_param(fn, 'fn')
@@ -330,7 +343,7 @@ def daily_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_daily'.format(pipeline_name),
+            name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
@@ -359,6 +372,7 @@ def hourly_schedule(
     mode="default",
     should_execute=None,
     environment_vars=None,
+    end_date=None,
 ):
     '''Create a schedule that runs hourly.
 
@@ -388,9 +402,11 @@ def hourly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
@@ -412,7 +428,7 @@ def hourly_schedule(
     cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)
 
     partition_fn = date_partition_range(
-        start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
+        start_date, end=end_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
     )
 
     def inner(fn):
@@ -425,7 +441,7 @@ def hourly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_hourly'.format(pipeline_name),
+            name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),

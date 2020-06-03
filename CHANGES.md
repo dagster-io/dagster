@@ -12,6 +12,12 @@
 - `@scheduler` and `@repository_partitions` have been removed. Load `ScheduleDefinition`s and `PartitionSetDefinition`s via `RepositoryDefinition` instead.
 - The python function `execute_partition_set` has been removed.
 - `dagit-cli` has been removed and `dagit` is now the only console entrypoint.
+- All `PartitionSetDefinitions` must have unique names with a `RepositoryDefinition`, including those from `PartitionScheduleDefinition`
+- The partitioned schedule decorators now generate names for their `PartitionSetDefinition` using the schedule name, suffixed with `_partitions`.
+
+**New**
+
+- The partitioned schedule decorators now support optional `end_time`.
 
 ## 0.7.15 (Latest)
 

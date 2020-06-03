@@ -149,6 +149,9 @@ class PartitionSetDefinition(
     def get_partitions(self):
         return self.partition_fn()
 
+    def get_partition_names(self):
+        return [part.name for part in self.get_partitions()]
+
     def create_schedule_definition(
         self,
         schedule_name,

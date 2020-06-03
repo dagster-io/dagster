@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .partition import PartitionSetDefinition
+from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
 
@@ -110,7 +110,7 @@ class _CacheingDefinitionIndex(object):
 
 class RepositoryData(object):
     '''Contains definitions belonging to a repository.
-    
+
     Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
     subclass RepositoryData for fine-grained control over access to and lazy creation
@@ -119,7 +119,7 @@ class RepositoryData(object):
 
     def __init__(self, pipelines, partition_sets, schedules):
         '''Constructs a new RepositoryData object.
-        
+
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
         callables with no arguments that will be invoked to lazily construct definitions when
         accessed by name. This can be helpful for performance when there are many definitions in a
@@ -160,7 +160,7 @@ class RepositoryData(object):
     @staticmethod
     def from_dict(repository_definitions):
         '''Static constructor.
-        
+
         Args:
             repository_definition (Dict[str, Dict[str, ...]]): A dict of the form:
 
@@ -200,7 +200,7 @@ class RepositoryData(object):
     @classmethod
     def from_list(cls, repository_definitions):
         '''Static constructor.
-        
+
         Args:
             repository_definition (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines or other
@@ -233,6 +233,17 @@ class RepositoryData(object):
                         )
                     )
                 schedules[definition.name] = definition
+                if isinstance(definition, PartitionScheduleDefinition):
+                    partition_set_def = definition.get_partition_set()
+                    if (
+                        partition_set_def.name in partition_sets
+                        and partition_set_def != partition_sets[partition_set_def.name]
+                    ):
+                        raise DagsterInvalidDefinitionError(
+                            'Duplicate partition set definition found for partition set '
+                            '{partition_set_name}'.format(partition_set_name=partition_set_def.name)
+                        )
+                    partition_sets[partition_set_def.name] = partition_set_def
 
         return RepositoryData(
             pipelines=pipelines, partition_sets=partition_sets, schedules=schedules
@@ -419,10 +430,10 @@ class RepositoryData(object):
 
     def solid_def_named(self, name):
         '''Get the solid with the given name in the repository.
-        
+
         Args:
             name (str): The name of the solid for which to retrieve the solid definition.
-        
+
         Returns:
             SolidDefinition: The solid with the given name.
         '''
@@ -513,10 +524,10 @@ class RepositoryDefinition(object):
 
     def solid_def_named(self, name):
         '''Get the solid with the given name in the repository.
-        
+
         Args:
             name (str): The name of the solid for which to retrieve the solid definition.
-        
+
         Returns:
             SolidDefinition: The solid with the given name.
         '''
