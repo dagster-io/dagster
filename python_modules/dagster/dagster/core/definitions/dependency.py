@@ -211,6 +211,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
             SolidHandle:
 
         Example:
+
+        .. code-block:: python
+
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
             ancestor = SolidHandle('bar', SolidHandle('foo', None))
             assert handle.pop(ancestor) == SolidHandle('baz', None)
@@ -236,6 +239,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
             SolidHandle:
 
         Example:
+
+        .. code-block:: python
+
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
             ancestor = SolidHandle('quux' None)
             assert handle.with_ancestor(ancestor) == SolidHandle(

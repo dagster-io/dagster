@@ -40,7 +40,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, Con
     To use Postgres for event log storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../docs/sections/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../docs/next/src/pages/docs/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :lines: 12-21
        :language: YAML
