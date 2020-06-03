@@ -73,7 +73,7 @@ def resolve_to_config_type(dagster_type):
     if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
         raise DagsterInvalidDefinitionError(
             'You have passed a DagsterType class {dagster_type} to the config system. '
-            'The DagsterType and config schema systems are seperate. '
+            'The DagsterType and config schema systems are separate. '
             'Valid config values are:\n{desc}'.format(
                 dagster_type=repr(dagster_type), desc=VALID_CONFIG_DESC,
             )
@@ -109,7 +109,7 @@ def resolve_to_config_type(dagster_type):
             (
                 'You have passed an instance of DagsterType {type_name} to the config '
                 'system (Repr of type: {dagster_type}). '
-                'The DagsterType and config schema systems are seperate. '
+                'The DagsterType and config schema systems are separate. '
                 'Valid config values are:\n{desc}'
             ).format(
                 type_name=dagster_type.name if dagster_type.name else dagster_type.key,
@@ -120,7 +120,7 @@ def resolve_to_config_type(dagster_type):
 
     # If we are passed here either:
     #  1) We have been passed a python builtin
-    #  2) We have been a dagster wrapping type that needs to be convert its config varient
+    #  2) We have been a dagster wrapping type that needs to be convert its config variant
     #     e.g. dagster.List
     #  2) We have been passed an invalid thing. We return False to signify this. It is
     #     up to callers to report a reasonable error.
