@@ -558,7 +558,7 @@ def _subset_for_execution(pipeline_def, solid_names):
         # we re-raise a DagsterInvalidSubsetError.
         six.raise_from(
             DagsterInvalidSubsetError(
-                "The atempted subset {solid_subset} for pipeline {pipeline_name} results in an invalid pipeline".format(
+                "The attempted subset {solid_subset} for pipeline {pipeline_name} results in an invalid pipeline".format(
                     solid_subset=str(solid_names), pipeline_name=pipeline_def.name
                 )
             ),

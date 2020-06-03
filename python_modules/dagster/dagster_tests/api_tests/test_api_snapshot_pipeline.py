@@ -69,7 +69,7 @@ def test_pipeline_with_invalid_definition_snapshot_api():
     assert re.match(
         (
             r'.*DagsterInvalidSubsetError[\s\S]*'
-            r"The atempted subset \['fail_subset'\] for pipeline bar results in an invalid pipeline"
+            r"The attempted subset \['fail_subset'\] for pipeline bar results in an invalid pipeline"
         ),
         external_pipeline_subset_result.error.message,
     )
