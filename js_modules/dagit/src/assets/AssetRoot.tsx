@@ -202,6 +202,10 @@ export const ASSET_QUERY = gql`
           runOrError {
             ... on PipelineRun {
               runId
+              tags {
+                key
+                value
+              }
               status
               pipeline {
                 name

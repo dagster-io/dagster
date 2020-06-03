@@ -1,4 +1,4 @@
-from dagster_examples.pyspark_pagerank.repository import define_repository
+from dagster_examples.pyspark_pagerank.repository import pyspark_pagerank_repo
 
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
@@ -7,16 +7,16 @@ from .util import checks_for_helper_functions
 
 
 def test_pyspark_pagerank_repo():
-    assert define_repository().get_all_pipelines()
+    assert pyspark_pagerank_repo.get_all_pipelines()
 
 
 def test_run_step_one():
-    assert execute_pipeline(define_repository().get_pipeline('pyspark_pagerank_step_one')).success
+    assert execute_pipeline(pyspark_pagerank_repo.get_pipeline('pyspark_pagerank_step_one')).success
 
 
 def test_run_step_two():
     result = execute_pipeline(
-        define_repository().get_pipeline('pyspark_pagerank_step_two'),
+        pyspark_pagerank_repo.get_pipeline('pyspark_pagerank_step_two'),
         environment_dict={
             'solids': {
                 'whole_pipeline_solid': {
@@ -43,7 +43,7 @@ def test_step_two_fns():
 
 def test_run_step_three():
     result = execute_pipeline(
-        define_repository().get_pipeline('pyspark_pagerank_step_three'),
+        pyspark_pagerank_repo.get_pipeline('pyspark_pagerank_step_three'),
         environment_dict={
             'solids': {
                 'whole_pipeline_solid_using_context': {
@@ -70,7 +70,7 @@ def test_step_three_fns():
 
 def test_run_step_four():
     result = execute_pipeline(
-        define_repository().get_pipeline('pyspark_pagerank_step_four'),
+        pyspark_pagerank_repo.get_pipeline('pyspark_pagerank_step_four'),
         environment_dict={
             'solids': {
                 'parse_pagerank_data_step_four': {
@@ -97,7 +97,7 @@ def test_step_four_fns():
 
 def test_run_step_five():
     result = execute_pipeline(
-        define_repository().get_pipeline('pyspark_pagerank_step_five'),
+        pyspark_pagerank_repo.get_pipeline('pyspark_pagerank_step_five'),
         environment_dict={
             'solids': {
                 'parse_pagerank_data_step_five': {
@@ -125,7 +125,7 @@ def test_step_five_fns():
 
 def test_run_final_example():
     result = execute_pipeline(
-        define_repository().get_pipeline('pyspark_pagerank'),
+        pyspark_pagerank_repo.get_pipeline('pyspark_pagerank'),
         environment_dict={
             'solids': {
                 'parse_pagerank_data': {

@@ -21,6 +21,7 @@ from .errors import (
     create_selector_unspecified_value_error,
 )
 from .evaluate_value_result import EvaluateValueResult
+from .field import resolve_to_config_type
 from .iterate_types import config_schema_snapshot_from_config_type
 from .post_process import post_process_config
 from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
@@ -48,7 +49,10 @@ def is_config_scalar_valid(config_type_snap, config_value):
         check.failed('Not a supported scalar {}'.format(config_type_snap))
 
 
-def validate_config(config_type, config_value):
+def validate_config(config_schema, config_value):
+
+    config_type = resolve_to_config_type(config_schema)
+
     config_schema_snapshot = config_schema_snapshot_from_config_type(config_type)
 
     return validate_config_from_snap(

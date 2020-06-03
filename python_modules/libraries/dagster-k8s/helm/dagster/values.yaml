@@ -57,7 +57,7 @@ dagit:
 # All user code will be invoked within the image specified here.
 ####################################################################################################
 pipeline_run:
-  # REQUIRED: The Dagster K8sRunLauncher will invoke job executions in containers from this image
+  # REQUIRED: The Dagster K8s run launchers will invoke job executions in containers from this image
   image:
     repository: ""
     tag: ""

@@ -32,10 +32,6 @@ export interface RunTableRunFragment_tags {
 
 export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
-  stepsSucceeded: number;
-  stepsFailed: number;
-  expectations: number;
-  materializations: number;
   startTime: number | null;
   endTime: number | null;
 }

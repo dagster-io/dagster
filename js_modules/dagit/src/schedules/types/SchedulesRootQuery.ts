@@ -30,6 +30,12 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks {
   status: ScheduleTickStatus;
 }
 
+export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
@@ -38,6 +44,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pi
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs {
   __typename: "PipelineRun";
   runId: string;
+  tags: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_tags[];
   pipeline: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline;
   status: PipelineRunStatus;
 }

@@ -7,6 +7,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.config.field_utils import Shape
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils import merge_dicts
 
 K8S_JOB_BACKOFF_LIMIT = 4
 
@@ -104,12 +105,31 @@ class DagsterK8sJobConfig(
 
     @classmethod
     def config_type(cls):
+        '''Combined config type which includes both run launcher and pipeline run config.
+        '''
+        cfg_run_launcher = DagsterK8sJobConfig.config_type_run_launcher()
+        cfg_pipeline_run = DagsterK8sJobConfig.config_type_pipeline_run()
+        return merge_dicts(cfg_run_launcher, cfg_pipeline_run)
+
+    @classmethod
+    def config_type_run_launcher(cls):
+        '''Configuration intended to be set on the Dagster instance.
+        '''
         return {
-            'job_image': Field(
+            'instance_config_map': Field(
                 StringSource,
                 is_required=True,
-                description='Docker image to use for launched task Jobs '
-                '(e.g. "mycompany.com/dagster-k8s-image:latest").',
+                description='The ``name`` of an existing Volume to mount into the pod in order to '
+                'provide a ConfigMap for the Dagster instance. This Volume should contain a '
+                '``dagster.yaml`` with appropriate values for run storage, event log storage, etc.',
+            ),
+            'postgres_password_secret': Field(
+                StringSource,
+                is_required=True,
+                description='The name of the Kubernetes Secret where the postgres password can be '
+                'retrieved. Will be mounted and supplied as an environment variable to the Job Pod.'
+                'Secret must contain the key ``"postgresql-password"`` which will be exposed in '
+                'the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.',
             ),
             'dagster_home': Field(
                 StringSource,
@@ -118,6 +138,19 @@ class DagsterK8sJobConfig(
                 description='The location of DAGSTER_HOME in the Job container; this is where the '
                 '``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. '
                 'Defaults to /opt/dagster/dagster_home.',
+            ),
+        }
+
+    @classmethod
+    def config_type_pipeline_run(cls):
+        '''Configuration intended to be set at pipeline execution time.
+        '''
+        return {
+            'job_image': Field(
+                StringSource,
+                is_required=True,
+                description='Docker image to use for launched task Jobs '
+                '(e.g. "mycompany.com/dagster-k8s-image:latest").',
             ),
             'image_pull_policy': Field(
                 StringSource,
@@ -137,21 +170,6 @@ class DagsterK8sJobConfig(
                 is_required=False,
                 description='(Advanced) Override the name of the Kubernetes service account under '
                 'which to run the Job.',
-            ),
-            'instance_config_map': Field(
-                StringSource,
-                is_required=True,
-                description='The ``name`` of an existing Volume to mount into the pod in order to '
-                'provide a ConfigMap for the Dagster instance. This Volume should contain a '
-                '``dagster.yaml`` with appropriate values for run storage, event log storage, etc.',
-            ),
-            'postgres_password_secret': Field(
-                StringSource,
-                is_required=True,
-                description='The name of the Kubernetes Secret where the postgres password can be '
-                'retrieved. Will be mounted and supplied as an environment variable to the Job Pod.'
-                'Secret must contain the key ``"postgresql-password"`` which will be exposed in '
-                'the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.',
             ),
             'env_config_maps': Field(
                 Noneable(Array(StringSource)),

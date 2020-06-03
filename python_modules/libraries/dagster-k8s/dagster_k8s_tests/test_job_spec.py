@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from dagster_k8s.job import construct_dagster_graphql_k8s_job
+from dagster_k8s import construct_dagster_graphql_k8s_job
 from dagster_test.test_project import test_project_docker_image, test_project_environments_path
 
 from dagster import __version__ as dagster_version

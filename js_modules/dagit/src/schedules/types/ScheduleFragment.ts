@@ -25,6 +25,12 @@ export interface ScheduleFragment_ticks {
   status: ScheduleTickStatus;
 }
 
+export interface ScheduleFragment_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ScheduleFragment_runs_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
@@ -33,6 +39,7 @@ export interface ScheduleFragment_runs_pipeline {
 export interface ScheduleFragment_runs {
   __typename: "PipelineRun";
   runId: string;
+  tags: ScheduleFragment_runs_tags[];
   pipeline: ScheduleFragment_runs_pipeline;
   status: PipelineRunStatus;
 }

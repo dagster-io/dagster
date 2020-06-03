@@ -1,14 +1,8 @@
 import datetime
 
-from dagster import RepositoryDefinition, daily_schedule
+from dagster import daily_schedule, repository
 
 from .final_pipeline import gcp_pipeline
-
-
-def define_repo():
-    return RepositoryDefinition(
-        name='gcp_pipeline', pipeline_defs=[gcp_pipeline], schedule_defs=define_schedule()
-    )
 
 
 def define_schedule():
@@ -43,3 +37,8 @@ def define_schedule():
         }
 
     return [explore_visits_daily_schedule]
+
+
+@repository
+def gcp_repo():
+    return [gcp_pipeline] + define_schedule()

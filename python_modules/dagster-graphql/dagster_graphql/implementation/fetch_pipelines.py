@@ -9,7 +9,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
 
-from .utils import UserFacingGraphQLError, capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
 
 
 @capture_dauphin_error
@@ -18,7 +18,7 @@ def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_na
     return DauphinPipelineSnapshot(
         get_full_external_pipeline_or_raise(
             graphene_info,
-            PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset=None),
+            legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset=None),
         )
     )
 

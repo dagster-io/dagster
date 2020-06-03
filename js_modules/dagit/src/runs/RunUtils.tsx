@@ -30,13 +30,11 @@ import {
 import { SharedToaster } from "../DomUtils";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import * as qs from "query-string";
-import { Details } from "../ListComponents";
-import { Link } from "react-router-dom";
-import { RunStatsDetailFragment } from "./types/RunStatsDetailFragment";
 import { formatElapsedTime } from "../Util";
 import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
 import { DocumentNode } from "graphql";
 import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import { RunStats } from "./RunStats";
 
 export type IRunStatus =
   | "SUCCESS"
@@ -44,6 +42,13 @@ export type IRunStatus =
   | "FAILURE"
   | "STARTED"
   | "MANAGED";
+
+export function subsetTitleForRun(run: {
+  tags: { key: string; value: string }[];
+}) {
+  const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
+  return stepsTag ? stepsTag.value : "Full Pipeline";
+}
 
 export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
@@ -273,27 +278,46 @@ export function getReexecutionVariables(input: {
     };
   }
 }
+export const RunStatusWithStats: React.SFC<RunStatusProps & {
+  runId: string;
+}> = ({ runId, ...rest }) => (
+  <Popover
+    position={"bottom"}
+    interactionKind={"hover"}
+    content={<RunStats runId={runId} />}
+    hoverOpenDelay={100}
+  >
+    <div style={{ padding: 1 }}>
+      <RunStatus {...rest} />
+    </div>
+  </Popover>
+);
 
-export const RunStatus: React.SFC<{ status: IRunStatus; square?: boolean }> = ({
-  status,
-  square
-}) => {
+interface RunStatusProps {
+  status: IRunStatus;
+  size?: number;
+}
+
+export const RunStatus: React.SFC<RunStatusProps> = ({ status, size }) => {
   if (status === "STARTED") {
     return (
       <div style={{ display: "inline-block" }}>
-        <Spinner size={11} />
+        <Spinner size={size || 11} />
       </div>
     );
   }
-  return <RunStatusDot status={status} square={square} />;
+  return <RunStatusDot status={status} size={size || 11} />;
 };
 
 // eslint-disable-next-line no-unexpected-multiline
-const RunStatusDot = styled.div<{ status: IRunStatus; square?: boolean }>`
+const RunStatusDot = styled.div<{
+  status: IRunStatus;
+  size: number;
+}>`
   display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: ${({ square }) => (square ? 0 : 5.5)}px;
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+  border-radius: ${({ size }) => size / 2}px;
   align-self: center;
   transition: background 200ms linear;
   background: ${({ status }) => RUN_STATUS_COLORS[status]};
@@ -547,39 +571,47 @@ const PipelineEnvironmentYamlQuery = gql`
   }
 `;
 
-export const RunStatsDetails = ({ run }: { run: RunStatsDetailFragment }) => {
+interface RunTimeProps {
+  run: RunTimeFragment;
+  size?: "standard" | "minimal";
+}
+export const RunTime: React.FunctionComponent<RunTimeProps> = ({
+  run,
+  size
+}) => {
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
-      <Popover
-        content={<PythonErrorInfo error={run.stats} />}
-        targetTagName="div"
-      >
-        <Details>
-          <Icon icon="error" /> Failed to load stats
-        </Details>
+      <Popover content={<PythonErrorInfo error={run.stats} />}>
+        <div>
+          <Icon icon="error" /> Failed to load times
+        </div>
       </Popover>
     );
   }
+
+  let format = "MMM DD, H:mm A";
+  if (
+    size === "minimal" &&
+    unixTimestampToString(run.stats.startTime, "MMM DD") ===
+      unixTimestampToString(Date.now() / 1000, "MMM DD")
+  ) {
+    format = "H:mm A";
+  }
+
   return (
-    <Details>
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
-      >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
-      <Link to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}>
-        {`${run.stats.stepsFailed} steps failed, `}{" "}
-      </Link>
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
-      >{`${run.stats.materializations} materializations`}</Link>
-      ,{" "}
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
-      >{`${run.stats.expectations} expectations passed`}</Link>
-    </Details>
+    <div>
+      {run.stats.startTime ? (
+        unixTimestampToString(run.stats.startTime, format)
+      ) : run.status === "FAILURE" ? (
+        <>Failed to start</>
+      ) : (
+        <>Starting...</>
+      )}
+    </div>
   );
 };
 
-export const RunTime = ({ run }: { run: RunTimeFragment }) => {
+export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({ run }) => {
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -591,28 +623,7 @@ export const RunTime = ({ run }: { run: RunTimeFragment }) => {
   }
 
   return (
-    <>
-      {run.stats.startTime ? (
-        <div style={{ marginBottom: 4 }}>
-          <Icon icon="calendar" /> {unixTimestampToString(run.stats.startTime)}
-          <Icon
-            icon="arrow-right"
-            style={{ marginLeft: 10, marginRight: 10 }}
-          />
-          {unixTimestampToString(run.stats.endTime)}
-        </div>
-      ) : run.status === "FAILURE" ? (
-        <div style={{ marginBottom: 4 }}> Failed to start</div>
-      ) : (
-        <div style={{ marginBottom: 4 }}>
-          <Icon icon="calendar" /> Starting...
-        </div>
-      )}
-      <TimeElapsed
-        startUnix={run.stats.startTime}
-        endUnix={run.stats.endTime}
-      />
-    </>
+    <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
   );
 };
 
@@ -647,35 +658,14 @@ export class TimeElapsed extends React.Component<{
 
     return (
       <div>
-        <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
+        <Icon icon="time" iconSize={13} style={{ paddingBottom: 1 }} />{" "}
+        {start ? formatElapsedTime(end - start) : ""}
       </div>
     );
   }
 }
 
 export const RunComponentFragments = {
-  STATS_DETAIL_FRAGMENT: gql`
-    fragment RunStatsDetailFragment on PipelineRun {
-      runId
-      pipeline {
-        ... on PipelineReference {
-          name
-        }
-      }
-      stats {
-        ... on PipelineRunStatsSnapshot {
-          stepsSucceeded
-          stepsFailed
-          expectations
-          materializations
-        }
-        ... on PythonError {
-          ...PythonErrorFragment
-        }
-      }
-    }
-    ${PythonErrorInfo.fragments.PythonErrorFragment}
-  `,
   RUN_TIME_FRAGMENT: gql`
     fragment RunTimeFragment on PipelineRun {
       status

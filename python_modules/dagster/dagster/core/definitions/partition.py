@@ -170,7 +170,7 @@ class PartitionSetDefinition(
             environment_vars (Optional[dict]): The environment variables to set for the schedule
 
         Returns:
-            ScheduleDefinition -- The generated ScheduleDefinition for the partition selector
+            ScheduleDefinition: The generated ScheduleDefinition for the partition selector
         '''
 
         check.str_param(schedule_name, 'schedule_name')

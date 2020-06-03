@@ -11,4 +11,4 @@ def test_repository_snapshot_api():
     external_repository = sync_get_external_repository(location_handle)
 
     assert isinstance(external_repository, ExternalRepository)
-    assert external_repository.name == 'bar'
+    assert external_repository.name == 'bar_repo'

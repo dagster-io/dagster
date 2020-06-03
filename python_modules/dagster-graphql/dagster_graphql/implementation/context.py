@@ -1,28 +1,15 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
-
-import six
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import DauphinInvalidSubsetError
+from dagster_graphql.schema.pipelines import DauphinPipeline
 
 from dagster import check
-from dagster.api.snapshot_repository import sync_get_external_repository
-from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
-    ExternalExecutionPlan,
-    ExternalPipeline,
-    LocationHandle,
-    RepositoryHandle,
+    InProcessRepositoryLocation,
+    PipelineSelector,
+    RepositoryLocation,
 )
+from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import snapshot_from_execution_plan
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils.hosted_user_process import (
-    external_pipeline_from_recon_pipeline,
-    external_repo_from_def,
-)
-
-from .reloader import Reloader
-from .utils import PipelineSelector
 
 
 class DagsterGraphQLContext:
@@ -53,11 +40,32 @@ class DagsterGraphQLContext:
     def has_repository_location(self, name):
         return name in self._repository_locations
 
-    def get_external_pipeline(self, selector):
+    def get_subset_external_pipeline(self, selector):
         check.inst_param(selector, 'selector', PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly
         # since we may have to request a subset we don't have in memory yet
-        return self._repository_locations[selector.location_name].get_external_pipeline(selector)
+
+        repository_location = self._repository_locations[selector.location_name]
+        external_repository = repository_location.get_repository(selector.repository_name)
+
+        subset_result = repository_location.get_subset_external_pipeline_result(selector)
+        if not subset_result.success:
+            error_info = subset_result.error
+            raise UserFacingGraphQLError(
+                DauphinInvalidSubsetError(
+                    message="{message}{cause_message}".format(
+                        message=error_info.message,
+                        cause_message="\n{}".format(error_info.cause.message)
+                        if error_info.cause
+                        else "",
+                    ),
+                    pipeline=DauphinPipeline(self.get_full_external_pipeline(selector)),
+                )
+            )
+
+        return ExternalPipeline(
+            subset_result.external_pipeline_data, repository_handle=external_repository.handle,
+        )
 
     def has_external_pipeline(self, selector):
         check.inst_param(selector, 'selector', PipelineSelector)
@@ -131,206 +139,3 @@ class DagsterGraphQLContext:
         '''
         if self.instance.run_launcher:
             self.instance.run_launcher.join()
-
-
-class RepositoryLocation(six.with_metaclass(ABCMeta)):
-    '''
-    A RepositoryLocation represents a target containing user code which has a set of Dagster
-    definition objects. A given location will contain some number of uniquely named
-    RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
-
-    Dagster tools are typically "host" processes, meaning they load a RepositoryLocation and
-    communicate with it over an IPC/RPC layer. Currently this IPC layer is implemented by
-    invoking the dagster CLI in a target python interpreter (e.g. a virtual environment) in either
-      a) the current node
-      b) a container
-
-    In the near future, we may also make this communication channel able over an RPC layer, in
-    which case the information needed to load a RepositoryLocation will be a url that abides by
-    some RPC contract.
-
-    We also allow for InProcessRepositoryLocation which actually loads the user-defined artifacts
-    into process with the host tool. This is mostly for test scenarios.
-    '''
-
-    @abstractmethod
-    def get_repository(self, name):
-        pass
-
-    @abstractmethod
-    def has_repository(self, name):
-        pass
-
-    @abstractmethod
-    def get_repositories(self):
-        pass
-
-    @abstractproperty
-    def name(self):
-        pass
-
-    @abstractproperty
-    def handle(self):
-        pass
-
-    @abstractmethod
-    def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        pass
-
-    @abstractmethod
-    def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-    ):
-        pass
-
-    @abstractmethod
-    def get_external_pipeline(self, selector):
-        pass
-
-
-class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, recon_repo, reloader=None):
-
-        self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-        self._handle = LocationHandle(self.name, recon_repo.pointer)
-
-        self._external_repo = external_repo_from_def(
-            recon_repo.get_definition(),
-            RepositoryHandle(recon_repo.get_definition().name, self._handle),
-        )
-
-        self._repositories = {self._external_repo.name: self._external_repo}
-        self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
-
-    def get_reconstructable_pipeline(self, name):
-        return self._recon_repo.get_reconstructable_pipeline(name)
-
-    def get_reconstructable_repository(self):
-        return self._recon_repo
-
-    @property
-    def is_reload_supported(self):
-        return self.reloader and self.reloader.is_reload_supported
-
-    @property
-    def name(self):
-        return '<<in_process>>'
-
-    @property
-    def handle(self):
-        return self._handle
-
-    def get_repository(self, name):
-        return self._repositories[name]
-
-    def has_repository(self, name):
-        return name in self._repositories
-
-    def get_repositories(self):
-        return self._repositories
-
-    def get_external_pipeline(self, selector):
-        check.inst_param(selector, 'selector', PipelineSelector)
-        check.invariant(
-            selector.location_name == self.name,
-            'PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}'.format(
-                self=self, selector=selector
-            ),
-        )
-
-        return external_pipeline_from_recon_pipeline(
-            recon_pipeline=self.get_reconstructable_pipeline(selector.pipeline_name),
-            solid_subset=selector.solid_subset,
-            repository_handle=self._external_repo.handle,
-        )
-
-    def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.dict_param(environment_dict, 'environment_dict')
-        check.str_param(mode, 'mode')
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-        return ExternalExecutionPlan(
-            execution_plan_snapshot=snapshot_from_execution_plan(
-                create_execution_plan(
-                    pipeline=self.get_reconstructable_pipeline(
-                        external_pipeline.name
-                    ).subset_for_execution(external_pipeline.solid_subset),
-                    environment_dict=environment_dict,
-                    mode=mode,
-                    step_keys_to_execute=step_keys_to_execute,
-                ),
-                external_pipeline.identifying_pipeline_snapshot_id,
-            ),
-            represented_pipeline=external_pipeline,
-        )
-
-    def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-    ):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.dict_param(environment_dict, 'environment_dict')
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-        execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_pipeline(external_pipeline.name),
-            environment_dict=environment_dict,
-            mode=pipeline_run.mode,
-            step_keys_to_execute=step_keys_to_execute,
-        )
-
-        execute_plan(
-            execution_plan=execution_plan,
-            instance=instance,
-            pipeline_run=pipeline_run,
-            environment_dict=environment_dict,
-        )
-
-
-class OutOfProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, name, pointer):
-        check.inst_param(pointer, 'pointer', CodePointer)
-        self._handle = LocationHandle(name, pointer)
-        self._name = check.str_param(name, 'name')
-        self.external_repository = sync_get_external_repository(self._handle)
-
-    def get_repository(self, name):
-        check.str_param(name, 'name')
-        check.param_invariant(name == self.external_repository.name, 'name')
-        return self.external_repository
-
-    def has_repository(self, name):
-        return name == self.external_repository.name
-
-    def get_repositories(self):
-        return {self.external_repository.name: self.external_repository}
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def handle(self):
-        return self._handle
-
-    def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
-    ):
-        raise NotImplementedError()
-
-    def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
-    ):
-        raise NotImplementedError()
-
-    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
-        raise NotImplementedError()
-
-    def get_external_pipeline(self, selector):
-        raise NotImplementedError()

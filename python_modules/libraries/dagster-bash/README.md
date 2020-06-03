@@ -1,4 +1,4 @@
 # dagster-bash
 
-##Introduction
-This library provides a means for invoking shell scripts from a Dagster pipeline.
+The docs for `dagster-bash` can be found
+[here](https://docs.dagster.io/docs/apidocs/libraries/dagster_bash).

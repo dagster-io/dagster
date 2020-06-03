@@ -28,6 +28,7 @@ from dagster import (
 )
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.solid_container import _create_adjacency_lists
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.results import SolidExecutionResult
@@ -694,7 +695,9 @@ def test_reexecution_fs_storage():
         root_run_id=pipeline_result.run_id,
     )
 
-    reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
+    reexecution_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+    )
 
     assert reexecution_result.success
     assert len(reexecution_result.solid_result_list) == 2
@@ -711,7 +714,9 @@ def test_reexecution_fs_storage():
         root_run_id=pipeline_result.run_id,
     )
 
-    grandchild_result = execute_run(pipeline_def, pipeline_run, instance)
+    grandchild_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+    )
 
     assert grandchild_result.success
     assert len(grandchild_result.solid_result_list) == 2
@@ -749,7 +754,9 @@ def test_reexecution_fs_storage_with_subset():
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
     )
-    reexecution_result_no_subset = execute_run(pipeline_def, reexecution_pipeline_run, instance)
+    reexecution_result_no_subset = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
+    )
     assert reexecution_result_no_subset.success
     assert len(reexecution_result_no_subset.solid_result_list) == 2
     assert reexecution_result_no_subset.result_for_solid('add_one').skipped
@@ -776,7 +783,9 @@ def test_reexecution_fs_storage_with_subset():
         step_keys_to_execute=['return_one.compute'],
     )
 
-    reexecution_result = execute_run(pipeline_def, reexecution_pipeline_run, instance)
+    reexecution_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
+    )
 
     assert reexecution_result.success
     assert len(reexecution_result.solid_result_list) == 1
@@ -806,7 +815,9 @@ def test_reexecution_fs_storage_with_subset():
         step_keys_to_execute=['return_one.compute'],
     )
 
-    re_reexecution_result = execute_run(pipeline_def, re_reexecution_pipeline_run, instance)
+    re_reexecution_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), re_reexecution_pipeline_run, instance
+    )
 
     assert re_reexecution_result.success
     assert len(re_reexecution_result.solid_result_list) == 1
@@ -854,7 +865,9 @@ def test_single_step_reexecution():
         root_run_id=pipeline_result.run_id,
     )
 
-    reexecution_result = execute_run(pipeline_def, reexecution_pipeline_run, instance)
+    reexecution_result = execute_run(
+        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
+    )
 
     assert reexecution_result.success
     assert reexecution_result.result_for_solid('return_one').output_value() == None
@@ -890,7 +903,9 @@ def test_two_step_reexecution():
         root_run_id=pipeline_result.run_id,
     )
 
-    reexecution_result = execute_run(two_step_reexec, reexecution_pipeline_run, instance=instance)
+    reexecution_result = execute_run(
+        InMemoryExecutablePipeline(two_step_reexec), reexecution_pipeline_run, instance=instance
+    )
 
     assert reexecution_result.success
     assert reexecution_result.result_for_solid('return_one').output_value() == None

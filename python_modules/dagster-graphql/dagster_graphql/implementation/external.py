@@ -1,14 +1,14 @@
-import sys
-
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+    PipelineSelector,
+)
 
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
 
 
 def get_full_external_pipeline_or_raise(graphene_info, selector):
@@ -28,8 +28,8 @@ def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_su
     check.str_param(pipeline_name, 'pipeline_name')
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    return graphene_info.context.get_external_pipeline(
-        PipelineSelector.legacy(graphene_info.context, pipeline_name, solid_subset)
+    return graphene_info.context.get_subset_external_pipeline(
+        legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset)
     )
 
 
@@ -54,20 +54,8 @@ def get_external_pipeline_or_raise(graphene_info, selector):
                     pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
                 )
             )
-    try:
-        return graphene_info.context.get_external_pipeline(selector)
-    except DagsterInvalidDefinitionError:
-        # this handles the case when you construct a subset such that an unsatisfied
-        # input cannot be hydrate from config. Current this is only relevant for
-        # the in-process case. Once we add the out-of-process we will communicate
-        # this error through the communication channel and change what exception
-        # is thrown
-        raise UserFacingGraphQLError(
-            DauphinInvalidSubsetError(
-                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
-                pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
-            )
-        )
+
+    return graphene_info.context.get_subset_external_pipeline(selector)
 
 
 def ensure_valid_config(external_pipeline, mode, environment_dict):

@@ -14,7 +14,6 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     ResourceDefinition,
     SolidDefinition,
     SolidInvocation,
@@ -22,6 +21,7 @@ from dagster import (
     check,
     lambda_solid,
     pipeline,
+    repository,
     resource,
     solid,
 )
@@ -376,7 +376,8 @@ def reimport_pipeline():
     reimport_solid(lister())
 
 
-def define_example_repository():
+@repository
+def notebook_repo():
     pipeline_dict = {
         'bad_kernel_pipeline': define_bad_kernel_pipeline,
         'error_pipeline': define_error_pipeline,
@@ -394,4 +395,4 @@ def define_example_repository():
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline
 
-    return RepositoryDefinition(name='notebook_repo', pipeline_dict=pipeline_dict)
+    return {'pipelines': pipeline_dict}

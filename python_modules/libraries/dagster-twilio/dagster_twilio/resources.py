@@ -1,19 +1,14 @@
 from twilio.rest import Client
 
-from dagster import Field, resource
-
-
-class TwilioClient(Client):
-    def __init__(self, account_sid, auth_token):
-        super(TwilioClient, self).__init__(account_sid, auth_token)
+from dagster import Field, StringSource, resource
 
 
 @resource(
     {
-        'account_sid': Field(str, description='Twilio Account SID'),
-        'auth_token': Field(str, description='Twilio Auth Token'),
+        'account_sid': Field(StringSource, description='Twilio Account SID'),
+        'auth_token': Field(StringSource, description='Twilio Auth Token'),
     },
-    description='This resource is for connecting to Slack',
+    description='This resource is for connecting to Twilio',
 )
 def twilio_resource(context):
-    return TwilioClient(**context.resource_config)
+    return Client(context.resource_config['account_sid'], context.resource_config['auth_token'])

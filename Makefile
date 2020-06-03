@@ -32,6 +32,7 @@ install_dev_python_modules:
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dasgtermill because of dependency
 # See https://github.com/dagster-io/dagster/issues/1485
+# NOTE: These installations will fail for Python 2.7 (Flyte and Dask don't work w/ py27)
 
 	pip install apache-airflow \
 				-e python_modules/dagster \
@@ -66,7 +67,6 @@ install_dev_python_modules:
 				-e examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
-
 	# Don't install dagster-azure as part of this target _yet_ - it has a dependency
 	# conflict with dagster-snowflake which causes any import of dagster-snowflake to
 	# fail with an ImportError (e.g. in examples).
@@ -75,9 +75,9 @@ install_dev_python_modules:
 	# See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
 	# pip install -e python_modules/libraries/dagster-azure $(QUIET)
 
-	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/libraries/dagster-airflow $(QUIET)
+	set SLUGIFY_USES_TEXT_UNIDECODE=yes
+	pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
-	# NOTE: These installations will fail for Python 2.7 (Flyte and Dask don't work w/ py27)
 	-pip install -e python_modules/libraries/dagster-flyte $(QUIET)
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
 	-pip install -r docs-requirements.txt

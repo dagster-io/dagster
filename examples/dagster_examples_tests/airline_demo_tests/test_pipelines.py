@@ -65,6 +65,7 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
+@pytest.mark.skipif('"win" in sys.platform', reason="avoiding the geopandas tests")
 def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_warehouse.yaml')

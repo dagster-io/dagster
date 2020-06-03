@@ -10,10 +10,10 @@ from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
-    RepositoryDefinition,
     ScheduleDefinition,
     lambda_solid,
     pipeline,
+    repository,
     seven,
 )
 from dagster.core.instance import DagsterInstance
@@ -42,10 +42,6 @@ def math():
     mult_two(add_one())
 
 
-def define_repository():
-    return RepositoryDefinition(name='test', pipeline_defs=[math], schedule_defs=define_schedules())
-
-
 def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",
@@ -55,6 +51,11 @@ def define_schedules():
     )
 
     return [math_hourly_schedule]
+
+
+@repository
+def test():
+    return [math] + define_schedules()
 
 
 def test_basic_introspection():

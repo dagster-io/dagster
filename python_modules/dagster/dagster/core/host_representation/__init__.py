@@ -9,6 +9,7 @@ that have been persisted. e.g. HistoricalPipeline
 from .external import ExternalExecutionPlan, ExternalPipeline, ExternalRepository
 from .external_data import (
     ExternalPipelineData,
+    ExternalPipelineSubsetResult,
     ExternalPresetData,
     ExternalRepositoryData,
     external_pipeline_data_from_def,
@@ -17,4 +18,10 @@ from .external_data import (
 from .handle import LocationHandle, PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .pipeline_index import PipelineIndex
+from .repository_location import (
+    InProcessRepositoryLocation,
+    OutOfProcessRepositoryLocation,
+    RepositoryLocation,
+)
 from .represented import RepresentedPipeline
+from .selector import PipelineSelector

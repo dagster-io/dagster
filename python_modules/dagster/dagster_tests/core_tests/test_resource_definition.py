@@ -15,6 +15,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
@@ -764,7 +765,7 @@ def test_single_step_resource_event_logs():
         step_keys_to_execute=['resource_solid.compute'],
     )
 
-    result = execute_run(pipeline, pipeline_run, instance)
+    result = execute_run(InMemoryExecutablePipeline(pipeline), pipeline_run, instance)
 
     assert result.success
     log_messages = [event for event in events if isinstance(event, LogMessageRecord)]

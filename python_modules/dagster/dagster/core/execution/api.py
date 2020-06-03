@@ -1,12 +1,5 @@
-import time
-
 from dagster import check
-from dagster.core.definitions import (
-    ExecutablePipeline,
-    PartitionSetDefinition,
-    PipelineDefinition,
-    SystemStorageData,
-)
+from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.pipeline import PipelineSubsetForExecution
 from dagster.core.errors import DagsterInvariantViolationError
@@ -20,7 +13,7 @@ from dagster.core.selector import parse_solid_subset
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
+from dagster.core.utils import str_format_list
 from dagster.utils import merge_dicts
 
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
@@ -91,7 +84,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (ExecutablePipeline): The pipeline to execute.
         pipeline_run (PipelineRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -100,14 +93,21 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
-    pipeline, pipeline_def = _check_pipeline(pipeline)
+    if isinstance(pipeline, PipelineDefinition):
+        raise DagsterInvariantViolationError(
+            'execute_run requires an ExecutablePipeline but received a PipelineDefinition '
+            'directly instead. To support hand-off to other processes provide a '
+            'ReconstructablePipeline which can be done using reconstructable(). For in '
+            'process only execution you can use InMemoryExecutablePipeline.'
+        )
 
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
+    pipeline_def = pipeline.get_definition()
     if pipeline_run.solid_subset:
-        pipeline_def = pipeline.get_definition()
         if isinstance(pipeline_def, PipelineSubsetForExecution):
             check.invariant(
                 len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
@@ -187,13 +187,13 @@ def execute_pipeline_iterator(
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (inlcuding names of solid invocations). For example:
+            selection queries (including names of solid invocations). For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
                 (downstream dependencies) within 3 levels down.
             - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -262,13 +262,13 @@ def execute_pipeline(
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
         solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (inlcuding names of solid invocations). For example:
+            selection queries (including names of solid invocations). For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
                 (downstream dependencies) within 3 levels down.
             - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
-                ancestors, "other_solid_a" itslef, and "other_solid_b" and its direct child solids.
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
@@ -352,44 +352,6 @@ def execute_plan(
             retries=retries,
         )
     )
-
-
-def execute_partition_set(partition_set, partition_filter, instance=None):
-    '''Programatically perform a backfill over a partition set
-
-    Arguments:
-        partition_set (PartitionSet): The base partition set to run the backfill over
-        partition_filter (Callable[[List[Partition]]], List[Partition]): A function that takes
-            a list of partitions and returns a filtered list of partitions to run the backfill
-            over.
-        instance (DagsterInstance): The instance to use to perform the backfill
-    '''
-    check.inst_param(partition_set, 'partition_set', PartitionSetDefinition)
-    check.callable_param(partition_filter, 'partition_filter')
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    candidate_partitions = partition_set.get_partitions()
-    partitions = partition_filter(candidate_partitions)
-
-    instance = instance or DagsterInstance.ephemeral()
-
-    for partition in partitions:
-        run = PipelineRun(
-            pipeline_name=partition_set.pipeline_name,
-            run_id=make_new_run_id(),
-            environment_dict=partition_set.environment_dict_for_partition(partition),
-            mode='default',
-            tags=merge_dicts(
-                PipelineRun.tags_for_backfill_id(make_new_backfill_id()),
-                partition_set.tags_for_partition(partition),
-            ),
-            status=PipelineRunStatus.NOT_STARTED,
-        )
-
-        # Remove once we can handle synchronous execution... currently limited by sqlite
-        time.sleep(0.1)
-
-        instance.launch_run(run.run_id)
 
 
 def _check_pipeline(pipeline):

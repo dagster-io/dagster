@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
 import styled from "styled-components/macro";
-import { Colors, NonIdealState, Icon, Tooltip } from "@blueprintjs/core";
+import { Colors, NonIdealState, Tooltip } from "@blueprintjs/core";
 import PipelineGraph from "../graph/PipelineGraph";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "../Loading";
@@ -14,13 +14,13 @@ import {
   PipelineOverviewQueryVariables
 } from "./types/PipelineOverviewQuery";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { RunStatus, titleForRun } from "../runs/RunUtils";
+import { RunStatus, titleForRun, RunTime } from "../runs/RunUtils";
 import { Link } from "react-router-dom";
 import { unixTimestampToString } from "../Util";
 import {
+  RunElapsed,
   RunActionsMenu,
-  TimeElapsed,
-  RunStatsDetails,
+  RunStatusWithStats,
   RunComponentFragments
 } from "../runs/RunUtils";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
@@ -220,29 +220,11 @@ const OverviewRun = ({ run }: { run: Run }) => {
   const variables = React.useContext(RunsQueryVariablesContext);
   const time =
     run.stats.__typename === "PipelineRunStatsSnapshot" ? (
-      <>
-        {run.stats.startTime ? (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" />{" "}
-            {unixTimestampToString(run.stats.startTime)}
-            <Icon
-              icon="arrow-right"
-              style={{ marginLeft: 10, marginRight: 10 }}
-            />
-            {unixTimestampToString(run.stats.endTime)}
-          </div>
-        ) : run.status === "FAILURE" ? (
-          <div style={{ marginBottom: 4 }}> Failed to start</div>
-        ) : (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" /> Starting...
-          </div>
-        )}
-        <TimeElapsed
-          startUnix={run.stats.startTime}
-          endUnix={run.stats.endTime}
-        />
-      </>
+      <RunTime run={run} />
+    ) : null;
+  const elapsed =
+    run.stats.__typename === "PipelineRunStatsSnapshot" ? (
+      <RunElapsed run={run} />
     ) : null;
 
   const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
@@ -250,15 +232,15 @@ const OverviewRun = ({ run }: { run: Run }) => {
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        <RunStatus status={run.status} />
+        <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
         <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
-        <RunStatsDetails run={run} />
-        <div style={{ margin: "5px 0" }}>{`Mode: ${run.mode}`}</div>
+        <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>
         {time}
+        {elapsed}
       </RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
         <RunActionsMenu run={run} refetchQueries={refetchQueries} />
@@ -326,6 +308,10 @@ const ScheduleFragment = gql`
       pipeline {
         name
       }
+      tags {
+        key
+        value
+      }
       stats {
         ... on PipelineRunStatsSnapshot {
           endTime
@@ -358,7 +344,6 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
         }
         runs(limit: $limit) {
           ...RunActionMenuFragment
-          ...RunStatsDetailFragment
           ...RunTimeFragment
           assets {
             key
@@ -381,7 +366,6 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
   }
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
   ${ScheduleFragment}
-  ${RunComponentFragments.STATS_DETAIL_FRAGMENT}
   ${RunComponentFragments.RUN_TIME_FRAGMENT}
   ${RunComponentFragments.RUN_ACTION_MENU_FRAGMENT}
 `;

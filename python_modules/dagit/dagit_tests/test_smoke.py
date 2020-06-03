@@ -31,7 +31,7 @@ SMOKE_TEST_QUERY = '''
 def test_smoke_app():
     flask_app = app.create_app_with_reconstructable_repo(
         ReconstructableRepository.for_module(
-            module='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
+            module='dagster_examples.intro_tutorial.repos', fn_name='hello_cereal_repository'
         ),
         DagsterInstance.ephemeral(),
     )

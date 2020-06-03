@@ -133,12 +133,6 @@ doctest:
 livehtml:
 	sphinx-autobuild -a -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-gatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn build && cd ..
-
-livegatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn develop
-
 buildnext:
 	make clean && make json
 	rm -rf next/src/data

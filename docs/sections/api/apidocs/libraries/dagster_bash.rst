@@ -8,3 +8,5 @@ The Dagster bash library provides solid factories for executing inline bash scri
 .. autofunction:: bash_command_solid
 
 .. autofunction:: bash_script_solid
+
+.. autofunction:: bash_solid

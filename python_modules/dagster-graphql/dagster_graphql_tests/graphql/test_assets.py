@@ -2,15 +2,7 @@ import time
 
 from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
 
-from dagster import (
-    Materialization,
-    Output,
-    RepositoryDefinition,
-    execute_pipeline,
-    pipeline,
-    seven,
-    solid,
-)
+from dagster import Materialization, Output, execute_pipeline, pipeline, repository, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -71,6 +63,7 @@ def get_instance(temp_dir):
     )
 
 
+@repository
 def asset_repo():
     @solid
     def solid_a(_):
@@ -92,15 +85,13 @@ def asset_repo():
     def multi_asset_pipeline():
         solid_b(solid_a())
 
-    return RepositoryDefinition(
-        name='asset_repo', pipeline_defs=[single_asset_pipeline, multi_asset_pipeline]
-    )
+    return [single_asset_pipeline, multi_asset_pipeline]
 
 
 def test_get_all_asset_keys(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
-        repo = asset_repo()
+        repo = asset_repo
         execute_pipeline(repo.get_pipeline('multi_asset_pipeline'), instance=instance)
         context = define_context_for_file(__file__, 'asset_repo', instance)
         result = execute_dagster_graphql(context, GET_ASSET_KEY_QUERY)
@@ -111,7 +102,7 @@ def test_get_all_asset_keys(snapshot):
 def test_get_asset_key_materialization(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
-        repo = asset_repo()
+        repo = asset_repo
         execute_pipeline(repo.get_pipeline('single_asset_pipeline'), instance=instance)
         context = define_context_for_file(__file__, 'asset_repo', instance)
         result = execute_dagster_graphql(
@@ -124,7 +115,7 @@ def test_get_asset_key_materialization(snapshot):
 def test_get_asset_runs():
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
-        repo = asset_repo()
+        repo = asset_repo
         single_run_id = execute_pipeline(
             repo.get_pipeline('single_asset_pipeline'), instance=instance
         ).run_id

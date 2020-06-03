@@ -81,7 +81,6 @@ const Body = styled.div`
   font-family: Consolas, Menlo, monospace;
   font-size: 13px;
   overflow: scroll;
-  max-height: 500px;
   background: ${Colors.WHITE};
   border-top: 1px solid ${Colors.LIGHT_GRAY3};
   padding: 20px;

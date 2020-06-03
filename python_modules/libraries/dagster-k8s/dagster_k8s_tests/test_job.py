@@ -1,4 +1,4 @@
-from dagster_k8s.job import DagsterK8sJobConfig
+from dagster_k8s import DagsterK8sJobConfig
 
 
 def test_job_serialization():

@@ -1,5 +1,11 @@
+import six
+
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 from dagster.utils.backcompat import rename_warning
 
@@ -503,9 +509,18 @@ def _subset_for_execution(pipeline_def, solid_names):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
 
-    solid_name_set = set(solid_names)
+    for solid_name in solid_names:
+        if not pipeline_def.has_solid_named(solid_name):
+            raise DagsterInvalidSubsetError(
+                'Pipeline {pipeline_name} has no solid named {name}.'.format(
+                    pipeline_name=pipeline_def.name, name=solid_name
+                ),
+            )
+
     solids = list(map(pipeline_def.solid_named, solid_names))
     deps = {_dep_key_of(solid): {} for solid in solids}
+
+    solid_name_set = set(solid_names)
 
     for solid in solids:
         for input_handle in solid.input_handles():
@@ -527,15 +542,28 @@ def _subset_for_execution(pipeline_def, solid_names):
                     ]
                 )
 
-    sub_pipeline_def = PipelineSubsetForExecution(
-        name=pipeline_def.name,  # should we change the name for subsetted pipeline?
-        solid_defs=list({solid.definition for solid in solids}),
-        mode_defs=pipeline_def.mode_definitions,
-        dependencies=deps,
-        _parent_pipeline_def=pipeline_def,
-    )
+    try:
+        sub_pipeline_def = PipelineSubsetForExecution(
+            name=pipeline_def.name,  # should we change the name for subsetted pipeline?
+            solid_defs=list({solid.definition for solid in solids}),
+            mode_defs=pipeline_def.mode_definitions,
+            dependencies=deps,
+            _parent_pipeline_def=pipeline_def,
+        )
 
-    return sub_pipeline_def
+        return sub_pipeline_def
+    except DagsterInvalidDefinitionError as exc:
+        # This handles the case when you construct a subset such that an unsatisfied
+        # input cannot be hydrate from config. Instead of throwing a DagsterInvalidDefinitionError,
+        # we re-raise a DagsterInvalidSubsetError.
+        six.raise_from(
+            DagsterInvalidSubsetError(
+                "The atempted subset {solid_subset} for pipeline {pipeline_name} results in an invalid pipeline".format(
+                    solid_subset=str(solid_names), pipeline_name=pipeline_def.name
+                )
+            ),
+            exc,
+        )
 
 
 def _validate_resource_dependencies(mode_definitions, solid_defs):

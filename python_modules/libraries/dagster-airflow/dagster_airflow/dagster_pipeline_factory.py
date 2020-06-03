@@ -21,9 +21,9 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     SolidDefinition,
     check,
+    repository,
     solid,
 )
 from dagster.core.definitions.utils import VALID_NAME_REGEX, validate_tags
@@ -111,7 +111,11 @@ def make_dagster_repo_from_airflow_dag_bag(
             )
             count += 1
 
-    return RepositoryDefinition(name=repo_name, pipeline_defs=pipeline_defs)
+    @repository(name=repo_name)
+    def _repo():
+        return pipeline_defs
+
+    return _repo
 
 
 def make_dagster_repo_from_airflow_example_dags(repo_name='airflow_example_dags_repo'):

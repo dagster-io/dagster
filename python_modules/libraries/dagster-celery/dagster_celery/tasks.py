@@ -89,7 +89,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
     ):
         '''Run step execution in a K8s job pod.
         '''
-        from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
+        from dagster_k8s import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
         from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_job_success
 
         import kubernetes

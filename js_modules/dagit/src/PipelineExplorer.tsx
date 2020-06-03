@@ -146,7 +146,13 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const { explorerPath, options, pipeline, parentHandle } = this.props;
+    const {
+      options,
+      pipeline,
+      explorerPath,
+      parentHandle,
+      selectedHandle
+    } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
@@ -166,16 +172,7 @@ export default class PipelineExplorer extends React.Component<
       s.name.includes(highlighted)
     );
 
-    let selectedHandle = this.props.selectedHandle;
-    if (
-      selectedHandle &&
-      !queryResultSolids.all.some(s => s.name === selectedHandle!.solid.name)
-    ) {
-      selectedHandle = undefined;
-    }
-
     const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
-
     const backgroundTranslucent = Color(backgroundColor)
       .fade(0.6)
       .toString();

@@ -49,10 +49,13 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
         return self.pointer.get_cli_args()
 
     @classmethod
-    def from_yaml(cls, file_path):
+    def from_legacy_repository_yaml(cls, file_path):
         check.str_param(file_path, 'file_path')
         absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
-        return cls(pointer=CodePointer.from_yaml(absolute_file_path), yaml_path=absolute_file_path,)
+        return cls(
+            pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path),
+            yaml_path=absolute_file_path,
+        )
 
 
 @whitelist_for_serdes
@@ -200,7 +203,7 @@ def pipeline_def_from_pointer(pointer):
 
 def repository_def_from_pointer(pointer):
     from .pipeline import PipelineDefinition
-    from .repository import RepositoryDefinition
+    from .repository import RepositoryData, RepositoryDefinition
 
     target = pointer.load_target()
 
@@ -212,7 +215,9 @@ def repository_def_from_pointer(pointer):
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, PipelineDefinition):
         # consider including pipeline name in generated repo name
-        repo_def = RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[target])
+        repo_def = RepositoryDefinition(
+            name=EPHEMERAL_NAME, repository_data=RepositoryData.from_list([target])
+        )
     elif isinstance(target, RepositoryDefinition):
         repo_def = target
     else:

@@ -9,10 +9,10 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PresetDefinition,
-    RepositoryDefinition,
     execute_pipeline,
     file_relative_path,
     pipeline,
+    repository,
 )
 from dagster.core.utility_solids import define_stub_solid
 
@@ -30,13 +30,6 @@ def define_papermill_pandas_hello_world_solid():
         notebook_path=nb_test_path('papermill_pandas_hello_world'),
         input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
         output_defs=[OutputDefinition(DataFrame)],
-    )
-
-
-def define_pandas_repository():
-    return RepositoryDefinition(
-        name='test_dagstermill_pandas_solids',
-        pipeline_defs=[papermill_pandas_hello_world_pipeline, pandas_hello_world],
     )
 
 
@@ -65,3 +58,8 @@ def define_pandas_repository():
 def papermill_pandas_hello_world_pipeline():
     hello_world = define_papermill_pandas_hello_world_solid()
     hello_world()
+
+
+@repository
+def test_dagstermill_pandas_solids():
+    return [papermill_pandas_hello_world_pipeline, pandas_hello_world]

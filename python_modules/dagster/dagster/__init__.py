@@ -49,6 +49,7 @@ from dagster.core.definitions import (
     multiprocess_executor,
     pipeline,
     reconstructable,
+    repository,
     resource,
     schedule,
     solid,
@@ -78,11 +79,7 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import (
-    execute_partition_set,
-    execute_pipeline,
-    execute_pipeline_iterator,
-)
+from dagster.core.execution.api import execute_pipeline, execute_pipeline_iterator
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
@@ -163,6 +160,7 @@ __all__ = [
     'lambda_solid',
     'logger',
     'pipeline',
+    'repository',
     'resource',
     'schedule',
     'solid',
@@ -264,7 +262,6 @@ __all__ = [
     'ScheduleDefinition',
     'ScheduleExecutionContext',
     'daily_schedule',
-    'execute_partition_set',
     'hourly_schedule',
     'monthly_schedule',
     'weekly_schedule',

@@ -6,7 +6,8 @@ from dagster_graphql.test.utils import (
     get_legacy_pipeline_selector,
 )
 
-from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
+from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -228,9 +229,11 @@ def get_repo_at_time_1():
     def foo_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, foo_pipeline]
+
+    return evolving_repo
 
 
 def get_repo_at_time_2():
@@ -251,9 +254,11 @@ def get_repo_at_time_2():
     def bar_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, bar_pipeline]
+
+    return evolving_repo
 
 
 def test_runs_over_time():
@@ -499,7 +504,7 @@ def test_run_group():
                 root_run_id=root_run_id,
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
-            execute_run(foo_pipeline, run, instance)
+            execute_run(InMemoryExecutablePipeline(foo_pipeline), run, instance)
             runs.append(run)
 
         context_at_time_1 = define_context_for_file(__file__, 'get_repo_at_time_1', instance)

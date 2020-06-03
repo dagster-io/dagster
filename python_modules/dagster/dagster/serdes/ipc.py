@@ -22,6 +22,12 @@ def ipc_write_unary_response(output_file, obj):
         stream.send(obj)
 
 
+def read_unary_response(output_file):
+    messages = list(ipc_read_event_stream(output_file))
+    check.invariant(len(messages) == 1)
+    return messages[0]
+
+
 @whitelist_for_serdes
 class IPCStartMessage(namedtuple('_IPCStartMessage', '')):
     def __new__(cls):

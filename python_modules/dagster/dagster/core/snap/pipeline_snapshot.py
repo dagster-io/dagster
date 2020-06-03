@@ -216,7 +216,7 @@ def _construct_scalar_union_from_snap(config_type_snap, config_snap_map):
         scalar_type=construct_config_type_from_snap(
             config_snap_map[config_type_snap.type_param_keys[0]], config_snap_map
         ),
-        non_scalar_type=construct_config_type_from_snap(
+        non_scalar_schema=construct_config_type_from_snap(
             config_snap_map[config_type_snap.type_param_keys[1]], config_snap_map
         ),
     )
