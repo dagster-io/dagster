@@ -4,7 +4,7 @@
 
 **Breaking Changes**
 
-- `Path` is no longer as built-in dagster type.
+- `Path` is no longer a built-in dagster type.
 - The CLI option `--celery-base-priority` is no longer available for the command:
   `dagster pipeline backfill`. Use the tags option to specify the celery priority, (e.g.
   `dagster pipeline backfill my_pipeline --tags '{ "dagster-celery/run_priority": 3 }'`
@@ -14,10 +14,16 @@
 - `dagit-cli` has been removed and `dagit` is now the only console entrypoint.
 - All `PartitionSetDefinitions` must have unique names with a `RepositoryDefinition`, including those from `PartitionScheduleDefinition`
 - The partitioned schedule decorators now generate names for their `PartitionSetDefinition` using the schedule name, suffixed with `_partitions`.
+- The AWS CLI has been removed.
+- `dagster_aws.EmrRunJobFlowSolidDefinition` has been removed.
+- `dagster_spark.SparkSolidDefinition` has been removed - use `create_spark_solid` instead.
+- The `SparkRDD` Dagster type, which only worked with an in-memory engine, has been removed.
 
 **New**
 
 - The partitioned schedule decorators now support optional `end_time`.
+- `dagster_spark.create_spark_solid` now accepts a `required_resource_keys` argument, which enables
+  setting up a step launcher for Spark solids, like the `emr_pyspark_step_launcher`.
 
 ## 0.7.15 (Latest)
 
