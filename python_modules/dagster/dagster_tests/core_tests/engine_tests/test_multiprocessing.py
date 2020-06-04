@@ -5,6 +5,7 @@ from dagster import (
     Field,
     InputDefinition,
     Nothing,
+    Output,
     OutputDefinition,
     PresetDefinition,
     String,
@@ -249,3 +250,41 @@ def test_ephemeral_event_log():
     assert result.success
 
     assert result.result_for_solid('adder').output_value() == 11
+
+
+@solid(
+    output_defs=[
+        OutputDefinition(name='option_1', is_required=False),
+        OutputDefinition(name='option_2', is_required=False),
+    ]
+)
+def either_or(_context):
+    yield Output(1, 'option_1')
+
+
+@lambda_solid
+def echo(x):
+    return x
+
+
+@pipeline
+def optional_stuff():
+    option_1, option_2 = either_or()
+    echo(echo(option_1))
+    echo(echo(option_2))
+
+
+def test_optional_outputs():
+    single_result = execute_pipeline(optional_stuff)
+    assert single_result.success
+    assert not [event for event in single_result.step_event_list if event.is_step_failure]
+    assert len([event for event in single_result.step_event_list if event.is_step_skipped]) == 2
+
+    multi_result = execute_pipeline(
+        reconstructable(optional_stuff),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
+    )
+    assert multi_result.success
+    assert not [event for event in multi_result.step_event_list if event.is_step_failure]
+    assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
