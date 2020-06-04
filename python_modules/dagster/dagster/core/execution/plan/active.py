@@ -203,6 +203,8 @@ class ActiveExecution(object):
             self.mark_failed(dagster_event.step_key)
         elif dagster_event.is_step_success:
             self.mark_success(dagster_event.step_key)
+        elif dagster_event.is_step_skipped:
+            self.mark_skipped(dagster_event.step_key)
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(
                 dagster_event.step_key,

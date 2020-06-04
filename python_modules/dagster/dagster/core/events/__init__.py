@@ -280,6 +280,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.STEP_FAILURE
 
     @property
+    def is_step_skipped(self):
+        return self.event_type == DagsterEventType.STEP_SKIPPED
+
+    @property
     def is_step_up_for_retry(self):
         return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
 
