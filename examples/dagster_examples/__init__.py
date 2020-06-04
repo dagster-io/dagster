@@ -48,10 +48,9 @@ def get_event_pipelines():
 
 
 def get_pyspark_pipelines():
-    from dagster_examples.pyspark_pagerank.pyspark_pagerank_pipeline import pyspark_pagerank
     from dagster_examples.simple_pyspark.pipelines import simple_pyspark_sfo_weather_pipeline
 
-    return [pyspark_pagerank, simple_pyspark_sfo_weather_pipeline]
+    return [simple_pyspark_sfo_weather_pipeline]
 
 
 def get_lakehouse_pipelines():

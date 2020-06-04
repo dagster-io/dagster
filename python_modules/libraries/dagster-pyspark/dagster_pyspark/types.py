@@ -1,67 +1,12 @@
 import os
 
-from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 from dagster import Bool, Field, Materialization, PythonObjectDagsterType, String, check
 from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
-from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
-
-
-@input_selector_schema(
-    Selector(
-        {
-            'csv': {
-                'path': Field(String),
-                'sep': Field(String, is_required=False),
-                'header': Field(Bool, is_required=False),
-            }
-        }
-    ),
-    required_resource_keys={'pyspark'},
-)
-def load_rdd(context, file_type, file_options):
-    if file_type == 'csv':
-        return context.resources.pyspark.spark_session.read.csv(
-            file_options['path'], sep=file_options.get('sep')
-        ).rdd
-    else:
-        check.failed('Unsupported file type: {}'.format(file_type))
-
-
-@output_selector_schema(
-    Selector(
-        {
-            'csv': Field(
-                {
-                    'path': Field(String),
-                    'sep': Field(String, is_required=False),
-                    'header': Field(Bool, is_required=False),
-                }
-            )
-        }
-    ),
-    required_resource_keys={'pyspark'},
-)
-def write_rdd(context, file_type, file_options, spark_rdd):
-    if file_type == 'csv':
-        df = context.resources.pyspark.spark_session.createDataFrame(spark_rdd)
-        context.log.info('DF: {}'.format(df))
-        df.write.csv(
-            file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
-        )
-    else:
-        check.failed('Unsupported file type: {}'.format(file_type))
-
-
-SparkRDD = PythonObjectDagsterType(
-    python_type=RDD,
-    name='SparkRDD',
-    input_hydration_config=load_rdd,
-    output_materialization_config=write_rdd,
-)
+from dagster.core.types.config_schema import output_selector_schema
 
 
 @output_selector_schema(

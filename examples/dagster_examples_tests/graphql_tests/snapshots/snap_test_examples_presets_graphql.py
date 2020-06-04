@@ -915,14 +915,6 @@ snapshots['test_presets_on_examples 13'] = {
 
 snapshots['test_presets_on_examples 14'] = {
     'pipelineOrError': {
-        'name': 'pyspark_pagerank',
-        'presets': [
-        ]
-    }
-}
-
-snapshots['test_presets_on_examples 15'] = {
-    'pipelineOrError': {
         'name': 'simple_lakehouse_pipeline',
         'presets': [
             {
@@ -951,7 +943,7 @@ snapshots['test_presets_on_examples 15'] = {
     }
 }
 
-snapshots['test_presets_on_examples 16'] = {
+snapshots['test_presets_on_examples 15'] = {
     'pipelineOrError': {
         'name': 'simple_pyspark_sfo_weather_pipeline',
         'presets': [
@@ -1008,7 +1000,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 17'] = {
+snapshots['test_presets_on_examples 16'] = {
     'pipelineOrError': {
         'name': 'sleepy_pipeline',
         'presets': [
@@ -1034,7 +1026,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 18'] = {
+snapshots['test_presets_on_examples 17'] = {
     'pipelineOrError': {
         'name': 'stdout_spew_pipeline',
         'presets': [
@@ -1042,7 +1034,7 @@ snapshots['test_presets_on_examples 18'] = {
     }
 }
 
-snapshots['test_presets_on_examples 19'] = {
+snapshots['test_presets_on_examples 18'] = {
     'pipelineOrError': {
         'name': 'unreliable_pipeline',
         'presets': [
