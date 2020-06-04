@@ -113,7 +113,7 @@ def define_baz_partitions():
 @repository
 def bar():
     return {
-        'pipelines': {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        'pipelines': {'foo': foo_pipeline, 'baz': baz_pipeline},
         'schedules': define_bar_schedules(),
         'partition_sets': define_baz_partitions(),
     }

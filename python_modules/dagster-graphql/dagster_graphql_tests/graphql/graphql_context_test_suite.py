@@ -11,6 +11,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
     OutOfProcessRepositoryLocation,
+    OutOfProcessRepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -191,8 +192,14 @@ class EnvironmentManagers:
         def _mgr_fn(recon_repo):
             '''Goes out of process but same process as host process'''
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+
+            # this is "ok" because we know the test host process containers the user code
+            repo_name = recon_repo.get_definition().name
             yield OutOfProcessRepositoryLocation(
-                name='test-out-of-process-env', pointer=recon_repo.pointer
+                OutOfProcessRepositoryLocationHandle(
+                    location_name='test',
+                    repository_code_pointer_dict={repo_name: recon_repo.pointer},
+                )
             )
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])

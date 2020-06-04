@@ -94,7 +94,11 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     external_repo = external_repo_from_def(
         repo_def,
         RepositoryHandle(
-            repo_def.name, RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
+            repository_name=repo_def.name,
+            repository_key=repo_def.name,
+            repository_location_handle=RepositoryLocationHandle.create_in_process_location(
+                recon_repo.pointer
+            ),
         ),
     )
     return external_repo.get_full_external_pipeline(pipeline_name)

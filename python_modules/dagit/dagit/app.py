@@ -197,12 +197,7 @@ def create_app_from_workspace(workspace, instance):
             recon_repo = ReconstructableRepository(repository_location_handle.pointer)
             locations.append(InProcessRepositoryLocation(recon_repo))
         elif isinstance(repository_location_handle, OutOfProcessRepositoryLocationHandle):
-            locations.append(
-                OutOfProcessRepositoryLocation(
-                    name=repository_location_handle.location_name,
-                    pointer=repository_location_handle.pointer,
-                )
-            )
+            locations.append(OutOfProcessRepositoryLocation(repository_location_handle))
         else:
             check.failed('{} unsupported'.format(repository_location_handle))
 

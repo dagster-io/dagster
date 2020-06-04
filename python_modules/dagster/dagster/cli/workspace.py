@@ -5,11 +5,16 @@ import six
 from dagster import check
 from dagster.config import Field, ScalarUnion, Selector, validate_config
 from dagster.core.code_pointer import CodePointer, rebase_file
-from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.definitions.reconstructable import def_from_pointer
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.utils import load_yaml_from_path, merge_dicts
 
-from .autodiscovery import loadable_target_from_python_file, loadable_target_from_python_module
+from .autodiscovery import (
+    LoadableTarget,
+    loadable_targets_from_python_file,
+    loadable_targets_from_python_module,
+)
 
 
 class Workspace:
@@ -61,6 +66,14 @@ def load_workspace_from_yaml_path(yaml_path):
     return Workspace(location_handles)
 
 
+def load_def_in_module(module_name, definition):
+    return def_from_pointer(CodePointer.from_module(module_name, definition))
+
+
+def load_def_in_python_file(python_file, definition):
+    return def_from_pointer(CodePointer.from_python_file(python_file, definition))
+
+
 def _location_handle_from_module_config(python_module_config):
     module_name, definition, location_name = (
         (python_module_config, None, None)
@@ -72,15 +85,35 @@ def _location_handle_from_module_config(python_module_config):
         )
     )
 
-    pointer = CodePointer.from_module(
-        module_name, definition if definition else loadable_target_from_python_module(module_name),
+    loadable_targets = (
+        [LoadableTarget(definition, load_def_in_module(module_name, definition))]
+        if definition
+        else loadable_targets_from_python_module(module_name)
     )
 
+    repository_code_pointer_dict = {}
+    for loadable_target in loadable_targets:
+        repository_code_pointer_dict[
+            loadable_target.target_definition.name
+        ] = CodePointer.from_module(module_name, loadable_target.symbol_name)
+
     return RepositoryLocationHandle.create_out_of_process_location(
-        pointer=pointer,
+        repository_code_pointer_dict=repository_code_pointer_dict,
         # default to the name of the repository symbol for now
-        location_name=location_name if location_name else pointer.fn_name,
+        location_name=assign_location_name(location_name, repository_code_pointer_dict),
     )
+
+
+def assign_location_name(location_name, repository_code_pointer_dict):
+    if location_name:
+        return location_name
+
+    if len(repository_code_pointer_dict) > 1:
+        raise DagsterInvariantViolationError(
+            'If there is one than more repository you must provide a location name'
+        )
+
+    return next(iter(repository_code_pointer_dict.keys()))
 
 
 def _location_handle_from_python_file(python_file_config, yaml_path):
@@ -97,14 +130,22 @@ def _location_handle_from_python_file(python_file_config, yaml_path):
     )
 
     absolute_path = rebase_file(relative_path, yaml_path)
-    pointer = CodePointer.from_python_file(
-        python_file=absolute_path,
-        definition=definition if definition else loadable_target_from_python_file(absolute_path),
+    loadable_targets = (
+        [LoadableTarget(definition, load_def_in_python_file(absolute_path, definition))]
+        if definition
+        else loadable_targets_from_python_file(absolute_path)
     )
+
+    repository_code_pointer_dict = {}
+    for loadable_target in loadable_targets:
+        repository_code_pointer_dict[
+            loadable_target.target_definition.name
+        ] = CodePointer.from_python_file(absolute_path, loadable_target.symbol_name)
+
     return RepositoryLocationHandle.create_out_of_process_location(
-        pointer=pointer,
+        repository_code_pointer_dict=repository_code_pointer_dict,
         # default to the name of the repository symbol for now
-        location_name=location_name if location_name else pointer.fn_name,
+        location_name=assign_location_name(location_name, repository_code_pointer_dict),
     )
 
 

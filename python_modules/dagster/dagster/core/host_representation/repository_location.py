@@ -3,12 +3,13 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
-from dagster.core.code_pointer import CodePointer
+from dagster.api.snapshot_repository import sync_get_external_repositories
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
+    OutOfProcessRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -80,9 +81,14 @@ class InProcessRepositoryLocation(RepositoryLocation):
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self._handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
 
+        def_name = recon_repo.get_definition().name
         self._external_repo = external_repo_from_def(
             recon_repo.get_definition(),
-            RepositoryHandle(recon_repo.get_definition().name, self._handle),
+            RepositoryHandle(
+                repository_name=def_name,
+                repository_key=def_name,
+                repository_location_handle=self._handle,
+            ),
         )
 
         self._repositories = {self._external_repo.name: self._external_repo}
@@ -169,30 +175,32 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
 
 class OutOfProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, name, pointer):
-        from dagster.api.snapshot_repository import sync_get_external_repository
-
-        check.inst_param(pointer, 'pointer', CodePointer)
-        self._handle = RepositoryLocationHandle.create_out_of_process_location(
-            location_name=name, pointer=pointer
+    # We need to allow for fetching of multiple repositories from a location
+    # to make this work. Currently sync_get_external_repository is not
+    # multi-repo aware
+    def __init__(self, repository_location_handle):
+        self._handle = check.inst_param(
+            repository_location_handle,
+            'repository_location_handle',
+            OutOfProcessRepositoryLocationHandle,
         )
-        self._name = check.str_param(name, 'name')
-        self.external_repository = sync_get_external_repository(self._handle)
+        self.external_repositories = {
+            er.name: er for er in sync_get_external_repositories(self._handle)
+        }
 
     def get_repository(self, name):
         check.str_param(name, 'name')
-        check.param_invariant(name == self.external_repository.name, 'name')
-        return self.external_repository
+        return self.external_repositories[name]
 
     def has_repository(self, name):
-        return name == self.external_repository.name
+        return name in self.external_repositories
 
     def get_repositories(self):
-        return {self.external_repository.name: self.external_repository}
+        return self.external_repositories
 
     @property
     def name(self):
-        return self._name
+        return self._handle.location_name
 
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
@@ -236,5 +244,6 @@ class OutOfProcessRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        pipeline_handle = PipelineHandle(selector.pipeline_name, self.external_repository.handle)
+        external_repository = self.external_repositories[selector.repository_name]
+        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset(pipeline_handle, selector.solid_subset)

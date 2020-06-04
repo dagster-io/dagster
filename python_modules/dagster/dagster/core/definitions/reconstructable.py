@@ -171,26 +171,32 @@ def bootstrap_standalone_recon_pipeline(pointer):
     )
 
 
-def pipeline_def_from_pointer(pointer):
-    from .pipeline import PipelineDefinition
-
+def def_from_pointer(pointer):
     target = pointer.load_target()
+
+    if not callable(target):
+        return target
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
-    if callable(target):
-        try:
-            target = target()
-        except TypeError as t_e:
-            six.raise_from(
-                DagsterInvariantViolationError(
-                    'Error invoking function at {target} with no arguments. '
-                    'Reconstructable target must be callable with no arguments'.format(
-                        target=pointer.describe()
-                    )
-                ),
-                t_e,
-            )
+    try:
+        return target()
+    except TypeError as t_e:
+        six.raise_from(
+            DagsterInvariantViolationError(
+                'Error invoking function at {target} with no arguments. '
+                'Reconstructable target must be callable with no arguments'.format(
+                    target=pointer.describe()
+                )
+            ),
+            t_e,
+        )
+
+
+def pipeline_def_from_pointer(pointer):
+    from .pipeline import PipelineDefinition
+
+    target = def_from_pointer(pointer)
 
     if isinstance(target, PipelineDefinition):
         return target
@@ -205,12 +211,7 @@ def repository_def_from_pointer(pointer):
     from .pipeline import PipelineDefinition
     from .repository import RepositoryData, RepositoryDefinition
 
-    target = pointer.load_target()
-
-    # if its a function invoke it - otherwise we are pointing to a
-    # artifact in module scope, likely decorator output
-    if callable(target):
-        target = target()
+    target = def_from_pointer(pointer)
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, PipelineDefinition):

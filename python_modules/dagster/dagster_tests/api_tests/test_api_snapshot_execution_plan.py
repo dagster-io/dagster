@@ -6,11 +6,22 @@ from dagster.core.host_representation.handle import PipelineHandle, RepositoryHa
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 
-def test_execution_plan_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
+def get_bar_repo_handle():
+    return RepositoryHandle(
+        repository_name='bar_repo',
+        repository_key='bar_repo',
+        repository_location_handle=RepositoryLocationHandle.create_in_process_location(
+            FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo')
+        ),
     )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+
+
+def get_foo_pipeline_handle():
+    return PipelineHandle('foo', get_bar_repo_handle())
+
+
+def test_execution_plan_snapshot_api():
+    pipeline_handle = get_foo_pipeline_handle()
 
     execution_plan_snapshot = sync_get_external_execution_plan(
         pipeline_handle, environment_dict={}, mode="default", snapshot_id="12345",
@@ -25,10 +36,7 @@ def test_execution_plan_snapshot_api():
 
 
 def test_execution_plan_with_step_keys_to_execute_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
-    )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+    pipeline_handle = get_foo_pipeline_handle()
 
     execution_plan_snapshot = sync_get_external_execution_plan(
         pipeline_handle,
@@ -46,10 +54,7 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api():
 
 
 def test_execution_plan_with_subset_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
-    )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+    pipeline_handle = get_foo_pipeline_handle()
 
     execution_plan_snapshot = sync_get_external_execution_plan(
         pipeline_handle,

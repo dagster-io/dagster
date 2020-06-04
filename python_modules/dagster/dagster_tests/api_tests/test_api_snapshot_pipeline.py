@@ -11,11 +11,22 @@ from dagster.core.host_representation.external_data import ExternalPipelineSubse
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryHandle
 
 
-def test_pipeline_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
+def get_bar_repo_handle():
+    return RepositoryHandle(
+        repository_name='bar_repo',
+        repository_key='bar_repo',
+        repository_location_handle=RepositoryLocationHandle.create_in_process_location(
+            FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo')
+        ),
     )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+
+
+def get_foo_pipeline_handle():
+    return PipelineHandle('foo', get_bar_repo_handle())
+
+
+def test_pipeline_snapshot_api():
+    pipeline_handle = get_foo_pipeline_handle()
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(pipeline_handle)
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
@@ -24,10 +35,7 @@ def test_pipeline_snapshot_api():
 
 
 def test_pipeline_with_valid_subset_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
-    )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+    pipeline_handle = get_foo_pipeline_handle()
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
         pipeline_handle, solid_subset=["do_something"]
@@ -38,10 +46,7 @@ def test_pipeline_with_valid_subset_snapshot_api():
 
 
 def test_pipeline_with_invalid_subset_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
-    )
-    pipeline_handle = PipelineHandle('foo', RepositoryHandle('bar', location_handle))
+    pipeline_handle = get_foo_pipeline_handle()
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
         pipeline_handle, solid_subset=["invalid_solid"]
@@ -56,10 +61,7 @@ def test_pipeline_with_invalid_subset_snapshot_api():
 
 @pytest.mark.skipif(sys.version_info.major < 3, reason='Exception cause only vailable in py3+')
 def test_pipeline_with_invalid_definition_snapshot_api():
-    location_handle = RepositoryLocationHandle.create_in_process_location(
-        FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'),
-    )
-    pipeline_handle = PipelineHandle('bar', RepositoryHandle('bar', location_handle))
+    pipeline_handle = PipelineHandle('bar', get_bar_repo_handle())
 
     external_pipeline_subset_result = sync_get_external_pipeline_subset(
         pipeline_handle, solid_subset=["fail_subset"]

@@ -16,48 +16,85 @@ IN_PROCESS_NAME = '<<in_process>>'
 class RepositoryLocationHandle:
     @staticmethod
     def create_in_process_location(pointer):
-        return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, pointer)
+        check.inst_param(pointer, 'pointer', CodePointer)
+
+        # If we are here we know we are in a hosted_user_process so we can do this
+        from dagster.utils.hosted_user_process import repository_def_from_pointer
+
+        repo_def = repository_def_from_pointer(pointer)
+        return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, {repo_def.name: pointer})
 
     @staticmethod
-    def create_out_of_process_location(location_name, pointer):
-        return OutOfProcessRepositoryLocationHandle(location_name, pointer)
+    def create_out_of_process_location(location_name, repository_code_pointer_dict):
+        check.str_param(location_name, 'location_name')
+        check.dict_param(
+            repository_code_pointer_dict,
+            'repository_code_pointer_dict',
+            key_type=str,
+            value_type=CodePointer,
+        )
+        return OutOfProcessRepositoryLocationHandle(location_name, repository_code_pointer_dict)
 
 
 class InProcessRepositoryLocationHandle(
-    namedtuple('_InProcessRepositoryLocationHandle', 'location_name pointer'),
+    namedtuple('_InProcessRepositoryLocationHandle', 'location_name repository_code_pointer_dict'),
     RepositoryLocationHandle,
 ):
-    def __new__(cls, location_name, pointer):
+    def __new__(cls, location_name, repository_code_pointer_dict):
         return super(InProcessRepositoryLocationHandle, cls).__new__(
             cls,
             check.str_param(location_name, 'location_name'),
-            check.inst_param(pointer, 'pointer', CodePointer),
+            check.dict_param(
+                repository_code_pointer_dict,
+                'repository_code_pointer_dict',
+                key_type=str,
+                value_type=CodePointer,
+            ),
         )
+
+    def pointer_for_repo(self, repository_name):
+        check.str_param(repository_name, 'repository_name')
+        return self.repository_code_pointer_dict[repository_name]
 
 
 class OutOfProcessRepositoryLocationHandle(
-    namedtuple('_OutOfProcessRepositoryLocationHandle', 'location_name pointer'),
+    namedtuple(
+        '_OutOfProcessRepositoryLocationHandle', 'location_name repository_code_pointer_dict'
+    ),
     RepositoryLocationHandle,
 ):
-    def __new__(cls, location_name, pointer):
+    def __new__(cls, location_name, repository_code_pointer_dict):
         return super(OutOfProcessRepositoryLocationHandle, cls).__new__(
             cls,
             check.str_param(location_name, 'location_name'),
-            check.inst_param(pointer, 'pointer', CodePointer),
+            check.dict_param(
+                repository_code_pointer_dict,
+                'repository_code_pointer_dict',
+                key_type=str,
+                value_type=CodePointer,
+            ),
         )
 
 
 class RepositoryHandle(
-    namedtuple('_RepositoryHandle', 'repository_name repository_location_handle')
+    # repository_name is the name of the repository itself.
+    # repository_key is how the repository location indexes into the collection
+    # of pointers.
+    namedtuple('_RepositoryHandle', 'repository_name repository_key repository_location_handle')
 ):
-    def __new__(cls, repository_name, repository_location_handle):
+    def __new__(cls, repository_name, repository_key, repository_location_handle):
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, 'repository_name'),
+            check.str_param(repository_key, 'repository_key'),
             check.inst_param(
                 repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
             ),
         )
+
+    def get_pointer(self):
+        # This will not work on all future repository locations
+        return self.repository_location_handle.repository_code_pointer_dict[self.repository_key]
 
 
 class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_handle')):

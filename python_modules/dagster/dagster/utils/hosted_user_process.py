@@ -24,14 +24,14 @@ from dagster.core.host_representation.external_data import (
 # we can do this because we only use in a hosted user process
 def pipeline_def_from_pipeline_handle(pipeline_handle):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.repository_location_handle.pointer
+    pointer = pipeline_handle.repository_handle.get_pointer()
     repo_def = repository_def_from_pointer(pointer)
     return repo_def.get_pipeline(pipeline_handle.pipeline_name)
 
 
 def recon_pipeline_from_pipeline_handle(pipeline_handle):
     check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.repository_location_handle.pointer
+    pointer = pipeline_handle.repository_handle.get_pointer()
     recon_repo = ReconstructableRepository(pointer)
     return recon_repo.get_reconstructable_pipeline(pipeline_handle.pipeline_name)
 

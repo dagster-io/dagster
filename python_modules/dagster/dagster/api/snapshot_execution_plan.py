@@ -25,12 +25,12 @@ def sync_get_external_execution_plan(
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     check.str_param(snapshot_id, 'snapshot_id')
 
-    location_handle = pipeline_handle.repository_handle.repository_location_handle
+    pointer = pipeline_handle.repository_handle.get_pointer()
 
     with get_temp_file_name() as output_file:
         parts = (
             ['dagster', 'api', 'snapshot', 'execution_plan', output_file]
-            + xplat_shlex_split(location_handle.pointer.get_cli_args())
+            + xplat_shlex_split(pointer.get_cli_args())
             + [
                 pipeline_handle.pipeline_name,
                 '--environment-dict={environment_dict}'.format(
