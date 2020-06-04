@@ -264,8 +264,12 @@ def test_optional_outputs():
     assert not [event for event in single_result.step_event_list if event.is_step_failure]
     assert len([event for event in single_result.step_event_list if event.is_step_skipped]) == 2
 
+    pipe = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'optional_stuff'
+    ).build_pipeline_definition()
+
     multi_result = execute_pipeline(
-        reconstructable(optional_stuff),
+        pipe,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
