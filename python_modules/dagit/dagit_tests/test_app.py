@@ -16,6 +16,24 @@ def test_create_app_with_reconstructable_repo():
     assert create_app_with_reconstructable_repo(recon_repo, DagsterInstance.ephemeral())
 
 
+def test_create_app_with_reconstructable_repo_and_scheduler():
+    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
+        file_relative_path(__file__, './repository.yaml')
+    )
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(
+            temp_dir,
+            overrides={
+                'scheduler': {
+                    'module': 'dagster.utils.test',
+                    'class': 'FilesystemTestScheduler',
+                    'config': {'base_dir': temp_dir},
+                }
+            },
+        )
+        assert create_app_with_reconstructable_repo(recon_repo, instance)
+
+
 def test_notebook_view():
     notebook_path = file_relative_path(__file__, 'render_uuid_notebook.ipynb')
 
