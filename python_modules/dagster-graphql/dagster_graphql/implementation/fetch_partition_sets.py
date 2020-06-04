@@ -14,8 +14,9 @@ def get_partition_sets_or_error(graphene_info, pipeline_name):
 
 
 def _get_partition_sets(graphene_info, pipeline_name):
-    partition_sets = graphene_info.context.legacy_get_repository_definition().partition_set_defs
-
+    external_partition_sets = (
+        graphene_info.context.legacy_external_repository.get_external_partition_sets()
+    )
     if pipeline_name:
 
         external_pipeline = get_full_external_pipeline_or_raise(
@@ -25,14 +26,19 @@ def _get_partition_sets(graphene_info, pipeline_name):
 
         matching_partition_sets = filter(
             lambda partition_set: partition_set.pipeline_name == external_pipeline.name,
-            partition_sets,
+            external_partition_sets,
         )
     else:
-        matching_partition_sets = partition_sets
+        matching_partition_sets = external_partition_sets
 
     return [
-        graphene_info.schema.type_named('PartitionSet')(partition_set)
-        for partition_set in sorted(
+        graphene_info.schema.type_named('PartitionSet')(
+            external_partition_set=external_partition_set,
+            partition_set_def=graphene_info.context.legacy_get_repository_definition().get_partition_set_def(
+                external_partition_set.name
+            ),
+        )
+        for external_partition_set in sorted(
             matching_partition_sets,
             key=lambda partition_set: (
                 partition_set.pipeline_name,
@@ -46,9 +52,14 @@ def _get_partition_sets(graphene_info, pipeline_name):
 @capture_dauphin_error
 def get_partition_set(graphene_info, partition_set_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    partition_sets = graphene_info.context.legacy_get_repository_definition().partition_set_defs
+    partition_sets = graphene_info.context.legacy_external_repository.get_external_partition_sets()
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:
-            return graphene_info.schema.type_named('PartitionSet')(partition_set)
+            return graphene_info.schema.type_named('PartitionSet')(
+                external_partition_set=partition_set,
+                partition_set_def=graphene_info.context.legacy_get_repository_definition().get_partition_set_def(
+                    partition_set_name
+                ),
+            )
 
     return graphene_info.schema.type_named('PartitionSetNotFoundError')(partition_set_name)

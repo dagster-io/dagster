@@ -13,8 +13,8 @@ from dagster_graphql.schema.errors import (
 
 from dagster import check
 from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
-from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
+from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler import Schedule, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -54,15 +54,16 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     run_config_yaml = dauphin.Field(dauphin.String)
     partition_set = dauphin.Field('PartitionSet')
 
-    def resolve_run_config_yaml(self, _graphene_info):
+    def resolve_run_config_yaml(self, graphene_info):
         schedule_def = self._schedule_def
+        schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
         try:
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
                 '{schedule_name}'.format(schedule_name=schedule_def.name),
             ):
-                environment_config = schedule_def.get_environment_dict(self._schedule_context)
+                environment_config = schedule_def.get_environment_dict(schedule_context)
         except ScheduleExecutionError:
             return None
 
@@ -70,24 +71,34 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         return run_config_yaml if run_config_yaml else ''
 
     def resolve_partition_set(self, graphene_info):
-        if isinstance(self._schedule_def, PartitionScheduleDefinition):
-            return graphene_info.schema.type_named('PartitionSet')(
-                self._schedule_def.get_partition_set()
+        if self._external_schedule.partition_set_name is None:
+            return None
+
+        external_partition_set = (
+            graphene_info.context.get_repository_location(
+                self._external_schedule.handle.location_name
             )
+            .get_repository(self._external_schedule.handle.repository_name)
+            .get_partition_set(self._external_schedule.partition_set_name)
+        )
 
-        return None
+        return graphene_info.schema.type_named('PartitionSet')(
+            external_partition_set=external_partition_set,
+            partion_set_def=self._schedule_def.get_partition_set(),
+        )
 
-    def __init__(self, graphene_info, schedule_def):
+    def __init__(self, schedule_def, external_schedule):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
-        self._schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
-        self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
+        self._external_schedule = check.inst_param(
+            external_schedule, 'external_schedule', ExternalSchedule
+        )
 
         super(DauphinScheduleDefinition, self).__init__(
-            name=schedule_def.name,
-            cron_schedule=schedule_def.cron_schedule,
-            pipeline_name=schedule_def.pipeline_name,
-            solid_subset=schedule_def.solid_subset,
-            mode=schedule_def.mode,
+            name=external_schedule.name,
+            cron_schedule=external_schedule.cron_schedule,
+            pipeline_name=external_schedule.pipeline_name,
+            solid_subset=external_schedule.solid_subset,
+            mode=external_schedule.mode,
         )
 
 
@@ -176,11 +187,12 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
     def __init__(self, graphene_info, schedule):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
-
+        external_repository = graphene_info.context.legacy_external_repository
+        external_schedule = external_repository.get_external_schedule(schedule.name)
         super(DauphinRunningSchedule, self).__init__(
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
-                graphene_info=graphene_info,
                 schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
+                external_schedule=external_schedule,
             ),
             status=schedule.status,
             python_path=schedule.python_path,

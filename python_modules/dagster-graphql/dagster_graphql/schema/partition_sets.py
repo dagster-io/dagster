@@ -8,7 +8,8 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
-from dagster.core.definitions.partition import Partition, PartitionSetDefinition
+from dagster.core.definitions.partition import PartitionSetDefinition
+from dagster.core.host_representation import ExternalPartitionSet
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 
@@ -24,34 +25,40 @@ class DauphinPartition(dauphin.ObjectType):
     tags = dauphin.non_null_list('PipelineTag')
     runs = dauphin.non_null_list('PipelineRun')
 
-    def __init__(self, partition, partition_set):
-        self._partition = check.inst_param(partition, 'partition', Partition)
-        self._partition_set = check.inst_param(
-            partition_set, 'partition_set', PartitionSetDefinition
+    def __init__(self, partition_name, partition_set_def, external_partition_set):
+        self._partition_name = check.str_param(partition_name, 'partition_name')
+        self._partition_set_def = check.inst_param(
+            partition_set_def, 'partition_set_def', PartitionSetDefinition
+        )
+        self._external_partition_set = check.inst_param(
+            external_partition_set, 'external_partition_set', ExternalPartitionSet
         )
 
         super(DauphinPartition, self).__init__(
-            name=partition.name,
-            partition_set_name=partition_set.name,
-            solid_subset=partition_set.solid_subset,
-            mode=partition_set.mode,
+            name=partition_name,
+            partition_set_name=external_partition_set.name,
+            solid_subset=external_partition_set.solid_subset,
+            mode=external_partition_set.mode,
         )
 
     def resolve_runConfigYaml(self, _):
-        environment_dict = self._partition_set.environment_dict_for_partition(self._partition)
+        partition = self._partition_set_def.get_partition(self._partition_name)
+        environment_dict = self._partition_set_def.environment_dict_for_partition(partition)
         return yaml.dump(environment_dict, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):
+        partition = self._partition_set_def.get_partition(self._partition_name)
+        tags = self._partition_set_def.tags_for_partition(partition).items()
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
-            for key, value in self._partition_set.tags_for_partition(self._partition).items()
+            for key, value in tags
         ]
 
     def resolve_runs(self, graphene_info):
         runs_filter = PipelineRunsFilter(
             tags={
-                'dagster/partition_set': self._partition_set.name,
-                'dagster/partition': self._partition.name,
+                'dagster/partition_set': self._external_partition_set.name,
+                'dagster/partition': self._partition_name,
             }
         )
         return get_runs(graphene_info, runs_filter)
@@ -79,32 +86,39 @@ class DauphinPartitionSet(dauphin.ObjectType):
         reverse=dauphin.Boolean(),
     )
 
-    def __init__(self, partition_set):
-        self._partition_set = check.inst_param(
-            partition_set, 'partition_set', PartitionSetDefinition
+    def __init__(self, partition_set_def, external_partition_set):
+        self._partition_set_def = check.inst_param(
+            partition_set_def, 'partition_set_def', PartitionSetDefinition
+        )
+        self._external_partition_set = check.inst_param(
+            external_partition_set, 'external_partition_set', ExternalPartitionSet
         )
 
         super(DauphinPartitionSet, self).__init__(
-            name=partition_set.name,
-            pipeline_name=partition_set.pipeline_name,
-            solid_subset=partition_set.solid_subset,
-            mode=partition_set.mode,
+            name=external_partition_set.name,
+            pipeline_name=external_partition_set.pipeline_name,
+            solid_subset=external_partition_set.solid_subset,
+            mode=external_partition_set.mode,
         )
 
     def resolve_partitions(self, graphene_info, **kwargs):
-        partitions = self._partition_set.get_partitions()
+        partition_names = self._external_partition_set.partition_names
 
         cursor = kwargs.get("cursor")
         limit = kwargs.get("limit")
         reverse = kwargs.get('reverse')
 
         start = 0
-        end = len(partitions)
+        end = len(partition_names)
         index = 0
 
         if cursor:
             index = next(
-                (idx for (idx, partition) in enumerate(partitions) if partition.name == cursor),
+                (
+                    idx
+                    for (idx, partition_name) in enumerate(partition_names)
+                    if partition_name == cursor
+                ),
                 None,
             )
 
@@ -119,14 +133,16 @@ class DauphinPartitionSet(dauphin.ObjectType):
             else:
                 end = start + limit
 
-        partitions = partitions[start:end]
+        partition_names = partition_names[start:end]
 
         return graphene_info.schema.type_named('Partitions')(
             results=[
                 graphene_info.schema.type_named('Partition')(
-                    partition=partition, partition_set=self._partition_set
+                    partition_name=partition_name,
+                    partition_set_def=self._partition_set_def,
+                    external_partition_set=self._external_partition_set,
                 )
-                for partition in partitions
+                for partition_name in partition_names
             ]
         )
 

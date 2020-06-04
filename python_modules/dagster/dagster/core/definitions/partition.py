@@ -149,6 +149,13 @@ class PartitionSetDefinition(
     def get_partitions(self):
         return self.partition_fn()
 
+    def get_partition(self, name):
+        for partition in self.get_partitions():
+            if partition.name == name:
+                return partition
+
+        check.failed('Partition name {} not found!'.format(name))
+
     def get_partition_names(self):
         return [part.name for part in self.get_partitions()]
 

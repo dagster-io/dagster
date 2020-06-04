@@ -538,6 +538,9 @@ class RepositoryDefinition(object):
     def partition_set_defs(self):
         return self._repository_data.get_all_partition_sets()
 
+    def get_partition_set_def(self, name):
+        return self._repository_data.get_partition_set(name)
+
     @property
     def schedule_defs(self):
         return self._repository_data.get_all_schedules()

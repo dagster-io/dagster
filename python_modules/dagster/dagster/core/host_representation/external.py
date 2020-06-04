@@ -65,6 +65,12 @@ class ExternalRepository:
             self._handle,
         )
 
+    def get_external_partition_sets(self):
+        return [
+            ExternalPartitionSet(external_partition_set_data, self._handle)
+            for external_partition_set_data in self.external_repository_data.external_partition_set_datas
+        ]
+
     def get_full_external_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
         return ExternalPipeline(
@@ -258,6 +264,30 @@ class ExternalSchedule:
             self._external_schedule_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
         )
 
+    @property
+    def name(self):
+        return self._external_schedule_data.name
+
+    @property
+    def cron_schedule(self):
+        return self._external_schedule_data.cron_schedule
+
+    @property
+    def solid_subset(self):
+        return self._external_schedule_data.solid_subset
+
+    @property
+    def pipeline_name(self):
+        return self._external_schedule_data.pipeline_name
+
+    @property
+    def mode(self):
+        return self._external_schedule_data.mode
+
+    @property
+    def partition_set_name(self):
+        return self._external_schedule_data.partition_set_name
+
 
 class ExternalPartitionSet:
     def __init__(self, external_partition_set_data, handle):
@@ -267,3 +297,23 @@ class ExternalPartitionSet:
         self._handle = PartitionSetHandle(
             external_partition_set_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
         )
+
+    @property
+    def name(self):
+        return self._external_partition_set_data.name
+
+    @property
+    def solid_subset(self):
+        return self._external_partition_set_data.solid_subset
+
+    @property
+    def partition_names(self):
+        return self._external_partition_set_data.partition_names
+
+    @property
+    def mode(self):
+        return self._external_partition_set_data.mode
+
+    @property
+    def pipeline_name(self):
+        return self._external_partition_set_data.pipeline_name
