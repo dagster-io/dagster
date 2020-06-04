@@ -163,11 +163,11 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
         },
     )
     assert result.success
-    mock_wait.assert_called_once()
-    mock_get_step_events.assert_called_once()
+    assert mock_wait.call_count == 1
+    assert mock_get_step_events.call_count == 1
     # TODO: uncomment this with correct value when uploaded packages are more stable
     assert mock_put_file.call_count == 8
-    mock_submit_run.assert_called_once()
+    assert mock_submit_run.call_count == 1
 
 
 @pytest.mark.skipif(
