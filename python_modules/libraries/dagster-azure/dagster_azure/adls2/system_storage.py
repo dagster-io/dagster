@@ -1,4 +1,4 @@
-from dagster import Field, String, SystemStorageData, system_storage
+from dagster import Field, StringSource, SystemStorageData, system_storage
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.system_storage import fs_system_storage, mem_system_storage
 
@@ -10,8 +10,8 @@ from .intermediate_store import ADLS2IntermediateStore
     name='adls2',
     is_persistent=True,
     config={
-        'adls2_file_system': Field(String, description='ADLS Gen2 file system name'),
-        'adls2_prefix': Field(String, is_required=False, default_value='dagster'),
+        'adls2_file_system': Field(StringSource, description='ADLS Gen2 file system name'),
+        'adls2_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },
     required_resource_keys={'adls2'},
 )

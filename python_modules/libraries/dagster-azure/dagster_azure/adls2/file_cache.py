@@ -1,4 +1,4 @@
-from dagster import Field, Selector, String, StringSource, check, resource
+from dagster import Field, Selector, StringSource, check, resource
 from dagster.core.storage.file_cache import FileCache
 
 from .file_manager import ADLS2FileHandle
@@ -46,7 +46,7 @@ class ADLS2FileCache(FileCache):
 
 @resource(
     {
-        'storage_account': Field(String, description='The storage account name.'),
+        'storage_account': Field(StringSource, description='The storage account name.'),
         'credential': Field(
             Selector(
                 {
@@ -56,8 +56,10 @@ class ADLS2FileCache(FileCache):
             ),
             description='The credentials with which to authenticate.',
         ),
-        'prefix': Field(String, description='The base path prefix to use in ADLS2'),
-        'file_system': Field(String, description='The storage account filesystem (aka container)'),
+        'prefix': Field(StringSource, description='The base path prefix to use in ADLS2'),
+        'file_system': Field(
+            StringSource, description='The storage account filesystem (aka container)'
+        ),
         'overwrite': Field(bool, is_required=False, default_value=False),
     }
 )

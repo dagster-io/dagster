@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 '''
 
-from dagster import Bool, Field, Int, String
+from dagster import Bool, Field, IntSource, String, StringSource
 
 from .types import (
     BQCreateDisposition,
@@ -21,7 +21,7 @@ from .types import (
 def bq_resource_config():
 
     project = Field(
-        String,
+        StringSource,
         description='''Project ID for the project which the client acts on behalf of. Will be passed
         when creating a dataset / job. If not passed, falls back to the default inferred from the
         environment.''',
@@ -29,7 +29,7 @@ def bq_resource_config():
     )
 
     location = Field(
-        String,
+        StringSource,
         description='(Optional) Default location for jobs / datasets / tables.',
         is_required=False,
     )
@@ -61,7 +61,7 @@ def _define_shared_fields():
     )
 
     destination_encryption_configuration = Field(
-        String,
+        StringSource,
         description='''Custom encryption configuration for the destination table.
         Custom encryption configuration (e.g., Cloud KMS keys) or None if using default encryption.
         See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationEncryptionConfiguration
@@ -79,13 +79,13 @@ def _define_shared_fields():
     time_partitioning = Field(
         {
             'expiration_ms': Field(
-                Int,
+                IntSource,
                 description='''Number of milliseconds for which to keep the storage for a
                     partition.''',
                 is_required=False,
             ),
             'field': Field(
-                String,
+                StringSource,
                 description='''If set, the table is partitioned by this field. If not set, the
                     table is partitioned by pseudo column _PARTITIONTIME. The field must be a
                     top-level TIMESTAMP or DATE field. Its mode must be NONEABLE or REQUIRED.''',
@@ -173,7 +173,7 @@ def define_bigquery_query_config():
     )
 
     maximum_billing_tier = Field(
-        Int,
+        IntSource,
         description='''Deprecated. Changes the billing tier to allow high-compute queries.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.maximumBillingTier
         ''',
@@ -181,7 +181,7 @@ def define_bigquery_query_config():
     )
 
     maximum_bytes_billed = Field(
-        Int,
+        IntSource,
         description='''Maximum bytes to be billed for this job or None if not set.
 
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.maximumBytesBilled
@@ -299,11 +299,11 @@ def define_bigquery_load_config():
     )
 
     destination_table_description = Field(
-        String, description='description given to destination table.', is_required=False
+        StringSource, description='description given to destination table.', is_required=False
     )
 
     destination_table_friendly_name = Field(
-        String, description='name given to destination table.', is_required=False
+        StringSource, description='name given to destination table.', is_required=False
     )
 
     encoding = Field(
@@ -311,7 +311,7 @@ def define_bigquery_load_config():
     )
 
     field_delimiter = Field(
-        String, description='The separator for fields in a CSV file.', is_required=False
+        StringSource, description='The separator for fields in a CSV file.', is_required=False
     )
 
     ignore_unknown_values = Field(
@@ -320,18 +320,24 @@ def define_bigquery_load_config():
         is_required=False,
     )
 
-    max_bad_records = Field(Int, description='Number of invalid rows to ignore.', is_required=False)
+    max_bad_records = Field(
+        IntSource, description='Number of invalid rows to ignore.', is_required=False
+    )
 
     null_marker = Field(
-        String, description='Represents a null value (CSV only).', is_required=False
+        StringSource, description='Represents a null value (CSV only).', is_required=False
     )
 
     quote_character = Field(
-        String, description='Character used to quote data sections (CSV only).', is_required=False
+        StringSource,
+        description='Character used to quote data sections (CSV only).',
+        is_required=False,
     )
 
     skip_leading_rows = Field(
-        Int, description='Number of rows to skip when reading data (CSV only).', is_required=False
+        IntSource,
+        description='Number of rows to skip when reading data (CSV only).',
+        is_required=False,
     )
 
     source_format = Field(BQSourceFormat, description='File format of the data.', is_required=False)

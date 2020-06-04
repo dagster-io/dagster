@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from dagster import Field, logger
+from dagster import Field, IntSource, StringSource, logger
 
 
 class ContextFilter(logging.Filter):
@@ -14,10 +14,10 @@ class ContextFilter(logging.Filter):
 
 @logger(
     {
-        'log_level': Field(str, is_required=False, default_value='INFO'),
-        'name': Field(str, is_required=False, default_value='dagster_papertrail'),
-        'papertrail_address': Field(str, description='Papertrail URL', is_required=True),
-        'papertrail_port': Field(int, description='Papertrail port', is_required=True),
+        'log_level': Field(StringSource, is_required=False, default_value='INFO'),
+        'name': Field(StringSource, is_required=False, default_value='dagster_papertrail'),
+        'papertrail_address': Field(StringSource, description='Papertrail URL', is_required=True),
+        'papertrail_port': Field(IntSource, description='Papertrail port', is_required=True),
     },
     description='A JSON-formatted console logger',
 )

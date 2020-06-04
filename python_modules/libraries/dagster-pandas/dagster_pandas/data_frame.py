@@ -12,7 +12,7 @@ from dagster import (
     EventMetadataEntry,
     Field,
     Materialization,
-    String,
+    StringSource,
     TypeCheck,
     check,
 )
@@ -29,9 +29,12 @@ def dict_without_keys(ddict, *keys):
 @output_selector_schema(
     Selector(
         {
-            'csv': {'path': String, 'sep': Field(String, is_required=False, default_value=','),},
-            'parquet': {'path': String},
-            'table': {'path': String},
+            'csv': {
+                'path': StringSource,
+                'sep': Field(StringSource, is_required=False, default_value=','),
+            },
+            'parquet': {'path': StringSource},
+            'table': {'path': StringSource},
         },
     )
 )
@@ -56,9 +59,12 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
 @input_selector_schema(
     Selector(
         {
-            'csv': {'path': String, 'sep': Field(String, is_required=False, default_value=','),},
-            'parquet': {'path': String},
-            'table': {'path': String},
+            'csv': {
+                'path': StringSource,
+                'sep': Field(StringSource, is_required=False, default_value=','),
+            },
+            'parquet': {'path': StringSource},
+            'table': {'path': StringSource},
         },
     )
 )

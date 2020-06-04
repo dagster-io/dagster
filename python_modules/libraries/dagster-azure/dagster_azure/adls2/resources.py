@@ -1,13 +1,13 @@
 from dagster_azure.blob.utils import create_blob_client
 
-from dagster import Field, Selector, String, StringSource, resource
+from dagster import Field, Selector, StringSource, resource
 
 from .utils import create_adls2_client
 
 
 @resource(
     {
-        'storage_account': Field(String, description='The storage account name.'),
+        'storage_account': Field(StringSource, description='The storage account name.'),
         'credential': Field(
             Selector(
                 {
