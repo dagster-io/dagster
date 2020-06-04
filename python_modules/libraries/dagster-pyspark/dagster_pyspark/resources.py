@@ -30,4 +30,13 @@ class PySparkResource(object):
 
 @resource({'spark_conf': spark_config()})
 def pyspark_resource(init_context):
+    '''This resource provides access to a PySpark SparkSession for executing PySpark code within
+    Dagster.
+
+    Example:
+
+    .. literalinclude:: ../../../../../examples/basic_pyspark/repo.py
+       :language: python
+
+    '''
     return PySparkResource(init_context.resource_config['spark_conf'])
