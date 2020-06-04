@@ -14,7 +14,7 @@ from dagster.core.scheduler import (
     reconcile_scheduler_state,
 )
 from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
@@ -107,7 +107,7 @@ def test_start_stop_schedule():
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
             run_launcher=SyncInMemoryRunLauncher(),
@@ -152,7 +152,7 @@ def test_get_all_schedules():
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
             run_launcher=SyncInMemoryRunLauncher(),

@@ -196,8 +196,3 @@ class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
     def on_modified(self, event):
         if event.src_path in self.update_paths:
             self.manager.notify_subscriptions(self.run_id, self.key)
-
-
-class NoOpComputeLogManager(LocalComputeLogManager):
-    def enabled(self, _pipeline_run, _step_key):
-        return False

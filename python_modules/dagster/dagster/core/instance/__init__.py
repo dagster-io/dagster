@@ -216,7 +216,7 @@ class DagsterInstance:
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -226,7 +226,7 @@ class DagsterInstance:
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=SyncInMemoryRunLauncher(),
         )
 

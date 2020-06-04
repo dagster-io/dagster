@@ -48,7 +48,7 @@ from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
@@ -682,7 +682,7 @@ def define_scheduler_instance():
             event_storage=InMemoryEventLogStorage(),
             schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
             scheduler=FilesystemTestScheduler(temp_dir),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=SyncInMemoryRunLauncher(),
         )
 
@@ -993,7 +993,7 @@ def run_test_backfill(execution_args, expected_count=None, error_message=None):
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=run_launcher,
         )
         with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
@@ -1060,7 +1060,7 @@ def run_launch(execution_args, expected_count=None):
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=run_launcher,
         )
         with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
@@ -1085,7 +1085,7 @@ def mocked_instance():
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=InMemoryRunLauncher(),
         )
         with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:

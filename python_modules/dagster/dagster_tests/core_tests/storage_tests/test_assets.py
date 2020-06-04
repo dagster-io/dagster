@@ -18,7 +18,7 @@ from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
 )
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 
@@ -29,7 +29,7 @@ def get_instance(temp_dir, event_log_storage):
         local_artifact_storage=LocalArtifactStorage(temp_dir),
         run_storage=InMemoryRunStorage(),
         event_storage=event_log_storage,
-        compute_log_manager=NoOpComputeLogManager(temp_dir),
+        compute_log_manager=NoOpComputeLogManager(),
         run_launcher=SyncInMemoryRunLauncher(),
     )
 

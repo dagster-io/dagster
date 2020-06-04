@@ -12,7 +12,7 @@ from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.scheduler import Schedule, ScheduleStatus, reconcile_scheduler_state
 from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
@@ -104,7 +104,7 @@ def define_scheduler_instance(tempdir):
         local_artifact_storage=LocalArtifactStorage(tempdir),
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
-        compute_log_manager=NoOpComputeLogManager(tempdir),
+        compute_log_manager=NoOpComputeLogManager(),
         schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
         scheduler=SystemCronScheduler(),
         run_launcher=SyncInMemoryRunLauncher(),
