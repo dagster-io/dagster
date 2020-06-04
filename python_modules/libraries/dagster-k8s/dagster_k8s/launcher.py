@@ -1,6 +1,8 @@
 import kubernetes
 
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check, seven
+from dagster.config.field import resolve_to_config_type
+from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import ExternalPipeline
@@ -323,27 +325,13 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._inst_data
 
     def launch_run(self, instance, run, external_pipeline):
-        try:
-            from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY
-        except ImportError:
-            raise DagsterK8sError(
-                'To use the CeleryK8sRunLauncher, dagster_celery must be'
-                ' installed in your Python environment.'
-            )
-
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
-
-        check.invariant(
-            CELERY_K8S_CONFIG_KEY in run.environment_dict.get('execution', {}),
-            '{} execution must be configured in pipeline execution config to launch runs with '
-            'CeleryK8sRunLauncher'.format(CELERY_K8S_CONFIG_KEY),
-        )
 
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
 
-        exc_config = run.environment_dict['execution'][CELERY_K8S_CONFIG_KEY].get('config', {})
+        exc_config = _get_validated_celery_k8s_executor_config(run.environment_dict)
 
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,
@@ -403,3 +391,31 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
         check.not_implemented('Termination not yet implemented')
+
+
+def _get_validated_celery_k8s_executor_config(environment_dict):
+    check.dict_param(environment_dict, 'environment_dict')
+
+    try:
+        from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY, celery_k8s_config
+    except ImportError:
+        raise DagsterK8sError(
+            'To use the CeleryK8sRunLauncher, dagster_celery must be'
+            ' installed in your Python environment.'
+        )
+
+    check.invariant(
+        CELERY_K8S_CONFIG_KEY in environment_dict.get('execution', {}),
+        '{} execution must be configured in pipeline execution config to launch runs with '
+        'CeleryK8sRunLauncher'.format(CELERY_K8S_CONFIG_KEY),
+    )
+
+    execution_config_schema = resolve_to_config_type(celery_k8s_config())
+    execution_run_config = environment_dict['execution'][CELERY_K8S_CONFIG_KEY].get('config', {})
+    res = process_config(execution_config_schema, execution_run_config)
+
+    check.invariant(
+        res.success, 'Incorrect {} execution schema provided'.format(CELERY_K8S_CONFIG_KEY)
+    )
+
+    return res.value
