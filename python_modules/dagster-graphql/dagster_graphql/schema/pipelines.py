@@ -164,8 +164,15 @@ class DauphinIPipelineSnapshotMixin(object):
         return get_runs(graphene_info, runs_filter, kwargs.get('cursor'), kwargs.get('limit'))
 
     def resolve_schedules(self, graphene_info):
-        external_repository = graphene_info.context.legacy_external_repository
-        schedules = graphene_info.context.instance.all_schedules(external_repository.name)
+        represented_pipeline = self.get_represented_pipeline()
+        if not isinstance(represented_pipeline, ExternalPipeline):
+            # this is an historical pipeline snapshot, so there are not any associated running
+            # schedules
+            return []
+
+        schedules = graphene_info.context.instance.all_schedules(
+            represented_pipeline.handle.repository_name
+        )
         return [
             graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
             for schedule in schedules
