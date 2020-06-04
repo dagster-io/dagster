@@ -919,7 +919,7 @@ type Query {
   repositoryLocationsOrError: RepositoryLocationsOrError!
   repositoryOrError(repositoryLocationName: String, repositoryName: String): RepositoryOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipelineSnapshotOrError(snapshotId: String, activePipelineName: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
+  pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(pipelineName: String): PartitionSetsOrError!

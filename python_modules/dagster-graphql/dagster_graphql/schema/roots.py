@@ -25,7 +25,6 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
-    get_pipeline_snapshot_or_error_from_pipeline_name,
     get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
@@ -85,7 +84,6 @@ class DauphinQuery(dauphin.ObjectType):
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
         snapshotId=dauphin.String(),
-        activePipelineName=dauphin.String(),
         activePipelineSelector=dauphin.Argument('PipelineSelector'),
     )
 
@@ -169,23 +167,17 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
-        pipeline_name_arg = kwargs.get('activePipelineName')
         pipeline_selector_arg = kwargs.get('activePipelineSelector')
         check.invariant(
-            1
-            == sum(1 for arg in (snapshot_id_arg, pipeline_name_arg, pipeline_selector_arg) if arg),
-            'Must only pass one of snapshotId, activePipelineName, or activePipelineSelector',
+            not (snapshot_id_arg and pipeline_selector_arg),
+            'Must only pass one of snapshotId or activePipelineSelector',
         )
         check.invariant(
-            snapshot_id_arg or pipeline_name_arg or pipeline_selector_arg,
-            'Must set one of snapshotId or activePipelineName',
+            snapshot_id_arg or pipeline_selector_arg,
+            'Must set one of snapshotId or activePipelineSelector',
         )
 
-        if pipeline_name_arg:
-            return get_pipeline_snapshot_or_error_from_pipeline_name(
-                graphene_info, pipeline_name_arg
-            )
-        elif pipeline_selector_arg:
+        if pipeline_selector_arg:
             pipeline_selector = pipeline_selector_from_graphql(
                 graphene_info.context, kwargs['activePipelineSelector']
             )
