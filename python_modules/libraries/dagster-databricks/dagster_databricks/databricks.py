@@ -29,7 +29,7 @@ class DatabricksClient:
 
     def submit_run(self, *args, **kwargs):
         '''Submit a run directly to the 'Runs Submit' API.'''
-        return self.client.jobs.submit_run(*args, **kwargs)
+        return self.client.jobs.submit_run(*args, **kwargs)  # pylint: disable=no-member
 
     def read_file(self, dbfs_path, block_size=1024 ** 2):
         '''Read a file from DBFS to a **byte string**.'''
@@ -38,11 +38,13 @@ class DatabricksClient:
             dbfs_path = dbfs_path[7:]
         data = b''
         bytes_read = 0
-        jdoc = self.client.dbfs.read(path=dbfs_path, length=block_size)
+        jdoc = self.client.dbfs.read(path=dbfs_path, length=block_size)  # pylint: disable=no-member
         data += base64.b64decode(jdoc['data'])
         while jdoc['bytes_read'] == block_size:
             bytes_read += jdoc['bytes_read']
-            jdoc = self.client.dbfs.read(path=dbfs_path, offset=bytes_read, length=block_size)
+            jdoc = self.client.dbfs.read(  # pylint: disable=no-member
+                path=dbfs_path, offset=bytes_read, length=block_size
+            )
             data += base64.b64decode(jdoc['data'])
         return data
 
@@ -53,16 +55,18 @@ class DatabricksClient:
         '''
         if dbfs_path.startswith('dbfs://'):
             dbfs_path = dbfs_path[7:]
-        create_response = self.client.dbfs.create(path=dbfs_path, overwrite=overwrite)
+        create_response = self.client.dbfs.create(  # pylint: disable=no-member
+            path=dbfs_path, overwrite=overwrite
+        )
         handle = create_response['handle']
 
         block = file_obj.read(block_size)
         while block:
             data = base64.b64encode(block).decode('utf-8')
-            self.client.dbfs.add_block(data=data, handle=handle)
+            self.client.dbfs.add_block(data=data, handle=handle)  # pylint: disable=no-member
             block = file_obj.read(block_size)
 
-        self.client.dbfs.close(handle=handle)
+        self.client.dbfs.close(handle=handle)  # pylint: disable=no-member
 
     def get_run_state(self, databricks_run_id):
         '''Get the state of a run by Databricks run ID (_not_ dagster run ID).
@@ -70,7 +74,7 @@ class DatabricksClient:
         Return a `DatabricksRunState` object. Note that the `result_state`
         attribute may be `None` if the run hasn't yet terminated.
         '''
-        run = self.client.jobs.get_run(databricks_run_id)
+        run = self.client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
         state = run['state']
         result_state = state.get('result_state')
         if result_state:
@@ -229,8 +233,10 @@ class DatabricksJobRunner:
     def retrieve_logs_for_run_id(self, log, databricks_run_id):
         '''Retrieve the stdout and stderr logs for a run.'''
         api_client = self.client.client
-        run = api_client.jobs.get_run(databricks_run_id)
-        cluster = api_client.cluster.get_cluster(run['cluster_instance']['cluster_id'])
+        run = api_client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
+        cluster = api_client.cluster.get_cluster(  # pylint: disable=no-member
+            run['cluster_instance']['cluster_id']
+        )
         log_config = cluster.get('cluster_log_conf')
         if log_config is None:
             log.warn(
