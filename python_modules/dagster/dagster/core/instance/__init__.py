@@ -26,7 +26,7 @@ from dagster.utils.merger import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
-from .ref import InstanceRef, compute_logs_directory
+from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -213,7 +213,7 @@ class DagsterInstance:
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -223,7 +223,7 @@ class DagsterInstance:
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(),
         )
 
     @staticmethod

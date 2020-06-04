@@ -1,10 +1,16 @@
 # Changelog
 
+## 0.7.16
+
+**Bugfix**
+
+- Enabled `NoOpComputeLogManager` to be configured as the `compute_logs` implementation in `dagster.yaml`
+
 ## 0.7.15
 
 **New**
 
-- Improve dagster scheduler state reconcilation. 
+- Improve dagster scheduler state reconcilation.
 
 ## 0.7.14
 

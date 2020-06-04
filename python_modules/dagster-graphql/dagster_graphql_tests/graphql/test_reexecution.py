@@ -7,7 +7,7 @@ from dagster_graphql.test.utils import define_context_for_repository_yaml, execu
 from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
@@ -150,7 +150,7 @@ def test_pipeline_reexecution_successful_launch():
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=test_queue,
         )
 
