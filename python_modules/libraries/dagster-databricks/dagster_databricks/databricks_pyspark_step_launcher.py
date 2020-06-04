@@ -4,6 +4,7 @@ import pickle
 
 import dagster_databricks
 from dagster_databricks import DatabricksJobRunner, databricks_step_main
+from dagster_pyspark.utils import build_pyspark_zip
 
 from dagster import Bool, Field, StringSource, check, resource, seven
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -13,11 +14,9 @@ from dagster.core.execution.plan.external_step import (
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
-from dagster_pyspark.utils import build_pyspark_zip
 from dagster.serdes import deserialize_value
 
 from .configs import define_databricks_storage_config, define_databricks_submit_run_config
-
 
 CODE_ZIP_NAME = 'code.zip'
 

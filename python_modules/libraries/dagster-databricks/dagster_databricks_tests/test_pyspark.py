@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource

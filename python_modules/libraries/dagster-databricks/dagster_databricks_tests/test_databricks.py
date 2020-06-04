@@ -6,7 +6,6 @@ import dagster
 from dagster.seven import mock
 from dagster.utils.test import create_test_pipeline_execution_context
 
-
 HOST = 'https://uksouth.azuredatabricks.net'
 TOKEN = 'super-secret-token'
 

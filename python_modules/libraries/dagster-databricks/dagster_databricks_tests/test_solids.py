@@ -1,7 +1,7 @@
+from dagster_databricks import DatabricksRunJobSolidDefinition
+
 from dagster import execute_pipeline, pipeline
 from dagster.seven import mock
-
-from dagster_databricks import DatabricksRunJobSolidDefinition
 
 HOST = 'https://uksouth.azuredatabricks.net'
 TOKEN = 'super-secret-token'

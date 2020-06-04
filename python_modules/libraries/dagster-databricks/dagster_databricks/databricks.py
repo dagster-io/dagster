@@ -1,17 +1,17 @@
 import base64
 import time
 
+import requests.exceptions
+from databricks_api import DatabricksAPI
+
 import dagster
 from dagster import check
-from databricks_api import DatabricksAPI
-import requests.exceptions
 
 from .types import (
-    DatabricksRunResultState,
-    DatabricksRunLifeCycleState,
     DATABRICKS_RUN_TERMINATED_STATES,
+    DatabricksRunLifeCycleState,
+    DatabricksRunResultState,
 )
-
 
 # wait at most 24 hours by default for run execution
 _DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60

@@ -19,7 +19,6 @@ from dagster import check
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
 from dagster.serdes import serialize_value
 
-
 # This won't be set in Databricks but is needed to be non-None for the
 # Dagster step to run.
 if 'DATABRICKS_TOKEN' not in os.environ:
