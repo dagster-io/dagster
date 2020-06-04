@@ -26,6 +26,7 @@ import {
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "../runs/RunsRoot";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
@@ -34,14 +35,14 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({ match }) => {
   const pipelineName = match.params.pipelinePath.split(":")[0];
-
+  const pipelineSelector = usePipelineSelector(pipelineName);
   const queryResult = useQuery<
     PipelineOverviewQuery,
     PipelineOverviewQueryVariables
   >(PIPELINE_OVERVIEW_QUERY, {
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
-    variables: { pipelineName, limit: 5 }
+    variables: { pipelineSelector, limit: 5 }
   });
   return (
     <Loading queryResult={queryResult}>
@@ -331,8 +332,11 @@ const ScheduleFragment = gql`
 `;
 
 export const PIPELINE_OVERVIEW_QUERY = gql`
-  query PipelineOverviewQuery($pipelineName: String, $limit: Int!) {
-    pipelineSnapshotOrError(activePipelineName: $pipelineName) {
+  query PipelineOverviewQuery(
+    $pipelineSelector: PipelineSelector!
+    $limit: Int!
+  ) {
+    pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
         name
         description

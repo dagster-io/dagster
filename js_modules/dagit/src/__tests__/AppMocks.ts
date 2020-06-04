@@ -24,7 +24,12 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "PIPELINE_EXPLORER_ROOT_QUERY",
     query: PIPELINE_EXPLORER_ROOT_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline",
+      pipelineSelector: {
+        pipelineName: "airline_demo_ingest_pipeline",
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository",
+        solidSubset: undefined
+      },
       snapshotId: undefined,
       rootHandleID: "",
       requestScopeHandleID: ""
@@ -41,7 +46,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     variables: {
       pipelineSelector: {
         repositoryLocationName: "<<in_process>>",
-        repositoryName: "internal-dagit-repository",
+        repositoryName: "internal_dagit_repository",
         pipelineName: "airline_demo_ingest_pipeline"
       },
       dagsterTypeName: "PySparkDataFrame"
@@ -58,7 +63,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     variables: {
       pipelineSelector: {
         repositoryLocationName: "<<in_process>>",
-        repositoryName: "internal-dagit-repository",
+        repositoryName: "internal_dagit_repository",
         pipelineName: "airline_demo_ingest_pipeline"
       }
     } as TypeListContainerQueryVariables,
@@ -69,7 +74,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: SOLIDS_ROOT_QUERY,
     variables: {
       repositoryLocationName: "<<in_process>>",
-      repositoryName: "internal-dagit-repository"
+      repositoryName: "internal_dagit_repository"
     },
     filepath: path.join(__dirname, "__data__", "SOLIDS_ROOT_QUERY.json")
   },
@@ -78,7 +83,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: USED_SOLID_DETAILS_QUERY,
     variables: {
       repositoryLocationName: "<<in_process>>",
-      repositoryName: "internal-dagit-repository",
+      repositoryName: "internal_dagit_repository",
       name: "s3_to_df"
     },
     filepath: path.join(__dirname, "__data__", "USED_SOLID_DETAILS_QUERY.json")
@@ -89,7 +94,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     variables: {
       selector: {
         repositoryLocationName: "<<in_process>>",
-        repositoryName: "internal-dagit-repository",
+        repositoryName: "internal_dagit_repository",
         pipelineName: "airline_demo_ingest_pipeline"
       },
       handleID: "download_q2_sfo_weather"

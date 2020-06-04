@@ -26,7 +26,7 @@ export const REPOSITORY_LOCATION_FRAGMENT = gql`
 `;
 
 export const usePipelineSelector = (
-  pipelineName: string,
+  pipelineName?: string,
   solidSubset?: string[]
 ) => {
   const { repository, repositoryLocation } = React.useContext(

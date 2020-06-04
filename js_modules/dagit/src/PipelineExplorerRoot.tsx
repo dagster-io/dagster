@@ -18,6 +18,7 @@ import {
   explorerPathToString
 } from "./PipelinePathUtils";
 import styled from "styled-components/macro";
+import { usePipelineSelector } from "./DagsterRepositoryContext";
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -195,14 +196,14 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $pipelineName: String
+    $pipelineSelector: PipelineSelector
     $snapshotId: String
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
     pipelineSnapshotOrError(
       snapshotId: $snapshotId
-      activePipelineName: $pipelineName
+      activePipelineSelector: $pipelineSelector
     ) {
       ... on PipelineSnapshot {
         name
@@ -256,6 +257,7 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
     explorerPath.pathSolids.length - 1
   );
 
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
     PipelineExplorerRootQueryVariables
@@ -263,9 +265,7 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
     variables: {
-      pipelineName: explorerPath.snapshotId
-        ? undefined
-        : explorerPath.pipelineName,
+      pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
       snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
       rootHandleID: parentNames.join("."),
       requestScopeHandleID: options.explodeComposites

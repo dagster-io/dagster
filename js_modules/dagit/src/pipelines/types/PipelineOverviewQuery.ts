@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, ScheduleTickStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunStatus, ScheduleTickStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineOverviewQuery
@@ -387,6 +387,6 @@ export interface PipelineOverviewQuery {
 }
 
 export interface PipelineOverviewQueryVariables {
-  pipelineName?: string | null;
+  pipelineSelector: PipelineSelector;
   limit: number;
 }
