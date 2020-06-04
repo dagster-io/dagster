@@ -76,6 +76,9 @@ def setup_storage(step_run_ref):
     At least one of S3 or ADLS2 storage should be provided in config, so that the run can
     save intermediate files to a location accessible by the original process which launched
     the job.
+
+    This requires modifying the 'sc' global which isn't great.
+    https://github.com/dagster-io/dagster/issues/2492 tracks a better solution
     '''
     root_storage = step_run_ref.environment_dict['storage']
     check.invariant(
