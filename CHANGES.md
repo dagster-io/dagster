@@ -5,6 +5,7 @@
 **Bugfix**
 
 - Enabled `NoOpComputeLogManager` to be configured as the `compute_logs` implementation in `dagster.yaml`
+- Suppressed noisy error messages in logs from skipped steps
 
 ## 0.7.15
 
