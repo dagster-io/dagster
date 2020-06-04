@@ -206,20 +206,6 @@ def _get_instance(stream, instance_ref_json):
         return
 
 
-def _get_instance(stream, instance_ref_json):
-    try:
-        return DagsterInstance.from_ref(deserialize_json_to_dagster_namedtuple(instance_ref_json))
-
-    except:  # pylint: disable=bare-except
-        stream.send_error(
-            sys.exc_info(),
-            message='Could not deserialize instance-ref arg: {json_string}'.format(
-                json_string=instance_ref_json
-            ),
-        )
-        return
-
-
 def _get_pipeline_run(stream, pipeline_run_json):
     try:
         return deserialize_json_to_dagster_namedtuple(pipeline_run_json)
