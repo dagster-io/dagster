@@ -587,20 +587,14 @@ def _define_adls2_storage_credentials():
 
 def _define_storage_credentials():
     return Selector(
-        {'s3': _define_s3_storage_credentials()},
-        # TODO: uncomment when dagster-azure is merged.
-        # {'s3': _define_s3_storage_credentials(), 'adls2': _define_adls2_storage_credentials()},
+        {'s3': _define_s3_storage_credentials(), 'adls2': _define_adls2_storage_credentials()},
     )
 
 
 def define_databricks_storage_config():
     return Field(
         Selector(
-            {
-                's3': _define_s3_storage_credentials()
-                # TODO: uncomment when dagster-azure is merged.
-                # 'adls2': _define_adls2_storage_credentials(),
-            }
+            {'s3': _define_s3_storage_credentials(), 'adls2': _define_adls2_storage_credentials()}
         ),
         description='Databricks storage configuration. Solids using the '
         'DatabricksPySparkStepLauncher to execute pipeline steps in Databricks MUST configure '
