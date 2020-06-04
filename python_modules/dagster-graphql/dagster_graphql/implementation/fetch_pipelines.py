@@ -24,6 +24,14 @@ def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_na
 
 
 @capture_dauphin_error
+def get_pipeline_snapshot_or_error_from_pipeline_selector(graphene_info, pipeline_selector):
+    check.inst_param(pipeline_selector, 'pipeline_selector', PipelineSelector)
+    return DauphinPipelineSnapshot(
+        get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
+    )
+
+
+@capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id):
     check.str_param(snapshot_id, 'snapshot_id')
     return _get_dauphin_pipeline_snapshot_from_instance(graphene_info.context.instance, snapshot_id)

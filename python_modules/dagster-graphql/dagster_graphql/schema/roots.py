@@ -26,6 +26,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
     get_pipeline_snapshot_or_error_from_pipeline_name,
+    get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
 from dagster_graphql.implementation.fetch_runs import (
@@ -85,6 +86,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('PipelineSnapshotOrError'),
         snapshotId=dauphin.String(),
         activePipelineName=dauphin.String(),
+        activePipelineSelector=dauphin.Argument('PipelineSelector'),
     )
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
@@ -168,17 +170,27 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
         pipeline_name_arg = kwargs.get('activePipelineName')
+        pipeline_selector_arg = kwargs.get('activePipelineSelector')
         check.invariant(
-            not (snapshot_id_arg and pipeline_name_arg),
-            'Cannot pass both snapshotId and activePipelineName',
+            1
+            == sum(1 for arg in (snapshot_id_arg, pipeline_name_arg, pipeline_selector_arg) if arg),
+            'Must only pass one of snapshotId, activePipelineName, or activePipelineSelector',
         )
         check.invariant(
-            snapshot_id_arg or pipeline_name_arg, 'Must set one of snapshotId or activePipelineName'
+            snapshot_id_arg or pipeline_name_arg or pipeline_selector_arg,
+            'Must set one of snapshotId or activePipelineName',
         )
 
         if pipeline_name_arg:
             return get_pipeline_snapshot_or_error_from_pipeline_name(
                 graphene_info, pipeline_name_arg
+            )
+        elif pipeline_selector_arg:
+            pipeline_selector = pipeline_selector_from_graphql(
+                graphene_info.context, kwargs['activePipelineSelector']
+            )
+            return get_pipeline_snapshot_or_error_from_pipeline_selector(
+                graphene_info, pipeline_selector
             )
         else:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
