@@ -76,6 +76,7 @@ export const RegExps = {
   // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
   // same as above, but to avoid clasifiyng "a" as a sub-dict in "value: a:b", we require whitespace after the colon
+  // eslint-disable-next-line no-useless-escape
   DICT_KEY_IN_VALUE: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:\s+)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
   UNQUOTED_STRING: /^.*$/,
