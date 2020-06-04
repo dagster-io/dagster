@@ -395,7 +395,8 @@ def _define_libraries():
             )
         ],
         description='An optional list of libraries to be installed on the cluster that will '
-        'execute the job. The default value is an empty list.',
+        'execute the job. By default dagster, dagster-databricks and dagster-pyspark libraries '
+        'will be included.',
         is_required=False,
     )
 

@@ -104,20 +104,13 @@ def setup_storage(step_run_ref):
         raise Exception('No valid storage found!')
 
 
-def main(step_run_ref_filepath, pipeline_zip, other_zips):
+def main(step_run_ref_filepath, pipeline_zip):
     # Extract any zip files to a temporary directory and add that temporary directory
     # to the site path so the contained files can be imported.
     #
     # We can't rely on pip or other packaging tools because the zipped files might not
     # even be Python packages.
     with tempfile.TemporaryDirectory() as tmp:
-
-        # TODO sd2k: remove the other_zips param and this code when dagster-azure/dagster-databricks
-        # are released and rely on libraries being installed instead.
-        for filepath in other_zips:
-            print('Extracting {}'.format(filepath))
-            with zipfile.ZipFile(filepath) as zf:
-                zf.extractall(tmp)
 
         print('Extracting {}'.format(pipeline_zip))
         with zipfile.ZipFile(pipeline_zip) as zf:
@@ -145,4 +138,4 @@ def main(step_run_ref_filepath, pipeline_zip, other_zips):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2], sys.argv[3:])
+    main(sys.argv[1], sys.argv[2])

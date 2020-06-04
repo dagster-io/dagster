@@ -166,7 +166,7 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
     assert mock_wait.call_count == 1
     assert mock_get_step_events.call_count == 1
     # TODO: uncomment this with correct value when uploaded packages are more stable
-    assert mock_put_file.call_count == 8
+    assert mock_put_file.call_count == 3
     assert mock_submit_run.call_count == 1
 
 

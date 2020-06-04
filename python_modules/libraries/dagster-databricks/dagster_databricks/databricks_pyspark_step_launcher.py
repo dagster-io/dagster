@@ -2,7 +2,6 @@ import io
 import os.path
 import pickle
 
-import dagster_databricks
 from dagster_databricks import DatabricksJobRunner, databricks_step_main
 from dagster_pyspark.utils import build_pyspark_zip
 
@@ -141,14 +140,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         parameters = [
             self._internal_dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
             self._internal_dbfs_path(run_id, step_key, CODE_ZIP_NAME),
-            # TODO sd2k: remove the rest when dagster-azure/dagster-databricks are released
-            # and rely on libraries instead.
-            self._internal_dbfs_path(run_id, step_key, 'dagster.zip'),
-            self._internal_dbfs_path(run_id, step_key, 'dagster-aws.zip'),
-            # self._internal_dbfs_path(run_id, step_key, 'dagster-azure.zip'),
-            self._internal_dbfs_path(run_id, step_key, 'dagster-pyspark.zip'),
-            self._internal_dbfs_path(run_id, step_key, 'dagster-spark.zip'),
-            self._internal_dbfs_path(run_id, step_key, 'dagster-databricks.zip'),
         ]
         return {'spark_python_task': {'python_file': python_file, 'parameters': parameters}}
 
@@ -161,35 +152,6 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             self.databricks_runner.client.put_file(
                 infile, self._dbfs_path(run_id, step_key, self._main_file_name())
             )
-
-        if True:
-            # TODO sd2k: remove this when dagster-azure/dagster-databricks are released
-            # and rely on libraries instead.
-            import dagster
-            import dagster_aws
-
-            # import dagster_azure
-            import dagster_pyspark
-            import dagster_spark
-
-            for package, module in [
-                ('dagster', dagster),
-                ('dagster-aws', dagster_aws),
-                # ('dagster-azure', dagster_azure),
-                ('dagster-pyspark', dagster_pyspark),
-                ('dagster-spark', dagster_spark),
-                ('dagster-databricks', dagster_databricks),
-            ]:
-                log.info('Uploading %s to DBFS' % package)
-                with seven.TemporaryDirectory() as temp_dir:
-                    # Zip and upload package containing pipeline
-                    zip_local_path = os.path.join(temp_dir, '{}.zip'.format(package))
-                    package_path = os.path.join(os.path.dirname(module.__file__), os.path.pardir,)
-                    build_pyspark_zip(zip_local_path, package_path)
-                    with open(zip_local_path, 'rb') as infile:
-                        self.databricks_runner.client.put_file(
-                            infile, self._dbfs_path(run_id, step_key, '{}.zip'.format(package))
-                        )
 
         log.info('Uploading pipeline to DBFS')
         with seven.TemporaryDirectory() as temp_dir:

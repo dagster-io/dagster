@@ -164,16 +164,16 @@ class DatabricksJobRunner:
             'Invalid value for run_config.cluster',
         )
 
-        # We'll always need some libraries, namely dagster/dagster_pyspark/databricks_api,
+        # We'll always need some libraries, namely dagster/dagster_databricks/dagster_pyspark,
         # since they're imported by our scripts.
-        # TODO sd2k: only add these if it's not already present
-        # TODO sd2k: also add dagster-databricks once it's released
-        # TODO sd2k: remove databricks_api once dagster-databricks is released
-        libraries = run_config.get('libraries', []) + [
-            {'pypi': {'package': 'dagster=={}'.format(dagster.__version__)}},
-            {'pypi': {'package': 'dagster_pyspark=={}'.format(dagster.__version__)}},
-            {'pypi': {'package': 'databricks_api'}},
-        ]
+        # Add them if they're not already added by users in config.
+        libraries = list(run_config.get('libraries', []))
+        python_libraries = {x['pypi']['package'].split('==')[0] for x in libraries if 'pypi' in x}
+        for library in ["dagster", "dagster_databricks", "dagster_pyspark"]:
+            if library not in python_libraries:
+                libraries.append(
+                    {"pypi": {"package": "{}=={}".format(library, dagster.__version__)}}
+                )
 
         # Only one task should be able to be chosen really; make sure of that here.
         check.invariant(
