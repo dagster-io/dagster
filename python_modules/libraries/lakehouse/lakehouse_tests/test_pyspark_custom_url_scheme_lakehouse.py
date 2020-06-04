@@ -1,6 +1,7 @@
 import os
 
-from dagster_pyspark import pyspark_resource, spark_session_from_config
+from dagster_pyspark import pyspark_resource
+from dagster_pyspark.resources import spark_session_from_config
 from lakehouse import Lakehouse, construct_lakehouse_pipeline, input_table, pyspark_table
 from lakehouse.util import invoke_compute
 from pyspark.sql import DataFrame as SparkDF

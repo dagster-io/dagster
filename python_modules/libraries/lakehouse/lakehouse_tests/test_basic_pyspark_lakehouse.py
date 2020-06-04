@@ -1,6 +1,6 @@
 import os
 
-from dagster_pyspark import spark_session_from_config
+from dagster_pyspark.resources import spark_session_from_config
 from lakehouse import PySparkMemLakehouse, input_table, pyspark_table
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Row
