@@ -4,12 +4,11 @@ import os
 import pytest
 import yaml
 from click.testing import CliRunner
-from dagit.app import create_app_with_reconstructable_repo
-from dagit.cli import host_dagit_ui_with_reconstructable_repo, host_dagit_ui_with_workspace, ui
+from dagit.app import create_app_from_workspace
+from dagit.cli import host_dagit_ui_with_workspace, ui
 
 from dagster import seven
 from dagster.cli.workspace import load_workspace_from_yaml_path
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import environ
@@ -17,17 +16,13 @@ from dagster.seven import mock
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 
-def test_create_app_with_reconstructable_repo():
-    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-        file_relative_path(__file__, './repository.yaml')
-    )
-    assert create_app_with_reconstructable_repo(recon_repo, DagsterInstance.ephemeral())
+def test_create_app_with_workspace():
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
 
-def test_create_app_with_reconstructable_repo_and_scheduler():
-    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-        file_relative_path(__file__, './repository.yaml')
-    )
+def test_create_app_with_workspace_and_scheduler():
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(
             temp_dir,
@@ -39,18 +34,14 @@ def test_create_app_with_reconstructable_repo_and_scheduler():
                 }
             },
         )
-        assert create_app_with_reconstructable_repo(recon_repo, instance)
+        assert create_app_from_workspace(workspace, instance)
 
 
 def test_notebook_view():
     notebook_path = file_relative_path(__file__, 'render_uuid_notebook.ipynb')
 
-    with create_app_with_reconstructable_repo(
-        ReconstructableRepository.from_legacy_repository_yaml(
-            file_relative_path(__file__, './repository.yaml')
-        ),
-        DagsterInstance.ephemeral(),
-    ).test_client() as client:
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    with create_app_from_workspace(workspace, DagsterInstance.ephemeral(),).test_client() as client:
         res = client.get('/dagit/notebook?path={}'.format(notebook_path))
 
     assert res.status_code == 200
@@ -59,12 +50,8 @@ def test_notebook_view():
 
 
 def test_index_view():
-    with create_app_with_reconstructable_repo(
-        ReconstructableRepository.from_legacy_repository_yaml(
-            file_relative_path(__file__, './repository.yaml')
-        ),
-        DagsterInstance.ephemeral(),
-    ).test_client() as client:
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    with create_app_from_workspace(workspace, DagsterInstance.ephemeral(),).test_client() as client:
         res = client.get('/')
 
     assert res.status_code == 200, res.data
@@ -82,11 +69,9 @@ def test_successful_host_dagit_ui_from_workspace():
 
 def test_successful_host_dagit_ui_from_legacy_repository():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-            file_relative_path(__file__, './repository.yaml')
-        )
-        host_dagit_ui_with_reconstructable_repo(
-            storage_fallback=temp_dir, recon_repo=recon_repo, host=None, port=2343
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+        host_dagit_ui_with_workspace(
+            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
         )
 
 
@@ -111,12 +96,10 @@ def test_unknown_error():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-            file_relative_path(__file__, './repository.yaml')
-        )
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
         with pytest.raises(AnException):
-            host_dagit_ui_with_reconstructable_repo(
-                storage_fallback=temp_dir, recon_repo=recon_repo, host=None, port=2343
+            host_dagit_ui_with_workspace(
+                storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
             )
 
 
@@ -127,13 +110,11 @@ def test_port_collision():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-            file_relative_path(__file__, './repository.yaml')
-        )
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
         with pytest.raises(Exception) as exc_info:
-            host_dagit_ui_with_reconstructable_repo(
+            host_dagit_ui_with_workspace(
                 storage_fallback=temp_dir,
-                recon_repo=recon_repo,
+                workspace=workspace,
                 host=None,
                 port=2343,
                 port_lookup=False,
@@ -165,9 +146,10 @@ def test_dagit_logs(
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_tutorial_file('')):
 
-                runner.invoke(
-                    ui, ['-y', file_relative_path(__file__, 'telemetry_repository.yaml'),],
+                result = runner.invoke(
+                    ui, ['-w', file_relative_path(__file__, 'telemetry_repository.yaml'),],
                 )
+                assert result.exit_code == 0, str(result.exception)
 
                 actions = set()
                 for record in caplog.records:

@@ -194,7 +194,9 @@ def create_app_from_workspace(workspace, instance):
     for repository_location_handle in workspace.repository_location_handles:
         if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
             # will need to change for multi repo
-            recon_repo = ReconstructableRepository(repository_location_handle.pointer)
+            check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
+            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
+            recon_repo = ReconstructableRepository(pointer)
             locations.append(InProcessRepositoryLocation(recon_repo))
         elif isinstance(repository_location_handle, OutOfProcessRepositoryLocationHandle):
             locations.append(OutOfProcessRepositoryLocation(repository_location_handle))
@@ -202,21 +204,5 @@ def create_app_from_workspace(workspace, instance):
             check.failed('{} unsupported'.format(repository_location_handle))
 
     context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
-
-    # Skip interacting with scheduler in this codepath
-
-    return instantiate_app_with_views(context)
-
-
-def create_app_with_reconstructable_repo(recon_repo, instance):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    warn_if_compute_logs_disabled()
-
-    print('Loading repository...')
-    context = DagsterGraphQLContext(
-        instance=instance, locations=[InProcessRepositoryLocation(recon_repo)], version=__version__,
-    )
 
     return instantiate_app_with_views(context)

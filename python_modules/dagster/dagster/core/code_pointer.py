@@ -111,7 +111,9 @@ class ModuleCodePointer(namedtuple('_ModuleCodePointer', 'module fn_name'), Code
         module = importlib.import_module(self.module)
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
-                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+                '{name} not found in module {module}. dir: {dir}'.format(
+                    name=self.fn_name, module=self.module, dir=dir(module)
+                )
             )
 
         return getattr(module, self.fn_name)

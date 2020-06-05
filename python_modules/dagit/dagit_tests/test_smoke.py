@@ -4,7 +4,7 @@ import json
 
 from dagit import app
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
 
 SMOKE_TEST_QUERY = '''
@@ -29,9 +29,12 @@ SMOKE_TEST_QUERY = '''
 
 
 def test_smoke_app():
-    flask_app = app.create_app_with_reconstructable_repo(
-        ReconstructableRepository.for_module(
-            module='dagster_examples.intro_tutorial.repos', fn_name='hello_cereal_repository'
+    flask_app = app.create_app_from_workspace(
+        get_workspace_from_kwargs(
+            dict(
+                module_name='dagster_examples.intro_tutorial.repos',
+                definition='hello_cereal_repository',
+            )
         ),
         DagsterInstance.ephemeral(),
     )

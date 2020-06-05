@@ -4,11 +4,11 @@ import runpy
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_with_reconstructable_repo
+from dagit.app import create_app_from_workspace
 
 from dagster import DagsterTypeCheckDidNotPass
-from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_execute_command
+from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
@@ -42,10 +42,10 @@ def path_to_tutorial_file(path):
     return script_relative_path(os.path.join('../../dagster_examples/intro_tutorial/', path))
 
 
-def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
-    handle = recon_repo_for_cli_args(kwargs)
+def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
+    workspace = get_workspace_from_kwargs(kwargs)
 
-    app = create_app_with_reconstructable_repo(handle, DagsterInstance.ephemeral())
+    app = create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
     client = app.test_client()
 
@@ -165,7 +165,9 @@ cli_args = [
 # dagit -f filename -n fn_name
 def test_load_pipeline(filename, fn_name, _env_yaml, _mode, _preset, _return_code, _exception):
     with pushd(path_to_tutorial_file('')):
-        load_dagit_for_repo_cli_args(python_file=path_to_tutorial_file(filename), fn_name=fn_name)
+        load_dagit_for_workspace_cli_args(
+            python_file=path_to_tutorial_file(filename), fn_name=fn_name
+        )
 
 
 @pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,_return_code,_exception', cli_args)
@@ -207,6 +209,6 @@ def test_runpy(filename, _fn_name, _env_yaml, _mode, _preset, _return_code, exce
 
 # dagit
 def test_load_repo():
-    load_dagit_for_repo_cli_args(
+    load_dagit_for_workspace_cli_args(
         n_pipelines=2, repository_yaml=path_to_tutorial_file(DEFAULT_REPOSITORY_YAML_FILENAME)
     )

@@ -1,6 +1,9 @@
 import warnings
+from collections import namedtuple
 
+import click
 import six
+from click import UsageError
 
 from dagster import check
 from dagster.config import Field, ScalarUnion, Selector, validate_config
@@ -85,6 +88,14 @@ def _location_handle_from_module_config(python_module_config):
         )
     )
 
+    return _location_handle_from_module_name(module_name, definition, location_name)
+
+
+def _location_handle_from_module_name(module_name, definition, location_name=None):
+    check.str_param(module_name, 'module_name')
+    check.opt_str_param(definition, 'definition')
+    check.opt_str_param(location_name, 'location_name')
+
     loadable_targets = (
         [LoadableTarget(definition, load_def_in_module(module_name, definition))]
         if definition
@@ -116,7 +127,7 @@ def assign_location_name(location_name, repository_code_pointer_dict):
     return next(iter(repository_code_pointer_dict.keys()))
 
 
-def _location_handle_from_python_file(python_file_config, yaml_path):
+def _location_handle_from_python_file_config(python_file_config, yaml_path):
     check.str_param(yaml_path, 'yaml_path')
 
     relative_path, definition, location_name = (
@@ -130,17 +141,26 @@ def _location_handle_from_python_file(python_file_config, yaml_path):
     )
 
     absolute_path = rebase_file(relative_path, yaml_path)
+
+    return _location_handle_from_python_file(absolute_path, definition, location_name)
+
+
+def _location_handle_from_python_file(python_file, definition, location_name=None):
+    check.str_param(python_file, 'python_file')
+    check.opt_str_param(definition, 'definition')
+    check.opt_str_param(location_name, 'location_name')
+
     loadable_targets = (
-        [LoadableTarget(definition, load_def_in_python_file(absolute_path, definition))]
+        [LoadableTarget(definition, load_def_in_python_file(python_file, definition))]
         if definition
-        else loadable_targets_from_python_file(absolute_path)
+        else loadable_targets_from_python_file(python_file)
     )
 
     repository_code_pointer_dict = {}
     for loadable_target in loadable_targets:
         repository_code_pointer_dict[
             loadable_target.target_definition.name
-        ] = CodePointer.from_python_file(absolute_path, loadable_target.symbol_name)
+        ] = CodePointer.from_python_file(python_file, loadable_target.symbol_name)
 
     return RepositoryLocationHandle.create_out_of_process_location(
         repository_code_pointer_dict=repository_code_pointer_dict,
@@ -154,7 +174,7 @@ def _location_handle_from_location_config(location_config, yaml_path):
     check.str_param(yaml_path, 'yaml_path')
 
     if 'python_file' in location_config:
-        return _location_handle_from_python_file(location_config['python_file'], yaml_path)
+        return _location_handle_from_python_file_config(location_config['python_file'], yaml_path)
 
     elif 'python_module' in location_config:
         return _location_handle_from_module_config(location_config['python_module'])
@@ -234,3 +254,101 @@ def validate_workspace_config(workspace_config):
     check.dict_param(workspace_config, 'workspace_config')
 
     return validate_config(WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY, workspace_config)
+
+
+def _cli_load_invariant(condition, msg=None):
+    msg = (
+        msg
+        or 'Invalid set of CLI arguments for loading repository/pipeline. See --help for details.'
+    )
+    if not condition:
+        raise UsageError(msg)
+
+
+def _check_cli_arguments_none(kwargs, *keys):
+    for key in keys:
+        _cli_load_invariant(not kwargs.get(key))
+
+
+def are_all_keys_empty(kwargs, keys):
+    for key in keys:
+        if kwargs.get(key):
+            return False
+
+    return True
+
+
+WORKSPACE_CLI_ARGS = ('workspace', 'python_file', 'module_name', 'definition', 'repository_yaml')
+
+
+WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'path')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file definition')
+ModuleTarget = namedtuple('ModuleTarget', 'module_name definition')
+
+WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget)
+
+
+def created_workspace_load_target(kwargs):
+    check.dict_param(kwargs, 'kwargs')
+    if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
+        return WorkspaceFileTarget(path='workspace.yaml')
+    if kwargs.get('repository_yaml'):
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'definition', 'workspace')
+        return WorkspaceFileTarget(path=kwargs['repository_yaml'])
+    if kwargs.get('workspace'):
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'definition')
+        return WorkspaceFileTarget(path=kwargs['workspace'])
+    if kwargs.get('python_file'):
+        _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
+        return PythonFileTarget(
+            python_file=kwargs.get('python_file'), definition=kwargs.get('definition')
+        )
+    if kwargs.get('module_name'):
+        return ModuleTarget(
+            module_name=kwargs.get('module_name'), definition=kwargs.get('definition')
+        )
+    check.failed('invalid')
+
+
+def workspace_from_load_target(load_target):
+    check.inst_param(load_target, 'load_target', WorkspaceLoadTarget)
+
+    if isinstance(load_target, WorkspaceFileTarget):
+        return load_workspace_from_yaml_path(load_target.path)
+    elif isinstance(load_target, PythonFileTarget):
+        return Workspace(
+            [_location_handle_from_python_file(load_target.python_file, load_target.definition)]
+        )
+    elif isinstance(load_target, ModuleTarget):
+        return Workspace(
+            [_location_handle_from_module_name(load_target.module_name, load_target.definition)]
+        )
+    else:
+        check.not_implemented('Unsupported: {}'.format(load_target))
+
+
+def get_workspace_from_kwargs(kwargs):
+    return workspace_from_load_target(created_workspace_load_target(kwargs))
+
+
+def workspace_target_argument(f):
+    from .pipeline import apply_click_params
+
+    return apply_click_params(
+        f,
+        click.option(
+            '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
+        ),
+        click.option(
+            '--python-file',
+            '-f',
+            type=click.Path(exists=True),
+            help='Specify python file where repository or pipeline function lives.',
+        ),
+        click.option(
+            '--module-name', '-m', help='Specify module where repository or pipeline function lives'
+        ),
+        click.option(
+            '--definition', '-d', help='Function that returns either repository or pipeline'
+        ),
+    )

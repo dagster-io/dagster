@@ -8,15 +8,12 @@ from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
 from dagster import check, seven
-from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.cli.pipeline import repository_target_argument
-from dagster.cli.workspace import Workspace, load_workspace_from_yaml_path
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
-from .app import create_app_from_workspace, create_app_with_reconstructable_repo
+from .app import create_app_from_workspace
 from .version import __version__
 
 
@@ -52,7 +49,7 @@ DEFAULT_DAGIT_PORT = 3000
         ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
     ),
 )
-@repository_target_argument
+@workspace_target_argument
 @click.option(
     '--host',
     '-h',
@@ -65,14 +62,6 @@ DEFAULT_DAGIT_PORT = 3000
     '-p',
     type=click.INT,
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
-)
-@click.option(
-    '--image',
-    help=(
-        "Built image name:tag that holds user code. WARNING This is experimental, you"
-        "will only be able to load a very limited part of dagit."
-    ),
-    type=click.STRING,
 )
 @click.option(
     '--storage-fallback',
@@ -112,13 +101,11 @@ def ui(host, port, storage_fallback, workdir, **kwargs):
 
 
 def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):
-    if kwargs.get('workspace'):
-        workspace = load_workspace_from_yaml_path(kwargs.get('workspace'))
-        return host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup)
-    else:
-        return host_dagit_ui_with_reconstructable_repo(
-            recon_repo_for_cli_args(kwargs), host, port, storage_fallback, port_lookup
-        )
+    workspace = get_workspace_from_kwargs(kwargs)
+    if not workspace:
+        raise Exception('Unable to load workspace with cli_args: {}'.format(kwargs))
+
+    return host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup)
 
 
 def host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup=True):
@@ -126,21 +113,18 @@ def host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_l
 
     instance = DagsterInstance.get(storage_fallback)
 
+    if len(workspace.repository_location_handles) == 1:
+        repository_location_handle = workspace.repository_location_handles[0]
+        if len(repository_location_handle.repository_code_pointer_dict) == 1:
+            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
+
+            from dagster.core.definitions.reconstructable import ReconstructableRepository
+
+            recon_repo = ReconstructableRepository(pointer)
+
+            log_repo_stats(instance=instance, repo=recon_repo, source='dagit')
+
     app = create_app_from_workspace(workspace, instance)
-
-    start_server(host, port, app, port_lookup)
-
-
-def host_dagit_ui_with_reconstructable_repo(
-    recon_repo, host, port, storage_fallback, port_lookup=True
-):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-
-    instance = DagsterInstance.get(storage_fallback)
-
-    log_repo_stats(instance=instance, repo=recon_repo, source='dagit')
-
-    app = create_app_with_reconstructable_repo(recon_repo, instance)
 
     start_server(host, port, app, port_lookup)
 
