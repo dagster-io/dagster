@@ -115,7 +115,7 @@ def test_load_python_environment_with_file():
     python_environment_yaml_with_file = '''
 load_from:
     - python_environment:
-        pythonpath: /path/to/venv/bin/python
+        executable_path: /path/to/venv/bin/python
         target:
             python_file: file_valid_in_that_env.py
 '''
@@ -129,7 +129,7 @@ def test_load_python_environment_with_module():
     python_environment_yaml_with_module = '''
 load_from:
     - python_environment:
-        pythonpath: /path/to/venv/bin/python
+        executable_path: /path/to/venv/bin/python
         target:
             python_module: module_valid_in_that_env.py
 '''

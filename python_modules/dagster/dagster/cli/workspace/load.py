@@ -145,18 +145,59 @@ def location_handle_from_python_file(python_file, definition, location_name=None
     )
 
 
+def _location_handle_from_python_environment_config(python_environment_config, yaml_path):
+    check.dict_param(python_environment_config, 'python_environment_config')
+    check.str_param(yaml_path, 'yaml_path')
+
+    executable_path, target_config = (
+        python_environment_config['executable_path'],
+        python_environment_config['target'],
+    )
+
+    check.invariant(is_target_config(target_config))
+
+    # just using out of process handle as convenient intermediate data structure
+    # TODO will need to interrogate target out-of-process to get code pointers
+    out_of_process_location_handle = _location_handle_from_target_config(target_config, yaml_path)
+
+    return RepositoryLocationHandle.create_python_env_location(
+        executable_path=executable_path,
+        location_name=out_of_process_location_handle.location_name,
+        repository_code_pointer_dict=out_of_process_location_handle.repository_code_pointer_dict,
+    )
+
+
 def _location_handle_from_location_config(location_config, yaml_path):
     check.dict_param(location_config, 'location_config')
     check.str_param(yaml_path, 'yaml_path')
 
-    if 'python_file' in location_config:
-        return location_handle_from_python_file_config(location_config['python_file'], yaml_path)
-
-    elif 'python_module' in location_config:
-        return _location_handle_from_module_config(location_config['python_module'])
+    if is_target_config(location_config):
+        return _location_handle_from_target_config(location_config, yaml_path)
 
     elif 'python_environment' in location_config:
-        check.not_implemented('not implemented')
+        return _location_handle_from_python_environment_config(
+            location_config['python_environment'], yaml_path
+        )
 
     else:
         check.not_implemented('Unsupported location config: {}'.format(location_config))
+
+
+def is_target_config(potential_target_config):
+    return isinstance(potential_target_config, dict) and (
+        potential_target_config.get('python_file') or potential_target_config.get('python_module')
+    )
+
+
+def _location_handle_from_target_config(target_config, yaml_path):
+    check.dict_param(target_config, 'target_config')
+    check.param_invariant(is_target_config(target_config), 'target_config')
+    check.str_param(yaml_path, 'yaml_path')
+
+    if 'python_file' in target_config:
+        return location_handle_from_python_file_config(target_config['python_file'], yaml_path)
+
+    elif 'python_module' in target_config:
+        return _location_handle_from_module_config(target_config['python_module'])
+    else:
+        check.failed('invalid target_config')

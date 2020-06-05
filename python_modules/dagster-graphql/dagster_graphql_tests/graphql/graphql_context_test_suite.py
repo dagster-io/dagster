@@ -10,8 +10,8 @@ from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
-    OutOfProcessRepositoryLocation,
-    OutOfProcessRepositoryLocationHandle,
+    PythonEnvRepositoryLocation,
+    RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -195,8 +195,8 @@ class EnvironmentManagers:
 
             # this is "ok" because we know the test host process containers the user code
             repo_name = recon_repo.get_definition().name
-            yield OutOfProcessRepositoryLocation(
-                OutOfProcessRepositoryLocationHandle(
+            yield PythonEnvRepositoryLocation(
+                RepositoryLocationHandle.create_out_of_process_location(
                     location_name='test',
                     repository_code_pointer_dict={repo_name: recon_repo.pointer},
                 )

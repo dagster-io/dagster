@@ -15,8 +15,13 @@ def get_bar_repo_handle():
     return RepositoryHandle(
         repository_name='bar_repo',
         repository_key='bar_repo',
-        repository_location_handle=RepositoryLocationHandle.create_in_process_location(
-            FileCodePointer(file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo')
+        repository_location_handle=RepositoryLocationHandle.create_out_of_process_location(
+            location_name='bar_repo_location',
+            repository_code_pointer_dict={
+                'bar_repo': FileCodePointer(
+                    file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'
+                )
+            },
         ),
     )
 

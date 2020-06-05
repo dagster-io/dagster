@@ -1,7 +1,10 @@
 import json
 
 from dagster import check
-from dagster.core.host_representation.handle import PipelineHandle
+from dagster.core.host_representation.handle import (
+    PipelineHandle,
+    PythonEnvRepositoryLocationHandle,
+)
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster.serdes.ipc import read_unary_response
 from dagster.seven import xplat_shlex_split
@@ -26,10 +29,23 @@ def sync_get_external_execution_plan(
     check.str_param(snapshot_id, 'snapshot_id')
 
     pointer = pipeline_handle.repository_handle.get_pointer()
+    location_handle = pipeline_handle.repository_handle.repository_location_handle
+
+    check.param_invariant(
+        isinstance(location_handle, PythonEnvRepositoryLocationHandle), 'pipeline_handle'
+    )
 
     with get_temp_file_name() as output_file:
         parts = (
-            ['dagster', 'api', 'snapshot', 'execution_plan', output_file]
+            [
+                location_handle.executable_path,
+                '-m',
+                'dagster',
+                'api',
+                'snapshot',
+                'execution_plan',
+                output_file,
+            ]
             + xplat_shlex_split(pointer.get_cli_args())
             + [
                 pipeline_handle.pipeline_name,

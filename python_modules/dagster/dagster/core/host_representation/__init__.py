@@ -25,8 +25,8 @@ from .external_data import (
 )
 from .handle import (
     InProcessRepositoryLocationHandle,
-    OutOfProcessRepositoryLocationHandle,
     PipelineHandle,
+    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -34,7 +34,7 @@ from .historical import HistoricalPipeline
 from .pipeline_index import PipelineIndex
 from .repository_location import (
     InProcessRepositoryLocation,
-    OutOfProcessRepositoryLocation,
+    PythonEnvRepositoryLocation,
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline

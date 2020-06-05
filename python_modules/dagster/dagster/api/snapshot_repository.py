@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
     ExternalRepositoryData,
-    OutOfProcessRepositoryLocationHandle,
+    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -19,7 +19,7 @@ def sync_get_external_repositories(repository_location_handle):
     )
 
     check.param_invariant(
-        isinstance(repository_location_handle, OutOfProcessRepositoryLocationHandle),
+        isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle),
         'repository_location_handle',
     )
 
@@ -28,9 +28,15 @@ def sync_get_external_repositories(repository_location_handle):
     for key, pointer in repository_location_handle.repository_code_pointer_dict.items():
         with get_temp_file_name() as output_file:
 
-            parts = ['dagster', 'api', 'snapshot', 'repository', output_file] + xplat_shlex_split(
-                pointer.get_cli_args()
-            )
+            parts = [
+                repository_location_handle.executable_path,
+                '-m',
+                'dagster',
+                'api',
+                'snapshot',
+                'repository',
+                output_file,
+            ] + xplat_shlex_split(pointer.get_cli_args())
 
             execute_command_in_subprocess(parts)
 

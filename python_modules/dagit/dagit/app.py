@@ -22,11 +22,11 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
-    OutOfProcessRepositoryLocation,
+    PythonEnvRepositoryLocation,
 )
 from dagster.core.host_representation.handle import (
     InProcessRepositoryLocationHandle,
-    OutOfProcessRepositoryLocationHandle,
+    PythonEnvRepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -198,8 +198,8 @@ def create_app_from_workspace(workspace, instance):
             pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
             recon_repo = ReconstructableRepository(pointer)
             locations.append(InProcessRepositoryLocation(recon_repo))
-        elif isinstance(repository_location_handle, OutOfProcessRepositoryLocationHandle):
-            locations.append(OutOfProcessRepositoryLocation(repository_location_handle))
+        elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
+            locations.append(PythonEnvRepositoryLocation(repository_location_handle))
         else:
             check.failed('{} unsupported'.format(repository_location_handle))
 

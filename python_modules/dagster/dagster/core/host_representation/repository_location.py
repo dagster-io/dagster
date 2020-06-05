@@ -9,7 +9,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
-    OutOfProcessRepositoryLocationHandle,
+    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -174,15 +174,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
 
-class OutOfProcessRepositoryLocation(RepositoryLocation):
-    # We need to allow for fetching of multiple repositories from a location
-    # to make this work. Currently sync_get_external_repository is not
-    # multi-repo aware
+class PythonEnvRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
         self._handle = check.inst_param(
             repository_location_handle,
             'repository_location_handle',
-            OutOfProcessRepositoryLocationHandle,
+            PythonEnvRepositoryLocationHandle,
         )
         self.external_repositories = {
             er.name: er for er in sync_get_external_repositories(self._handle)

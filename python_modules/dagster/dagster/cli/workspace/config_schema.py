@@ -24,7 +24,7 @@ def ensure_workspace_config(workspace_config, yaml_path):
     return validation_result
 
 
-def _get_python_target_configs():
+def _get_target_config():
     return {
         'python_file': ScalarUnion(
             scalar_type=str,
@@ -49,11 +49,11 @@ WORKSPACE_CONFIG_SCHEMA = {
     'load_from': [
         Selector(
             merge_dicts(
-                _get_python_target_configs(),
+                _get_target_config(),
                 {
                     'python_environment': {
-                        'pythonpath': str,
-                        'target': Selector(_get_python_target_configs()),
+                        'executable_path': str,
+                        'target': Selector(_get_target_config()),
                     },
                 },
             )

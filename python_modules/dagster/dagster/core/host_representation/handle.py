@@ -1,3 +1,4 @@
+import sys
 from collections import namedtuple
 
 from dagster import check
@@ -33,7 +34,37 @@ class RepositoryLocationHandle:
             key_type=str,
             value_type=CodePointer,
         )
-        return OutOfProcessRepositoryLocationHandle(location_name, repository_code_pointer_dict)
+        return PythonEnvRepositoryLocationHandle(
+            location_name=location_name,
+            executable_path=sys.executable,
+            repository_code_pointer_dict=repository_code_pointer_dict,
+        )
+
+    @staticmethod
+    def create_python_env_location(executable_path, location_name, repository_code_pointer_dict):
+        check.str_param(executable_path, 'executable_path')
+        check.str_param(location_name, 'location_name')
+        check.dict_param(
+            repository_code_pointer_dict,
+            'repository_code_pointer_dict',
+            key_type=str,
+            value_type=CodePointer,
+        )
+        return PythonEnvRepositoryLocationHandle(
+            location_name=location_name,
+            executable_path=executable_path,
+            repository_code_pointer_dict=repository_code_pointer_dict,
+        )
+
+
+class PythonEnvRepositoryLocationHandle(
+    namedtuple(
+        '_PythonEnvRepositoryLocationHandle',
+        'executable_path location_name repository_code_pointer_dict',
+    ),
+    RepositoryLocationHandle,
+):
+    pass
 
 
 class InProcessRepositoryLocationHandle(
@@ -55,25 +86,6 @@ class InProcessRepositoryLocationHandle(
     def pointer_for_repo(self, repository_name):
         check.str_param(repository_name, 'repository_name')
         return self.repository_code_pointer_dict[repository_name]
-
-
-class OutOfProcessRepositoryLocationHandle(
-    namedtuple(
-        '_OutOfProcessRepositoryLocationHandle', 'location_name repository_code_pointer_dict'
-    ),
-    RepositoryLocationHandle,
-):
-    def __new__(cls, location_name, repository_code_pointer_dict):
-        return super(OutOfProcessRepositoryLocationHandle, cls).__new__(
-            cls,
-            check.str_param(location_name, 'location_name'),
-            check.dict_param(
-                repository_code_pointer_dict,
-                'repository_code_pointer_dict',
-                key_type=str,
-                value_type=CodePointer,
-            ),
-        )
 
 
 class RepositoryHandle(
