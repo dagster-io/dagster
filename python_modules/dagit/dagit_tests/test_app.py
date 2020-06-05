@@ -148,6 +148,7 @@ def path_to_tutorial_file(path):
     )
 
 
+@pytest.mark.skip("Race condition causing test flakiness")
 @pytest.mark.skipif(
     os.name == 'nt', reason="TemporaryDirectory disabled for win because of event.log contention"
 )
