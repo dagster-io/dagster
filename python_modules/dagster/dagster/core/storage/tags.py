@@ -20,6 +20,8 @@ STEP_SELECTION_TAG = '{prefix}step_selection'.format(prefix=SYSTEM_TAG_PREFIX)
 
 SOLID_SELECTION_TAG = '{prefix}solid_selection'.format(prefix=SYSTEM_TAG_PREFIX)
 
+PRESET_NAME_TAG = '{prefix}preset_name'.format(prefix=SYSTEM_TAG_PREFIX)
+
 
 def check_tags(obj, name):
     check.opt_dict_param(obj, name, key_type=str, value_type=str)

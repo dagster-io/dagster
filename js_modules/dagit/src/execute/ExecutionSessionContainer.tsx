@@ -192,6 +192,14 @@ export default class ExecutionSessionContainer extends React.Component<
                     value: currentSession.solidSubsetQuery
                   }
                 ]
+              : []),
+            ...(currentSession?.base?.["presetName"]
+              ? [
+                  {
+                    key: "dagster/preset_name",
+                    value: currentSession?.base?.["presetName"]
+                  }
+                ]
               : [])
           ]
         }
