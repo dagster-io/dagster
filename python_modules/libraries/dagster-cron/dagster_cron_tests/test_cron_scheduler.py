@@ -516,3 +516,36 @@ def test_wipe(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
 
         # Check schedules are wiped
         assert instance.all_schedules(test_repository.name) == []
+
+
+def test_log_directory(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
+    with TemporaryDirectory() as tempdir:
+
+        instance = define_scheduler_instance(tempdir)
+        schedule_log_path = instance.logs_path_for_schedule(
+            test_repository.name, "no_config_pipeline_every_min_schedule"
+        )
+
+        assert schedule_log_path.endswith(
+            "/schedules/logs/{repository_name}/{schedule_name}/scheduler.log".format(
+                repository_name=test_repository.name,
+                schedule_name="no_config_pipeline_every_min_schedule",
+            )
+        )
+
+        # Initialize scheduler
+        reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '.../repository.yam'),
+            repository=test_repository,
+            instance=instance,
+        )
+
+        # Start schedule
+        instance.start_schedule(test_repository.name, "no_config_pipeline_every_min_schedule")
+
+        # Wipe scheduler
+        instance.wipe_all_schedules()
+
+        # Check schedules are wiped
+        assert instance.all_schedules(test_repository.name) == []

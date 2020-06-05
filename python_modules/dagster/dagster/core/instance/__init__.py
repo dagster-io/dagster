@@ -957,5 +957,5 @@ class DagsterInstance:
 
         self._schedule_storage.wipe()
 
-    def log_path_for_schedule(self, repository_name, schedule_name):
-        return self._scheduler.get_log_path(self, repository_name, schedule_name)
+    def logs_path_for_schedule(self, repository_name, schedule_name):
+        return self._scheduler.get_logs_path(self, repository_name, schedule_name)

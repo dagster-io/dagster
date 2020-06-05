@@ -37,6 +37,7 @@ from dagster.cli.pipeline import (
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.cli.schedule import (
     schedule_list_command,
+    schedule_logs_command,
     schedule_restart_command,
     schedule_start_command,
     schedule_stop_command,
@@ -890,6 +891,18 @@ def test_schedules_restart_all(_patch_scheduler_instance):
 
     assert result.exit_code == 0
     assert result.output == 'Restarted all running schedules for repository bar\n'
+
+
+def test_schedules_logs(_patch_scheduler_instance):
+    runner = CliRunner()
+
+    result = runner.invoke(
+        schedule_logs_command,
+        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+    )
+
+    assert result.exit_code == 0
+    assert result.output.endswith('/scheduler.log\n')
 
 
 @pytest.mark.skipif(

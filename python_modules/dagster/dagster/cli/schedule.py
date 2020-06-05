@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import sys
 
 import click
@@ -22,6 +23,7 @@ def create_schedule_cli_group():
     group.add_command(schedule_up_command)
     group.add_command(schedule_preview_command)
     group.add_command(schedule_start_command)
+    group.add_command(schedule_logs_command)
     group.add_command(schedule_stop_command)
     group.add_command(schedule_restart_command)
     group.add_command(schedule_wipe_command)
@@ -309,6 +311,32 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
         raise click.UsageError(ex)
 
     print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
+
+
+@click.command(name='logs', help="Get logs for a schedule")
+@click.argument('schedule_name', nargs=-1)
+@repository_target_argument
+def schedule_logs_command(schedule_name, **kwargs):
+    schedule_name = extract_schedule_name(schedule_name)
+    if schedule_name is None:
+        print(
+            'Noop: dagster schedule logs was called without any arguments specifying which '
+            'schedules to retrieve logs for. Pass a schedule name'
+        )
+        return
+    return execute_logs_command(schedule_name, kwargs, click.echo)
+
+
+def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
+    handle = recon_repo_for_cli_args(cli_args)
+    instance = DagsterInstance.get()
+    check_handle_and_scheduler(handle, instance)
+
+    repository = handle.get_definition()
+    repository_name = repository.name
+
+    logs_path = os.path.join(instance.logs_path_for_schedule(repository_name, schedule_name))
+    print_fn(logs_path)
 
 
 @click.command(name='restart', help="Restart a running schedule")
