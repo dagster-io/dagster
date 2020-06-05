@@ -44,6 +44,7 @@ event_log_storage:
 # Scheduler
 # ==================================================================================================
 # Provides an optional scheduler which will control timed, repeated execution of pipeline runs.
+# Currently, only SystemCronScheduler is supported.
 scheduler:
   module: dagster_cron.cron_scheduler
   class: SystemCronScheduler

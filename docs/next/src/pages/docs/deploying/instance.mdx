@@ -84,7 +84,8 @@ to store intermediates and other local artifacts on an NFS mount, and to stream 
 S3 bucket.
 
 To do this, provide a `$DAGSTER_HOME/dagster.yaml` file. Dagit and all Dagster tools will look for
-this file on startup. An example `dagster.yaml` is below:
+this file on startup. Note that Dagster supports retrieving instance YAML values from environment
+variables, using `env:` instead of a string literal. An example `dagster.yaml` is below:
 
 ```yaml literalinclude caption=dagster.yaml
 file:src/pages/docs/deploying/dagster.yaml
