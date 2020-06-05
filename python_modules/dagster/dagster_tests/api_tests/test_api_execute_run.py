@@ -1,20 +1,24 @@
-from dagster import file_relative_path, seven
+import pytest
+
+from dagster import seven
 from dagster.api.execute_run import sync_cli_api_execute_run
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 
+from .utils import get_bar_repo_handle, legacy_get_bar_repo_handle
 
-def test_execute_run_api():
+
+@pytest.mark.parametrize(
+    "repo_handle", [get_bar_repo_handle(), legacy_get_bar_repo_handle()],
+)
+def test_execute_run_api(repo_handle):
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         events = [
             event
             for event in sync_cli_api_execute_run(
                 instance=instance,
-                repo_cli_args=ReconstructableRepository.for_file(
-                    file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'
-                ).get_cli_args(),
+                repo_handle=repo_handle,
                 pipeline_name='foo',
                 environment_dict={},
                 mode='default',

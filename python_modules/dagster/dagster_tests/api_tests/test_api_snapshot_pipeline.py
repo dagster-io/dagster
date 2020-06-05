@@ -3,31 +3,11 @@ import sys
 
 import pytest
 
-from dagster import file_relative_path
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset
-from dagster.core.code_pointer import FileCodePointer
-from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
-from dagster.core.host_representation.handle import PipelineHandle, RepositoryHandle
+from dagster.core.host_representation.handle import PipelineHandle
 
-
-def get_bar_repo_handle():
-    return RepositoryHandle(
-        repository_name='bar_repo',
-        repository_key='bar_repo',
-        repository_location_handle=RepositoryLocationHandle.create_out_of_process_location(
-            location_name='bar_repo_location',
-            repository_code_pointer_dict={
-                'bar_repo': FileCodePointer(
-                    file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'
-                )
-            },
-        ),
-    )
-
-
-def get_foo_pipeline_handle():
-    return PipelineHandle('foo', get_bar_repo_handle())
+from .utils import get_bar_repo_handle, get_foo_pipeline_handle
 
 
 def test_pipeline_snapshot_api():

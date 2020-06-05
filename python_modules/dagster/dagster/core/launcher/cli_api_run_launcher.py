@@ -20,15 +20,6 @@ def _is_alive(popen):
     return popen.poll() is None
 
 
-def _get_repo_pointer_in_single_repo_location(external_pipeline):
-    # currently this only works for locations with a single repository
-    repository_location_handle = (
-        external_pipeline.handle.repository_handle.repository_location_handle
-    )
-    check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
-    return next(iter(repository_location_handle.repository_code_pointer_dict.values()))
-
-
 class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     '''
     This run launcher launches a new process which invokes
@@ -134,9 +125,6 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
-        # this currently only works for locations with a single repo
-        pointer = _get_repo_pointer_in_single_repo_location(external_pipeline)
-
         # initialize when the first run happens
         if not self._instance:
             self.initialize(instance)
@@ -148,7 +136,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = cli_api_execute_run(
             output_file=output_file,
             instance=self._instance,
-            repo_cli_args=pointer.get_cli_args(),
+            repository_handle=external_pipeline.handle.repository_handle,
             pipeline_run=run,
         )
 
