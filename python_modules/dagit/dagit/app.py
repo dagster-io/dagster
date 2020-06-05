@@ -2,9 +2,7 @@ from __future__ import absolute_import
 
 import io
 import os
-import sys
 import uuid
-import warnings
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -31,7 +29,6 @@ from dagster.core.host_representation.handle import (
     OutOfProcessRepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
@@ -226,19 +223,5 @@ def create_app_with_reconstructable_repo(recon_repo, instance):
     context = DagsterGraphQLContext(
         instance=instance, locations=[InProcessRepositoryLocation(recon_repo)], version=__version__,
     )
-
-    # Automatically initialize scheduler everytime Dagit loads
-    scheduler = instance.scheduler
-    repository = context.legacy_get_repository_definition()
-
-    if repository.schedule_defs:
-        if scheduler:
-            python_path = sys.executable
-            repository_path = context.legacy_location.get_reconstructable_repository().yaml_path
-            reconcile_scheduler_state(
-                python_path, repository_path, repository=repository, instance=instance
-            )
-        else:
-            warnings.warn(MISSING_SCHEDULER_WARNING)
 
     return instantiate_app_with_views(context)
