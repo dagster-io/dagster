@@ -53,7 +53,7 @@ from dagster_graphql.implementation.utils import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.host_representation import RepresentedPipeline
+from dagster.core.host_representation import RepositorySelector, RepresentedPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -96,7 +96,9 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     partitionSetsOrError = dauphin.Field(
-        dauphin.NonNull('PartitionSetsOrError'), pipelineName=dauphin.String()
+        dauphin.NonNull('PartitionSetsOrError'),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
+        pipelineName=dauphin.NonNull(dauphin.String),
     )
     partitionSetOrError = dauphin.Field(
         dauphin.NonNull('PartitionSetOrError'), partitionSetName=dauphin.String()
@@ -227,9 +229,11 @@ class DauphinQuery(dauphin.ObjectType):
         )
 
     def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
-        pipeline_name = kwargs.get('pipelineName')
-
-        return get_partition_sets_or_error(graphene_info, pipeline_name)
+        return get_partition_sets_or_error(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+            kwargs.get('pipelineName'),
+        )
 
     def resolve_partitionSetOrError(self, graphene_info, partitionSetName):
         return get_partition_set(graphene_info, partitionSetName)
@@ -620,6 +624,15 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     executionMetadata = dauphin.Field('ExecutionMetadata')
     stepKeys = dauphin.Field(dauphin.List(dauphin.NonNull(dauphin.String)))
     preset = dauphin.Field(dauphin.String)
+
+
+class DauphinRepositorySelector(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'RepositorySelector'
+        description = '''This type represents the fields necessary to identify a repository.'''
+
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPipelineSelector(dauphin.InputObjectType):

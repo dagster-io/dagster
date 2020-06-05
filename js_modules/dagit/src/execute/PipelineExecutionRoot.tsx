@@ -70,7 +70,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                 currentSession={data.sessions[data.current]}
                 onSaveSession={changes => onSaveSession(data.current, changes)}
               >
-                {vars.selector.name !== "" ? (
+                {vars.selector.pipelineName !== "" ? (
                   <NonIdealState
                     icon={IconNames.FLOW_BRANCH}
                     title="Pipeline Not Found"

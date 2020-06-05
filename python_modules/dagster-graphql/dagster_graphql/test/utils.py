@@ -79,3 +79,15 @@ def get_legacy_pipeline_selector(graphql_context, pipeline_name, solid_selection
         'pipelineName': pipeline_name,
         'solidSelection': solid_selection,
     }
+
+
+def get_legacy_repository_selector(graphql_context):
+    assert len(graphql_context.repository_locations) == 1
+    repository_location = graphql_context.repository_locations[0]
+    repositories = repository_location.get_repositories()
+    assert len(repositories) == 1
+    repository = next(iter(repositories.values()))
+    return {
+        'repositoryLocationName': repository_location.name,
+        'repositoryName': repository.name,
+    }

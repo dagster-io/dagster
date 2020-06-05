@@ -931,7 +931,7 @@ type Query {
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
-  partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
+  partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
@@ -994,6 +994,11 @@ type RepositoryNotFoundError implements Error {
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+input RepositorySelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
 
 type Resource {
   name: String!

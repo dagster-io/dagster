@@ -1,28 +1,8 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
-
-GET_PARTITION_SETS_QUERY = '''
-{
-    partitionSetsOrError {
-        __typename
-        ...on PartitionSets {
-            results {
-                name
-                pipelineName
-                solidSelection
-                mode
-            }
-        }
-        ... on PythonError {
-            message
-            stack
-        }
-    }
-}
-'''
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_repository_selector
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
-    query PartitionSetsQuery($pipelineName: String!) {
-        partitionSetsOrError(pipelineName: $pipelineName) {
+    query PartitionSetsQuery($repositorySelector: RepositorySelector!, $pipelineName: String!) {
+        partitionSetsOrError(repositorySelector: $repositorySelector, pipelineName: $pipelineName) {
             __typename
             ...on PartitionSets {
                 results {
@@ -67,17 +47,12 @@ GET_PARTITION_SET_QUERY = '''
 '''
 
 
-def test_get_all_partition_sets(graphql_context, snapshot):
-    result = execute_dagster_graphql(graphql_context, GET_PARTITION_SETS_QUERY)
-    assert result.data
-    snapshot.assert_match(result.data)
-
-
 def test_get_partition_sets_for_pipeline(graphql_context, snapshot):
+    selector = get_legacy_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context,
         GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-        variables={'pipelineName': 'no_config_pipeline'},
+        variables={'repositorySelector': selector, 'pipelineName': 'no_config_pipeline'},
     )
 
     assert result.data
@@ -86,7 +61,7 @@ def test_get_partition_sets_for_pipeline(graphql_context, snapshot):
     invalid_pipeline_result = execute_dagster_graphql(
         graphql_context,
         GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-        variables={'pipelineName': 'invalid_pipeline'},
+        variables={'repositorySelector': selector, 'pipelineName': 'invalid_pipeline'},
     )
 
     assert invalid_pipeline_result.data

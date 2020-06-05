@@ -29,7 +29,10 @@ import { IExecutionSession } from "../LocalStorage";
 import { isEqual } from "apollo-utilities";
 import styled from "styled-components";
 import { ShortcutHandler } from "../ShortcutHandler";
-import { usePipelineSelector } from "../DagsterRepositoryContext";
+import {
+  useRepositorySelector,
+  usePipelineSelector
+} from "../DagsterRepositoryContext";
 
 type Preset = ConfigPresetsQuery_pipelineOrError_Pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
@@ -428,8 +431,14 @@ const CONFIG_PRESETS_QUERY = gql`
 `;
 
 export const CONFIG_PARTITION_SETS_QUERY = gql`
-  query ConfigPartitionSetsQuery($pipelineName: String!) {
-    partitionSetsOrError(pipelineName: $pipelineName) {
+  query ConfigPartitionSetsQuery(
+    $repositorySelector: RepositorySelector!
+    $pipelineName: String!
+  ) {
+    partitionSetsOrError(
+      repositorySelector: $repositorySelector
+      pipelineName: $pipelineName
+    ) {
       __typename
       ... on PartitionSets {
         results {
@@ -501,6 +510,7 @@ function usePresetsAndPartitions(
   loading: boolean;
   pipeline?: Pipeline;
 } {
+  const repositorySelector = useRepositorySelector();
   const pipelineSelector = usePipelineSelector(pipelineName);
   const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
     fetchPolicy: "cache-and-network",
@@ -510,7 +520,7 @@ function usePresetsAndPartitions(
     CONFIG_PARTITION_SETS_QUERY,
     {
       fetchPolicy: "cache-and-network",
-      variables: { pipelineName }
+      variables: { repositorySelector, pipelineName }
     }
   );
 

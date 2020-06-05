@@ -70,6 +70,22 @@ export const useRepositoryOptions = () => {
   return { error: null, options };
 };
 
+export const useRepositorySelector = () => {
+  const { repository, repositoryLocation } = React.useContext(
+    DagsterRepositoryContext
+  );
+
+  if (!repository || !repositoryLocation) {
+    // use legacy fields
+    throw Error("no legacy repository");
+  }
+
+  return {
+    repositoryLocationName: repositoryLocation.name,
+    repositoryName: repository.name
+  };
+};
+
 export const usePipelineSelector = (
   pipelineName?: string,
   solidSelection?: string[]
@@ -79,18 +95,13 @@ export const usePipelineSelector = (
   );
 
   if (!repository || !repositoryLocation) {
-    // use legacy fields
-    console.error("Using legacy pipeline selector", pipelineName);
-    return {
-      name: pipelineName,
-      solidSelection
-    };
+    throw Error("no legacy repository");
   }
 
   return {
     pipelineName,
-    repositoryLocationName: repositoryLocation?.name,
-    repositoryName: repository?.name,
+    repositoryLocationName: repositoryLocation.name,
+    repositoryName: repository.name,
     solidSelection
   };
 };

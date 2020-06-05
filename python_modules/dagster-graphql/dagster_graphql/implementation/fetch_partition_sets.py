@@ -7,14 +7,14 @@ from dagster.core.host_representation import ExternalPartitionSet, RepositoryHan
 from .utils import capture_dauphin_error
 
 
-@capture_dauphin_error
-def get_partition_sets_or_error(graphene_info, pipeline_name):
-    repository = graphene_info.context.legacy_external_repository
-    partition_sets = repository.get_external_partition_sets()
-    if pipeline_name:
-        partition_sets = filter(
-            lambda partition_set: partition_set.pipeline_name == pipeline_name, partition_sets
-        )
+def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_name):
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
+    partition_sets = [
+        partition_set
+        for partition_set in repository.get_external_partition_sets()
+        if partition_set.pipeline_name == pipeline_name
+    ]
 
     return graphene_info.schema.type_named('PartitionSets')(
         results=[

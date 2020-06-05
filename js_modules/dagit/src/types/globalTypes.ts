@@ -101,6 +101,11 @@ export interface PipelineSelector {
   solidSelection?: string[] | null;
 }
 
+export interface RepositorySelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================
