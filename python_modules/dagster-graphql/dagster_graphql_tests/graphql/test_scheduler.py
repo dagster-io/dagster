@@ -16,6 +16,8 @@ from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.utils import file_relative_path
 from dagster.utils.test import FilesystemTestScheduler
 
+from .setup import define_test_context
+
 GET_SCHEDULES_QUERY = '''
 {
     scheduler {
@@ -82,6 +84,27 @@ mutation(
     }
   }
 }
+'''
+
+GET_SCHEDULE = '''
+query getSchedule($scheduleName: String!) {
+  scheduleOrError(scheduleName: $scheduleName) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on RunningSchedule {
+      scheduleDefinition {
+        name
+        partitionSet {
+          name
+        }
+      }
+    }
+  }
+}
+
 '''
 
 
@@ -245,3 +268,36 @@ def test_scheduler_change_set_adding_schedule():
     assert sorted(change_set_4) == sorted(
         [('add', 'renamed_schedule_3', []), ('remove', 'schedule_3', [])]
     )
+
+
+def test_get_schedule():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(),
+            schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+            scheduler=FilesystemTestScheduler(temp_dir),
+            run_launcher=SyncInMemoryRunLauncher(),
+        )
+
+        context = define_test_context(instance)
+        # Initialize scheduler
+        repository = context.legacy_get_repository_definition()
+        instance.reconcile_scheduler_state(
+            repository=repository,
+            python_path='/path/to/python',
+            repository_path='/path/to/repository',
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            GET_SCHEDULE,
+            variables={'scheduleName': 'partition_based_multi_mode_decorator'},
+        )
+
+        assert result.data
+        assert result.data['scheduleOrError']['__typename'] == 'RunningSchedule'
+        assert result.data['scheduleOrError']['scheduleDefinition']['partitionSet']

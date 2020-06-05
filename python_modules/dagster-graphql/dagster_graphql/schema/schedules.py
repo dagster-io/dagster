@@ -79,12 +79,12 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
                 self._external_schedule.handle.location_name
             )
             .get_repository(self._external_schedule.handle.repository_name)
-            .get_partition_set(self._external_schedule.partition_set_name)
+            .get_external_partition_set(self._external_schedule.partition_set_name)
         )
 
         return graphene_info.schema.type_named('PartitionSet')(
             external_partition_set=external_partition_set,
-            partion_set_def=self._schedule_def.get_partition_set(),
+            partition_set_def=self._schedule_def.get_partition_set(),
         )
 
     def __init__(self, schedule_def, external_schedule):

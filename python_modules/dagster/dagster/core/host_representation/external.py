@@ -288,6 +288,10 @@ class ExternalSchedule:
     def partition_set_name(self):
         return self._external_schedule_data.partition_set_name
 
+    @property
+    def handle(self):
+        return self._handle
+
 
 class ExternalPartitionSet:
     def __init__(self, external_partition_set_data, handle):

@@ -131,7 +131,7 @@ class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_han
 
     @property
     def location_name(self):
-        return self.repository_handle.location_handle.location_name
+        return self.repository_handle.repository_location_handle.location_name
 
 
 class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):
@@ -148,4 +148,4 @@ class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name r
 
     @property
     def location_name(self):
-        return self.repository_handle.location_handle.location_name
+        return self.repository_handle.repository_location_handle.location_name
