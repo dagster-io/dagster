@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import sys
-
 from click.testing import CliRunner
 from dagster_graphql.client.query import LAUNCH_SCHEDULED_EXECUTION_MUTATION
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
@@ -51,12 +49,7 @@ def test_schedules():
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        repository = context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            python_path=sys.executable,
-            repository_path=file_relative_path(__file__, '../'),
-            repository=repository,
-        )
+        instance.reconcile_scheduler_state(context.legacy_external_repository)
 
         for schedule_name in [
             'many_events_every_min',

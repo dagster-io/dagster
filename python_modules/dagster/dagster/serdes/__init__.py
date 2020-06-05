@@ -159,7 +159,7 @@ def _pack_value(val, enum_map, tuple_map):
         klass_name = val.__class__.__name__
         check.invariant(
             klass_name in tuple_map,
-            'Can only serialize whitelisted namedtuples, received {}'.format(klass_name),
+            'Can only serialize whitelisted namedtuples, received tuple {}'.format(val),
         )
         base_dict = {
             key: _pack_value(value, enum_map, tuple_map) for key, value in val._asdict().items()

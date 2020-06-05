@@ -5,7 +5,6 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
-from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
@@ -28,19 +27,6 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance'
 
         return super(ScheduleExecutionContext, cls).__new__(
             cls, check.inst_param(instance, 'instance', DagsterInstance),
-        )
-
-
-@whitelist_for_serdes
-class ScheduleDefinitionData(
-    namedtuple('ScheduleDefinitionData', 'name cron_schedule environment_vars')
-):
-    def __new__(cls, name, cron_schedule, environment_vars=None):
-        return super(ScheduleDefinitionData, cls).__new__(
-            cls,
-            check.str_param(name, 'name'),
-            check.str_param(cron_schedule, 'cron_schedule'),
-            check.opt_dict_param(environment_vars, 'environment_vars'),
         )
 
 
@@ -76,7 +62,8 @@ class ScheduleDefinition(object):
     '''
 
     __slots__ = [
-        '_schedule_definition_data',
+        '_name',
+        '_cron_schedule',
         '_execution_params',
         '_environment_dict_fn',
         '_environment_dict',
@@ -86,6 +73,7 @@ class ScheduleDefinition(object):
         '_solid_selection',
         '_tags_fn',
         '_should_execute',
+        '_environment_vars',
     ]
 
     def __init__(
@@ -102,17 +90,22 @@ class ScheduleDefinition(object):
         should_execute=None,
         environment_vars=None,
     ):
-        check.str_param(name, 'name')
-        check.str_param(cron_schedule, 'cron_schedule')
-        check.str_param(pipeline_name, 'pipeline_name')
-        check.opt_dict_param(environment_dict, 'environment_dict')
+
+        self._name = check.str_param(name, 'name')
+        self._cron_schedule = check.str_param(cron_schedule, 'cron_schedule')
+        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self._environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
         check.opt_callable_param(environment_dict_fn, 'environment_dict_fn')
-        check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
+        self._tags = check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
         check.opt_callable_param(tags_fn, 'tags_fn')
-        check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
-        mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, 'solid_selection', of_type=str
+        )
+        self._mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
         check.opt_callable_param(should_execute, 'should_execute')
-        check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+        self._environment_vars = check.opt_dict_param(
+            environment_vars, 'environment_vars', key_type=str, value_type=str
+        )
 
         if environment_dict_fn and environment_dict:
             raise DagsterInvalidDefinitionError(
@@ -120,51 +113,35 @@ class ScheduleDefinition(object):
                 ' to ScheduleDefinition. Must provide only one of the two.'
             )
 
+        if not environment_dict and not environment_dict_fn:
+            environment_dict_fn = lambda _context: {}
+        self._environment_dict_fn = environment_dict_fn
+
         if tags_fn and tags:
             raise DagsterInvalidDefinitionError(
                 'Attempted to provide both tags_fn and tags as arguments'
                 ' to ScheduleDefinition. Must provide only one of the two.'
             )
 
-        if not environment_dict and not environment_dict_fn:
-            environment_dict_fn = lambda _context: {}
-
         if not tags and not tags_fn:
             tags_fn = lambda _context: {}
+        self._tags_fn = tags_fn
 
         if not should_execute:
             should_execute = lambda _context: True
-
-        self._schedule_definition_data = ScheduleDefinitionData(
-            name=check.str_param(name, 'name'),
-            cron_schedule=check.str_param(cron_schedule, 'cron_schedule'),
-            environment_vars=check.opt_dict_param(environment_vars, 'environment_vars'),
-        )
-
-        self._environment_dict = environment_dict
-        self._environment_dict_fn = environment_dict_fn
-        self._tags = tags
-        self._tags_fn = tags_fn
         self._should_execute = should_execute
-        self._mode = mode
-        self._pipeline_name = pipeline_name
-        self._solid_selection = solid_selection
-
-    @property
-    def schedule_definition_data(self):
-        return self._schedule_definition_data
 
     @property
     def name(self):
-        return self._schedule_definition_data.name
+        return self._name
 
     @property
     def cron_schedule(self):
-        return self._schedule_definition_data.cron_schedule
+        return self._cron_schedule
 
     @property
     def environment_vars(self):
-        return self._schedule_definition_data.environment_vars
+        return self._environment_vars
 
     @property
     def mode(self):

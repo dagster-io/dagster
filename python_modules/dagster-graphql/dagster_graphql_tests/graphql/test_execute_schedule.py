@@ -288,20 +288,18 @@ class TestExecuteSchedule(
         context = graphql_context
         instance = context.instance
 
-        repository = context.legacy_get_repository_definition()
+        external_repository = context.legacy_external_repository
 
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
+        instance.reconcile_scheduler_state(external_repository)
+        external_schedule = external_repository.get_external_schedule(
+            "no_config_pipeline_hourly_schedule"
         )
-        schedule_def = repository.get_schedule_def("no_config_pipeline_hourly_schedule")
 
         start_time = time.time()
         execute_dagster_graphql_and_finish_runs(
             context,
             LAUNCH_SCHEDULED_EXECUTION_QUERY,
-            variables={'scheduleName': schedule_def.name},
+            variables={'scheduleName': external_schedule.name},
         )
 
         # Check tick data and stats through gql
@@ -311,7 +309,7 @@ class TestExecuteSchedule(
         schedule_result = next(
             schedule_result
             for schedule_result in result.data['scheduler']['runningSchedules']
-            if schedule_result['scheduleDefinition']['name'] == schedule_def.name
+            if schedule_result['scheduleDefinition']['name'] == external_schedule.name
         )
 
         assert schedule_result
@@ -319,23 +317,21 @@ class TestExecuteSchedule(
         snapshot.assert_match(schedule_result)
 
         # Check directly against the DB
-        ticks = instance.get_schedule_ticks_by_schedule(repository.name, schedule_def.name)
+        ticks = instance.get_schedule_ticks(external_schedule.get_reconstruction_id())
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.schedule_name == schedule_def.name
-        assert tick.cron_schedule == schedule_def.cron_schedule
+        assert tick.schedule_origin_id == external_schedule.get_reconstruction_id()
+        assert tick.schedule_name == external_schedule.name
+        assert tick.cron_schedule == external_schedule.cron_schedule
         assert tick.timestamp > start_time and tick.timestamp < time.time()
         assert tick.status == ScheduleTickStatus.SUCCESS
         assert tick.run_id
 
     def test_tick_skip(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+
+        instance.reconcile_scheduler_state(external_repository)
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -353,7 +349,11 @@ class TestExecuteSchedule(
         assert schedule_result['stats']['ticksSkipped'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'no_config_should_execute')
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule(
+                'no_config_should_execute'
+            ).get_reconstruction_id()
+        )
 
         assert len(ticks) == 1
         tick = ticks[0]
@@ -361,12 +361,9 @@ class TestExecuteSchedule(
 
     def test_should_execute_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+
+        instance.reconcile_scheduler_state(external_repository)
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -384,8 +381,10 @@ class TestExecuteSchedule(
         assert schedule_result['stats']['ticksFailed'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(
-            repository.name, 'should_execute_error_schedule'
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule(
+                'should_execute_error_schedule'
+            ).get_reconstruction_id()
         )
 
         assert len(ticks) == 1
@@ -399,12 +398,9 @@ class TestExecuteSchedule(
 
     def test_tags_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+
+        instance.reconcile_scheduler_state(external_repository)
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -426,7 +422,9 @@ class TestExecuteSchedule(
         assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'tags_error_schedule')
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule('tags_error_schedule').get_reconstruction_id()
+        )
 
         assert len(ticks) == 1
         tick = ticks[0]
@@ -435,12 +433,8 @@ class TestExecuteSchedule(
 
     def test_environment_dict_scheduler_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+        instance.reconcile_scheduler_state(external_repository)
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -460,8 +454,10 @@ class TestExecuteSchedule(
         assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(
-            repository.name, 'environment_dict_error_schedule'
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule(
+                'environment_dict_error_schedule'
+            ).get_reconstruction_id()
         )
 
         assert len(ticks) == 1
@@ -471,12 +467,9 @@ class TestExecuteSchedule(
 
     def test_environment_dict_scheduler_error_serialize_cause(self, graphql_context):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+
+        instance.reconcile_scheduler_state(external_repository)
 
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -486,8 +479,10 @@ class TestExecuteSchedule(
         assert_launch_scheduled_execution_success(result)
         run_id = result.data['launchScheduledExecution']['run']['runId']
 
-        ticks = instance.get_schedule_ticks_by_schedule(
-            repository.name, 'environment_dict_error_schedule'
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule(
+                'environment_dict_error_schedule'
+            ).get_reconstruction_id()
         )
 
         assert len(ticks) == 1
@@ -497,12 +492,8 @@ class TestExecuteSchedule(
 
     def test_query_multiple_schedule_ticks(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+        instance.reconcile_scheduler_state(external_repository)
 
         for scheduleName in [
             'no_config_pipeline_hourly_schedule',
@@ -583,12 +574,8 @@ class TestExecuteSchedule(
 
     def test_invalid_config_schedule_error(self, graphql_context, snapshot):
         instance = graphql_context.instance
-        repository = graphql_context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        external_repository = graphql_context.legacy_external_repository
+        instance.reconcile_scheduler_state(external_repository)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -611,7 +598,11 @@ class TestExecuteSchedule(
         assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'invalid_config_schedule')
+        ticks = instance.get_schedule_ticks(
+            external_repository.get_external_schedule(
+                'invalid_config_schedule'
+            ).get_reconstruction_id()
+        )
 
         assert len(ticks) == 1
         tick = ticks[0]

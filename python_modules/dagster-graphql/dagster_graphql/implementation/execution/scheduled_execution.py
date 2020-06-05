@@ -49,13 +49,13 @@ def launch_scheduled_execution(graphene_info, schedule_name):
         # and store a ScheduleTick.
         # If this fails, this error should be sent to the file based scheduler logs.
         external_repository = graphene_info.context.legacy_external_repository
-        repository_name = external_repository.name
+        external_schedule = external_repository.get_external_schedule(schedule_name)
         schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
         cron_schedule = "Unknown" if not schedule_def else schedule_def.cron_schedule
         tick = graphene_info.context.instance.create_schedule_tick(
-            repository_name,
             ScheduleTickData(
-                schedule_name=schedule_name,
+                schedule_origin_id=external_schedule.get_reconstruction_id(),
+                schedule_name=external_schedule.name,
                 cron_schedule=cron_schedule,
                 timestamp=time.time(),
                 status=ScheduleTickStatus.STARTED,
@@ -81,7 +81,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
         if not should_execute:
             # Update tick to skipped state and return
             tick = tick.with_status(ScheduleTickStatus.SKIPPED)
-            graphene_info.context.instance.update_schedule_tick(repository_name, tick)
+            graphene_info.context.instance.update_schedule_tick(tick)
             # Return skipped specific gql response
             return graphene_info.schema.type_named('ScheduledExecutionBlocked')(
                 message='Schedule {schedule_name} did not run because the should_execute did not return'
@@ -135,7 +135,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
 
         run, result = _execute_schedule(graphene_info, external_pipeline, execution_params, errors)
         graphene_info.context.instance.update_schedule_tick(
-            repository_name, tick.with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id),
+            tick.with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id),
         )
 
         return result
@@ -145,7 +145,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
 
         if tick:
             graphene_info.context.instance.update_schedule_tick(
-                repository_name, tick.with_status(ScheduleTickStatus.FAILURE, error=error_data),
+                tick.with_status(ScheduleTickStatus.FAILURE, error=error_data),
             )
 
         raise exc

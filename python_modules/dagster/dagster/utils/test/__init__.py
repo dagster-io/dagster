@@ -407,21 +407,18 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def debug_info(self):
         return ""
 
-    def start_schedule(self, instance, repository_name, schedule_name):
+    def start_schedule(self, instance, external_schedule):
         pass
 
-    def stop_schedule(self, instance, repository_name, schedule_name):
+    def stop_schedule(self, instance, schedule_origin_id):
         pass
 
-    def running_schedule_count(self, repository_name, schedule_name):
+    def running_schedule_count(self, schedule_origin_id):
         return 0
 
-    def get_logs_path(self, _instance, repository_name, schedule_name):
-        check.str_param(repository_name, 'repository_name')
-        check.str_param(schedule_name, 'schedule_name')
-        return os.path.join(
-            self._artifacts_dir, repository_name, 'logs', schedule_name, 'scheduler.log'
-        )
+    def get_logs_path(self, _instance, schedule_origin_id):
+        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        return os.path.join(self._artifacts_dir, 'logs', schedule_origin_id, 'scheduler.log')
 
     def wipe(self, instance):
         pass

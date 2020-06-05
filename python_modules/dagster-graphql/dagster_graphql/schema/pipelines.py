@@ -170,8 +170,8 @@ class DauphinIPipelineSnapshotMixin(object):
             # schedules
             return []
 
-        schedules = graphene_info.context.instance.all_schedules(
-            represented_pipeline.handle.repository_name
+        schedules = graphene_info.context.instance.all_stored_schedule_state(
+            represented_pipeline.get_reconstruction_info().repository_target.get_id()
         )
         return [
             graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)

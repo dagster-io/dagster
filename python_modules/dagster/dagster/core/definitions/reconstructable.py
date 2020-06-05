@@ -23,14 +23,12 @@ EPHEMERAL_NAME = '<<unnamed>>'
 
 
 @whitelist_for_serdes
-class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointer yaml_path')):
+class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointer')):
     def __new__(
-        cls, pointer, yaml_path=None,
+        cls, pointer,
     ):
         return super(ReconstructableRepository, cls).__new__(
-            cls,
-            pointer=check.inst_param(pointer, 'pointer', CodePointer),
-            yaml_path=check.opt_str_param(yaml_path, 'yaml_path'),
+            cls, pointer=check.inst_param(pointer, 'pointer', CodePointer),
         )
 
     @lru_cache(maxsize=1)
@@ -55,10 +53,7 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
     def from_legacy_repository_yaml(cls, file_path):
         check.str_param(file_path, 'file_path')
         absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
-        return cls(
-            pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path),
-            yaml_path=absolute_file_path,
-        )
+        return cls(pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path))
 
     def get_reconstruction_info(self):
         return RepositoryReconstructionInfo(

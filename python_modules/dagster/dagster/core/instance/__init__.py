@@ -873,65 +873,57 @@ class DagsterInstance:
 
     # Scheduler
 
-    def reconcile_scheduler_state(self, python_path, repository_path, repository):
-        return self._scheduler.reconcile_scheduler_state(
-            self, repository, python_path, repository_path
-        )
+    def reconcile_scheduler_state(self, external_repository):
+        return self._scheduler.reconcile_scheduler_state(self, external_repository)
 
-    def start_schedule_and_update_storage_state(self, repository_name, schedule_name):
-        return self._scheduler.start_schedule_and_update_storage_state(
-            self, repository_name, schedule_name
-        )
+    def start_schedule_and_update_storage_state(self, external_schedule):
+        return self._scheduler.start_schedule_and_update_storage_state(self, external_schedule)
 
-    def stop_schedule_and_update_storage_state(self, repository_name, schedule_name):
-        return self._scheduler.stop_schedule_and_update_storage_state(
-            self, repository_name, schedule_name
-        )
+    def stop_schedule_and_update_storage_state(self, schedule_origin_id):
+        return self._scheduler.stop_schedule_and_update_storage_state(self, schedule_origin_id)
 
-    def stop_schedule_and_delete_from_storage(self, repository_name, schedule_name):
-        return self._scheduler.stop_schedule_and_delete_from_storage(
-            self, repository_name, schedule_name
-        )
+    def stop_schedule_and_delete_from_storage(self, schedule_origin_id):
+        return self._scheduler.stop_schedule_and_delete_from_storage(self, schedule_origin_id)
 
-    def running_schedule_count(self, repository_name, schedule_name):
-        return self._scheduler.running_schedule_count(repository_name, schedule_name)
+    def running_schedule_count(self, schedule_origin_id):
+        return self._scheduler.running_schedule_count(schedule_origin_id)
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
 
         errors = []
 
-        schedule_info = self.all_schedules_info()
         schedules = []
-        for repository_name, schedule in schedule_info:
-            if schedule.status == ScheduleStatus.RUNNING and not self.running_schedule_count(
-                repository_name, schedule.name
+        for schedule_state in self.all_stored_schedule_state():
+            if schedule_state.status == ScheduleStatus.RUNNING and not self.running_schedule_count(
+                schedule_state.schedule_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be running, but the scheduler is not "
-                    "running the schedule.".format(schedule_name=schedule.name)
+                    "running the schedule.".format(schedule_name=schedule_state.name)
                 )
-            elif schedule.status == ScheduleStatus.STOPPED and self.running_schedule_count(
-                repository_name, schedule.name
+            elif schedule_state.status == ScheduleStatus.STOPPED and self.running_schedule_count(
+                schedule_state.schedule_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be stopped, but the scheduler is still running "
-                    "the schedule.".format(schedule_name=schedule.name)
+                    "the schedule.".format(schedule_name=schedule_state.name)
                 )
 
-            if self.running_schedule_count(repository_name, schedule.name) > 1:
+            if self.running_schedule_count(schedule_state.schedule_origin_id) > 1:
                 errors.append(
                     "Duplicate jobs found: More than one job for schedule {schedule_name} are "
-                    "running on the scheduler.".format(schedule_name=schedule.name)
+                    "running on the scheduler.".format(schedule_name=schedule_state.name)
                 )
 
             schedule_info = {
-                schedule.name: {
-                    "status": schedule.status.value,
-                    "cron_schedule": schedule.cron_schedule,
-                    "python_path": schedule.python_path,
-                    "repository_name": repository_name,
-                    "repository_path": schedule.repository_path,
+                schedule_state.name: {
+                    "status": schedule_state.status.value,
+                    "cron_schedule": schedule_state.cron_schedule,
+                    "python_path": schedule_state.reconstruction_info.executable_path,
+                    "repository_pointer": schedule_state.reconstruction_info.get_repo_pointer().describe(),
+                    "schedule_origin_id": schedule_state.schedule_origin_id,
+                    "repository_origin_id": schedule_state.repository_origin_id,
                 }
             }
 
@@ -946,37 +938,32 @@ class DagsterInstance:
 
     # Schedule Storage
 
-    def create_schedule_tick(self, repository_name, schedule_tick_data):
-        return self._schedule_storage.create_schedule_tick(repository_name, schedule_tick_data)
+    def create_schedule_tick(self, schedule_tick_data):
+        return self._schedule_storage.create_schedule_tick(schedule_tick_data)
 
-    def update_schedule_tick(self, repository_name, tick):
-        return self._schedule_storage.update_schedule_tick(repository_name, tick)
+    def update_schedule_tick(self, tick):
+        return self._schedule_storage.update_schedule_tick(tick)
 
-    def get_schedule_ticks_by_schedule(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_ticks_by_schedule(repository_name, schedule_name)
+    def get_schedule_ticks(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_ticks(schedule_origin_id)
 
-    def get_schedule_tick_stats_by_schedule(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_tick_stats_by_schedule(
-            repository_name, schedule_name
-        )
+    def get_schedule_tick_stats(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_tick_stats(schedule_origin_id)
 
-    def all_schedules_info(self):
-        return self._schedule_storage.all_schedules_info()
+    def all_stored_schedule_state(self, repository_origin_id=None):
+        return self._schedule_storage.all_stored_schedule_state(repository_origin_id)
 
-    def all_schedules(self, repository_name=None):
-        return self._schedule_storage.all_schedules(repository_name)
+    def get_schedule_state(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_state(schedule_origin_id)
 
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_by_name(repository_name, schedule_name)
+    def add_schedule_state(self, schedule_state):
+        return self._schedule_storage.add_schedule_state(schedule_state)
 
-    def add_schedule(self, repository_name, schedule):
-        return self._schedule_storage.add_schedule(repository_name, schedule)
+    def update_schedule_state(self, schedule_state):
+        return self._schedule_storage.update_schedule_state(schedule_state)
 
-    def update_schedule(self, repository_name, schedule):
-        return self._schedule_storage.update_schedule(repository_name, schedule)
-
-    def delete_schedule(self, repository_name, schedule):
-        return self._schedule_storage.delete_schedule(repository_name, schedule)
+    def delete_schedule_state(self, schedule_origin_id):
+        return self._schedule_storage.delete_schedule_state(schedule_origin_id)
 
     def wipe_all_schedules(self):
         if self._scheduler:
@@ -984,5 +971,5 @@ class DagsterInstance:
 
         self._schedule_storage.wipe()
 
-    def logs_path_for_schedule(self, repository_name, schedule_name):
-        return self._scheduler.get_logs_path(self, repository_name, schedule_name)
+    def logs_path_for_schedule(self, schedule_origin_id):
+        return self._scheduler.get_logs_path(self, schedule_origin_id)

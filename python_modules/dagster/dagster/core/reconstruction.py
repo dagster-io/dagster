@@ -71,5 +71,8 @@ class ScheduleReconstructionInfo(
     def get_repo_cli_args(self):
         return self.repository_info.get_cli_args()
 
+    def get_repo_pointer(self):
+        return self.repository_info.code_pointer
+
     def get_id(self):
         return create_snapshot_id(self)

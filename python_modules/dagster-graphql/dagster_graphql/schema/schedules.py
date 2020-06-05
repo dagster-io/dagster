@@ -15,7 +15,7 @@ from dagster import check
 from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 from dagster.core.host_representation import ExternalSchedule
-from dagster.core.scheduler import Schedule, ScheduleTickStatus
+from dagster.core.scheduler import ScheduleState, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
@@ -175,8 +175,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         name = 'RunningSchedule'
 
     schedule_definition = dauphin.NonNull('ScheduleDefinition')
-    python_path = dauphin.Field(dauphin.String)
-    repository_path = dauphin.Field(dauphin.String)
     status = dauphin.NonNull('ScheduleStatus')
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
@@ -187,41 +185,39 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     running_schedule_count = dauphin.NonNull(dauphin.Int)
 
     def __init__(self, graphene_info, schedule):
-        self._schedule = check.inst_param(schedule, 'schedule', Schedule)
+        self._schedule_state = check.inst_param(schedule, 'schedule', ScheduleState)
         external_repository = graphene_info.context.legacy_external_repository
-        external_schedule = external_repository.get_external_schedule(schedule.name)
+
+        # wont always have the schedule - should always have the ID
+        self._external_schedule = external_repository.get_external_schedule(schedule.name)
+
+        self._external_schedule_origin_id = self._external_schedule.get_reconstruction_id()
+
         super(DauphinRunningSchedule, self).__init__(
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
                 schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
-                external_schedule=external_schedule,
+                external_schedule=self._external_schedule,
             ),
             status=schedule.status,
-            python_path=schedule.python_path,
-            repository_path=schedule.repository_path,
         )
 
     def resolve_running_schedule_count(self, graphene_info):
-        external_repository = graphene_info.context.legacy_external_repository
         running_schedule_count = graphene_info.context.instance.running_schedule_count(
-            external_repository.name, self._schedule.name
+            self._external_schedule_origin_id
         )
         return running_schedule_count
 
     def resolve_stats(self, graphene_info):
-        external_repository = graphene_info.context.legacy_external_repository
-        stats = graphene_info.context.instance.get_schedule_tick_stats_by_schedule(
-            external_repository.name, self._schedule.name
+        stats = graphene_info.context.instance.get_schedule_tick_stats(
+            self._external_schedule_origin_id
         )
         return graphene_info.schema.type_named('ScheduleTickStatsSnapshot')(stats)
 
     def resolve_ticks(self, graphene_info, limit=None):
-        external_repository = graphene_info.context.legacy_external_repository
 
         # TODO: Add cursor limit argument to get_schedule_ticks_by_schedule
         # https://github.com/dagster-io/dagster/issues/2291
-        ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
-            external_repository.name, self._schedule.name
-        )
+        ticks = graphene_info.context.instance.get_schedule_ticks(self._external_schedule_origin_id)
 
         if not limit:
             tick_subset = ticks
@@ -239,23 +235,21 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         ]
 
     def resolve_ticks_count(self, graphene_info):
-        external_repository = graphene_info.context.legacy_external_repository
-        ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
-            external_repository.name, self._schedule.name
-        )
+        ticks = graphene_info.context.instance.get_schedule_ticks(self._external_schedule_origin_id)
         return len(ticks)
 
     def resolve_runs(self, graphene_info, **kwargs):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter.for_schedule(self._schedule), limit=kwargs.get('limit'),
+                filters=PipelineRunsFilter.for_schedule(self._schedule_state),
+                limit=kwargs.get('limit'),
             )
         ]
 
     def resolve_runs_count(self, graphene_info):
         return graphene_info.context.instance.get_runs_count(
-            filters=PipelineRunsFilter.for_schedule(self._schedule)
+            filters=PipelineRunsFilter.for_schedule(self._schedule_state)
         )
 
 

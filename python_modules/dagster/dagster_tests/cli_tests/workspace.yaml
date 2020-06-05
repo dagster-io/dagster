@@ -1,0 +1,4 @@
+load_from:
+  - python_file:
+      relative_path: test_cli_commands.py
+      attribute: bar

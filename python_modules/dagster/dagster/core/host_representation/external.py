@@ -59,6 +59,12 @@ class ExternalRepository:
             self.external_repository_data.get_external_schedule_data(schedule_name), self._handle
         )
 
+    def get_external_schedules(self):
+        return [
+            ExternalSchedule(external_schedule_data, self._handle)
+            for external_schedule_data in self.external_repository_data.external_schedule_datas
+        ]
+
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(
             self.external_repository_data.get_external_partition_set_data(partition_set_name),
@@ -311,6 +317,10 @@ class ExternalSchedule:
     @property
     def partition_set_name(self):
         return self._external_schedule_data.partition_set_name
+
+    @property
+    def environment_vars(self):
+        return self._external_schedule_data.environment_vars
 
     @property
     def handle(self):

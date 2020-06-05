@@ -1,22 +1,19 @@
 import os
-import sys
 
 import mock
-from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import ScheduleDefinition, seven
+from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
-from dagster.utils import file_relative_path
 from dagster.utils.test import FilesystemTestScheduler
 
-from .setup import define_test_context
+from .setup import define_test_context, main_repo_location_name, main_repo_name
 
 GET_SCHEDULES_QUERY = '''
 {
@@ -35,8 +32,6 @@ GET_SCHEDULES_QUERY = '''
           }
           runsCount
           status
-          pythonPath
-          repositoryPath
         }
       }
     }
@@ -131,15 +126,12 @@ def test_start_stop_schedule():
             run_launcher=SyncInMemoryRunLauncher(),
         )
 
-        context = define_context_for_repository_yaml(
-            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
+        context = define_test_context(instance)
         # Initialize scheduler
-        repository = context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            python_path=sys.executable, repository_path="", repository=repository,
-        )
+        external_repository = context.get_repository_location(
+            main_repo_location_name()
+        ).get_repository(main_repo_name())
+        instance.reconcile_scheduler_state(external_repository)
 
         # Start schedule
         start_result = execute_dagster_graphql(
@@ -173,21 +165,18 @@ def test_get_all_schedules():
             run_launcher=SyncInMemoryRunLauncher(),
         )
 
-        context = define_context_for_repository_yaml(
-            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
+        context = define_test_context(instance)
+        external_repository = context.get_repository_location(
+            main_repo_location_name()
+        ).get_repository(main_repo_name())
+        instance.reconcile_scheduler_state(external_repository)
 
         # Initialize scheduler
-        repository = context.legacy_get_repository_definition()
-        instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
-        )
+        instance.reconcile_scheduler_state(external_repository)
 
         # Start schedule
         schedule = instance.start_schedule_and_update_storage_state(
-            repository.name, "no_config_pipeline_hourly_schedule"
+            external_repository.get_external_schedule("no_config_pipeline_hourly_schedule")
         )
 
         # Query Scheduler + all Schedules
@@ -196,6 +185,7 @@ def test_get_all_schedules():
         # These schedules are defined in dagster_graphql_tests/graphql/setup_scheduler.py
         # If you add a schedule there, be sure to update the number of schedules below
         assert scheduler_result.data
+
         assert scheduler_result.data['scheduler']
         assert scheduler_result.data['scheduler']['runningSchedules']
         assert len(scheduler_result.data['scheduler']['runningSchedules']) == 18
@@ -218,58 +208,6 @@ def test_get_all_schedules():
                 )
 
 
-def test_scheduler_change_set_adding_schedule():
-
-    schedule_1 = ScheduleDefinition('schedule_1', "*****", "pipeline_name", {})
-    schedule_2 = ScheduleDefinition('schedule_2', "*****", "pipeline_name", {})
-    schedule_3 = ScheduleDefinition('schedule_3', "*****", "pipeline_name", {})
-    schedule_4 = ScheduleDefinition('schedule_4', "*****", "pipeline_name", {})
-
-    modified_schedule_2 = ScheduleDefinition(
-        'schedule_2', "0****", "pipeline_name", {'new_key': "new_value"}
-    )
-    renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", "pipeline_name", {})
-
-    running_1 = Schedule(schedule_1.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_2 = Schedule(schedule_2.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_3 = Schedule(schedule_3.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_4 = Schedule(schedule_4.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-
-    # Add initial schedules
-    change_set_1 = get_schedule_change_set([], [schedule_1, schedule_2])
-    assert sorted(change_set_1) == sorted([('add', 'schedule_2', []), ('add', 'schedule_1', [])])
-
-    # Add more schedules
-    change_set_2 = get_schedule_change_set(
-        [running_1, running_2], [schedule_1, schedule_2, schedule_3, schedule_4]
-    )
-    assert sorted(change_set_2) == sorted([('add', 'schedule_3', []), ('add', 'schedule_4', [])])
-
-    # Modify schedule_2
-    change_set_3 = get_schedule_change_set(
-        [running_1, running_2, running_3, running_4],
-        [schedule_1, modified_schedule_2, schedule_3, schedule_4],
-    )
-    assert change_set_3 == [('change', 'schedule_2', [('cron_schedule', ('*****', '0****'))])]
-
-    # Delete schedules
-    change_set_3 = get_schedule_change_set(
-        [running_1, running_2, running_3, running_4], [schedule_3, schedule_4]
-    )
-    assert sorted(change_set_3) == sorted(
-        [('remove', 'schedule_1', []), ('remove', 'schedule_2', [])]
-    )
-
-    # Rename schedules
-    change_set_4 = get_schedule_change_set(
-        [running_1, running_2, running_3, running_4],
-        [schedule_1, schedule_2, renamed_schedule_3, schedule_4],
-    )
-    assert sorted(change_set_4) == sorted(
-        [('add', 'renamed_schedule_3', []), ('remove', 'schedule_3', [])]
-    )
-
-
 def test_get_schedule():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance(
@@ -284,12 +222,10 @@ def test_get_schedule():
         )
 
         context = define_test_context(instance)
-        # Initialize scheduler
-        repository = context.legacy_get_repository_definition()
         instance.reconcile_scheduler_state(
-            repository=repository,
-            python_path='/path/to/python',
-            repository_path='/path/to/repository',
+            external_repository=context.get_repository_location(
+                main_repo_location_name()
+            ).get_repository(main_repo_name()),
         )
 
         result = execute_dagster_graphql(

@@ -673,7 +673,7 @@ def test_schedules_list(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_list_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     if result.exception:
@@ -687,22 +687,21 @@ def test_schedules_up(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
-
     assert result.exit_code == 0
-    assert result.output == 'Changes:\n  + foo_schedule (add)\n'
+    assert 'Changes:\n  + foo_schedule (add)' in result.output
 
 
 def test_schedules_up_and_list(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
-        schedule_list_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     assert result.exit_code == 0
@@ -718,12 +717,12 @@ def test_schedules_start_and_stop(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')],
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')],
     )
 
     result = runner.invoke(
         schedule_start_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     assert result.exit_code == 0
@@ -731,7 +730,7 @@ def test_schedules_start_and_stop(_patch_scheduler_instance):
 
     result = runner.invoke(
         schedule_stop_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     assert result.exit_code == 0
@@ -742,7 +741,7 @@ def test_schedules_start_empty(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_start_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')],
+        schedule_start_command, ['-w', file_relative_path(__file__, 'workspace.yaml')],
     )
 
     assert result.exit_code == 0
@@ -753,12 +752,12 @@ def test_schedules_start_all(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
         schedule_start_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), '--start-all'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), '--start-all'],
     )
 
     assert result.exit_code == 0
@@ -769,12 +768,12 @@ def test_schedules_wipe_correct_delete_message(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
         schedule_wipe_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml')],
+        ['-w', file_relative_path(__file__, 'workspace.yaml')],
         input="DELETE\n",
     )
 
@@ -785,25 +784,24 @@ def test_schedules_wipe_correct_delete_message(_patch_scheduler_instance):
     assert 'Wiped all schedules and schedule cron jobs' in result.output
 
     result = runner.invoke(
-        schedule_up_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), '--preview'],
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml'), '--preview'],
     )
 
     # Verify schedules were wiped
     assert result.exit_code == 0
-    assert result.output == 'Planned Schedule Changes:\n  + foo_schedule (add)\n'
+    assert 'Planned Schedule Changes:\n  + foo_schedule (add)' in result.output
 
 
 def test_schedules_wipe_incorrect_delete_message(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
         schedule_wipe_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml')],
+        ['-w', file_relative_path(__file__, 'workspace.yaml')],
         input="WRONG\n",
     )
 
@@ -811,8 +809,7 @@ def test_schedules_wipe_incorrect_delete_message(_patch_scheduler_instance):
     assert 'Exiting without deleting all schedules and schedule cron jobs' in result.output
 
     result = runner.invoke(
-        schedule_up_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), '--preview'],
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml'), '--preview'],
     )
 
     # Verify schedules were not wiped
@@ -824,17 +821,17 @@ def test_schedules_restart(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
         schedule_start_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     result = runner.invoke(
         schedule_restart_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     assert result.exit_code == 0
@@ -845,24 +842,23 @@ def test_schedules_restart_all(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
-        schedule_up_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')]
+        schedule_up_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
     )
 
     result = runner.invoke(
         schedule_start_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     result = runner.invoke(
         schedule_restart_command,
         [
-            '-y',
-            file_relative_path(__file__, 'repository_file.yaml'),
+            '-w',
+            file_relative_path(__file__, 'workspace.yaml'),
             'foo_schedule',
             '--restart-all-running',
         ],
     )
-
     assert result.exit_code == 0
     assert result.output == 'Restarted all running schedules for repository bar\n'
 
@@ -872,7 +868,7 @@ def test_schedules_logs(_patch_scheduler_instance):
 
     result = runner.invoke(
         schedule_logs_command,
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo_schedule'],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), 'foo_schedule'],
     )
 
     assert result.exit_code == 0
@@ -1142,22 +1138,6 @@ def test_tags_pipeline():
         run = runs[0]
         assert len(run.tags) >= 1
         assert run.tags.get('foo') == 'bar'
-
-
-def test_a():
-    runner = CliRunner()
-    result = runner.invoke(
-        pipeline_execute_command,
-        [
-            '-f',
-            file_relative_path(__file__, 'test_cli_commands.py'),
-            '-n',
-            'foo_pipeline',
-            '--solid-selection',
-            'do_something',
-        ],
-    )
-    print(result)
 
 
 def test_execute_subset_pipeline():
