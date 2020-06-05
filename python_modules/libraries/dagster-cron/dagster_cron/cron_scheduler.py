@@ -156,7 +156,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
     def _get_command(self, script_file, instance, repository_name, schedule):
         schedule_log_file_path = self.get_logs_path(instance, repository_name, schedule.name)
-        command = "{script_file} > {schedule_log_file_path} 2>&1".format(
+        command = "{script_file} >> {schedule_log_file_path} 2>&1".format(
             script_file=script_file, schedule_log_file_path=schedule_log_file_path
         )
 
