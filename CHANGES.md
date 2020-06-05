@@ -25,7 +25,14 @@
 - `dagster_spark.create_spark_solid` now accepts a `required_resource_keys` argument, which enables
   setting up a step launcher for Spark solids, like the `emr_pyspark_step_launcher`.
 
-## 0.7.15 (Latest)
+## 0.7.16 (Latest)
+
+**Bugfix**
+
+- Enabled `NoOpComputeLogManager` to be configured as the `compute_logs` implementation in `dagster.yaml`
+- Suppressed noisy error messages in logs from skipped steps
+
+## 0.7.15
 
 **New**
 
@@ -49,7 +56,6 @@
 - Fixes a race condition in Airflow injection logic that happens when multiple Operators try to
   create PipelineRun entries simultaneously.
 - Fixed an issue with schedules that had invalid config not logging the appropriate error.
-
 
 ## 0.7.13
 
