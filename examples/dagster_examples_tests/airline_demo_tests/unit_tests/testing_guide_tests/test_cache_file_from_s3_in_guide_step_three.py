@@ -1,6 +1,8 @@
 import os
 
-from dagster_aws.s3 import S3Coordinate, S3FakeSession
+import boto3
+from dagster_aws.s3 import S3Coordinate
+from moto import mock_s3
 
 from dagster import ModeDefinition, solid
 from dagster.core.storage.file_cache import FSFileCache
@@ -44,13 +46,16 @@ def test_cache_file_from_s3_step_three_mock():
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
 
 
+@mock_s3
 def test_cache_file_from_s3_step_three_fake(snapshot):
-    s3_session = S3FakeSession({'some-bucket': {'some-key': b'foo'}})
+    s3 = boto3.client('s3')
+    s3.create_bucket(Bucket='some-bucket')
+    s3.put_object(Bucket='some-bucket', Key='some-key', Body=b'foo')
 
     with get_temp_dir() as temp_dir:
         execute_solid(
             cache_file_from_s3,
-            unittest_for_local_mode_def(temp_dir, s3_session),
+            unittest_for_local_mode_def(temp_dir, s3),
             input_values={'s3_coord': {'bucket': 'some-bucket', 'key': 'some-key'}},
         )
 
@@ -60,4 +65,11 @@ def test_cache_file_from_s3_step_three_fake(snapshot):
         with open(target_file, 'rb') as ff:
             assert ff.read() == b'foo'
 
-        snapshot.assert_match(s3_session.buckets)
+    snapshot.assert_match(
+        {
+            'some-bucket': {
+                k: s3.get_object(Bucket='some-bucket', Key=k)['Body'].read()
+                for k in [obj['Key'] for obj in s3.list_objects(Bucket='some-bucket')['Contents']]
+            }
+        }
+    )

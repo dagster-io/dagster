@@ -1,4 +1,6 @@
-from dagster_aws.s3 import S3Coordinate, S3FakeSession, S3FileCache
+import boto3
+from dagster_aws.s3 import S3Coordinate, S3FileCache
+from moto import mock_s3
 
 from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name
@@ -22,32 +24,41 @@ def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
             return file_handle
 
 
-def unittest_for_aws_mode_def(s3_file_cache_session, s3_session):
+def unittest_for_aws_mode_def(s3_session):
     return ModeDefinition.from_resources(
         {
-            'file_cache': S3FileCache('file-cache-bucket', 'file-cache', s3_file_cache_session),
+            'file_cache': S3FileCache('file-cache-bucket', 'file-cache', s3_session),
             's3': s3_session,
         }
     )
 
 
+@mock_s3
 def test_cache_file_from_s3_step_four(snapshot):
-    s3_session = S3FakeSession({'source-bucket': {'source-file': b'foo'}})
-    s3_file_cache_session = S3FakeSession()
+    s3 = boto3.client('s3')
+    s3.create_bucket(Bucket='source-bucket')
+    s3.create_bucket(Bucket='file-cache-bucket')
+    s3.put_object(Bucket='source-bucket', Key='source-file', Body=b'foo')
 
     solid_result = execute_solid(
         cache_file_from_s3,
-        unittest_for_aws_mode_def(s3_file_cache_session, s3_session),
+        unittest_for_aws_mode_def(s3),
         input_values={'s3_coord': {'bucket': 'source-bucket', 'key': 'source-file'}},
     )
 
     assert solid_result.output_value().path_desc == 's3://file-cache-bucket/file-cache/source-file'
 
-    file_cache_obj = s3_file_cache_session.get_object(
-        Bucket='file-cache-bucket', Key='file-cache/source-file'
-    )
+    file_cache_obj = s3.get_object(Bucket='file-cache-bucket', Key='file-cache/source-file')
 
     assert file_cache_obj['Body'].read() == b'foo'
 
-    # just perform a snapshot of the bucket structure as well
-    snapshot.assert_match(s3_file_cache_session.buckets)
+    snapshot.assert_match(
+        {
+            'file-cache-bucket': {
+                k: s3.get_object(Bucket='file-cache-bucket', Key=k)['Body'].read()
+                for k in [
+                    obj['Key'] for obj in s3.list_objects(Bucket='file-cache-bucket')['Contents']
+                ]
+            }
+        }
+    )

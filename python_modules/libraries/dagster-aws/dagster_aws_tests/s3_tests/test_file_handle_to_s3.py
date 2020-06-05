@@ -1,4 +1,6 @@
-from dagster_aws.s3 import create_s3_fake_resource, file_handle_to_s3
+import boto3
+from dagster_aws.s3 import file_handle_to_s3
+from moto import mock_s3
 
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
 from dagster.utils.test import get_temp_file_handle_with_data
@@ -20,12 +22,16 @@ def create_file_handle_pipeline(temp_file_handle, s3_resource):
     return test
 
 
+@mock_s3
 def test_successful_file_handle_to_s3():
     foo_bytes = 'foo'.encode()
     with get_temp_file_handle_with_data(foo_bytes) as temp_file_handle:
-        s3_fake_resource = create_s3_fake_resource()
+        # Uses mock S3
+        s3 = boto3.client('s3')
+        s3.create_bucket(Bucket='some-bucket')
+
         result = execute_pipeline(
-            create_file_handle_pipeline(temp_file_handle, s3_fake_resource),
+            create_file_handle_pipeline(temp_file_handle, s3),
             environment_dict={
                 'solids': {
                     'file_handle_to_s3': {'config': {'Bucket': 'some-bucket', 'Key': 'some-key'}}
@@ -35,9 +41,7 @@ def test_successful_file_handle_to_s3():
 
         assert result.success
 
-        assert s3_fake_resource.mock_extras.upload_fileobj.call_count == 1
-
-        assert s3_fake_resource.get_object('some-bucket', 'some-key')['Body'].read() == foo_bytes
+        assert s3.get_object(Bucket='some-bucket', Key='some-key')['Body'].read() == foo_bytes
 
         materializations = result.result_for_solid(
             'file_handle_to_s3'

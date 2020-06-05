@@ -45,15 +45,6 @@ S3
   :py:class:`s3_system_storage`.
 
 
-Testing
-^^^^^^^
-
-.. autoclass:: dagster_aws.s3.S3FakeSession
-  :members:
-
-.. autofunction:: dagster_aws.s3.create_s3_fake_resource
-
-
 Redshift
 --------
 .. autodata:: dagster_aws.redshift.redshift_resource

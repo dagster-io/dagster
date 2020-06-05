@@ -39,6 +39,7 @@ setup(
             'matplotlib==3.0.2; python_version >= "3.5"',
             'matplotlib==2.2.4; python_version < "3.5"',
             'mock',
+            'moto==1.3.7',
             'pandas>=1.0.0',
             'pytest-mock',
             'pyspark>=2.0.2',

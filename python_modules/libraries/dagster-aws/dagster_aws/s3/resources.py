@@ -1,6 +1,7 @@
-from dagster import Field, resource
+import boto3
+from botocore.handlers import disable_signing
 
-from .utils import create_s3_session
+from dagster import Field, resource
 
 
 @resource(
@@ -78,6 +79,10 @@ def s3_resource(context):
     region_name = context.resource_config.get('region_name')
     endpoint_url = context.resource_config.get('endpoint_url')
 
-    return create_s3_session(
-        signed=not use_unsigned_session, region_name=region_name, endpoint_url=endpoint_url
-    )
+    s3 = boto3.resource(  # pylint:disable=C0103
+        's3', region_name=region_name, use_ssl=True, endpoint_url=endpoint_url
+    ).meta.client
+
+    if use_unsigned_session:
+        s3.meta.events.register('choose-signer.s3.*', disable_signing)
+    return s3
