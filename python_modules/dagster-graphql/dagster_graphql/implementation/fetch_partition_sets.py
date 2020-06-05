@@ -2,12 +2,19 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.api.snapshot_partition import sync_get_external_partition
-from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
+from dagster.core.host_representation import (
+    ExternalPartitionSet,
+    RepositoryHandle,
+    RepositorySelector,
+)
 
 from .utils import capture_dauphin_error
 
 
 def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_name):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+    check.str_param(pipeline_name, 'pipeline_name')
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
     partition_sets = [
@@ -34,10 +41,12 @@ def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_nam
 
 
 @capture_dauphin_error
-def get_partition_set(graphene_info, partition_set_name):
+def get_partition_set(graphene_info, repository_selector, partition_set_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
     check.str_param(partition_set_name, 'partition_set_name')
-    repository = graphene_info.context.legacy_external_repository
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
     partition_sets = repository.get_external_partition_sets()
     for partition_set in partition_sets:
         if partition_set.name == partition_set_name:

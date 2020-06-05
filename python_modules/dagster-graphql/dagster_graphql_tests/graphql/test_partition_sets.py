@@ -24,8 +24,8 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
 '''
 
 GET_PARTITION_SET_QUERY = '''
-    query PartitionSetQuery($partitionSetName: String!) {
-        partitionSetOrError(partitionSetName: $partitionSetName) {
+    query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
+        partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             __typename
             ... on PythonError {
                 message
@@ -69,10 +69,11 @@ def test_get_partition_sets_for_pipeline(graphql_context, snapshot):
 
 
 def test_get_partition_set(graphql_context, snapshot):
+    selector = get_legacy_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context,
         GET_PARTITION_SET_QUERY,
-        variables={'partitionSetName': 'integer_partition'},
+        variables={'partitionSetName': 'integer_partition', 'repositorySelector': selector},
     )
 
     assert result.data
@@ -81,7 +82,7 @@ def test_get_partition_set(graphql_context, snapshot):
     invalid_partition_set_result = execute_dagster_graphql(
         graphql_context,
         GET_PARTITION_SET_QUERY,
-        variables={'partitionSetName': 'invalid_partition'},
+        variables={'partitionSetName': 'invalid_partition', 'repositorySelector': selector},
     )
 
     print(invalid_partition_set_result.data)

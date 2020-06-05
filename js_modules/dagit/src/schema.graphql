@@ -932,7 +932,7 @@ type Query {
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
-  partitionSetOrError(partitionSetName: String): PartitionSetOrError!
+  partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!

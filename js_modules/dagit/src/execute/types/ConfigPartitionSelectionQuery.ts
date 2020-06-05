@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RepositorySelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: ConfigPartitionSelectionQuery
 // ====================================================
@@ -38,6 +40,7 @@ export interface ConfigPartitionSelectionQuery {
 }
 
 export interface ConfigPartitionSelectionQueryVariables {
+  repositorySelector: RepositorySelector;
   partitionSetName: string;
   partitionName: string;
 }

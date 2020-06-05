@@ -33,6 +33,7 @@ import {
   useRepositorySelector,
   usePipelineSelector
 } from "../DagsterRepositoryContext";
+import { RepositorySelector } from "../types/globalTypes";
 
 type Preset = ConfigPresetsQuery_pipelineOrError_Pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
@@ -86,6 +87,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
   };
 
   onSelectPartition = async (
+    repositorySelector: RepositorySelector,
     partitionSetName: string,
     partitionName: string,
     pipeline?: Pipeline
@@ -98,7 +100,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
     try {
       const { data } = await this.props.client.query({
         query: CONFIG_PARTITION_SELECTION_QUERY,
-        variables: { partitionSetName, partitionName }
+        variables: { repositorySelector, partitionSetName, partitionName }
       });
 
       if (
@@ -172,6 +174,7 @@ interface ConfigEditorPartitionPickerProps {
   partitionSetName: string;
   value: string | null;
   onSelect: (
+    repositorySelector: RepositorySelector,
     partitionSetName: string,
     partitionName: string,
     pipeline?: Pipeline
@@ -181,11 +184,12 @@ interface ConfigEditorPartitionPickerProps {
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
   props => {
     const { partitionSetName, pipelineName, value, onSelect } = props;
+    const repositorySelector = useRepositorySelector();
     const pipelineSelector = usePipelineSelector(pipelineName);
     const { data, loading } = useQuery<ConfigPartitionsQuery>(
       CONFIG_PARTITIONS_QUERY,
       {
-        variables: { partitionSetName, pipelineSelector },
+        variables: { repositorySelector, pipelineSelector, partitionSetName },
         fetchPolicy: "network-only"
       }
     );
@@ -251,7 +255,12 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         )}
         noResults={<Menu.Item disabled={true} text="No presets." />}
         onItemSelect={item => {
-          return onSelect(partitionSetName, item.name, pipeline);
+          return onSelect(
+            repositorySelector,
+            partitionSetName,
+            item.name,
+            pipeline
+          );
         }}
       />
     );
@@ -453,8 +462,9 @@ export const CONFIG_PARTITION_SETS_QUERY = gql`
 
 const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
-    $partitionSetName: String!
+    $repositorySelector: RepositorySelector!
     $pipelineSelector: PipelineSelector!
+    $partitionSetName: String!
   ) {
     pipelineOrError(params: $pipelineSelector) {
       __typename
@@ -466,7 +476,10 @@ const CONFIG_PARTITIONS_QUERY = gql`
         }
       }
     }
-    partitionSetOrError(partitionSetName: $partitionSetName) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
       __typename
       ... on PartitionSet {
         partitions {
@@ -481,10 +494,14 @@ const CONFIG_PARTITIONS_QUERY = gql`
 
 const CONFIG_PARTITION_SELECTION_QUERY = gql`
   query ConfigPartitionSelectionQuery(
+    $repositorySelector: RepositorySelector!
     $partitionSetName: String!
     $partitionName: String!
   ) {
-    partitionSetOrError(partitionSetName: $partitionSetName) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
       __typename
       ... on PartitionSet {
         partition(partitionName: $partitionName) {

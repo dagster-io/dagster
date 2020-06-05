@@ -206,6 +206,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
           partitionSet {
             name
           }
+          pipelineName
         }
         ticksList: ticks(limit: $ticksLimit) {
           tickId

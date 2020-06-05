@@ -101,7 +101,9 @@ class DauphinQuery(dauphin.ObjectType):
         pipelineName=dauphin.NonNull(dauphin.String),
     )
     partitionSetOrError = dauphin.Field(
-        dauphin.NonNull('PartitionSetOrError'), partitionSetName=dauphin.String()
+        dauphin.NonNull('PartitionSetOrError'),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
+        partitionSetName=dauphin.String(),
     )
 
     pipelineRunsOrError = dauphin.Field(
@@ -235,8 +237,12 @@ class DauphinQuery(dauphin.ObjectType):
             kwargs.get('pipelineName'),
         )
 
-    def resolve_partitionSetOrError(self, graphene_info, partitionSetName):
-        return get_partition_set(graphene_info, partitionSetName)
+    def resolve_partitionSetOrError(self, graphene_info, **kwargs):
+        return get_partition_set(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+            kwargs.get('partitionSetName'),
+        )
 
     def resolve_pipelineRunTags(self, graphene_info):
         return get_run_tags(graphene_info)

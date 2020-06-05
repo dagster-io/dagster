@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
+import { RepositorySelector, PipelineSelector } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ConfigPartitionsQuery
@@ -54,6 +54,7 @@ export interface ConfigPartitionsQuery {
 }
 
 export interface ConfigPartitionsQueryVariables {
-  partitionSetName: string;
+  repositorySelector: RepositorySelector;
   pipelineSelector: PipelineSelector;
+  partitionSetName: string;
 }
