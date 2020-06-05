@@ -244,8 +244,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPythonsNo38,
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-azure',
-        env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
+        'python_modules/libraries/dagster-azure', env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-celery',
@@ -269,6 +268,8 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             'GCP_PROJECT_ID',
         ],
         extra_cmds_fn=gcp_extra_cmds_fn,
+        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+        retries=2,
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-k8s',
@@ -297,6 +298,8 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         'python_modules/libraries/dagster-twilio',
         env_vars=['TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN'],
+        # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
+        retries=2,
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagstermill',

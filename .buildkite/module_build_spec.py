@@ -13,7 +13,7 @@ class ModuleBuildSpec(
     namedtuple(
         '_ModuleBuildSpec',
         'directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file '
-        'tox_env_suffixes buildkite_label',
+        'tox_env_suffixes buildkite_label retries',
     )
 ):
     '''Main spec for testing Dagster Python modules using tox.
@@ -46,6 +46,7 @@ class ModuleBuildSpec(
             as two build steps. Defaults to None.
         buildkite_label: (str, optional): Optional label to override what's shown in Buildkite.
             Defaults to None (uses the package name as the label).
+        retries: (int, optional): Whether to retry these tests on failure
 
     Returns:
         List[dict]: List of test steps
@@ -61,6 +62,7 @@ class ModuleBuildSpec(
         tox_file=None,
         tox_env_suffixes=None,
         buildkite_label=None,
+        retries=None,
     ):
         return super(ModuleBuildSpec, cls).__new__(
             cls,
@@ -72,6 +74,7 @@ class ModuleBuildSpec(
             tox_file,
             tox_env_suffixes,
             buildkite_label,
+            retries,
         )
 
     def get_tox_build_steps(self):
@@ -108,6 +111,9 @@ class ModuleBuildSpec(
                     .run(*cmds)
                     .on_integration_image(version, self.env_vars or [])
                 )
+
+                if self.retries:
+                    step = step.with_retry(self.retries)
 
                 if self.depends_on_fn:
                     step = step.depends_on(self.depends_on_fn(version))
