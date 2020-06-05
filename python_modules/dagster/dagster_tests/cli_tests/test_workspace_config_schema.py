@@ -1,6 +1,6 @@
 import yaml
 
-from dagster.cli.workspace import validate_workspace_config
+from dagster.cli.workspace.config_schema import validate_workspace_config
 
 
 def _validate_yaml_contents(yaml_contents):

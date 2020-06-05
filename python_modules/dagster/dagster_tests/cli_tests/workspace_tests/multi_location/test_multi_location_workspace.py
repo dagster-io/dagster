@@ -1,4 +1,5 @@
-from dagster.cli.workspace import Workspace, load_workspace_from_yaml_path
+from dagster.cli.workspace import Workspace
+from dagster.cli.workspace.load import load_workspace_from_yaml_path
 from dagster.utils import file_relative_path
 
 

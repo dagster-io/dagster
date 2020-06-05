@@ -8,7 +8,7 @@ from dagit.app import create_app_from_workspace
 from dagit.cli import host_dagit_ui_with_workspace, ui
 
 from dagster import seven
-from dagster.cli.workspace import load_workspace_from_yaml_path
+from dagster.cli.workspace.load import load_workspace_from_yaml_path
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import environ
