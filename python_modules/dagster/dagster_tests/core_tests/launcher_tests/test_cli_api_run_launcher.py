@@ -218,7 +218,7 @@ def _message_exists(event_records, message_text):
     return False
 
 
-def test_single_solid_subset_execution():
+def test_single_solid_selection_execution():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
@@ -245,7 +245,7 @@ def test_single_solid_subset_execution():
         assert _get_successful_step_keys(event_records) == {'return_one.compute'}
 
 
-def test_multi_solid_subset_execution():
+def test_multi_solid_selection_execution():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 

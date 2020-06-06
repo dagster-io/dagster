@@ -139,7 +139,7 @@ def test_execution_plan_subset_strict_resources():
     assert set(resources_initted.keys()) == {'b'}
 
 
-def test_solid_subset_strict_resources():
+def test_solid_selection_strict_resources():
     resources_initted = {}
 
     selective_init_test_pipeline = get_resource_init_pipeline(resources_initted)
@@ -152,7 +152,7 @@ def test_solid_subset_strict_resources():
     assert set(resources_initted.keys()) == {'b'}
 
 
-def test_solid_subset_with_aliases_strict_resources():
+def test_solid_selection_with_aliases_strict_resources():
     resources_initted = {}
 
     @resource
@@ -229,7 +229,7 @@ def create_composite_solid_pipeline(resources_initted):
     return selective_init_composite_test_pipeline
 
 
-def test_solid_subset_strict_resources_within_composite():
+def test_solid_selection_strict_resources_within_composite():
     resources_initted = {}
 
     result = execute_pipeline(

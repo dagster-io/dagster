@@ -359,7 +359,7 @@ def test_pipeline_explicit_subset():
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+        pipeline_def, environment_dict=env_config, solid_selection=['add_one']
     )
 
     assert subset_result.success
@@ -474,14 +474,14 @@ def test_pipeline_explicit_subset_with_multi_dependency():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
-    subset_result = execute_pipeline(pipeline_def, solid_subset=['noop'])
+    subset_result = execute_pipeline(pipeline_def, solid_selection=['noop'])
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
     subset_result = execute_pipeline(
-        pipeline_def, solid_subset=['return_one', 'return_two', 'noop']
+        pipeline_def, solid_selection=['return_one', 'return_two', 'noop']
     )
 
     assert subset_result.success
@@ -528,7 +528,7 @@ def test_pipeline_execution_explicit_disjoint_subset():
     pipeline_def = define_created_disjoint_three_part_pipeline()
 
     result = execute_pipeline(
-        pipeline_def, solid_subset=['add_one', 'add_three'], environment_dict=env_config
+        pipeline_def, solid_selection=['add_one', 'add_three'], environment_dict=env_config
     )
 
     assert result.success
@@ -768,7 +768,7 @@ def test_reexecution_fs_storage_with_subset():
         pipeline_def,
         environment_dict=environment_dict,
         instance=instance,
-        solid_subset=['return_one'],
+        solid_selection=['return_one'],
     )
     assert pipeline_result_subset.success
     assert len(pipeline_result_subset.solid_result_list) == 1

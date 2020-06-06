@@ -57,11 +57,11 @@ def test_snapshot_command_pipeline():
         )
 
 
-def test_snapshot_command_pipeline_solid_subset():
+def test_snapshot_command_pipeline_solid_selection():
 
     with get_temp_file_name() as output_file:
         runner = CliRunner()
-        solid_subset = ['do_input']
+        solid_selection = ['do_input']
         result = runner.invoke(
             pipeline_subset_snapshot_command,
             [
@@ -69,7 +69,9 @@ def test_snapshot_command_pipeline_solid_subset():
                 '-y',
                 file_relative_path(__file__, 'repository_file.yaml'),
                 'foo',
-                '--solid-subset={solid_subset}'.format(solid_subset=json.dumps(solid_subset)),
+                '--solid-selection={solid_selection}'.format(
+                    solid_selection=json.dumps(solid_selection)
+                ),
             ],
         )
 

@@ -97,31 +97,35 @@ def test_parse_clause_invalid():
 
 
 def test_parse_solid_selection_single():
-    solid_subset_single = parse_solid_selection(foo_pipeline, ['add_nums'])
-    assert len(solid_subset_single) == 1
-    assert solid_subset_single == {'add_nums'}
+    solid_selection_single = parse_solid_selection(foo_pipeline, ['add_nums'])
+    assert len(solid_selection_single) == 1
+    assert solid_selection_single == {'add_nums'}
 
-    solid_subset_star = parse_solid_selection(foo_pipeline, ['add_nums*'])
-    assert len(solid_subset_star) == 3
-    assert set(solid_subset_star) == {'add_nums', 'multiply_two', 'add_one'}
+    solid_selection_star = parse_solid_selection(foo_pipeline, ['add_nums*'])
+    assert len(solid_selection_star) == 3
+    assert set(solid_selection_star) == {'add_nums', 'multiply_two', 'add_one'}
 
-    solid_subset_both = parse_solid_selection(foo_pipeline, ['*add_nums+'])
-    assert len(solid_subset_both) == 4
-    assert set(solid_subset_both) == {'return_one', 'return_two', 'add_nums', 'multiply_two'}
+    solid_selection_both = parse_solid_selection(foo_pipeline, ['*add_nums+'])
+    assert len(solid_selection_both) == 4
+    assert set(solid_selection_both) == {'return_one', 'return_two', 'add_nums', 'multiply_two'}
 
 
 def test_parse_solid_selection_multi():
-    solid_subset_multi_disjoint = parse_solid_selection(foo_pipeline, ['return_one', 'add_nums+'])
-    assert len(solid_subset_multi_disjoint) == 3
-    assert set(solid_subset_multi_disjoint) == {'return_one', 'add_nums', 'multiply_two'}
+    solid_selection_multi_disjoint = parse_solid_selection(
+        foo_pipeline, ['return_one', 'add_nums+']
+    )
+    assert len(solid_selection_multi_disjoint) == 3
+    assert set(solid_selection_multi_disjoint) == {'return_one', 'add_nums', 'multiply_two'}
 
-    solid_subset_multi_overlap = parse_solid_selection(foo_pipeline, ['*add_nums', 'return_one+'])
-    assert len(solid_subset_multi_overlap) == 3
-    assert set(solid_subset_multi_overlap) == {'return_one', 'return_two', 'add_nums'}
+    solid_selection_multi_overlap = parse_solid_selection(
+        foo_pipeline, ['*add_nums', 'return_one+']
+    )
+    assert len(solid_selection_multi_overlap) == 3
+    assert set(solid_selection_multi_overlap) == {'return_one', 'return_two', 'add_nums'}
 
-    solid_subset_multi_with_invalid = parse_solid_selection(foo_pipeline, ['*add_nums', 'a'])
-    assert len(solid_subset_multi_with_invalid) == 3
-    assert set(solid_subset_multi_with_invalid) == {'return_one', 'return_two', 'add_nums'}
+    solid_selection_multi_with_invalid = parse_solid_selection(foo_pipeline, ['*add_nums', 'a'])
+    assert len(solid_selection_multi_with_invalid) == 3
+    assert set(solid_selection_multi_with_invalid) == {'return_one', 'return_two', 'add_nums'}
 
 
 def test_parse_solid_selection_invalid():

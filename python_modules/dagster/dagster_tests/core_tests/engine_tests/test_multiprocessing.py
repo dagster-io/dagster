@@ -163,7 +163,7 @@ def test_no_handle():
     assert 'is not reconstructable' in result.event_list[0].pipeline_init_failure_data.error.message
 
 
-def test_solid_subset():
+def test_solid_selection():
     pipe = reconstructable(define_diamond_pipeline)
 
     result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp())

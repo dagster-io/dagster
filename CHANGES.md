@@ -18,6 +18,9 @@
 - `dagster_aws.EmrRunJobFlowSolidDefinition` has been removed.
 - `dagster_spark.SparkSolidDefinition` has been removed - use `create_spark_solid` instead.
 - The `SparkRDD` Dagster type, which only worked with an in-memory engine, has been removed.
+- Dagster CLI no longer takes `solid-subset` argument - use `solid-selection` instead. In addition to
+  taking solid names, `solid-selection` now support selection queries like `*solid_name+` to specify
+  subset of solids.
 
 **New**
 

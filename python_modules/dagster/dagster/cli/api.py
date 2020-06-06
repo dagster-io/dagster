@@ -63,14 +63,14 @@ def repository_snapshot_command(output_file, **kwargs):
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
 @pipeline_target_command
-@click.option('--solid-subset', '-s', help="JSON encoded list of solids")
-def pipeline_subset_snapshot_command(output_file, solid_subset, **kwargs):
+@click.option('--solid-selection', '-s', help="JSON encoded list of solid selections")
+def pipeline_subset_snapshot_command(output_file, solid_selection, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
-    if solid_subset:
-        solid_subset = json.loads(solid_subset)
+    if solid_selection:
+        solid_selection = json.loads(solid_selection)
 
     ipc_write_unary_response(
-        output_file, get_external_pipeline_subset_result(recon_pipeline, solid_subset)
+        output_file, get_external_pipeline_subset_result(recon_pipeline, solid_selection)
     )
 
 
@@ -78,22 +78,28 @@ def pipeline_subset_snapshot_command(output_file, solid_subset, **kwargs):
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
 @pipeline_target_command
-@click.option('--solid-subset', help="JSON encoded list of solids")
+@click.option('--solid-selection', help="JSON encoded list of solid selections")
 @click.option('--environment-dict', help="JSON encoded environment_dict")
 @click.option('--mode', help="mode")
 @click.option('--step-keys-to-execute', help="JSON encoded step_keys_to_execute")
 @click.option('--snapshot-id', help="Snapshot ID")
 def execution_plan_snapshot_command(
-    output_file, solid_subset, environment_dict, mode, step_keys_to_execute, snapshot_id, **kwargs
+    output_file,
+    solid_selection,
+    environment_dict,
+    mode,
+    step_keys_to_execute,
+    snapshot_id,
+    **kwargs
 ):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
 
     environment_dict = json.loads(environment_dict)
     if step_keys_to_execute:
         step_keys_to_execute = json.loads(step_keys_to_execute)
-    if solid_subset:
-        solid_subset = json.loads(solid_subset)
-        recon_pipeline = recon_pipeline.subset_for_execution(solid_subset)
+    if solid_selection:
+        solid_selection = json.loads(solid_selection)
+        recon_pipeline = recon_pipeline.subset_for_execution(solid_selection)
 
     execution_plan_snapshot = snapshot_from_execution_plan(
         create_execution_plan(

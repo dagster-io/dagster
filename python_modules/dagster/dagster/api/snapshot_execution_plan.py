@@ -59,7 +59,7 @@ def sync_get_external_execution_plan(
 
         if solid_selection:
             parts.append(
-                '--solid-subset={solid_selection}'.format(
+                '--solid-selection={solid_selection}'.format(
                     solid_selection=json.dumps(solid_selection)
                 )
             )

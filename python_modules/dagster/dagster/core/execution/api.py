@@ -169,7 +169,7 @@ def execute_pipeline_iterator(
     mode=None,
     preset=None,
     tags=None,
-    solid_subset=None,
+    solid_selection=None,
     instance=None,
 ):
     '''Execute a pipeline iteratively.
@@ -191,8 +191,8 @@ def execute_pipeline_iterator(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (including names of solid invocations). For example:
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
@@ -219,7 +219,7 @@ def execute_pipeline_iterator(
         mode=mode,
         preset=preset,
         tags=tags,
-        solid_selection=solid_subset,
+        solid_selection=solid_selection,
         instance=instance,
     )
 
@@ -242,7 +242,7 @@ def execute_pipeline(
     mode=None,
     preset=None,
     tags=None,
-    solid_subset=None,
+    solid_selection=None,
     instance=None,
     raise_on_error=True,
 ):
@@ -265,8 +265,8 @@ def execute_pipeline(
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
-        solid_subset (Optional[List[str]]): Optionally, a list of solid selection queries solid
-            selection queries (including names of solid invocations). For example:
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
             - ['some_solid']: select "some_solid" itself.
             - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
             - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
@@ -296,7 +296,7 @@ def execute_pipeline(
         mode=mode,
         preset=preset,
         tags=tags,
-        solid_selection=solid_subset,
+        solid_selection=solid_selection,
         instance=instance,
     )
 
@@ -530,7 +530,7 @@ def _check_execute_pipeline_args(
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_subset,
                 'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
-                'the `solid_subset` argument: {solid_selection}'.format(
+                'the `solid_selection` argument: {solid_selection}'.format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_subset,
                     solid_selection=solid_selection,

@@ -85,7 +85,7 @@ def test_subset_execution():
     result = execute_pipeline(
         do_math,
         {'solids': {'add_one': {'inputs': {'num': 2}}, 'add_two': {'inputs': {'num': 3}}}},
-        solid_subset=['add_one', 'add_two'],
+        solid_selection=['add_one', 'add_two'],
     )
 
     assert result.success

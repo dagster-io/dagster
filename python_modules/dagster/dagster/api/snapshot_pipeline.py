@@ -40,7 +40,7 @@ def sync_get_external_pipeline_subset(pipeline_handle, solid_selection=None):
 
         if solid_selection:
             parts.append(
-                '--solid-subset={solid_selection}'.format(
+                '--solid-selection={solid_selection}'.format(
                     solid_selection=json.dumps(solid_selection)
                 )
             )

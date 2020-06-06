@@ -23,13 +23,13 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
     return graphene_info.context.get_full_external_pipeline(selector)
 
 
-def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
+def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_selection):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
 
     return graphene_info.context.get_subset_external_pipeline(
-        legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_subset)
+        legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_selection)
     )
 
 

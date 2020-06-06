@@ -135,7 +135,7 @@ def test_reconstructable_cli_args():
     assert recon_module.get_cli_args() == '-m foo_module -n bar_function'
 
 
-def test_solid_subset():
+def test_solid_selection():
     recon_pipe = reconstructable(get_the_pipeline)
     sub_pipe_full = recon_pipe.subset_for_execution(['the_solid'])
     assert sub_pipe_full.solids_to_execute == {'the_solid'}
