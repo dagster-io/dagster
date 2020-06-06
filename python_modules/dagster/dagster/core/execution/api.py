@@ -587,23 +587,3 @@ def _check_execute_pipeline_args(
         pipeline.solids_to_execute,
         solid_selection,
     )
-
-
-def _check_parent_run(instance, run_id):
-    parent_pipeline_run = instance.get_run_by_id(run_id)
-    check.invariant(
-        parent_pipeline_run,
-        'No parent run with id {run_id} found in instance.'.format(run_id=run_id),
-    )
-
-    if parent_pipeline_run.root_run_id is not None:  # re-execution
-        root_run = instance.get_run_by_id(parent_pipeline_run.root_run_id)
-        check.invariant(
-            isinstance(root_run, PipelineRun),
-            'No root run found for id: {root_run_id} (from parent run {parent_run_id})'.format(
-                root_run_id=parent_pipeline_run.root_run_id,
-                parent_run_id=parent_pipeline_run.previous_run_id,
-            ),
-        )
-
-    return parent_pipeline_run
