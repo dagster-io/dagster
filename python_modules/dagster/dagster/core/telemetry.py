@@ -16,7 +16,6 @@ import json
 import logging
 import os
 import sys
-import time
 import uuid
 import zlib
 from collections import namedtuple
@@ -373,14 +372,14 @@ SLACK_PROMPT = '''
 }
 
 
-def upload_logs():
+def upload_logs(stop_event):
     '''Upload logs to telemetry server every hour, or when log directory size is > 10MB'''
     try:
         last_run = datetime.datetime.now() - datetime.timedelta(minutes=120)
         dagster_log_dir = get_dir_from_dagster_home('logs')
         dagster_log_queue_dir = get_dir_from_dagster_home('.logs_queue')
         in_progress = False
-        while True:
+        while not stop_event.is_set():
             log_size = 0
             if os.path.isdir(dagster_log_dir):
                 log_size = sum(
@@ -412,7 +411,7 @@ def upload_logs():
                 _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir)
                 in_progress = False
 
-            time.sleep(600)  # Sleep for 10 minutes
+            stop_event.wait(600)  # Sleep for 10 minutes
     except Exception:  # pylint: disable=broad-except
         pass
 
