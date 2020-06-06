@@ -295,7 +295,7 @@ const ScheduleFragment = gql`
       name
       cronSchedule
       pipelineName
-      solidSubset
+      solidSelection
       mode
       runConfigYaml
     }

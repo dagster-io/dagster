@@ -341,7 +341,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         name = 'PipelinePreset'
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
     runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
@@ -354,8 +354,8 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     def resolve_name(self, _graphene_info):
         return self._active_preset_data.name
 
-    def resolve_solidSubset(self, _graphene_info):
-        return self._active_preset_data.solid_subset
+    def resolve_solidSelection(self, _graphene_info):
+        return self._active_preset_data.solid_selection
 
     def resolve_runConfigYaml(self, _graphene_info):
         yaml_str = yaml.safe_dump(

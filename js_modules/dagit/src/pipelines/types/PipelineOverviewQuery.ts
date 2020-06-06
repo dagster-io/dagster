@@ -295,7 +295,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   name: string;
   cronSchedule: string;
   pipelineName: string;
-  solidSubset: (string | null)[] | null;
+  solidSelection: (string | null)[] | null;
   mode: string;
   runConfigYaml: string | null;
 }

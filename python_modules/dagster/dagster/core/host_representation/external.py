@@ -281,8 +281,8 @@ class ExternalSchedule:
         return self._external_schedule_data.cron_schedule
 
     @property
-    def solid_subset(self):
-        return self._external_schedule_data.solid_subset
+    def solid_selection(self):
+        return self._external_schedule_data.solid_selection
 
     @property
     def pipeline_name(self):
@@ -315,8 +315,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.name
 
     @property
-    def solid_subset(self):
-        return self._external_partition_set_data.solid_subset
+    def solid_selection(self):
+        return self._external_partition_set_data.solid_selection
 
     @property
     def partition_names(self):

@@ -35,27 +35,27 @@ def test_presets():
             PresetDefinition.from_files(
                 'passing',
                 environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'passing_overide_to_fail',
                 environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ).with_additional_config({'solids': {'can_fail': {'config': {'error': True}}}}),
             PresetDefinition(
                 'passing_direct_dict',
                 environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'failing_1',
                 environment_files=[file_relative_path(__file__, 'fail_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'failing_2', environment_files=[file_relative_path(__file__, 'pass_env.yaml')]
             ),
-            PresetDefinition('subset', solid_subset=['can_fail'],),
+            PresetDefinition('subset', solid_selection=['can_fail'],),
         ],
     )
 
@@ -172,7 +172,7 @@ final: "result"
 
     res = PresetDefinition.from_yaml_strings('empty')
     assert res == PresetDefinition(
-        name='empty', environment_dict={}, solid_subset=None, mode='default'
+        name='empty', environment_dict={}, solid_selection=None, mode='default'
     )
 
 

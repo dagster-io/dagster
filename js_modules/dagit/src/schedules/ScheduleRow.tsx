@@ -110,7 +110,7 @@ export const ScheduleRow: React.FunctionComponent<{
     name,
     cronSchedule,
     pipelineName,
-    solidSubset,
+    solidSelection,
     mode,
     runConfigYaml
   } = scheduleDefinition;
@@ -329,7 +329,7 @@ export const ScheduleRow: React.FunctionComponent<{
                   href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
                     {
                       mode,
-                      solidSubset,
+                      solidSelection,
                       config: runConfigYaml
                     }
                   )}`}
@@ -361,7 +361,7 @@ export const ScheduleRowFragment = gql`
       name
       cronSchedule
       pipelineName
-      solidSubset
+      solidSelection
       mode
       runConfigYaml
     }

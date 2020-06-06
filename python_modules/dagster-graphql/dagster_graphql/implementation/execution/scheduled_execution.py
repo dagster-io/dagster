@@ -115,7 +115,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
             errors.append(error_data)
 
         external_pipeline = legacy_get_external_pipeline_or_raise(
-            graphene_info, schedule_def.pipeline_name, schedule_def.solid_subset
+            graphene_info, schedule_def.pipeline_name, schedule_def.solid_selection
         )
         pipeline_tags = external_pipeline.tags or {}
         check_tags(pipeline_tags, 'pipeline_tags')
@@ -125,7 +125,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
 
         execution_params = ExecutionParams(
             selector=legacy_pipeline_selector(
-                graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
+                graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_selection
             ),
             environment_dict=environment_dict,
             mode=mode,

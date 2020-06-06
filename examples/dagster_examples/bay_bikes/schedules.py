@@ -21,7 +21,7 @@ now = datetime.now()
     pipeline_name='generate_training_set_and_train_model',
     start_date=datetime(year=2019, month=1, day=1),
     execution_time=(now + timedelta(minutes=1)).time(),
-    solid_subset=['weather_etl'],
+    solid_selection=['weather_etl'],
     mode='production',
     environment_vars={
         'POSTGRES_USERNAME': os.environ.get('POSTGRES_USERNAME', ''),
@@ -88,7 +88,7 @@ def daily_weather_schedule(date):
     start_date=datetime(year=2018, month=1, day=1),
     execution_time=(now + timedelta(minutes=1)).time(),
     execution_day_of_month=now.day,
-    solid_subset=['trip_etl'],
+    solid_selection=['trip_etl'],
     mode='production',
     environment_vars={
         'POSTGRES_USERNAME': os.environ.get('POSTGRES_USERNAME', ''),

@@ -21,7 +21,7 @@ def schedule(
     name=None,
     tags=None,
     tags_fn=None,
-    solid_subset=None,
+    solid_selection=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
@@ -44,9 +44,8 @@ def schedule(
             that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
@@ -69,7 +68,7 @@ def schedule(
             environment_dict_fn=fn,
             tags=tags,
             tags_fn=tags_fn,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,
@@ -85,7 +84,7 @@ def monthly_schedule(
     execution_day_of_month=1,
     execution_time=datetime.time(0, 0),
     tags_fn_for_date=None,
-    solid_subset=None,
+    solid_selection=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
@@ -108,9 +107,8 @@ def monthly_schedule(
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -125,7 +123,7 @@ def monthly_schedule(
     check.inst_param(start_date, 'start_date', datetime.datetime)
     check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
@@ -162,7 +160,7 @@ def monthly_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
@@ -184,7 +182,7 @@ def weekly_schedule(
     execution_day_of_week=0,
     execution_time=datetime.time(0, 0),
     tags_fn_for_date=None,
-    solid_subset=None,
+    solid_selection=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
@@ -207,9 +205,8 @@ def weekly_schedule(
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -224,7 +221,7 @@ def weekly_schedule(
     check.inst_param(start_date, 'start_date', datetime.datetime)
     check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
@@ -261,7 +258,7 @@ def weekly_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
@@ -282,7 +279,7 @@ def daily_schedule(
     name=None,
     execution_time=datetime.time(0, 0),
     tags_fn_for_date=None,
-    solid_subset=None,
+    solid_selection=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
@@ -303,9 +300,8 @@ def daily_schedule(
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -320,7 +316,7 @@ def daily_schedule(
     check.inst_param(start_date, 'start_date', datetime.datetime)
     check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
@@ -347,7 +343,7 @@ def daily_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
@@ -368,7 +364,7 @@ def hourly_schedule(
     name=None,
     execution_time=datetime.time(0, 0),
     tags_fn_for_date=None,
-    solid_subset=None,
+    solid_selection=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
@@ -391,9 +387,8 @@ def hourly_schedule(
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -408,7 +403,7 @@ def hourly_schedule(
     check.inst_param(start_date, 'start_date', datetime.datetime)
     check.opt_inst_param(end_date, 'end_date', datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
@@ -445,7 +440,7 @@ def hourly_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )

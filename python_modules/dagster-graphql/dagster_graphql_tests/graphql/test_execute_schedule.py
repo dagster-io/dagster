@@ -236,13 +236,13 @@ class TestExecuteSchedule(
     @pytest.mark.parametrize(
         'schedule_name',
         [
-            'solid_subset_hourly_decorator',
-            'solid_subset_daily_decorator',
-            'solid_subset_monthly_decorator',
-            'solid_subset_weekly_decorator',
+            'solid_selection_hourly_decorator',
+            'solid_selection_daily_decorator',
+            'solid_selection_monthly_decorator',
+            'solid_selection_weekly_decorator',
         ],
     )
-    def test_solid_subset_schedule_decorator(self, schedule_name, graphql_context):
+    def test_solid_selection_schedule_decorator(self, schedule_name, graphql_context):
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_SCHEDULED_EXECUTION_QUERY,

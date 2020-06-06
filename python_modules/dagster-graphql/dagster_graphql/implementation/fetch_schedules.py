@@ -100,7 +100,7 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
 
     return ExecutionParams(
         selector=legacy_pipeline_selector(
-            graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
+            graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_selection
         ),
         environment_dict=environment_dict,
         mode=mode,

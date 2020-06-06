@@ -856,36 +856,36 @@ def define_schedules():
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_hourly_decorator(_date):
+    def solid_selection_hourly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=2),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_daily_decorator(_date):
+    def solid_selection_daily_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @monthly_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=100),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_monthly_decorator(_date):
+    def solid_selection_monthly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @weekly_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=50),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_weekly_decorator(_date):
+    def solid_selection_weekly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     # Schedules for testing the user error boundary
@@ -944,10 +944,10 @@ def define_schedules():
         partition_based_custom_selector,
         partition_based_decorator,
         partition_based_multi_mode_decorator,
-        solid_subset_hourly_decorator,
-        solid_subset_daily_decorator,
-        solid_subset_monthly_decorator,
-        solid_subset_weekly_decorator,
+        solid_selection_hourly_decorator,
+        solid_selection_daily_decorator,
+        solid_selection_monthly_decorator,
+        solid_selection_weekly_decorator,
         should_execute_error_schedule,
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
@@ -960,7 +960,7 @@ def define_partitions():
     integer_set = PartitionSetDefinition(
         name="integer_partition",
         pipeline_name="no_config_pipeline",
-        solid_subset=['return_hello'],
+        solid_selection=['return_hello'],
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
         environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},

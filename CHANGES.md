@@ -20,7 +20,10 @@
 - The `SparkRDD` Dagster type, which only worked with an in-memory engine, has been removed.
 - Dagster CLI no longer takes `solid-subset` argument - use `solid-selection` instead. In addition to
   taking solid names, `solid-selection` now support selection queries like `*solid_name+` to specify
-  subset of solids.
+  subsets of the pipeline.
+- the argument `solid_subset` in `ScheduleDefinition`, `PartitionSetDefinition`, and `PresetDefinition`
+  has been renamed to `solid_selection`. In addition to solid names, it now also support selection
+  queries like `*solid_name+` to specify subsets of the pipeline.
 
 **New**
 

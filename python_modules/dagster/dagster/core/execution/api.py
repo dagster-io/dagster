@@ -526,17 +526,17 @@ def _check_execute_pipeline_args(
             environment_dict = pipeline_preset.environment_dict
 
         # load solid_selection from preset
-        if pipeline_preset.solid_subset is not None:
+        if pipeline_preset.solid_selection is not None:
             check.invariant(
-                solid_selection is None or solid_selection == pipeline_preset.solid_subset,
-                'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
+                solid_selection is None or solid_selection == pipeline_preset.solid_selection,
+                'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
                 'the `solid_selection` argument: {solid_selection}'.format(
                     preset=preset,
-                    preset_subset=pipeline_preset.solid_subset,
+                    preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,
                 ),
             )
-            solid_selection = pipeline_preset.solid_subset
+            solid_selection = pipeline_preset.solid_selection
 
         check.invariant(
             mode is None or mode == pipeline_preset.mode,

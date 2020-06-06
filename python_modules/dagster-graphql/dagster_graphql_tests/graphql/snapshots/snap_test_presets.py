@@ -6,7 +6,9 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_in_process_env] 1'] = {
+snapshots[
+    'TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_in_process_env] 1'
+] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [
@@ -19,7 +21,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: data/num_prod.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -30,7 +32,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: data/num.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -41,13 +43,15 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: /data/num.csv
 ''',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }
 
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_in_process_env] 1'] = {
+snapshots[
+    'TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_in_process_env] 1'
+] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [
@@ -60,7 +64,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: data/num_prod.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -71,7 +75,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: data/num.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -82,13 +86,15 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: /data/num.csv
 ''',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }
 
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_out_of_process_env] 1'] = {
+snapshots[
+    'TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_out_of_process_env] 1'
+] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [
@@ -101,7 +107,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: data/num_prod.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -112,7 +118,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: data/num.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -123,13 +129,15 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     inputs:
       num: /data/num.csv
 ''',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }
 
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_out_of_process_env] 1'] = {
+snapshots[
+    'TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_out_of_process_env] 1'
+] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [
@@ -142,7 +150,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: data/num_prod.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -153,7 +161,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: data/num.csv
 ''',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 '__typename': 'PipelinePreset',
@@ -164,8 +172,8 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_inst
     inputs:
       num: /data/num.csv
 ''',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }

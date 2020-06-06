@@ -19,7 +19,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefin
   name: string;
   cronSchedule: string;
   pipelineName: string;
-  solidSubset: (string | null)[] | null;
+  solidSelection: (string | null)[] | null;
   mode: string;
   runConfigYaml: string | null;
   partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet | null;

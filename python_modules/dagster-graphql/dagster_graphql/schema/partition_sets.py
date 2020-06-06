@@ -19,7 +19,7 @@ class DauphinPartition(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     partition_set_name = dauphin.NonNull(dauphin.String)
-    solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
     runConfigYaml = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
@@ -37,7 +37,7 @@ class DauphinPartition(dauphin.ObjectType):
         super(DauphinPartition, self).__init__(
             name=partition_name,
             partition_set_name=external_partition_set.name,
-            solid_subset=external_partition_set.solid_subset,
+            solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )
 
@@ -77,7 +77,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
-    solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
     partitions = dauphin.Field(
         dauphin.NonNull('Partitions'),
@@ -97,7 +97,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
         super(DauphinPartitionSet, self).__init__(
             name=external_partition_set.name,
             pipeline_name=external_partition_set.pipeline_name,
-            solid_subset=external_partition_set.solid_subset,
+            solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )
 

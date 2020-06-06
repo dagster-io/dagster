@@ -14,85 +14,75 @@ snapshots['test_get_all_partition_sets 1'] = {
                 'mode': 'foo_mode',
                 'name': 'partition_based_multi_mode_decorator_partitions',
                 'pipelineName': 'multi_mode_with_loggers',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
-                'name': 'solid_subset_daily_decorator_partitions',
+                'name': 'solid_selection_daily_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
-                'solidSubset': [
-                    'return_foo'
-                ]
+                'solidSelection': ['return_foo'],
             },
             {
                 'mode': 'default',
-                'name': 'solid_subset_hourly_decorator_partitions',
+                'name': 'solid_selection_hourly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
-                'solidSubset': [
-                    'return_foo'
-                ]
+                'solidSelection': ['return_foo'],
             },
             {
                 'mode': 'default',
-                'name': 'solid_subset_monthly_decorator_partitions',
+                'name': 'solid_selection_monthly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
-                'solidSubset': [
-                    'return_foo'
-                ]
+                'solidSelection': ['return_foo'],
             },
             {
                 'mode': 'default',
-                'name': 'solid_subset_weekly_decorator_partitions',
+                'name': 'solid_selection_weekly_decorator_partitions',
                 'pipelineName': 'no_config_chain_pipeline',
-                'solidSubset': [
-                    'return_foo'
-                ]
+                'solidSelection': ['return_foo'],
             },
             {
                 'mode': 'default',
                 'name': 'environment_dict_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'integer_partition',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': [
-                    'return_hello'
-                ]
+                'solidSelection': ['return_hello'],
             },
             {
                 'mode': 'default',
                 'name': 'partition_based_decorator_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'should_execute_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'tags_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'enum_partition',
                 'pipelineName': 'noop_pipeline',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }
 
@@ -104,48 +94,46 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
                 'mode': 'default',
                 'name': 'environment_dict_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'integer_partition',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': [
-                    'return_hello'
-                ]
+                'solidSelection': ['return_hello'],
             },
             {
                 'mode': 'default',
                 'name': 'partition_based_decorator_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'should_execute_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
+                'solidSelection': None,
             },
             {
                 'mode': 'default',
                 'name': 'tags_error_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            }
-        ]
+                'solidSelection': None,
+            },
+        ],
     }
 }
 
 snapshots['test_get_partition_sets_for_pipeline 2'] = {
     'partitionSetsOrError': {
         '__typename': 'PipelineNotFoundError',
-        'message': 'Could not find Pipeline <<in_process>>.test_repo.invalid_pipeline'
+        'message': 'Could not find Pipeline <<in_process>>.test_repo.invalid_pipeline',
     }
 }
 
@@ -156,47 +144,23 @@ snapshots['test_get_partition_set 1'] = {
         'name': 'integer_partition',
         'partitions': {
             'results': [
-                {
-                    'name': '0'
-                },
-                {
-                    'name': '1'
-                },
-                {
-                    'name': '2'
-                },
-                {
-                    'name': '3'
-                },
-                {
-                    'name': '4'
-                },
-                {
-                    'name': '5'
-                },
-                {
-                    'name': '6'
-                },
-                {
-                    'name': '7'
-                },
-                {
-                    'name': '8'
-                },
-                {
-                    'name': '9'
-                }
+                {'name': '0'},
+                {'name': '1'},
+                {'name': '2'},
+                {'name': '3'},
+                {'name': '4'},
+                {'name': '5'},
+                {'name': '6'},
+                {'name': '7'},
+                {'name': '8'},
+                {'name': '9'},
             ]
         },
         'pipelineName': 'no_config_pipeline',
-        'solidSubset': [
-            'return_hello'
-        ]
+        'solidSelection': ['return_hello'],
     }
 }
 
 snapshots['test_get_partition_set 2'] = {
-    'partitionSetOrError': {
-        '__typename': 'PartitionSetNotFoundError'
-    }
+    'partitionSetOrError': {'__typename': 'PartitionSetNotFoundError'}
 }

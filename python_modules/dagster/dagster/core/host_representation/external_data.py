@@ -123,14 +123,16 @@ class ExternalPipelineData(
 
 @whitelist_for_serdes
 class ExternalPresetData(
-    namedtuple('_ExternalPresetData', 'name environment_dict solid_subset mode')
+    namedtuple('_ExternalPresetData', 'name environment_dict solid_selection mode')
 ):
-    def __new__(cls, name, environment_dict, solid_subset, mode):
+    def __new__(cls, name, environment_dict, solid_selection, mode):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, 'solid_selection', of_type=str
+            ),
             mode=check.str_param(mode, 'mode'),
         )
 
@@ -139,16 +141,16 @@ class ExternalPresetData(
 class ExternalScheduleData(
     namedtuple(
         '_ExternalScheduleData',
-        'name cron_schedule pipeline_name solid_subset mode partition_set_name',
+        'name cron_schedule pipeline_name solid_selection mode partition_set_name',
     )
 ):
-    def __new__(cls, name, cron_schedule, pipeline_name, solid_subset, mode, partition_set_name):
+    def __new__(cls, name, cron_schedule, pipeline_name, solid_selection, mode, partition_set_name):
         return super(ExternalScheduleData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             cron_schedule=check.str_param(cron_schedule, 'cron_schedule'),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
+            solid_selection=check.opt_nullable_list_param(solid_selection, 'solid_selection', str),
             mode=check.opt_str_param(mode, 'mode'),
             partition_set_name=check.opt_str_param(partition_set_name, 'partition_set_name'),
         )
@@ -156,15 +158,17 @@ class ExternalScheduleData(
 
 @whitelist_for_serdes
 class ExternalPartitionSetData(
-    namedtuple('_ExternalPartitionSetData', 'name partition_names pipeline_name solid_subset mode')
+    namedtuple(
+        '_ExternalPartitionSetData', 'name partition_names pipeline_name solid_selection mode'
+    )
 ):
-    def __new__(cls, name, partition_names, pipeline_name, solid_subset, mode):
+    def __new__(cls, name, partition_names, pipeline_name, solid_selection, mode):
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             partition_names=check.list_param(partition_names, 'parition_names', str),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', str),
+            solid_selection=check.opt_nullable_list_param(solid_selection, 'solid_selection', str),
             mode=check.opt_str_param(mode, 'mode'),
         )
 
@@ -208,7 +212,7 @@ def external_schedule_data_from_def(schedule_def):
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         pipeline_name=schedule_def.pipeline_name,
-        solid_subset=schedule_def.solid_subset,
+        solid_selection=schedule_def.solid_selection,
         mode=schedule_def.mode,
         partition_set_name=schedule_def.get_partition_set().name
         if isinstance(schedule_def, PartitionScheduleDefinition)
@@ -222,7 +226,7 @@ def external_partition_set_data_from_def(partition_set_def):
         name=partition_set_def.name,
         partition_names=partition_set_def.get_partition_names(),
         pipeline_name=partition_set_def.pipeline_name,
-        solid_subset=partition_set_def.solid_subset,
+        solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )
 
@@ -232,6 +236,6 @@ def external_preset_data_from_def(preset_def):
     return ExternalPresetData(
         name=preset_def.name,
         environment_dict=preset_def.environment_dict,
-        solid_subset=preset_def.solid_subset,
+        solid_selection=preset_def.solid_selection,
         mode=preset_def.mode,
     )

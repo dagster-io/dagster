@@ -17,7 +17,7 @@ export interface ConfigPresetsQuery_pipelineOrError_Pipeline_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   runConfigYaml: string;
 }
 

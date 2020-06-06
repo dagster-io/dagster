@@ -75,7 +75,7 @@ def define_diamond_pipeline():
                     'execution': {'multiprocess': {}},
                     'solids': {'adder': {'inputs': {'left': {'value': 1}, 'right': {'value': 1}}}},
                 },
-                solid_subset=['adder'],
+                solid_selection=['adder'],
             )
         ],
     )

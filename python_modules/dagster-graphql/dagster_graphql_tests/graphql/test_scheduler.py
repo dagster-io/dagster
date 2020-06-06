@@ -27,7 +27,7 @@ GET_SCHEDULES_QUERY = '''
             name
             pipelineName
             mode
-            solidSubset
+            solidSelection
             runConfigYaml
           }
           runs {

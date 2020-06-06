@@ -8,7 +8,7 @@ query PresetsQuery($selector: PipelineSelector!) {
       presets {
         __typename
         name
-        solidSubset
+        solidSelection
         runConfigYaml
         mode
       }

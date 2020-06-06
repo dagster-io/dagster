@@ -49,7 +49,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     cron_schedule = dauphin.NonNull(dauphin.String)
 
     pipeline_name = dauphin.NonNull(dauphin.String)
-    solid_subset = dauphin.List(dauphin.String)
+    solid_selection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     run_config_yaml = dauphin.Field(dauphin.String)
     partition_set = dauphin.Field('PartitionSet')
@@ -97,7 +97,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             name=external_schedule.name,
             cron_schedule=external_schedule.cron_schedule,
             pipeline_name=external_schedule.pipeline_name,
-            solid_subset=external_schedule.solid_subset,
+            solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
         )
 

@@ -6,7 +6,9 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_external_repository_data 1'] = '''{
+snapshots[
+    'test_external_repository_data 1'
+] = '''{
   "__class__": "ExternalRepositoryData",
   "external_partition_set_datas": [
     {
@@ -47,7 +49,7 @@ snapshots['test_external_repository_data 1'] = '''{
         "2019-01-31"
       ],
       "pipeline_name": "a_pipeline",
-      "solid_subset": null
+      "solid_selection": null
     }
   ],
   "external_pipeline_datas": [
@@ -61,7 +63,7 @@ snapshots['test_external_repository_data 1'] = '''{
           },
           "mode": "mode_one",
           "name": "kitchen_sink_preset",
-          "solid_subset": [
+          "solid_selection": [
             "a_solid"
           ]
         },
@@ -70,7 +72,7 @@ snapshots['test_external_repository_data 1'] = '''{
           "environment_dict": {},
           "mode": "default",
           "name": "plain_preset",
-          "solid_subset": null
+          "solid_selection": null
         }
       ],
       "name": "a_pipeline",
@@ -1153,13 +1155,15 @@ snapshots['test_external_repository_data 1'] = '''{
       "name": "a_schedule",
       "partition_set_name": "a_schedule_partitions",
       "pipeline_name": "a_pipeline",
-      "solid_subset": null
+      "solid_selection": null
     }
   ],
   "name": "repo"
 }'''
 
-snapshots['test_external_pipeline_data 1'] = '''{
+snapshots[
+    'test_external_pipeline_data 1'
+] = '''{
   "__class__": "ExternalPipelineData",
   "active_presets": [
     {
@@ -1169,7 +1173,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
       },
       "mode": "mode_one",
       "name": "kitchen_sink_preset",
-      "solid_subset": [
+      "solid_selection": [
         "a_solid"
       ]
     },
@@ -1178,7 +1182,7 @@ snapshots['test_external_pipeline_data 1'] = '''{
       "environment_dict": {},
       "mode": "default",
       "name": "plain_preset",
-      "solid_subset": null
+      "solid_selection": null
     }
   ],
   "name": "a_pipeline",

@@ -64,9 +64,8 @@ class ScheduleDefinition(object):
             that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
         should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
             schedule execution tie to determine whether a schedule should execute or skip. Takes a
@@ -84,7 +83,7 @@ class ScheduleDefinition(object):
         '_tags',
         '_mode',
         '_pipeline_name',
-        '_solid_subset',
+        '_solid_selection',
         '_tags_fn',
         '_should_execute',
     ]
@@ -98,7 +97,7 @@ class ScheduleDefinition(object):
         environment_dict_fn=None,
         tags=None,
         tags_fn=None,
-        solid_subset=None,
+        solid_selection=None,
         mode="default",
         should_execute=None,
         environment_vars=None,
@@ -110,7 +109,7 @@ class ScheduleDefinition(object):
         check.opt_callable_param(environment_dict_fn, 'environment_dict_fn')
         check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
         check.opt_callable_param(tags_fn, 'tags_fn')
-        check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
         check.opt_callable_param(should_execute, 'should_execute')
         check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
@@ -149,7 +148,7 @@ class ScheduleDefinition(object):
         self._should_execute = should_execute
         self._mode = mode
         self._pipeline_name = pipeline_name
-        self._solid_subset = solid_subset
+        self._solid_selection = solid_selection
 
     @property
     def schedule_definition_data(self):
@@ -199,5 +198,5 @@ class ScheduleDefinition(object):
         return self._pipeline_name
 
     @property
-    def solid_subset(self):
-        return self._solid_subset
+    def solid_selection(self):
+        return self._solid_selection

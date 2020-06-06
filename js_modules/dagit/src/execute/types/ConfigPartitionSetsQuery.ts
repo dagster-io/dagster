@@ -15,7 +15,7 @@ export interface ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_res
   __typename: "PartitionSet";
   name: string;
   mode: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets {

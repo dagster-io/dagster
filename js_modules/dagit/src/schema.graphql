@@ -646,7 +646,7 @@ type PageInfo {
 type Partition {
   name: String!
   partitionSetName: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
   mode: String!
   runConfigYaml: String!
   tags: [PipelineTag!]!
@@ -660,7 +660,7 @@ type Partitions {
 type PartitionSet {
   name: String!
   pipelineName: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
   mode: String!
   partitions(cursor: String, limit: Int, reverse: Boolean): Partitions!
 }
@@ -746,7 +746,7 @@ union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | 
 
 type PipelinePreset {
   name: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
   runConfigYaml: String!
   mode: String!
 }
@@ -1068,7 +1068,7 @@ type ScheduleDefinition {
   name: String!
   cronSchedule: String!
   pipelineName: String!
-  solidSubset: [String]
+  solidSelection: [String]
   mode: String!
   runConfigYaml: String
   partitionSet: PartitionSet

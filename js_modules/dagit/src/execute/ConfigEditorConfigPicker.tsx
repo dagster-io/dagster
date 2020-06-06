@@ -72,9 +72,9 @@ export class ConfigEditorConfigPicker extends React.Component<
       base: { presetName: preset.name },
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || "",
-      solidSelection: preset.solidSubset,
+      solidSelection: preset.solidSelection,
       solidSelectionQuery:
-        preset.solidSubset === null ? "*" : preset.solidSubset.join(","),
+        preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
       mode: preset.mode,
       tags: [...(pipeline?.tags || [])]
     });
@@ -90,9 +90,11 @@ export class ConfigEditorConfigPicker extends React.Component<
         partitionName: partition.name
       }),
       runConfigYaml: partition.runConfigYaml || "",
-      solidSelection: partition.solidSubset,
+      solidSelection: partition.solidSelection,
       solidSelectionQuery:
-        partition.solidSubset === null ? "*" : partition.solidSubset.join(","),
+        partition.solidSelection === null
+          ? "*"
+          : partition.solidSelection.join(","),
       mode: partition.mode,
       tags: [...(pipeline?.tags || []), ...partition.tags]
     });
@@ -323,10 +325,10 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
                     {item.name}
                     <div style={{ opacity: 0.4, fontSize: "0.75rem" }}>
                       {[
-                        item.solidSubset
-                          ? item.solidSubset.length === 1
-                            ? `Solids: ${item.solidSubset[0]}`
-                            : `Solids: ${item.solidSubset.length}`
+                        item.solidSelection
+                          ? item.solidSelection.length === 1
+                            ? `Solids: ${item.solidSelection[0]}`
+                            : `Solids: ${item.solidSelection.length}`
                           : `Solids: All`,
                         `Mode: ${item.mode}`
                       ].join(" - ")}
@@ -379,7 +381,7 @@ const CONFIG_PRESETS_QUERY = gql`
           __typename
           name
           mode
-          solidSubset
+          solidSelection
           runConfigYaml
         }
         tags {
@@ -399,7 +401,7 @@ export const CONFIG_PARTITION_SETS_QUERY = gql`
         results {
           name
           mode
-          solidSubset
+          solidSelection
         }
       }
     }
@@ -427,7 +429,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
         partitions {
           results {
             name
-            solidSubset
+            solidSelection
             runConfigYaml
             mode
             tags {

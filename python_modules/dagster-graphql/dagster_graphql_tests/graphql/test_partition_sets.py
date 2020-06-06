@@ -8,7 +8,7 @@ GET_PARTITION_SETS_QUERY = '''
             results {
                 name
                 pipelineName
-                solidSubset
+                solidSelection
                 mode
             }
         }
@@ -28,7 +28,7 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
                 results {
                     name
                     pipelineName
-                    solidSubset
+                    solidSelection
                     mode
                 }
             }
@@ -54,7 +54,7 @@ GET_PARTITION_SET_QUERY = '''
             ...on PartitionSet {
                 name
                 pipelineName
-                solidSubset
+                solidSelection
                 mode
                 partitions {
                     results {

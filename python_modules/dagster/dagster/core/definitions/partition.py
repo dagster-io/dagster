@@ -76,7 +76,7 @@ class PartitionSetDefinition(
     namedtuple(
         '_PartitionSetDefinition',
         (
-            'name pipeline_name partition_fn solid_subset mode user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+            'name pipeline_name partition_fn solid_selection mode user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
         ),
     )
 ):
@@ -88,8 +88,8 @@ class PartitionSetDefinition(
         pipeline_name (str): The name of the pipeline definition
         partition_fn (Callable[void, List[Partition]]): User-provided function to define the set of
             valid partition objects.
-        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-            unaliased solids or of their aliases if aliased) to execute with this partition.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute with this partition. e.g. ['*some_solid+', 'other_solid']
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
         environment_dict_fn_for_partition (Callable[[Partition], [Dict]]): A
             function that takes a Partition and returns the environment
@@ -104,7 +104,7 @@ class PartitionSetDefinition(
         name,
         pipeline_name,
         partition_fn,
-        solid_subset=None,
+        solid_selection=None,
         mode=None,
         environment_dict_fn_for_partition=lambda _partition: {},
         tags_fn_for_partition=lambda _partition: {},
@@ -125,7 +125,9 @@ class PartitionSetDefinition(
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, 'partition_fn')()
             ],
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, 'solid_selection', of_type=str
+            ),
             mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
             user_defined_environment_dict_fn_for_partition=check.callable_param(
                 environment_dict_fn_for_partition, 'environment_dict_fn_for_partition'
@@ -233,7 +235,7 @@ class PartitionSetDefinition(
             pipeline_name=self.pipeline_name,
             environment_dict_fn=_environment_dict_fn_wrapper,
             tags_fn=_tags_fn_wrapper,
-            solid_subset=self.solid_subset,
+            solid_selection=self.solid_selection,
             mode=self.mode,
             should_execute=_should_execute_wrapper,
             environment_vars=environment_vars,
@@ -251,7 +253,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         pipeline_name,
         environment_dict_fn,
         tags_fn,
-        solid_subset,
+        solid_selection,
         mode,
         should_execute,
         environment_vars,
@@ -263,7 +265,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             pipeline_name=pipeline_name,
             environment_dict_fn=environment_dict_fn,
             tags_fn=tags_fn,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,

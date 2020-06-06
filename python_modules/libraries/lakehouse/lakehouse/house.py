@@ -65,7 +65,7 @@ class Lakehouse:
                 name='default',
                 mode='default',
                 environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
-                solid_subset=None,
+                solid_selection=None,
             )
 
             lakehouse = Lakehouse(

@@ -37,7 +37,7 @@ WEATHER_INGEST_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
         ],
-        solid_subset=['weather_etl'],
+        solid_selection=['weather_etl'],
     ),
     PresetDefinition.from_pkg_resources(
         'prod_weather_etl',
@@ -48,7 +48,7 @@ WEATHER_INGEST_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
         ],
-        solid_subset=['weather_etl'],
+        solid_selection=['weather_etl'],
     ),
 ]
 
@@ -62,7 +62,7 @@ TRIP_INGEST_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
         ],
-        solid_subset=['trip_etl'],
+        solid_selection=['trip_etl'],
     ),
     PresetDefinition.from_pkg_resources(
         'prod_trip_etl',
@@ -73,7 +73,7 @@ TRIP_INGEST_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
         ],
-        solid_subset=['trip_etl'],
+        solid_selection=['trip_etl'],
     ),
 ]
 
@@ -87,7 +87,7 @@ TRAINING_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'training.yaml'),
         ],
-        solid_subset=['train_daily_bike_supply_model'],
+        solid_selection=['train_daily_bike_supply_model'],
     ),
     PresetDefinition.from_pkg_resources(
         'prod_train_daily_bike_supply_model',
@@ -98,7 +98,7 @@ TRAINING_PRESETS = [
             ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
             ('dagster_examples.bay_bikes.environments', 'training.yaml'),
         ],
-        solid_subset=['train_daily_bike_supply_model'],
+        solid_selection=['train_daily_bike_supply_model'],
     ),
 ]
 

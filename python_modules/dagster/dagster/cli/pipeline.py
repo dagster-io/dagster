@@ -422,15 +422,17 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     solid_selection = get_solid_selection_from_args(kwargs)
 
-    if preset and preset.solid_subset is not None:
+    if preset and preset.solid_selection is not None:
         check.invariant(
-            solid_selection is None or solid_selection == preset.solid_subset,
-            'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
+            solid_selection is None or solid_selection == preset.solid_selection,
+            'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
             'the `solid_selection` argument: {solid_selection}'.format(
-                preset=preset, preset_subset=preset.solid_subset, solid_selection=solid_selection,
+                preset=preset,
+                preset_subset=preset.solid_selection,
+                solid_selection=solid_selection,
             ),
         )
-        solid_selection = preset.solid_subset
+        solid_selection = preset.solid_selection
 
     # generate pipeline subset from the given solid_selection
     if solid_selection:
@@ -714,8 +716,8 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             run = instance.create_run_for_pipeline(
                 pipeline_def=pipeline_def,
                 mode=partition_set.mode,
-                solids_to_execute=frozenset(partition_set.solid_subset)
-                if partition_set and partition_set.solid_subset
+                solids_to_execute=frozenset(partition_set.solid_selection)
+                if partition_set and partition_set.solid_selection
                 else None,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),

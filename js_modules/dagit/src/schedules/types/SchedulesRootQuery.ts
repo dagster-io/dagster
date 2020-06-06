@@ -19,7 +19,7 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   name: string;
   cronSchedule: string;
   pipelineName: string;
-  solidSubset: (string | null)[] | null;
+  solidSelection: (string | null)[] | null;
   mode: string;
   runConfigYaml: string | null;
 }

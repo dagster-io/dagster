@@ -20,7 +20,7 @@ def a_solid(_):
         PresetDefinition(
             name='kitchen_sink_preset',
             environment_dict={'foo': 'bar'},
-            solid_subset=['a_solid'],
+            solid_selection=['a_solid'],
             mode='mode_one',
         ),
     ],

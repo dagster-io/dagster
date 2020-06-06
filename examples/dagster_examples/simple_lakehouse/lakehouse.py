@@ -170,7 +170,7 @@ def make_simple_lakehouse():
         name='dev',
         mode='dev',
         environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
-        solid_subset=None,
+        solid_selection=None,
     )
 
     prod_mode = ModeDefinition(
@@ -180,7 +180,7 @@ def make_simple_lakehouse():
         name='prod',
         mode='prod',
         environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
-        solid_subset=None,
+        solid_selection=None,
     )
 
     return Lakehouse(
