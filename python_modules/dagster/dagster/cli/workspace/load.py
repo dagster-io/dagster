@@ -1,8 +1,10 @@
+import os
 import warnings
 
 import six
 
 from dagster import check
+from dagster.api.list_repositories import sync_list_repositories
 from dagster.core.code_pointer import CodePointer, rebase_file
 from dagster.core.definitions.reconstructable import def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
@@ -22,6 +24,10 @@ def load_workspace_from_yaml_path(yaml_path):
     check.str_param(yaml_path, 'yaml_path')
 
     workspace_config = load_yaml_from_path(yaml_path)
+    return load_workspace_from_config(workspace_config, yaml_path)
+
+
+def load_workspace_from_config(workspace_config, yaml_path):
     ensure_workspace_config(workspace_config, yaml_path)
 
     if 'repository' in workspace_config:
@@ -54,7 +60,12 @@ def load_def_in_python_file(python_file, definition):
 
 
 def _location_handle_from_module_config(python_module_config):
-    module_name, definition, location_name = (
+    module_name, definition, location_name = _get_module_config_data(python_module_config)
+    return location_handle_from_module_name(module_name, definition, location_name)
+
+
+def _get_module_config_data(python_module_config):
+    return (
         (python_module_config, None, None)
         if isinstance(python_module_config, six.string_types)
         else (
@@ -63,8 +74,6 @@ def _location_handle_from_module_config(python_module_config):
             python_module_config.get('location_name'),
         )
     )
-
-    return location_handle_from_module_name(module_name, definition, location_name)
 
 
 def location_handle_from_module_name(module_name, definition, location_name=None):
@@ -106,19 +115,23 @@ def assign_location_name(location_name, repository_code_pointer_dict):
 def location_handle_from_python_file_config(python_file_config, yaml_path):
     check.str_param(yaml_path, 'yaml_path')
 
-    relative_path, definition, location_name = (
-        (python_file_config, None, None)
+    absolute_path, definition, location_name = _get_python_file_config_data(
+        python_file_config, yaml_path
+    )
+
+    return location_handle_from_python_file(absolute_path, definition, location_name)
+
+
+def _get_python_file_config_data(python_file_config, yaml_path):
+    return (
+        (rebase_file(python_file_config, yaml_path), None, None)
         if isinstance(python_file_config, six.string_types)
         else (
-            python_file_config['relative_path'],
+            rebase_file(python_file_config['relative_path'], yaml_path),
             python_file_config.get('definition'),
             python_file_config.get('location_name'),
         )
     )
-
-    absolute_path = rebase_file(relative_path, yaml_path)
-
-    return location_handle_from_python_file(absolute_path, definition, location_name)
 
 
 def location_handle_from_python_file(python_file, definition, location_name=None):
@@ -150,21 +163,70 @@ def _location_handle_from_python_environment_config(python_environment_config, y
     check.str_param(yaml_path, 'yaml_path')
 
     executable_path, target_config = (
-        python_environment_config['executable_path'],
+        # do shell expansion on path
+        os.path.expanduser(python_environment_config['executable_path']),
         python_environment_config['target'],
     )
 
     check.invariant(is_target_config(target_config))
 
-    # just using out of process handle as convenient intermediate data structure
-    # TODO will need to interrogate target out-of-process to get code pointers
-    out_of_process_location_handle = _location_handle_from_target_config(target_config, yaml_path)
-
-    return RepositoryLocationHandle.create_python_env_location(
-        executable_path=executable_path,
-        location_name=out_of_process_location_handle.location_name,
-        repository_code_pointer_dict=out_of_process_location_handle.repository_code_pointer_dict,
+    python_file_config, python_module_config = (
+        target_config.get('python_file'),
+        target_config.get('python_module'),
     )
+
+    if python_file_config:
+        absolute_path, definition, location_name = _get_python_file_config_data(
+            python_file_config, yaml_path
+        )
+
+        if not definition:
+            response = sync_list_repositories(
+                executable_path=executable_path, python_file=absolute_path, module_name=None,
+            )
+
+            return RepositoryLocationHandle.create_python_env_location(
+                executable_path=executable_path,
+                location_name=location_name,
+                repository_code_pointer_dict={
+                    lrs.python_symbol: CodePointer.from_python_file(
+                        absolute_path, lrs.python_symbol
+                    )
+                    for lrs in response.repository_symbols
+                },
+            )
+        else:
+            return RepositoryLocationHandle.create_python_env_location(
+                executable_path=executable_path,
+                location_name=location_name,
+                repository_code_pointer_dict={
+                    definition: CodePointer.from_python_file(absolute_path, definition)
+                },
+            )
+    else:
+        check.invariant(python_module_config)
+        module_name, definition, location_name = _get_module_config_data(python_module_config)
+
+        if not definition:
+            response = sync_list_repositories(
+                executable_path=executable_path, python_file=None, module_name=module_name,
+            )
+            return RepositoryLocationHandle.create_python_env_location(
+                executable_path=executable_path,
+                location_name=location_name,
+                repository_code_pointer_dict={
+                    lrs.python_symbol: CodePointer.from_module(module_name, lrs.python_symbol)
+                    for lrs in response.repository_symbols
+                },
+            )
+        else:
+            return RepositoryLocationHandle.create_python_env_location(
+                executable_path=executable_path,
+                location_name=location_name,
+                repository_code_pointer_dict={
+                    definition: CodePointer.from_module(module_name, definition)
+                },
+            )
 
 
 def _location_handle_from_location_config(location_config, yaml_path):
