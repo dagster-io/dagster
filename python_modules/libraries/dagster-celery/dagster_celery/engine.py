@@ -1,6 +1,8 @@
 import sys
 import time
 
+from dagster_k8s.job import get_k8s_resource_requirements
+
 from dagster import check
 from dagster.core.engine.engine_base import Engine
 from dagster.core.errors import DagsterSubprocessError
@@ -187,6 +189,7 @@ def _submit_task(app, pipeline_context, step, queue, priority):
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     from .tasks import create_k8s_job_task
 
+    resources = get_k8s_resource_requirements(step.tags)
     task = create_k8s_job_task(app)
 
     task_signature = task.si(
@@ -198,6 +201,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         run_id=pipeline_context.pipeline_run.run_id,
         job_config_dict=pipeline_context.executor_config.job_config.to_dict(),
         job_namespace=pipeline_context.executor_config.job_namespace,
+        resources=resources,
         load_incluster_config=pipeline_context.executor_config.load_incluster_config,
         kubeconfig_file=pipeline_context.executor_config.kubeconfig_file,
     )

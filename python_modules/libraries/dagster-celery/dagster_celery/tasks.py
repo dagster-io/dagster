@@ -85,6 +85,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_config_dict,
         job_namespace,
         load_incluster_config,
+        resources=None,
         kubeconfig_file=None,
     ):
         '''Run step execution in a K8s job pod.
@@ -109,6 +110,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
         check.str_param(job_namespace, 'job_namespace')
         check.bool_param(load_incluster_config, 'load_incluster_config')
+        resources = check.opt_inst_param(
+            resources, 'resources', kubernetes.client.V1ResourceRequirements
+        )
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
         # For when launched via DinD or running the cluster
@@ -132,7 +136,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         variables = construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys)
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables)]
 
-        job = construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name)
+        job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)
 
         # Running list of events generated from this task execution
         events = []

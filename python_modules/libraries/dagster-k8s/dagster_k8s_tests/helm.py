@@ -143,10 +143,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             },
             'celery': {
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
-                'extraWorkerQueues': [
-                    {'name': 'extra-queue-1', 'replicaCount': 1},
-                    {'name': 'extra-queue-2', 'replicaCount': 2},
-                ],
+                'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
             },
             'pipeline_run': {
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},

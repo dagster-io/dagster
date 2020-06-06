@@ -1,13 +1,14 @@
 from collections import namedtuple
 
 import kubernetes
+import yaml
 
-from dagster import Array, Field, Noneable, StringSource
+from dagster import Array, DagsterInvariantViolationError, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.config.field_utils import Shape
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils import merge_dicts
+from dagster.utils import frozentags, merge_dicts
 
 K8S_JOB_BACKOFF_LIMIT = 4
 
@@ -27,6 +28,32 @@ DAGSTER_PG_PASSWORD_SECRET_KEY = 'postgresql-password'
 
 # Kubernetes Job object names cannot be longer than 63 characters
 MAX_K8S_NAME_LEN = 63
+
+K8S_RESOURCE_REQUIREMENTS_KEY = 'dagster-k8s/resource_requirements'
+K8s_RESOURCE_REQUIREMENTS_VALID_KEYS = set(['limits', 'requests'])
+
+
+def get_k8s_resource_requirements(tags):
+    check.inst_param(tags, 'tags', frozentags)
+    req_str = tags.get(K8S_RESOURCE_REQUIREMENTS_KEY)
+    if req_str is not None:
+        req_dict = yaml.safe_load(req_str)
+
+        req_keys = set(req_dict.keys())
+        if len(req_keys.difference(K8s_RESOURCE_REQUIREMENTS_VALID_KEYS)) > 0:
+            raise DagsterInvariantViolationError(
+                'Invalid K8s resource specification. {resource} expected to only contain keys in '
+                'set {valid_keys} but found extra keys {extra_keys}'.format(
+                    resource=req_dict,
+                    valid_keys=K8s_RESOURCE_REQUIREMENTS_VALID_KEYS,
+                    extra_keys=req_keys.difference(K8s_RESOURCE_REQUIREMENTS_VALID_KEYS),
+                )
+            )
+
+        req = kubernetes.client.V1ResourceRequirements(**req_dict)
+        return req
+
+    return None
 
 
 @whitelist_for_serdes
@@ -218,7 +245,9 @@ class DagsterK8sJobConfig(
         return DagsterK8sJobConfig(**config)
 
 
-def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None, component=None):
+def construct_dagster_graphql_k8s_job(
+    job_config, args, job_name, resources=None, pod_name=None, component=None
+):
     '''Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
     Args:
@@ -226,6 +255,8 @@ def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None,
             Job object.
         args (List[str]): CLI arguments to use with dagster-graphql in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
+        resources (kubernetes.client.V1ResourceRequirements): The resource requirements for the
+            container
         pod_name (str, optional): The name of the Pod. Note that this name must be <= 63 characters
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
@@ -237,6 +268,9 @@ def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None,
     check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
     check.list_param(args, 'args', of_type=str)
     check.str_param(job_name, 'job_name')
+    resources = check.opt_inst_param(
+        resources, 'resources', kubernetes.client.V1ResourceRequirements
+    )
     pod_name = check.opt_str_param(pod_name, 'pod_name', default=job_name + '-pod')
     check.opt_str_param(component, 'component')
 
@@ -281,6 +315,7 @@ def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None,
             ),
         ],
         env_from=job_config.env_from_sources,
+        resources=resources,
         volume_mounts=[
             kubernetes.client.V1VolumeMount(
                 name='dagster-instance',
