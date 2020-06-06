@@ -278,6 +278,21 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
     '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
+@click.option(
+    '-s',
+    '--solid-selection',
+    type=click.STRING,
+    help=(
+        'Specify the solid subselection to execute. It can be multiple clauses separated by commas.'
+        'Examples:'
+        '\n- "some_solid" will execute "some_solid" itself'
+        '\n- "*some_solid" will execute "some_solid" and all its ancestors (upstream dependencies)'
+        '\n- "*some_solid+++" will execute "some_solid", all its ancestors, and its descendants'
+        '   (downstream dependencies) within 3 levels down'
+        '\n- "*some_solid,other_solid_a,other_solid_b+" will execute "some_solid" and all its'
+        '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
+    ),
+)
 @telemetry_wrapper
 def pipeline_execute_command(env, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
@@ -295,12 +310,14 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
 
 def execute_execute_command(env, cli_args, mode=None, tags=None):
     pipeline = recon_pipeline_for_cli_args(cli_args)
-    return do_execute_command(pipeline, env, mode, tags)
+    solid_selection = get_solid_selection_from_args(cli_args)
+    return do_execute_command(pipeline, env, mode, tags, solid_selection)
 
 
 def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     pipeline = recon_pipeline_for_cli_args(cli_args)
     tags = get_tags_from_args(cli_args)
+    solid_selection = get_solid_selection_from_args(cli_args)
 
     return execute_pipeline(
         pipeline,
@@ -308,10 +325,11 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
         instance=DagsterInstance.get(),
         raise_on_error=False,
         tags=tags,
+        solid_selection=solid_selection,
     )
 
 
-def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
+def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_selection=None):
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
@@ -324,6 +342,7 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
         tags=tags,
         instance=DagsterInstance.get(),
         raise_on_error=False,
+        solid_selection=solid_selection,
     )
 
 
@@ -346,10 +365,10 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline launch pandas_hello_world -e "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline launch pandas_hello_world -e pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
@@ -365,10 +384,24 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
     '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
+@click.option(
+    '-s',
+    '--solid-selection',
+    type=click.STRING,
+    help=(
+        'Specify the solid subselection to launch. It can be multiple clauses separated by commas.'
+        'Examples:'
+        '\n- "some_solid" will launch "some_solid" itself'
+        '\n- "*some_solid" will launch "some_solid" and all its ancestors (upstream dependencies)'
+        '\n- "*some_solid+++" will launch "some_solid", all its ancestors, and its descendants'
+        '   (downstream dependencies) within 3 levels down'
+        '\n- "*some_solid,other_solid_a,other_solid_b+" will launch "some_solid" and all its'
+        '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
+    ),
+)
 @telemetry_wrapper
 def pipeline_launch_command(env, preset_name, mode, **kwargs):
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
-
     pipeline = recon_pipeline_for_cli_args(kwargs)
 
     instance = DagsterInstance.get()
@@ -387,12 +420,27 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     run_tags = get_tags_from_args(kwargs)
 
+    solid_selection = get_solid_selection_from_args(kwargs)
+
+    if preset and preset.solid_subset is not None:
+        check.invariant(
+            solid_selection is None or solid_selection == preset.solid_subset,
+            'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
+            'the `solid_selection` argument: {solid_selection}'.format(
+                preset=preset, preset_subset=preset.solid_subset, solid_selection=solid_selection,
+            ),
+        )
+        solid_selection = preset.solid_subset
+
+    # generate pipeline subset from the given solid_selection
+    if solid_selection:
+        pipeline = pipeline.subset_for_execution(solid_selection)
+
     # FIXME need to check the env against environment_dict
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
-        solids_to_execute=frozenset(preset.solid_subset)
-        if preset and preset.solid_subset
-        else None,
+        solid_selection=solid_selection,
+        solids_to_execute=pipeline.solids_to_execute,
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,
@@ -483,6 +531,14 @@ def get_tags_from_args(kwargs):
                 serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
             )
         )
+
+
+def get_solid_selection_from_args(kwargs):
+    solid_selection_str = kwargs.get('solid_selection')
+    if not check.is_str(solid_selection_str):
+        return None
+
+    return [ele.strip() for ele in solid_selection_str.split(',')] if solid_selection_str else None
 
 
 def print_partition_format(partitions, indent_level):

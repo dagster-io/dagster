@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import re
 import string
 from contextlib import contextmanager
 
@@ -1168,3 +1169,181 @@ def test_tags_pipeline():
         run = runs[0]
         assert len(run.tags) >= 1
         assert run.tags.get('foo') == 'bar'
+
+
+def test_a():
+    runner = CliRunner()
+    result = runner.invoke(
+        pipeline_execute_command,
+        [
+            '-f',
+            file_relative_path(__file__, 'test_cli_commands.py'),
+            '-n',
+            'foo_pipeline',
+            '--solid-selection',
+            'do_something',
+        ],
+    )
+    print(result)
+
+
+def test_execute_subset_pipeline():
+    runner = CliRunner()
+    # single clause, solid name
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                'do_something',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert run.solid_selection == ['do_something']
+        assert run.solids_to_execute == {'do_something'}
+
+    # single clause, DSL query
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                '*do_something+',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert run.solid_selection == ['*do_something+']
+        assert run.solids_to_execute == {'do_something', 'do_input'}
+
+    # multiple clauses, DSL query and solid name
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                '*do_something+,do_input',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert set(run.solid_selection) == set(['*do_something+', 'do_input'])
+        assert run.solids_to_execute == {'do_something', 'do_input'}
+
+    # invalid value
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                'a, b',
+            ],
+        )
+        assert result.exit_code == 1
+        assert re.match(
+            'No qualified solids to execute found for solid_selection', str(result.exception)
+        )
+
+
+def test_launch_subset_pipeline():
+    runner = CliRunner()
+    # single clause, solid name
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_launch_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                'do_something',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert run.solid_selection == ['do_something']
+        assert run.solids_to_execute == {'do_something'}
+
+    # single clause, DSL query
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_launch_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                '*do_something+',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert run.solid_selection == ['*do_something+']
+        assert run.solids_to_execute == {'do_something', 'do_input'}
+
+    # multiple clauses, DSL query and solid name
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_launch_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                '*do_something+,do_input',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert set(run.solid_selection) == set(['*do_something+', 'do_input'])
+        assert run.solids_to_execute == {'do_something', 'do_input'}
+
+    # invalid value
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_launch_command,
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-n',
+                'foo_pipeline',
+                '--solid-selection',
+                'a, b',
+            ],
+        )
+        assert result.exit_code == 1
+        assert re.match(
+            'No qualified solids to execute found for solid_selection', str(result.exception)
+        )
