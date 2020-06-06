@@ -28,7 +28,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
         pipelineName: "airline_demo_ingest_pipeline",
         repositoryLocationName: "<<in_process>>",
         repositoryName: "internal_dagit_repository",
-        solidSubset: undefined
+        solidSelection: undefined
       },
       snapshotId: undefined,
       rootHandleID: "",

@@ -111,7 +111,7 @@ query getSchedule($scheduleName: String!) {
 def default_execution_params():
     return {
         "runConfigData": {"storage": {"filesystem": None}},
-        "selector": {"name": "no_config_pipeline", "solidSubset": None},
+        "selector": {"name": "no_config_pipeline", "solidSelection": None},
         "mode": "default",
     }
 

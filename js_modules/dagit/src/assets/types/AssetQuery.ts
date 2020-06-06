@@ -113,13 +113,13 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
 export interface AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_runs_pipeline_PipelineSnapshot {
   __typename: "PipelineSnapshot";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   pipelineSnapshotId: string;
 }
 

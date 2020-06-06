@@ -632,7 +632,7 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
     pipelineName = dauphin.Field(dauphin.String)
     repositoryName = dauphin.Field(dauphin.String)
     repositoryLocationName = dauphin.Field(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

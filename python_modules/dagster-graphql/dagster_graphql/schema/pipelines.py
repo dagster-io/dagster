@@ -31,7 +31,7 @@ class DauphinPipelineReference(dauphin.Interface):
         name = 'PipelineReference'
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
@@ -40,7 +40,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
         interfaces = (DauphinPipelineReference,)
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinIPipelineSnapshotMixin(object):
@@ -156,7 +156,7 @@ class DauphinIPipelineSnapshotMixin(object):
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
-    def resolve_solidSubset(self, _graphene_info):
+    def resolve_solidSelection(self, _graphene_info):
         return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):

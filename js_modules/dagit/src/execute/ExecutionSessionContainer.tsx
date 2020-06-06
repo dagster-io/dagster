@@ -146,13 +146,13 @@ export default class ExecutionSessionContainer extends React.Component<
     });
   };
 
-  onSolidSubsetChange = (
-    solidSubset: string[] | null,
-    solidSubsetQuery: string | null
+  onsolidSelectionChange = (
+    solidSelection: string[] | null,
+    solidSelectionQuery: string | null
   ) => {
     this.props.onSaveSession({
-      solidSubset,
-      solidSubsetQuery
+      solidSelection,
+      solidSelectionQuery
     });
   };
 
@@ -185,11 +185,11 @@ export default class ExecutionSessionContainer extends React.Component<
             ...tags.map(tag => ({ key: tag.key, value: tag.value })),
             // pass solid selection query via tags
             // clean up https://github.com/dagster-io/dagster/issues/2495
-            ...(currentSession.solidSubsetQuery
+            ...(currentSession.solidSelectionQuery
               ? [
                   {
                     key: "dagster/solid_selection",
-                    value: currentSession.solidSubsetQuery
+                    value: currentSession.solidSelectionQuery
                   }
                 ]
               : []),
@@ -314,7 +314,7 @@ export default class ExecutionSessionContainer extends React.Component<
               <ConfigEditorConfigPicker
                 pipelineName={pipeline.name}
                 base={currentSession.base}
-                solidSubset={currentSession.solidSubset}
+                solidSelection={currentSession.solidSelection}
                 onCreateSession={onCreateSession}
                 onSaveSession={onSaveSession}
               />
@@ -322,9 +322,9 @@ export default class ExecutionSessionContainer extends React.Component<
               <SolidSelector
                 serverProvidedSubsetError={subsetError}
                 pipelineName={pipeline.name}
-                value={currentSession.solidSubset || null}
-                query={currentSession.solidSubsetQuery || null}
-                onChange={this.onSolidSubsetChange}
+                value={currentSession.solidSelection || null}
+                query={currentSession.solidSelectionQuery || null}
+                onChange={this.onsolidSelectionChange}
               />
               <div style={{ width: 5 }} />
               <ConfigEditorModePicker

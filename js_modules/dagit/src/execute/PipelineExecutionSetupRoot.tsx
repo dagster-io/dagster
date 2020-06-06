@@ -16,7 +16,7 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentP
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
-    if (qs.config || qs.mode || qs.solidSubset) {
+    if (qs.config || qs.mode || qs.solidSelection) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof qs.config === "string") {
         newSession.runConfigYaml = qs.config;
@@ -24,13 +24,13 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentP
       if (typeof qs.mode === "string") {
         newSession.mode = qs.mode;
       }
-      if (qs.solidSubset instanceof Array) {
-        newSession.solidSubset = qs.solidSubset;
-      } else if (typeof qs.solidSubset === "string") {
-        newSession.solidSubset = [qs.solidSubset];
+      if (qs.solidSelection instanceof Array) {
+        newSession.solidSelection = qs.solidSelection;
+      } else if (typeof qs.solidSelection === "string") {
+        newSession.solidSelection = [qs.solidSelection];
       }
-      if (typeof qs.solidSubsetQuery === "string") {
-        newSession.solidSubsetQuery = qs.solidSubsetQuery;
+      if (typeof qs.solidSelectionQuery === "string") {
+        newSession.solidSelectionQuery = qs.solidSelectionQuery;
       }
 
       onSave(applyCreateSession(data, newSession));

@@ -10,13 +10,13 @@
 export interface RunActionMenuFragment_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface RunActionMenuFragment_pipeline_PipelineSnapshot {
   __typename: "PipelineSnapshot";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   pipelineSnapshotId: string;
 }
 

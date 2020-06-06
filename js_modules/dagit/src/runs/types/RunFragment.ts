@@ -12,7 +12,7 @@ import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
 export interface RunFragment_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface RunFragment_tags {

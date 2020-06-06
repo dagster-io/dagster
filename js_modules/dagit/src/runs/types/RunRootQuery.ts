@@ -16,7 +16,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError {
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_tags {

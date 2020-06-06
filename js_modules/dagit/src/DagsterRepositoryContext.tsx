@@ -27,7 +27,7 @@ export const REPOSITORY_LOCATION_FRAGMENT = gql`
 
 export const usePipelineSelector = (
   pipelineName?: string,
-  solidSubset?: string[]
+  solidSelection?: string[]
 ) => {
   const { repository, repositoryLocation } = React.useContext(
     DagsterRepositoryContext
@@ -38,7 +38,7 @@ export const usePipelineSelector = (
     console.error("Using legacy pipeline selector", pipelineName);
     return {
       name: pipelineName,
-      solidSubset
+      solidSelection
     };
   }
 
@@ -46,6 +46,6 @@ export const usePipelineSelector = (
     pipelineName,
     repositoryLocationName: repositoryLocation?.name,
     repositoryName: repository?.name,
-    solidSubset
+    solidSelection
   };
 };

@@ -52,7 +52,7 @@ export const RUN_ROOT_QUERY = gql`
           __typename
           ... on PipelineReference {
             name
-            solidSubset
+            solidSelection
           }
         }
         ...RunFragment

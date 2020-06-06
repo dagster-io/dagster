@@ -233,13 +233,13 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline {
   __typename: "UnknownPipeline";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_PipelineSnapshot {
   __typename: "PipelineSnapshot";
   name: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   pipelineSnapshotId: string;
 }
 

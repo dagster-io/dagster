@@ -45,7 +45,7 @@ interface Pipeline {
 interface ConfigEditorConfigPickerProps {
   base: IExecutionSession["base"];
   pipelineName: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
@@ -72,8 +72,8 @@ export class ConfigEditorConfigPicker extends React.Component<
       base: { presetName: preset.name },
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || "",
-      solidSubset: preset.solidSubset,
-      solidSubsetQuery:
+      solidSelection: preset.solidSubset,
+      solidSelectionQuery:
         preset.solidSubset === null ? "*" : preset.solidSubset.join(","),
       mode: preset.mode,
       tags: [...(pipeline?.tags || [])]
@@ -90,8 +90,8 @@ export class ConfigEditorConfigPicker extends React.Component<
         partitionName: partition.name
       }),
       runConfigYaml: partition.runConfigYaml || "",
-      solidSubset: partition.solidSubset,
-      solidSubsetQuery:
+      solidSelection: partition.solidSubset,
+      solidSelectionQuery:
         partition.solidSubset === null ? "*" : partition.solidSubset.join(","),
       mode: partition.mode,
       tags: [...(pipeline?.tags || []), ...partition.tags]
@@ -103,14 +103,14 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   render() {
-    const { pipelineName, solidSubset, base } = this.props;
+    const { pipelineName, solidSelection, base } = this.props;
 
     return (
       <PickerContainer>
         <ConfigEditorConfigGeneratorPicker
           value={base}
           pipelineName={pipelineName}
-          solidSubset={solidSubset}
+          solidSelection={solidSelection}
           onSelectPreset={this.onSelectPreset}
           onSelectPartitionSet={this.onSelectPartitionSet}
         />
@@ -222,7 +222,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
 
 interface ConfigEditorConfigGeneratorPickerProps {
   pipelineName: string;
-  solidSubset: string[] | null;
+  solidSelection: string[] | null;
   value: IExecutionSession["base"];
   onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
   onSelectPartitionSet: (

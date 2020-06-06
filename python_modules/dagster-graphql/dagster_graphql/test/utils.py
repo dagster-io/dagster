@@ -77,5 +77,5 @@ def get_legacy_pipeline_selector(graphql_context, pipeline_name, solid_selection
         'repositoryLocationName': repository_location.name,
         'repositoryName': repository.name,
         'pipelineName': pipeline_name,
-        'solidSubset': solid_selection,
+        'solidSelection': solid_selection,
     }

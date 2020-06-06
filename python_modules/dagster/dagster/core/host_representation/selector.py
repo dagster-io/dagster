@@ -26,7 +26,7 @@ class PipelineSelector(
             'repositoryLocationName': self.location_name,
             'repositoryName': self.repository_name,
             'pipelineName': self.pipeline_name,
-            'solidSubset': self.solid_selection,
+            'solidSelection': self.solid_selection,
         }
 
     def with_solid_selection(self, solid_selection):

@@ -58,7 +58,7 @@ def pipeline_selector_from_graphql(context, data):
         )
 
         return legacy_pipeline_selector(
-            context, name=data['name'], solid_selection=data.get('solidSubset'),
+            context, name=data['name'], solid_selection=data.get('solidSelection'),
         )
 
     # can be removed once DauphinPipelineSelector fields
@@ -74,7 +74,7 @@ def pipeline_selector_from_graphql(context, data):
         location_name=data['repositoryLocationName'],
         repository_name=data['repositoryName'],
         pipeline_name=data['pipelineName'],
-        solid_selection=data.get('solidSubset'),
+        solid_selection=data.get('solidSelection'),
     )
 
 

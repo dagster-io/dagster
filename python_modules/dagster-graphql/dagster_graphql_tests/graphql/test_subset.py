@@ -49,7 +49,7 @@ def types_dict_of_result(subset_result, top_key):
     }
 
 
-class TestSolidSubsets(ReadonlyGraphQLContextTestMatrix):
+class TestSolidSelections(ReadonlyGraphQLContextTestMatrix):
     def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
         result = execute_dagster_graphql(

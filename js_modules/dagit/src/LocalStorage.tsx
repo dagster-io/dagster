@@ -37,8 +37,8 @@ export interface IExecutionSession {
     | { partitionsSetName: string; partitionName: string | null }
     | null;
   mode: string | null;
-  solidSubset: string[] | null;
-  solidSubsetQuery: string | null;
+  solidSelection: string[] | null;
+  solidSelectionQuery: string | null;
   tags: PipelineRunTag[] | null;
 
   // this is set when you execute the session and freeze it
@@ -99,8 +99,8 @@ export function applyCreateSession(
         runConfigYaml: "",
         mode: null,
         base: null,
-        solidSubset: null,
-        solidSubsetQuery: "*",
+        solidSelection: null,
+        solidSelectionQuery: "*",
         tags: null,
         runId: undefined,
         ...initial,

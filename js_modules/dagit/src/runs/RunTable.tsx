@@ -46,7 +46,7 @@ export class RunTable extends React.Component<RunTableProps> {
           __typename
           ... on PipelineReference {
             name
-            solidSubset
+            solidSelection
           }
           ... on PipelineSnapshot {
             pipelineSnapshotId

@@ -94,7 +94,7 @@ export interface PipelineSelector {
   pipelineName?: string | null;
   repositoryName?: string | null;
   repositoryLocationName?: string | null;
-  solidSubset?: string[] | null;
+  solidSelection?: string[] | null;
 }
 
 //==============================================================

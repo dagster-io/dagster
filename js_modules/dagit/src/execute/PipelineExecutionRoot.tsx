@@ -24,7 +24,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   const [data, onSave] = useStorage(pipelineName);
   const pipelineSelector = usePipelineSelector(
     pipelineName,
-    data.sessions[data.current]?.solidSubset || undefined
+    data.sessions[data.current]?.solidSelection || undefined
   );
   const vars = {
     selector: pipelineSelector,

@@ -63,7 +63,7 @@ export class Run extends React.Component<RunProps, RunState> {
           __typename
           ... on PipelineReference {
             name
-            solidSubset
+            solidSelection
           }
         }
         executionPlan {

@@ -753,7 +753,7 @@ type PipelinePreset {
 
 interface PipelineReference {
   name: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
 }
 
 type PipelineRun {
@@ -848,7 +848,7 @@ input PipelineSelector {
   pipelineName: String
   repositoryName: String
   repositoryLocationName: String
-  solidSubset: [String!]
+  solidSelection: [String!]
 }
 
 type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
@@ -862,7 +862,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
-  solidSubset: [String!]
+  solidSelection: [String!]
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [RunningSchedule!]!
 }
@@ -1231,7 +1231,7 @@ type TypeCheck implements DisplayableEvent {
 
 type UnknownPipeline implements PipelineReference {
   name: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
 }
 
 type UsedSolid {

@@ -232,11 +232,11 @@ export function getReexecutionVariables(input: {
             repositoryLocationName,
             repositoryName,
             pipelineName: run.pipeline.name,
-            solidSubset: run.pipeline.solidSubset
+            solidSelection: run.pipeline.solidSelection
           }
         : {
             name: run.pipeline.name,
-            solidSubset: run.pipeline.solidSubset
+            solidSelection: run.pipeline.solidSelection
           };
 
     const executionParams = {
@@ -271,7 +271,7 @@ export function getReexecutionVariables(input: {
         runConfigData: yaml.parse(envYaml),
         selector: {
           name: run.pipeline.name,
-          solidSubset: run.pipeline.solidSubset
+          solidSelection: run.pipeline.solidSelection
         },
         executionMetadata: getExecutionMetadata(run)
       }
@@ -478,7 +478,7 @@ export const RunActionsMenu: React.FunctionComponent<{
               }/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
-                solidSubset: run.pipeline.solidSubset
+                solidSelection: run.pipeline.solidSelection
               })}`}
             />
           </Tooltip>
@@ -691,7 +691,7 @@ export const RunComponentFragments = {
         __typename
         ... on PipelineReference {
           name
-          solidSubset
+          solidSelection
         }
         ... on PipelineSnapshot {
           pipelineSnapshotId
