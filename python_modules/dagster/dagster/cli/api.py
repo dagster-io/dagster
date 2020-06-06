@@ -3,12 +3,18 @@ from __future__ import print_function
 import json
 import os
 import sys
+from collections import namedtuple
 
 import click
 
 from dagster import check
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
+from dagster.cli.workspace.autodiscovery import (
+    loadable_targets_from_python_file,
+    loadable_targets_from_python_module,
+)
+from dagster.cli.workspace.cli_target import python_target_argument
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
@@ -20,7 +26,7 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -45,10 +51,67 @@ def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
+@whitelist_for_serdes
+class ListRepositoriesResponse(namedtuple('_ListRepositoriesResponse', 'repository_symbols')):
+    def __new__(cls, repository_symbols):
+        return super(ListRepositoriesResponse, cls).__new__(
+            cls,
+            repository_symbols=check.list_param(
+                repository_symbols, 'repository_symbols', of_type=LoadableRepositorySymbol
+            ),
+        )
+
+
+@whitelist_for_serdes
+class LoadableRepositorySymbol(
+    namedtuple('_LoadableRepositorySymbol', 'repository_name python_symbol')
+):
+    def __new__(cls, repository_name, python_symbol):
+        return super(LoadableRepositorySymbol, cls).__new__(
+            cls,
+            repository_name=check.str_param(repository_name, 'repository_name'),
+            python_symbol=check.str_param(python_symbol, 'python_symbol'),
+        )
+
+
+@click.command(name='list_repositories', help='Return the snapshot for the given repository')
+@click.argument('output_file', type=click.Path())
+@python_target_argument
+def list_repositories_command(output_file, python_file, module_name):
+    loadable_targets = _get_loadable_targets(python_file, module_name)
+
+    ipc_write_unary_response(
+        output_file,
+        ListRepositoriesResponse(
+            [
+                LoadableRepositorySymbol(
+                    python_symbol=lt.symbol_name, repository_name=lt.target_definition.name
+                )
+                for lt in loadable_targets
+            ]
+        ),
+    )
+
+
+def _get_loadable_targets(python_file, module_name):
+    if python_file:
+        return loadable_targets_from_python_file(python_file)
+    elif module_name:
+        return loadable_targets_from_python_module(module_name)
+    else:
+        check.failed('invalid')
+
+
 # Snapshot CLI
 
 
-@click.command(name='repository', help='Return the snapshot for the given repository')
+@click.command(
+    name='repository',
+    help=(
+        'Return all repository symbols in a given python_file or module name. '
+        'Used to bootstrap workspace creation process'
+    ),
+)
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
 def repository_snapshot_command(output_file, **kwargs):
@@ -119,6 +182,7 @@ def create_snapshot_cli_group():
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
     group.add_command(execution_plan_snapshot_command)
+    group.add_command(list_repositories_command)
     return group
 
 

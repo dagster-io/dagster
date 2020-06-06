@@ -88,14 +88,8 @@ def get_workspace_from_kwargs(kwargs):
     return workspace_from_load_target(created_workspace_load_target(kwargs))
 
 
-def workspace_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
-
-    return apply_click_params(
-        f,
-        click.option(
-            '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
-        ),
+def python_target_click_options():
+    return [
         click.option(
             '--python-file',
             '-f',
@@ -105,7 +99,32 @@ def workspace_target_argument(f):
         click.option(
             '--module-name', '-m', help='Specify module where repository or pipeline function lives'
         ),
-        click.option(
-            '--definition', '-d', help='Function that returns either repository or pipeline'
-        ),
+    ]
+
+
+def workspace_target_click_options():
+    return (
+        [
+            click.option(
+                '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
+            )
+        ]
+        + python_target_click_options()
+        + [
+            click.option(
+                '--definition', '-d', help='Function that returns either repository or pipeline'
+            ),
+        ]
     )
+
+
+def workspace_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(f, *workspace_target_click_options())
+
+
+def python_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(f, *python_target_click_options())
