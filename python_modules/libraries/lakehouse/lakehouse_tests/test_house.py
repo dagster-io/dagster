@@ -8,7 +8,7 @@ from dagster.check import CheckError
 def _assert_input_defs(solid_def, expected):
     assert len(solid_def.input_defs) == len(expected)
     assert sorted(expected) == sorted(
-        (input_def.dagster_type, input_def.name) for input_def in solid_def.input_defs
+        (input_def.dagster_type.key, input_def.name) for input_def in solid_def.input_defs
     )
 
 
@@ -84,7 +84,7 @@ def test_get_computed_asset_solid_def_with_computed_asset_deps(basic_lakehouse):
     assert solid_def.required_resource_keys == {'storage1', 'storage2'}
     _assert_input_defs(
         solid_def,
-        [(dep_asset1.dagster_type, 'dep_asset1'), (dep_asset2.dagster_type, 'dep_asset2')],
+        [(dep_asset1.dagster_type.key, 'dep_asset1'), (dep_asset2.dagster_type.key, 'dep_asset2')],
     )
     _assert_output_def(solid_def, some_asset.dagster_type, 'result')
 

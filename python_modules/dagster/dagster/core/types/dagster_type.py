@@ -171,14 +171,7 @@ class DagsterType(object):
         return TypeCheck(success=retval) if isinstance(retval, bool) else retval
 
     def __eq__(self, other):
-        check.inst_param(other, 'other', DagsterType)
-
-        if isinstance(other, self.__class__):
-            return len(self.inner_types) == len(other.inner_types) and all(
-                t1 == t2 for t1, t2 in zip(self.inner_types, other.inner_types)
-            )
-        else:
-            return False
+        return isinstance(other, DagsterType) and self.key == other.key
 
     def __ne__(self, other):
         return not self.__eq__(other)
