@@ -13,12 +13,4 @@ from complex_pipeline import complex_pipeline
 
 @repository
 def hello_cereal_repository():
-    # Note that we can pass a dict of functions, rather than a list of
-    # pipeline definitions. This allows us to construct pipelines lazily,
-    # if, e.g., initializing a pipeline involves any heavy compute
-    return {
-        'pipelines': {
-            'hello_cereal_pipeline': lambda: hello_cereal_pipeline,
-            'complex_pipeline': lambda: complex_pipeline,
-        }
-    }
+    return [hello_cereal_pipeline, complex_pipeline]

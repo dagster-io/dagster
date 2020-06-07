@@ -53,7 +53,7 @@ lines:56-75
 You'll see that Dagit distinguishes between the two invocations of the
 single library solid and the solid's definition. The invocation is
 named and bound via a dependency graph to other invocations of other
-solids. The definition is the generic, resuable piece of logic that is
+solids. The definition is the generic, reusable piece of logic that is
 invoked many times within this pipeline.
 
 ![reusable_solids.png](/assets/images/tutorial/reusable_solids.png)
@@ -157,7 +157,7 @@ encapsulated access to the database behind the call to
 we can easily swap resource implementations -- for instance, to test
 against a local SQLite database instead of a production Snowflake
 database; to abstract software changes, such as swapping raw SQL for
-SQLAlchemy; or to accomodate changes in business logic, like moving from
+SQLAlchemy; or to accommodate changes in business logic, like moving from
 an overwriting scheme to append-only, date-partitioned tables.
 
 To implement a resource and specify its config schema, we use the <PyObject module="dagster" object="resource" displayText="@resource" /> decorator. The decorated function should return whatever object you wish to make available under the specific resource's slot in
@@ -276,7 +276,7 @@ prompt you.
 ### Pipeline Config Presets
 
 Useful as the Dagit config editor and the ability to stitch together
-YAML fragments is, once pipelines have been productionized and config is
+YAML fragments is, once pipelines have been have been deployed and config is
 unlikely to change, it's often useful to distribute pipelines with
 embedded config. For example, you might point solids at different S3
 buckets in different environments, or want to pull database credentials
@@ -541,19 +541,16 @@ But most of the time, especially when working on long-running projects with
 other people, we will want to be able to target many pipelines at once with
 our tools.
 
-Dagster provides the concept of a repository, a collection of pipelines that
+Dagster provides the concept of a repository, a collection of pipelines (and other definitions) that
 the Dagster tools can target as a whole. Repositories are declared using the <PyObject module="dagster" object="RepositoryDefinition" /> API
 as follows:
 
 ```python literalinclude showLines startLine=14 caption=repos.py
 file:/dagster_examples/intro_tutorial/advanced/repositories/repos.py
-lines:14-24
+lines:14-16
 ```
 
-Note that the name of the pipeline in the `RepositoryDefinition`
-must match the name we declared for it in its `pipeline` (the
-default is the function name). Don't worry, if these names don't match, you'll
-see a helpful error message.
+One can return a list of items, each one of which can be a pipeline, a schedule, or a partition set.
 
 If you save this file as `repos.py`, you can then run the command
 line tools on it. Try running:
@@ -562,28 +559,83 @@ line tools on it. Try running:
 $ dagit -f repos.py -n define_repo
 ```
 
+### Lazy Construction
+
+Notice that this requires eager construction of all its member definitions. In
+large codebases, pipeline construction time can be large. In these cases, it may
+behoove you to only construct them on demand. For that, you can also return
+a dictionary of function references, which are constructed on demand:
+
+```python literalinclude showLines startLine=14 caption=repos.py
+file:/dagster_examples/intro_tutorial/advanced/repositories/lazy_repos.py
+lines:15-25
+```
+
+Note that the name of the pipeline in the `RepositoryDefinition`
+must match the name we declared for it in its `pipeline` (the
+default is the function name). Don't worry, if these names don't match, you'll
+see a helpful error message.
+
+### Repositories in Dagit
+
 Now you can see the list of all pipelines in the repo via the dropdown at the
 top:
 
 ![repos.png](/assets/images/tutorial/repos.png)
 
-Typing the name of the file and function defining the repository gets tiresome
-and repetitive, so let's create a declarative config file with this
-information to make using the command line tools easier. Save this file as
-`repository.yaml`. This is the default name for a repository config
-file, although you can tell the CLI tools to use any file you like with the
-`-y` flag.
+## Workspaces
 
-```YAML literalinclude caption=repository.yaml
-file:/dagster_examples/intro_tutorial/advanced/repositories/repository.yaml
+Loading repositories via the `-f` or `-m` options is actually just a convenience function.
+The underlying abstraction is the "workspace", which determines all of the available
+repositories available to dagit. 
+
+We have a file format for building workspaces called `workspace.yaml`. 
+It is a convenience: it prevents you from having to type the same `-f` or `-m` flag repeatedly.
+But as you'll see below it enables more capabilities.
+
+```YAML literalinclude caption=workspace.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/workspace.yaml
 ```
 
-Now you should be able to list the pipelines in this repo without all the
-typing:
+Dagit will look for workspace.yaml in the current directory by default, so now
+you can launch dagit from that directory with no arguments.
 
 ```bash
 $ dagit
 ```
+
+### Multiple repositories 
+
+You can also use the workspace.yaml to load multiple repositories. This can often be
+useful for organization purposes, in order to group pipelines and other artifacts by team.
+
+```YAML literalinclude caption=multi_repo_workspace.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
+```
+
+Load it
+
+```bash
+$ dagit -w multi_repo_workspace.yaml
+```
+
+And now you can switch between repositories in dagit.
+
+### Multi-environment repositories
+
+Sometimes teams desire different python versions or virtual environments. To support this dagster allows repositories
+to live in completely separate processes from each other, and tools like Dagit communicate with those
+repositories using a cross-process rpc protocol.
+
+Via the workspace, you can configure where to launch repositories. See example:
+
+```YAML literalinclude caption=multi_python_env_workspace_example.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
+```
+
+For this example to work, you need to change the executable path to point a virtual environment
+available in your system, and point to a python module or file that is available and loadable
+by that executable.
 
 <br />
 

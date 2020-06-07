@@ -33,7 +33,7 @@ file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
 lines:7-15
 ```
 
-Here, rather than hardcoding the value of `dataset_path`, we use an
+Here, rather than hard-coding the value of `dataset_path`, we use an
 input, `csv_path`. It's easy to see why this is better. We can reuse
 the same solid in all the different places we might need to read in a
 CSV from a filepath. We can test the solid by pointing it at some known
@@ -136,7 +136,7 @@ rapid experimentation with and debugging of parameterized pipeline executions. A
 always, run:
 
 ```bash
-$ dagit -f inputs.py -a inputs_pipeline
+$ dagit -f inputs.py
 ```
 
 Notice that no execution plan appears in the bottom pane of the Playground.
@@ -201,7 +201,7 @@ file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
 lines:7-39
 ```
 
-Defaults are often sufficient for configuation values like these, and sets of
+Defaults are often sufficient for configuration values like these, and sets of
 parameters are often reusable. And it's unlikely that values like this will be
 provided dynamically by the outputs of other solids in a pipeline.
 
@@ -235,7 +235,7 @@ executes our pipeline, the framework will make validated config for each solid a
 Let's see how all of this looks in dagit. As usual, run:
 
 ```bash
-$ dagit -f config.py -n config_pipeline
+$ dagit -f config.py
 ```
 
 ![config_figure_one.png](/assets/images/tutorial/config_figure_one.png)

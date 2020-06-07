@@ -1,0 +1,3 @@
+load_from:
+  - python_module: dagster_examples.intro_tutorial.repos
+  - python_file: repos.py

@@ -48,7 +48,7 @@ of `load_cereals`.
 Let's visualize the DAG we've just defined in dagit.
 
 ```bash
-$ dagit -f serial_pipeline.py -n serial_pipeline
+$ dagit -f serial_pipeline.py
 ```
 
 Navigate to [http://127.0.0.1:3000/pipeline/serial_pipeline/](http://127.0.0.1:3000/pipeline/serial_pipeline/) or choose
@@ -75,7 +75,7 @@ make both `sort_by_calories` and `sort_by_protein` consume this output.
 Their outputs are in turn both consumed by `display_results`.
 
 Let's visualize this pipeline in Dagit
-(`dagit -f complex_pipeline.py -n complex_pipeline`):
+(`dagit -f complex_pipeline.py`):
 
 ![complex_pipeline_figure_one.png](/assets/images/tutorial/complex_pipeline_figure_one.png)
 
