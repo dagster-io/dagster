@@ -18,7 +18,6 @@ run_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-
 # ==================================================================================================
 # Event Log Storage
 # ==================================================================================================
@@ -39,7 +38,6 @@ event_log_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-
 # ==================================================================================================
 # Scheduler
 # ==================================================================================================
@@ -48,7 +46,6 @@ event_log_storage:
 scheduler:
   module: dagster_cron.cron_scheduler
   class: SystemCronScheduler
-
 
 # ==================================================================================================
 # Schedule Storage
@@ -70,17 +67,13 @@ schedule_storage:
         env: DAGSTER_PG_DB
       port: 5432
 
-
 # ==================================================================================================
 # Run Launcher
 # ==================================================================================================
-# Provides an optional means to delegate the execution of pipeline runs.
+# Component that determines where runs are executed.
 run_launcher:
-  module: dagster_graphql.launcher
-  class: RemoteDagitRunLauncher
-    config:
-      address: http://dagit.mycorp.com
-
+  module: dagster.core.launcher
+  class: CliApiRunLauncher
 
 # ==================================================================================================
 # Compute Log Storage
@@ -95,9 +88,8 @@ compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: "mycorp-dagster-compute-logs"
-    prefix: "dagster-test-"
-
+    bucket: 'mycorp-dagster-compute-logs'
+    prefix: 'dagster-test-'
 
 # ==================================================================================================
 # Local Artifact Storage
@@ -112,8 +104,7 @@ local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
   config:
-    base_dir: "/var/shared/dagster"
-
+    base_dir: '/var/shared/dagster'
 
 # ==================================================================================================
 # Dagit

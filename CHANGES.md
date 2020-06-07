@@ -32,6 +32,7 @@
 
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
+- `RemoteDagitRunLauncher` has been deleted.
 
 **New**
 

@@ -142,9 +142,9 @@ Run launcher
 
 .. autoclass:: RunLauncher
 
-.. currentmodule:: dagster_graphql.launcher
+.. autoclass:: CliApiRunLauncher
 
-.. autoclass:: RemoteDagitRunLauncher
+.. currentmodule:: dagster_graphql.launcher
 
 See also: :py:class:`dagster_k8s.K8sRunLauncher`.
 

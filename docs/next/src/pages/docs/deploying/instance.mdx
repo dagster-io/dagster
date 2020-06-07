@@ -122,9 +122,9 @@ The API docs for available options are linked below:
 - _(default)_ <PyObject module="dagster.core.storage.schedules" object="SqliteScheduleStorage"/>
 - <PyObject module="dagster_postgres" object="PostgresScheduleStorage" />
 
-**Run Launcher** _(none provided by default)_
+**Run Launcher**
 
-- <PyObject module="dagster_graphql.launcher" object="RemoteDagitRunLauncher" />
+- _(default)_ <PyObject module="dagster.core.launcher" object="CliApiRunLauncher" />
 
 Each of these components makes use of common plugin machinery, the <PyObject module="dagster.serdes"
 object="ConfigurableClass" displayText="ConfigurableClass" />. This lets you specify what class to

@@ -634,16 +634,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     repo_def = recon_repo.get_definition()
     noprompt = cli_args.get('noprompt')
 
-    # check run launcher
-    if not instance.run_launcher:
-        raise click.UsageError(
-            'A run launcher must be configured before running a backfill. You can configure a run '
-            'launcher (e.g. dagster_graphql.launcher.RemoteDagitRunLauncher) in your instance '
-            '`dagster.yaml` settings. See '
-            'https://docs.dagster.io/docs/deploying/instance/ for more'
-            'information.'
-        )
-
     # Resolve pipeline
     if not pipeline_name and noprompt:
         raise click.UsageError('No pipeline specified')
