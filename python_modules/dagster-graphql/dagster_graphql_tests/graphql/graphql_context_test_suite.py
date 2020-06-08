@@ -461,11 +461,31 @@ class GraphQLContextVariant:
         '''
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.readonly)
 
+    @staticmethod
+    def legacy_all_readonly_variants():
+        '''
+        Return all readonly variants that are in process and single location.
+        If you try to start or launch these will error
+        '''
+        return _variants_without_marks(
+            _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.readonly),
+            [pytest.mark.multi_location],
+        )
+
 
 def _variants_with_mark(variants, mark):
     def _yield_all():
         for variant in variants:
             if mark in variant.marks:
+                yield variant
+
+    return list(_yield_all())
+
+
+def _variants_without_marks(variants, marks):
+    def _yield_all():
+        for variant in variants:
+            if all(mark not in variant.marks for mark in marks):
                 yield variant
 
     return list(_yield_all())
@@ -568,6 +588,10 @@ class TestAThing(
 
 ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_readonly_variants()
+)
+
+LegacyReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.legacy_all_readonly_variants()
 )
 
 ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(

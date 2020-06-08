@@ -4,7 +4,7 @@ import sys
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
 query EnvironmentQuery($selector: PipelineSelector!){
@@ -49,7 +49,7 @@ def types_dict_of_result(subset_result, top_key):
     }
 
 
-class TestSolidSelections(ReadonlyGraphQLContextTestMatrix):
+class TestSolidSelections(LegacyReadonlyGraphQLContextTestMatrix):
     def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(self, graphql_context):
         selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
         result = execute_dagster_graphql(
