@@ -239,7 +239,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-aws',
-        env_vars=['AWS_DEFAULT_REGION'],
+        env_vars=['AWS_DEFAULT_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
         # See: https://github.com/dagster-io/dagster/issues/1960
         supported_pythons=SupportedPythonsNo38,
     ),
