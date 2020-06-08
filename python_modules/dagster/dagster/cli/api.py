@@ -20,6 +20,7 @@ from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessErro
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import (
+    external_partition_data_from_def,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
@@ -177,12 +178,27 @@ def execution_plan_snapshot_command(
     ipc_write_unary_response(output_file, execution_plan_snapshot)
 
 
+@click.command(name='partition', help='Return the config for a partition')
+@click.argument('output_file', type=click.Path())
+@repository_target_argument
+@click.option('--partition-set-name', help="partition set name")
+@click.option('--partition-name', help="partition name")
+def partition_data_command(output_file, partition_set_name, partition_name, **kwargs):
+    recon_repo = recon_repo_for_cli_args(kwargs)
+    definition = recon_repo.get_definition()
+    partition_set_def = definition.get_partition_set_def(partition_set_name)
+    partition = partition_set_def.get_partition(partition_name)
+    partition_data = external_partition_data_from_def(partition_set_def, partition)
+    ipc_write_unary_response(output_file, partition_data)
+
+
 def create_snapshot_cli_group():
     group = click.Group(name="snapshot")
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
     group.add_command(execution_plan_snapshot_command)
     group.add_command(list_repositories_command)
+    group.add_command(partition_data_command)
     return group
 
 

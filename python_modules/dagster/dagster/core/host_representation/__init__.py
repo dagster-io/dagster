@@ -14,12 +14,14 @@ from .external import (
     ExternalSchedule,
 )
 from .external_data import (
+    ExternalPartitionData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalPipelineSubsetResult,
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalScheduleData,
+    external_partition_data_from_def,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )

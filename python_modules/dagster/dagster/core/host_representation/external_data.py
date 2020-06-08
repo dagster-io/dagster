@@ -15,7 +15,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.partition import Partition, PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -173,6 +173,17 @@ class ExternalPartitionSetData(
         )
 
 
+@whitelist_for_serdes
+class ExternalPartitionData(namedtuple('_ExternalPartitionSetData', 'name tags run_config')):
+    def __new__(cls, name, tags, run_config):
+        return super(ExternalPartitionData, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            tags=check.opt_dict_param(tags, 'tags'),
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+        )
+
+
 def external_repository_data_from_def(repository_def):
     check.inst_param(repository_def, 'repository_def', RepositoryDefinition)
 
@@ -239,3 +250,11 @@ def external_preset_data_from_def(preset_def):
         solid_selection=preset_def.solid_selection,
         mode=preset_def.mode,
     )
+
+
+def external_partition_data_from_def(partition_set_def, partition):
+    check.inst_param(partition_set_def, 'partition_set_def', PartitionSetDefinition)
+    check.inst_param(partition, 'partition', Partition)
+    run_config = partition_set_def.environment_dict_for_partition(partition)
+    tags = partition_set_def.tags_for_partition(partition)
+    return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
