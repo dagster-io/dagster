@@ -7,7 +7,7 @@ load_from:
         python_module:
           module_name: dagster_examples
           location_name: dagster_examples
-          definition: define_internal_dagit_repository
+          attribute: define_internal_dagit_repository
   - python_environment:
       executable_path: "~/venvs/dagster-dev-3.8.1/bin/python"
       target:

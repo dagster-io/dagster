@@ -5,7 +5,7 @@ from collections import namedtuple
 from dagster import DagsterInvariantViolationError, PipelineDefinition, RepositoryDefinition
 from dagster.core.code_pointer import load_python_file
 
-LoadableTarget = namedtuple('LoadableTarget', 'symbol_name target_definition')
+LoadableTarget = namedtuple('LoadableTarget', 'attribute target_definition')
 
 
 def loadable_targets_from_python_file(python_file):
@@ -38,7 +38,7 @@ def loadable_targets_from_loaded_module(module):
                 'functions: {pipeline_symbols}.'
             ).format(
                 module_name=module.__name__,
-                pipeline_symbols=repr([p.symbol_name for p in loadable_pipelines]),
+                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
             )
         )
 

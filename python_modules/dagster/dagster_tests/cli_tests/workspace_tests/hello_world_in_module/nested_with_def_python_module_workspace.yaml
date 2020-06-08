@@ -1,4 +1,4 @@
 load_from:
   - python_module:
       module_name: dagster.utils.test.hello_world_repository
-      definition: hello_world_repository
+      attribute: hello_world_repository

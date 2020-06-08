@@ -64,13 +64,13 @@ class ListRepositoriesResponse(namedtuple('_ListRepositoriesResponse', 'reposito
 
 @whitelist_for_serdes
 class LoadableRepositorySymbol(
-    namedtuple('_LoadableRepositorySymbol', 'repository_name python_symbol')
+    namedtuple('_LoadableRepositorySymbol', 'repository_name attribute')
 ):
-    def __new__(cls, repository_name, python_symbol):
+    def __new__(cls, repository_name, attribute):
         return super(LoadableRepositorySymbol, cls).__new__(
             cls,
             repository_name=check.str_param(repository_name, 'repository_name'),
-            python_symbol=check.str_param(python_symbol, 'python_symbol'),
+            attribute=check.str_param(attribute, 'attribute'),
         )
 
 
@@ -85,7 +85,7 @@ def list_repositories_command(output_file, python_file, module_name):
         ListRepositoriesResponse(
             [
                 LoadableRepositorySymbol(
-                    python_symbol=lt.symbol_name, repository_name=lt.target_definition.name
+                    attribute=lt.attribute, repository_name=lt.target_definition.name
                 )
                 for lt in loadable_targets
             ]

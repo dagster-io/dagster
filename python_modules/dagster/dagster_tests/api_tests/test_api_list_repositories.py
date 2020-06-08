@@ -18,7 +18,7 @@ def test_sync_list_python_file():
     symbol = loadable_repo_symbols[0]
 
     assert symbol.repository_name == 'bar_repo'
-    assert symbol.python_symbol == 'bar_repo'
+    assert symbol.attribute == 'bar_repo'
 
 
 def test_sync_list_python_file_multi_repo():
@@ -32,7 +32,7 @@ def test_sync_list_python_file_multi_repo():
     assert isinstance(loadable_repo_symbols[0], LoadableRepositorySymbol)
     assert isinstance(loadable_repo_symbols[1], LoadableRepositorySymbol)
 
-    by_symbol = {lrs.python_symbol: lrs for lrs in loadable_repo_symbols}
+    by_symbol = {lrs.attribute: lrs for lrs in loadable_repo_symbols}
 
     assert by_symbol['repo_one_symbol'].repository_name == 'repo_one'
     assert by_symbol['repo_two'].repository_name == 'repo_two'
@@ -50,4 +50,4 @@ def test_sync_list_python_module():
     symbol = loadable_repo_symbols[0]
 
     assert symbol.repository_name == 'hello_world_repository'
-    assert symbol.python_symbol == 'hello_world_repository'
+    assert symbol.attribute == 'hello_world_repository'

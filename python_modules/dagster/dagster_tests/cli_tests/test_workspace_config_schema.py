@@ -44,7 +44,7 @@ load_from:
 load_from:
     - python_file: 
         relative_path: a_file.py
-        definition: repo_symbol
+        attribute: repo_symbol
 '''
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name).success
 
@@ -52,7 +52,7 @@ load_from:
 load_from:
     - python_file: 
         relative_path: a_file.py
-        definition: repo_symbol
+        attribute: repo_symbol
         location_name: some_location
 '''
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name_and_location).success
@@ -78,7 +78,7 @@ load_from:
 load_from:
     - python_module:
         module_name: a_module 
-        definition: repo_symbol
+        attribute: repo_symbol
 '''
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name).success
 
@@ -86,7 +86,7 @@ load_from:
 load_from:
     - python_module: 
         module_name: a_module 
-        definition: repo_symbol
+        attribute: repo_symbol
         location_name: some_location
 '''
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name_and_location).success

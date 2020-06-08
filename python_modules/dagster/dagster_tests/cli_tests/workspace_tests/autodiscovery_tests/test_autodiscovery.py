@@ -15,7 +15,7 @@ def test_single_repository():
     loadable_targets = loadable_targets_from_python_file(single_repo_path)
 
     assert len(loadable_targets) == 1
-    symbol = loadable_targets[0].symbol_name
+    symbol = loadable_targets[0].attribute
     assert symbol == 'single_repository'
 
     repo_def = CodePointer.from_python_file(single_repo_path, symbol).load_target()
@@ -36,7 +36,7 @@ def test_single_pipeline():
     loadable_targets = loadable_targets_from_python_file(single_pipeline_path)
 
     assert len(loadable_targets) == 1
-    symbol = loadable_targets[0].symbol_name
+    symbol = loadable_targets[0].attribute
     assert symbol == 'a_pipeline'
 
     repo_def = repository_def_from_pointer(
@@ -72,7 +72,7 @@ def test_single_repository_in_module():
         'dagster.utils.test.toys.single_repository'
     )
     assert len(loadable_targets) == 1
-    symbol = loadable_targets[0].symbol_name
+    symbol = loadable_targets[0].attribute
     assert symbol == 'single_repository'
 
     repo_def = CodePointer.from_module(

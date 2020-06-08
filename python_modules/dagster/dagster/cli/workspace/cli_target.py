@@ -35,12 +35,12 @@ def are_all_keys_empty(kwargs, keys):
     return True
 
 
-WORKSPACE_CLI_ARGS = ('workspace', 'python_file', 'module_name', 'definition', 'repository_yaml')
+WORKSPACE_CLI_ARGS = ('workspace', 'python_file', 'module_name', 'attribute', 'repository_yaml')
 
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'path')
-PythonFileTarget = namedtuple('PythonFileTarget', 'python_file definition')
-ModuleTarget = namedtuple('ModuleTarget', 'module_name definition')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
+ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
 
 WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget)
 
@@ -50,19 +50,19 @@ def created_workspace_load_target(kwargs):
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         return WorkspaceFileTarget(path='workspace.yaml')
     if kwargs.get('repository_yaml'):
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'definition', 'workspace')
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'workspace')
         return WorkspaceFileTarget(path=kwargs['repository_yaml'])
     if kwargs.get('workspace'):
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'definition')
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
         return WorkspaceFileTarget(path=kwargs['workspace'])
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
         return PythonFileTarget(
-            python_file=kwargs.get('python_file'), definition=kwargs.get('definition')
+            python_file=kwargs.get('python_file'), attribute=kwargs.get('attribute')
         )
     if kwargs.get('module_name'):
         return ModuleTarget(
-            module_name=kwargs.get('module_name'), definition=kwargs.get('definition')
+            module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute')
         )
     check.failed('invalid')
 
@@ -74,11 +74,11 @@ def workspace_from_load_target(load_target):
         return load_workspace_from_yaml_path(load_target.path)
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
-            [location_handle_from_python_file(load_target.python_file, load_target.definition)]
+            [location_handle_from_python_file(load_target.python_file, load_target.attribute)]
         )
     elif isinstance(load_target, ModuleTarget):
         return Workspace(
-            [location_handle_from_module_name(load_target.module_name, load_target.definition)]
+            [location_handle_from_module_name(load_target.module_name, load_target.attribute)]
         )
     else:
         check.not_implemented('Unsupported: {}'.format(load_target))
@@ -112,7 +112,12 @@ def workspace_target_click_options():
         + python_target_click_options()
         + [
             click.option(
-                '--definition', '-d', help='Function that returns either repository or pipeline'
+                '--attribute',
+                '-a',
+                help=(
+                    'Attribute that is either a 1) repository or pipeline or '
+                    '2) a function that returns a repository.'
+                ),
             ),
         ]
     )

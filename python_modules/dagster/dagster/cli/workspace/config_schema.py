@@ -30,7 +30,7 @@ def _get_target_config():
             scalar_type=str,
             non_scalar_schema={
                 'relative_path': str,
-                'definition': Field(str, is_required=False),
+                'attribute': Field(str, is_required=False),
                 'location_name': Field(str, is_required=False),
             },
         ),
@@ -38,7 +38,7 @@ def _get_target_config():
             scalar_type=str,
             non_scalar_schema={
                 'module_name': str,
-                'definition': Field(str, is_required=False),
+                'attribute': Field(str, is_required=False),
                 'location_name': Field(str, is_required=False),
             },
         ),

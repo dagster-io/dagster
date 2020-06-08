@@ -1,4 +1,4 @@
 load_from:
   - python_file:
       relative_path: hello_world_repository.py
-      definition: hello_world_repository
+      attribute: hello_world_repository
