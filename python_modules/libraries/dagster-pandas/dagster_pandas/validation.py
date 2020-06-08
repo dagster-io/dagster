@@ -41,15 +41,16 @@ def _construct_keyword_constraints(non_nullable, unique, ignore_missing_vals):
 
 class PandasColumn:
     '''
-    The main API for expressing column level schemas and constraints for your custom dataframe types.
+    The main API for expressing column level schemas and constraints for your custom dataframe
+    types.
 
     Args:
         name (str): Name of the column. This must match up with the column name in the dataframe you
             expect to receive.
-        is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-            the validate function will validate the column. Defaults to False.
-        constraints (Optional[List[Constraint]]): List of constraint objects that indicate the validation rules
-            for the pandas column.
+        is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the
+            column exists, the validate function will validate the column. Defaults to False.
+        constraints (Optional[List[Constraint]]): List of constraint objects that indicate the
+            validation rules for the pandas column.
     '''
 
     def __init__(self, name, constraints=None, is_optional=False):

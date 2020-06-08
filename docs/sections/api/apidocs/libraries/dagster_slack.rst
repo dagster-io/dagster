@@ -7,12 +7,15 @@ Slack (dagster_slack)
 :raw-html-m2r:`<img src="https://user-images.githubusercontent.com/609349/57994610-c581f680-7a72-11e9-85cd-41fd649cc26d.png" />`
 
 |
+
 This library provides an integration with Slack, to support posting messages in your company's Slack workspace.
 
 |
+
 Presently, it provides a thin wrapper on the Slack client API `chat.postMessage <https://api.slack.com/methods/chat.postMessage>`_.
 
 |
+
 To use this integration, you'll first need to create a Slack App for it.
 
 

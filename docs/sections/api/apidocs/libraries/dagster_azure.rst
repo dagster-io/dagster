@@ -5,6 +5,7 @@ Utilities for using Azure Storage Accounts with Dagster. This is mostly aimed at
 Storage Gen 2 (ADLS2) but also contains some utilities for Azure Blob Storage.
 
 |
+
 **NOTE:** This package is incompatible with ``dagster-snowflake``! This is due to a version mismatch
 between the underlying ``azure-storage-blob`` package; ``dagster-snowflake`` has a transitive
 dependency on an old version, via ``snowflake-connector-python``.
