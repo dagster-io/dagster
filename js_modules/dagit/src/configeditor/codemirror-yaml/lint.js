@@ -10,8 +10,15 @@ function showTooltip(e, content, node) {
   tt.className = "CodeMirror-lint-tooltip";
   tt.appendChild(content.cloneNode(true));
   document.body.appendChild(tt);
-  tt.style.top = nodeRect.top - tt.clientHeight - 5 + "px";
-  tt.style.left = nodeRect.left + 5 + "px";
+  if (nodeRect.top > tt.clientHeight) {
+    // position on the top
+    tt.style.top = nodeRect.top - tt.clientHeight - 5 + "px";
+    tt.style.left = nodeRect.left + 5 + "px";
+  } else {
+    // positon on the right if top would be off-screen
+    tt.style.top = nodeRect.top + 5 + "px";
+    tt.style.left = nodeRect.right + 10 + "px";
+  }
   if (tt.style.opacity != null) tt.style.opacity = 1;
   return tt;
 }
