@@ -8,6 +8,7 @@ from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
 
 from dagster import (
+    AssetKey,
     EventMetadataEntry,
     Materialization,
     ModeDefinition,
@@ -505,7 +506,7 @@ def test_load_from_config(hostname):
 def test_asset_materialization(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
-    asset_key = 'asset one'
+    asset_key = AssetKey(['path', 'to', 'asset_one'])
 
     @solid
     def materialize_one(_):
@@ -542,13 +543,11 @@ def test_asset_events_error_parsing(conn_string):
     def mock_log(msg):
         _logs.append(msg)
 
-    asset_key = 'asset one'
+    asset_key = AssetKey('asset_one')
 
     @solid
     def materialize_one(_):
-        yield Materialization(
-            label='one', asset_key=asset_key,
-        )
+        yield Materialization(label='one', asset_key=asset_key)
         yield Output(1)
 
     def _solids():

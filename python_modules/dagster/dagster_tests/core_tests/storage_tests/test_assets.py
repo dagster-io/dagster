@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import (
+    AssetKey,
     DagsterEventType,
     Materialization,
     Output,
@@ -37,31 +38,41 @@ def get_instance(temp_dir, event_log_storage):
 @contextmanager
 def create_in_memory_event_log_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        yield get_instance(temp_dir, InMemoryEventLogStorage())
+        asset_storage = InMemoryEventLogStorage()
+        instance = get_instance(temp_dir, asset_storage)
+        yield [instance, asset_storage]
 
 
 @contextmanager
 def create_consolidated_sqlite_event_log_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        yield get_instance(temp_dir, ConsolidatedSqliteEventLogStorage(temp_dir))
+        asset_storage = ConsolidatedSqliteEventLogStorage(temp_dir)
+        instance = get_instance(temp_dir, asset_storage)
+        yield [instance, asset_storage]
 
 
 asset_test = pytest.mark.parametrize(
-    'asset_aware_instance',
+    'asset_aware_context',
     [create_in_memory_event_log_instance, create_consolidated_sqlite_event_log_instance,],
 )
 
 
 @solid
 def solid_one(_):
-    yield Materialization(label='one', asset_key='asset_1')
+    yield Materialization(label='one', asset_key=AssetKey('asset_1'))
     yield Output(1)
 
 
 @solid
 def solid_two(_):
-    yield Materialization(label='two', asset_key='asset_2')
-    yield Materialization(label='three', asset_key='asset_3')
+    yield Materialization(label='two', asset_key=AssetKey('asset_2'))
+    yield Materialization(label='three', asset_key=AssetKey(['path', 'to', 'asset_3']))
+    yield Output(1)
+
+
+@solid
+def solid_normalization(_):
+    yield Materialization(label='normalization', asset_key='path/to-asset_4')
     yield Output(1)
 
 
@@ -76,25 +87,31 @@ def pipeline_two():
     solid_two()
 
 
-@asset_test
-def test_asset_keys(asset_aware_instance):
-    with asset_aware_instance() as instance:
-        execute_pipeline(pipeline_one, instance=instance)
-        execute_pipeline(pipeline_two, instance=instance)
-        asset_keys = set(
-            instance._event_storage.get_all_asset_keys()  # pylint: disable=protected-access
-        )
-        assert asset_keys == set(['asset_1', 'asset_2', 'asset_3'])
+@pipeline
+def pipeline_normalization():
+    solid_normalization()
 
 
 @asset_test
-def test_asset_events(asset_aware_instance):
-    with asset_aware_instance() as instance:
+def test_asset_keys(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
         execute_pipeline(pipeline_one, instance=instance)
         execute_pipeline(pipeline_two, instance=instance)
-        asset_events = instance._event_storage.get_asset_events(  # pylint: disable=protected-access
-            'asset_1'
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 3
+        assert set([asset_key.to_db_string() for asset_key in asset_keys]) == set(
+            ['asset_1', 'asset_2', 'path.to.asset_3']
         )
+
+
+@asset_test
+def test_asset_events(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+        asset_events = event_log_storage.get_asset_events(AssetKey('asset_1'))
         assert len(asset_events) == 2
         for event in asset_events:
             assert isinstance(event, EventRecord)
@@ -102,13 +119,27 @@ def test_asset_events(asset_aware_instance):
             assert event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION
             assert event.dagster_event.asset_key
 
+        asset_events = event_log_storage.get_asset_events(AssetKey(['path', 'to', 'asset_3']))
+        assert len(asset_events) == 1
+
 
 @asset_test
-def test_asset_run_ids(asset_aware_instance):
-    with asset_aware_instance() as instance:
+def test_asset_run_ids(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
         one = execute_pipeline(pipeline_one, instance=instance)
         two = execute_pipeline(pipeline_two, instance=instance)
-        run_ids = instance._event_storage.get_asset_run_ids(  # pylint: disable=protected-access
-            'asset_1'
-        )
+        run_ids = event_log_storage.get_asset_run_ids(AssetKey('asset_1'))
         assert set(run_ids) == set([one.run_id, two.run_id])
+
+
+@asset_test
+def test_asset_normalization(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_normalization, instance=instance)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 1
+        asset_key = asset_keys[0]
+        assert asset_key.to_db_string() == 'path.to.asset_4'
+        assert asset_key.path == ['path', 'to', 'asset_4']

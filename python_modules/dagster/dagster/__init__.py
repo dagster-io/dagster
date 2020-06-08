@@ -2,6 +2,7 @@ from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
+    AssetKey,
     CompositeSolidDefinition,
     ConfigMapping,
     DependencyDefinition,
@@ -125,6 +126,7 @@ from dagster.config.source import StringSource, IntSource  # isort:skip
 
 __all__ = [
     # Definition
+    'AssetKey',
     'CompositeSolidDefinition',
     'ConfigMapping',
     'DependencyDefinition',

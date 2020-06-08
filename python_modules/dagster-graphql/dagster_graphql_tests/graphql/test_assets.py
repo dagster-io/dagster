@@ -9,7 +9,9 @@ GET_ASSET_KEY_QUERY = '''
         __typename
         ...on AssetConnection {
             nodes {
-                key
+                key {
+                    path
+                }
             }
         }
     }
@@ -17,7 +19,7 @@ GET_ASSET_KEY_QUERY = '''
 '''
 
 GET_ASSET_MATERIALIZATION = '''
-    query AssetQuery($assetKey: String!) {
+    query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetMaterializations(limit: 1) {
@@ -33,7 +35,7 @@ GET_ASSET_MATERIALIZATION = '''
 '''
 
 GET_ASSET_RUNS = '''
-    query AssetRunsQuery($assetKey: String!) {
+    query AssetRunsQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 runs {
@@ -75,7 +77,7 @@ class TestAssetAwareEventLog(
         )
         assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
         result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_MATERIALIZATION, variables={'assetKey': 'a'}
+            graphql_context, GET_ASSET_MATERIALIZATION, variables={'assetKey': {'path': ['a']}}
         )
         assert result.data
         snapshot.assert_match(result.data)
@@ -100,7 +102,7 @@ class TestAssetAwareEventLog(
         multi_run_id = result.data['launchPipelineExecution']['run']['runId']
 
         result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_RUNS, variables={'assetKey': 'a'}
+            graphql_context, GET_ASSET_RUNS, variables={'assetKey': {'path': ['a']}}
         )
         assert result.data
         fetched_runs = [run['runId'] for run in result.data['assetOrError']['runs']]

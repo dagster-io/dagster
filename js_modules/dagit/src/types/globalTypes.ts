@@ -61,6 +61,10 @@ export enum StepKind {
   COMPUTE = "COMPUTE",
 }
 
+export interface AssetKeyInput {
+  path: string[];
+}
+
 export interface ExecutionMetadata {
   runId?: string | null;
   tags?: ExecutionTag[] | null;

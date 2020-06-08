@@ -11,13 +11,25 @@ snapshots['TestAssetAwareEventLog.test_get_all_asset_keys[in_memory_instance_in_
         '__typename': 'AssetConnection',
         'nodes': [
             {
-                'key': 'c'
+                'key': {
+                    'path': [
+                        'c'
+                    ]
+                }
             },
             {
-                'key': 'b'
+                'key': {
+                    'path': [
+                        'b'
+                    ]
+                }
             },
             {
-                'key': 'a'
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
             }
         ]
     }
@@ -42,13 +54,25 @@ snapshots['TestAssetAwareEventLog.test_get_all_asset_keys[asset_aware_instance_i
         '__typename': 'AssetConnection',
         'nodes': [
             {
-                'key': 'a'
+                'key': {
+                    'path': [
+                        'a'
+                    ]
+                }
             },
             {
-                'key': 'b'
+                'key': {
+                    'path': [
+                        'b'
+                    ]
+                }
             },
             {
-                'key': 'c'
+                'key': {
+                    'path': [
+                        'c'
+                    ]
+                }
             }
         ]
     }

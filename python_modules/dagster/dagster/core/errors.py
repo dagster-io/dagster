@@ -403,3 +403,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
 
 class ScheduleExecutionError(DagsterUserCodeExecutionError):
     '''Errors raised during the execution of schedule.'''
+
+
+class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
+    ''' Error raised by invalid asset key '''

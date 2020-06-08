@@ -48,9 +48,9 @@ const getNaturalLanguageCronString = (cronSchedule: string) => {
 };
 
 const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
-  if (status === ScheduleStatus.STOPPED && runningScheduleCount == 0) {
+  if (status === ScheduleStatus.STOPPED && runningScheduleCount === 0) {
     return null;
-  } else if (status === ScheduleStatus.RUNNING && runningScheduleCount == 1) {
+  } else if (status === ScheduleStatus.RUNNING && runningScheduleCount === 1) {
     return null;
   }
 

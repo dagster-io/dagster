@@ -3,7 +3,17 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import EventMetadataEntry, Field, Materialization, Output, Permissive, pipeline, solid
+from dagster import (
+    Array,
+    AssetKey,
+    EventMetadataEntry,
+    Field,
+    Materialization,
+    Output,
+    Permissive,
+    pipeline,
+    solid,
+)
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 
@@ -11,6 +21,7 @@ def _base_config():
     return {
         'error_rate': Field(float, is_required=False, default_value=0.0),
         'sleep': Field(float, is_required=False, default_value=0.5),
+        'materialization_key_list': Field(Array(str), is_required=False),
         'materialization_key': Field(str, is_required=False),
         'materialization_text': Field(str, is_required=False),
         'materialization_url': Field(str, is_required=False),
@@ -26,7 +37,14 @@ def _base_compute(context):
     if random() < context.solid_config['error_rate']:
         raise Exception('blah')
 
-    if context.solid_config.get('materialization_key') is not None:
+    asset_key = None
+
+    if context.solid_config.get('materialization_key_list') is not None:
+        asset_key = AssetKey(context.solid_config.get('materialization_key_list'))
+    elif context.solid_config.get('materialization_key') is not None:
+        asset_key = AssetKey(context.solid_config.get('materialization_key'))
+
+    if asset_key:
         metadata_entries = []
         if context.solid_config.get('materialization_text') is not None:
             metadata_entries.append(
@@ -67,9 +85,7 @@ def _base_compute(context):
             metadata_entries = None
 
         yield Materialization(
-            label=context.solid.name,
-            asset_key=context.solid_config.get('materialization_key'),
-            metadata_entries=metadata_entries,
+            label=context.solid.name, asset_key=asset_key, metadata_entries=metadata_entries,
         )
 
     yield Output(1)
@@ -175,13 +191,13 @@ def longitudinal_config(partition):
             },
             'build_cost_dashboard': {
                 'config': {
-                    'materialization_key': 'cost_dashboard',
+                    'materialization_key_list': ['dashboards', 'cost_dashboard'],
                     'materialization_url': 'http://docs.dagster.io/cost',
                 }
             },
             'build_traffic_dashboard': {
                 'config': {
-                    'materialization_key': 'traffic_dashboard',
+                    'materialization_key_list': ['dashboards', 'traffic_dashboard'],
                     'materialization_url': 'http://docs.dagster.io/traffic',
                 }
             },

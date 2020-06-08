@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetQuery
@@ -11,6 +11,11 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 
 export interface AssetQuery_assetOrError_AssetsNotSupportedError {
   __typename: "AssetsNotSupportedError";
+}
+
+export interface AssetQuery_assetOrError_Asset_key {
+  __typename: "AssetKey";
+  path: string[];
 }
 
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError {
@@ -169,7 +174,7 @@ export interface AssetQuery_assetOrError_Asset_runs {
 
 export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
-  key: string;
+  key: AssetQuery_assetOrError_Asset_key;
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
   runs: AssetQuery_assetOrError_Asset_runs[];
 }
@@ -181,5 +186,5 @@ export interface AssetQuery {
 }
 
 export interface AssetQueryVariables {
-  assetKey: string;
+  assetKey: AssetKeyInput;
 }

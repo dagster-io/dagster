@@ -154,7 +154,8 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
   const assetMap = {};
   runs.forEach(run => {
     run.assets.forEach(asset => {
-      assetMap[asset.key] = true;
+      const assetKeyStr = asset.key.path.join("/");
+      assetMap[assetKeyStr] = true;
     });
   });
   const assetKeys = Object.keys(assetMap);
@@ -350,7 +351,9 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
           ...RunActionMenuFragment
           ...RunTimeFragment
           assets {
-            key
+            key {
+              path
+            }
           }
         }
         schedules {

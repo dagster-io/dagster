@@ -21,6 +21,7 @@ from .dependency import (
     SolidOutputHandle,
 )
 from .events import (
+    AssetKey,
     EventMetadataEntry,
     ExpectationResult,
     Failure,

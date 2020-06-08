@@ -8,13 +8,21 @@ type ArrayConfigType implements ConfigType & WrappingConfigType {
 }
 
 type Asset {
-  key: String!
+  key: AssetKey!
   assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
   runs(cursor: String, limit: Int): [PipelineRun!]!
 }
 
 type AssetConnection {
   nodes: [Asset!]!
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 type AssetMaterialization {
@@ -934,7 +942,7 @@ type Query {
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError: AssetsOrError!
-  assetOrError(assetKey: String!): AssetOrError!
+  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
 }
 
 type RegularConfigType implements ConfigType {

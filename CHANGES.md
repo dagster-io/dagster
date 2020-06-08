@@ -24,6 +24,14 @@
 - the argument `solid_subset` in `ScheduleDefinition`, `PartitionSetDefinition`, and `PresetDefinition`
   has been renamed to `solid_selection`. In addition to solid names, it now also support selection
   queries like `*solid_name+` to specify subsets of the pipeline.
+- Asset keys are now sanitized for non-alphanumeric characters. All characters besides alphanumerics and `_` are treated as path delimiters. Asset keys can also be specified by the `AssetKey` python class, exported from the `dagster` package, which accepts a list of strings as an explicit path. You may need to migrate your historical event log data for asset keys from previous runs to be attributed correctly. This `event_log` data migration can be invoked as follows:
+
+  ```python
+  from dagster.core.storage.event_log.migration import migrate_event_log_data
+  from dagster import DagsterInstance
+
+  migrate_event_log_data(instance=DagsterInstance.get())
+  ```
 
 **New**
 

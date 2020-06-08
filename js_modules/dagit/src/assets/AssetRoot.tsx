@@ -4,6 +4,7 @@ import gql from "graphql-tag";
 import { Colors } from "@blueprintjs/core";
 import { useQuery } from "react-apollo";
 import Loading from "../Loading";
+import { AssetsRootQuery_assetsOrError_AssetConnection_nodes_key } from "./types/AssetsRootQuery";
 import { AssetQuery_assetOrError_Asset_assetMaterializations } from "./types/AssetQuery";
 import {
   Header,
@@ -19,11 +20,12 @@ import { PipelineRunStatus } from "../types/globalTypes";
 import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
 
+type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
 type AssetMaterialization = AssetQuery_assetOrError_Asset_assetMaterializations;
 
-export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
+export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
   const queryResult = useQuery(ASSET_QUERY, {
-    variables: { assetKey }
+    variables: { assetKey: { path: assetKey.path } }
   });
   return (
     <Loading queryResult={queryResult}>
@@ -34,7 +36,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
         if (!assetOrError.assetMaterializations.length) {
           return (
             <Container>
-              <TitleHeader>Asset: {assetKey}</TitleHeader>
+              <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
             </Container>
           );
         }
@@ -42,7 +44,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
         const lastMaterialization = assetOrError.assetMaterializations[0];
         return (
           <Container>
-            <TitleHeader>Asset: {assetKey}</TitleHeader>
+            <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
             <AssetLastMaterialization
               assetMaterialization={lastMaterialization}
             />
@@ -158,7 +160,7 @@ const AssetValueGraph = (props: any) => {
     }))
   };
   const options = {
-    title: { display: true, text: `${props.assetKey} values` },
+    title: { display: true, text: `${props.assetKey.path.join(".")} values` },
     scales: {
       yAxes: [{ scaleLabel: { display: true, labelString: "Value" } }],
       xAxes: [
@@ -194,10 +196,12 @@ const Container = styled.div`
 `;
 
 export const ASSET_QUERY = gql`
-  query AssetQuery($assetKey: String!) {
+  query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
-        key
+        key {
+          path
+        }
         assetMaterializations {
           runOrError {
             ... on PipelineRun {

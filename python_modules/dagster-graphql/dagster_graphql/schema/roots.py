@@ -52,6 +52,7 @@ from dagster_graphql.implementation.utils import (
 )
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -156,7 +157,8 @@ class DauphinQuery(dauphin.ObjectType):
     instance = dauphin.NonNull('Instance')
     assetsOrError = dauphin.Field(dauphin.NonNull('AssetsOrError'))
     assetOrError = dauphin.Field(
-        dauphin.NonNull('AssetOrError'), assetKey=dauphin.NonNull(dauphin.String)
+        dauphin.NonNull('AssetOrError'),
+        assetKey=dauphin.Argument(dauphin.NonNull('AssetKeyInput')),
     )
 
     def resolve_repositoryLocationsOrError(self, graphene_info):
@@ -267,8 +269,8 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_assetsOrError(self, graphene_info):
         return get_assets(graphene_info)
 
-    def resolve_assetOrError(self, graphene_info, assetKey):
-        return get_asset(graphene_info, assetKey)
+    def resolve_assetOrError(self, graphene_info, **kwargs):
+        return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs['assetKey']))
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
@@ -788,3 +790,10 @@ class DauphinInstance(dauphin.ObjectType):
         if not execution_manager_settings:
             return False
         return execution_manager_settings.get('disabled', False)
+
+
+class DauphinAssetKeyInput(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'AssetKeyInput'
+
+    path = dauphin.non_null_list(dauphin.String)

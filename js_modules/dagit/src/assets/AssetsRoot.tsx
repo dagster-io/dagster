@@ -3,7 +3,10 @@ import styled from "styled-components";
 import { Icon, InputGroup, NonIdealState } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import { AssetsRootQuery_assetsOrError_AssetConnection_nodes } from "./types/AssetsRootQuery";
+import {
+  AssetsRootQuery_assetsOrError_AssetConnection_nodes,
+  AssetsRootQuery_assetsOrError_AssetConnection_nodes_key
+} from "./types/AssetsRootQuery";
 import Loading from "../Loading";
 import { Link, RouteComponentProps } from "react-router-dom";
 import { AssetRoot } from "./AssetRoot";
@@ -16,13 +19,12 @@ import {
 } from "../ListComponents";
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
+type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
 
-export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
-  assetSelector: string;
-}>> = ({ match }) => {
-  const assetName =
-    match.params.assetSelector &&
-    decodeURIComponent(match.params.assetSelector);
+export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
+  match
+}) => {
+  const assetName = match.params["0"];
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
   return (
@@ -77,7 +79,9 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
             </Wrapper>
           );
         }
-        const assetIsKnown = assetKeys.includes(assetName);
+        const [matchingAssetKey] = assetKeys.filter(
+          (x: AssetKey) => x.path.join(".") === assetName
+        );
 
         const topNav = (
           <div style={{ margin: 20 }}>
@@ -95,7 +99,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
           );
         }
 
-        if (!assetIsKnown) {
+        if (!matchingAssetKey) {
           return (
             <Wrapper>
               {topNav}
@@ -111,7 +115,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
         return (
           <Wrapper>
             {topNav}
-            <AssetRoot assetKey={assetName} />
+            <AssetRoot assetKey={matchingAssetKey} />
           </Wrapper>
         );
       }}
@@ -145,7 +149,7 @@ const AssetsTable = ({ assets }: { assets: Asset[] }) => {
           <LegendColumn>Last materialized</LegendColumn>
         </Legend>
         {assets
-          .filter((asset: Asset) => !q || matches(asset.key, q))
+          .filter((asset: Asset) => !q || matches(asset.key.path.join("."), q))
           .map((asset: Asset, idx: number) => {
             const timestamp = asset.assetMaterializations.length
               ? new Date(
@@ -156,12 +160,11 @@ const AssetsTable = ({ assets }: { assets: Asset[] }) => {
                   )
                 ).toLocaleString()
               : "-";
+            const linkUrl = `/assets/${asset.key.path.join(".")}`;
             return (
               <RowContainer key={idx}>
                 <RowColumn>
-                  <Link to={`/assets/${encodeURIComponent(asset.key)}`}>
-                    {asset.key}
-                  </Link>
+                  <Link to={linkUrl}>{asset.key.path.join(".")}</Link>
                 </RowColumn>
                 <RowColumn>{timestamp}</RowColumn>
               </RowContainer>
@@ -191,7 +194,9 @@ export const ASSETS_ROOT_QUERY = gql`
       }
       ... on AssetConnection {
         nodes {
-          key
+          key {
+            path
+          }
           assetMaterializations(limit: 1) {
             materializationEvent {
               timestamp

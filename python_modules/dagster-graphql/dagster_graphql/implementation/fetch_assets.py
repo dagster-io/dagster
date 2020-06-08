@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 
@@ -32,7 +33,7 @@ def get_asset(graphene_info, asset_key):
 
 
 def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
-    check.str_param(asset_key, 'asset_key')
+    check.inst_param(asset_key, 'asset_key', AssetKey)
     check.opt_str_param(cursor, 'cursor')
     check.opt_int_param(limit, 'limit')
     event_storage = (
@@ -49,7 +50,7 @@ def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
 
 
 def get_asset_run_ids(graphene_info, asset_key):
-    check.str_param(asset_key, 'asset_key')
+    check.inst_param(asset_key, 'asset_key', AssetKey)
     event_storage = (
         graphene_info.context.instance._event_storage  # pylint: disable=protected-access
     )

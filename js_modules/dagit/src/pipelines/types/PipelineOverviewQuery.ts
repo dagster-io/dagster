@@ -272,9 +272,14 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PythonError;
 
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets {
   __typename: "Asset";
-  key: string;
+  key: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets_key;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs {

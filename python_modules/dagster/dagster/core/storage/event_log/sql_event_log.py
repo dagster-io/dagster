@@ -6,6 +6,7 @@ import six
 import sqlalchemy as db
 
 from dagster import check, seven
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -46,13 +47,15 @@ class SqlEventLogStorage(EventLogStorage):
         '''
 
         dagster_event_type = None
-        asset_key = None
+        asset_key_str = None
         step_key = event.step_key
 
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
             step_key = event.dagster_event.step_key
-            asset_key = event.dagster_event.asset_key
+            if event.dagster_event.asset_key:
+                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                asset_key_str = event.dagster_event.asset_key.to_db_string()
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -61,7 +64,7 @@ class SqlEventLogStorage(EventLogStorage):
             dagster_event_type=dagster_event_type,
             timestamp=utc_datetime_from_timestamp(event.timestamp),
             step_key=step_key,
-            asset_key=asset_key,
+            asset_key=asset_key_str,
         )
 
     def store_event(self, event):
@@ -300,8 +303,13 @@ class SqlEventLogStorage(EventLogStorage):
         check.int_param(record_id, 'record_id')
         check.inst_param(event, 'event', EventRecord)
         dagster_event_type = None
+        asset_key_str = None
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
+            if event.dagster_event.asset_key:
+                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                asset_key_str = event.dagster_event.asset_key.to_db_string()
+
         with self.connect(run_id=event.run_id) as conn:
             conn.execute(
                 SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
@@ -311,6 +319,7 @@ class SqlEventLogStorage(EventLogStorage):
                     dagster_event_type=dagster_event_type,
                     timestamp=utc_datetime_from_timestamp(event.timestamp),
                     step_key=event.step_key,
+                    asset_key=asset_key_str,
                 )
             )
 
@@ -357,12 +366,13 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
 
-        return [asset_key for (asset_key,) in results if asset_key]
+        return [AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key]
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
-        check.str_param(asset_key, 'asset_key')
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        asset_key_str = asset_key.to_db_string()
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            SqlEventLogStorageTable.c.asset_key == asset_key
+            SqlEventLogStorageTable.c.asset_key == asset_key_str
         )
         query = self._add_cursor_limit_to_query(query, cursor, limit)
         with self.connect() as conn:
@@ -385,12 +395,13 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         return events
 
     def get_asset_run_ids(self, asset_key):
-        check.str_param(asset_key, 'asset_key')
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        asset_key_str = asset_key.to_db_string()
         query = (
             db.select(
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
             )
-            .where(SqlEventLogStorageTable.c.asset_key == asset_key)
+            .where(SqlEventLogStorageTable.c.asset_key == asset_key_str)
             .group_by(SqlEventLogStorageTable.c.run_id,)
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )

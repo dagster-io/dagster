@@ -66,7 +66,7 @@ const AppRoutes = () => (
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
     <Route path="/schedules" component={SchedulesRoot} />
     <Route path="/assets" component={AssetsRoot} exact={true} />
-    <Route path="/assets/:assetSelector" component={AssetsRoot} />
+    <Route path="/assets/(/?.*)" component={AssetsRoot} />
     <Route path="/instance" component={InstanceDetailsRoot} />
 
     <Route
