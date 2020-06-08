@@ -32,6 +32,7 @@ class ECSClient:
         self.region_name = check.str_param(region_name, 'key_id')
         self.access_key = check.str_param(access_key, 'key_id')
         self.launch_type = check.str_param(launch_type, 'key_id')
+        self.account_id = '123412341234'
         self.task_definition_arn = None
         self.tasks = None
         self.container_name = None
@@ -43,6 +44,7 @@ class ECSClient:
         self.cluster = None
         if starter_client is None:
             self.ecs_client = self.make_client('ecs')
+            self.account_id = boto3.client('sts').get_caller_identity().get('Account')
         else:
             self.ecs_client = starter_client
         if starter_log_client is None:
@@ -71,6 +73,7 @@ class ECSClient:
             )
         else:
             clients = boto3.client(client_type, region_name=self.region_name, **kwargs)
+
         return clients
 
     def set_cluster(self):
@@ -106,7 +109,7 @@ class ECSClient:
         except botocore.exceptions.ClientError as e:
             self.warnings.append(str(e))
         basedict = {
-            "executionRoleArn": "arn:aws:iam::968703565975:role/ecsTaskExecutionRole",
+            "executionRoleArn": "arn:aws:iam::{}:role/ecsTaskExecutionRole".format(self.account_id),
             "containerDefinitions": [
                 {
                     "logConfiguration": {
