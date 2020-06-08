@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -38,24 +37,11 @@ class OutputDefinition(object):
         check.opt_bool_param(is_optional, 'is_optional')
         check.opt_bool_param(is_required, 'is_required')
 
-        canonical_is_required = canonicalize_backcompat_args(
-            new_val=is_required,
-            new_arg='is_required',
-            old_val=is_optional,
-            old_arg='is_optional',
-            coerce_old_to_new=lambda val: not val,
-            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0. Users should use "is_required" instead.',
-        )
-        self._optional = False if (canonical_is_required is None) else not canonical_is_required
+        self._optional = False if (is_required is None) else not is_required
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def runtime_type(self):
-        rename_warning(new_name='dagster_type', old_name='runtime_type', breaking_version='0.8.0')
-        return self._dagster_type
 
     @property
     def dagster_type(self):

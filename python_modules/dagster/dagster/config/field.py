@@ -3,7 +3,6 @@ from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
 from dagster.utils import is_enum_value
-from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
@@ -186,9 +185,6 @@ class Field(object):
         is_required (bool):
             Whether the presence of this field is required. Defaults to true. If ``is_required``
             is ``True``, no default value should be provided.
-        is_optional (bool) (deprecated):
-            Whether the presence of this field is optional. If ``is_optional`` is ``False``, no
-            default value should be provided. Deprecated. Use ``is_required`` instead.
         description (str):
             A human-readable description of this config field.
 
@@ -221,12 +217,7 @@ class Field(object):
         return config_type
 
     def __init__(
-        self,
-        config,
-        default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=None,
-        is_required=None,
-        description=None,
+        self, config, default_value=FIELD_NO_DEFAULT_PROVIDED, is_required=None, description=None,
     ):
         from .validate import validate_config
         from .post_process import resolve_defaults
@@ -235,7 +226,6 @@ class Field(object):
 
         self.description = check.opt_str_param(description, 'description')
 
-        check.opt_bool_param(is_optional, 'is_optional')
         check.opt_bool_param(is_required, 'is_required')
 
         if default_value != FIELD_NO_DEFAULT_PROVIDED:
@@ -243,16 +233,7 @@ class Field(object):
                 not (callable(default_value)), 'default_value', 'default_value cannot be a callable'
             )
 
-        canonical_is_required = canonicalize_backcompat_args(
-            new_val=is_required,
-            new_arg='is_required',
-            old_val=is_optional,
-            old_arg='is_optional',
-            coerce_old_to_new=lambda val: not val,
-            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0. Users should use "is_required" instead.',
-        )
-
-        if canonical_is_required is True:
+        if is_required is True:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
                 'default_value',
@@ -281,20 +262,19 @@ class Field(object):
                     'Invalid default_value for Field.', evr.errors, default_value,
                 )
 
-        if canonical_is_required is None:
-            # neither is_required nor is_optional were specified
-            canonical_is_required = not all_optional_type(self.config_type)
+        if is_required is None:
+            is_required = not all_optional_type(self.config_type)
 
             # on implicitly optional - set the default value
             # by resolving the defaults of the type
-            if not canonical_is_required and not self.default_provided:
+            if not is_required and not self.default_provided:
                 evr = resolve_defaults(self.config_type, None)
                 if not evr.success:
                     raise DagsterInvalidConfigError(
                         'Unable to resolve implicit default_value for Field.', evr.errors, None,
                     )
                 self._default_value = evr.value
-        self._is_required = canonical_is_required
+        self._is_required = is_required
 
     @property
     def is_required(self):

@@ -8,7 +8,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
@@ -278,13 +278,6 @@ class SolidDefinition(ISolidDefinition):
     def has_config_entry(self):
         return self._config_field or self.has_configurable_inputs or self.has_configurable_outputs
 
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        for tt in self.all_input_output_types():
-            yield tt
-
     def all_dagster_types(self):
         for tt in self.all_input_output_types():
             yield tt
@@ -550,17 +543,6 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         mapped_solid = self.solid_named(mapping.solid_name)
 
         return mapped_solid.definition.default_value_for_input(mapping.input_name)
-
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        for tt in self.all_input_output_types():
-            yield tt
-
-        for solid_def in self._solid_defs:
-            for ttype in solid_def.all_dagster_types():
-                yield ttype
 
     def all_dagster_types(self):
         for tt in self.all_input_output_types():

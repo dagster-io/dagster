@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.0 (Upcoming)
+## 0.8.0 "In The Zone"
 
 **Breaking Changes**
 
@@ -33,6 +33,15 @@
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
 - `RemoteDagitRunLauncher` has been deleted.
+- The deprecated `is_optional` parameter to `Field` and `OutputDefinition` has been removed.
+  Use `is_required` instead.
+- The deprecated `runtime_type` property on `InputDefinition` and `OutputDefinition` has been
+  removed. Use `dagster_type` instead.
+- The deprecated `has_runtime_type`, `runtime_type_named`, and `all_runtime_types` methods on
+  `PipelineDefinition` have been removed. Use `has_dagster_type`, `dagster_type_named`, and
+  `all_dagster_types` instead.
+- The deprecated `all_runtime_types` method on `SolidDefinition` and `CompositeSolidDefinition`
+  has been removed. Use `all_dagster_types` instead.
 
 **New**
 

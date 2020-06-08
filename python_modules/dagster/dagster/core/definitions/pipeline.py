@@ -8,7 +8,6 @@ from dagster.core.errors import (
 )
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 from dagster.core.utils import str_format_set
-from dagster.utils.backcompat import rename_warning
 
 from .dependency import (
     DependencyDefinition,
@@ -370,26 +369,6 @@ class PipelineDefinition(IContainSolids):
     @property
     def dependency_structure(self):
         return self._dependency_structure
-
-    def has_runtime_type(self, name):
-        rename_warning(
-            new_name='has_dagster_type', old_name='has_runtime_type', breaking_version='0.8.0'
-        )
-        check.str_param(name, 'name')
-        return name in self._dagster_type_dict
-
-    def runtime_type_named(self, name):
-        rename_warning(
-            new_name='dagster_type_named', old_name='runtime_type_named', breaking_version='0.8.0'
-        )
-        check.str_param(name, 'name')
-        return self._dagster_type_dict[name]
-
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        return self._dagster_type_dict.values()
 
     def has_dagster_type(self, name):
         check.str_param(name, 'name')

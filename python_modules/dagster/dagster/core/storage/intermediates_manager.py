@@ -6,22 +6,17 @@ from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .intermediate_store import IntermediateStore
 
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
-    def get_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, runtime_type=None
-    ):
+    def get_intermediate(self, context, dagster_type=None, step_output_handle=None):
         pass
 
     @abstractmethod
-    def set_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, value=None, runtime_type=None
-    ):
+    def set_intermediate(self, context, dagster_type=None, step_output_handle=None, value=None):
         pass
 
     @abstractmethod
@@ -64,24 +59,18 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     # especially
 
     def get_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, runtime_type=None
+        self, context, dagster_type=None, step_output_handle=None,
     ):
-        canonicalize_dagster_type = canonicalize_backcompat_args(
-            dagster_type, 'dagster_type', runtime_type, 'runtime_type',
-        )  # TODO to deprecate in 0.8.0
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.opt_inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
+        check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
 
     def set_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, value=None, runtime_type=None
+        self, context, dagster_type=None, step_output_handle=None, value=None,
     ):
-        canonicalize_dagster_type = canonicalize_backcompat_args(
-            dagster_type, 'dagster_type', runtime_type, 'runtime_type',
-        )  # TODO to deprecate in 0.8.0
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.opt_inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
+        check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
@@ -108,32 +97,24 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         return ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
 
     def get_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, runtime_type=None
+        self, context, dagster_type=None, step_output_handle=None,
     ):
-        canonicalize_dagster_type = resolve_dagster_type(
-            canonicalize_backcompat_args(
-                dagster_type, 'dagster_type', runtime_type, 'runtime_type',
-            )
-        )  # TODO to deprecate in 0.8.0
+        dagster_type = resolve_dagster_type(dagster_type)
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
+        check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
 
         return self._intermediate_store.get_value(
-            context=context,
-            dagster_type=canonicalize_dagster_type,
-            paths=self._get_paths(step_output_handle),
+            context=context, dagster_type=dagster_type, paths=self._get_paths(step_output_handle),
         )
 
     def set_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, value=None, runtime_type=None
+        self, context, dagster_type=None, step_output_handle=None, value=None,
     ):
-        canonicalize_dagster_type = canonicalize_backcompat_args(
-            dagster_type, 'dagster_type', runtime_type, 'runtime_type',
-        )  # TODO to deprecate in 0.8.0
+
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
+        check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
         if self.has_intermediate(context, step_output_handle):
@@ -145,7 +126,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         return self._intermediate_store.set_value(
             obj=value,
             context=context,
-            dagster_type=canonicalize_dagster_type,
+            dagster_type=dagster_type,
             paths=self._get_paths(step_output_handle),
         )
 
