@@ -182,7 +182,7 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-            yield InProcessRepositoryLocation(recon_repo=recon_repo)
+            yield [InProcessRepositoryLocation(recon_repo=recon_repo)]
 
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
 
@@ -195,14 +195,49 @@ class EnvironmentManagers:
 
             # this is "ok" because we know the test host process containers the user code
             repo_name = recon_repo.get_definition().name
-            yield PythonEnvRepositoryLocation(
-                RepositoryLocationHandle.create_out_of_process_location(
-                    location_name='test',
-                    repository_code_pointer_dict={repo_name: recon_repo.pointer},
+            yield [
+                PythonEnvRepositoryLocation(
+                    RepositoryLocationHandle.create_out_of_process_location(
+                        location_name='test',
+                        repository_code_pointer_dict={repo_name: recon_repo.pointer},
+                    )
                 )
-            )
+            ]
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
+
+    @staticmethod
+    def multi_location():
+        @contextmanager
+        def _mgr_fn(recon_repo):
+            '''Goes out of process but same process as host process'''
+            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+
+            empty_repo = ReconstructableRepository.from_legacy_repository_yaml(
+                file_relative_path(__file__, 'empty_repo.yaml')
+            )
+
+            yield [
+                PythonEnvRepositoryLocation(
+                    RepositoryLocationHandle.create_out_of_process_location(
+                        location_name='test',
+                        repository_code_pointer_dict={
+                            recon_repo.get_definition().name: recon_repo.pointer
+                        },
+                    )
+                ),
+                InProcessRepositoryLocation(empty_repo),
+                PythonEnvRepositoryLocation(
+                    RepositoryLocationHandle.create_out_of_process_location(
+                        location_name='empty_repo',
+                        repository_code_pointer_dict={
+                            empty_repo.get_definition().name: empty_repo.pointer
+                        },
+                    )
+                ),
+            ]
+
+        return MarkedManager(_mgr_fn, [Marks.multi_location])
 
 
 class Marks:
@@ -218,6 +253,7 @@ class Marks:
     # Repository Location marks
     hosted_user_process_env = pytest.mark.hosted_user_process_env
     out_of_process_env = pytest.mark.out_of_process_env
+    multi_location = pytest.mark.multi_location
 
     # Asset-aware sqlite variants
     asset_aware_instance = pytest.mark.asset_aware_instance
@@ -255,8 +291,8 @@ class GraphQLContextVariant:
     See InstanceManagers for examples
 
     marked_environment_mgr (MarkedManager): The manager_fn with in
-    must be a contextmanager takes a ReconstructableRepo and
-    yields a RepositoryLocation.
+    must be a contextmanager takes a default ReconstructableRepo and
+    yields a list of RepositoryLocation.
 
     See EnvironmentManagers for examples
 
@@ -350,6 +386,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_sqlite_instance_multi_location():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_sqlite_instance(),
+            EnvironmentManagers.multi_location(),
+            test_id='readonly_sqlite_instance_multi_location',
+        )
+
+    @staticmethod
     def readonly_in_memory_instance_in_process_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
@@ -363,6 +407,14 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.out_of_process(),
             test_id='readonly_in_memory_instance_out_of_process_env',
+        )
+
+    @staticmethod
+    def readonly_in_memory_instance_multi_location():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_in_memory_instance(),
+            EnvironmentManagers.multi_location(),
+            test_id='readonly_in_memory_instance_multi_location',
         )
 
     @staticmethod
@@ -387,8 +439,10 @@ class GraphQLContextVariant:
             GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
+            GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
+            GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
         ]
 
@@ -421,8 +475,8 @@ def _variants_with_mark(variants, mark):
 def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
-        with context_variant.environment_mgr(recon_repo) as environment:
-            yield DagsterGraphQLContext(instance=instance, locations=[environment])
+        with context_variant.environment_mgr(recon_repo) as environments:
+            yield DagsterGraphQLContext(instance=instance, locations=environments)
 
 
 class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):

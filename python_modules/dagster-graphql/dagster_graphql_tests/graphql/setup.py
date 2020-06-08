@@ -977,6 +977,11 @@ def define_partitions():
 
 
 @repository
+def empty_repo():
+    return []
+
+
+@repository
 def test_repo():
     return (
         [
