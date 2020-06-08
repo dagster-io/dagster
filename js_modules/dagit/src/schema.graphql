@@ -671,6 +671,7 @@ type PartitionSet {
   solidSelection: [String!]
   mode: String!
   partitions(cursor: String, limit: Int, reverse: Boolean): Partitions!
+  partition(partitionName: String!): Partition
 }
 
 type PartitionSetNotFoundError implements Error {

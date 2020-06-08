@@ -69,7 +69,6 @@ GET_PARTITION_SET_QUERY = '''
 
 def test_get_all_partition_sets(graphql_context, snapshot):
     result = execute_dagster_graphql(graphql_context, GET_PARTITION_SETS_QUERY)
-
     assert result.data
     snapshot.assert_match(result.data)
 

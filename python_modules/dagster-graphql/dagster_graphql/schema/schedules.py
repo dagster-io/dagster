@@ -74,17 +74,16 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         if self._external_schedule.partition_set_name is None:
             return None
 
-        external_partition_set = (
-            graphene_info.context.get_repository_location(
-                self._external_schedule.handle.location_name
-            )
-            .get_repository(self._external_schedule.handle.repository_name)
-            .get_external_partition_set(self._external_schedule.partition_set_name)
+        repository = graphene_info.context.get_repository_location(
+            self._external_schedule.handle.location_name
+        ).get_repository(self._external_schedule.handle.repository_name)
+        external_partition_set = repository.get_external_partition_set(
+            self._external_schedule.partition_set_name
         )
 
         return graphene_info.schema.type_named('PartitionSet')(
+            external_repository_handle=repository.handle,
             external_partition_set=external_partition_set,
-            partition_set_def=self._schedule_def.get_partition_set(),
         )
 
     def __init__(self, schedule_def, external_schedule):

@@ -665,7 +665,7 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 foKuVj"
+          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 fCwRPc"
         >
           <div
             className="bp3-spinner"

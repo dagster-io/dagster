@@ -1,5 +1,10 @@
 import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_partition_sets import (
+    get_partition_by_name,
+    get_partition_config,
+    get_partition_tags,
+)
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.schema.errors import (
     DauphinPartitionSetNotFoundError,
@@ -8,8 +13,7 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionSetDefinition
-from dagster.core.host_representation import ExternalPartitionSet
+from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 
@@ -25,14 +29,14 @@ class DauphinPartition(dauphin.ObjectType):
     tags = dauphin.non_null_list('PipelineTag')
     runs = dauphin.non_null_list('PipelineRun')
 
-    def __init__(self, partition_name, partition_set_def, external_partition_set):
-        self._partition_name = check.str_param(partition_name, 'partition_name')
-        self._partition_set_def = check.inst_param(
-            partition_set_def, 'partition_set_def', PartitionSetDefinition
+    def __init__(self, external_repository_handle, external_partition_set, partition_name):
+        self._external_repository_handle = check.inst_param(
+            external_repository_handle, 'external_respository_handle', RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
             external_partition_set, 'external_partition_set', ExternalPartitionSet
         )
+        self._partition_name = check.str_param(partition_name, 'partition_name')
 
         super(DauphinPartition, self).__init__(
             name=partition_name,
@@ -42,16 +46,22 @@ class DauphinPartition(dauphin.ObjectType):
         )
 
     def resolve_runConfigYaml(self, _):
-        partition = self._partition_set_def.get_partition(self._partition_name)
-        environment_dict = self._partition_set_def.environment_dict_for_partition(partition)
-        return yaml.dump(environment_dict, default_flow_style=False)
+        run_config = get_partition_config(
+            self._external_repository_handle,
+            self._external_partition_set.name,
+            self._partition_name,
+        )
+        return yaml.dump(run_config, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):
-        partition = self._partition_set_def.get_partition(self._partition_name)
-        tags = self._partition_set_def.tags_for_partition(partition).items()
+        tags = get_partition_tags(
+            self._external_repository_handle,
+            self._external_partition_set.name,
+            self._partition_name,
+        )
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
-            for key, value in tags
+            for key, value in tags.items()
         ]
 
     def resolve_runs(self, graphene_info):
@@ -85,10 +95,11 @@ class DauphinPartitionSet(dauphin.ObjectType):
         limit=dauphin.Int(),
         reverse=dauphin.Boolean(),
     )
+    partition = dauphin.Field('Partition', partition_name=dauphin.NonNull(dauphin.String))
 
-    def __init__(self, partition_set_def, external_partition_set):
-        self._partition_set_def = check.inst_param(
-            partition_set_def, 'partition_set_def', PartitionSetDefinition
+    def __init__(self, external_repository_handle, external_partition_set):
+        self._external_repository_handle = check.inst_param(
+            external_repository_handle, 'external_respository_handle', RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
             external_partition_set, 'external_partition_set', ExternalPartitionSet
@@ -138,12 +149,20 @@ class DauphinPartitionSet(dauphin.ObjectType):
         return graphene_info.schema.type_named('Partitions')(
             results=[
                 graphene_info.schema.type_named('Partition')(
-                    partition_name=partition_name,
-                    partition_set_def=self._partition_set_def,
                     external_partition_set=self._external_partition_set,
+                    external_repository_handle=self._external_repository_handle,
+                    partition_name=partition_name,
                 )
                 for partition_name in partition_names
             ]
+        )
+
+    def resolve_partition(self, graphene_info, partition_name):
+        return get_partition_by_name(
+            graphene_info,
+            self._external_repository_handle,
+            self._external_partition_set,
+            partition_name,
         )
 
 

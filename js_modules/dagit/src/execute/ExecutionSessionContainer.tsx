@@ -39,12 +39,10 @@ import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
-import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
 import ApolloClient from "apollo-client";
 import { PipelineSelector } from "../types/globalTypes";
-
-type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags;
+import { PipelineRunTag } from "../LocalStorage";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -64,6 +62,7 @@ interface IExecutionSessionContainerState {
   preview: PreviewConfigQuery | null;
   previewedDocument: object | null;
 
+  loading: boolean;
   editorHelpContext: ConfigEditorHelpContext | null;
   showWhitespace: boolean;
   tagEditorOpen: boolean;
@@ -123,6 +122,7 @@ export default class ExecutionSessionContainer extends React.Component<
     preview: null,
     previewedDocument: null,
 
+    loading: false,
     showWhitespace: true,
     editorHelpContext: null,
     tagEditorOpen: false
@@ -243,10 +243,10 @@ export default class ExecutionSessionContainer extends React.Component<
     return undefined;
   };
 
-  saveTags = (tags: PipelineTag[]) => {
+  saveTags = (tags: PipelineRunTag[]) => {
     const tagDict = {};
-    const toSave: PipelineTag[] = [];
-    tags.forEach((tag: PipelineTag) => {
+    const toSave: PipelineRunTag[] = [];
+    tags.forEach((tag: PipelineRunTag) => {
       if (!(tag.key in tagDict)) {
         tagDict[tag.key] = tag.value;
         toSave.push(tag);
@@ -287,11 +287,15 @@ export default class ExecutionSessionContainer extends React.Component<
   openTagEditor = () => this.setState({ tagEditorOpen: true });
   closeTagEditor = () => this.setState({ tagEditorOpen: false });
 
+  onConfigLoading = () => this.setState({ loading: true });
+  onConfigLoaded = () => this.setState({ loading: false });
+
   render() {
     const { currentSession, onCreateSession, onSaveSession } = this.props;
     const {
       preview,
       previewedDocument,
+      loading,
       editorHelpContext,
       showWhitespace,
       tagEditorOpen
@@ -315,6 +319,8 @@ export default class ExecutionSessionContainer extends React.Component<
                 pipelineName={pipeline.name}
                 base={currentSession.base}
                 solidSelection={currentSession.solidSelection}
+                onLoading={this.onConfigLoading}
+                onLoaded={this.onConfigLoaded}
                 onCreateSession={onCreateSession}
                 onSaveSession={onSaveSession}
               />
@@ -350,6 +356,12 @@ export default class ExecutionSessionContainer extends React.Component<
                 open={tagEditorOpen}
                 onRequestClose={this.closeTagEditor}
               />
+              {loading ? (
+                <div style={{ marginLeft: 20 }}>
+                  <Spinner size={20} />
+                </div>
+              ) : null}
+              <SettingsBarOverlay configLoading={loading} />
             </SessionSettingsBar>
             {tags.length ? (
               <TagContainer tags={tags} onRequestEdit={this.openTagEditor} />
@@ -478,11 +490,23 @@ const PREVIEW_CONFIG_QUERY = gql`
 const SessionSettingsBar = styled.div`
   color: white;
   display: flex;
+  position: relative;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
   background: ${Colors.WHITE};
   align-items: center;
   height: 47px;
   padding: 8px 10px;
+`;
+const SettingsBarOverlay = styled.div<{ configLoading: boolean }>`
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: #fff;
+  opacity: 0.7;
+  z-index: 1;
+  display: ${({ configLoading }) => (configLoading ? "block" : "none")};
 `;
 
 const ConfigEditorDisplayOptionsContainer = styled.div`

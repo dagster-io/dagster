@@ -11,7 +11,7 @@ import {
 import * as ReactDOM from "react-dom";
 
 import { Select, Suggest } from "@blueprintjs/select";
-import { useQuery } from "react-apollo";
+import { useQuery, withApollo, WithApolloClient } from "react-apollo";
 import {
   ConfigPresetsQuery,
   ConfigPresetsQuery_pipelineOrError_Pipeline_presets
@@ -48,12 +48,14 @@ interface ConfigEditorConfigPickerProps {
   solidSelection: string[] | null;
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
+  onLoading: () => void;
+  onLoaded: () => void;
 }
 
 const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
 
-export class ConfigEditorConfigPicker extends React.Component<
-  ConfigEditorConfigPickerProps
+class ConfigEditorConfigPickerInternal extends React.Component<
+  WithApolloClient<ConfigEditorConfigPickerProps>
 > {
   onSelectPartitionSet = (partitionSet: PartitionSet) => {
     this.props.onSaveSession({
@@ -80,24 +82,49 @@ export class ConfigEditorConfigPicker extends React.Component<
     });
   };
 
-  onSelectPartition = (partition: Partition, pipeline?: Pipeline) => {
+  onSelectPartition = async (
+    partitionSetName: string,
+    partitionName: string,
+    pipeline?: Pipeline
+  ) => {
     if (!pipeline) {
       console.error("Could not load pipeline tags");
     }
-    this.onCommit({
-      name: partition.name,
-      base: Object.assign({}, this.props.base, {
-        partitionName: partition.name
-      }),
-      runConfigYaml: partition.runConfigYaml || "",
-      solidSelection: partition.solidSelection,
-      solidSelectionQuery:
-        partition.solidSelection === null
-          ? "*"
-          : partition.solidSelection.join(","),
-      mode: partition.mode,
-      tags: [...(pipeline?.tags || []), ...partition.tags]
-    });
+
+    this.props.onLoading();
+    try {
+      const { data } = await this.props.client.query({
+        query: CONFIG_PARTITION_SELECTION_QUERY,
+        variables: { partitionSetName, partitionName }
+      });
+
+      if (
+        !data ||
+        !data.partitionSetOrError ||
+        data.partitionSetOrError.__typename !== "PartitionSet"
+      ) {
+        this.props.onLoaded();
+        return;
+      }
+
+      const { partition } = data.partitionSetOrError;
+
+      this.onCommit({
+        name: partition.name,
+        base: Object.assign({}, this.props.base, {
+          partitionName: partition.name
+        }),
+        runConfigYaml: partition.runConfigYaml || "",
+        solidSelection: partition.solidSelection,
+        solidSelectionQuery:
+          partition.solidSelection === null
+            ? "*"
+            : partition.solidSelection.join(","),
+        mode: partition.mode,
+        tags: [...(pipeline?.tags || []), ...partition.tags]
+      });
+    } catch {}
+    this.props.onLoaded();
   };
 
   onCommit = (changes: Partial<IExecutionSession>) => {
@@ -133,11 +160,19 @@ export class ConfigEditorConfigPicker extends React.Component<
   }
 }
 
+export const ConfigEditorConfigPicker = withApollo<
+  ConfigEditorConfigPickerProps
+>(ConfigEditorConfigPickerInternal);
+
 interface ConfigEditorPartitionPickerProps {
   pipelineName: string;
   partitionSetName: string;
   value: string | null;
-  onSelect: (partition: Partition, pipeline?: Pipeline) => void;
+  onSelect: (
+    partitionSetName: string,
+    partitionName: string,
+    pipeline?: Pipeline
+  ) => void;
 }
 
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
@@ -157,6 +192,10 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         ? data.partitionSetOrError.partitions.results
         : [];
 
+    const pipeline: Pipeline | undefined =
+      data?.pipelineOrError.__typename === "Pipeline"
+        ? data.pipelineOrError
+        : undefined;
     const selected = partitions.find(p => p.name === value);
 
     const inputProps: IInputGroupProps & HTMLInputProps = {
@@ -209,12 +248,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         )}
         noResults={<Menu.Item disabled={true} text="No presets." />}
         onItemSelect={item => {
-          return onSelect(
-            item,
-            data?.pipelineOrError.__typename === "Pipeline"
-              ? data.pipelineOrError
-              : undefined
-          );
+          return onSelect(partitionSetName, item.name, pipeline);
         }}
       />
     );
@@ -429,13 +463,29 @@ const CONFIG_PARTITIONS_QUERY = gql`
         partitions {
           results {
             name
-            solidSelection
-            runConfigYaml
-            mode
-            tags {
-              key
-              value
-            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const CONFIG_PARTITION_SELECTION_QUERY = gql`
+  query ConfigPartitionSelectionQuery(
+    $partitionSetName: String!
+    $partitionName: String!
+  ) {
+    partitionSetOrError(partitionSetName: $partitionSetName) {
+      __typename
+      ... on PartitionSet {
+        partition(partitionName: $partitionName) {
+          name
+          solidSelection
+          runConfigYaml
+          mode
+          tags {
+            key
+            value
           }
         }
       }
