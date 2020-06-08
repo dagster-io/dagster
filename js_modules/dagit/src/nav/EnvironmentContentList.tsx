@@ -13,29 +13,32 @@ import styled from "styled-components/macro";
 
 import { tabForPipelinePathComponent } from "./PipelineNav";
 import { ContentListSolidsQuery } from "./types/ContentListSolidsQuery";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import { DagsterRepoOption } from "../DagsterRepositoryContext";
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
 
-export const EnvironmentContentList: React.FunctionComponent<{
+interface EnvironmentContentListProps {
   selector?: string;
   tab?: string;
-}> = ({ tab, selector }) => {
+  repo: DagsterRepoOption;
+}
+
+export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentListProps> = ({
+  tab,
+  repo,
+  selector
+}) => {
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
   const pipelineTab = tabForPipelinePathComponent(tab);
   const [q, setQ] = React.useState<string>("");
 
   // Load solids, but only if the user clicks on the Solid option
   const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
     fetchPolicy: "cache-first",
-    skip: !repository || !repositoryLocation,
     variables: {
-      repositoryLocationName: repositoryLocation?.name,
-      repositoryName: repository?.name
+      repositoryLocationName: repo.repositoryLocation.name,
+      repositoryName: repo.repository.name
     }
   });
   React.useEffect(() => {
@@ -82,7 +85,7 @@ export const EnvironmentContentList: React.FunctionComponent<{
       </Header>
       {type === "pipelines" ? (
         <Items>
-          {(repository?.pipelines || [])
+          {repo.repository.pipelines
             .map(pipeline => pipeline.name)
             .filter(p => !q || iincludes(p, q))
             .map(p => (

@@ -173,33 +173,65 @@ exports[`renders execution 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -860,33 +892,65 @@ exports[`renders pipeline page 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -5533,33 +5597,65 @@ exports[`renders pipeline solid page 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -10206,33 +10302,65 @@ exports[`renders solids explorer 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -12007,33 +12135,65 @@ exports[`renders type page 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -16680,33 +16840,65 @@ exports[`renders type page 2`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div
@@ -21353,33 +21545,65 @@ exports[`renders without error 1`] = `
       }
     >
       <div
-        style={
-          Object {
-            "alignItems": "center",
-            "borderBottom": "1px solid #30404D",
-            "display": "flex",
-            "padding": "10px 10px",
-          }
-        }
+        className="bp3-popover-wrapper bp3-fill"
       >
         <div
-          style={
-            Object {
-              "flex": 1,
-            }
-          }
+          className="bp3-popover-target"
+          onClick={[Function]}
         >
           <div
-            style={
-              Object {
-                "color": "#5C7080",
-                "fontSize": 10.5,
-              }
-            }
+            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 hIyBBV"
           >
-            ENVIRONMENT
+            <div
+              style={
+                Object {
+                  "flex": 1,
+                  "minWidth": 0,
+                }
+              }
+            >
+              <div
+                style={
+                  Object {
+                    "color": "#5C7080",
+                    "fontSize": 10.5,
+                  }
+                }
+              >
+                ENVIRONMENT
+              </div>
+              <div
+                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+              >
+                internal_dagit_repository
+              </div>
+            </div>
+            <span
+              className="bp3-icon bp3-icon-caret-down"
+              icon="caret-down"
+              style={
+                Object {
+                  "marginTop": 12,
+                  "opacity": 0.9,
+                }
+              }
+            >
+              <svg
+                data-icon="caret-down"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  caret-down
+                </desc>
+                <path
+                  d="M12 6.5c0-.28-.22-.5-.5-.5h-7a.495.495 0 00-.37.83l3.5 4c.09.1.22.17.37.17s.28-.07.37-.17l3.5-4c.08-.09.13-.2.13-.33z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
           </div>
-          Repository
         </div>
       </div>
       <div

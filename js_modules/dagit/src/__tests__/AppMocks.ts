@@ -1,5 +1,5 @@
 import path from "path";
-import { ROOT_REPOSITORIES_QUERY } from "../App";
+import { ROOT_REPOSITORIES_QUERY } from "../DagsterRepositoryContext";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 import { SOLIDS_ROOT_QUERY } from "../solids/SolidsRoot";

@@ -11,6 +11,7 @@ import { EnvironmentPicker } from "./EnvironmentPicker";
 import { EnvironmentContentList } from "./EnvironmentContentList";
 import navBarImage from "../images/nav-logo-icon.png";
 import navTitleImage from "../images/nav-title.png";
+import { DagsterRepoOption } from "../DagsterRepositoryContext";
 
 const KEYCODE_FOR_1 = 49;
 
@@ -35,7 +36,17 @@ const INSTANCE_TABS = [
   }
 ];
 
-export const LeftNav = () => {
+interface LeftNavProps {
+  options: DagsterRepoOption[];
+  repo: DagsterRepoOption | null;
+  setRepo: (repo: DagsterRepoOption) => void;
+}
+
+export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
+  options,
+  repo,
+  setRepo
+}) => {
   const history = useHistory();
   const match = useRouteMatch<{ tab: string; selector: string }>([
     "/pipeline/:selector/:tab?",
@@ -85,8 +96,8 @@ export const LeftNav = () => {
           flex: 1
         }}
       >
-        <EnvironmentPicker />
-        <EnvironmentContentList {...match?.params} />
+        <EnvironmentPicker options={options} repo={repo} setRepo={setRepo} />
+        {repo && <EnvironmentContentList {...match?.params} repo={repo} />}
         <div style={{ flex: 1 }} />
       </div>
     </LeftNavContainer>

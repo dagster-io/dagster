@@ -9,7 +9,6 @@ import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot
 import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
 import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
-import { RootRepositoriesQuery } from "./types/RootRepositoriesQuery";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
@@ -18,42 +17,16 @@ import { ScheduleRoot } from "./schedules/ScheduleRoot";
 import { AssetsRoot } from "./assets/AssetsRoot";
 import { LeftNav } from "./nav/LeftNav";
 import { PipelineNav } from "./nav/PipelineNav";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
 import { FeatureFlagsRoot } from "./FeatureFlagsRoot";
 import { InstanceDetailsRoot } from "./InstanceDetailsRoot";
 import { SolidDetailsRoot } from "./solids/SolidDetailsRoot";
 import {
+  isRepositoryOptionEqual,
   DagsterRepositoryContext,
-  REPOSITORY_LOCATION_FRAGMENT
+  useRepositoryOptions,
+  DagsterRepoOption
 } from "./DagsterRepositoryContext";
 import { CustomTooltipProvider } from "./CustomTooltipProvider";
-
-const extractData = (result: RootRepositoriesQuery | undefined) => {
-  if (!result?.repositoryLocationsOrError) {
-    return {
-      repositoryContext: {
-        repositoryLocation: undefined,
-        repository: undefined
-      }
-    };
-  }
-
-  if (result.repositoryLocationsOrError.__typename === "PythonError") {
-    return {
-      error: result.repositoryLocationsOrError,
-      repositoryContext: {
-        repositoryLocation: undefined,
-        repository: undefined
-      }
-    };
-  }
-
-  const [repositoryLocation] = result.repositoryLocationsOrError.nodes || [];
-  const [repository] = repositoryLocation?.repositories || [];
-  const repositoryContext = { repositoryLocation, repository };
-  return { repositoryContext };
-};
 
 const AppRoutes = () => (
   <Switch>
@@ -115,51 +88,34 @@ const AppRoutes = () => (
 );
 
 export const App: React.FunctionComponent = () => {
-  const result = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
-    fetchPolicy: "cache-and-network"
-  });
+  const { options, error } = useRepositoryOptions();
+  const [repo, setRepo] = React.useState<DagsterRepoOption | null>(null);
 
-  const { repositoryContext, error } = extractData(result?.data);
-  const { repositoryLocation, repository } = repositoryContext;
+  React.useEffect(() => {
+    if (!repo || !options.find(o => isRepositoryOptionEqual(o, repo)))
+      setRepo(options[0]);
+  }, [repo, options]);
 
   return (
     <div style={{ display: "flex", height: "100%" }}>
       <BrowserRouter>
-        <DagsterRepositoryContext.Provider value={repositoryContext}>
-          <LeftNav />
-          {error ? (
-            <PythonErrorInfo
-              contextMsg={`${error.__typename} encountered when loading pipelines:`}
-              error={error}
-              centered={true}
-            />
-          ) : repositoryLocation && repository ? (
-            <>
-              <AppRoutes />
-              <CustomTooltipProvider />
-              <CustomAlertProvider />
-            </>
-          ) : (
-            <NonIdealState icon={<Spinner size={24} />} />
-          )}
-        </DagsterRepositoryContext.Provider>
+        <LeftNav options={options} repo={repo} setRepo={setRepo} />
+        {error ? (
+          <PythonErrorInfo
+            contextMsg={`${error.__typename} encountered when loading pipelines:`}
+            error={error}
+            centered={true}
+          />
+        ) : repo ? (
+          <DagsterRepositoryContext.Provider value={repo}>
+            <AppRoutes />
+            <CustomTooltipProvider />
+            <CustomAlertProvider />
+          </DagsterRepositoryContext.Provider>
+        ) : (
+          <NonIdealState icon={<Spinner size={24} />} />
+        )}
       </BrowserRouter>
     </div>
   );
 };
-
-export const ROOT_REPOSITORIES_QUERY = gql`
-  query RootRepositoriesQuery {
-    repositoryLocationsOrError {
-      __typename
-      ... on RepositoryLocationConnection {
-        nodes {
-          ...RepositoryLocationFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-  ${REPOSITORY_LOCATION_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-`;
