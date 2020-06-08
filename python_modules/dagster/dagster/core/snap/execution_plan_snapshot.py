@@ -3,9 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput, StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
-from dagster.serdes import whitelist_for_serdes
-
-from .utils import create_snapshot_id
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
 
 def create_execution_plan_snapshot_id(execution_plan_snapshot):

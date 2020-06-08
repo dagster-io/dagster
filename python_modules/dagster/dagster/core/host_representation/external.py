@@ -85,6 +85,16 @@ class ExternalRepository:
     def handle(self):
         return self._handle
 
+    def get_reconstruction_info(self):
+        return self._handle.get_reconstruction_info()
+
+    def get_reconstruction_id(self):
+        '''
+        A means of identifying the repository this ExternalRepository represents based on
+        how the repository will be loaded in the user process.
+        '''
+        return self.get_reconstruction_info().get_id()
+
 
 class ExternalPipeline(RepresentedPipeline):
     '''
@@ -170,6 +180,12 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def handle(self):
         return self._handle
+
+    def get_reconstruction_info(self):
+        return self._handle.get_reconstruction_info()
+
+    def get_reconstruction_id(self):
+        return self.get_reconstruction_info().get_id()
 
 
 class ExternalExecutionPlan:
@@ -299,6 +315,12 @@ class ExternalSchedule:
     @property
     def handle(self):
         return self._handle
+
+    def get_reconstruction_info(self):
+        return self._handle.get_reconstruction_info()
+
+    def get_reconstruction_id(self):
+        return self.get_reconstruction_info().get_id()
 
 
 class ExternalPartitionSet:

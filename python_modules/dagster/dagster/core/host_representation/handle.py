@@ -3,6 +3,11 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.reconstruction import (
+    PipelineReconstructionInfo,
+    RepositoryReconstructionInfo,
+    ScheduleReconstructionInfo,
+)
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -20,7 +25,7 @@ class RepositoryLocationHandle:
         check.inst_param(pointer, 'pointer', CodePointer)
 
         # If we are here we know we are in a hosted_user_process so we can do this
-        from dagster.utils.hosted_user_process import repository_def_from_pointer
+        from dagster.core.definitions.reconstructable import repository_def_from_pointer
 
         repo_def = repository_def_from_pointer(pointer)
         return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, {repo_def.name: pointer})
@@ -83,10 +88,6 @@ class InProcessRepositoryLocationHandle(
             ),
         )
 
-    def pointer_for_repo(self, repository_name):
-        check.str_param(repository_name, 'repository_name')
-        return self.repository_code_pointer_dict[repository_name]
-
 
 class RepositoryHandle(
     # repository_name is the name of the repository itself.
@@ -104,9 +105,27 @@ class RepositoryHandle(
             ),
         )
 
-    def get_pointer(self):
-        # This will not work on all future repository locations
-        return self.repository_location_handle.repository_code_pointer_dict[self.repository_key]
+    def get_reconstruction_info(self):
+        if isinstance(self.repository_location_handle, InProcessRepositoryLocationHandle):
+            return RepositoryReconstructionInfo(
+                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
+                    self.repository_key
+                ],
+                executable_path=sys.executable,
+            )
+        elif isinstance(self.repository_location_handle, PythonEnvRepositoryLocationHandle):
+            return RepositoryReconstructionInfo(
+                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
+                    self.repository_key
+                ],
+                executable_path=self.repository_location_handle.executable_path,
+            )
+        else:
+            check.failed(
+                'Can not target represented RepositoryDefinition locally for repository from a {}.'.format(
+                    self.repository_location_handle.__class__.__name__
+                )
+            )
 
 
 class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_handle')):
@@ -128,6 +147,11 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
 
+    def get_reconstruction_info(self):
+        return PipelineReconstructionInfo(
+            self.pipeline_name, self.repository_handle.get_reconstruction_info(),
+        )
+
 
 class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_handle')):
     def __new__(cls, schedule_name, repository_handle):
@@ -144,6 +168,11 @@ class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_han
     @property
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
+
+    def get_reconstruction_info(self):
+        return ScheduleReconstructionInfo(
+            self.schedule_name, self.repository_handle.get_reconstruction_info(),
+        )
 
 
 class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):

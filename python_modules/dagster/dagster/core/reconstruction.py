@@ -1,0 +1,75 @@
+from collections import namedtuple
+
+from dagster import check
+from dagster.core.code_pointer import CodePointer
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
+
+
+@whitelist_for_serdes
+class RepositoryReconstructionInfo(
+    namedtuple('_RepositoryReconstructionInfo', 'executable_path code_pointer'),
+):
+    '''
+    Derived from the handle structure in the host process, this is the subset of information
+    necessary to load a target RepositoryDefinition in a "user process" locally.
+    '''
+
+    def __new__(cls, executable_path, code_pointer):
+        return super(RepositoryReconstructionInfo, cls).__new__(
+            cls,
+            check.str_param(executable_path, 'executable_path'),
+            check.inst_param(code_pointer, 'code_pointer', CodePointer),
+        )
+
+    def get_cli_args(self):
+        return self.code_pointer.get_cli_args()
+
+    def get_id(self):
+        return create_snapshot_id(self)
+
+
+@whitelist_for_serdes
+class PipelineReconstructionInfo(
+    namedtuple('_PipelineReconstructionInfo', 'pipeline_name repository_info')
+):
+    def __new__(cls, pipeline_name, repository_info):
+        return super(PipelineReconstructionInfo, cls).__new__(
+            cls,
+            check.str_param(pipeline_name, 'pipeline_name'),
+            check.inst_param(repository_info, 'repository_info', RepositoryReconstructionInfo),
+        )
+
+    @property
+    def executable_path(self):
+        return self.repository_info.executable_path
+
+    def get_repo_cli_args(self):
+        return self.repository_info.get_cli_args()
+
+    def get_repo_pointer(self):
+        return self.repository_info.code_pointer
+
+    def get_id(self):
+        return create_snapshot_id(self)
+
+
+@whitelist_for_serdes
+class ScheduleReconstructionInfo(
+    namedtuple('_ScheduleReconstructionInfo', 'schedule_name repository_info')
+):
+    def __new__(cls, schedule_name, repository_info):
+        return super(ScheduleReconstructionInfo, cls).__new__(
+            cls,
+            check.str_param(schedule_name, 'schedule_name'),
+            check.inst_param(repository_info, 'repository_info', RepositoryReconstructionInfo),
+        )
+
+    @property
+    def executable_path(self):
+        return self.repository_info.executable_path
+
+    def get_repo_cli_args(self):
+        return self.repository_info.get_cli_args()
+
+    def get_id(self):
+        return create_snapshot_id(self)

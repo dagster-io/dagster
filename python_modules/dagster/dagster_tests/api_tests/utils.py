@@ -36,3 +36,7 @@ def legacy_get_bar_repo_handle():
         file_relative_path(__file__, 'repository_file.yaml')
     )
     return InProcessRepositoryLocation(recon_repo).get_repository('bar_repo').handle
+
+
+def legacy_get_foo_pipeline_handle():
+    return PipelineHandle('foo', legacy_get_bar_repo_handle())

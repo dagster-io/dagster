@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import namedtuple
 
 import six
@@ -11,6 +12,7 @@ from dagster.core.code_pointer import (
     get_python_file_from_previous_stack_frame,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.reconstruction import PipelineReconstructionInfo, RepositoryReconstructionInfo
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
@@ -57,6 +59,14 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
             pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path),
             yaml_path=absolute_file_path,
         )
+
+    def get_reconstruction_info(self):
+        return RepositoryReconstructionInfo(
+            executable_path=sys.executable, code_pointer=self.pointer
+        )
+
+    def get_reconstruction_id(self):
+        return self.get_reconstruction_info().get_id()
 
 
 @whitelist_for_serdes
@@ -167,6 +177,14 @@ class ReconstructablePipeline(
             ),
         )
         return inst
+
+    def get_reconstruction_info(self):
+        return PipelineReconstructionInfo(
+            self.pipeline_name, self.repository.get_reconstruction_info()
+        )
+
+    def get_reconstruction_id(self):
+        return self.get_reconstruction_info().get_id()
 
 
 def reconstructable(target):

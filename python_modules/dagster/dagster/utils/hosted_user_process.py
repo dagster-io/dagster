@@ -16,12 +16,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_pointer,
 )
-from dagster.core.host_representation import (
-    ExternalPipeline,
-    ExternalRepository,
-    PipelineHandle,
-    RepositoryHandle,
-)
+from dagster.core.host_representation import ExternalPipeline, ExternalRepository, RepositoryHandle
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -30,21 +25,13 @@ from dagster.core.host_representation.handle import (
     InProcessRepositoryLocationHandle,
     PythonEnvRepositoryLocationHandle,
 )
+from dagster.core.reconstruction import PipelineReconstructionInfo
 
 
-# we can do this because we only use in a hosted user process
-def pipeline_def_from_pipeline_handle(pipeline_handle):
-    check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.get_pointer()
-    repo_def = repository_def_from_pointer(pointer)
-    return repo_def.get_pipeline(pipeline_handle.pipeline_name)
-
-
-def recon_pipeline_from_pipeline_handle(pipeline_handle):
-    check.inst_param(pipeline_handle, 'pipeline_handle', PipelineHandle)
-    pointer = pipeline_handle.repository_handle.get_pointer()
-    recon_repo = ReconstructableRepository(pointer)
-    return recon_repo.get_reconstructable_pipeline(pipeline_handle.pipeline_name)
+def recon_pipeline_from_reconstruction_info(local_target):
+    check.inst_param(local_target, 'local_target', PipelineReconstructionInfo)
+    recon_repo = ReconstructableRepository(local_target.get_repo_pointer())
+    return recon_repo.get_reconstructable_pipeline(local_target.pipeline_name)
 
 
 def external_repo_from_def(repository_def, repository_handle):
@@ -83,4 +70,4 @@ def repository_def_from_repository_handle(repository_handle):
         'In order to use this function the location of the repository must be in process '
         'or it must a python environment with the exact same executable.',
     )
-    return repository_def_from_pointer(repository_handle.get_pointer())
+    return repository_def_from_pointer(repository_handle.get_reconstruction_info().code_pointer)

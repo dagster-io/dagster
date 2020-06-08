@@ -13,6 +13,7 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readable, etc) just handle the json case effectively.
 '''
+import hashlib
 import importlib
 import sys
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -26,6 +27,13 @@ from dagster import check, seven
 
 _WHITELISTED_TUPLE_MAP = {}
 _WHITELISTED_ENUM_MAP = {}
+
+
+def create_snapshot_id(snapshot):
+    json_rep = serialize_dagster_namedtuple(snapshot)
+    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    m.update(json_rep.encode())
+    return m.hexdigest()
 
 
 def serialize_pp(value):

@@ -5,11 +5,11 @@ from dagster.api.execute_run import sync_cli_api_execute_run
 from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 
-from .utils import get_bar_repo_handle, legacy_get_bar_repo_handle
+from .utils import get_foo_pipeline_handle, legacy_get_foo_pipeline_handle
 
 
 @pytest.mark.parametrize(
-    "repo_handle", [get_bar_repo_handle(), legacy_get_bar_repo_handle()],
+    "repo_handle", [get_foo_pipeline_handle(), legacy_get_foo_pipeline_handle()],
 )
 def test_execute_run_api(repo_handle):
     with seven.TemporaryDirectory() as temp_dir:
@@ -18,7 +18,7 @@ def test_execute_run_api(repo_handle):
             event
             for event in sync_cli_api_execute_run(
                 instance=instance,
-                repo_handle=repo_handle,
+                reconstruction_info=repo_handle.get_reconstruction_info(),
                 pipeline_name='foo',
                 environment_dict={},
                 mode='default',

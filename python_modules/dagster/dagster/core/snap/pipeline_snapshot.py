@@ -18,7 +18,7 @@ from dagster.config.snap import (
     ConfigTypeSnap,
 )
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
-from dagster.serdes import deserialize_value, whitelist_for_serdes
+from dagster.serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
@@ -33,7 +33,6 @@ from .solid import (
     SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
 )
-from .utils import create_snapshot_id
 
 
 def create_pipeline_snapshot_id(snapshot):

@@ -4,7 +4,6 @@ from dagster.core.host_representation import (
     ExternalRepositoryData,
     PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
-    RepositoryLocationHandle,
 )
 from dagster.serdes.ipc import read_unary_response
 from dagster.seven import xplat_shlex_split
@@ -15,12 +14,7 @@ from .utils import execute_command_in_subprocess
 
 def sync_get_external_repositories(repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle,
-    )
-
-    check.param_invariant(
-        isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle),
-        'repository_location_handle',
+        repository_location_handle, 'repository_location_handle', PythonEnvRepositoryLocationHandle,
     )
 
     repos = []
