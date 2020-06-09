@@ -19,7 +19,7 @@ class Partition(namedtuple('_Partition', ('value name'))):
     Partition is the representation of a logical slice across an axis of a pipeline's work
 
     Args:
-        partition (Any): The object for this partition
+        value (Any): The object for this partition
         name (str): Name for this partition
     '''
 
@@ -76,7 +76,8 @@ class PartitionSetDefinition(
     namedtuple(
         '_PartitionSetDefinition',
         (
-            'name pipeline_name partition_fn solid_selection mode user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+            'name pipeline_name partition_fn solid_selection mode '
+            'user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
         ),
     )
 ):
@@ -89,14 +90,14 @@ class PartitionSetDefinition(
         partition_fn (Callable[void, List[Partition]]): User-provided function to define the set of
             valid partition objects.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute with this partition. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
         environment_dict_fn_for_partition (Callable[[Partition], [Dict]]): A
-            function that takes a Partition and returns the environment
+            function that takes a :py:class:`~dagster.Partition` and returns the environment
             configuration that parameterizes the execution for this partition, as a dict
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
-            takes a Partition and returns a list of key value pairs that will be
-            added to the generated run for this partition.
+            takes a :py:class:`~dagster.Partition` and returns a list of key value pairs that will
+            be added to the generated run for this partition.
     '''
 
     def __new__(
@@ -178,8 +179,8 @@ class PartitionSetDefinition(
             determines whether a schedule should execute. Defaults to a function that always returns
             ``True``.
             partition_selector (Callable[PartitionSet], Partition): A partition selector for the
-                schedule
-            environment_vars (Optional[dict]): The environment variables to set for the schedule
+                schedule.
+            environment_vars (Optional[dict]): The environment variables to set for the schedule.
 
         Returns:
             ScheduleDefinition: The generated ScheduleDefinition for the partition selector

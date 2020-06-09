@@ -20,7 +20,6 @@ class PresetDefinition(
 ):
     '''Defines a preset configuration in which a pipeline can execute.
 
-
     Presets can be used in Dagit to load predefined configurations into the tool.
 
     Presets may also be used from the Python API (in a script, or in test) as follows:
@@ -42,7 +41,7 @@ class PresetDefinition(
         environment_dict (Optional[dict]): A dict representing the config to set with the preset.
             This is equivalent to the ``environment_dict`` argument to :py:func:`execute_pipeline`.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute with the preset. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this preset. (default: 'default')
     '''
 
@@ -56,7 +55,7 @@ class PresetDefinition(
             environment_files (Optional[List[str]]): List of paths or glob patterns for yaml files
                 to load and parse as the environment config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
-                solid names) to execute with the preset. e.g. ['*some_solid+', 'other_solid']
+                solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -110,7 +109,7 @@ class PresetDefinition(
             yaml_strings (Optional[List[str]]): List of yaml strings to parse as the environment
                 config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
-                solid names) to execute with the preset. e.g. ['*some_solid+', 'other_solid']
+                solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -165,7 +164,8 @@ class PresetDefinition(
             pkg_resource_defs (Optional[List[(str, str)]]): List of pkg_resource modules/files to
                 load as environment config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
-                solid names) to execute with this partition. e.g. ['*some_solid+', 'other_solid']
+                solid names) to execute with this partition. e.g.
+                ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -219,7 +219,7 @@ class PresetDefinition(
         return yaml.dump(self.environment_dict or {}, default_flow_style=False)
 
     def with_additional_config(self, environment_dict):
-        '''return a new PresetDefinition with additional config merged in to the existing config'''
+        '''Return a new PresetDefinition with additional config merged in to the existing config.'''
 
         check.opt_nullable_dict_param(environment_dict, 'environment_dict')
         if environment_dict is None:

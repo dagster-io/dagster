@@ -45,7 +45,7 @@ def schedule(
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
@@ -108,7 +108,7 @@ def monthly_schedule(
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -117,7 +117,8 @@ def monthly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
+            current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
@@ -133,9 +134,8 @@ def monthly_schedule(
 
     if execution_day_of_month <= 0 or execution_day_of_month > 31:
         raise DagsterInvalidDefinitionError(
-            "`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be between 1 and 31".format(
-                execution_day_of_month
-            )
+            '`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be '
+            'between 1 and 31'.format(execution_day_of_month)
         )
 
     cron_schedule = '{minute} {hour} {day} * *'.format(
@@ -206,7 +206,7 @@ def weekly_schedule(
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -215,7 +215,8 @@ def weekly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
+            current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
@@ -231,9 +232,8 @@ def weekly_schedule(
 
     if execution_day_of_week < 0 or execution_day_of_week >= 7:
         raise DagsterInvalidDefinitionError(
-            "`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be between 0 [Sunday] and 6 [Saturday]".format(
-                execution_day_of_week
-            )
+            '`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be '
+            'between 0 [Sunday] and 6 [Saturday]'.format(execution_day_of_week)
         )
 
     cron_schedule = '{minute} {hour} * * {day}'.format(
@@ -301,7 +301,7 @@ def daily_schedule(
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -310,7 +310,8 @@ def daily_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
+            current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
@@ -388,7 +389,7 @@ def hourly_schedule(
             function that generates tags to attach to the schedules runs. Takes the date of the
             schedule run and returns a dictionary of tags (string key-value pairs).
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
@@ -397,7 +398,8 @@ def hourly_schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to current time.
+        end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
+            current time.
     '''
     check.opt_str_param(name, 'name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
@@ -416,8 +418,8 @@ def hourly_schedule(
             "\tschedule_time=datetime.time(hour={hour}, minute={minute}, ...)."
             "Since this is a hourly schedule, the hour parameter will be ignored and the schedule "
             "will run on the {minute} mark for the previous hour interval. Replace "
-            "datetime.time(hour={hour}, minute={minute}, ...) with datetime.time(minute={minute}, ...)"
-            "to fix this warning."
+            "datetime.time(hour={hour}, minute={minute}, ...) with "
+            "datetime.time(minute={minute}, ...) to fix this warning."
         )
 
     cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)

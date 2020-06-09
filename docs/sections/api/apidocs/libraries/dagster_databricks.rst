@@ -1,5 +1,5 @@
 Databricks (dagster_databricks)
--------------------------
+-------------------------------
 
 The ``dagster_databricks`` package provides two main pieces of functionality:
 

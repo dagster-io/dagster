@@ -60,16 +60,16 @@ class ScheduleDefinition(object):
             and ``environment_dict_fn``.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
-            that generates tags to attach to the schedules runs. Takes a
+        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A
+            function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ['*some_solid+', 'other_solid']
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
-        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs
+            at schedule execution time to determine whether a schedule should execute or skip. Takes
+            a :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
