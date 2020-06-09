@@ -258,6 +258,11 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
         extra_cmds_fn=dask_extra_cmds_fn,
     ),
+    ModuleBuildSpec(
+        'python_modules/libraries/dagster-databricks',
+        # See: https://github.com/dagster-io/dagster/issues/1960
+        supported_pythons=SupportedPythonsNo38,
+    ),
     ModuleBuildSpec('python_modules/libraries/dagster-flyte', supported_pythons=SupportedPython3s,),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-gcp',

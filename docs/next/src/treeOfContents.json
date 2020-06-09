@@ -165,6 +165,10 @@
         "path": "/docs/apidocs/libraries/dagster_datadog"
       },
       {
+        "name": "Databricks (dagster_databricks)",
+        "path": "/docs/apidocs/libraries/dagster_databricks"
+      },
+      {
         "name": "DBT (dagster_dbt)",
         "path": "/docs/apidocs/libraries/dagster_dbt"
       },

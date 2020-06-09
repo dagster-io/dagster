@@ -50,6 +50,10 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_databricks</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_datadog</loc>
   </url>
 

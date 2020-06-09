@@ -104,7 +104,7 @@ solids:
         bucket: dagster-airline-demo-source-data
         key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             },
             {
                 '__typename': 'PipelinePreset',
@@ -219,7 +219,7 @@ solids:
         config:
           table_name: q2_sfo_weather
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             },
             {
                 '__typename': 'PipelinePreset',
@@ -334,9 +334,9 @@ storage:
       s3_bucket: dagster-scratch-80542c2
       s3_prefix: airline-demo
 ''',
-                'solidSelection': None,
-            },
-        ],
+                'solidSelection': None
+            }
+        ]
     }
 }
 
@@ -380,14 +380,18 @@ solids:
       Bucket: dagster-scratch-80542c2
       Key: airline_outputs/sfo_outbound_avg_delay_plots.pdf
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             }
-        ],
+        ]
     }
 }
 
 snapshots['test_presets_on_examples 3'] = {
-    'pipelineOrError': {'name': 'composition', 'presets': []}
+    'pipelineOrError': {
+        'name': 'composition',
+        'presets': [
+        ]
+    }
 }
 
 snapshots['test_presets_on_examples 4'] = {
@@ -424,7 +428,9 @@ solids:
           table_name:
             value: weather_staging
 ''',
-                'solidSelection': ['weather_etl'],
+                'solidSelection': [
+                    'weather_etl'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -464,9 +470,11 @@ solids:
           table_name:
             value: weather_staging
 ''',
-                'solidSelection': ['weather_etl'],
-            },
-        ],
+                'solidSelection': [
+                    'weather_etl'
+                ]
+            }
+        ]
     }
 }
 
@@ -496,9 +504,9 @@ solids:
       return_wrong_type: false
       throw_in_solid: false
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             }
-        ],
+        ]
     }
 }
 
@@ -537,9 +545,9 @@ solids:
           app:
             name: test_app
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             }
-        ],
+        ]
     }
 }
 
@@ -592,7 +600,9 @@ solids:
           bucket_name: dagster-scratch-ccdfe1e
           file_name: training_data
 ''',
-                'solidSelection': ['train_daily_bike_supply_model'],
+                'solidSelection': [
+                    'train_daily_bike_supply_model'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -630,7 +640,9 @@ solids:
           target_csv_file_in_archive:
             value: 202001-baywheels-tripdata.csv
 ''',
-                'solidSelection': ['trip_etl'],
+                'solidSelection': [
+                    'trip_etl'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -662,7 +674,9 @@ solids:
           table_name:
             value: weather_staging
 ''',
-                'solidSelection': ['weather_etl'],
+                'solidSelection': [
+                    'weather_etl'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -717,7 +731,9 @@ solids:
           bucket_name: dagster-scratch-ccdfe1e
           file_name: training_data
 ''',
-                'solidSelection': ['train_daily_bike_supply_model'],
+                'solidSelection': [
+                    'train_daily_bike_supply_model'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -763,7 +779,9 @@ solids:
           target_csv_file_in_archive:
             value: 202001-baywheels-tripdata.csv
 ''',
-                'solidSelection': ['trip_etl'],
+                'solidSelection': [
+                    'trip_etl'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -803,24 +821,44 @@ solids:
           table_name:
             value: weather_staging
 ''',
-                'solidSelection': ['weather_etl'],
-            },
-        ],
+                'solidSelection': [
+                    'weather_etl'
+                ]
+            }
+        ]
     }
 }
 
 snapshots['test_presets_on_examples 8'] = {
-    'pipelineOrError': {'name': 'jaffle_pipeline', 'presets': []}
+    'pipelineOrError': {
+        'name': 'jaffle_pipeline',
+        'presets': [
+        ]
+    }
 }
 
-snapshots['test_presets_on_examples 9'] = {'pipelineOrError': {'name': 'log_spew', 'presets': []}}
+snapshots['test_presets_on_examples 9'] = {
+    'pipelineOrError': {
+        'name': 'log_spew',
+        'presets': [
+        ]
+    }
+}
 
 snapshots['test_presets_on_examples 10'] = {
-    'pipelineOrError': {'name': 'longitudinal_pipeline', 'presets': []}
+    'pipelineOrError': {
+        'name': 'longitudinal_pipeline',
+        'presets': [
+        ]
+    }
 }
 
 snapshots['test_presets_on_examples 11'] = {
-    'pipelineOrError': {'name': 'many_events', 'presets': []}
+    'pipelineOrError': {
+        'name': 'many_events',
+        'presets': [
+        ]
+    }
 }
 
 snapshots['test_presets_on_examples 12'] = {
@@ -843,7 +881,7 @@ snapshots['test_presets_on_examples 12'] = {
         csv:
           path: data/num_prod.csv
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             },
             {
                 '__typename': 'PipelinePreset',
@@ -861,14 +899,18 @@ snapshots['test_presets_on_examples 12'] = {
         csv:
           path: data/num.csv
 ''',
-                'solidSelection': None,
-            },
-        ],
+                'solidSelection': None
+            }
+        ]
     }
 }
 
 snapshots['test_presets_on_examples 13'] = {
-    'pipelineOrError': {'name': 'pandas_hello_world_pipeline_with_read_csv', 'presets': []}
+    'pipelineOrError': {
+        'name': 'pandas_hello_world_pipeline_with_read_csv',
+        'presets': [
+        ]
+    }
 }
 
 snapshots['test_presets_on_examples 14'] = {
@@ -884,7 +926,7 @@ snapshots['test_presets_on_examples 14'] = {
     config:
       root: .
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             },
             {
                 '__typename': 'PipelinePreset',
@@ -895,9 +937,9 @@ snapshots['test_presets_on_examples 14'] = {
     config:
       root: .
 ''',
-                'solidSelection': None,
-            },
-        ],
+                'solidSelection': None
+            }
+        ]
     }
 }
 
@@ -923,12 +965,51 @@ solids:
 storage:
   filesystem: null
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             },
             {
                 '__typename': 'PipelinePreset',
-                'mode': 'prod',
-                'name': 'prod',
+                'mode': 'prod_databricks',
+                'name': 'prod_databricks',
+                'runConfigYaml': '''resources:
+  pyspark_step_launcher:
+    config:
+      databricks_host: uksouth.azuredatabricks.net
+      databricks_token:
+        env: DATABRICKS_TOKEN
+      local_pipeline_package_path: .
+      run_config:
+        cluster:
+          new:
+            nodes:
+              node_types:
+                node_type_id: Standard_DS3_v2
+            size:
+              num_workers: 1
+            spark_version: 6.5.x-scala2.11
+        run_name: dagster-tests
+      staging_prefix: /dagster-databricks-tests
+      storage:
+        s3:
+          access_key_key: aws-access-key
+          secret_key_key: aws-secret-key
+          secret_scope: dagster-databricks-tests
+solids:
+  make_weather_samples:
+    inputs:
+      file_path: s3://dagster-databricks-tests/sfo_q2_weather_fixed_header.txt
+storage:
+  s3:
+    config:
+      s3_bucket: dagster-databricks-tests
+      s3_prefix: simple-pyspark
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'prod_emr',
+                'name': 'prod_emr',
                 'runConfigYaml': '''resources:
   pyspark_step_launcher:
     config:
@@ -952,9 +1033,9 @@ storage:
       s3_bucket: dagster-scratch-80542c2
       s3_prefix: simple-pyspark
 ''',
-                'solidSelection': None,
-            },
-        ],
+                'solidSelection': None
+            }
+        ]
     }
 }
 
@@ -978,16 +1059,24 @@ solids:
 storage:
   filesystem: {}
 ''',
-                'solidSelection': None,
+                'solidSelection': None
             }
-        ],
+        ]
     }
 }
 
 snapshots['test_presets_on_examples 17'] = {
-    'pipelineOrError': {'name': 'stdout_spew_pipeline', 'presets': []}
+    'pipelineOrError': {
+        'name': 'stdout_spew_pipeline',
+        'presets': [
+        ]
+    }
 }
 
 snapshots['test_presets_on_examples 18'] = {
-    'pipelineOrError': {'name': 'unreliable_pipeline', 'presets': []}
+    'pipelineOrError': {
+        'name': 'unreliable_pipeline',
+        'presets': [
+        ]
+    }
 }
