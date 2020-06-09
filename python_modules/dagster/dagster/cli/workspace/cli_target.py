@@ -158,6 +158,21 @@ def repository_target_argument(f):
     )
 
 
+def pipeline_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(
+        repository_target_argument(f),
+        click.option(
+            '--pipeline',
+            '-p',
+            help=(
+                'Pipeline within the repository, necessary if more than one pipeline is present.'
+            ),
+        ),
+    )
+
+
 def get_repository_location_from_kwargs(kwargs):
     workspace = get_workspace_from_kwargs(kwargs)
     provided_location_name = kwargs.get('location')
@@ -218,11 +233,48 @@ def get_external_repository_from_kwargs(kwargs):
             ).format(
                 provided_repo_name=provided_repo_name,
                 location_name=repo_location.name,
-                found_names=_sorted_quoted(repo_location.get_repository_names()),
+                found_names=_sorted_quoted(repo_dict.keys()),
             )
         )
 
     return repo_location.get_repository(provided_repo_name)
+
+
+def get_external_pipeline_from_kwargs(kwargs):
+    external_repo = get_external_repository_from_kwargs(kwargs)
+
+    provided_pipeline_name = kwargs.get('pipeline')
+
+    external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
+
+    check.invariant(external_pipelines)
+
+    if provided_pipeline_name is None and len(external_pipelines) == 1:
+        return next(iter(external_pipelines.values()))
+
+    if provided_pipeline_name is None:
+        raise click.UsageError(
+            (
+                'Must provide --pipeline as there is more than one pipeline '
+                'in {repository}. Options are: {pipelines}.'
+            ).format(
+                repository=external_repo.name, pipelines=_sorted_quoted(external_pipelines.keys())
+            )
+        )
+
+    if not provided_pipeline_name in external_pipelines:
+        raise click.UsageError(
+            (
+                'Pipeline "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Found {found_names} instead.'
+            ).format(
+                provided_pipeline_name=provided_pipeline_name,
+                repository_name=external_repo.name,
+                found_names=_sorted_quoted(external_pipelines.keys()),
+            )
+        )
+
+    return external_pipelines[provided_pipeline_name]
 
 
 def _sorted_quoted(strings):
