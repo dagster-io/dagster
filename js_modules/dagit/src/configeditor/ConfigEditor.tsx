@@ -199,10 +199,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
                   editor.showHint({
                     completeSingle: true
                   }),
-                "Shift-Space": (editor: any) =>
-                  editor.showHint({
-                    completeSingle: true
-                  }),
                 "Shift-Tab": (editor: any) => editor.execCommand("indentLess"),
                 Tab: (editor: any) => editor.execCommand("indentMore"),
                 // Persistent search box in Query Editor

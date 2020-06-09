@@ -27,7 +27,7 @@ export const Row = styled.div<{ level: LogLevel }>`
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
+  border-top: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props => bgcolorForLevel(props.level)};
   &:hover {
     background: white;
