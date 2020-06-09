@@ -8,7 +8,6 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
@@ -245,7 +244,6 @@ class SolidDefinition(ISolidDefinition):
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
-        metadata=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_field = check_user_facing_opt_config_param(config, 'config')
@@ -258,7 +256,7 @@ class SolidDefinition(ISolidDefinition):
             input_defs=check.list_param(input_defs, 'input_defs', InputDefinition),
             output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
-            tags=canonicalize_backcompat_args(tags, 'tags', metadata, 'metadata'),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
             positional_inputs=positional_inputs,
         )
 

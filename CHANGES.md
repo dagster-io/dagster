@@ -43,13 +43,17 @@
   `all_dagster_types` instead.
 - The deprecated `all_runtime_types` method on `SolidDefinition` and `CompositeSolidDefinition`
   has been removed. Use `all_dagster_types` instead.
-- `bash_command_solid` and `bash_script_solid` solid factory functions have been renamed to `create_bash_command_solid` and `create_bash_script_solid`
+- `bash_command_solid` and `bash_script_solid` solid factory functions have been renamed to
+  `create_bash_command_solid` and `create_bash_script_solid`
+- The deprecated `metadata` argument to `SolidDefinition` and `@solid` has been removed. Use `tags`
+  instead.
 
 **New**
 
 - The partitioned schedule decorators now support optional `end_time`.
 - `dagster_spark.create_spark_solid` now accepts a `required_resource_keys` argument, which enables
   setting up a step launcher for Spark solids, like the `emr_pyspark_step_launcher`.
+- FIXME: Adds the `SourceString` machinery
 
 ## 0.7.16 (Latest)
 

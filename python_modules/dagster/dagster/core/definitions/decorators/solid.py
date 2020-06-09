@@ -4,7 +4,6 @@ from functools import update_wrapper, wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ...decorator_utils import (
     InvalidDecoratedFunctionInfo,
@@ -91,7 +90,6 @@ def solid(
     config=None,
     required_resource_keys=None,
     tags=None,
-    metadata=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
 
@@ -208,7 +206,6 @@ def solid(
         check.invariant(description is None)
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
-        check.invariant(metadata is None)
         check.invariant(tags is None)
 
         return _Solid()(name)
@@ -220,7 +217,7 @@ def solid(
         config=config,
         description=description,
         required_resource_keys=required_resource_keys,
-        tags=canonicalize_backcompat_args(tags, 'tags', metadata, 'metadata'),
+        tags=tags,
     )
 
 
