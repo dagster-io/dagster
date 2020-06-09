@@ -32,6 +32,7 @@
 
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
+
 - `RemoteDagitRunLauncher` has been deleted.
 - The deprecated `is_optional` parameter to `Field` and `OutputDefinition` has been removed.
   Use `is_required` instead.
@@ -42,6 +43,7 @@
   `all_dagster_types` instead.
 - The deprecated `all_runtime_types` method on `SolidDefinition` and `CompositeSolidDefinition`
   has been removed. Use `all_dagster_types` instead.
+- `bash_command_solid` and `bash_script_solid` solid factory functions have been renamed to `create_bash_command_solid` and `create_bash_script_solid`
 
 **New**
 

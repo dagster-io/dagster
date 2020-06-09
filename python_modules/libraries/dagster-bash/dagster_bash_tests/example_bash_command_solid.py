@@ -1,9 +1,11 @@
-from dagster_bash import bash_command_solid
+from dagster_bash import create_bash_command_solid
 
 from dagster import pipeline
 
 
 @pipeline
 def pipe():
-    a = bash_command_solid('echo "hello, world!"', name='a')
-    a()
+    # create a new bash solid
+    bash_solid = create_bash_command_solid('echo "hello, world!"', name='a')
+    # invoke it
+    bash_solid()

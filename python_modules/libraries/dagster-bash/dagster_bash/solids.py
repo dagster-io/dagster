@@ -81,7 +81,7 @@ def bash_solid(context, bash_command):
     return output
 
 
-def bash_command_solid(
+def create_bash_command_solid(
     bash_command, name, description=None, required_resource_keys=None, tags=None,
 ):
     '''This function is a factory that constructs solids to execute a Bash command.
@@ -143,7 +143,9 @@ def bash_command_solid(
     return _bash_solid
 
 
-def bash_script_solid(bash_script_path, name='bash_script_solid', input_defs=None, **kwargs):
+def create_bash_script_solid(
+    bash_script_path, name='create_bash_script_solid', input_defs=None, **kwargs
+):
     '''This function is a factory which constructs a solid that will execute a Bash command read
     from a script file.
 
@@ -163,7 +165,7 @@ def bash_script_solid(bash_script_path, name='bash_script_solid', input_defs=Non
 
     Args:
         bash_script_path (str): The script file to execute.
-        name (str, optional): The name of this solid. Defaults to "bash_script_solid".
+        name (str, optional): The name of this solid. Defaults to "create_bash_script_solid".
         input_defs (List[InputDefinition], optional): input definitions for the solid. Defaults to
             a single Nothing input.
 
