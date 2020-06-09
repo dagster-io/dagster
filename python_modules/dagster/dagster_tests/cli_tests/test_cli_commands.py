@@ -140,24 +140,25 @@ def stderr_pipeline():
     fail()
 
 
-def test_list_command():
-    runner = CliRunner()
-
-    execute_list_command(
-        {
-            'repository_yaml': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'bar',
-        },
-        no_print,
+def assert_correct_hello_cereal_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        'Repository hello_cereal_repository\n'
+        '**********************************\n'
+        'Pipeline: complex_pipeline\n'
+        'Solids: (Execution Order)\n'
+        '    load_cereals\n'
+        '    sort_by_calories\n'
+        '    sort_by_protein\n'
+        '    display_results\n'
+        '*******************************\n'
+        'Pipeline: hello_cereal_pipeline\n'
+        'Solids: (Execution Order)\n'
+        '    hello_cereal\n'
     )
 
-    result = runner.invoke(
-        pipeline_list_command,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'bar'],
-    )
 
+def assert_correct_bar_repository_output(result):
     assert result.exit_code == 0
     assert result.output == (
         'Repository bar\n'
@@ -174,6 +175,27 @@ def test_list_command():
         '    do_input\n'
     )
 
+
+def test_list_command():
+    runner = CliRunner()
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'bar',
+        },
+        no_print,
+    )
+
+    result = runner.invoke(
+        pipeline_list_command,
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar'],
+    )
+
+    assert_correct_bar_repository_output(result)
+
     execute_list_command(
         {
             'repository_yaml': None,
@@ -186,23 +208,9 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_repository'],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-a', 'hello_cereal_repository'],
     )
-    assert result.exit_code == 0
-    assert result.output == (
-        'Repository hello_cereal_repository\n'
-        '**********************************\n'
-        'Pipeline: complex_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    load_cereals\n'
-        '    sort_by_calories\n'
-        '    sort_by_protein\n'
-        '    display_results\n'
-        '*******************************\n'
-        'Pipeline: hello_cereal_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    hello_cereal\n'
-    )
+    assert_correct_hello_cereal_output(result)
 
     execute_list_command(
         {
@@ -215,23 +223,9 @@ def test_list_command():
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-y', file_relative_path(__file__, 'repository_module.yaml')]
+        pipeline_list_command, ['-w', file_relative_path(__file__, 'repository_module.yaml')]
     )
-    assert result.exit_code == 0
-    assert result.output == (
-        'Repository hello_cereal_repository\n'
-        '**********************************\n'
-        'Pipeline: complex_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    load_cereals\n'
-        '    sort_by_calories\n'
-        '    sort_by_protein\n'
-        '    display_results\n'
-        '*******************************\n'
-        'Pipeline: hello_cereal_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    hello_cereal\n'
-    )
+    assert_correct_hello_cereal_output(result)
 
     with pytest.raises(UsageError):
         execute_list_command(
@@ -251,41 +245,19 @@ def test_list_command():
             'foo.py',
             '-m',
             'dagster_examples.intro_tutorial.repos',
-            '-n',
+            '-a',
             'hello_cereal_repository',
         ],
     )
     assert result.exit_code == 2
 
-    with pytest.raises(UsageError):
-        execute_list_command(
-            {
-                'repository_yaml': None,
-                'python_file': None,
-                'module_name': 'dagster_examples.intro_tutorial.repos',
-                'fn_name': None,
-            },
-            no_print,
-        )
-
     result = runner.invoke(pipeline_list_command, ['-m', 'dagster_examples.intro_tutorial.repos'])
-    assert result.exit_code == 2
-
-    with pytest.raises(UsageError):
-        execute_list_command(
-            {
-                'repository_yaml': None,
-                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-                'module_name': None,
-                'fn_name': None,
-            },
-            no_print,
-        )
+    assert_correct_hello_cereal_output(result)
 
     result = runner.invoke(
         pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py')]
     )
-    assert result.exit_code == 2
+    assert_correct_bar_repository_output(result)
 
 
 def valid_execute_args():

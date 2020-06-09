@@ -36,6 +36,8 @@ PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
     __file__, 'hello_world_in_file/python_file_with_named_location_workspace.yaml'
 )
 
+LEGACY_REPOSITORY = file_relative_path(__file__, 'hello_world_in_file/legacy_repository.yaml')
+
 
 @pytest.mark.parametrize(
     'cli_args',
@@ -54,6 +56,10 @@ PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
             '-r',
             'hello_world_repository',
         ],
+        # legacy repository
+        ['-w', LEGACY_REPOSITORY],
+        # legacy repository with specified name
+        ['-w', LEGACY_REPOSITORY, '-r', 'hello_world_repository'],
     ),
 )
 def test_valid_repository_target_combos_with_single_repo_single_location(cli_args):

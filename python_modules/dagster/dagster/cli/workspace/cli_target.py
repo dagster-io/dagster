@@ -4,7 +4,7 @@ import click
 from click import UsageError
 
 from dagster import check
-from dagster.core.host_representation.repository_location import PythonEnvRepositoryLocation
+from dagster.core.host_representation import RepositoryLocation
 
 from .load import (
     load_workspace_from_yaml_path,
@@ -163,7 +163,7 @@ def get_repository_location_from_kwargs(kwargs):
     provided_location_name = kwargs.get('location')
 
     if provided_location_name is None and len(workspace.repository_location_handles) == 1:
-        return PythonEnvRepositoryLocation(next(iter(workspace.repository_location_handles)))
+        return RepositoryLocation.from_handle(next(iter(workspace.repository_location_handles)))
 
     if provided_location_name is None:
         raise click.UsageError(
@@ -184,7 +184,7 @@ def get_repository_location_from_kwargs(kwargs):
             )
         )
 
-    return PythonEnvRepositoryLocation(
+    return RepositoryLocation.from_handle(
         workspace.get_repository_location_handle(provided_location_name)
     )
 

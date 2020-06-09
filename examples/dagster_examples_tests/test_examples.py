@@ -32,7 +32,7 @@ def test_list_command():
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-y', script_relative_path('../repository.yaml')]
+        pipeline_list_command, ['-w', script_relative_path('../repository.yaml')]
     )
     assert result.exit_code == 0
 

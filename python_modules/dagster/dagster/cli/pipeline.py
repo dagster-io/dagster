@@ -13,6 +13,10 @@ import yaml
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
+from dagster.cli.workspace.cli_target import (
+    get_external_repository_from_kwargs,
+    repository_target_argument,
+)
 from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.host_representation import InProcessRepositoryLocation
@@ -24,6 +28,7 @@ from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.hosted_user_process import repository_def_from_repository_handle
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -107,14 +112,14 @@ def legacy_pipeline_target_argument(f):
     name='list',
     help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
 )
-@legacy_repository_target_argument
+@repository_target_argument
 def pipeline_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
 
 def execute_list_command(cli_args, print_fn):
-    repository = recon_repo_for_cli_args(cli_args).get_definition()
-
+    external_repository = get_external_repository_from_kwargs(cli_args)
+    repository = repository_def_from_repository_handle(external_repository.handle)
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
     print_fn('*' * len(title))

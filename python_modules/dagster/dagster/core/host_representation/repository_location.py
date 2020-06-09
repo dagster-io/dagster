@@ -9,11 +9,12 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
+    InProcessRepositoryLocationHandle,
+    PipelineHandle,
     PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
-from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -77,10 +78,24 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     def get_subset_external_pipeline_result(self, selector):
         pass
 
+    @staticmethod
+    def from_handle(repository_location_handle):
+        check.inst_param(
+            repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
+        )
+
+        if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
+            check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
+            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
+            return InProcessRepositoryLocation(ReconstructableRepository(pointer))
+        elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
+            return PythonEnvRepositoryLocation(repository_location_handle)
+        else:
+            check.failed('Unsupported handle: {}'.format(repository_location_handle))
+
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, recon_repo):
-
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self._handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
 
