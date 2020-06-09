@@ -116,7 +116,7 @@ def test_region():
 def test_full_run():
     testclient = client.ECSClient()
     testclient.set_and_register_task(
-        ["echo $TEST; echo start; echo middle"], ["/bin/bash", "-c"], family='multimessage',
+        ["echo start"], ["/bin/bash", "-c"], family='multimessage',
     )
     networkConfiguration = {
         'awsvpcConfiguration': {
@@ -126,5 +126,35 @@ def test_full_run():
         }
     }
     testclient.run_task(networkConfiguration=networkConfiguration)
-    testclient.spin_til_done()
-    assert " ".join(testclient.logs_messages) == '\"end\" start middle'
+
+    testclient.set_and_register_task(
+        ["echo middle"], ["/bin/bash", "-c"], family='multimessage',
+    )
+    testclient.run_task(networkConfiguration=networkConfiguration)
+    testclient.set_and_register_task(
+        ["echo $TEST"], ["/bin/bash", "-c"], family='multimessage',
+    )
+    testclient.run_task(networkConfiguration=networkConfiguration)
+    testclient.spin_all()
+    assert testclient.logs_messages == {2: ['end'], 1: ['middle'], 0: ['start']}
+
+
+@pytest.mark.skipif(
+    'AWS_ECS_TEST_DO_IT_LIVE' not in os.environ,
+    reason='This test is slow and requires a live ECS cluster; run only upon explicit request',
+)
+def test_one_run():
+    testclient = client.ECSClient()
+    testclient.set_and_register_task(
+        ["echo start"], ["/bin/bash", "-c"], family='multimessage',
+    )
+    networkConfiguration = {
+        'awsvpcConfiguration': {
+            'subnets': ['subnet-0f3b1467',],
+            'securityGroups': ['sg-08627da7435350fa6',],
+            'assignPublicIp': 'ENABLED',
+        }
+    }
+    testclient.run_task(networkConfiguration=networkConfiguration)
+    testclient.spin_all()
+    assert testclient.logs_messages == {0: ['start']}

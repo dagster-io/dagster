@@ -15,8 +15,12 @@ class ECSClient:
         key_id (Optional[str]): the AWS access key ID to use
         access_key (Optional[str]): the AWS access key going with that key_id
         launch_type (Optional[str]): whether to use EC2 or FARGATE for the task
+        grab_logs (Optional[bool]):  whether to pull down ECS logs
         starter_client (boto3.client): starter ecs client, used for mocking
         starter_log_client (boto3.client): starter log client, used for mocking
+
+
+    TODO: find ECS specific logs, if they exist -- right now logs are stdout and stderr
     """
 
     def __init__(
@@ -27,20 +31,22 @@ class ECSClient:
         launch_type='FARGATE',
         starter_client=None,
         starter_log_client=None,
+        grab_logs=True,
     ):
         self.key_id = check.str_param(key_id, 'key_id')
-        self.region_name = check.str_param(region_name, 'key_id')
-        self.access_key = check.str_param(access_key, 'key_id')
-        self.launch_type = check.str_param(launch_type, 'key_id')
+        self.region_name = check.str_param(region_name, 'region_name')
+        self.access_key = check.str_param(access_key, 'access_key')
+        self.launch_type = check.str_param(launch_type, 'launch_type')
         self.account_id = '123412341234'
+        self.grab_logs = check.bool_param(grab_logs, 'grab_logs')
         self.task_definition_arn = None
-        self.tasks = None
+        self.tasks = []
+        self.tasks_done = []
+        self.offset = -1
         self.container_name = None
-        self.log_group_name = None
-        self.ecs_logs = None
-        self.logs_messages = None
+        self.ecs_logs = dict()
+        self.logs_messages = dict()
         self.warnings = []
-        self.log_stream_name = None
         self.cluster = None
         if starter_client is None:
             self.ecs_client = self.make_client('ecs')
@@ -104,8 +110,9 @@ class ECSClient:
             memory (Optional[str]): how much memory (in MB) the task needs
             cpu (Optional[str]): how much CPU (in vCPU) the task needs
         """
+        fmtstr = family + str(self.offset + 1)
         try:
-            self.log_client.create_log_group(logGroupName="/ecs/{}".format(family))
+            self.log_client.create_log_group(logGroupName="/ecs/{}".format(fmtstr))
         except botocore.exceptions.ClientError as e:
             self.warnings.append(str(e))
         basedict = {
@@ -115,7 +122,7 @@ class ECSClient:
                     "logConfiguration": {
                         "logDriver": "awslogs",
                         "options": {
-                            "awslogs-group": "/ecs/{}".format(family),
+                            "awslogs-group": "/ecs/{}".format(fmtstr),
                             "awslogs-region": "us-east-2",
                             "awslogs-stream-prefix": "ecs",
                         },
@@ -159,45 +166,65 @@ class ECSClient:
         task = taskdict['tasks'][0]
         container = task['containers'][0]
         running_task_arn = container["taskArn"]
-        self.tasks = [running_task_arn]
-        taskDefinition = self.ecs_client.describe_task_definition(
-            taskDefinition=self.task_definition_arn
-        )['taskDefinition']
-        logconfig = taskDefinition['containerDefinitions'][0]['logConfiguration']['options']
-        streamobj = self.log_client.describe_log_streams(
-            logGroupName=logconfig['awslogs-group'],
-            logStreamNamePrefix=logconfig['awslogs-stream-prefix'],
-        )
-        self.log_group_name = logconfig['awslogs-group']
-        self.log_stream_name = streamobj['logStreams'][-1]['logStreamName']
+        self.tasks.append(running_task_arn)
+        self.tasks_done.append(False)
+        self.offset += 1
 
-    def check_if_done(self):
+    def check_if_done(self, offset=0):
         """
         polls ECS to see if the task is complete, pulling down logs if so
 
         TODO:  handle pagination for 100+ tasks
+        Args:
+             offset (int): which task to check for
+
         Returns:
              boolean corresponding to completion
         """
+        if self.tasks_done[offset]:
+            return True
         response = self.ecs_client.describe_tasks(tasks=self.tasks, cluster=self.cluster)
-        if response['tasks'][0]['lastStatus'] == 'STOPPED':
-            logs = self.log_client.get_log_events(
-                logGroupName=self.log_group_name, logStreamName=self.log_stream_name
-            )
-            self.ecs_logs = logs['events']
-            self.logs_messages = [log['message'] for log in self.ecs_logs]
+        resp = response['tasks'][offset]
+        if resp['lastStatus'] == 'STOPPED':
+            if self.grab_logs:
+                check_arn = resp['taskDefinitionArn']
+                taskDefinition = self.ecs_client.describe_task_definition(taskDefinition=check_arn)[
+                    'taskDefinition'
+                ]
+                logconfig = taskDefinition['containerDefinitions'][0]['logConfiguration']['options']
+                streamobj = self.log_client.describe_log_streams(
+                    logGroupName=logconfig['awslogs-group'],
+                    logStreamNamePrefix=logconfig['awslogs-stream-prefix'],
+                )
+                logs = self.log_client.get_log_events(
+                    logGroupName=logconfig['awslogs-group'],
+                    logStreamName=streamobj['logStreams'][-1]['logStreamName'],
+                )
+                self.ecs_logs[offset] = logs['events']
+                self.logs_messages[offset] = [log['message'] for log in logs['events']]
+            self.tasks_done[offset] = True
             return True
         return False
 
-    def spin_til_done(self, time_delay=5):
+    def spin_til_done(self, offset=0, time_delay=5):
         """
         spinpolls the ECS servers to test if the task is done
 
         Args:
+            offset (int): the offset of the task within the task array
             time_delay (int): how long to wait between polls, seconds
         """
-        while not self.check_if_done():
+        while not self.check_if_done(offset=offset):
             time.sleep(time_delay)
+
+    def spin_all(self, time_delay=5):
+        """
+        spinpolls all generated tasks
+        Args:
+            time_delay (int): how long to wait between polls, seconds
+        """
+        for i in range(self.offset + 1):
+            self.spin_til_done(offset=i, time_delay=time_delay)
 
 
 if __name__ == "__main__":
@@ -208,7 +235,7 @@ if __name__ == "__main__":
 
     testclient = ECSClient()
     testclient.set_and_register_task(
-        ["echo $TEST; echo start; echo middle"], ["/bin/bash", "-c"], family='multimessage',
+        ["echo start"], ["/bin/bash", "-c"], family='multimessage',
     )
     networkConfiguration = {
         'awsvpcConfiguration': {
@@ -218,5 +245,16 @@ if __name__ == "__main__":
         }
     }
     testclient.run_task(networkConfiguration=networkConfiguration)
+
+    testclient.set_and_register_task(
+        ["echo middle"], ["/bin/bash", "-c"], family='multimessage',
+    )
+    testclient.run_task(networkConfiguration=networkConfiguration)
+    testclient.set_and_register_task(
+        ["echo $TEST"], ["/bin/bash", "-c"], family='multimessage',
+    )
+    testclient.run_task(networkConfiguration=networkConfiguration)
+    testclient.spin_til_done(offset=2)
+    testclient.spin_til_done(offset=1)
     testclient.spin_til_done()
-    assert " ".join(testclient.logs_messages) == '\"end\" start middle'
+    print(testclient.logs_messages)
