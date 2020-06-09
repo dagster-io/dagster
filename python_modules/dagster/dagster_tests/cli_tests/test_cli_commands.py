@@ -1151,13 +1151,13 @@ def run_launch(execution_args, expected_count=None):
             _instance.return_value = instance
 
             result = runner.invoke(pipeline_launch_command, execution_args)
-            assert result.exit_code == 0
+            assert result.exit_code == 0, result.stdout
             if expected_count:
                 assert len(run_launcher.queue()) == expected_count
 
 
 def test_launch_pipeline():
-    for cli_args in valid_legacy_cli_args():
+    for cli_args in valid_cli_args():
         run_launch(cli_args, expected_count=1)
 
 
@@ -1333,7 +1333,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'do_something',
@@ -1353,7 +1353,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+',
@@ -1373,7 +1373,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+,do_input',
@@ -1393,7 +1393,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'a, b',

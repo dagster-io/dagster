@@ -383,10 +383,10 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
 @click.command(
     name='launch',
     help='Launch a pipeline using the run launcher configured on the Dagster instance.\n\n{instructions}'.format(
-        instructions=get_legacy_pipeline_instructions('launch')
+        instructions=get_pipeline_instructions('launch')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
     '-e',
     '--env',
@@ -407,9 +407,7 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
     ),
 )
 @click.option(
-    '-p',
     '--preset-name',
-    '--preset',
     type=click.STRING,
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
@@ -436,7 +434,11 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
 @telemetry_wrapper
 def pipeline_launch_command(env, preset_name, mode, **kwargs):
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
-    pipeline = recon_pipeline_for_cli_args(kwargs)
+
+    external_pipeline = get_external_pipeline_from_kwargs(kwargs)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
 
     instance = DagsterInstance.get()
     log_repo_stats(instance=instance, pipeline=pipeline, source='pipeline_launch_command')
@@ -448,7 +450,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         if mode:
             raise click.UsageError('Can not use --preset with --mode.')
 
-        preset = pipeline.get_preset(preset_name)
+        preset = pipeline.get_definition().get_preset(preset_name)
     else:
         preset = None
 
