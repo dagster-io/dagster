@@ -3,6 +3,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
+from dagster.core.host_representation import ScheduleSelector
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
@@ -16,11 +17,14 @@ from .utils import (
 
 
 @capture_dauphin_error
-def start_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
+def start_schedule(graphene_info, schedule_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
+    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
     schedule = instance.start_schedule_and_update_storage_state(
-        external_repository.get_external_schedule(schedule_name)
+        repository.get_external_schedule(schedule_selector.schedule_name)
     )
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
@@ -30,11 +34,14 @@ def start_schedule(graphene_info, schedule_name):
 
 
 @capture_dauphin_error
-def stop_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
+def stop_schedule(graphene_info, schedule_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
+    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
     schedule = instance.stop_schedule_and_update_storage_state(
-        external_repository.get_external_schedule(schedule_name).get_origin_id()
+        repository.get_external_schedule(schedule_selector.schedule_name).get_origin_id()
     )
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(

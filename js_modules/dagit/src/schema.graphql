@@ -570,8 +570,8 @@ type Mutation {
   launchScheduledExecution(scheduleName: String!): LaunchScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
-  startSchedule(scheduleName: String!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
+  startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  stopRunningSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
@@ -1108,6 +1108,12 @@ type SchedulerNotDefinedError implements Error {
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+input ScheduleSelector {
+  repositoryName: String
+  repositoryLocationName: String
+  scheduleName: String
+}
 
 enum ScheduleStatus {
   RUNNING

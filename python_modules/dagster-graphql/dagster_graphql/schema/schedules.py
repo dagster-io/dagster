@@ -14,7 +14,7 @@ from dagster_graphql.schema.errors import (
 from dagster import check
 from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
-from dagster.core.host_representation import ExternalSchedule
+from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.scheduler import ScheduleState, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -278,12 +278,12 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
         name = 'StartScheduleMutation'
 
     class Arguments(object):
-        schedule_name = dauphin.NonNull(dauphin.String)
+        schedule_selector = dauphin.NonNull('ScheduleSelector')
 
     Output = dauphin.NonNull('ScheduleMutationResult')
 
-    def mutate(self, graphene_info, schedule_name):
-        return start_schedule(graphene_info, schedule_name)
+    def mutate(self, graphene_info, schedule_selector):
+        return start_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
 
 
 class DauphinStopRunningScheduleMutation(dauphin.Mutation):
@@ -291,9 +291,9 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
         name = 'StopRunningScheduleMutation'
 
     class Arguments(object):
-        schedule_name = dauphin.NonNull(dauphin.String)
+        schedule_selector = dauphin.NonNull('ScheduleSelector')
 
     Output = dauphin.NonNull('ScheduleMutationResult')
 
-    def mutate(self, graphene_info, schedule_name):
-        return stop_schedule(graphene_info, schedule_name)
+    def mutate(self, graphene_info, schedule_selector):
+        return stop_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))

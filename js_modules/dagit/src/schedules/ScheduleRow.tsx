@@ -36,6 +36,7 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
 import { titleForRun, RunStatus } from "../runs/RunUtils";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { useScheduleSelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -155,6 +156,7 @@ export const ScheduleRow: React.FunctionComponent<{
   });
 
   const match = useRouteMatch("/schedules/:scheduleName");
+  const scheduleSelector = useScheduleSelector(name);
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -177,11 +179,11 @@ export const ScheduleRow: React.FunctionComponent<{
           onChange={() => {
             if (status === ScheduleStatus.RUNNING) {
               stopSchedule({
-                variables: { scheduleName: name }
+                variables: { scheduleSelector }
               });
             } else {
               startSchedule({
-                variables: { scheduleName: name }
+                variables: { scheduleSelector }
               });
             }
           }}
@@ -413,8 +415,8 @@ const ErrorTag = styled.div`
 `;
 
 const START_SCHEDULE_MUTATION = gql`
-  mutation StartSchedule($scheduleName: String!) {
-    startSchedule(scheduleName: $scheduleName) {
+  mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
+    startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
       ... on RunningScheduleResult {
         schedule {
@@ -436,8 +438,8 @@ const START_SCHEDULE_MUTATION = gql`
 `;
 
 const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleName: String!) {
-    stopRunningSchedule(scheduleName: $scheduleName) {
+  mutation StopSchedule($scheduleSelector: ScheduleSelector!) {
+    stopRunningSchedule(scheduleSelector: $scheduleSelector) {
       __typename
       ... on RunningScheduleResult {
         schedule {

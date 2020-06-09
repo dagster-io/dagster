@@ -656,6 +656,16 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
+class DauphinScheduleSelector(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'ScheduleSelector'
+        description = '''This type represents the fields necessary to identify a schedule.'''
+
+    repositoryName = dauphin.Field(dauphin.String)
+    repositoryLocationName = dauphin.Field(dauphin.String)
+    scheduleName = dauphin.Field(dauphin.String)
+
+
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):
     class Meta(object):
         name = 'PipelineRunsFilter'

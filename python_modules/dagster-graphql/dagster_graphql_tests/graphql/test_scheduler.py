@@ -1,7 +1,7 @@
 import os
 
 import mock
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_schedule_selector
 
 from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -40,10 +40,10 @@ GET_SCHEDULES_QUERY = '''
 
 START_SCHEDULES_QUERY = '''
 mutation(
-  $scheduleName: String!
+  $scheduleSelector: ScheduleSelector!
 ) {
   startSchedule(
-    scheduleName: $scheduleName,
+    scheduleSelector: $scheduleSelector,
   ) {
     ... on PythonError {
       message
@@ -62,10 +62,10 @@ mutation(
 
 STOP_SCHEDULES_QUERY = '''
 mutation(
-  $scheduleName: String!
+  $scheduleSelector: ScheduleSelector!
 ) {
   stopRunningSchedule(
-    scheduleName: $scheduleName,
+    scheduleSelector: $scheduleSelector,
   ) {
     ... on PythonError {
       message
@@ -133,19 +133,19 @@ def test_start_stop_schedule():
         ).get_repository(main_repo_name())
         instance.reconcile_scheduler_state(external_repository)
 
+        schedule_selector = get_legacy_schedule_selector(
+            context, 'no_config_pipeline_hourly_schedule'
+        )
+
         # Start schedule
         start_result = execute_dagster_graphql(
-            context,
-            START_SCHEDULES_QUERY,
-            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
+            context, START_SCHEDULES_QUERY, variables={'scheduleSelector': schedule_selector},
         )
         assert start_result.data['startSchedule']['schedule']['status'] == 'RUNNING'
 
         # Stop schedule
         stop_result = execute_dagster_graphql(
-            context,
-            STOP_SCHEDULES_QUERY,
-            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
+            context, STOP_SCHEDULES_QUERY, variables={'scheduleSelector': schedule_selector},
         )
         assert stop_result.data['stopRunningSchedule']['schedule']['status'] == 'STOPPED'
 

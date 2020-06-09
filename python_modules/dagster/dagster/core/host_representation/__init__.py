@@ -40,4 +40,4 @@ from .repository_location import (
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline
-from .selector import PipelineSelector, RepositorySelector
+from .selector import PipelineSelector, RepositorySelector, ScheduleSelector

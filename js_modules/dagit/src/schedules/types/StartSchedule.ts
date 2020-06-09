@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StartSchedule
@@ -39,5 +39,5 @@ export interface StartSchedule {
 }
 
 export interface StartScheduleVariables {
-  scheduleName: string;
+  scheduleSelector: ScheduleSelector;
 }

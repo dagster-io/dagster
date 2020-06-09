@@ -90,18 +90,18 @@ export const usePipelineSelector = (
   pipelineName?: string,
   solidSelection?: string[]
 ) => {
-  const { repository, repositoryLocation } = React.useContext(
-    DagsterRepositoryContext
-  );
-
-  if (!repository || !repositoryLocation) {
-    throw Error("no legacy repository");
-  }
-
+  const repositorySelector = useRepositorySelector();
   return {
+    ...repositorySelector,
     pipelineName,
-    repositoryLocationName: repositoryLocation.name,
-    repositoryName: repository.name,
     solidSelection
+  };
+};
+
+export const useScheduleSelector = (scheduleName: string) => {
+  const repositorySelector = useRepositorySelector();
+  return {
+    ...repositorySelector,
+    scheduleName
   };
 };
