@@ -76,8 +76,8 @@ def cli_api_execute_run(output_file, instance, repository_handle, pipeline_run):
         + [
             '--instance-ref',
             '{instance_ref}'.format(instance_ref=serialize_dagster_namedtuple(instance.get_ref())),
-            '--pipeline-run',
-            '{pipeline_run}'.format(pipeline_run=serialize_dagster_namedtuple(pipeline_run)),
+            '--pipeline-run-id',
+            '{pipeline_run_id}'.format(pipeline_run_id=pipeline_run.run_id),
         ]
     )
 

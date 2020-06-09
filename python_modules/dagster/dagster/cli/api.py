@@ -206,20 +206,6 @@ def _get_instance(stream, instance_ref_json):
         return
 
 
-def _get_pipeline_run(stream, pipeline_run_json):
-    try:
-        return deserialize_json_to_dagster_namedtuple(pipeline_run_json)
-
-    except:  # pylint: disable=bare-except
-        stream.send_error(
-            sys.exc_info(),
-            message='Could not deserialize pipeline-run arg: {json_string}'.format(
-                json_string=pipeline_run_json
-            ),
-        )
-        return
-
-
 def _recon_pipeline(stream, recon_repo, pipeline_run):
     try:
         recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_run.pipeline_name)
@@ -244,25 +230,23 @@ def _recon_pipeline(stream, recon_repo, pipeline_run):
 @click.command(name='execute_run')
 @click.argument('output_file', type=click.Path())
 @repository_target_argument
-@click.option('--pipeline-run')
+@click.option('--pipeline-run-id')
 @click.option('--instance-ref')
-def execute_run_command(output_file, pipeline_run, instance_ref, **kwargs):
+def execute_run_command(output_file, pipeline_run_id, instance_ref, **kwargs):
     recon_repo = recon_repo_for_cli_args(kwargs)
 
-    return _execute_run_command_body(output_file, recon_repo, pipeline_run, instance_ref)
+    return _execute_run_command_body(output_file, recon_repo, pipeline_run_id, instance_ref)
 
 
 def _execute_run_command_body(
-    output_file, recon_repo, pipeline_run_json, instance_ref_json,
+    output_file, recon_repo, pipeline_run_id, instance_ref_json,
 ):
     with ipc_write_stream(output_file) as stream:
         instance = _get_instance(stream, instance_ref_json)
         if not instance:
             return
 
-        pipeline_run = _get_pipeline_run(stream, pipeline_run_json)
-        if not pipeline_run:
-            return
+        pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
         pid = os.getpid()
         instance.report_engine_event(
