@@ -242,6 +242,10 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/dagster_pyspark/dagster_pyspark</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/learn/guides/dagster_types</loc>
   </url>
 
