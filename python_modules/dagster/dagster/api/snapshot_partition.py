@@ -13,21 +13,12 @@ def sync_get_external_partition(repository_handle, partition_set_name, partition
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
 
-    pointer = repository_handle.get_pointer()
-    location_handle = repository_handle.repository_location_handle
+    origin = repository_handle.get_origin()
 
     with get_temp_file_name() as output_file:
         parts = (
-            [
-                location_handle.executable_path,
-                '-m',
-                'dagster',
-                'api',
-                'snapshot',
-                'partition',
-                output_file,
-            ]
-            + xplat_shlex_split(pointer.get_cli_args())
+            [origin.executable_path, '-m', 'dagster', 'api', 'snapshot', 'partition', output_file,]
+            + xplat_shlex_split(origin.get_cli_args())
             + [
                 '--partition-set-name={}'.format(partition_set_name),
                 '--partition-name={}'.format(partition_name),
