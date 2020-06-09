@@ -240,9 +240,9 @@ Even if you're not familiar with SQLAlchemy, it's enough to note that
 this is a very different implementation of the `warehouse` resource. To
 make this implementation available to Dagster, we attach it to a <PyObject module="dagster" object="ModeDefinition" />.
 
-```python literalinclude showLines startLine=128 caption=modes.py
+```python literalinclude showLines startLine=130 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-lines:128-143
+lines:130-145
 ```
 
 Each of the ways we can invoke a Dagster pipeline lets us select which
@@ -252,7 +252,7 @@ From the command line, we can set `-d` or `--mode` and select the name
 of the mode:
 
 ```bash
-$ dagster pipeline execute -f modes.py -n modes_pipeline -e resources.yaml -d unittest
+$ dagster pipeline execute -f modes.py -e resources.yaml -d unittest
 ```
 
 Or, from the Python API:
@@ -307,7 +307,7 @@ Dagit.
 From the CLI, use `-p` or `--preset`:
 
 ```bash
-$ dagster pipeline execute -f presets.py -n presets_pipeline -p unittest
+$ dagster pipeline execute -f presets.py --preset unittest
 ```
 
 From Python, you can use <PyObject module="dagster" object="execute_pipeline" />
@@ -533,8 +533,8 @@ In all of the examples we've seen so far, we've specified a file (`-f`) or a mod
 CLI tools how to load a pipeline, e.g.:
 
 ```bash
-$ dagit -f hello_cereal.py -n hello_cereal_pipeline
-$ dagster pipeline execute -f hello_cereal.py -n hello_cereal_pipeline
+$ dagit -f hello_cereal.py
+$ dagster pipeline execute -f hello_cereal.py
 ```
 
 But most of the time, especially when working on long-running projects with

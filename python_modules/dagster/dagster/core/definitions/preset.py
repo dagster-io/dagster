@@ -33,7 +33,6 @@ class PresetDefinition(
     .. code-block:: shell
 
         $ dagster pipeline execute example_pipeline --preset example_preset
-        $ dagster pipeline execute example_pipeline -p example_preset
 
     Args:
         name (str): The name of this preset. Must be unique in the presets defined on a given

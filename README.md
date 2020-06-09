@@ -87,13 +87,13 @@ if __name__ == "__main__":
 **(2) Dagster CLI**
 
 ```bash
-$ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
+$ dagster pipeline execute -f hello_dagster.py
 ```
 
 **(3) Dagit web UI**
 
 ```bash
-$ dagit -f hello_dagster.py -a hello_pipeline
+$ dagit -f hello_dagster.py
 ```
 
 ## Learn

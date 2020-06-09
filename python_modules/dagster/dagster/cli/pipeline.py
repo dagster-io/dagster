@@ -34,7 +34,10 @@ from dagster.utils import (
     merge_dicts,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import repository_def_from_repository_handle
+from dagster.utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    repository_def_from_repository_handle,
+)
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -123,6 +126,8 @@ def pipeline_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn):
     external_repository = get_external_repository_from_kwargs(cli_args)
+    # We should move this to use external repository
+    # https://github.com/dagster-io/dagster/issues/2556
     repository = repository_def_from_repository_handle(external_repository.handle)
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -265,10 +270,10 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 @click.command(
     name='execute',
     help='Execute a pipeline.\n\n{instructions}'.format(
-        instructions=get_legacy_pipeline_instructions('execute')
+        instructions=get_pipeline_instructions('execute')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
     '-e',
     '--env',
@@ -281,15 +286,14 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline execute -p pandas_hello_world -e "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline execute -p pandas_hello_world -e pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
 @click.option(
-    '-p',
     '--preset',
     type=click.STRING,
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
@@ -332,13 +336,20 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
 
 
 def execute_execute_command(env, cli_args, mode=None, tags=None):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
     solid_selection = get_solid_selection_from_args(cli_args)
     return do_execute_command(pipeline, env, mode, tags, solid_selection)
 
 
 def execute_execute_command_with_preset(preset_name, cli_args, _mode):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
+
     tags = get_tags_from_args(cli_args)
     solid_selection = get_solid_selection_from_args(cli_args)
 

@@ -78,7 +78,7 @@ mechanisms:
 From the directory in which you've saved the pipeline file, just run:
 
 ```bash
-$ dagster pipeline execute -f hello_cereal.py -n hello_cereal_pipeline
+$ dagster pipeline execute -f hello_cereal.py
 ```
 
 You'll see the full stream of events emitted by dagster appear in the console,
@@ -279,7 +279,7 @@ We can pass config files in this format to the dagster CLI tool with the
 `-e` flag.
 
 ```bash
-$ dagster pipeline execute -f inputs.py -n inputs_pipeline -e inputs_env.yaml
+$ dagster pipeline execute -f inputs.py -e inputs_env.yaml
 ```
 
 In practice, you might have different sections of your environment dict

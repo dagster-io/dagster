@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import pytest
@@ -73,7 +74,11 @@ def test_args_fails():
 
 def test_bad_target():
     with pytest.raises(
-        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+        DagsterInvariantViolationError,
+        match=re.escape(
+            'Loadable attributes must be either a PipelineDefinition or a '
+            'RepositoryDefinition. Got None.'
+        ),
     ):
         reconstructable(not_the_pipeline)
 

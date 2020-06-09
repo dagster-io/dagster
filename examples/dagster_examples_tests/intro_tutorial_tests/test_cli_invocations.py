@@ -158,16 +158,16 @@ def test_load_pipeline(filename, fn_name, _env_yaml, _mode, _preset, _return_cod
 
 
 @pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,return_code,_exception', cli_args)
-# dagster pipeline execute -f filename -n fn_name -e env_yaml -p preset
+# dagster pipeline execute -f filename -n fn_name -e env_yaml --preset preset
 def test_dagster_pipeline_execute(
     filename, fn_name, env_yaml, mode, preset, return_code, _exception
 ):
     with pushd(path_to_tutorial_file('')):
         dagster_pipeline_execute(
-            ['-f', path_to_tutorial_file(filename), '-n', fn_name]
+            ['-f', path_to_tutorial_file(filename), '-a', fn_name]
             + (['-e', env_yaml] if env_yaml else [])
             + (['-d', mode] if mode else [])
-            + (['-p', preset] if preset else []),
+            + (['--preset', preset] if preset else []),
             return_code,
         )
 

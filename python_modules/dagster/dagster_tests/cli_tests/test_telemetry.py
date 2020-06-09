@@ -52,7 +52,7 @@ def test_dagster_telemetry_enabled(caplog):
                 pipeline_name = 'hello_cereal_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-n', pipeline_name],
+                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-a', pipeline_name],
                 )
 
                 for record in caplog.records:
@@ -84,7 +84,7 @@ def test_dagster_telemetry_disabled(caplog):
                 pipeline_name = 'hello_cereal_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-n', pipeline_name],
+                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-a', pipeline_name],
                 )
 
             assert not os.path.exists(os.path.join(get_dir_from_dagster_home('logs'), 'event.log'))
@@ -107,7 +107,7 @@ def test_dagster_telemetry_unset(caplog):
                 pipeline_name = 'hello_cereal_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-n', pipeline_name],
+                    ['-f', path_to_tutorial_file('hello_cereal.py'), '-a', pipeline_name],
                 )
 
                 for record in caplog.records:
@@ -138,15 +138,18 @@ def test_repo_stats(caplog):
                 result = runner.invoke(
                     pipeline_execute_command,
                     [
-                        '-y',
+                        '-w',
                         file_relative_path(__file__, '../repository.yaml'),
                         '-p',
+                        pipeline_name,
+                        '--preset',
                         'add',
                         '--tags',
                         '{ "foo": "bar" }',
-                        pipeline_name,
                     ],
                 )
+
+                assert result.exit_code == 0, result.stdout
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())

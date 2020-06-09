@@ -223,16 +223,31 @@ def bootstrap_standalone_recon_pipeline(pointer):
     )
 
 
+def _check_is_loadable(definition):
+    from .pipeline import PipelineDefinition
+    from .repository import RepositoryDefinition
+
+    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition)):
+        raise DagsterInvariantViolationError(
+            (
+                'Loadable attributes must be either a PipelineDefinition or a '
+                'RepositoryDefinition. Got {definition}.'
+            ).format(definition=repr(definition))
+        )
+    return definition
+
+
 def def_from_pointer(pointer):
     target = pointer.load_target()
 
     if not callable(target):
-        return target
+        return _check_is_loadable(target)
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
     try:
-        return target()
+        return _check_is_loadable(target())
+
     except TypeError as t_e:
         six.raise_from(
             DagsterInvariantViolationError(
