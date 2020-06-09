@@ -6,7 +6,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
   description="Dagster is a system for building modern data applications."
 />
 
-# Concepts
+## Concepts
 
 As you get started with Dagster, you'll find that there are a number of
 important concepts underpinning the system. Some of these concepts, like
@@ -16,15 +16,17 @@ Airflow. However, Dagster has some important differences from other
 workflow systems to facilitate operating at a higher level of
 abstraction.
 
-## Solid
-
-![solid.png](/assets/images/learn/concepts/solid.png)
+### Solid
 
 A solid is a functional unit of computation with defined inputs and
 outputs. Solids can be strung together into [pipelines](#pipelines-dags) by
 defining [dependencies](#dependencies) between their inputs and
 outputs. Solids are reusable, and instances of a solid may appear many
 times in a given pipeline, or across many different pipelines.
+
+<p align="center">
+  <img src="/assets/images/learn/concepts/solid.png" />
+</p>
 
 Solids often wrap code written in or intended to execute in other
 systems (e.g., SQL statements, Jupyter notebooks, or Spark jobs written
@@ -44,21 +46,25 @@ tools.
 You can check out [the solid guide](/docs/learn/guides/solid/solid) for a
 deeper dive on solids and how they can be used.
 
-## Compute Function
-
-![compute_fn.png](/assets/images/learn/concepts/compute_fn.png)
+### Compute Function
 
 The user-supplied function which forms the heart of a solid definition.
 The compute functions are the business logic defined by you as the user;
 this business logic is what will be executed when the solid is invoked
 by the Dagster engine.
 
-## Outputs
+<p align="center">
+  <img src="/assets/images/learn/concepts/compute_fn.png" />
+</p>
 
-![outputs.png](/assets/images/learn/concepts/outputs.png)
+## Outputs
 
 An output is how a solid's compute function communicates the name and
 value of an output to Dagster.
+
+<p align="center">
+  <img src="/assets/images/learn/concepts/outputs.png" />
+</p>
 
 Solid compute functions are expected to yield a stream of outputs.
 Implementers of a solid must ensure their compute function
@@ -87,8 +93,6 @@ def return_one(_):
 
 ## Pipelines & DAGs
 
-![pipeline.png](/assets/images/learn/concepts/pipeline.png)
-
 DAG is short for _directed acyclic graph_. In this context,
 we are concerned with graphs where the nodes are computations and the
 edges are dependencies between those computations. The dependencies are
@@ -97,6 +101,10 @@ inputs to another. These graphs are \*acyclic because there
 are no circular dependencies -- in other words, the graph has a clear
 beginning and end, and we can always figure out what order to execute
 its nodes in.
+
+<p align="center">
+  <img src="/assets/images/learn/concepts/pipeline.png" />
+</p>
 
 In Dagster, pipelines are directed acyclic graphs (DAGs) of solids --
 that is, they are made up of a number of solids which have data
@@ -124,13 +132,15 @@ resources and modes in pipeline execution.
 
 ## Dependencies
 
-![dependency.png](/assets/images/learn/concepts/dependency.png)
-
 Solids are linked together into [pipelines](#pipelines-dags) by defining the
 dependencies between their inputs and outputs. An important difference
 between Dagster and other workflow systems is that in Dagster,
 dependencies are expressed as data dependencies, not how or when they
 execute.
+
+<p align="center">
+  <img src="/assets/images/learn/concepts/dependency.png" />
+</p>
 
 This difference enables Dagster to support a much richer modeling of
 dependencies -- instead of merely ensuring that the order of execution
@@ -143,8 +153,6 @@ an example of composing solids with dependencies.
 
 ## Resources
 
-![resource.png](/assets/images/learn/concepts/resource.png)
-
 Resources are pipeline-scoped, and are typically used to expose features
 of the execution environment (like EMR, Redshift, Spark, BigQuery, etc.)
 to solids during pipeline execution. Resources bound to pipeline
@@ -152,27 +160,37 @@ execution through modes, and can also clean up after execution resolves.
 They are typically defined using the <PyObject module="dagster" object="resource" displayText="@resource" /> decorator
 or using the `ResourceDefinition` class directly.
 
-## Repository
+<p align="center">
+  <img src="/assets/images/learn/concepts/resource.png" />
+</p>
 
-![repository.png](/assets/images/learn/concepts/repository.png)
+## Repository
 
 A repository is a collection of pipelines that can be made available to
 the Dagit UI and other higher-level tools. Repositories are defined
-using the <PyObject module="dagster" object="RepositoryDefinition" /> class,
-and made available to higher-level tools with a special `repository.yaml` file that tells
-the tools where to look for a repository definition.
+using the <PyObject module="dagster" object="repository" displayText="@repository" /> decorator,
+and made available to higher-level tools with a special `workspace.yaml` file that tells
+the tools where to look for repository definitions.
+
+<p align="center">
+  <img src="/assets/images/learn/concepts/repository.png" />
+</p>
 
 ## Composite Solids
-
-![composites.png](/assets/images/learn/concepts/composites.png)
 
 To help manage the level of complexity that data applications tend to
 reach, dagster provides a unit of abstraction for composing a solid from
 other solids. We call this type of solid a **Composite Solid**.
 
+<p align="center">
+  <img src="/assets/images/learn/concepts/composites.png" />
+</p>
+
 This ability to compose solids can be used to:
 
-organize large or complicated graphs - abstract away complexity - wrap re-usable solids with domain specific information
+- Organize large or complicated graphs
+- Abstract away complexity
+- Wrap re-usable solids with domain specific information
 
 Refactoring a DAG of solids using composites is a very familiar
 experience to refactoring code with functions.

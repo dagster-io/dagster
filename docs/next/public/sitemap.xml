@@ -34,10 +34,6 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_bash</loc>
-  </url>
-
-  <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_celery</loc>
   </url>
 
@@ -99,6 +95,10 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_pyspark</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_shell</loc>
   </url>
 
   <url>
@@ -239,10 +239,6 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/learn/guides/dagster_pandas/dagster_pandas</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/dagster_pyspark/dagster_pyspark</loc>
   </url>
 
   <url>

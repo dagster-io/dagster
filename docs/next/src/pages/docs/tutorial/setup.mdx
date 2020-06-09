@@ -24,10 +24,10 @@ $ pip install dagster dagit
 
 This installs two modules:
 
-- **Dagster**: the core programming model and abstraction stack; stateless, single-node, single-process
-  and multi-process execution engines; and a CLI tool for driving those engines.
-- **Dagit**: a UI and rich development environment for Dagster, including a DAG browser, a type-aware
-  config editor, and a streaming execution interface.
+- **Dagster**: the core programming model and abstraction stack; stateless, single-node,
+  single-process and multi-process execution engines; and a CLI tool for driving those engines.
+- **Dagit**: the UI for developing and operating Dagster pipelines, including a DAG browser, a
+  type-aware config editor, and a live execution interface.
 
 ## Quick Start
 
@@ -52,29 +52,29 @@ def hello_pipeline():
     hello(get_name())
 ```
 
-Save the code above in a file named `hello_dagster.py`. You can execute the pipeline
-using any one of the following methods:
+Save the code above in a file named `hello_dagster.py`. You can execute the pipeline using any one
+of the following methods:
 
-(1) Dagster Python API
+**(1) Dagster Python API**
 
 ```python
 if __name__ == "__main__":
     execute_pipeline(hello_pipeline)   # Hello, dagster!
 ```
 
-(2) Dagster CLI
+**(2) Dagster CLI**
 
 ```bash
 $ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
 ```
 
-(3) Dagit web UI
+**(3) Dagit web UI**
 
 ```bash
-$ dagit -f hello_dagster.py -n hello_pipeline
+$ dagit -f hello_dagster.py -a hello_pipeline
 ```
 
-And then navigate to http://localhost:3000 to start using Dagit
+And then navigate to [http://localhost:3000](http://localhost:3000) to start using Dagit.
 
 ## If You Get Stuck
 
