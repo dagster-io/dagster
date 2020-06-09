@@ -6,7 +6,6 @@ import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
 
-from dagster import DagsterTypeCheckDidNotPass
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
@@ -66,14 +65,10 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     return res
 
 
-def dagster_pipeline_execute(args, exc=None):
+def dagster_pipeline_execute(args, return_code):
     runner = CliRunner()
     res = runner.invoke(pipeline_execute_command, args)
-    if exc:
-        assert res.exception
-        assert isinstance(res.exception, exc)
-    else:
-        assert res.exit_code == 0, res.exception
+    assert res.exit_code == return_code, res.exception
 
     return res
 
@@ -85,15 +80,7 @@ cli_args = [
     ('complex_pipeline.py', 'complex_pipeline', None, None, None, 0, None),
     ('inputs.py', 'inputs_pipeline', 'inputs_env.yaml', None, None, 0, None),
     ('config_bad_1.py', 'config_pipeline', 'inputs_env.yaml', None, None, 0, None),
-    (
-        'config_bad_2.py',
-        'config_pipeline',
-        'config_bad_2.yaml',
-        None,
-        None,
-        1,
-        DagsterTypeCheckDidNotPass,
-    ),
+    ('config_bad_2.py', 'config_pipeline', 'config_bad_2.yaml', None, None, 0, None,),
     ('config.py', 'config_pipeline', 'inputs_env.yaml', None, None, 0, None),
     ('config.py', 'config_pipeline', 'config_env_bad.yaml', None, None, 0, None),
     ('inputs_typed.py', 'inputs_pipeline', 'inputs_env.yaml', None, None, 0, None),
@@ -101,7 +88,7 @@ cli_args = [
     ('custom_types_2.py', 'custom_type_pipeline', 'custom_types_2.yaml', None, None, 1, Exception,),
     ('custom_types_3.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
     ('custom_types_4.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
-    ('custom_types_5.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 1, None),
+    ('custom_types_5.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
     (
         'custom_types_mypy_verbose.py',
         'custom_type_pipeline',
@@ -170,17 +157,18 @@ def test_load_pipeline(filename, fn_name, _env_yaml, _mode, _preset, _return_cod
         )
 
 
-@pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,_return_code,_exception', cli_args)
+@pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,return_code,_exception', cli_args)
 # dagster pipeline execute -f filename -n fn_name -e env_yaml -p preset
 def test_dagster_pipeline_execute(
-    filename, fn_name, env_yaml, mode, preset, _return_code, _exception
+    filename, fn_name, env_yaml, mode, preset, return_code, _exception
 ):
     with pushd(path_to_tutorial_file('')):
         dagster_pipeline_execute(
             ['-f', path_to_tutorial_file(filename), '-n', fn_name]
             + (['-e', env_yaml] if env_yaml else [])
             + (['-d', mode] if mode else [])
-            + (['-p', preset] if preset else [])
+            + (['-p', preset] if preset else []),
+            return_code,
         )
 
 
@@ -197,12 +185,11 @@ def test_script(filename, _fn_name, _env_yaml, _mode, _preset, return_code, _exc
 )
 def test_runpy(filename, _fn_name, _env_yaml, _mode, _preset, _return_code, exception):
     with pushd(path_to_tutorial_file('')):
-        try:
+        if exception:
+            with pytest.raises(exception):
+                runpy.run_path(filename, run_name='__main__')
+        else:
             runpy.run_path(filename, run_name='__main__')
-        except Exception as exc:
-            if exception and isinstance(exc, exception):
-                return
-            raise
 
 
 # TODO python command line

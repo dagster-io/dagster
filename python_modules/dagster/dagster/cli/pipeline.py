@@ -310,7 +310,9 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
     env = list(env)
     tags = get_tags_from_args(kwargs)
 
-    execute_execute_command(env, kwargs, mode, tags)
+    result = execute_execute_command(env, kwargs, mode, tags)
+    if not result.success:
+        raise click.ClickException('Pipeline run {} resulted in failure.'.format(result.run_id))
 
 
 def execute_execute_command(env, cli_args, mode=None, tags=None):

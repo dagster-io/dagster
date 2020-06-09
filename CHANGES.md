@@ -55,6 +55,10 @@
   setting up a step launcher for Spark solids, like the `emr_pyspark_step_launcher`.
 - FIXME: Adds the `SourceString` machinery
 
+**Bugfix**
+
+- `dagster pipeline execute` sets a non-zero exit code upon pipeline execution failure
+
 ## 0.7.16 (Latest)
 
 **Bugfix**

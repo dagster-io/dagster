@@ -490,10 +490,11 @@ def test_stdout_execute_command():
 
 def test_stderr_execute_command():
     runner = CliRunner()
-    result = runner_pipeline_execute(
-        runner,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'stderr_pipeline'],
+    result = runner.invoke(
+        pipeline_execute_command,
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'stderr_pipeline',],
     )
+    assert result.exit_code != 0
     assert 'I AM SUPPOSED TO FAIL' in result.output
 
 
