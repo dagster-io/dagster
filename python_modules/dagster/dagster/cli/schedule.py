@@ -40,7 +40,7 @@ def apply_click_params(command, *click_params):
     return command
 
 
-def repository_target_argument(f):
+def legacy_repository_yaml_target_argument(f):
     return apply_click_params(
         f,
         click.option(
@@ -137,7 +137,7 @@ def check_handle_and_scheduler(handle, instance):
 @click.command(
     name='preview', help='Preview changes that will be performed by `dagster schedule up'
 )
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_preview_command(**kwargs):
     return execute_preview_command(kwargs, click.echo)
 
@@ -162,7 +162,7 @@ def execute_preview_command(cli_args, print_fn):
     'corresponding running schedule will be stopped and deleted.',
 )
 @click.option('--preview', help="Preview changes", is_flag=True, default=False)
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_up_command(preview, **kwargs):
     return execute_up_command(preview, kwargs, click.echo)
 
@@ -194,7 +194,7 @@ def execute_up_command(preview, cli_args, print_fn):
         warning=REPO_TARGET_WARNING
     ),
 )
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
 @click.option('--stopped', help="Filter for stopped schedules", is_flag=True, default=False)
 @click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
@@ -262,7 +262,7 @@ def extract_schedule_name(schedule_name):
 @click.command(name='start', help="Start an existing schedule")
 @click.argument('schedule_name', nargs=-1)  # , required=True)
 @click.option('--start-all', help="start all schedules", is_flag=True, default=False)
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_start_command(schedule_name, start_all, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None and start_all is False:
@@ -309,7 +309,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
 @click.command(name='stop', help="Stop an existing schedule")
 @click.argument('schedule_name', nargs=-1)
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     return execute_stop_command(schedule_name, kwargs, click.echo)
@@ -333,7 +333,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
 @click.command(name='logs', help="Get logs for a schedule")
 @click.argument('schedule_name', nargs=-1)
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_logs_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None:
@@ -365,7 +365,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     is_flag=True,
     default=False,
 )
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     return execute_restart_command(schedule_name, restart_all_running, kwargs, click.echo)
@@ -410,7 +410,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
 
 @click.command(name='wipe', help="Deletes all schedules and schedule cron jobs.")
-@repository_target_argument
+@legacy_repository_yaml_target_argument
 def schedule_wipe_command(**kwargs):
     return execute_wipe_command(kwargs, click.echo)
 

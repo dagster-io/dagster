@@ -9,7 +9,7 @@ import click
 
 from dagster import check
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
-from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
+from dagster.cli.pipeline import legacy_pipeline_target_argument, legacy_repository_target_argument
 from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
@@ -113,7 +113,7 @@ def _get_loadable_targets(python_file, module_name):
     ),
 )
 @click.argument('output_file', type=click.Path())
-@repository_target_argument
+@legacy_repository_target_argument
 def repository_snapshot_command(output_file, **kwargs):
     recon_repo = recon_repo_for_cli_args(kwargs)
     definition = recon_repo.get_definition()
@@ -124,8 +124,8 @@ def repository_snapshot_command(output_file, **kwargs):
     name='pipeline_subset', help='Return ExternalPipelineSubsetResult for the given pipeline'
 )
 @click.argument('output_file', type=click.Path())
-@repository_target_argument
-@pipeline_target_command
+@legacy_repository_target_argument
+@legacy_pipeline_target_argument
 @click.option('--solid-selection', '-s', help="JSON encoded list of solid selections")
 def pipeline_subset_snapshot_command(output_file, solid_selection, **kwargs):
     recon_pipeline = recon_pipeline_for_cli_args(kwargs)
@@ -139,8 +139,8 @@ def pipeline_subset_snapshot_command(output_file, solid_selection, **kwargs):
 
 @click.command(name='execution_plan', help='Create an execution plan and return its snapshot')
 @click.argument('output_file', type=click.Path())
-@repository_target_argument
-@pipeline_target_command
+@legacy_repository_target_argument
+@legacy_pipeline_target_argument
 @click.option('--solid-selection', help="JSON encoded list of solid selections")
 @click.option('--environment-dict', help="JSON encoded environment_dict")
 @click.option('--mode', help="mode")
@@ -229,7 +229,7 @@ def _recon_pipeline(stream, recon_repo, pipeline_run):
 # how we want to communicate pipeline targets
 @click.command(name='execute_run')
 @click.argument('output_file', type=click.Path())
-@repository_target_argument
+@legacy_repository_target_argument
 @click.option('--pipeline-run-id')
 @click.option('--instance-ref')
 def execute_run_command(output_file, pipeline_run_id, instance_ref, **kwargs):

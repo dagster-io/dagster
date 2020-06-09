@@ -52,7 +52,7 @@ def apply_click_params(command, *click_params):
     return command
 
 
-def repository_target_argument(f):
+def legacy_repository_target_argument(f):
     return apply_click_params(
         f,
         click.option(
@@ -80,7 +80,7 @@ def repository_target_argument(f):
     )
 
 
-def pipeline_target_command(f):
+def legacy_pipeline_target_argument(f):
     # f = repository_config_argument(f)
     # nargs=-1 is used right now to make this argument optional
     # it can only handle 0 or 1 pipeline names
@@ -107,7 +107,7 @@ def pipeline_target_command(f):
     name='list',
     help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
 )
-@repository_target_argument
+@legacy_repository_target_argument
 def pipeline_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
@@ -176,7 +176,7 @@ def get_partitioned_pipeline_instructions(command_name):
 )
 @click.option('--verbose', is_flag=True)
 @click.option('--image', type=click.STRING, help="Built image name:tag that holds user code.")
-@pipeline_target_command
+@legacy_pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
     return execute_print_command(verbose, cli_args, click.echo)
 
@@ -247,7 +247,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         instructions=get_pipeline_instructions('execute')
     ),
 )
-@pipeline_target_command
+@legacy_pipeline_target_argument
 @click.option(
     '-e',
     '--env',
@@ -352,7 +352,7 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
         instructions=get_pipeline_instructions('launch')
     ),
 )
-@pipeline_target_command
+@legacy_pipeline_target_argument
 @click.option(
     '-e',
     '--env',
@@ -466,7 +466,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         instructions=get_pipeline_instructions('scaffold_config')
     ),
 )
-@pipeline_target_command
+@legacy_pipeline_target_argument
 @click.option('-p', '--print-only-required', default=False, is_flag=True)
 def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
@@ -583,7 +583,7 @@ def validate_partition_slice(partitions, name, value):
         instructions=get_partitioned_pipeline_instructions('backfill')
     ),
 )
-@pipeline_target_command
+@legacy_pipeline_target_argument
 @click.option(
     '-p',
     '--partitions',

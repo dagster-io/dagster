@@ -10,7 +10,7 @@ from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.cli.pipeline import repository_target_argument
+from dagster.cli.pipeline import legacy_repository_target_argument
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.seven import urljoin, urlparse
@@ -141,7 +141,7 @@ PREDEFINED_QUERIES = {
 }
 
 
-@repository_target_argument
+@legacy_repository_target_argument
 @click.command(
     name='ui',
     help=(
