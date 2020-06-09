@@ -193,6 +193,10 @@ class ExternalPipeline(RepresentedPipeline):
     def get_origin_id(self):
         return self.get_origin().get_id()
 
+    @property
+    def pipeline_snapshot(self):
+        return self._pipeline_index.pipeline_snapshot
+
 
 class ExternalExecutionPlan:
     '''

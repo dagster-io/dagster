@@ -12,9 +12,10 @@ import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
-from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
 from dagster.cli.workspace.cli_target import (
+    get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
+    pipeline_target_argument,
     repository_target_argument,
 )
 from dagster.core.definitions.executable import ExecutablePipeline
@@ -26,7 +27,12 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster.utils import (
+    DEFAULT_REPOSITORY_YAML_FILENAME,
+    DEFAULT_WORKSPACE_YAML_FILENAME,
+    load_yaml_from_glob_list,
+    merge_dicts,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import repository_def_from_repository_handle
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -45,9 +51,7 @@ def create_pipeline_cli_group():
     return group
 
 
-REPO_TARGET_WARNING = (
-    'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
-)
+REPO_TARGET_WARNING = 'Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m.'
 REPO_ARG_NAMES = ['repository_yaml', 'module_name', 'fn_name', 'python_file']
 
 
@@ -153,6 +157,18 @@ def format_description(desc, indent):
 def get_pipeline_instructions(command_name):
     return (
         'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
+        '\n\n1. dagster pipeline {command_name} -p <<pipeline_name>> (works if .{default_filename} exists)'
+        '\n\n2. dagster pipeline {command_name} -p <<pipeline_name>> -w path/to/{default_filename}'
+        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_pipeline'
+        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -a define_some_pipeline'
+        '\n\n5. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>'
+        '\n\n6. dagster pipeline {command_name} -m a_module.submodule -a define_some_repo -p <<pipeline_name>>'
+    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
+
+
+def get_legacy_pipeline_instructions(command_name):
+    return (
+        'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
         '\n\n1. dagster pipeline {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
         '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -y path/to/{default_filename}'
         '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -n define_some_pipeline'
@@ -180,14 +196,14 @@ def get_partitioned_pipeline_instructions(command_name):
     ),
 )
 @click.option('--verbose', is_flag=True)
-@click.option('--image', type=click.STRING, help="Built image name:tag that holds user code.")
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
     return execute_print_command(verbose, cli_args, click.echo)
 
 
 def execute_print_command(verbose, cli_args, print_fn):
-    pipeline_snapshot = get_pipeline_snapshot_from_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    pipeline_snapshot = external_pipeline.pipeline_snapshot
 
     if verbose:
         print_pipeline(pipeline_snapshot, print_fn=print_fn)
@@ -249,7 +265,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 @click.command(
     name='execute',
     help='Execute a pipeline.\n\n{instructions}'.format(
-        instructions=get_pipeline_instructions('execute')
+        instructions=get_legacy_pipeline_instructions('execute')
     ),
 )
 @legacy_pipeline_target_argument
@@ -356,7 +372,7 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
 @click.command(
     name='launch',
     help='Launch a pipeline using the run launcher configured on the Dagster instance.\n\n{instructions}'.format(
-        instructions=get_pipeline_instructions('launch')
+        instructions=get_legacy_pipeline_instructions('launch')
     ),
 )
 @legacy_pipeline_target_argument
@@ -470,7 +486,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 @click.command(
     name='scaffold_config',
     help='Scaffold the config for a pipeline.\n\n{instructions}'.format(
-        instructions=get_pipeline_instructions('scaffold_config')
+        instructions=get_legacy_pipeline_instructions('scaffold_config')
     ),
 )
 @legacy_pipeline_target_argument

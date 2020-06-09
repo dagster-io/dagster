@@ -38,6 +38,7 @@ PICKLE_PROTOCOL = 2
 
 
 DEFAULT_REPOSITORY_YAML_FILENAME = 'repository.yaml'
+DEFAULT_WORKSPACE_YAML_FILENAME = 'workspace.yaml'
 
 
 def file_relative_path(dunderfile, relative_path):
