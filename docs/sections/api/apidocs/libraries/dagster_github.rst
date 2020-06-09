@@ -2,17 +2,17 @@
    :format: html
 
 
-Github (dagster_github)
+GitHub (dagster_github)
 -----------------------
 
-This library provides an integration with github apps, to support performing various automation
+This library provides an integration with GitHub Apps, to support performing various automation
 operations within your github repositories and with the tighter permissions scopes that github apps
 allow for vs using a personal token.
 
 Presently, it provides a thin wrapper on the `github v4 graphql API
 <https://developer.github.com/v4/>`_.
 
-To use this integration, you'll first need to create a Github App for it.
+To use this integration, you'll first need to create a GitHub App for it.
 
 
 #.
@@ -20,10 +20,10 @@ To use this integration, you'll first need to create a Github App for it.
    `https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/
    <https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/>`_\
    , You will end up with a private key and App ID, which will be used when configuring the
-   dagster-github resource. **Note** you will need to grant your app the relevent permissions for
-   the API requests you want to make, for example to post issues it will need read/write access for
-   the issues repository permission, more info on github application permissions can be found `here
-   <https://developer.github.com/v3/apps/permissions/>`_
+   ``dagster-github`` resource. **Note** you will need to grant your app the relevent permissions
+   for the API requests you want to make, for example to post issues it will need read/write access
+   for the issues repository permission, more info on GitHub application permissions can be found
+   `here <https://developer.github.com/v3/apps/permissions/>`_
 
 #.
    **Install App**\ : Follow the instructions in
@@ -31,7 +31,7 @@ To use this integration, you'll first need to create a Github App for it.
    <https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/#step-7-install-the-app-on-your-account>`_
 
 #.
-   **Find your installation_id**\ : You can pull this from the github app administration page,
+   **Find your installation_id**\ : You can pull this from the GitHub app administration page,
    ``https://github.com/apps/<app-name>/installations/<installation_id>``. **Note** if your app is
    installed more than once you can also programatically retrieve these IDs.
 
@@ -41,7 +41,7 @@ stored securily.
 Posting Issues
 --------------
 
-Now, you can create issues in Github from Dagster with the Github resource:
+Now, you can create issues in GitHub from Dagster with the GitHub resource:
 
 .. code-block:: python
 
@@ -74,10 +74,10 @@ Now, you can create issues in Github from Dagster with the Github resource:
        }}}}
    )
 
-Run the above code, and you'll see the issue appear in github:
+Run the above code, and you'll see the issue appear in GitHub:
 :raw-html-m2r:`<img width="636" src="https://user-images.githubusercontent.com/5943242/72079909-c6012300-32c9-11ea-8acc-19e6f5f3d067.png">`
 
-By provisioning ``github_resource`` as a Dagster pipeline resource, you can post to Github from
+By provisioning ``github_resource`` as a Dagster pipeline resource, you can post to GitHub from
 within any solid execution.
 
 Executing GraphQL queries
@@ -119,3 +119,6 @@ Executing GraphQL queries
    )
 
 .. currentmodule:: dagster_github
+
+.. autodata:: github_resource
+  :annotation: ResourceDefinition
