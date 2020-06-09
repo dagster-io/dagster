@@ -180,7 +180,7 @@ def execution_plan_snapshot_command(
 
 @click.command(name='partition', help='Return the config for a partition')
 @click.argument('output_file', type=click.Path())
-@repository_target_argument
+@legacy_repository_target_argument
 @click.option('--partition-set-name', help="partition set name")
 @click.option('--partition-name', help="partition name")
 def partition_data_command(output_file, partition_set_name, partition_name, **kwargs):
