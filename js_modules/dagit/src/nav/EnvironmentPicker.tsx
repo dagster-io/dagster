@@ -12,6 +12,7 @@ import {
   isRepositoryOptionEqual
 } from "../DagsterRepositoryContext";
 import styled from "styled-components/macro";
+import { useHistory } from "react-router";
 
 interface EnvironmentPickerProps {
   options: DagsterRepoOption[];
@@ -24,7 +25,14 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
   setRepo,
   options
 }) => {
+  const history = useHistory();
   const [open, setOpen] = React.useState(false);
+
+  const selectOption = (repo: DagsterRepoOption) => {
+    setRepo(repo);
+    history.push("/");
+  };
+
   return (
     <Popover
       fill={true}
@@ -37,7 +45,7 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
           {options.map((option, idx) => (
             <MenuItem
               key={idx}
-              onClick={() => setRepo(option)}
+              onClick={() => selectOption(option)}
               active={repo ? isRepositoryOptionEqual(repo, option) : false}
               icon={"git-repo"}
               text={

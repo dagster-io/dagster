@@ -92,8 +92,9 @@ export const App: React.FunctionComponent = () => {
   const [repo, setRepo] = React.useState<DagsterRepoOption | null>(null);
 
   React.useEffect(() => {
-    if (!repo || !options.find(o => isRepositoryOptionEqual(o, repo)))
+    if (!repo || !options.find(o => isRepositoryOptionEqual(o, repo))) {
       setRepo(options[0]);
+    }
   }, [repo, options]);
 
   return (
