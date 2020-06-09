@@ -59,7 +59,8 @@
 
 **Bugfix**
 
-- Enabled `NoOpComputeLogManager` to be configured as the `compute_logs` implementation in `dagster.yaml`
+- Enabled `NoOpComputeLogManager` to be configured as the `compute_logs` implementation in
+  `dagster.yaml`
 - Suppressed noisy error messages in logs from skipped steps
 
 ## 0.7.15
@@ -72,12 +73,16 @@
 
 **New**
 
-- Dagit now allows re-executing arbitrary step subset via step selector syntax, regardless of whether
-  the previous pipeline failed or not.
+- Dagit now allows re-executing arbitrary step subset via step selector syntax, regardless of
+  whether the previous pipeline failed or not.
 - Added a search filter for the root Assets page
 - Adds tooltip explanations for disabled run actions
-- The last output of the cron job command created by the scheduler is now stored in a file. A new `dagster schedule logs {schedule_name}` command will show the log file for a given schedule. This helps uncover errors like missing environment variables and import errors.
-- The dagit schedule page will now show inconsistency errors between schedule state and the cron tab that were previously only displayed by the `dagster schedule debug` command. As before, these errors can be resolve using `dagster schedule up`
+- The last output of the cron job command created by the scheduler is now stored in a file. A new
+  `dagster schedule logs {schedule_name}` command will show the log file for a given schedule. This
+  helps uncover errors like missing environment variables and import errors.
+- The dagit schedule page will now show inconsistency errors between schedule state and the cron
+  tab that were previously only displayed by the `dagster schedule debug` command. As before, these
+  errors can be resolve using `dagster schedule up`
 
 **Bugfix**
 
@@ -91,15 +96,17 @@
 
 **Breaking Changes**
 
-- `dagster pipeline backfill` command no longer takes a `mode` flag. Instead, it uses the mode specified on the `PartitionSetDefinition`. Similarly, the runs created from the backfill also use the `solid_subset` specified on the `PartitionSetDefinition`
+- `dagster pipeline backfill` command no longer takes a `mode` flag. Instead, it uses the mode
+  specified on the `PartitionSetDefinition`. Similarly, the runs created from the backfill also use
+  the `solid_subset` specified on the `PartitionSetDefinition`
 
 **BugFix**
 
 - Fixes a bug where using solid subsets when launching pipeline runs would fail config validation.
 - (dagster-gcp) allow multiple "bq_solid_for_queries" solids to co-exist in a pipeline
-- Improve scheduler state reconciliation with dagster-cron scheduler. `dagster schedule` debug comamnd will display
-  issues related to missing crob jobs, extraneous cron jobs, and duplicate cron jobs. Running
-  `dagster schedule up` will fix any issues.
+- Improve scheduler state reconciliation with dagster-cron scheduler. `dagster schedule` debug
+  command will display issues related to missing crob jobs, extraneous cron jobs, and duplicate cron
+  jobs. Running `dagster schedule up` will fix any issues.
 
 **New**
 
@@ -114,7 +121,8 @@
 
 **Bugfix**
 
-- We now only render the subset of an execution plan that has actually executed, and persist that subset information along with the snapshot.
+- We now only render the subset of an execution plan that has actually executed, and persist that
+  subset information along with the snapshot.
 - @pipeline and @composite_solid now correctly capture `__doc__` from the function they decorate.
 - Fixed a bug with using solid subsets in the Dagit playground
 
@@ -184,20 +192,33 @@
 
 **Breaking Changes**
 
-- If you are launching runs using `DagsterInstance.launch_run`, this method now takes a run id instead of an instance of `PipelineRun`. Additionally, `DagsterInstance.create_run` and `DagsterInstance.create_empty_run` have been replaced by `DagsterInstance.get_or_create_run` and `DagsterInstance.create_run_for_pipeline`.
+- If you are launching runs using `DagsterInstance.launch_run`, this method now takes a run id
+  instead of an instance of `PipelineRun`. Additionally, `DagsterInstance.create_run` and
+  `DagsterInstance.create_empty_run` have been replaced by `DagsterInstance.get_or_create_run` and
+  `DagsterInstance.create_run_for_pipeline`.
 - If you have implemented your own `RunLauncher`, there are two required changes:
-  - `RunLauncher.launch_run` takes a pipeline run that has already been created. You should remove any calls to `instance.create_run` in this method.
-  - Instead of calling `startPipelineExecution` (defined in the `dagster_graphql.client.query.START_PIPELINE_EXECUTION_MUTATION`) in the run launcher, you should call `startPipelineExecutionForCreatedRun` (defined in dagster_graphql.client.query.START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION`
+  - `RunLauncher.launch_run` takes a pipeline run that has already been created. You should remove
+    any calls to `instance.create_run` in this method.
+  - Instead of calling `startPipelineExecution` (defined in the
+    `dagster_graphql.client.query.START_PIPELINE_EXECUTION_MUTATION`) in the run launcher, you
+    should call `startPipelineExecutionForCreatedRun` (defined in
+    `dagster_graphql.client.query.START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION`).
   - Refer to the `RemoteDagitRunLauncher` for an example implementation.
 
 **New**
 
-- Improvements to preset and solid subselection in the playground. An inline preview of the pipeline instead of a modal when doing subselection, and the correct subselection is chosen when selecting a preset.
-- Improvements to the log searching. Tokenization and autocompletion for searching messages types and for specific steps.
-- You can now view the structure of pipelines from historical runs, even if that pipeline no longer exists in the loaded repository or has changed structure.
+- Improvements to preset and solid subselection in the playground. An inline preview of the pipeline
+  instead of a modal when doing subselection, and the correct subselection is chosen when selecting
+  a preset.
+- Improvements to the log searching. Tokenization and autocompletion for searching messages types
+  and for specific steps.
+- You can now view the structure of pipelines from historical runs, even if that pipeline no longer
+  exists in the loaded repository or has changed structure.
 - Historical execution plans are now viewable, even if the pipeline has changed structure.
-- Added metadata link to raw compute logs for all StepStart events in PipelineRun view and Step view.
-- Improved error handling for the scheduler. If a scheduled run has config errors, the errors are persisted to the event log for the run and can be viewed in Dagit.
+- Added metadata link to raw compute logs for all StepStart events in PipelineRun view and Step
+  view.
+- Improved error handling for the scheduler. If a scheduled run has config errors, the errors are
+  persisted to the event log for the run and can be viewed in Dagit.
 
 **Bugfix**
 
@@ -208,7 +229,8 @@
 **Documentation**
 
 - Brand new documentation site, available at https://docs.dagster.io
-- The tutorial has been restructured to multiple sections, and the examples in intro_tutorial have been rearranged to separate folders to reflect this.
+- The tutorial has been restructured to multiple sections, and the examples in intro_tutorial have
+  been rearranged to separate folders to reflect this.
 
 ## 0.7.8
 
@@ -263,10 +285,10 @@
   ```
 
 - We have made pipeline metadata serializable and persist that along with run information.
-  While there are no user-facing features to leverage this yet, it does require an instance migration.
-  `dagster instance migrate`. If you have already run the migration for the `event_log` changes
-  above, you do not need to run it again. Any unforeseen errors related the the new `snapshot_id`
-  in the `runs` table or the new `snapshots` table are related to this migration.
+  While there are no user-facing features to leverage this yet, it does require an instance
+  migration. Run `dagster instance migrate`. If you have already run the migration for the
+  `event_log` changes above, you do not need to run it again. Any unforeseen errors related to the
+  new `snapshot_id` in the `runs` table or the new `snapshots` table are related to this migration.
 - dagster-pandas `ColumnTypeConstraint` has been removed in favor of `ColumnDTypeFnConstraint` and
   `ColumnDTypeInSetConstraint`.
 
@@ -321,7 +343,8 @@
 - Added the ability to set default values in `InputDefinition`
 - Added CLI command `dagster pipeline launch` to launch runs using a configured `RunLauncher`
 - Added ability to specify pipeline run tags using the CLI
-- Added a `pdb` utility to `SolidExecutionContext` to help with debugging, available within a solid as `context.pdb`
+- Added a `pdb` utility to `SolidExecutionContext` to help with debugging, available within a solid
+  as `context.pdb`
 - Added `PresetDefinition.with_additional_config` to allow for config overrides
 - Added resource name to log messages generated during resource initialization
 - Added grouping tags for runs that have been retried / reexecuted.
@@ -337,7 +360,8 @@
 
 **dagstermill**
 
-- The Jupyter kernel to use may now be specified when creating dagster notebooks with the --kernel flag.
+- The Jupyter kernel to use may now be specified when creating dagster notebooks with the `--kernel`
+  flag.
 
 **dagster-dbt**
 
@@ -508,11 +532,16 @@
   and will be removed in a future version.
   - `InputDefinition.runtime_type` is deprecated. Use `InputDefinition.dagster_type` instead.
   - `OutputDefinition.runtime_type` is deprecated. Use `OutputDefinition.dagster_type` instead.
-  - `CompositeSolidDefinition.all_runtime_types` is deprecated. Use `CompositeSolidDefinition.all_dagster_types` instead.
-  - `SolidDefinition.all_runtime_types` is deprecated. Use `SolidDefinition.all_dagster_types` instead.
-  - `PipelineDefinition.has_runtime_type` is deprecated. Use `PipelineDefinition.has_dagster_type` instead.
-  - `PipelineDefinition.runtime_type_named` is deprecated. Use `PipelineDefinition.dagster_type_named` instead.
-  - `PipelineDefinition.all_runtime_types` is deprecated. Use `PipelineDefinition.all_dagster_types` instead.
+  - `CompositeSolidDefinition.all_runtime_types` is deprecated. Use
+    `CompositeSolidDefinition.all_dagster_types` instead.
+  - `SolidDefinition.all_runtime_types` is deprecated. Use `SolidDefinition.all_dagster_types`
+    instead.
+  - `PipelineDefinition.has_runtime_type` is deprecated. Use `PipelineDefinition.has_dagster_type`
+    instead.
+  - `PipelineDefinition.runtime_type_named` is deprecated. Use
+    `PipelineDefinition.dagster_type_named` instead.
+  - `PipelineDefinition.all_runtime_types` is deprecated. Use
+    `PipelineDefinition.all_dagster_types` instead.
 
 ## 0.7.2
 
@@ -582,9 +611,9 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
 **_Scheduler_**
 
-- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules
-  that have been running are no longer compatible with current storage. To migrate,
-  remove the `scheduler` argument on all `@schedules` decorators:
+- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`.
+  Existing schedules that have been running are no longer compatible with current storage. To
+  migrate, remove the `scheduler` argument on all `@schedules` decorators:
 
   instead of:
 
@@ -602,7 +631,8 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
     ...
   ```
 
-  Next, configure the scheduler on your instance by adding the following to `$DAGSTER_HOME/dagster.yaml`:
+  Next, configure the scheduler on your instance by adding the following to
+  `$DAGSTER_HOME/dagster.yaml`:
 
   ```
   scheduler:
@@ -610,22 +640,26 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
     class: SystemCronScheduler
   ```
 
-  Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules` directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.
+  Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules`
+  directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a
+  valid state.
 
-- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument
-  `context`, representing the `ScheduleExecutionContext`
+- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a
+  required first argument `context`, representing the `ScheduleExecutionContext`
 
 **_Config System Changes_**
 
-- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and
-  `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you
-  are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe
-  this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
+- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to
+  `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate
+  config use cases versus cases where you are using types as the inputs and outputs of solids as
+  well as python typing types (for mypy and friends). We believe this will be clearer to users in
+  addition to simplifying our own implementation and internal abstractions.
 
-  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API.
-  This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types
-  instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster
-  equivalents. These result in dramatically less verbose config specs in most cases.
+  Our recommended fix is _not_ to use `Shape` and `Array`, but instead to use our new condensed
+  config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with
+  one member instead of `Array`, bare types instead of `Field` with a single argument, and python
+  primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in
+  dramatically less verbose config specs in most cases.
 
   So instead of
 
@@ -646,11 +680,11 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
   No imports and much simpler, cleaner syntax.
 
-- `config_field` is no longer a valid argument on `solid`, `SolidDefinition`, `ExecutorDefintion`, `executor`,
-  `LoggerDefinition`, `logger`, `ResourceDefinition`, `resource`, `system_storage`, and `SystemStorageDefinition`. Use
-  `config` instead.
-- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To
-  upgrade, remove the first argument to `config_fn`.
+- `config_field` is no longer a valid argument on `solid`, `SolidDefinition`, `ExecutorDefintion`,
+  `executor`, `LoggerDefinition`, `logger`, `ResourceDefinition`, `resource`, `system_storage`, and
+  `SystemStorageDefinition`. Use `config` instead.
+- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context
+  has been deleted. To upgrade, remove the first argument to `config_fn`.
 
   So instead of
 
@@ -681,25 +715,29 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 **_Dagster Type System Changes_**
 
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-- Dagster types are now instances of `DagsterType`, rather than a class than inherits from `RuntimeType`. Instead of
-  dynamically generating a class to create a custom runtime type, just create an instance of a `DagsterType`. The type
-  checking function is now an argument to the `DagsterType`, rather than an abstract method that has to be implemented in
+- Dagster types are now instances of `DagsterType`, rather than a class than inherits from
+  `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just
+  create an instance of a `DagsterType`. The type checking function is now an argument to the
+  `DagsterType`, rather than an abstract method that has to be implemented in
   a subclass.
 - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
 - Core type check function of DagsterType can now return a naked `bool` in addition
   to a `TypeCheck` object.
-- `type_check_fn` on `DagsterType` (formerly `type_check` and `RuntimeType`, respectively) now takes a first argument
-  `context` of type `TypeCheckContext` in addition to the second argument of `value`.
+- `type_check_fn` on `DagsterType` (formerly `type_check` and `RuntimeType`, respectively) now
+  takes a first argument `context` of type `TypeCheckContext` in addition to the second argument of
+  `value`.
 - `define_python_dagster_type` has been eliminated in favor of `PythonObjectDagsterType` .
 - `dagster_type` has been renamed to `usable_as_dagster_type`.
-- `as_dagster_type` has been removed and similar capabilities added as `make_python_type_usable_as_dagster_type`.
+- `as_dagster_type` has been removed and similar capabilities added as
+  `make_python_type_usable_as_dagster_type`.
 - `PythonObjectDagsterType` and `usable_as_dagster_type` no longer take a `type_check` argument. If
   a custom type_check is needed, use `DagsterType`.
-- As a consequence of these changes, if you were previously using `dagster_pyspark` or `dagster_pandas` and expecting
-  Pyspark or Pandas types to work as Dagster types, e.g., in type annotations to functions decorated with `@solid` to
-  indicate that they are input or output types for a solid, you will need to call
-  `make_python_type_usable_as_dagster_type` from your code in order to map the Python types to the Dagster types, or just
-  use the Dagster types (`dagster_pandas.DataFrame` instead of `pandas.DataFrame`) directly.
+- As a consequence of these changes, if you were previously using `dagster_pyspark` or
+  `dagster_pandas` and expecting Pyspark or Pandas types to work as Dagster types, e.g., in type
+  annotations to functions decorated with `@solid` to indicate that they are input or output types
+  for a solid, you will need to call `make_python_type_usable_as_dagster_type` from your code in
+  order to map the Python types to the Dagster types, or just use the Dagster types
+  (`dagster_pandas.DataFrame` instead of `pandas.DataFrame`) directly.
 
 **_Other_**
 
@@ -712,14 +750,16 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
 **New**
 
-- Dagit now includes a much richer execution view, with a Gantt-style visualization of step execution and a live timeline.
+- Dagit now includes a much richer execution view, with a Gantt-style visualization of step
+  execution and a live timeline.
 - Early support for Python 3.8 is now available, and Dagster/Dagit along with many of our libraries
   are now tested against 3.8. Note that several of our upstream dependencies have yet to publish
   wheels for 3.8 on all platforms, so running on Python 3.8 likely still involves building some
   dependencies from source.
-- `dagster/priority` tags can now be used to prioritize the order of execution for the built-in in-process and
-  multiprocess engines.
-- `dagster-postgres` storages can now be configured with separate arguments and environment variables, such as:
+- `dagster/priority` tags can now be used to prioritize the order of execution for the built-in
+  in-process and multiprocess engines.
+- `dagster-postgres` storages can now be configured with separate arguments and environment
+  variables, such as:
 
   ```
   run_storage:
@@ -734,8 +774,9 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
         db_name: test
   ```
 
-- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster
-  process. As one example, this is used by `dagster-k8s` to submit pipeline execution as a Kubernetes Job.
+- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of
+  the Dagit/Dagster process. As one example, this is used by `dagster-k8s` to submit pipeline
+  execution as a Kubernetes Job.
 - Added support for adding tags to runs initiated from the `Playground` view in dagit.
 - Added `@monthly_schedule` decorator.
 - Added `Enum.from_python_enum` helper to wrap Python enums for config. (Thanks @kdungs!)
@@ -747,40 +788,44 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
   clusters, submitting jobs, and waiting for jobs/logs. We also now provide a
   `emr_pyspark_resource`, which together with the new `@pyspark_solid` decorator makes moving
   pyspark execution from your laptop to EMR as simple as changing modes.
-  **[dagster-pandas]** Added `create_dagster_pandas_dataframe_type`, `PandasColumn`, and `Constraint` API's in order for
-  users to create custom types which perform column validation, dataframe validation, summary statistics emission, and
-  dataframe serialization/deserialization.
-- **[dagster-gcp]** GCS is now supported for system storage, as well as being supported with the Dask executor. (Thanks
-  @habibutsu!) Bigquery solids have also been updated to support the new API.
+  **[dagster-pandas]** Added `create_dagster_pandas_dataframe_type`, `PandasColumn`, and
+  `Constraint` API's in order for users to create custom types which perform column validation,
+  dataframe validation, summary statistics emission, and dataframe serialization/deserialization.
+- **[dagster-gcp]** GCS is now supported for system storage, as well as being supported with the
+  Dask executor. (Thanks @habibutsu!) Bigquery solids have also been updated to support the new API.
 
 **Bugfix**
 
 - Ensured that all implementations of `RunStorage` clean up pipeline run tags when a run
   is deleted. Requires a storage migration, using `dagster instance migrate`.
 - The multiprocess and Celery engines now handle solid subsets correctly.
-- The multiprocess and Celery engines will now correctly emit skip events for steps downstream of failures and other
-  skips.
-- The `@solid` and `@lambda_solid` decorators now correctly wrap their decorated functions, in the sense of
-  `functools.wraps`.
+- The multiprocess and Celery engines will now correctly emit skip events for steps downstream of
+  failures and other skips.
+- The `@solid` and `@lambda_solid` decorators now correctly wrap their decorated functions, in the
+  sense of `functools.wraps`.
 - Performance improvements in Dagit when working with runs with large configurations.
-- The Helm chart in `dagster_k8s` has been hardened against various failure modes and is now compatible with Helm 2.
+- The Helm chart in `dagster_k8s` has been hardened against various failure modes and is now
+  compatible with Helm 2.
 - SQLite run and event log storages are more robust to concurrent use.
-- Improvements to error messages and to handling of user code errors in input hydration and output materialization logic.
-- Fixed an issue where the Airflow scheduler could hang when attempting to load dagster-airflow pipelines.
+- Improvements to error messages and to handling of user code errors in input hydration and output
+  materialization logic.
+- Fixed an issue where the Airflow scheduler could hang when attempting to load dagster-airflow
+  pipelines.
 - We now handle our SQLAlchemy connections in a more canonical way (thanks @zzztimbo!).
 - Fixed an issue using S3 system storage with certain custom serialization strategies.
 - Fixed an issue leaking orphan processes from compute logging.
 - Fixed an issue leaking semaphores from Dagit.
-- Setting the `raise_error` flag in `execute_pipeline` now actually raises user exceptions instead of a wrapper type.
+- Setting the `raise_error` flag in `execute_pipeline` now actually raises user exceptions instead
+  of a wrapper type.
 
 **Documentation**
 
-- Our docs have been reorganized and expanded (thanks @habibutsu, @vatervonacht, @zzztimbo). We'd love feedback and
-  contributions!
+- Our docs have been reorganized and expanded (thanks @habibutsu, @vatervonacht, @zzztimbo). We'd
+  love feedback and contributions!
 
 **Thank you**
-Thank you to all of the community contributors to this release!! In alphabetical order: @habibutsu, @kdungs,
-@vatervonacht, @zzztimbo.
+Thank you to all of the community contributors to this release!! In alphabetical order: @habibutsu,
+@kdungs, @vatervonacht, @zzztimbo.
 
 ## 0.6.9
 
@@ -828,8 +873,10 @@ Thank you to all of the community contributors to this release!! In alphabetical
 
 **New**
 
-- We are now more permissive when specifying configuration schema in order make constructing configuration schema more concise.
-- When specifying the value of scalar inputs in config, one can now specify that value directly as the key of the input, rather than having to embed it within a `value` key.
+- We are now more permissive when specifying configuration schema in order make constructing
+  configuration schema more concise.
+- When specifying the value of scalar inputs in config, one can now specify that value directly as
+  the key of the input, rather than having to embed it within a `value` key.
 
 **Breaking**
 
@@ -1000,18 +1047,24 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - `check_dagster_type` added as a utility to help test type checks on custom types
 - Improved support in the type system for `Set` and `Tuple` types
 - Allow composite solids with config mapping to expose an empty config schema
-- Simplified graphql API arguments to single-step re-execution to use `retryRunId`, `stepKeys` execution parameters instead of a `reexecutionConfig` input object
+- Simplified graphql API arguments to single-step re-execution to use `retryRunId`, `stepKeys`
+  execution parameters instead of a `reexecutionConfig` input object
 - Fixes missing step-level stdout/stderr from dagster CLI
 
 ## 0.6.3
 
-- Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to enable custom
-  type checks in place of default `isinstance` checks.
-  See documentation here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/types.html#custom-type-checks
-- Improved the type inference experience by automatically wrapping bare python types as dagster types.
-- Reworked our tutorial (now with more compelling/scary breakfast cereal examples) and public API documentation.
-  See the new tutorial here: https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html
-- New solids explorer in Dagit allows you to browse and search for solids used across the repository.
+- Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to
+  enable custom type checks in place of default `isinstance` checks.
+  See documentation here:
+  https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/types.html#custom-type-checks
+- Improved the type inference experience by automatically wrapping bare python types as dagster
+  types.
+- Reworked our tutorial (now with more compelling/scary breakfast cereal examples) and public API
+  documentation.
+  See the new tutorial here:
+  https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html
+- New solids explorer in Dagit allows you to browse and search for solids used across the
+  repository.
 
   ![Solid Explorer](./screenshots/solid_explorer.png)
   ![Solid Explorer](./screenshots/solid_explorer_input.png)
@@ -1031,7 +1084,8 @@ Thank you to all of the community contributors to this release!! In alphabetical
   ![Stop Button](./screenshots/stop_button.png)
 
 - Added an `--output` flag to `dagster-graphql` CLI.
-- Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks @shahvineet98).
+- Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks
+  @shahvineet98).
 - Fixed a wrong title in the `dagster-snowflake` library README (Thanks @Step2Web).
 
 ## 0.6.2
@@ -1150,14 +1204,16 @@ that elevate dagit and dagster from a local development tool to a deployable ser
 
 - Pinned RxPY to 1.6.1 to avoid breaking changes in 3.0.0 (py3-only).
 - Most definition objects are now read-only, with getters corresponding to the previous properties.
-- The `valueRepr` field has been removed from `ExecutionStepInputEvent` and `ExecutionStepOutputEvent`.
+- The `valueRepr` field has been removed from `ExecutionStepInputEvent` and
+  `ExecutionStepOutputEvent`.
 - Bug fixes and dagit UX improvements, including SQL highlighting and error handling.
 
 ## 0.5.2
 
 - Added top-level `define_python_dagster_type` function.
 - Renamed `metadata_fn` to `typecheck_metadata_fn` in all runtime type creation APIs.
-- Renamed `result_value` and `result_values` to `output_value` and `output_values` on `SolidExecutionResult`
+- Renamed `result_value` and `result_values` to `output_value` and `output_values` on
+  `SolidExecutionResult`
 - Dagstermill: Reworked public API now contains only `define_dagstermill_solid`, `get_context`,
   `yield_event`, `yield_result`, `DagstermillExecutionContext`, `DagstermillError`, and
   `DagstermillExecutionError`. Please see the new
