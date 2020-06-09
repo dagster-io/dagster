@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
-from dagster.core.reconstruction import PipelineReconstructionInfo
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.serdes.ipc import ipc_read_event_stream, open_ipc_subprocess
@@ -11,7 +11,7 @@ from dagster.utils import safe_tempfile_path
 
 # mostly for test
 def sync_cli_api_execute_run(
-    instance, reconstruction_info, pipeline_name, environment_dict, mode, solids_to_execute
+    instance, pipeline_origin, pipeline_name, environment_dict, mode, solids_to_execute
 ):
     with safe_tempfile_path() as output_file_path:
         pipeline_run = instance.create_run(
@@ -29,22 +29,22 @@ def sync_cli_api_execute_run(
             execution_plan_snapshot=None,
             parent_pipeline_snapshot=None,
         )
-        process = cli_api_execute_run(output_file_path, instance, reconstruction_info, pipeline_run)
+        process = cli_api_execute_run(output_file_path, instance, pipeline_origin, pipeline_run)
 
         _stdout, _stderr = process.communicate()
         for message in ipc_read_event_stream(output_file_path):
             yield message
 
 
-def cli_api_execute_run(output_file, instance, reconstruction_info, pipeline_run):
+def cli_api_execute_run(output_file, instance, pipeline_origin, pipeline_run):
     check.str_param(output_file, 'output_file')
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(reconstruction_info, 'reconstruction_info', PipelineReconstructionInfo)
+    check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     parts = (
-        [reconstruction_info.executable_path, '-m', 'dagster', 'api', 'execute_run', output_file]
-        + xplat_shlex_split(reconstruction_info.get_repo_cli_args())
+        [pipeline_origin.executable_path, '-m', 'dagster', 'api', 'execute_run', output_file]
+        + xplat_shlex_split(pipeline_origin.get_repo_cli_args())
         + [
             '--instance-ref',
             '{instance_ref}'.format(instance_ref=serialize_dagster_namedtuple(instance.get_ref())),

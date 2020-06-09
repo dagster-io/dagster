@@ -6,8 +6,8 @@ from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class RepositoryReconstructionInfo(
-    namedtuple('_RepositoryReconstructionInfo', 'executable_path code_pointer'),
+class RepositoryPythonOrigin(
+    namedtuple('_RepositoryPythonOrigin', 'executable_path code_pointer'),
 ):
     '''
     Derived from the handle structure in the host process, this is the subset of information
@@ -15,7 +15,7 @@ class RepositoryReconstructionInfo(
     '''
 
     def __new__(cls, executable_path, code_pointer):
-        return super(RepositoryReconstructionInfo, cls).__new__(
+        return super(RepositoryPythonOrigin, cls).__new__(
             cls,
             check.str_param(executable_path, 'executable_path'),
             check.inst_param(code_pointer, 'code_pointer', CodePointer),
@@ -29,14 +29,12 @@ class RepositoryReconstructionInfo(
 
 
 @whitelist_for_serdes
-class PipelineReconstructionInfo(
-    namedtuple('_PipelineReconstructionInfo', 'pipeline_name repository_info')
-):
+class PipelinePythonOrigin(namedtuple('_PipelinePythonOrigin', 'pipeline_name repository_info')):
     def __new__(cls, pipeline_name, repository_info):
-        return super(PipelineReconstructionInfo, cls).__new__(
+        return super(PipelinePythonOrigin, cls).__new__(
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_info, 'repository_info', RepositoryReconstructionInfo),
+            check.inst_param(repository_info, 'repository_info', RepositoryPythonOrigin),
         )
 
     @property
@@ -54,14 +52,12 @@ class PipelineReconstructionInfo(
 
 
 @whitelist_for_serdes
-class ScheduleReconstructionInfo(
-    namedtuple('_ScheduleReconstructionInfo', 'schedule_name repository_info')
-):
+class SchedulePythonOrigin(namedtuple('_SchedulePythonOrigin', 'schedule_name repository_info')):
     def __new__(cls, schedule_name, repository_info):
-        return super(ScheduleReconstructionInfo, cls).__new__(
+        return super(SchedulePythonOrigin, cls).__new__(
             cls,
             check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_info, 'repository_info', RepositoryReconstructionInfo),
+            check.inst_param(repository_info, 'repository_info', RepositoryPythonOrigin),
         )
 
     @property

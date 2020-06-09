@@ -47,11 +47,11 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     def start_schedule(self, instance, external_schedule):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
-        schedule_origin_id = external_schedule.get_reconstruction_id()
+        schedule_origin_id = external_schedule.get_origin_id()
 
         # If the cron job already exists, remove it. This prevents duplicate entries.
         # Then, add a new cron job to the cron tab.
-        if self.running_schedule_count(external_schedule.get_reconstruction_id()) > 0:
+        if self.running_schedule_count(external_schedule.get_origin_id()) > 0:
             self._end_cron_job(instance, schedule_origin_id)
 
         self._start_cron_job(instance, external_schedule)
@@ -142,7 +142,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         return command
 
     def _start_cron_job(self, instance, external_schedule):
-        schedule_origin_id = external_schedule.get_reconstruction_id()
+        schedule_origin_id = external_schedule.get_origin_id()
         script_file = self._write_bash_script_to_file(instance, external_schedule)
         command = self._get_command(script_file, instance, schedule_origin_id)
 
@@ -188,7 +188,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
     def _write_bash_script_to_file(self, instance, external_schedule):
         # Get path to store bash script
-        schedule_origin_id = external_schedule.get_reconstruction_id()
+        schedule_origin_id = external_schedule.get_origin_id()
         script_file = self._get_bash_script_file_path(instance, schedule_origin_id)
 
         # Get path to store schedule attempt logs
@@ -196,7 +196,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         schedule_log_file_name = "{}_{}.result".format("${RUN_DATE}", schedule_origin_id)
         schedule_log_file_path = os.path.join(logs_directory, schedule_log_file_name)
 
-        local_target = external_schedule.get_reconstruction_info()
+        local_target = external_schedule.get_origin()
 
         # Environment information needed for execution
         dagster_graphql_path = os.path.join(

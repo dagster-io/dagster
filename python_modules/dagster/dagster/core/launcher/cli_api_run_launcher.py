@@ -136,7 +136,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = cli_api_execute_run(
             output_file=output_file,
             instance=self._instance,
-            reconstruction_info=external_pipeline.get_reconstruction_info(),
+            pipeline_origin=external_pipeline.get_origin(),
             pipeline_run=run,
         )
 

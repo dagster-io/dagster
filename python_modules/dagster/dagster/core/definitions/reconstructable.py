@@ -12,7 +12,7 @@ from dagster.core.code_pointer import (
     get_python_file_from_previous_stack_frame,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.reconstruction import PipelineReconstructionInfo, RepositoryReconstructionInfo
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
@@ -55,13 +55,11 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
         absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
         return cls(pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path))
 
-    def get_reconstruction_info(self):
-        return RepositoryReconstructionInfo(
-            executable_path=sys.executable, code_pointer=self.pointer
-        )
+    def get_origin(self):
+        return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=self.pointer)
 
-    def get_reconstruction_id(self):
-        return self.get_reconstruction_info().get_id()
+    def get_origin_id(self):
+        return self.get_origin().get_id()
 
 
 @whitelist_for_serdes
@@ -173,13 +171,11 @@ class ReconstructablePipeline(
         )
         return inst
 
-    def get_reconstruction_info(self):
-        return PipelineReconstructionInfo(
-            self.pipeline_name, self.repository.get_reconstruction_info()
-        )
+    def get_origin(self):
+        return PipelinePythonOrigin(self.pipeline_name, self.repository.get_origin())
 
-    def get_reconstruction_id(self):
-        return self.get_reconstruction_info().get_id()
+    def get_origin_id(self):
+        return self.get_origin().get_id()
 
 
 def reconstructable(target):

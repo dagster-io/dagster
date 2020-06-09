@@ -54,7 +54,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
         cron_schedule = "Unknown" if not schedule_def else schedule_def.cron_schedule
         tick = graphene_info.context.instance.create_schedule_tick(
             ScheduleTickData(
-                schedule_origin_id=external_schedule.get_reconstruction_id(),
+                schedule_origin_id=external_schedule.get_origin_id(),
                 schedule_name=external_schedule.name,
                 cron_schedule=cron_schedule,
                 timestamp=time.time(),

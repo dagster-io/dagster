@@ -191,7 +191,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         # wont always have the schedule - should always have the ID
         self._external_schedule = external_repository.get_external_schedule(schedule.name)
 
-        self._external_schedule_origin_id = self._external_schedule.get_reconstruction_id()
+        self._external_schedule_origin_id = self._external_schedule.get_origin_id()
 
         super(DauphinRunningSchedule, self).__init__(
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(

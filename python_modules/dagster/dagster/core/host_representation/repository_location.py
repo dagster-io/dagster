@@ -230,7 +230,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan_snapshot = sync_get_external_execution_plan(
-            reconstruction_info=external_pipeline.get_reconstruction_info(),
+            pipeline_origin=external_pipeline.get_origin(),
             solid_selection=external_pipeline.solid_selection,
             environment_dict=environment_dict,
             mode=mode,
@@ -264,5 +264,5 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         external_repository = self.external_repositories[selector.repository_name]
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset(
-            pipeline_handle.get_reconstruction_info(), selector.solid_selection
+            pipeline_handle.get_origin(), selector.solid_selection
         )

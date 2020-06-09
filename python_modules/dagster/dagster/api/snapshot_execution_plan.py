@@ -1,7 +1,7 @@
 import json
 
 from dagster import check
-from dagster.core.reconstruction import PipelineReconstructionInfo
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster.serdes.ipc import read_unary_response
 from dagster.seven import xplat_shlex_split
@@ -11,14 +11,14 @@ from .utils import execute_command_in_subprocess
 
 
 def sync_get_external_execution_plan(
-    reconstruction_info,
+    pipeline_origin,
     environment_dict,
     mode,
     snapshot_id,
     solid_selection=None,
     step_keys_to_execute=None,
 ):
-    check.inst_param(reconstruction_info, 'reconstruction_info', PipelineReconstructionInfo)
+    check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
     check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
     check.dict_param(environment_dict, 'environment_dict')
     check.str_param(mode, 'mode')
@@ -28,7 +28,7 @@ def sync_get_external_execution_plan(
     with get_temp_file_name() as output_file:
         parts = (
             [
-                reconstruction_info.executable_path,
+                pipeline_origin.executable_path,
                 '-m',
                 'dagster',
                 'api',
@@ -36,9 +36,9 @@ def sync_get_external_execution_plan(
                 'execution_plan',
                 output_file,
             ]
-            + xplat_shlex_split(reconstruction_info.get_repo_cli_args())
+            + xplat_shlex_split(pipeline_origin.get_repo_cli_args())
             + [
-                reconstruction_info.pipeline_name,
+                pipeline_origin.pipeline_name,
                 '--environment-dict={environment_dict}'.format(
                     environment_dict=json.dumps(environment_dict)
                 ),

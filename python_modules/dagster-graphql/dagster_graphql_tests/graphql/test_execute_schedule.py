@@ -317,10 +317,10 @@ class TestExecuteSchedule(
         snapshot.assert_match(schedule_result)
 
         # Check directly against the DB
-        ticks = instance.get_schedule_ticks(external_schedule.get_reconstruction_id())
+        ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.schedule_origin_id == external_schedule.get_reconstruction_id()
+        assert tick.schedule_origin_id == external_schedule.get_origin_id()
         assert tick.schedule_name == external_schedule.name
         assert tick.cron_schedule == external_schedule.cron_schedule
         assert tick.timestamp > start_time and tick.timestamp < time.time()
@@ -350,9 +350,7 @@ class TestExecuteSchedule(
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks(
-            external_repository.get_external_schedule(
-                'no_config_should_execute'
-            ).get_reconstruction_id()
+            external_repository.get_external_schedule('no_config_should_execute').get_origin_id()
         )
 
         assert len(ticks) == 1
@@ -384,7 +382,7 @@ class TestExecuteSchedule(
         ticks = instance.get_schedule_ticks(
             external_repository.get_external_schedule(
                 'should_execute_error_schedule'
-            ).get_reconstruction_id()
+            ).get_origin_id()
         )
 
         assert len(ticks) == 1
@@ -423,7 +421,7 @@ class TestExecuteSchedule(
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks(
-            external_repository.get_external_schedule('tags_error_schedule').get_reconstruction_id()
+            external_repository.get_external_schedule('tags_error_schedule').get_origin_id()
         )
 
         assert len(ticks) == 1
@@ -457,7 +455,7 @@ class TestExecuteSchedule(
         ticks = instance.get_schedule_ticks(
             external_repository.get_external_schedule(
                 'environment_dict_error_schedule'
-            ).get_reconstruction_id()
+            ).get_origin_id()
         )
 
         assert len(ticks) == 1
@@ -482,7 +480,7 @@ class TestExecuteSchedule(
         ticks = instance.get_schedule_ticks(
             external_repository.get_external_schedule(
                 'environment_dict_error_schedule'
-            ).get_reconstruction_id()
+            ).get_origin_id()
         )
 
         assert len(ticks) == 1
@@ -599,9 +597,7 @@ class TestExecuteSchedule(
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks(
-            external_repository.get_external_schedule(
-                'invalid_config_schedule'
-            ).get_reconstruction_id()
+            external_repository.get_external_schedule('invalid_config_schedule').get_origin_id()
         )
 
         assert len(ticks) == 1

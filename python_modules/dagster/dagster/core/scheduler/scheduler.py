@@ -8,7 +8,7 @@ from dagster import check
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
-from dagster.core.reconstruction import ScheduleReconstructionInfo
+from dagster.core.origin import SchedulePythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -54,7 +54,7 @@ def get_schedule_change_set(schedule_states, external_schedules):
     check.list_param(schedule_states, 'schedule_states', ScheduleState)
     check.list_param(external_schedules, 'external_schedules', ExternalSchedule)
 
-    external_schedules_dict = {s.get_reconstruction_id(): s for s in external_schedules}
+    external_schedules_dict = {s.get_origin_id(): s for s in external_schedules}
     schedule_states_dict = {s.schedule_origin_id: s for s in schedule_states}
 
     external_schedule_origin_ids = set(external_schedules_dict.keys())
@@ -120,7 +120,7 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
         return super(ScheduleState, cls).__new__(
             cls,
             # Using the term "origin" to leave flexibility in handling future types
-            check.inst_param(origin, 'origin', ScheduleReconstructionInfo),
+            check.inst_param(origin, 'origin', SchedulePythonOrigin),
             check.inst_param(status, 'status', ScheduleStatus),
             check.str_param(cron_schedule, 'cron_schedule'),
         )
@@ -130,9 +130,9 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
         return self.origin.schedule_name
 
     @property
-    def reconstruction_info(self):
+    def pipeline_origin(self):
         # Set up for future proofing
-        check.invariant(isinstance(self.origin, ScheduleReconstructionInfo))
+        check.invariant(isinstance(self.origin, SchedulePythonOrigin))
         return self.origin
 
     @property
@@ -186,13 +186,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         for external_schedule in external_repository.get_external_schedules():
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
-            existing_schedule_state = instance.get_schedule_state(
-                external_schedule.get_reconstruction_id()
-            )
+            existing_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
             if existing_schedule_state:
                 # Keep the status, update target and cron schedule
                 schedule_state = ScheduleState(
-                    external_schedule.get_reconstruction_info(),
+                    external_schedule.get_origin(),
                     existing_schedule_state.status,
                     external_schedule.cron_schedule,
                 )
@@ -201,7 +199,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
                 schedules_to_restart.append((existing_schedule_state, external_schedule))
             else:
                 schedule_state = ScheduleState(
-                    external_schedule.get_reconstruction_info(),
+                    external_schedule.get_origin(),
                     ScheduleStatus.STOPPED,
                     external_schedule.cron_schedule,
                 )
@@ -210,14 +208,12 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         # Delete all existing schedules that are not in external schedules
         external_schedule_origin_ids = {
-            s.get_reconstruction_id() for s in external_repository.get_external_schedules()
+            s.get_origin_id() for s in external_repository.get_external_schedules()
         }
         existing_schedule_origin_ids = set(
             [
                 s.schedule_origin_id
-                for s in instance.all_stored_schedule_state(
-                    external_repository.get_reconstruction_id()
-                )
+                for s in instance.all_stored_schedule_state(external_repository.get_origin_id())
             ]
         )
         schedule_origin_ids_to_delete = existing_schedule_origin_ids - external_schedule_origin_ids
@@ -227,14 +223,14 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             # Restart is only needed if the schedule was previously running
             if schedule_state.status == ScheduleStatus.RUNNING:
                 try:
-                    self.stop_schedule(instance, external_schedule.get_reconstruction_id())
+                    self.stop_schedule(instance, external_schedule.get_origin_id())
                     self.start_schedule(instance, external_schedule)
                 except DagsterSchedulerError as e:
                     schedule_reconciliation_errors.append(e)
 
             if schedule_state.status == ScheduleStatus.STOPPED:
                 try:
-                    self.stop_schedule(instance, external_schedule.get_reconstruction_id())
+                    self.stop_schedule(instance, external_schedule.get_origin_id())
                 except DagsterSchedulerError as e:
                     schedule_reconciliation_errors.append(e)
 
@@ -267,9 +263,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
 
-        schedule_state = self._get_schedule_state(
-            instance, external_schedule.get_reconstruction_id()
-        )
+        schedule_state = self._get_schedule_state(instance, external_schedule.get_origin_id())
 
         if schedule_state.status == ScheduleStatus.RUNNING:
             raise DagsterSchedulerError(

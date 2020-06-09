@@ -3,11 +3,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
-from dagster.core.reconstruction import (
-    PipelineReconstructionInfo,
-    RepositoryReconstructionInfo,
-    ScheduleReconstructionInfo,
-)
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -105,16 +101,16 @@ class RepositoryHandle(
             ),
         )
 
-    def get_reconstruction_info(self):
+    def get_origin(self):
         if isinstance(self.repository_location_handle, InProcessRepositoryLocationHandle):
-            return RepositoryReconstructionInfo(
+            return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
                     self.repository_key
                 ],
                 executable_path=sys.executable,
             )
         elif isinstance(self.repository_location_handle, PythonEnvRepositoryLocationHandle):
-            return RepositoryReconstructionInfo(
+            return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
                     self.repository_key
                 ],
@@ -147,10 +143,8 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
 
-    def get_reconstruction_info(self):
-        return PipelineReconstructionInfo(
-            self.pipeline_name, self.repository_handle.get_reconstruction_info(),
-        )
+    def get_origin(self):
+        return PipelinePythonOrigin(self.pipeline_name, self.repository_handle.get_origin())
 
 
 class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_handle')):
@@ -169,10 +163,8 @@ class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_han
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
 
-    def get_reconstruction_info(self):
-        return ScheduleReconstructionInfo(
-            self.schedule_name, self.repository_handle.get_reconstruction_info(),
-        )
+    def get_origin(self):
+        return SchedulePythonOrigin(self.schedule_name, self.repository_handle.get_origin())
 
 
 class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):

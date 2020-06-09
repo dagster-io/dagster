@@ -18,7 +18,7 @@ def test_execute_run_api(repo_handle):
             event
             for event in sync_cli_api_execute_run(
                 instance=instance,
-                reconstruction_info=repo_handle.get_reconstruction_info(),
+                pipeline_origin=repo_handle.get_origin(),
                 pipeline_name='foo',
                 environment_dict={},
                 mode='default',

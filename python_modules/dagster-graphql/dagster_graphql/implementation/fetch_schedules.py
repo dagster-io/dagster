@@ -34,7 +34,7 @@ def stop_schedule(graphene_info, schedule_name):
     external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
     schedule = instance.stop_schedule_and_update_storage_state(
-        external_repository.get_external_schedule(schedule_name).get_reconstruction_id()
+        external_repository.get_external_schedule(schedule_name).get_origin_id()
     )
     return graphene_info.schema.type_named('RunningScheduleResult')(
         schedule=graphene_info.schema.type_named('RunningSchedule')(
@@ -64,7 +64,7 @@ def get_schedule_or_error(graphene_info, schedule_name):
     instance = graphene_info.context.instance
 
     schedule = instance.get_schedule_state(
-        external_repository.get_external_schedule(schedule_name).get_reconstruction_id()
+        external_repository.get_external_schedule(schedule_name).get_origin_id()
     )
     if not schedule:
         raise UserFacingGraphQLError(
@@ -131,7 +131,7 @@ def get_dagster_schedule(graphene_info, schedule_name):
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
     schedule = instance.get_schedule_state(
-        external_repository.get_external_schedule(schedule_name).get_reconstruction_id()
+        external_repository.get_external_schedule(schedule_name).get_origin_id()
     )
     if not schedule:
         raise UserFacingGraphQLError(

@@ -195,17 +195,17 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
     if running_filter:
         schedules = [
             s
-            for s in instance.all_stored_schedule_state(external_repo.get_reconstruction_id())
+            for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
             if s.status == ScheduleStatus.RUNNING
         ]
     elif stopped_filter:
         schedules = [
             s
-            for s in instance.all_stored_schedule_state(external_repo.get_reconstruction_id())
+            for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
             if s.status == ScheduleStatus.STOPPED
         ]
     else:
-        schedules = instance.all_stored_schedule_state(external_repo.get_reconstruction_id())
+        schedules = instance.all_stored_schedule_state(external_repo.get_origin_id())
 
     for schedule_state in schedules:
         # If --name filter is present, only print the schedule name
@@ -299,7 +299,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
     try:
         instance.stop_schedule_and_update_storage_state(
-            external_repo.get_external_schedule(schedule_name).get_reconstruction_id()
+            external_repo.get_external_schedule(schedule_name).get_origin_id()
         )
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
@@ -327,7 +327,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     check_repo_and_scheduler(external_repo, instance)
     logs_path = os.path.join(
         instance.logs_path_for_schedule(
-            external_repo.get_external_schedule(schedule_name).get_reconstruction_id()
+            external_repo.get_external_schedule(schedule_name).get_origin_id()
         )
     )
     print_fn(logs_path)
@@ -355,9 +355,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
     repository_name = external_repo.name
 
     if all_running_flag:
-        for schedule_state in instance.all_stored_schedule_state(
-            external_repo.get_reconstruction_id()
-        ):
+        for schedule_state in instance.all_stored_schedule_state(external_repo.get_origin_id()):
             if schedule_state.status == ScheduleStatus.RUNNING:
                 try:
                     external_schedule = external_repo.get_external_schedule(schedule_state.name)
@@ -373,7 +371,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         )
     else:
         external_schedule = external_repo.get_external_schedule(schedule_name)
-        schedule_state = instance.get_schedule_state(external_schedule.get_reconstruction_id())
+        schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
         if schedule_state.status != ScheduleStatus.RUNNING:
             click.UsageError(
                 "Cannot restart a schedule {name} because is not currently running".format(
