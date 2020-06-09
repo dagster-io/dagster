@@ -54,6 +54,9 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     def get_repositories(self):
         pass
 
+    def get_repository_names(self):
+        return list(self.get_repositories().keys())
+
     @abstractproperty
     def name(self):
         pass

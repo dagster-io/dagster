@@ -4,6 +4,7 @@ import click
 from click import UsageError
 
 from dagster import check
+from dagster.core.host_representation.repository_location import PythonEnvRepositoryLocation
 
 from .load import (
     load_workspace_from_yaml_path,
@@ -133,3 +134,96 @@ def python_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
     return apply_click_params(f, *python_target_click_options())
+
+
+def repository_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(
+        workspace_target_argument(f),
+        click.option(
+            '--repository',
+            '-r',
+            help=(
+                'Repository within the workspace, necessary if more than one repository is present.'
+            ),
+        ),
+        click.option(
+            '--location',
+            '-l',
+            help=(
+                'RepositoryLocation within the workspace, necessary if more than one location is present.'
+            ),
+        ),
+    )
+
+
+def get_repository_location_from_kwargs(kwargs):
+    workspace = get_workspace_from_kwargs(kwargs)
+    provided_location_name = kwargs.get('location')
+
+    if provided_location_name is None and len(workspace.repository_location_handles) == 1:
+        return PythonEnvRepositoryLocation(next(iter(workspace.repository_location_handles)))
+
+    if provided_location_name is None:
+        raise click.UsageError(
+            (
+                'Must provide --location as there are more than one locations '
+                'available. Options are: {}'
+            ).format(_sorted_quoted(workspace.repository_location_names))
+        )
+
+    if not workspace.has_repository_location_handle(provided_location_name):
+        raise click.UsageError(
+            (
+                'Location "{provided_location_name}" not found in workspace. '
+                'Found {found_names} instead.'
+            ).format(
+                provided_location_name=provided_location_name,
+                found_names=_sorted_quoted(workspace.repository_location_names),
+            )
+        )
+
+    return PythonEnvRepositoryLocation(
+        workspace.get_repository_location_handle(provided_location_name)
+    )
+
+
+def get_external_repository_from_kwargs(kwargs):
+    repo_location = get_repository_location_from_kwargs(kwargs)
+
+    repo_dict = repo_location.get_repositories()
+
+    provided_repo_name = kwargs.get('repository')
+
+    check.invariant(repo_dict, 'There should be at least one repo.')
+
+    # no name provided and there is only one repo. Automatically return
+    if provided_repo_name is None and len(repo_dict) == 1:
+        return next(iter(repo_dict.values()))
+
+    if provided_repo_name is None:
+        raise click.UsageError(
+            (
+                'Must provide --repository as there are more than one repositories '
+                'in {location}. Options are: {repos}.'
+            ).format(location=repo_location.name, repos=_sorted_quoted(repo_dict.keys()))
+        )
+
+    if not repo_location.has_repository(provided_repo_name):
+        raise click.UsageError(
+            (
+                'Repository "{provided_repo_name}" not found in location "{location_name}". '
+                'Found {found_names} instead.'
+            ).format(
+                provided_repo_name=provided_repo_name,
+                location_name=repo_location.name,
+                found_names=_sorted_quoted(repo_location.get_repository_names()),
+            )
+        )
+
+    return repo_location.get_repository(provided_repo_name)
+
+
+def _sorted_quoted(strings):
+    return '[' + ', '.join(["'{}'".format(s) for s in sorted(list(strings))]) + ']'

@@ -15,6 +15,10 @@ class Workspace:
     def repository_location_handles(self):
         return list(self._location_handle_dict.values())
 
+    @property
+    def repository_location_names(self):
+        return list(self._location_handle_dict.keys())
+
     def has_repository_location_handle(self, location_name):
         check.str_param(location_name, 'location_name')
         return location_name in self._location_handle_dict
