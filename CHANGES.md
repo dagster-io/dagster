@@ -43,10 +43,12 @@
   `all_dagster_types` instead.
 - The deprecated `all_runtime_types` method on `SolidDefinition` and `CompositeSolidDefinition`
   has been removed. Use `all_dagster_types` instead.
-- `bash_command_solid` and `bash_script_solid` solid factory functions have been renamed to
-  `create_bash_command_solid` and `create_bash_script_solid`
 - The deprecated `metadata` argument to `SolidDefinition` and `@solid` has been removed. Use `tags`
   instead.
+- `bash_command_solid` and `bash_script_solid` solid factory functions have been renamed to
+  `create_shell_command_solid` and `create_shell_script_solid`.
+- The dagster-bash package has been renamed to dagster-shell. All names inside it that included
+  "bash" now include "shell" instead.
 
 **New**
 

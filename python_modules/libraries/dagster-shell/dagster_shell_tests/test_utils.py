@@ -2,7 +2,7 @@ import logging
 import os
 
 import pytest
-from dagster_bash.utils import execute, execute_script_file
+from dagster_shell.utils import execute, execute_script_file
 
 
 def test_bad_output_logging():

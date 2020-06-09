@@ -145,10 +145,6 @@
         "path": "/docs/apidocs/libraries/dagster_azure"
       },
       {
-        "name": "Bash (dagster_bash)",
-        "path": "/docs/apidocs/libraries/dagster_bash"
-      },
-      {
         "name": "Celery (dagster_celery)",
         "path": "/docs/apidocs/libraries/dagster_celery"
       },
@@ -203,6 +199,10 @@
       {
         "name": "Pyspark (dagster_pyspark)",
         "path": "/docs/apidocs/libraries/dagster_pyspark"
+      },
+      {
+        "name": "Shell (dagster_shell)",
+        "path": "/docs/apidocs/libraries/dagster_shell"
       },
       {
         "name": "Slack (dagster_slack)",
