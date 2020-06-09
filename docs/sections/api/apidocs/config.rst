@@ -1,4 +1,4 @@
-Config 
+Config
 ======
 
 .. currentmodule:: dagster
@@ -7,17 +7,19 @@ The following types are used to describe the schema of configuration
 data via ``config``. They are used in conjunction with the
 builtin types above.
 
+.. autoclass:: ConfigSchema
+
 .. autoclass:: Field
 
 .. autoclass:: Selector
 
 .. autoclass:: Permissive
 
-.. autoclass:: Shape 
+.. autoclass:: Shape
 
-.. autoclass:: Array 
+.. autoclass:: Array
 
-.. autoclass:: Noneable 
+.. autoclass:: Noneable
 
 .. autoclass:: Enum
 

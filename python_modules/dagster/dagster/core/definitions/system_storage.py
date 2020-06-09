@@ -35,32 +35,9 @@ class SystemStorageDefinition(
         is_persistent (bool): Whether the storage is persistent in a way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor, or with
             dagster-airflow, requires a persistent storage mode.
-        config (Optional[Any]): The schema for the storage's configuration field.
+        config (Optional[ConfigSchema]): The schema for the storage's configuration field.
             Configuration data passed in this field will be made available to the
             ``system_storage_creation_fn`` under ``init_context.system_storage_config``.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type 
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called to construct the storage. This function should consume the init context and emit
             a :py:class:`SystemStorageData`.
@@ -106,7 +83,7 @@ class SystemStorageData(object):
 
 def system_storage(required_resource_keys, name=None, is_persistent=True, config=None):
     '''Creates a system storage definition.
-    
+
     The decorated function will be passed as the ``system_storage_creation_fn`` to a
     :py:class:`SystemStorageDefinition`.
 
@@ -117,30 +94,8 @@ def system_storage(required_resource_keys, name=None, is_persistent=True, config
             the context of dagster-airflow require a persistent storage mode.
         required_resource_keys (Set[str]):
             The resources that this storage needs at runtime to function.
-        config (Optional[Any]): The schema for the config. Configuration data available in
+        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type 
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
     '''
 
     if callable(name):

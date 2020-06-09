@@ -24,7 +24,7 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
     Args:
         config_fn (Callable[[dict], dict]): The function that will be called
             to map the composite config to a config appropriate for the child solids.
-        config_field (Field): The schema of the composite config.
+        config_field (ConfigSchema): The schema of the composite config.
     '''
 
     def __new__(cls, config_fn, config=None):
