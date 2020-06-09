@@ -27,7 +27,7 @@ SQLITE_EVENT_LOG_FILENAME = 'event_log'
 
 
 class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
-    '''SQLite-backed consolidated event log storage.
+    '''SQLite-backed consolidated event log storage intended for test cases only.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in

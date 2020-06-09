@@ -27,14 +27,15 @@ builtin types above.
 
 .. attribute:: StringSource
 
-   Use this type only for config fields. The value passed to a config field of this type may either
-   be a string, or a selector describing where to look up the value in the environment.
+   Use this type when you want to read a string config value from an environment variable. The value
+   passed to a config field of this type may either be a string literal, or a selector describing
+   how to look up the value from the executing process's environment variables.
 
    **Examples:**
 
    .. code-block:: python
 
-        @solid(config=StringSource)
+        @solid(config_schema=StringSource)
         def secret_solid(context) -> str:
             return context.solid_config
 
@@ -54,27 +55,29 @@ builtin types above.
 
 .. attribute:: IntSource
 
-   Use this type only for config fields. The value passed to a config field of this type may either
-   be an int, or a selector describing where to look up the value in the environment.
+   Use this type when you want to read an integer config value from an environment variable. The
+   value passed to a config field of this type may either be a integer literal, or a selector
+   describing how to look up the value from the executing process's environment variables.
 
    **Examples:**
 
    .. code-block:: python
 
-        @solid(config=IntSource)
-        def secret_solid(context) -> int:
+        @solid(config_schema=IntSource)
+        def secret_int_solid(context) -> str:
             return context.solid_config
 
         execute_solid(
-            secret_solid,
+            secret_int_solid,
             run_config={
-                'solids': {'secret_solid': {'config': 5}}
+                'solids': {'secret_int_solid': {'config': 3}}
             }
         )
 
         execute_solid(
-            secret_solid,
+            secret_int_solid,
             run_config={
-                'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
+                'solids': {'secret_int_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
             }
         )
+
