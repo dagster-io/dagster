@@ -38,9 +38,10 @@ from dagster_graphql.implementation.fetch_runs import (
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_schedules import (
+    get_schedule_definitions,
     get_schedule_or_error,
     get_scheduler_or_error,
-    get_schedules_or_error,
+    get_schedules,
 )
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
@@ -98,6 +99,8 @@ class DauphinQuery(dauphin.ObjectType):
         schedule_selector=dauphin.NonNull('ScheduleSelector'),
         limit=dauphin.Int(),
     )
+
+    scheduleDefinitions = dauphin.Field(dauphin.non_null_list('ScheduleDefinition'))
 
     partitionSetsOrError = dauphin.Field(
         dauphin.NonNull('PartitionSetsOrError'),
@@ -206,12 +209,15 @@ class DauphinQuery(dauphin.ObjectType):
         return get_scheduler_or_error(graphene_info)
 
     def resolve_schedules(self, graphene_info):
-        return get_schedules_or_error(graphene_info)
+        return get_schedules(graphene_info)
 
     def resolve_scheduleOrError(self, graphene_info, schedule_selector):
         return get_schedule_or_error(
             graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
         )
+
+    def resolve_scheduleDefinitions(self, graphene_info):
+        return get_schedule_definitions(graphene_info)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(

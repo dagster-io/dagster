@@ -51,12 +51,23 @@ def get_scheduler_or_error(graphene_info):
 
 
 @capture_dauphin_error
-def get_schedules_or_error(graphene_info):
+def get_schedules(graphene_info):
     instance = graphene_info.context.instance
 
     return [
         graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
         for s in instance.all_stored_schedule_state()
+    ]
+
+
+@capture_dauphin_error
+def get_schedule_definitions(graphene_info):
+    external_repository = graphene_info.context.legacy_external_repository
+    external_schedules = external_repository.get_external_schedules()
+
+    return [
+        graphene_info.schema.type_named('ScheduleDefinition')(external_schedule=external_schedule,)
+        for external_schedule in external_schedules
     ]
 
 
