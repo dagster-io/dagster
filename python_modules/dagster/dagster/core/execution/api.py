@@ -166,13 +166,13 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 def execute_pipeline_iterator(
     pipeline,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
     solid_selection=None,
     instance=None,
-    run_config=None,
+    environment_dict=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -243,14 +243,14 @@ def execute_pipeline_iterator(
 @telemetry_wrapper
 def execute_pipeline(
     pipeline,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
     solid_selection=None,
     instance=None,
     raise_on_error=True,
-    run_config=None,
+    environment_dict=None,
 ):
     '''Execute a pipeline synchronously.
 
@@ -525,14 +525,14 @@ def _check_execute_pipeline_args(
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
 
-        if pipeline_preset.environment_dict is not None:
+        if pipeline_preset.run_config is not None:
             check.invariant(
-                (not environment_dict) or (pipeline_preset.environment_dict == environment_dict),
+                (not environment_dict) or (pipeline_preset.run_config == environment_dict),
                 'The environment set in preset \'{preset}\' does not agree with the environment '
                 'passed in the `environment_dict` argument.'.format(preset=preset),
             )
 
-            environment_dict = pipeline_preset.environment_dict
+            environment_dict = pipeline_preset.run_config
 
         # load solid_selection from preset
         if pipeline_preset.solid_selection is not None:

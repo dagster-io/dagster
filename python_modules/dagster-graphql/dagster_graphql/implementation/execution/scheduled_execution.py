@@ -98,7 +98,7 @@ def launch_scheduled_execution(graphene_info, schedule_name):
                 lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
                 '{schedule_name}'.format(schedule_name=schedule_def.name),
             ):
-                environment_dict = schedule_def.get_environment_dict(schedule_context)
+                environment_dict = schedule_def.get_run_config(schedule_context)
         except DagsterUserCodeExecutionError as exc:
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             errors.append(error_data)

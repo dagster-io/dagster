@@ -331,11 +331,11 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
-    environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+    run_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
         pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         tags=tags,
         instance=DagsterInstance.get(),
@@ -443,7 +443,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         pipeline_def=pipeline.get_definition(),
         solid_selection=solid_selection,
         solids_to_execute=pipeline.solids_to_execute,
-        environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
+        environment_dict=preset.run_config if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,
     )
@@ -695,7 +695,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
                 solids_to_execute=frozenset(partition_set.solid_selection)
                 if partition_set and partition_set.solid_selection
                 else None,
-                environment_dict=partition_set.environment_dict_for_partition(partition),
+                environment_dict=partition_set.run_config_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
 

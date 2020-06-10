@@ -216,7 +216,7 @@ class PartitionSetDefinition(
             else:
                 return should_execute(context)
 
-        def _environment_dict_fn_wrapper(context):
+        def _run_config_fn_wrapper(context):
             check.inst_param(context, 'context', ScheduleExecutionContext)
             selected_partition = partition_selector(context, self)
             if not selected_partition:
@@ -228,7 +228,7 @@ class PartitionSetDefinition(
                     )
                 )
 
-            return self.environment_dict_for_partition(selected_partition)
+            return self.run_config_for_partition(selected_partition)
 
         def _tags_fn_wrapper(context):
             check.inst_param(context, 'context', ScheduleExecutionContext)
@@ -248,7 +248,7 @@ class PartitionSetDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=self.pipeline_name,
-            environment_dict_fn=_environment_dict_fn_wrapper,
+            run_config_fn=_run_config_fn_wrapper,
             tags_fn=_tags_fn_wrapper,
             solid_selection=self.solid_selection,
             mode=self.mode,

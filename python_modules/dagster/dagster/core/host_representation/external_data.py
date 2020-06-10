@@ -257,7 +257,7 @@ def external_preset_data_from_def(preset_def):
     check.inst_param(preset_def, 'preset_def', PresetDefinition)
     return ExternalPresetData(
         name=preset_def.name,
-        environment_dict=preset_def.environment_dict,
+        environment_dict=preset_def.run_config,
         solid_selection=preset_def.solid_selection,
         mode=preset_def.mode,
     )
@@ -266,6 +266,6 @@ def external_preset_data_from_def(preset_def):
 def external_partition_data_from_def(partition_set_def, partition):
     check.inst_param(partition_set_def, 'partition_set_def', PartitionSetDefinition)
     check.inst_param(partition, 'partition', Partition)
-    run_config = partition_set_def.environment_dict_for_partition(partition)
+    run_config = partition_set_def.run_config_for_partition(partition)
     tags = partition_set_def.tags_for_partition(partition)
     return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
