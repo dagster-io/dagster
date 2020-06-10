@@ -11,7 +11,7 @@ import six
 import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
-from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
+from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.workspace.cli_target import (
     get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
@@ -499,17 +499,20 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 @click.command(
     name='scaffold_config',
     help='Scaffold the config for a pipeline.\n\n{instructions}'.format(
-        instructions=get_legacy_pipeline_instructions('scaffold_config')
+        instructions=get_pipeline_instructions('scaffold_config')
     ),
 )
-@legacy_pipeline_target_argument
-@click.option('-p', '--print-only-required', default=False, is_flag=True)
+@pipeline_target_argument
+@click.option('--print-only-required', default=False, is_flag=True)
 def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
     skip_non_required = cli_args['print_only_required']
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 

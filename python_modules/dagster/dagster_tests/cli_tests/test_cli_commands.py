@@ -313,60 +313,6 @@ def valid_execute_args():
     ]
 
 
-def valid_legacy_execute_args():
-    return [
-        {
-            'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-            'pipeline_name': ('foo',),
-            'python_file': None,
-            'module_name': None,
-            'fn_name': None,
-        },
-        {
-            'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
-            'pipeline_name': ('hello_cereal_pipeline',),
-            'python_file': None,
-            'module_name': None,
-            'fn_name': None,
-        },
-        {
-            'repository_yaml': None,
-            'pipeline_name': ('foo',),
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'bar',
-        },
-        {
-            'repository_yaml': None,
-            'pipeline_name': ('hello_cereal_pipeline',),
-            'python_file': None,
-            'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'hello_cereal_repository',
-        },
-        {
-            'repository_yaml': None,
-            'pipeline_name': (),
-            'python_file': None,
-            'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'hello_cereal_pipeline',
-        },
-        {
-            'repository_yaml': None,
-            'pipeline_name': (),
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'define_foo_pipeline',
-        },
-        {
-            'repository_yaml': None,
-            'pipeline_name': (),
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'foo_pipeline',
-        },
-    ]
-
-
 def valid_cli_args():
     return [
         ['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'],
@@ -387,23 +333,6 @@ def valid_cli_args():
         ],
         ['-m', 'dagster_examples.intro_tutorial.repos', '-a', 'hello_cereal_pipeline'],
         ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'define_foo_pipeline'],
-    ]
-
-
-def valid_legacy_cli_args():
-    return [
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo'],
-        ['-y', file_relative_path(__file__, 'repository_module.yaml'), 'hello_cereal_pipeline'],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'bar', 'foo',],
-        [
-            '-m',
-            'dagster_examples.intro_tutorial.repos',
-            '-n',
-            'hello_cereal_repository',
-            'hello_cereal_pipeline',
-        ],
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_pipeline'],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'define_foo_pipeline'],
     ]
 
 
@@ -669,7 +598,7 @@ def runner_pipeline_execute(runner, cli_args):
 
 
 def test_scaffold_command():
-    for cli_args in valid_legacy_execute_args():
+    for cli_args in valid_execute_args():
         cli_args['print_only_required'] = True
         execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
@@ -678,11 +607,11 @@ def test_scaffold_command():
 
     runner = CliRunner()
 
-    for cli_args in valid_legacy_cli_args():
+    for cli_args in valid_cli_args():
         result = runner.invoke(pipeline_scaffold_command, cli_args)
         assert result.exit_code == 0
 
-        result = runner.invoke(pipeline_scaffold_command, ['-p'] + cli_args)
+        result = runner.invoke(pipeline_scaffold_command, ['--print-only-required'] + cli_args)
         assert result.exit_code == 0
 
 
