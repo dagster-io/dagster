@@ -23,6 +23,7 @@ from dagster.core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster.core.host_representation.external_data import (
+    ExternalPartitionData,
     ExternalPipelineSubsetResult,
     ExternalRepositoryData,
 )
@@ -252,18 +253,26 @@ def execution_plan_snapshot_command(args):
     )
 
 
-@click.command(name='partition', help='Return the config for a partition')
-@click.argument('output_file', type=click.Path())
-@legacy_repository_target_argument
-@click.option('--partition-set-name', help="partition set name")
-@click.option('--partition-name', help="partition name")
-def partition_data_command(output_file, partition_set_name, partition_name, **kwargs):
-    recon_repo = recon_repo_for_cli_args(kwargs)
+@whitelist_for_serdes
+class PartitionApiCommandArgs(
+    namedtuple('_PartitionApiCommandArgs', 'repository_origin partition_set_name partition_name')
+):
+    pass
+
+
+@api_cli_command(
+    name='partition',
+    help_str='Return the config for a partition',
+    input_cls=PartitionApiCommandArgs,
+    output_cls=ExternalPartitionData,
+)
+def partition_data_command(args):
+    check.inst_param(args, 'args', PartitionApiCommandArgs)
+    recon_repo = recon_repository_from_origin(args.repository_origin)
     definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name)
-    partition_data = external_partition_data_from_def(partition_set_def, partition)
-    ipc_write_unary_response(output_file, partition_data)
+    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
+    partition = partition_set_def.get_partition(args.partition_name)
+    return external_partition_data_from_def(partition_set_def, partition)
 
 
 def create_snapshot_cli_group():
