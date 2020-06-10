@@ -14,7 +14,6 @@ from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
 )
-from dagster.cli.workspace.cli_target import python_target_argument
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
@@ -81,10 +80,24 @@ class LoadableRepositorySymbol(
         )
 
 
+@whitelist_for_serdes
+class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name python_file')):
+    def __new__(cls, module_name, python_file):
+        check.invariant(not (module_name and python_file), 'Must set only one')
+        check.invariant(module_name or python_file, 'Must set at least one')
+        return super(ListRepositoriesInput, cls).__new__(
+            cls,
+            module_name=check.opt_str_param(module_name, 'module_name'),
+            python_file=check.opt_str_param(python_file, 'python_file'),
+        )
+
+
 @click.command(name='list_repositories', help='Return the snapshot for the given repository')
+@click.argument('input_file', type=click.Path())
 @click.argument('output_file', type=click.Path())
-@python_target_argument
-def list_repositories_command(output_file, python_file, module_name):
+def list_repositories_command(input_file, output_file):
+    args = check.inst(read_unary_input(input_file), ListRepositoriesInput)
+    python_file, module_name = args.python_file, args.module_name
     loadable_targets = _get_loadable_targets(python_file, module_name)
 
     ipc_write_unary_response(
