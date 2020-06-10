@@ -119,9 +119,21 @@ def _execute_load_in_source(context, source, source_name):
         % (cfg.to_api_repr() if cfg else '(no config provided)', source)
     )
 
-    context.resources.bigquery.load_table_from_source(
-        source_name, source, destination, job_config=cfg
-    ).result()
+    if source_name == BigQueryLoadSource.DataFrame:
+        context.resources.bigquery.load_table_from_dataframe(
+            source, destination, job_config=cfg
+        ).result()
+
+    # Load from file. See: https://cloud.google.com/bigquery/docs/loading-data-local
+    elif source_name == BigQueryLoadSource.File:
+        with open(source, 'rb') as file_obj:
+            context.resources.bigquery.load_table_from_file(
+                file_obj, destination, job_config=cfg
+            ).result()
+
+    # Load from GCS. See: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage
+    elif source_name == BigQueryLoadSource.GCS:
+        context.resources.biquery.load_table_from_uri(source, destination, job_config=cfg).result()
 
 
 @solid(
