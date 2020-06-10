@@ -20,7 +20,7 @@ def sync_get_external_partition(repository_handle, partition_set_name, partition
             PartitionApiCommandArgs(
                 repository_origin=repository_origin,
                 partition_set_name=partition_set_name,
-                partition_name=partition_set_name,
+                partition_name=partition_name,
             ),
         ),
         ExternalPartitionData,

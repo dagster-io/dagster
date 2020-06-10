@@ -19,12 +19,12 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterSubprocessError,
     ScheduleExecutionError,
+    PartitionScheduleExecutionError,
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import (
-    external_partition_data_from_def,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
@@ -283,7 +283,19 @@ def partition_data_command(args):
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(args.partition_set_name)
     partition = partition_set_def.get_partition(args.partition_name)
-    return external_partition_data_from_def(partition_set_def, partition)
+    try:
+        with user_code_error_boundary(
+            PartitionScheduleExecutionError,
+            lambda: 'Error occurred during the execution of user-provided partition functions for '
+            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
+        ):
+            run_config = partition_set_def.environment_dict_for_partition(partition)
+            tags = partition_set_def.tags_for_partition(partition)
+            return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
+    except PartitionScheduleExecutionError:
+        return ExternalPartitionData(
+            name=partition.name, error=serializable_error_info_from_exc_info(sys.exc_info())
+        )
 
 
 @whitelist_for_serdes

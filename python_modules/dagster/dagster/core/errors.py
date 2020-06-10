@@ -405,5 +405,9 @@ class ScheduleExecutionError(DagsterUserCodeExecutionError):
     '''Errors raised during the execution of schedule.'''
 
 
+class PartitionScheduleExecutionError(ScheduleExecutionError):
+    '''Errors raised during the execution of user-provided functions of a partition set schedule.'''
+
+
 class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
     ''' Error raised by invalid asset key '''

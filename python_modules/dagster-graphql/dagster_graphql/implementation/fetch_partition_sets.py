@@ -70,7 +70,6 @@ def get_partition_by_name(graphene_info, repository_handle, partition_set, parti
     )
 
 
-@capture_dauphin_error
 def get_partition_config(repository_handle, partition_set_name, partition_name):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
@@ -81,7 +80,6 @@ def get_partition_config(repository_handle, partition_set_name, partition_name):
     ).run_config
 
 
-@capture_dauphin_error
 def get_partition_tags(repository_handle, partition_set_name, partition_name):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
