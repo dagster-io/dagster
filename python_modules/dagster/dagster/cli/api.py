@@ -26,7 +26,10 @@ from dagster.core.host_representation import (
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    snapshot_from_execution_plan,
+)
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
@@ -92,24 +95,43 @@ class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name py
         )
 
 
-@click.command(name='list_repositories', help='Return the snapshot for the given repository')
-@click.argument('input_file', type=click.Path())
-@click.argument('output_file', type=click.Path())
-def list_repositories_command(input_file, output_file):
-    args = check.inst(read_unary_input(input_file), ListRepositoriesInput)
+def api_cli_command(name, help_str, input_cls, output_cls):
+    check.str_param(name, 'name')
+    check.str_param(help_str, 'help_str')
+    check.type_param(input_cls, 'input_cls')
+    check.type_param(output_cls, 'output_cls')
+
+    def wrap(fn):
+        @click.command(name=name, help=help_str)
+        @click.argument('input_file', type=click.Path())
+        @click.argument('output_file', type=click.Path())
+        def command(input_file, output_file):
+            args = check.inst(read_unary_input(input_file), input_cls)
+            output = check.inst(fn(args), output_cls)
+            ipc_write_unary_response(output_file, output)
+
+        return command
+
+    return wrap
+
+
+@api_cli_command(
+    name='list_repositories',
+    help_str='Return the snapshot for the given repository',
+    input_cls=ListRepositoriesInput,
+    output_cls=ListRepositoriesResponse,
+)
+def list_repositories_command(args):
+    check.inst_param(args, 'args', ListRepositoriesInput)
     python_file, module_name = args.python_file, args.module_name
     loadable_targets = _get_loadable_targets(python_file, module_name)
-
-    ipc_write_unary_response(
-        output_file,
-        ListRepositoriesResponse(
-            [
-                LoadableRepositorySymbol(
-                    attribute=lt.attribute, repository_name=lt.target_definition.name
-                )
-                for lt in loadable_targets
-            ]
-        ),
+    return ListRepositoriesResponse(
+        [
+            LoadableRepositorySymbol(
+                attribute=lt.attribute, repository_name=lt.target_definition.name
+            )
+            for lt in loadable_targets
+        ]
     )
 
 
@@ -188,13 +210,16 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
-@click.command(name='execution_plan', help='Create an execution plan and return its snapshot')
-@click.argument('input_file', type=click.Path())
-@click.argument('output_file', type=click.Path())
-def execution_plan_snapshot_command(input_file, output_file):
+@api_cli_command(
+    name='execution_plan',
+    help_str='Create an execution plan and return its snapshot',
+    input_cls=ExecutionPlanSnapshotArgs,
+    output_cls=ExecutionPlanSnapshot,
+)
+def execution_plan_snapshot_command(args):
     from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
-    args = check.inst(read_unary_input(input_file), ExecutionPlanSnapshotArgs)
+    check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
 
     recon_pipeline = (
         recon_pipeline_from_origin(args.pipeline_origin).subset_for_execution(args.solid_selection)
@@ -202,7 +227,7 @@ def execution_plan_snapshot_command(input_file, output_file):
         else recon_pipeline_from_origin(args.pipeline_origin)
     )
 
-    execution_plan_snapshot = snapshot_from_execution_plan(
+    return snapshot_from_execution_plan(
         create_execution_plan(
             pipeline=recon_pipeline,
             environment_dict=args.environment_dict,
@@ -211,8 +236,6 @@ def execution_plan_snapshot_command(input_file, output_file):
         ),
         args.snapshot_id,
     )
-
-    ipc_write_unary_response(output_file, execution_plan_snapshot)
 
 
 @click.command(name='partition', help='Return the config for a partition')
