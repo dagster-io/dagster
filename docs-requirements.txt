@@ -11,6 +11,7 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagster-dask
 -e ./python_modules/libraries/dagster-gcp
 -e ./python_modules/libraries/dagster-k8s
+-e ./python_modules/libraries/dagster-azure
 -r ./python_modules/dagster/dev-requirements.txt
 sphinx-click==2.3.1
 recommonmark==0.4.0
