@@ -62,9 +62,7 @@ def canonicalize_backcompat_args(
             '"{old_arg}" is deprecated and will be removed in {breaking_version}, use "{new_arg}" instead.'.format(
                 old_arg=old_arg, new_arg=new_arg, breaking_version=breaking_version
             )
-            + (' ' + additional_warn_txt)
-            if additional_warn_txt
-            else '',
+            + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
             # This punches up to the caller of canonicalize_backcompat_args
             stacklevel=3,
         )
