@@ -73,8 +73,10 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "SOLIDS_ROOT_QUERY",
     query: SOLIDS_ROOT_QUERY,
     variables: {
-      repositoryLocationName: "<<in_process>>",
-      repositoryName: "internal_dagit_repository"
+      repositorySelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository"
+      }
     },
     filepath: path.join(__dirname, "__data__", "SOLIDS_ROOT_QUERY.json")
   },
@@ -82,8 +84,10 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "USED_SOLIDS_DETAILS_QUERY",
     query: USED_SOLID_DETAILS_QUERY,
     variables: {
-      repositoryLocationName: "<<in_process>>",
-      repositoryName: "internal_dagit_repository",
+      repositorySelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository"
+      },
       name: "s3_to_df"
     },
     filepath: path.join(__dirname, "__data__", "USED_SOLID_DETAILS_QUERY.json")

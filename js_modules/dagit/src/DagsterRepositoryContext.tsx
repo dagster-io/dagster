@@ -3,14 +3,17 @@ import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import {
   RootRepositoriesQuery,
-  RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes,
-  RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_repositories
+  RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes,
+  RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location
 } from "./types/RootRepositoriesQuery";
 import PythonErrorInfo from "./PythonErrorInfo";
 
+type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
+type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+
 export interface DagsterRepoOption {
-  repositoryLocation: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes;
-  repository: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_repositories;
+  repositoryLocation: RepositoryLocation;
+  repository: Repository;
 }
 
 export const DagsterRepositoryContext = React.createContext<DagsterRepoOption>(
@@ -19,16 +22,17 @@ export const DagsterRepositoryContext = React.createContext<DagsterRepoOption>(
 
 export const ROOT_REPOSITORIES_QUERY = gql`
   query RootRepositoriesQuery {
-    repositoryLocationsOrError {
+    repositoriesOrError {
       __typename
-      ... on RepositoryLocationConnection {
+      ... on RepositoryConnection {
         nodes {
           name
-          repositories {
+          pipelines {
             name
-            pipelines {
-              name
-            }
+          }
+          location {
+            name
+            environmentPath
           }
         }
       }
@@ -52,20 +56,19 @@ export const useRepositoryOptions = () => {
     fetchPolicy: "cache-and-network"
   });
 
-  const options: DagsterRepoOption[] = [];
-
-  if (!data || !data.repositoryLocationsOrError) {
-    return { options, error: null };
+  if (!data || !data.repositoriesOrError) {
+    return { options: [], error: null };
   }
-  if (data.repositoryLocationsOrError.__typename === "PythonError") {
-    return { options, error: data.repositoryLocationsOrError };
+  if (data.repositoriesOrError.__typename === "PythonError") {
+    return { options: [], error: data.repositoriesOrError };
   }
 
-  for (const repositoryLocation of data.repositoryLocationsOrError.nodes) {
-    for (const repository of repositoryLocation.repositories) {
-      options.push({ repository, repositoryLocation });
-    }
-  }
+  const options: DagsterRepoOption[] = data.repositoriesOrError.nodes.map(
+    repository => ({
+      repository,
+      repositoryLocation: repository.location
+    })
+  );
 
   return { error: null, options };
 };

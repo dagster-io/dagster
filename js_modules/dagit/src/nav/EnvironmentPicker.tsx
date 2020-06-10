@@ -51,8 +51,10 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
               text={
                 <div>
                   <div>{option.repository.name}</div>
-                  <div style={{ opacity: 0.5 }}>
-                    {option.repositoryLocation.name}
+                  <div style={{ opacity: 0.5, fontSize: 12, marginTop: 5 }}>
+                    {option.repositoryLocation.environmentPath
+                      ? `${option.repositoryLocation.name}: ${option.repositoryLocation.environmentPath}`
+                      : option.repositoryLocation.name}
                   </div>
                 </div>
               }

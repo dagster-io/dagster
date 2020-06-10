@@ -14,8 +14,8 @@ from dagster_graphql.implementation.execution.execute_run_in_process import (
     execute_run_in_graphql_process,
 )
 from dagster_graphql.implementation.external import (
+    fetch_repositories,
     fetch_repository,
-    fetch_repository_locations,
     get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
@@ -71,12 +71,10 @@ class DauphinQuery(dauphin.ObjectType):
 
     version = dauphin.NonNull(dauphin.String)
 
-    repositoryLocationsOrError = dauphin.NonNull('RepositoryLocationsOrError')
-
+    repositoriesOrError = dauphin.NonNull('RepositoriesOrError')
     repositoryOrError = dauphin.Field(
         dauphin.NonNull('RepositoryOrError'),
-        repositoryLocationName=dauphin.String(),
-        repositoryName=dauphin.String(),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
     )
 
     pipelineOrError = dauphin.Field(
@@ -167,11 +165,13 @@ class DauphinQuery(dauphin.ObjectType):
         assetKey=dauphin.Argument(dauphin.NonNull('AssetKeyInput')),
     )
 
-    def resolve_repositoryLocationsOrError(self, graphene_info):
-        return fetch_repository_locations(graphene_info)
+    def resolve_repositoriesOrError(self, graphene_info):
+        return fetch_repositories(graphene_info)
 
-    def resolve_repositoryOrError(self, graphene_info, repositoryLocationName, repositoryName):
-        return fetch_repository(graphene_info, repositoryLocationName, repositoryName)
+    def resolve_repositoryOrError(self, graphene_info, **kwargs):
+        return fetch_repository(
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+        )
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')

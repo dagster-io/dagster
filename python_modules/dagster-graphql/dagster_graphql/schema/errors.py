@@ -636,10 +636,10 @@ class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
         )
 
 
-class DauphinRepositoryLocationsOrError(dauphin.Union):
+class DauphinRepositoriesOrError(dauphin.Union):
     class Meta(object):
-        name = 'RepositoryLocationsOrError'
-        types = ('RepositoryLocationConnection', DauphinPythonError)
+        name = 'RepositoriesOrError'
+        types = ('RepositoryConnection', DauphinPythonError)
 
 
 class DauphinRepositoryNotFoundError(dauphin.ObjectType):

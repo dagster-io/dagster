@@ -925,8 +925,8 @@ type PythonError implements Error {
 
 type Query {
   version: String!
-  repositoryLocationsOrError: RepositoryLocationsOrError!
-  repositoryOrError(repositoryLocationName: String, repositoryName: String): RepositoryOrError!
+  repositoriesOrError: RepositoriesOrError!
+  repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
@@ -970,23 +970,25 @@ type RegularDagsterType implements DagsterType {
   innerTypes: [DagsterType!]!
 }
 
+union RepositoriesOrError = RepositoryConnection | PythonError
+
 type Repository {
   name: String!
+  location: RepositoryLocation!
   pipelines: [Pipeline!]!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
 }
 
+type RepositoryConnection {
+  nodes: [Repository!]!
+}
+
 type RepositoryLocation {
   name: String!
+  environmentPath: String
   repositories: [Repository!]!
 }
-
-type RepositoryLocationConnection {
-  nodes: [RepositoryLocation!]!
-}
-
-union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
 
 type RepositoryNotFoundError implements Error {
   message: String!

@@ -9,7 +9,10 @@ import { SolidCard } from "./SolidCard";
 import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
 import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
 import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;
@@ -33,14 +36,14 @@ export const UsedSolidDetails: React.FunctionComponent<{
   const { repositoryLocation, repository } = React.useContext(
     DagsterRepositoryContext
   );
+  const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<UsedSolidDetailsQuery>(
     USED_SOLID_DETAILS_QUERY,
     {
       skip: !repository || !repositoryLocation,
       variables: {
         name,
-        repositoryLocationName: repositoryLocation?.name,
-        repositoryName: repository?.name
+        repositorySelector
       }
     }
   );
@@ -81,13 +84,9 @@ export const UsedSolidDetails: React.FunctionComponent<{
 export const USED_SOLID_DETAILS_QUERY = gql`
   query UsedSolidDetailsQuery(
     $name: String!
-    $repositoryName: String!
-    $repositoryLocationName: String!
+    $repositorySelector: RepositorySelector!
   ) {
-    repositoryOrError(
-      repositoryLocationName: $repositoryLocationName
-      repositoryName: $repositoryName
-    ) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         usedSolid(name: $name) {
           __typename

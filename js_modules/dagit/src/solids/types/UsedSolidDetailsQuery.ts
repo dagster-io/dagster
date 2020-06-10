@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RepositorySelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: UsedSolidDetailsQuery
 // ====================================================
@@ -543,6 +545,5 @@ export interface UsedSolidDetailsQuery {
 
 export interface UsedSolidDetailsQueryVariables {
   name: string;
-  repositoryName: string;
-  repositoryLocationName: string;
+  repositorySelector: RepositorySelector;
 }

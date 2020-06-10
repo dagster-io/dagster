@@ -18,17 +18,15 @@ from dagster.utils import (
 
 PIPELINES_OR_ERROR_QUERY = '''
 {
-    repositoryLocationsOrError {
+    repositoriesOrError {
         ... on PythonError {
             message
             stack
         }
-        ... on RepositoryLocationConnection {
+        ... on RepositoryConnection {
             nodes {
-                repositories {
-                    pipelines {
-                        name
-                    }
+                pipelines {
+                    name
                 }
             }
         }
@@ -51,16 +49,9 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     res = client.get('/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY))
     json_res = json.loads(res.data.decode('utf-8'))
     assert 'data' in json_res
-    assert 'repositoryLocationsOrError' in json_res['data']
-    assert 'nodes' in json_res['data']['repositoryLocationsOrError']
-    assert (
-        len(
-            json_res['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0][
-                'pipelines'
-            ]
-        )
-        == n_pipelines
-    )
+    assert 'repositoriesOrError' in json_res['data']
+    assert 'nodes' in json_res['data']['repositoriesOrError']
+    assert len(json_res['data']['repositoriesOrError']['nodes'][0]['pipelines']) == n_pipelines
 
     return res
 

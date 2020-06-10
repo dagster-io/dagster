@@ -2,14 +2,14 @@
 # distinct virtual environments
 load_from:
   - python_environment:
-      executable_path: "~/venvs/dagster-dev-3.7.6/bin/python"
+      executable_path: "~/.pyenv/versions/dagster-3.6.8/bin/python"
       target:
         python_module:
           module_name: dagster_examples
           location_name: dagster_examples
           attribute: define_internal_dagit_repository
   - python_environment:
-      executable_path: "~/venvs/dagster-dev-3.8.1/bin/python"
+      executable_path: "~/.pyenv/versions/release-0.7.16/bin/python"
       target:
         python_file:
           relative_path: dagster_examples/toys/repo.py

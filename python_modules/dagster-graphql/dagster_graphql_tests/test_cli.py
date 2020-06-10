@@ -72,10 +72,8 @@ def test_basic_introspection():
         assert result_data['data']
 
 
-def test_basic_repo_locations():
-    query = (
-        '{ repositoryLocationsOrError { ... on RepositoryLocationConnection { nodes { name } } } }'
-    )
+def test_basic_repositories():
+    query = '{ repositoriesOrError { ... on RepositoryConnection { nodes { name } } } }'
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
@@ -85,7 +83,7 @@ def test_basic_repo_locations():
         assert result.exit_code == 0
 
         result_data = json.loads(result.output)
-        assert result_data['data']['repositoryLocationsOrError']['nodes']
+        assert result_data['data']['repositoriesOrError']['nodes']
 
 
 def test_basic_variables():

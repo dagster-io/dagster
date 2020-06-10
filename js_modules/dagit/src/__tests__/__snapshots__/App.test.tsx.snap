@@ -452,15 +452,6 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/playground"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/playground"
@@ -1204,15 +1195,6 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -5912,15 +5894,6 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -10617,15 +10590,6 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -12447,15 +12411,6 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -17155,15 +17110,6 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -21857,15 +21803,6 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             pandas_hello_world_pipeline_with_read_csv
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="pyspark_pagerank"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/pyspark_pagerank/"
-            onClick={[Function]}
-          >
-            pyspark_pagerank
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"

@@ -1,16 +1,14 @@
 PRODUCTION_QUERY = '''
 query AppQuery {
-  repositoryLocationsOrError {
+  repositoriesOrError {
     ... on PythonError {
       message
       stack
     }
-    ... on RepositoryLocationConnection {
+    ... on RepositoryConnection {
       nodes {
-        repositories {
-          pipelines {
-            ...PipelineFragment
-          }
+        pipelines {
+          ...PipelineFragment
         }
       }
     }

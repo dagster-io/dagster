@@ -62,6 +62,10 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     def name(self):
         pass
 
+    @abstractproperty
+    def location_handle(self):
+        pass
+
     @abstractmethod
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
@@ -120,6 +124,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
     @property
     def name(self):
         return self._handle.location_name
+
+    @property
+    def location_handle(self):
+        return self._handle
 
     def get_repository(self, name):
         return self._repositories[name]
@@ -218,6 +226,10 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
     @property
     def name(self):
         return self._handle.location_name
+
+    @property
+    def location_handle(self):
+        return self._handle
 
     def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute

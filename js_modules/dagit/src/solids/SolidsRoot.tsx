@@ -19,7 +19,10 @@ import {
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { Colors, NonIdealState } from "@blueprintjs/core";
 import SolidTypeSignature from "../SolidTypeSignature";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
 import {
   UsedSolidDetails,
   SolidDetailScrollContainer
@@ -121,12 +124,10 @@ export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
   const { repositoryLocation, repository } = React.useContext(
     DagsterRepositoryContext
   );
+  const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
     skip: !repository || !repositoryLocation,
-    variables: {
-      repositoryLocationName: repositoryLocation?.name,
-      repositoryName: repository?.name
-    }
+    variables: { repositorySelector }
   });
   return (
     <Loading queryResult={queryResult}>
@@ -293,14 +294,8 @@ const SolidList: React.FunctionComponent<{
 };
 
 export const SOLIDS_ROOT_QUERY = gql`
-  query SolidsRootQuery(
-    $repositoryName: String!
-    $repositoryLocationName: String!
-  ) {
-    repositoryOrError(
-      repositoryLocationName: $repositoryLocationName
-      repositoryName: $repositoryName
-    ) {
+  query SolidsRootQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         usedSolids {
           __typename

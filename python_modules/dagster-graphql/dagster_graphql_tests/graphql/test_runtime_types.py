@@ -65,15 +65,13 @@ fragment dagsterTypeFragment on DagsterType {
 }
 
 {
-  repositoryLocationsOrError {
-    ... on RepositoryLocationConnection {
+  repositoriesOrError {
+    ... on RepositoryConnection {
       nodes {
-        repositories {
-          pipelines {
-            name
-            dagsterTypes {
-              ...dagsterTypeFragment
-            }
+        pipelines {
+          name
+          dagsterTypes {
+            ...dagsterTypeFragment
           }
         }
       }

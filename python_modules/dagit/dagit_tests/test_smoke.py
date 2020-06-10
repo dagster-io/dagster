@@ -9,17 +9,15 @@ from dagster.core.instance import DagsterInstance
 
 SMOKE_TEST_QUERY = '''
 {
-    repositoryLocationsOrError {
+    repositoriesOrError {
         ... on PythonError {
             message
             stack
         }
-        ... on RepositoryLocationConnection {
+        ... on RepositoryConnection {
             nodes {
-                repositories {
-                    pipelines {
-                        name
-                    }
+                pipelines {
+                    name
                 }
             }
         }
@@ -42,17 +40,11 @@ def test_smoke_app():
 
     result = client.post('/graphql', data={'query': SMOKE_TEST_QUERY},)
     data = json.loads(result.data.decode('utf-8'))
-    assert len(data['data']['repositoryLocationsOrError']['nodes']) == 1
-    assert len(data['data']['repositoryLocationsOrError']['nodes'][0]['repositories']) == 1
-    assert (
-        len(data['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0]['pipelines'])
-        == 2
-    )
+    assert len(data['data']['repositoriesOrError']['nodes']) == 1
+    assert len(data['data']['repositoriesOrError']['nodes'][0]['pipelines']) == 2
     assert {
         node_data['name']
-        for node_data in data['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0][
-            'pipelines'
-        ]
+        for node_data in data['data']['repositoriesOrError']['nodes'][0]['pipelines']
     } == set(['hello_cereal_pipeline', 'complex_pipeline'])
 
     result = client.get('/graphql')
