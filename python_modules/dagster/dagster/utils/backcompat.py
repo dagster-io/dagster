@@ -66,7 +66,7 @@ def canonicalize_backcompat_args(
     return new_val
 
 
-def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=None):
+def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=None, stacklevel=3):
     '''
     Common utility for managing backwards compatibility of renaming.
     '''
@@ -75,5 +75,20 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
             old_name=old_name, new_name=new_name, breaking_version=breaking_version,
         )
         + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
-        stacklevel=3,
+        stacklevel=stacklevel,
     )
+
+
+def canonicalize_run_config(run_config, environment_dict, stacklevel=3):
+    check.opt_dict_param(run_config, 'run_config')
+    check.opt_dict_param(environment_dict, 'environment_dict')
+    check.invariant(
+        not (run_config is not None and environment_dict is not None),
+        'Cannot set both run_config and environment_dict. Use run_config parameter.',
+    )
+
+    if environment_dict is not None:
+        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel)
+        return environment_dict
+    else:
+        return run_config

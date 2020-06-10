@@ -14,6 +14,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_run_config
 
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
 from .results import PipelineExecutionResult
@@ -171,6 +172,7 @@ def execute_pipeline_iterator(
     tags=None,
     solid_selection=None,
     instance=None,
+    run_config=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -205,6 +207,9 @@ def execute_pipeline_iterator(
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
+    # stack level is to punch through helper function
+    environment_dict = canonicalize_run_config(run_config, environment_dict, stacklevel=4)
+
     (
         pipeline,
         environment_dict,
@@ -245,6 +250,7 @@ def execute_pipeline(
     solid_selection=None,
     instance=None,
     raise_on_error=True,
+    run_config=None,
 ):
     '''Execute a pipeline synchronously.
 
@@ -282,6 +288,9 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
+    # stack level is to punch through helper function and telemetry wrapper
+    environment_dict = canonicalize_run_config(run_config, environment_dict, stacklevel=5)
+
     (
         pipeline,
         environment_dict,
