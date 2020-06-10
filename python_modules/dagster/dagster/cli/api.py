@@ -23,9 +23,12 @@ from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster.core.host_representation.external_data import (
+    ExternalPipelineSubsetResult,
+    ExternalRepositoryData,
+)
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     snapshot_from_execution_plan,
@@ -147,19 +150,20 @@ def _get_loadable_targets(python_file, module_name):
 # Snapshot CLI
 
 
-@click.command(
+@api_cli_command(
     name='repository',
-    help=(
+    help_str=(
         'Return all repository symbols in a given python_file or module name. '
         'Used to bootstrap workspace creation process'
     ),
+    input_cls=RepositoryPythonOrigin,
+    output_cls=ExternalRepositoryData,
 )
-@click.argument('output_file', type=click.Path())
-@legacy_repository_target_argument
-def repository_snapshot_command(output_file, **kwargs):
-    recon_repo = recon_repo_for_cli_args(kwargs)
-    definition = recon_repo.get_definition()
-    ipc_write_unary_response(output_file, external_repository_data_from_def(definition))
+def repository_snapshot_command(repository_python_origin):
+    from dagster.utils.hosted_user_process import recon_repository_from_origin
+
+    recon_repo = recon_repository_from_origin(repository_python_origin)
+    return external_repository_data_from_def(recon_repo.get_definition())
 
 
 @click.command(
