@@ -1,7 +1,14 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors, Icon, Checkbox } from "@blueprintjs/core";
+import {
+  Colors,
+  Icon,
+  Checkbox,
+  Tooltip,
+  Intent,
+  Position
+} from "@blueprintjs/core";
 
 import PythonErrorInfo from "../PythonErrorInfo";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -24,6 +31,22 @@ type ValidationErrorOrNode = ValidationError | React.ReactNode;
 function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === "object" && "__typename" in e ? true : false;
 }
+
+const stateToHint = {
+  invalid: {
+    title: `You need to fix this configuration section.`,
+    intent: Intent.DANGER
+  },
+  missing: {
+    title: `You need to add this configuration section.`,
+    intent: Intent.DANGER
+  },
+  present: {
+    title: `This section is present and valid.`,
+    intent: Intent.SUCCESS
+  },
+  none: { title: `This section is empty and valid.`, intent: Intent.PRIMARY }
+};
 
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
@@ -208,26 +231,25 @@ export class RunPreview extends React.Component<
             : "none";
 
           return (
-            <Item
+            <Tooltip
+              position={Position.BOTTOM}
+              content={stateToHint[state].title}
+              intent={stateToHint[state].intent}
               key={name}
-              state={state}
-              title={
-                {
-                  invalid: `You need to fix this configuration section.`,
-                  missing: `You need to add this configuration section.`,
-                  present: `This section is present and valid.`,
-                  none: `This section is empty and valid.`
-                }[state]
-              }
-              onClick={() => {
-                const first = pathErrors.find(isValidationError);
-                onHighlightPath(
-                  first ? errorStackToYamlPath(first.stack.entries) : path
-                );
-              }}
             >
-              {name}
-            </Item>
+              <Item
+                key={name}
+                state={state}
+                onClick={() => {
+                  const first = pathErrors.find(isValidationError);
+                  onHighlightPath(
+                    first ? errorStackToYamlPath(first.stack.entries) : path
+                  );
+                }}
+              >
+                {name}
+              </Item>
+            </Tooltip>
           );
         })
         .filter(Boolean);
@@ -339,21 +361,21 @@ const ItemsEmptyNotice = styled.div`
 
 const ItemBorder = {
   invalid: `1px solid #CE1126`,
-  missing: `1px solid #D9822B`,
+  missing: `1px solid #CE1126`,
   present: `1px solid #AFCCE1`,
   none: `1px solid ${Colors.LIGHT_GRAY2}`
 };
 
 const ItemBackground = {
   invalid: Colors.RED5,
-  missing: "#F2A85C",
+  missing: Colors.RED5,
   present: "#C8E1F4",
   none: Colors.LIGHT_GRAY4
 };
 
 const ItemBackgroundHover = {
   invalid: "#E15858",
-  missing: "#F2A85C",
+  missing: "#E15858",
   present: "#AFCCE1",
   none: Colors.LIGHT_GRAY4
 };
