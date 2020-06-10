@@ -57,12 +57,17 @@ def get_scheduler_or_error(graphene_info):
     if not instance.scheduler:
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
-    runningSchedules = [
+    return graphene_info.schema.type_named('Scheduler')()
+
+
+@capture_dauphin_error
+def get_schedules_or_error(graphene_info):
+    instance = graphene_info.context.instance
+
+    return [
         graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
         for s in instance.all_stored_schedule_state()
     ]
-
-    return graphene_info.schema.type_named('Scheduler')(runningSchedules=runningSchedules)
 
 
 @capture_dauphin_error

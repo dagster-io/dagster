@@ -58,7 +58,7 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   const errors = [];
   if (status === ScheduleStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
-      "Schedule is set to be running, but the scheduler is not running the schedule"
+      "Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule"
     );
   } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
     errors.push(

@@ -9,12 +9,7 @@ import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../t
 // GraphQL query operation: SchedulesRootQuery
 // ====================================================
 
-export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
-  __typename: "SchedulerNotDefinedError";
-  message: string;
-}
-
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition {
+export interface SchedulesRootQuery_schedules_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
   cronSchedule: string;
@@ -24,32 +19,32 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_schedul
   runConfigYaml: string | null;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks {
+export interface SchedulesRootQuery_schedules_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_tags {
+export interface SchedulesRootQuery_schedules_runs_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline {
+export interface SchedulesRootQuery_schedules_runs_pipeline {
   __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs {
+export interface SchedulesRootQuery_schedules_runs {
   __typename: "PipelineRun";
   runId: string;
-  tags: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_tags[];
-  pipeline: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs_pipeline;
+  tags: SchedulesRootQuery_schedules_runs_tags[];
+  pipeline: SchedulesRootQuery_schedules_runs_pipeline;
   status: PipelineRunStatus;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_stats {
+export interface SchedulesRootQuery_schedules_stats {
   __typename: "ScheduleTickStatsSnapshot";
   ticksStarted: number;
   ticksSucceeded: number;
@@ -57,21 +52,25 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_stats {
   ticksFailed: number;
 }
 
-export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
+export interface SchedulesRootQuery_schedules {
   __typename: "RunningSchedule";
   runningScheduleCount: number;
-  scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
-  ticks: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_ticks[];
+  scheduleDefinition: SchedulesRootQuery_schedules_scheduleDefinition;
+  ticks: SchedulesRootQuery_schedules_ticks[];
   runsCount: number;
-  runs: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_runs[];
-  stats: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_stats;
+  runs: SchedulesRootQuery_schedules_runs[];
+  stats: SchedulesRootQuery_schedules_stats;
   ticksCount: number;
   status: ScheduleStatus;
 }
 
 export interface SchedulesRootQuery_scheduler_Scheduler {
   __typename: "Scheduler";
-  runningSchedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
+}
+
+export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
+  __typename: "SchedulerNotDefinedError";
+  message: string;
 }
 
 export interface SchedulesRootQuery_scheduler_PythonError {
@@ -80,9 +79,10 @@ export interface SchedulesRootQuery_scheduler_PythonError {
   stack: string[];
 }
 
-export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_PythonError;
+export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_PythonError;
 
 export interface SchedulesRootQuery {
+  schedules: SchedulesRootQuery_schedules[];
   scheduler: SchedulesRootQuery_scheduler;
 }
 

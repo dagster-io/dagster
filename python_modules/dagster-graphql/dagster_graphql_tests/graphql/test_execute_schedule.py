@@ -16,29 +16,27 @@ from .utils import get_all_logs_for_finished_run_via_subscription
 
 SCHEDULE_TICKS_QUERY = '''
 {
-    scheduler {
-    ... on PythonError {
-        message
-        stack
-    }
-    ... on Scheduler {
-        runningSchedules {
-            scheduleDefinition {
-                name
-            }
-            ticks {
-                tickId
-                status
-            }
-            stats {
-                ticksStarted
-                ticksSucceeded
-                ticksSkipped
-                ticksFailed
-            }
-            ticksCount
+    schedules {
+        scheduleDefinition {
+            name
         }
+        ticks {
+            tickId
+            status
+        }
+        stats {
+            ticksStarted
+            ticksSucceeded
+            ticksSkipped
+            ticksFailed
+        }
+        ticksCount
     }
+    scheduler {
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 '''
@@ -308,7 +306,7 @@ class TestExecuteSchedule(
         assert result.data
         schedule_result = next(
             schedule_result
-            for schedule_result in result.data['scheduler']['runningSchedules']
+            for schedule_result in result.data['schedules']
             if schedule_result['scheduleDefinition']['name'] == external_schedule.name
         )
 
@@ -343,7 +341,7 @@ class TestExecuteSchedule(
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
-            for x in result.data['scheduler']['runningSchedules']
+            for x in result.data['schedules']
             if x['scheduleDefinition']['name'] == 'no_config_should_execute'
         )
         assert schedule_result['stats']['ticksSkipped'] == 1
@@ -373,7 +371,7 @@ class TestExecuteSchedule(
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
-            for x in result.data['scheduler']['runningSchedules']
+            for x in result.data['schedules']
             if x['scheduleDefinition']['name'] == 'should_execute_error_schedule'
         )
         assert schedule_result['stats']['ticksFailed'] == 1
@@ -413,7 +411,7 @@ class TestExecuteSchedule(
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
-            for x in result.data['scheduler']['runningSchedules']
+            for x in result.data['schedules']
             if x['scheduleDefinition']['name'] == 'tags_error_schedule'
         )
 
@@ -446,7 +444,7 @@ class TestExecuteSchedule(
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
-            for x in result.data['scheduler']['runningSchedules']
+            for x in result.data['schedules']
             if x['scheduleDefinition']['name'] == 'environment_dict_error_schedule'
         )
         assert schedule_result['stats']['ticksSucceeded'] == 1
@@ -505,7 +503,7 @@ class TestExecuteSchedule(
             )
 
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
-        snapshot.assert_match(result.data['scheduler']['runningSchedules'])
+        snapshot.assert_match(result.data['schedules'])
 
     def test_tagged_pipeline_schedule(self, graphql_context):
         result = execute_dagster_graphql_and_finish_runs(
@@ -590,7 +588,7 @@ class TestExecuteSchedule(
         result = execute_dagster_graphql_and_finish_runs(graphql_context, SCHEDULE_TICKS_QUERY)
         schedule_result = next(
             x
-            for x in result.data['scheduler']['runningSchedules']
+            for x in result.data['schedules']
             if x['scheduleDefinition']['name'] == 'invalid_config_schedule'
         )
         assert schedule_result['stats']['ticksSucceeded'] == 1

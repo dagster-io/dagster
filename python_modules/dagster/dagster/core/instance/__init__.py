@@ -886,7 +886,9 @@ class DagsterInstance:
         return self._scheduler.stop_schedule_and_delete_from_storage(self, schedule_origin_id)
 
     def running_schedule_count(self, schedule_origin_id):
-        return self._scheduler.running_schedule_count(schedule_origin_id)
+        if self._scheduler:
+            return self._scheduler.running_schedule_count(schedule_origin_id)
+        return 0
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus

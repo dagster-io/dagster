@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { NonIdealState } from "@blueprintjs/core";
+import { NonIdealState, Callout, Intent, Code } from "@blueprintjs/core";
 import {
   Header,
   Legend,
@@ -10,7 +10,8 @@ import {
 import { Query, QueryResult } from "react-apollo";
 import {
   SchedulesRootQuery,
-  SchedulesRootQuery_scheduler_Scheduler_runningSchedules
+  SchedulesRootQuery_scheduler,
+  SchedulesRootQuery_schedules
 } from "./types/SchedulesRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
@@ -18,6 +19,49 @@ import gql from "graphql-tag";
 import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
 
 const NUM_RUNS_TO_DISPLAY = 10;
+
+const getSchedulerError = (scheduler: SchedulesRootQuery_scheduler) => {
+  if (scheduler.__typename === "SchedulerNotDefinedError") {
+    return (
+      <Callout
+        icon="calendar"
+        intent={Intent.WARNING}
+        title="The current dagster instance does not have a scheduler configured."
+        style={{ marginBottom: 40 }}
+      >
+        <p>
+          A scheduler must be configured on the instance to run schedules.
+          Therefore, the schedules below are not currently running. You can
+          configure a scheduler on the instance through the{" "}
+          <Code>dagster.yaml</Code> file in <Code>$DAGSTER_HOME</Code>
+        </p>
+
+        <p>
+          See the{" "}
+          <a href="https://docs.dagster.io/docs/deploying/instance#instance-configuration-yaml">
+            instance configuration documentation
+          </a>{" "}
+          for more information.
+        </p>
+      </Callout>
+    );
+  } else if (scheduler.__typename === "PythonError") {
+    return (
+      <>
+        <div>
+          <NonIdealState
+            icon="error"
+            title="PythonError"
+            description={scheduler.message}
+          />
+        </div>
+        <pre>{scheduler.stack}</pre>
+      </>
+    );
+  }
+
+  return null;
+};
 
 export default class SchedulesRoot extends React.Component {
   render() {
@@ -34,47 +78,15 @@ export default class SchedulesRoot extends React.Component {
         {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
           <Loading queryResult={queryResult} allowStaleData={true}>
             {result => {
-              const { scheduler } = result;
+              const { scheduler, schedules } = result;
 
-              if (scheduler.__typename === "SchedulerNotDefinedError") {
+              const schedulerError = getSchedulerError(scheduler);
+
+              if (schedules.length === 0) {
                 return (
                   <ScrollContainer>
                     <div style={{ marginTop: 100 }}>
-                      <NonIdealState
-                        icon="calendar"
-                        title="Scheduler"
-                        description={
-                          <p>
-                            A scheduler must be configured to view schedules.
-                            You can configure a scheduler on your instance
-                            through <code>dagster.yaml</code>. See the{" "}
-                            <a href="https://docs.dagster.io/docs/tutorial/scheduler/">
-                              scheduler documentation
-                            </a>{" "}
-                            for more information.
-                          </p>
-                        }
-                      />
-                    </div>
-                  </ScrollContainer>
-                );
-              } else if (scheduler.__typename === "PythonError") {
-                return (
-                  <ScrollContainer>
-                    <div style={{ marginTop: 100 }}>
-                      <NonIdealState
-                        icon="error"
-                        title="PythonError"
-                        description={scheduler.message}
-                      />
-                    </div>
-                    <pre>{scheduler.stack}</pre>
-                  </ScrollContainer>
-                );
-              } else if (scheduler.runningSchedules.length === 0) {
-                return (
-                  <ScrollContainer>
-                    <div style={{ marginTop: 100 }}>
+                      {schedulerError}
                       <NonIdealState
                         icon="calendar"
                         title="Scheduler"
@@ -85,16 +97,16 @@ export default class SchedulesRoot extends React.Component {
                 );
               }
 
-              const sortedRunningSchedules = scheduler.runningSchedules.sort(
-                (a, b) =>
-                  a.scheduleDefinition.name.localeCompare(
-                    b.scheduleDefinition.name
-                  )
+              const sortedRunningSchedules = schedules.sort((a, b) =>
+                a.scheduleDefinition.name.localeCompare(
+                  b.scheduleDefinition.name
+                )
               );
 
               return (
                 <>
                   <ScrollContainer>
+                    {schedulerError}
                     <ScheduleTable schedules={sortedRunningSchedules} />
                   </ScrollContainer>
                 </>
@@ -108,7 +120,7 @@ export default class SchedulesRoot extends React.Component {
 }
 
 interface ScheduleTableProps {
-  schedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
+  schedules: SchedulesRootQuery_schedules[];
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
@@ -140,16 +152,11 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery($limit: Int!) {
+    schedules {
+      ...ScheduleFragment
+    }
     scheduler {
       __typename
-      ... on SchedulerNotDefinedError {
-        message
-      }
-      ... on Scheduler {
-        runningSchedules {
-          ...ScheduleFragment
-        }
-      }
       ... on SchedulerNotDefinedError {
         message
       }

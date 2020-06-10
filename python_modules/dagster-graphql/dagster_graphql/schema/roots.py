@@ -40,6 +40,7 @@ from dagster_graphql.implementation.fetch_runs import (
 from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_or_error,
     get_scheduler_or_error,
+    get_schedules_or_error,
 )
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
@@ -89,6 +90,7 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
+    schedules = dauphin.Field(dauphin.non_null_list('RunningSchedule'))
     scheduleOrError = dauphin.Field(
         dauphin.NonNull('ScheduleOrError'),
         schedule_name=dauphin.NonNull(dauphin.String),
@@ -198,6 +200,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
+
+    def resolve_schedules(self, graphene_info):
+        return get_schedules_or_error(graphene_info)
 
     def resolve_scheduleOrError(self, graphene_info, schedule_name):
         return get_schedule_or_error(graphene_info, schedule_name)

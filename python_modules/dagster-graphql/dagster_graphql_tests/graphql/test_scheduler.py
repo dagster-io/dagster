@@ -17,24 +17,20 @@ from .setup import define_test_context, main_repo_location_name, main_repo_name
 
 GET_SCHEDULES_QUERY = '''
 {
-    scheduler {
-      ... on Scheduler {
-        runningSchedules {
-          scheduleDefinition {
-            name
-            pipelineName
-            mode
-            solidSelection
-            runConfigYaml
-          }
-          runs {
-              runId
-          }
-          runsCount
-          status
-        }
-      }
+  schedules {
+    scheduleDefinition {
+      name
+      pipelineName
+      mode
+      solidSelection
+      runConfigYaml
     }
+    runs {
+        runId
+    }
+    runsCount
+    status
+  }
 }
 '''
 
@@ -185,12 +181,10 @@ def test_get_all_schedules():
         # These schedules are defined in dagster_graphql_tests/graphql/setup_scheduler.py
         # If you add a schedule there, be sure to update the number of schedules below
         assert scheduler_result.data
+        assert scheduler_result.data['schedules']
+        assert len(scheduler_result.data['schedules']) == 18
 
-        assert scheduler_result.data['scheduler']
-        assert scheduler_result.data['scheduler']['runningSchedules']
-        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 18
-
-        for schedule in scheduler_result.data['scheduler']['runningSchedules']:
+        for schedule in scheduler_result.data['schedules']:
             if schedule['scheduleDefinition']['name'] == 'no_config_pipeline_hourly_schedule':
                 assert schedule['status'] == 'RUNNING'
 

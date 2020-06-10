@@ -930,6 +930,7 @@ type Query {
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
+  schedules: [RunningSchedule!]!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
@@ -1108,6 +1109,10 @@ type SchedulerNotDefinedError implements Error {
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+type Schedules {
+  runningSchedules: [RunningSchedule!]!
+}
 
 input ScheduleSelector {
   repositoryName: String

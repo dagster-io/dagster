@@ -260,6 +260,13 @@ class DauphinScheduler(dauphin.ObjectType):
     runningSchedules = dauphin.non_null_list('RunningSchedule')
 
 
+class DauphinSchedules(dauphin.ObjectType):
+    class Meta(object):
+        name = 'Schedules'
+
+    runningSchedules = dauphin.non_null_list('RunningSchedule')
+
+
 class DauphinRunningScheduleResult(dauphin.ObjectType):
     class Meta(object):
         name = 'RunningScheduleResult'
