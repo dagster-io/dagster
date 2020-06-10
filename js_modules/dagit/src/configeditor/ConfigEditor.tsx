@@ -103,6 +103,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
+      prevProps.runConfigSchema !== this.props.runConfigSchema ||
       prevProps.showWhitespace !== this.props.showWhitespace
     );
   }

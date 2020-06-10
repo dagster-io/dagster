@@ -9,8 +9,8 @@ import { EvaluationErrorReason } from "./../../types/globalTypes";
 // GraphQL fragment: RunPreviewValidationFragment
 // ====================================================
 
-export interface RunPreviewValidationFragment_InvalidSubsetError {
-  __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError" | "PythonError";
+export interface RunPreviewValidationFragment_PipelineConfigValidationValid {
+  __typename: "PipelineConfigValidationValid";
 }
 
 export interface RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors_FieldNotDefinedConfigError_stack_entries_EvaluationStackPathEntry {
@@ -104,4 +104,27 @@ export interface RunPreviewValidationFragment_PipelineConfigValidationInvalid {
   errors: RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors[];
 }
 
-export type RunPreviewValidationFragment = RunPreviewValidationFragment_InvalidSubsetError | RunPreviewValidationFragment_PipelineConfigValidationInvalid;
+export interface RunPreviewValidationFragment_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
+}
+
+export interface RunPreviewValidationFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+}
+
+export interface RunPreviewValidationFragment_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPreviewValidationFragment_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPreviewValidationFragment_PythonError_cause | null;
+}
+
+export type RunPreviewValidationFragment = RunPreviewValidationFragment_PipelineConfigValidationValid | RunPreviewValidationFragment_PipelineConfigValidationInvalid | RunPreviewValidationFragment_PipelineNotFoundError | RunPreviewValidationFragment_InvalidSubsetError | RunPreviewValidationFragment_PythonError;

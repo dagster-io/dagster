@@ -9,7 +9,6 @@ import {
   SolidSelectorQuery_pipelineOrError_Pipeline_solids
 } from "./types/SolidSelectorQuery";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import { SubsetError } from "./ExecutionSessionContainer";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery } from "../GraphQueryImpl";
@@ -19,7 +18,7 @@ import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 interface ISolidSelectorProps {
   pipelineName: string;
-  serverProvidedSubsetError: SubsetError;
+  serverProvidedSubsetError?: { message: string };
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
@@ -96,10 +95,11 @@ export default (props: ISolidSelectorProps) => {
   const [pending, setPending] = React.useState<string>(query || "");
   const [focused, setFocused] = React.useState(false);
   const selector = usePipelineSelector(props.pipelineName);
-  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+  const { data, loading } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: { selector },
     fetchPolicy: "cache-and-network"
   });
+
   React.useEffect(() => {
     setPending(query || "");
   }, [query, focused]);
@@ -119,7 +119,7 @@ export default (props: ISolidSelectorProps) => {
   }
 
   const errorMessage =
-    queryResultSolids.length === 0 || pending.length === 0
+    !loading && (queryResultSolids.length === 0 || pending.length === 0)
       ? `You must provide a valid solid query or * to execute the entire pipeline.`
       : serverProvidedSubsetError
       ? serverProvidedSubsetError.message

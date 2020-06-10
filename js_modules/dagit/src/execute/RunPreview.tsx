@@ -13,7 +13,6 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType
 } from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
-import { RunPreviewExecutionPlanOrErrorFragment } from "./types/RunPreviewExecutionPlanOrErrorFragment";
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors
@@ -27,12 +26,11 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
 }
 
 interface RunPreviewProps {
-  plan: RunPreviewExecutionPlanOrErrorFragment | null;
   validation: RunPreviewValidationFragment | null;
   document: object | null;
 
   actions?: React.ReactChild;
-  runConfigSchema: ConfigEditorRunConfigSchemaFragment;
+  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
 }
 
@@ -45,22 +43,6 @@ export class RunPreview extends React.Component<
   RunPreviewState
 > {
   static fragments = {
-    RunPreviewExecutionPlanOrErrorFragment: gql`
-      fragment RunPreviewExecutionPlanOrErrorFragment on ExecutionPlanOrError {
-        __typename
-        ... on ExecutionPlan {
-          __typename
-        }
-        ... on PipelineNotFoundError {
-          message
-        }
-        ... on InvalidSubsetError {
-          message
-        }
-        ...PythonErrorFragment
-      }
-      ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `,
     RunPreviewValidationFragment: gql`
       fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
         __typename
@@ -92,7 +74,16 @@ export class RunPreview extends React.Component<
             }
           }
         }
+        ... on PipelineNotFoundError {
+          message
+        }
+        ... on InvalidSubsetError {
+          message
+        }
+        ...PythonErrorFragment
       }
+
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 
@@ -106,12 +97,16 @@ export class RunPreview extends React.Component<
   ) {
     return (
       nextProps.validation !== this.props.validation ||
-      nextProps.plan !== this.props.plan ||
+      nextProps.runConfigSchema !== this.props.runConfigSchema ||
       nextState.errorsOnly !== this.state.errorsOnly
     );
   }
 
   getRootCompositeChildren = () => {
+    if (!this.props.runConfigSchema) {
+      return {};
+    }
+
     const { allConfigTypes, rootConfigType } = this.props.runConfigSchema;
     const children: {
       [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
@@ -132,7 +127,7 @@ export class RunPreview extends React.Component<
   };
 
   render() {
-    const { plan, actions, document, validation, onHighlightPath } = this.props;
+    const { actions, document, validation, onHighlightPath } = this.props;
     const { errorsOnly } = this.state;
 
     const missingNodes: string[] = [];
@@ -160,12 +155,12 @@ export class RunPreview extends React.Component<
       });
     }
 
-    if (plan?.__typename === "InvalidSubsetError") {
-      errorsAndPaths.push({ pathKey: "", error: plan.message });
+    if (validation?.__typename === "InvalidSubsetError") {
+      errorsAndPaths.push({ pathKey: "", error: validation.message });
     }
 
-    if (plan?.__typename === "PythonError") {
-      const info = <PythonErrorInfo error={plan} />;
+    if (validation?.__typename === "PythonError") {
+      const info = <PythonErrorInfo error={validation} />;
       errorsAndPaths.push({
         pathKey: "",
         error: (

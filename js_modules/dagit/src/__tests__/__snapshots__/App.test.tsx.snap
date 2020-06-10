@@ -665,7 +665,7 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 fCwRPc"
+          className="ExecutionSessionContainer__LoadingOverlayContainer-sc-13rxma3-1 euhvqu"
         >
           <div
             className="bp3-spinner"
@@ -674,10 +674,10 @@ exports[`renders execution 1`] = `
               className="bp3-spinner-animation"
             >
               <svg
-                height={20}
+                height={24}
                 strokeWidth="16.00"
                 viewBox="-3.00 -3.00 106.00 106.00"
-                width={20}
+                width={24}
               >
                 <path
                   className="bp3-spinner-track"
@@ -693,7 +693,12 @@ exports[`renders execution 1`] = `
               </svg>
             </div>
           </div>
+            
+          Loading pipeline and partition sets...
         </div>
+        <div
+          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 fCwRPc"
+        />
       </div>
       <div
         className="SplitPanelContainer__vertical-wb7tmo-1 bpTRMQ"
@@ -711,7 +716,38 @@ exports[`renders execution 1`] = `
           }
         }
       >
-        <div />
+        <div
+          className="ExecutionSessionContainer__LoadingOverlayContainer-sc-13rxma3-1 euhvqu"
+        >
+          <div
+            className="bp3-spinner"
+          >
+            <div
+              className="bp3-spinner-animation"
+            >
+              <svg
+                height={24}
+                strokeWidth="16.00"
+                viewBox="-3.00 -3.00 106.00 106.00"
+                width={24}
+              >
+                <path
+                  className="bp3-spinner-track"
+                  d="M 50,50 m 0,-45 a 45,45 0 1 1 0,90 a 45,45 0 1 1 0,-90"
+                />
+                <path
+                  className="bp3-spinner-head"
+                  d="M 50,50 m 0,-45 a 45,45 0 1 1 0,90 a 45,45 0 1 1 0,-90"
+                  pathLength={280}
+                  strokeDasharray="280 280"
+                  strokeDashoffset={210}
+                />
+              </svg>
+            </div>
+          </div>
+            
+          Loading pipeline and partition sets...
+        </div>
       </div>
     </div>
   </div>
