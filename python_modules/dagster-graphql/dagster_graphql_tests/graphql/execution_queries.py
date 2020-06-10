@@ -288,41 +288,6 @@ mutation (
 '''
 )
 
-LAUNCH_SCHEDULED_EXECUTION_QUERY = (
-    LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
-    + '''
-
-mutation (
-    $scheduleName: String!
-) {
-    launchScheduledExecution(
-        scheduleName: $scheduleName
-    ) {
-        ...on ScheduleNotFoundError {
-            message
-            scheduleName
-        }
-        ...on SchedulerNotDefinedError {
-            message
-        }
-        ...on ScheduledExecutionBlocked {
-            __typename
-            message
-        }
-        ... on PythonError {
-            message
-            stack
-            cause {
-                message
-                stack
-            }
-        }
-        ...launchPipelineExecutionResultFragment
-    }
-}
-'''
-)
-
 
 LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = '''
 mutation (

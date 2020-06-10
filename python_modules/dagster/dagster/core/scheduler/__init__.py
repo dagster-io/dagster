@@ -1,3 +1,9 @@
+from .execution import (
+    ScheduledExecutionFailed,
+    ScheduledExecutionResult,
+    ScheduledExecutionSkipped,
+    ScheduledExecutionSuccess,
+)
 from .scheduler import (
     DagsterScheduleDoesNotExist,
     DagsterScheduleReconciliationError,
@@ -5,6 +11,7 @@ from .scheduler import (
     ScheduleState,
     ScheduleStatus,
     ScheduleTick,
+    ScheduleTickData,
     ScheduleTickStatsSnapshot,
     ScheduleTickStatus,
     Scheduler,

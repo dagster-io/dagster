@@ -6,7 +6,7 @@ import stat
 import six
 from crontab import CronTab
 
-from dagster import DagsterInstance, check, seven, utils
+from dagster import DagsterInstance, check, utils
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler import DagsterSchedulerError, Scheduler
 from dagster.serdes import ConfigurableClass
@@ -199,9 +199,6 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         local_target = external_schedule.get_origin()
 
         # Environment information needed for execution
-        dagster_graphql_path = os.path.join(
-            os.path.dirname(local_target.executable_path), 'dagster-graphql'
-        )
         dagster_home = os.getenv('DAGSTER_HOME')
 
         script_contents = '''
@@ -212,12 +209,11 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
             export RUN_DATE=$(date "+%Y%m%dT%H%M%S")
 
-            {dagster_graphql_path} -p launchScheduledExecution -v '{variables}' {repo_cli_args} --output "{result_file}"
+            {python_exe} -m dagster api launch_scheduled_execution --schedule_name {schedule_name} {repo_cli_args} "{result_file}"
         '''.format(
-            dagster_graphql_path=dagster_graphql_path,
+            python_exe=local_target.executable_path,
+            schedule_name=external_schedule.name,
             repo_cli_args=local_target.get_repo_cli_args(),
-            # legacy_ dependent behavior
-            variables=seven.json.dumps({"scheduleName": external_schedule.name}),
             result_file=schedule_log_file_path,
             dagster_home=dagster_home,
             env_vars="\n".join(

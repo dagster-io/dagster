@@ -263,29 +263,6 @@ def test_start_execution_predefined():
         )
 
 
-def test_launch_scheduled_execution_predefined():
-    with dagster_cli_runner() as runner:
-
-        repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
-
-        # Run command
-        variables = seven.json.dumps({'scheduleName': 'math_hourly_schedule'})
-        result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'launchScheduledExecution']
-        )
-
-        assert result.exit_code == 0
-        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-
-        if 'data' not in result_data:
-            raise Exception(result_data)
-
-        assert (
-            result_data['data']['launchScheduledExecution']['__typename']
-            == 'LaunchPipelineRunSuccess'
-        ), seven.json.dumps(result_data)
-
-
 def test_logs_in_start_execution_predefined():
     variables = seven.json.dumps(
         {

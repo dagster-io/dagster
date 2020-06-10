@@ -4,6 +4,7 @@ import click
 from click import UsageError
 
 from dagster import check
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocation
 
 from .load import (
@@ -103,6 +104,17 @@ def python_target_click_options():
     ]
 
 
+def attribute_option():
+    return click.option(
+        '--attribute',
+        '-a',
+        help=(
+            'Attribute that is either a 1) repository or pipeline or '
+            '2) a function that returns a repository.'
+        ),
+    )
+
+
 def workspace_target_click_options():
     return (
         [
@@ -111,16 +123,7 @@ def workspace_target_click_options():
             )
         ]
         + python_target_click_options()
-        + [
-            click.option(
-                '--attribute',
-                '-a',
-                help=(
-                    'Attribute that is either a 1) repository or pipeline or '
-                    '2) a function that returns a repository.'
-                ),
-            ),
-        ]
+        + [attribute_option()]
     )
 
 
@@ -134,6 +137,13 @@ def python_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
     return apply_click_params(f, *python_target_click_options())
+
+
+def origin_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    options = python_target_click_options() + [attribute_option()]
+    return apply_click_params(f, *options)
 
 
 def repository_target_argument(f):
@@ -171,6 +181,19 @@ def pipeline_target_argument(f):
             ),
         ),
     )
+
+
+def get_reconstructable_repository_from_origin_kwargs(kwargs):
+    if kwargs.get('python_file'):
+        _check_cli_arguments_none(kwargs, 'module_name')
+        return ReconstructableRepository.for_file(
+            kwargs.get('python_file'), kwargs.get('attribute')
+        )
+    if kwargs.get('module_name'):
+        return ReconstructableRepository.for_module(
+            kwargs.get('module_name'), kwargs.get('attribute')
+        )
+    check.failed('invalid')
 
 
 def get_repository_location_from_kwargs(kwargs):

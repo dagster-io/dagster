@@ -498,27 +498,6 @@ class DauphinLaunchPipelineExecutionResult(dauphin.Union):
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
 
-class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ScheduledExecutionBlocked'
-
-    message = dauphin.NonNull(dauphin.String)
-
-
-class DauphinLaunchScheduledExecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'LaunchScheduledExecutionResult'
-        types = (
-            (
-                DauphinScheduleNotFoundError,
-                DauphinSchedulerNotDefinedError,
-                DauphinScheduledExecutionBlocked,
-            )
-            + launch_pipeline_run_result_types
-            + pipeline_execution_error_types
-        )
-
-
 class DauphinExecutePlanSuccess(dauphin.ObjectType):
     class Meta(object):
         name = 'ExecutePlanSuccess'

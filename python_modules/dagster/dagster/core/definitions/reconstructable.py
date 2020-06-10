@@ -12,7 +12,7 @@ from dagster.core.code_pointer import (
     get_python_file_from_previous_stack_frame,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
@@ -37,6 +37,9 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
+
+    def get_reconstructable_schedule(self, name):
+        return ReconstructableSchedule(self, name)
 
     @classmethod
     def for_file(cls, file, fn_name):
@@ -84,7 +87,7 @@ class ReconstructablePipeline(
 
     @property
     def solid_selection(self):
-        return seven.json.loads(self.solid_selection_str)
+        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     @lru_cache(maxsize=1)
     def get_definition(self):
@@ -115,7 +118,7 @@ class ReconstructablePipeline(
             pipe = ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection),
+                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=frozenset(solids_to_execute),
             )
         else:
@@ -176,6 +179,28 @@ class ReconstructablePipeline(
 
     def get_origin_id(self):
         return self.get_origin().get_id()
+
+
+@whitelist_for_serdes
+class ReconstructableSchedule(namedtuple('_ReconstructableSchedule', 'repository schedule_name',)):
+    def __new__(
+        cls, repository, schedule_name,
+    ):
+        return super(ReconstructableSchedule, cls).__new__(
+            cls,
+            repository=check.inst_param(repository, 'repository', ReconstructableRepository),
+            schedule_name=check.str_param(schedule_name, 'schedule_name'),
+        )
+
+    def get_origin(self):
+        return SchedulePythonOrigin(self.schedule_name, self.repository.get_origin())
+
+    def get_origin_id(self):
+        return self.get_origin().get_id()
+
+    @lru_cache(maxsize=1)
+    def get_definition(self):
+        return self.repository.get_definition().get_schedule_def(self.schedule_name)
 
 
 def reconstructable(target):

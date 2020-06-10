@@ -476,8 +476,6 @@ type LaunchPipelineRunSuccess {
   run: PipelineRun!
 }
 
-union LaunchScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
 type ListDagsterType implements DagsterType & WrappingDagsterType {
   key: String!
   name: String
@@ -567,7 +565,6 @@ type ModeNotFoundError implements Error {
 }
 
 type Mutation {
-  launchScheduledExecution(scheduleName: String!): LaunchScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
@@ -1088,10 +1085,6 @@ type ScheduleDefinition {
   mode: String!
   runConfigYaml: String
   partitionSet: PartitionSet
-}
-
-type ScheduledExecutionBlocked {
-  message: String!
 }
 
 union ScheduleMutationResult = PythonError | RunningScheduleResult
