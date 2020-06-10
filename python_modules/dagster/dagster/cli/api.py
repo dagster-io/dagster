@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import json
 import os
 import sys
 from collections import namedtuple
@@ -8,8 +7,8 @@ from collections import namedtuple
 import click
 
 from dagster import check
-from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
-from dagster.cli.pipeline import legacy_pipeline_target_argument, legacy_repository_target_argument
+from dagster.cli.load_handle import recon_repo_for_cli_args
+from dagster.cli.pipeline import legacy_repository_target_argument
 from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
@@ -41,6 +40,10 @@ from dagster.serdes.ipc import (
     setup_interrupt_support,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    recon_repository_from_origin,
+)
 
 # Helpers
 
@@ -145,9 +148,7 @@ def _get_loadable_targets(python_file, module_name):
         return loadable_targets_from_python_module(module_name)
     else:
         check.failed('invalid')
-
-
-# Snapshot CLI
+    # Snapshot CLI
 
 
 @api_cli_command(
@@ -160,26 +161,36 @@ def _get_loadable_targets(python_file, module_name):
     output_cls=ExternalRepositoryData,
 )
 def repository_snapshot_command(repository_python_origin):
-    from dagster.utils.hosted_user_process import recon_repository_from_origin
 
     recon_repo = recon_repository_from_origin(repository_python_origin)
     return external_repository_data_from_def(recon_repo.get_definition())
 
 
-@click.command(
-    name='pipeline_subset', help='Return ExternalPipelineSubsetResult for the given pipeline'
-)
-@click.argument('output_file', type=click.Path())
-@legacy_repository_target_argument
-@legacy_pipeline_target_argument
-@click.option('--solid-selection', '-s', help="JSON encoded list of solid selections")
-def pipeline_subset_snapshot_command(output_file, solid_selection, **kwargs):
-    recon_pipeline = recon_pipeline_for_cli_args(kwargs)
-    if solid_selection:
-        solid_selection = json.loads(solid_selection)
+@whitelist_for_serdes
+class PipelineSubsetSnapshotArgs(
+    namedtuple('_PipelineSubsetSnapshotArgs', 'pipeline_origin solid_selection')
+):
+    def __new__(cls, pipeline_origin, solid_selection):
+        return super(PipelineSubsetSnapshotArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
+            ),
+            solid_selection=check.list_param(solid_selection, 'solid_selection', of_type=str)
+            if solid_selection
+            else None,
+        )
 
-    ipc_write_unary_response(
-        output_file, get_external_pipeline_subset_result(recon_pipeline, solid_selection)
+
+@api_cli_command(
+    name='pipeline_subset',
+    help_str='Return ExternalPipelineSubsetResult for the given pipeline',
+    input_cls=PipelineSubsetSnapshotArgs,
+    output_cls=ExternalPipelineSubsetResult,
+)
+def pipeline_subset_snapshot_command(args):
+    return get_external_pipeline_subset_result(
+        recon_pipeline_from_origin(args.pipeline_origin), args.solid_selection
     )
 
 
@@ -221,7 +232,6 @@ class ExecutionPlanSnapshotArgs(
     output_cls=ExecutionPlanSnapshot,
 )
 def execution_plan_snapshot_command(args):
-    from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
     check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
 

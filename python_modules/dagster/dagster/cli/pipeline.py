@@ -91,29 +91,6 @@ def legacy_repository_target_argument(f):
     )
 
 
-def legacy_pipeline_target_argument(f):
-    # f = repository_config_argument(f)
-    # nargs=-1 is used right now to make this argument optional
-    # it can only handle 0 or 1 pipeline names
-    # see .pipeline.recon_pipeline_for_cli_args
-    return apply_click_params(
-        f,
-        click.option(
-            '--repository-yaml',
-            '-y',
-            type=click.Path(exists=True),
-            help=(
-                'Path to config file. Defaults to ./{default_filename} if --python-file '
-                'and --module-name are not specified'
-            ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
-        ),
-        click.argument('pipeline_name', nargs=-1),
-        click.option('--python-file', '-f', type=click.Path(exists=True)),
-        click.option('--module-name', '-m'),
-        click.option('--fn-name', '-n'),
-    )
-
-
 @click.command(
     name='list',
     help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
