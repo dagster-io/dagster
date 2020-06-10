@@ -7,11 +7,9 @@ import textwrap
 import time
 
 import click
-import six
 import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
-from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.workspace.cli_target import (
     get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
@@ -36,6 +34,7 @@ from dagster.utils import (
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
+    recon_repo_from_external_repo,
     repository_def_from_repository_handle,
 )
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -54,8 +53,8 @@ def create_pipeline_cli_group():
     return group
 
 
-REPO_TARGET_WARNING = 'Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m.'
-REPO_ARG_NAMES = ['repository_yaml', 'module_name', 'fn_name', 'python_file']
+WORKSPACE_TARGET_WARNING = 'Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m.'
+WORKSPACE_ARG_NAMES = ['workspace', 'module_name', 'python_file', 'attribute']
 
 
 def apply_click_params(command, *click_params):
@@ -117,7 +116,7 @@ def legacy_pipeline_target_argument(f):
 
 @click.command(
     name='list',
-    help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
+    help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
@@ -622,9 +621,8 @@ def validate_partition_slice(partitions, name, value):
         instructions=get_partitioned_pipeline_instructions('backfill')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
-    '-p',
     '--partitions',
     type=click.STRING,
     help='Comma-separated list of partition names that we want to backfill',
@@ -635,7 +633,7 @@ def validate_partition_slice(partitions, name, value):
     help='The name of the partition set over which we want to backfill.',
 )
 @click.option(
-    '-a', '--all', type=click.STRING, help='Specify to select all partitions to backfill.',
+    '--all', type=click.STRING, help='Specify to select all partitions to backfill.',
 )
 @click.option(
     '--from',
@@ -662,28 +660,18 @@ def pipeline_backfill_command(**kwargs):
 
 
 def execute_backfill_command(cli_args, print_fn, instance=None):
-    pipeline_name = cli_args.pop('pipeline_name')
-    repo_args = {k: v for k, v in cli_args.items() if k in REPO_ARG_NAMES}
-    if pipeline_name and not isinstance(pipeline_name, six.string_types):
-        if len(pipeline_name) == 1:
-            pipeline_name = pipeline_name[0]
-
     instance = instance or DagsterInstance.get()
-    recon_repo = recon_repo_for_cli_args(repo_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    external_repository = get_external_repository_from_kwargs(cli_args)
+
+    # We should move this to use external repository
+    # https://github.com/dagster-io/dagster/issues/2556
+    recon_repo = recon_repo_from_external_repo(external_repository)
     repo_def = recon_repo.get_definition()
+
     noprompt = cli_args.get('noprompt')
 
-    # Resolve pipeline
-    if not pipeline_name and noprompt:
-        raise click.UsageError('No pipeline specified')
-    if not pipeline_name:
-        pipeline_name = click.prompt(
-            'Select a pipeline to backfill: {}'.format(', '.join(repo_def.pipeline_names))
-        )
-    if not repo_def.has_pipeline(pipeline_name):
-        raise click.UsageError('No pipeline found named `{}`'.format(pipeline_name))
-
-    pipeline_def = repo_def.get_pipeline(pipeline_name)
+    pipeline_def = repo_def.get_pipeline(external_pipeline.name)
 
     # Resolve partition set
     all_partition_sets = repo_def.partition_set_defs + [
@@ -722,12 +710,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     print_fn('\n     Pipeline: {}'.format(pipeline_def.name))
     print_fn('Partition set: {}'.format(partition_set.name))
     print_fn('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
-
-    # This whole CLI tool should move to more of a "host process" model - but this is how we start
-    repo_location = InProcessRepositoryLocation(recon_repo)
-    external_pipeline = (
-        repo_location.get_repository(repo_def.name).get_full_external_pipeline(pipeline_name),
-    )
 
     # Confirm and launch
     if noprompt or click.confirm(

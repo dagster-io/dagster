@@ -972,29 +972,12 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         check.not_implemented('Termintation not supported')
 
 
-def backfill_execute_args(execution_args):
-    backfill_args = {
-        'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-        'noprompt': True,
-    }
-    pipeline_name = execution_args.get('pipeline_name')
-    if pipeline_name:
-        backfill_args['pipeline_name'] = (pipeline_name,)
-    for name, value in execution_args.items():
-        if name != 'pipeline_name':
-            backfill_args[name] = value
-    return backfill_args
-
-
 def backfill_cli_runner_args(execution_args):
-    backfill_args = ['-y', file_relative_path(__file__, 'repository_file.yaml'), '--noprompt']
-    pipeline_name = execution_args.get('pipeline_name')
-    if pipeline_name:
-        backfill_args.append(pipeline_name)
-    for name, value in execution_args.items():
-        if name != 'pipeline_name':
-            backfill_args.extend(['--{}'.format(name.replace('_', '-')), value])
-    return backfill_args
+    return [
+        '-w',
+        file_relative_path(__file__, 'repository_file.yaml'),
+        '--noprompt',
+    ] + execution_args
 
 
 def run_test_backfill(execution_args, expected_count=None, error_message=None):
@@ -1012,55 +995,50 @@ def run_test_backfill(execution_args, expected_count=None, error_message=None):
         with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
             _instance.return_value = instance
 
-            if error_message:
-                with pytest.raises(UsageError) as error_info:
-                    execute_backfill_command(backfill_execute_args(execution_args), no_print)
-                assert error_info and error_message in error_info.value.message
-
             result = runner.invoke(
                 pipeline_backfill_command, backfill_cli_runner_args(execution_args)
             )
             if error_message:
-                assert result.exit_code == 2
+                assert result.exit_code == 2, result.stdout
             else:
-                assert result.exit_code == 0
+                assert result.exit_code == 0, result.stdout
                 if expected_count:
                     assert len(run_launcher.queue()) == expected_count
 
 
 def test_backfill_no_pipeline():
-    args = {'pipeline_name': 'nonexistent'}
+    args = ['--pipeline', 'nonexistent']
     run_test_backfill(args, error_message='No pipeline found')
 
 
 def test_backfill_no_partition_sets():
-    args = {'pipeline_name': 'foo'}
+    args = ['--pipeline', 'foo']
     run_test_backfill(args, error_message='No partition sets found')
 
 
 def test_backfill_no_named_partition_set():
-    args = {'pipeline_name': 'baz', 'partition_set': 'nonexistent'}
+    args = ['--pipeline', 'baz', '--partition-set', 'nonexistent']
     run_test_backfill(args, error_message='No partition set found')
 
 
 def test_backfill_launch():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions']
     run_test_backfill(args, expected_count=len(string.ascii_lowercase))
 
 
 def test_backfill_partition_range():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'x'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'x']
     run_test_backfill(args, expected_count=3)
 
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'to': 'c'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--to', 'c']
     run_test_backfill(args, expected_count=3)
 
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'c', 'to': 'f'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'c', '--to', 'f']
     run_test_backfill(args, expected_count=4)
 
 
 def test_backfill_partition_enum():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'partitions': 'c,x,z'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--partitions', 'c,x,z']
     run_test_backfill(args, expected_count=3)
 
 
@@ -1152,7 +1130,7 @@ def test_tags_pipeline():
         result = runner.invoke(
             pipeline_backfill_command,
             [
-                '-y',
+                '-w',
                 file_relative_path(__file__, 'repository_file.yaml'),
                 '--noprompt',
                 '--partition-set',
@@ -1161,10 +1139,11 @@ def test_tags_pipeline():
                 'c',
                 '--tags',
                 '{ "foo": "bar" }',
+                '-p',
                 'baz',
             ],
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stdout
         runs = instance.run_launcher.queue()
         assert len(runs) == 1
         run = runs[0]
