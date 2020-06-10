@@ -17,9 +17,9 @@ from dagster import (
     RetryRequested,
     execute_pipeline,
     lambda_solid,
-    reconstructable,
     solid,
 )
+from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
@@ -103,11 +103,13 @@ def test_pipeline():
 
 
 def test_all_step_events():  # pylint: disable=too-many-locals
-    pipeline = reconstructable(define_test_events_pipeline)
-    pipeline_def = pipeline.get_definition()
+    workspace = workspace_from_load_target(
+        PythonFileTarget(__file__, define_test_events_pipeline.__name__)
+    )
+    pipeline_def = define_test_events_pipeline()
     mode = pipeline_def.get_default_mode_name()
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, mode=mode)
+    execution_plan = create_execution_plan(pipeline_def, mode=mode)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan, mode=mode
     )
@@ -137,12 +139,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     'stepKeys': [step.key],
                 }
             }
-            res = execute_query(
-                pipeline.get_reconstructable_repository(),
-                EXECUTE_PLAN_MUTATION,
-                variables,
-                instance=instance,
-            )
+            res = execute_query(workspace, EXECUTE_PLAN_MUTATION, variables, instance=instance,)
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
             # response

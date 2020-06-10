@@ -8,6 +8,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.utils import frozentags
+from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 from .config import DaskConfig
 
@@ -16,12 +17,12 @@ DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
 
 
 def query_on_dask_worker(
-    recon_repo, variables, dependencies, instance_ref=None
+    workspace, variables, dependencies, instance_ref=None
 ):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     '''
-    return execute_execute_plan_mutation(recon_repo, variables, instance_ref=instance_ref)
+    return execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref)
 
 
 def get_dask_resource_requirements(tags):
@@ -124,9 +125,13 @@ class DaskEngine(Engine):  # pylint: disable=no-init
 
                     dask_task_name = '%s.%s' % (pipeline_name, step.key)
 
+                    workspace = create_in_process_ephemeral_workspace(
+                        pointer=pipeline_context.pipeline.get_reconstructable_repository().pointer
+                    )
+
                     future = client.submit(
                         query_on_dask_worker,
-                        pipeline_context.pipeline.get_reconstructable_repository(),
+                        workspace,
                         variables,
                         dependencies,
                         instance.get_ref(),

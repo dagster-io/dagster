@@ -105,7 +105,7 @@ def invoke_steps_within_python_operator(
     step_keys = invocation_args.step_keys
     instance_ref = invocation_args.instance_ref
     run_config = invocation_args.run_config
-    handle = invocation_args.handle
+    workspace = invocation_args.workspace
     pipeline_snapshot = invocation_args.pipeline_snapshot
     execution_plan_snapshot = invocation_args.execution_plan_snapshot
     parent_pipeline_snapshot = invocation_args.parent_pipeline_snapshot
@@ -137,7 +137,7 @@ def invoke_steps_within_python_operator(
             parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
-    events = execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref,)
+    events = execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref,)
     check_events_for_failures(events)
     check_events_for_skips(events)
     return events

@@ -14,12 +14,12 @@ class DagsterGraphQLClientError(DagsterError):
     dagster-graphql'''
 
 
-def execute_execute_plan_mutation(recon_repo, variables, instance_ref=None):
+def execute_execute_plan_mutation(workspace, variables, instance_ref=None):
     instance = (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
     res = execute_query(
-        recon_repo, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
+        workspace, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
     )
     instance.dispose()
     handle_execution_errors(res, 'executePlan')

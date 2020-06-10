@@ -61,11 +61,10 @@ def test():
 def test_basic_introspection():
     query = '{ __schema { types { name } } }'
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
-
+        result = runner.invoke(ui, ['-w', workspace_path, '-t', query])
         assert result.exit_code == 0
 
         result_data = json.loads(result.output)
@@ -75,10 +74,10 @@ def test_basic_introspection():
 def test_basic_repositories():
     query = '{ repositoriesOrError { ... on RepositoryConnection { nodes { name } } } }'
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
+        result = runner.invoke(ui, ['-w', workspace_path, '-t', query])
 
         assert result.exit_code == 0
 
@@ -89,10 +88,10 @@ def test_basic_repositories():
 def test_basic_variables():
     query = 'query FooBar($pipelineName: String!){ pipelineOrError(params:{name: $pipelineName}){ ... on Pipeline { name } } }'
     variables = '{"pipelineName": "math"}'
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
+        result = runner.invoke(ui, ['-w', workspace_path, '-v', variables, '-t', query])
 
         assert result.exit_code == 0
 
@@ -137,11 +136,11 @@ def test_start_execution_text():
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-t', LAUNCH_PIPELINE_EXECUTION_QUERY]
+            ui, ['-w', workspace_path, '-v', variables, '-t', LAUNCH_PIPELINE_EXECUTION_QUERY]
         )
 
         assert result.exit_code == 0
@@ -167,13 +166,13 @@ def test_start_execution_file():
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
     with dagster_cli_runner() as runner:
         result = runner.invoke(
             ui,
             [
-                '-y',
-                repo_path,
+                '-w',
+                workspace_path,
                 '-v',
                 variables,
                 '--file',
@@ -204,7 +203,7 @@ def test_start_execution_save_output():
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         with seven.TemporaryDirectory() as temp_dir:
@@ -213,8 +212,8 @@ def test_start_execution_save_output():
             result = runner.invoke(
                 ui,
                 [
-                    '-y',
-                    repo_path,
+                    '-w',
+                    workspace_path,
                     '-v',
                     variables,
                     '--file',
@@ -247,11 +246,11 @@ def test_start_execution_predefined():
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'launchPipelineExecution']
+            ui, ['-w', workspace_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
@@ -274,13 +273,13 @@ def test_logs_in_start_execution_predefined():
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'launchPipelineExecution']
+            ui, ['-w', workspace_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])

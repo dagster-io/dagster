@@ -7,12 +7,14 @@ from airflow.operators import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
 from dagster import check, seven
+from dagster.cli.workspace.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster.utils.backcompat import canonicalize_run_config
+from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -53,13 +55,13 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         'DagsterOperatorInvocationArgs',
-        'handle pipeline_name run_config mode step_keys instance_ref pipeline_snapshot '
+        'workspace pipeline_name run_config mode step_keys instance_ref pipeline_snapshot '
         'execution_plan_snapshot parent_pipeline_snapshot',
     )
 ):
     def __new__(
         cls,
-        handle,
+        workspace,
         pipeline_name,
         run_config,
         mode,
@@ -71,7 +73,7 @@ class DagsterOperatorInvocationArgs(
     ):
         return super(DagsterOperatorInvocationArgs, cls).__new__(
             cls,
-            handle=handle,
+            workspace=workspace,
             pipeline_name=pipeline_name,
             run_config=run_config,
             mode=mode,
@@ -87,7 +89,7 @@ class DagsterOperatorParameters(
     namedtuple(
         '_DagsterOperatorParameters',
         (
-            'handle pipeline_name run_config '
+            'workspace pipeline_name run_config '
             'mode task_id step_keys dag instance_ref op_kwargs pipeline_snapshot '
             'execution_plan_snapshot parent_pipeline_snapshot'
         ),
@@ -97,7 +99,7 @@ class DagsterOperatorParameters(
         cls,
         pipeline_name,
         task_id,
-        handle=None,
+        workspace=None,
         run_config=None,
         mode=None,
         step_keys=None,
@@ -111,9 +113,10 @@ class DagsterOperatorParameters(
     ):
         run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
         check_storage_specified(run_config)
+
         return super(DagsterOperatorParameters, cls).__new__(
             cls,
-            handle=check.opt_inst_param(handle, 'handle', ReconstructableRepository),
+            workspace=check.opt_inst_param(workspace, 'workspace', Workspace),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
             run_config=check.opt_dict_param(run_config, 'run_config', key_type=str),
             mode=check.opt_str_param(mode, 'mode'),
@@ -136,7 +139,7 @@ class DagsterOperatorParameters(
     @property
     def invocation_args(self):
         return DagsterOperatorInvocationArgs(
-            handle=self.handle,
+            workspace=self.workspace,
             pipeline_name=self.pipeline_name,
             run_config=self.run_config,
             mode=self.mode,
@@ -166,6 +169,9 @@ def _make_airflow_dag(
     operator=DagsterPythonOperator,
 ):
     check.inst_param(handle, 'handle', ReconstructableRepository)
+
+    workspace = create_in_process_ephemeral_workspace(pointer=handle.pointer)
+
     check.str_param(pipeline_name, 'pipeline_name')
     run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
@@ -208,7 +214,7 @@ def _make_airflow_dag(
         step_keys = [step.key for step in solid_steps]
 
         operator_parameters = DagsterOperatorParameters(
-            handle=handle,
+            workspace=workspace,
             pipeline_name=pipeline_name,
             run_config=run_config,
             mode=mode,

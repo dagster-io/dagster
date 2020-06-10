@@ -12,6 +12,7 @@ to be the case.
 import sys
 
 from dagster import check
+from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_pointer,
@@ -24,6 +25,7 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.host_representation.handle import (
     InProcessRepositoryLocationHandle,
     PythonEnvRepositoryLocationHandle,
+    RepositoryLocationHandle,
 )
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
@@ -80,3 +82,12 @@ def repository_def_from_repository_handle(repository_handle):
         'or it must a python environment with the exact same executable.',
     )
     return repository_def_from_pointer(repository_handle.get_origin().code_pointer)
+
+
+def create_in_process_ephemeral_workspace(pointer):
+    from dagster.cli.workspace.workspace import Workspace
+
+    check.inst_param(pointer, 'pointer', CodePointer)
+    repository_location_handles = [RepositoryLocationHandle.create_in_process_location(pointer)]
+    workspace = Workspace(repository_location_handles=repository_location_handles)
+    return workspace

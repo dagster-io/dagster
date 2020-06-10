@@ -18,7 +18,10 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils.hosted_user_process import external_repo_from_def
+from dagster.utils.hosted_user_process import (
+    external_repo_from_def,
+    is_repository_location_in_same_python_env,
+)
 
 from .selector import PipelineSelector
 
@@ -257,7 +260,38 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
     def execute_plan(
         self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
     ):
-        raise NotImplementedError()
+        if (
+            is_repository_location_in_same_python_env(self.location_handle)
+            and len(self.location_handle.repository_code_pointer_dict) == 1
+        ):
+            check.inst_param(instance, 'instance', DagsterInstance)
+            check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+            check.dict_param(environment_dict, 'environment_dict')
+            check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+            check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+            pointer = next(iter(self.location_handle.repository_code_pointer_dict.values()))
+            recon_repo = ReconstructableRepository(pointer)
+
+            execution_plan = create_execution_plan(
+                pipeline=recon_repo.get_reconstructable_pipeline(external_pipeline.name),
+                environment_dict=environment_dict,
+                mode=pipeline_run.mode,
+                step_keys_to_execute=step_keys_to_execute,
+            )
+
+            execute_plan(
+                execution_plan=execution_plan,
+                instance=instance,
+                pipeline_run=pipeline_run,
+                environment_dict=environment_dict,
+            )
+        else:
+            raise NotImplementedError(
+                'execute_plan is currently only supported when the location is a python '
+                'environment with the exact same executable and when there is only a single '
+                'repository.'
+            )
 
     def execute_pipeline(self, instance, external_pipeline, pipeline_run):
         raise NotImplementedError()

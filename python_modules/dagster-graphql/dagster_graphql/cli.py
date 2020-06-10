@@ -9,9 +9,10 @@ from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import check, seven
-from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.cli.pipeline import legacy_repository_target_argument
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.cli.workspace import workspace_target_argument
+from dagster.cli.workspace.cli_target import get_workspace_from_kwargs
+from dagster.cli.workspace.workspace import Workspace
+from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
@@ -22,7 +23,7 @@ from .client.query import (
     EXECUTE_RUN_IN_PROCESS_MUTATION,
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
 )
-from .implementation.context import DagsterGraphQLContext, InProcessRepositoryLocation
+from .implementation.context import DagsterGraphQLContext
 from .schema import create_schema
 from .version import __version__
 
@@ -36,8 +37,8 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(recon_repo, query, variables=None, use_sync_executor=False, instance=None):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+def execute_query(workspace, query, variables=None, use_sync_executor=False, instance=None):
+    check.inst_param(workspace, 'workspace', Workspace)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
     instance = (
@@ -49,9 +50,9 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
 
     query = query.strip('\'" \n\t')
 
-    context = DagsterGraphQLContext(
-        locations=[InProcessRepositoryLocation(recon_repo)], instance=instance, version=__version__,
-    )
+    locations = [RepositoryLocation.from_handle(x) for x in workspace.repository_location_handles]
+
+    context = DagsterGraphQLContext(locations=locations, instance=instance, version=__version__,)
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
@@ -83,8 +84,8 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
     return result_dict
 
 
-def execute_query_from_cli(recon_repo, query, variables=None, output=None):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+def execute_query_from_cli(workspace, query, variables=None, output=None):
+    check.inst_param(workspace, 'workspace', Workspace)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
     check.opt_str_param(output, 'output')
@@ -92,7 +93,7 @@ def execute_query_from_cli(recon_repo, query, variables=None, output=None):
     query = query.strip('\'" \n\t')
 
     result_dict = execute_query(
-        recon_repo, query, variables=seven.json.loads(variables) if variables else None
+        workspace, query, variables=seven.json.loads(variables) if variables else None
     )
     str_res = seven.json.dumps(result_dict)
 
@@ -139,7 +140,7 @@ PREDEFINED_QUERIES = {
 }
 
 
-@legacy_repository_target_argument
+@workspace_target_argument
 @click.command(
     name='ui',
     help=(
@@ -206,8 +207,8 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
         res = execute_query_against_remote(remote, query, variables)
         print(res)
     else:
-        recon_repo = recon_repo_for_cli_args(kwargs)
-        execute_query_from_cli(recon_repo, query, variables, output)
+        workspace = get_workspace_from_kwargs(kwargs)
+        execute_query_from_cli(workspace, query, variables, output)
 
 
 cli = create_dagster_graphql_cli()
