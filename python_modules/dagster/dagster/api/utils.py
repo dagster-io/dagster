@@ -15,7 +15,7 @@ def execute_command_in_subprocess(parts):
         )
 
 
-def execute_api_cli_command(executable_path, command_name, input_obj):
+def execute_unary_api_cli_command(executable_path, command_name, input_obj):
     with get_temp_file_name() as input_file, get_temp_file_name() as output_file:
         parts = [
             executable_path,

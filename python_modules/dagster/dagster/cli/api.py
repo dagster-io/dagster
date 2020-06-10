@@ -102,7 +102,11 @@ class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name py
         )
 
 
-def api_cli_command(name, help_str, input_cls, output_cls):
+def unary_api_cli_command(name, help_str, input_cls, output_cls):
+    '''
+    Use this to decorate synchronous api cli commands that take
+    one object and return one object.
+    '''
     check.str_param(name, 'name')
     check.str_param(help_str, 'help_str')
     check.type_param(input_cls, 'input_cls')
@@ -122,7 +126,7 @@ def api_cli_command(name, help_str, input_cls, output_cls):
     return wrap
 
 
-@api_cli_command(
+@unary_api_cli_command(
     name='list_repositories',
     help_str='Return the snapshot for the given repository',
     input_cls=ListRepositoriesInput,
@@ -152,7 +156,7 @@ def _get_loadable_targets(python_file, module_name):
     # Snapshot CLI
 
 
-@api_cli_command(
+@unary_api_cli_command(
     name='repository',
     help_str=(
         'Return all repository symbols in a given python_file or module name. '
@@ -183,7 +187,7 @@ class PipelineSubsetSnapshotArgs(
         )
 
 
-@api_cli_command(
+@unary_api_cli_command(
     name='pipeline_subset',
     help_str='Return ExternalPipelineSubsetResult for the given pipeline',
     input_cls=PipelineSubsetSnapshotArgs,
@@ -226,7 +230,7 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
-@api_cli_command(
+@unary_api_cli_command(
     name='execution_plan',
     help_str='Create an execution plan and return its snapshot',
     input_cls=ExecutionPlanSnapshotArgs,
@@ -260,7 +264,7 @@ class PartitionApiCommandArgs(
     pass
 
 
-@api_cli_command(
+@unary_api_cli_command(
     name='partition',
     help_str='Return the config for a partition',
     input_cls=PartitionApiCommandArgs,

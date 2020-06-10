@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.host_representation.external_data import ExternalPartitionData
 from dagster.core.host_representation.handle import RepositoryHandle
 
-from .utils import execute_api_cli_command
+from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_partition(repository_handle, partition_set_name, partition_name):
@@ -14,7 +14,7 @@ def sync_get_external_partition(repository_handle, partition_set_name, partition
     repository_origin = repository_handle.get_origin()
 
     return check.inst(
-        execute_api_cli_command(
+        execute_unary_api_cli_command(
             repository_origin.executable_path,
             'partition',
             PartitionApiCommandArgs(

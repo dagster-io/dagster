@@ -7,7 +7,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.origin import RepositoryPythonOrigin
 
-from .utils import execute_api_cli_command
+from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_repositories(repository_location_handle):
@@ -20,7 +20,7 @@ def sync_get_external_repositories(repository_location_handle):
     for key, pointer in repository_location_handle.repository_code_pointer_dict.items():
 
         external_repository_data = check.inst(
-            execute_api_cli_command(
+            execute_unary_api_cli_command(
                 repository_location_handle.executable_path,
                 'repository',
                 RepositoryPythonOrigin(repository_location_handle.executable_path, pointer),

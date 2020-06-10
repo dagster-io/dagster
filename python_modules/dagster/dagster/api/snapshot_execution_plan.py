@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from .utils import execute_api_cli_command
+from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_execution_plan(
@@ -23,7 +23,7 @@ def sync_get_external_execution_plan(
     check.str_param(snapshot_id, 'snapshot_id')
 
     return check.inst(
-        execute_api_cli_command(
+        execute_unary_api_cli_command(
             pipeline_origin.executable_path,
             'execution_plan',
             ExecutionPlanSnapshotArgs(
