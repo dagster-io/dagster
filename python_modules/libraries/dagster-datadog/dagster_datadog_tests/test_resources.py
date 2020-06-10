@@ -70,7 +70,7 @@ def test_datadog_resource(
 
     result = execute_solid(
         datadog_solid,
-        environment_dict={
+        run_config={
             'resources': {'datadog': {'config': {'api_key': 'NOT_USED', 'app_key': 'NOT_USED'}}}
         },
         mode_def=ModeDefinition(resource_defs={'datadog': datadog_resource}),

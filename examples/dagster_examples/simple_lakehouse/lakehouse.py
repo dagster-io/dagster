@@ -169,7 +169,7 @@ def make_simple_lakehouse():
     dev = PresetDefinition(
         name='dev',
         mode='dev',
-        environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
+        run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
         solid_selection=None,
     )
 
@@ -179,7 +179,7 @@ def make_simple_lakehouse():
     prod = PresetDefinition(
         name='prod',
         mode='prod',
-        environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
+        run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
         solid_selection=None,
     )
 

@@ -188,7 +188,7 @@ def test_json_console_logger(capsys):
     execute_solid(
         hello_world,
         mode_def=ModeDefinition(logger_defs={'json': json_console_logger}),
-        environment_dict={'loggers': {'json': {'config': {}}}},
+        run_config={'loggers': {'json': {'config': {}}}},
     )
 
     captured = capsys.readouterr()

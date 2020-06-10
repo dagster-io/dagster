@@ -40,7 +40,7 @@ def adls2_resource(context):
 
             result = execute_solid(
                 example_adls2_solid,
-                environment_dict={
+                run_config={
                     'resources': {
                         'adls2': {
                             'config': {

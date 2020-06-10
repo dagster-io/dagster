@@ -28,10 +28,10 @@ MODE_DEF = ModeDefinition(resource_defs={'spark': spark_resource})
 def test_jar_not_found():
     spark_solid = create_spark_solid('spark_solid', main_class='something')
     # guid guaranteed to not exist
-    environment_dict = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
+    run_config = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
 
     result = execute_solid(
-        spark_solid, environment_dict=environment_dict, raise_on_error=False, mode_def=MODE_DEF
+        spark_solid, run_config=run_config, raise_on_error=False, mode_def=MODE_DEF
     )
     assert result.failure_data
     assert (
@@ -60,12 +60,12 @@ def test_no_spark_home():
         del os.environ['SPARK_HOME']
 
     spark_solid = create_spark_solid('spark_solid', main_class='something')
-    environment_dict = yaml.safe_load(
+    run_config = yaml.safe_load(
         NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, '.'))
     )
 
     result = execute_solid(
-        spark_solid, environment_dict=environment_dict, raise_on_error=False, mode_def=MODE_DEF
+        spark_solid, run_config=run_config, raise_on_error=False, mode_def=MODE_DEF
     )
     assert result.failure_data
     assert (

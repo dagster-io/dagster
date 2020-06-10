@@ -27,7 +27,7 @@ def cereal_schedules():
             name='good_morning',
             cron_schedule='45 6 * * *',
             pipeline_name='hello_cereal_pipeline',
-            environment_dict={'storage': {'filesystem': {}}},
+            run_config={'storage': {'filesystem': {}}},
         )
     ]
 

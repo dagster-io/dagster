@@ -10,8 +10,7 @@ def test_shell_command_solid():
     solid = create_shell_command_solid('echo "this is a test message: $MY_ENV_VAR"', name='foobar')
 
     result = execute_solid(
-        solid,
-        environment_dict={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
+        solid, run_config={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
 
@@ -21,7 +20,7 @@ def test_shell_solid():
     result = execute_solid(
         shell_solid,
         input_values={'shell_command': 'echo "this is a test message: $MY_ENV_VAR"'},
-        environment_dict={'solids': {'shell_solid': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
+        run_config={'solids': {'shell_solid': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
 
@@ -43,7 +42,7 @@ def test_shell_command_stream_logs():
 
     result = execute_solid(
         solid,
-        environment_dict={
+        run_config={
             'solids': {
                 'foobar': {'config': {'output_logging': 'STREAM', 'env': {'MY_ENV_VAR': 'foobar'}}}
             }
@@ -56,8 +55,7 @@ def test_shell_script_solid():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = create_shell_script_solid(os.path.join(script_dir, 'test.sh'), name='foobar')
     result = execute_solid(
-        solid,
-        environment_dict={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
+        solid, run_config={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
 
@@ -91,7 +89,6 @@ def test_shell_command_solid_overrides():
     )
 
     result = execute_solid(
-        solid,
-        environment_dict={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
+        solid, run_config={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}

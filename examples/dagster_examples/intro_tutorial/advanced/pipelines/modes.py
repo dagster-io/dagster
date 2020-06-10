@@ -146,7 +146,7 @@ def modes_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {
                 'inputs': {'csv_path': {'value': '../../cereal.csv'}}
@@ -155,8 +155,6 @@ if __name__ == '__main__':
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
     result = execute_pipeline(
-        pipeline=modes_pipeline,
-        mode='unittest',
-        environment_dict=environment_dict,
+        pipeline=modes_pipeline, mode='unittest', run_config=run_config,
     )
     assert result.success

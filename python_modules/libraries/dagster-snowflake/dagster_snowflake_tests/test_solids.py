@@ -12,7 +12,7 @@ def test_snowflake_solid(snowflake_connect):
 
     result = execute_solid(
         snowflake_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'snowflake': {
                     'config': {

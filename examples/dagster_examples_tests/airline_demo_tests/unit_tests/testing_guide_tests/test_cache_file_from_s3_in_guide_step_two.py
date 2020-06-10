@@ -51,7 +51,7 @@ def test_cache_file_from_s3_step_two_use_config():
         execute_solid(
             cache_file_from_s3,
             ModeDefinition(resource_defs={'file_cache': fs_file_cache}),
-            environment_dict={
+            run_config={
                 'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
                 'solids': {
                     'cache_file_from_s3': {

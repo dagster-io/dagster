@@ -16,7 +16,7 @@ from dagster.seven import mock
 from dagster.utils.temp_file import get_temp_dir
 
 
-def execute_solid_with_resources(solid_def, resource_defs, environment_dict):
+def execute_solid_with_resources(solid_def, resource_defs, run_config):
     @pipeline(
         name='{}_solid_test'.format(solid_def.name),
         mode_defs=[ModeDefinition(resource_defs=resource_defs)],
@@ -24,7 +24,7 @@ def execute_solid_with_resources(solid_def, resource_defs, environment_dict):
     def test_pipeline():
         return solid_def()
 
-    return execute_pipeline(test_pipeline, environment_dict)
+    return execute_pipeline(test_pipeline, run_config)
 
 
 def test_cache_file_from_s3_basic():
@@ -38,7 +38,7 @@ def test_cache_file_from_s3_basic():
                     's3': ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
@@ -77,7 +77,7 @@ def test_cache_file_from_s3_specify_target_key():
                     's3': ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}},
@@ -106,7 +106,7 @@ def test_cache_file_from_s3_skip_download():
                     's3': ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
@@ -128,7 +128,7 @@ def test_cache_file_from_s3_skip_download():
                     's3': ResourceDefinition.hardcoded_resource(s3_session_two),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
@@ -153,7 +153,7 @@ def test_cache_file_from_s3_overwrite():
                     's3': ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
@@ -177,7 +177,7 @@ def test_cache_file_from_s3_overwrite():
                     's3': ResourceDefinition.hardcoded_resource(s3_session_two),
                 }
             ),
-            environment_dict={
+            run_config={
                 'solids': {
                     'cache_file_from_s3': {
                         'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
@@ -199,7 +199,7 @@ def test_missing_resources():
             execute_solid(
                 cache_file_from_s3,
                 ModeDefinition(resource_defs={'file_cache': fs_file_cache}),
-                environment_dict={
+                run_config={
                     'solids': {
                         'cache_file_from_s3': {
                             'inputs': {

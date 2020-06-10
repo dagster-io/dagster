@@ -119,7 +119,7 @@ def test_download_weather_report_from_weather_api_200(mocker, setup_dark_sky, mo
     solid_result = execute_solid(
         download_weather_report_from_weather_api,
         ModeDefinition(resource_defs={'credentials_vault': credentials_vault,}),
-        environment_dict={
+        run_config={
             'resources': {
                 'credentials_vault': {
                     'config': {'environment_variable_names': ['DARK_SKY_API_KEY']}
@@ -206,7 +206,7 @@ def test_generate_training_set(mocker):
     test_pipeline_result = execute_pipeline(
         pipeline=generate_test_training_set_pipeline,
         mode='testing',
-        environment_dict=compose_training_data_env_dict(),
+        run_config=compose_training_data_env_dict(),
     )
     assert test_pipeline_result.success
 
@@ -365,7 +365,7 @@ def test_generate_training_set(mocker):
     shutil.rmtree(os.path.join(tempfile.gettempdir(), 'testing-storage'), ignore_errors=True)
 
 
-def environment_dictionary():
+def run_config_dict():
     return {
         'resources': {
             'postgres_db': {
@@ -403,7 +403,7 @@ def mock_download_zipfile(tmp_dir, fake_trip_data, _url, _target, _chunk_size):
 
 
 def test_monthly_trip_pipeline(mocker):
-    env_dictionary = environment_dictionary()
+    env_dictionary = run_config_dict()
     with seven.TemporaryDirectory() as tmp_dir:
         # Run pipeline
         download_zipfile = mocker.patch(
@@ -418,7 +418,7 @@ def test_monthly_trip_pipeline(mocker):
         ]['target_csv_file_in_archive']['value'] = os.path.join(tmp_dir, FAKE_ZIPFILE_NAME)
         result = execute_solid(
             trip_etl,
-            environment_dict=env_dictionary,
+            run_config=env_dictionary,
             mode_def=ModeDefinition(
                 name='trip_testing',
                 resource_defs={'postgres_db': postgres_db_info_resource, 'volume': mount},

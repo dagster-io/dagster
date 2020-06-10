@@ -9,10 +9,8 @@ from dagster.utils.merger import deep_merge_dicts
 
 weather_etl_environment = generate_training_set_and_train_model.get_preset(
     'prod_weather_etl'
-).environment_dict
-trip_etl_environment = generate_training_set_and_train_model.get_preset(
-    'prod_trip_etl'
-).environment_dict
+).run_config
+trip_etl_environment = generate_training_set_and_train_model.get_preset('prod_trip_etl').run_config
 
 now = datetime.now()
 

@@ -56,7 +56,7 @@ def test_execute_dict_from_config():
     assert (
         execute_solid(
             input_dict,
-            environment_dict={'solids': {'input_dict': {'inputs': {'data': {'key': 'in_config'}}}}},
+            run_config={'solids': {'input_dict': {'inputs': {'data': {'key': 'in_config'}}}}},
         ).output_value()
         == 'in_config'
     )

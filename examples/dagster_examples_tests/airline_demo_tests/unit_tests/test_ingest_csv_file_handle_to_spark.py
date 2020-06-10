@@ -35,7 +35,7 @@ def test_ingest_csv_file_handle_to_spark(spark_config):
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        environment_dict={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
+        run_config={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
     )
     assert result.success
 
@@ -63,7 +63,7 @@ def test_ingest_csv_file_with_special_handle_to_spark(spark_config):
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        environment_dict={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
+        run_config={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
     )
     assert result.success
 

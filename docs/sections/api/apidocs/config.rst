@@ -40,14 +40,14 @@ builtin types above.
 
         execute_solid(
             secret_solid,
-            environment_dict={
+            run_config={
                 'solids': {'secret_solid': {'config': 'test_value'}}
             }
         )
 
         execute_solid(
             secret_solid,
-            environment_dict={
+            run_config={
                 'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
             }
         )
@@ -67,14 +67,14 @@ builtin types above.
 
         execute_solid(
             secret_solid,
-            environment_dict={
+            run_config={
                 'solids': {'secret_solid': {'config': 5}}
             }
         )
 
         execute_solid(
             secret_solid,
-            environment_dict={
+            run_config={
                 'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
             }
         )

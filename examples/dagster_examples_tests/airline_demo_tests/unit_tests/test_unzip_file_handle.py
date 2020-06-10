@@ -46,7 +46,7 @@ def test_unzip_file_handle():
 
         result = execute_pipeline(
             do_test_unzip_file_handle,
-            environment_dict={
+            run_config={
                 'solids': {
                     'unzip_file_handle': {
                         'inputs': {'archive_member': {'value': 'some_archive_member'}}
@@ -86,7 +86,7 @@ def test_unzip_file_handle_on_fake_s3():
 
     result = execute_pipeline(
         do_test_unzip_file_handle_s3,
-        environment_dict={
+        run_config={
             'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}},
             'solids': {
                 'unzip_file_handle': {'inputs': {'archive_member': {'value': 'an_archive_member'}}}

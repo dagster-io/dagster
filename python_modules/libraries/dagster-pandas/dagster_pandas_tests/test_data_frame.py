@@ -180,7 +180,7 @@ def test_custom_dagster_dataframe_hydration_ok():
 
         solid_result = execute_solid(
             use_test_dataframe,
-            environment_dict={
+            run_config={
                 'solids': {
                     'use_test_dataframe': {
                         'inputs': {'test_df': {'csv': {'path': input_csv_fp}}},
@@ -230,7 +230,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
 
     solid_result = execute_solid(
         did_i_win,
-        environment_dict={
+        run_config={
             'solids': {
                 'did_i_win': {
                     'inputs': {'df': {'door_a': 'bar'}},

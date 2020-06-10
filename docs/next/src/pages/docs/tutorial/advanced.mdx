@@ -291,7 +291,7 @@ lines:129-170
 
 We illustrate two ways of defining a preset.
 
-The first is to pass an `environment_dict` literal to the constructor.
+The first is to pass an `run_config` literal to the constructor.
 Because this dict is defined in Python, you can do arbitrary computation
 to construct it -- for instance, picking up environment variables,
 making a call to a secrets store like Hashicorp Vault, etc.
@@ -773,7 +773,7 @@ good_weekday_morning = ScheduleDefinition(
     name="good_weekday_morning",
     cron_schedule="45 6 * * *",
     pipeline_name="hello_cereal_pipeline",
-    environment_dict={"storage": {"filesystem": {}}},
+    run_config={"storage": {"filesystem": {}}},
     should_execute=weekday_filter,
 )
 ```

@@ -136,7 +136,7 @@ def composite_solids_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'load_cereals': {
                 'solids': {
@@ -154,6 +154,6 @@ if __name__ == '__main__':
         }
     }
     result = execute_pipeline(
-        composite_solids_pipeline, environment_dict=environment_dict
+        composite_solids_pipeline, run_config=run_config
     )
     assert result.success

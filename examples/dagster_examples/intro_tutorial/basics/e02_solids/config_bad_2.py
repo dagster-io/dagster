@@ -43,7 +43,7 @@ def config_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {
                 'inputs': {
@@ -59,7 +59,5 @@ if __name__ == '__main__':
             }
         }
     }
-    result = execute_pipeline(
-        config_pipeline, environment_dict=environment_dict
-    )
+    result = execute_pipeline(config_pipeline, run_config=run_config)
     assert result.success
