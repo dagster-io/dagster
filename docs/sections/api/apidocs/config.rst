@@ -51,3 +51,30 @@ builtin types above.
                 'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
             }
         )
+
+.. attribute:: IntSource
+
+   Use this type only for config fields. The value passed to a config field of this type may either
+   be an int, or a selector describing where to look up the value in the environment.
+
+   **Examples:**
+
+   .. code-block:: python
+
+        @solid(config=IntSource)
+        def secret_solid(context) -> int:
+            return context.solid_config
+
+        execute_solid(
+            secret_solid,
+            environment_dict={
+                'solids': {'secret_solid': {'config': 5}}
+            }
+        )
+
+        execute_solid(
+            secret_solid,
+            environment_dict={
+                'solids': {'secret_solid': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
+            }
+        )
