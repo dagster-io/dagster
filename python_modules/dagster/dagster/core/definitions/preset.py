@@ -10,14 +10,13 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_run_config, rename_warning
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
 
 
-class PresetDefinition(
-    namedtuple('_PresetDefinition', 'name environment_dict solid_selection mode')
-):
+class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_selection mode')):
     '''Defines a preset configuration in which a pipeline can execute.
 
     Presets can be used in Dagit to load predefined configurations into the tool.
@@ -37,8 +36,8 @@ class PresetDefinition(
     Args:
         name (str): The name of this preset. Must be unique in the presets defined on a given
             pipeline.
-        environment_dict (Optional[dict]): A dict representing the config to set with the preset.
-            This is equivalent to the ``environment_dict`` argument to :py:func:`execute_pipeline`.
+        run_config (Optional[dict]): A dict representing the config to set with the preset.
+            This is equivalent to the ``run_config`` argument to :py:func:`execute_pipeline`.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this preset. (default: 'default')
@@ -196,13 +195,13 @@ class PresetDefinition(
 
         return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_selection, mode)
 
-    def __new__(cls, name, environment_dict=None, solid_selection=None, mode=None):
-        check.opt_dict_param(environment_dict, 'environment_dict')
+    def __new__(cls, name, run_config=None, solid_selection=None, mode=None, environment_dict=None):
+        run_config = canonicalize_run_config(run_config, environment_dict)
 
         return super(PresetDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            environment_dict=environment_dict,
+            run_config=run_config,
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, 'solid_selection', of_type=str
             ),
@@ -230,3 +229,9 @@ class PresetDefinition(
                 mode=self.mode,
                 environment_dict=merge_dicts(self.environment_dict, environment_dict),
             )
+
+    @property
+    def environment_dict(self):
+        # Backcompat
+        rename_warning('run_config', 'environment_dict', '0.9.0')
+        return self.run_config

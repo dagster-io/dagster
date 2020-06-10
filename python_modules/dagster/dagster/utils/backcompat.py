@@ -4,7 +4,13 @@ from dagster import check
 
 
 def canonicalize_backcompat_args(
-    new_val, new_arg, old_val, old_arg, coerce_old_to_new=None, additional_warn_txt=None
+    new_val,
+    new_arg,
+    old_val,
+    old_arg,
+    breaking_version,
+    coerce_old_to_new=None,
+    additional_warn_txt=None,
 ):
     '''
     Utility for managing backwards compatibility of two related arguments.
@@ -28,6 +34,7 @@ def canonicalize_backcompat_args(
             new_arg='new_flag',
             old_val=old_flag,
             old_arg='old_flag',
+            breaking_version='0.9.0',
             coerce_old_to_new=lambda val: not val,
         )
 
@@ -52,8 +59,8 @@ def canonicalize_backcompat_args(
         return new_val
     if old_val is not None:
         warnings.warn(
-            '"{old_arg}" is deprecated, use "{new_arg}" instead.'.format(
-                old_arg=old_arg, new_arg=new_arg
+            '"{old_arg}" is deprecated and will be removed in {breaking_version}, use "{new_arg}" instead.'.format(
+                old_arg=old_arg, new_arg=new_arg, breaking_version=breaking_version
             )
             + (' ' + additional_warn_txt)
             if additional_warn_txt

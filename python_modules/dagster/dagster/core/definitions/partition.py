@@ -6,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -77,7 +78,7 @@ class PartitionSetDefinition(
         '_PartitionSetDefinition',
         (
             'name pipeline_name partition_fn solid_selection mode '
-            'user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+            'user_defined_run_config_fn_for_partition user_defined_tags_fn_for_partition'
         ),
     )
 ):
@@ -92,7 +93,7 @@ class PartitionSetDefinition(
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
-        environment_dict_fn_for_partition (Callable[[Partition], [Dict]]): A
+        run_config_fn_for_partition (Callable[[Partition], [Dict]]): A
             function that takes a :py:class:`~dagster.Partition` and returns the environment
             configuration that parameterizes the execution for this partition, as a dict
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
@@ -107,8 +108,9 @@ class PartitionSetDefinition(
         partition_fn,
         solid_selection=None,
         mode=None,
-        environment_dict_fn_for_partition=lambda _partition: {},
+        run_config_fn_for_partition=None,
         tags_fn_for_partition=lambda _partition: {},
+        environment_dict_fn_for_partition=None,
     ):
         def _wrap(x):
             if isinstance(x, Partition):
@@ -118,6 +120,14 @@ class PartitionSetDefinition(
             raise DagsterInvalidDefinitionError(
                 'Expected <Partition> | <str>, received {type}'.format(type=type(x))
             )
+
+        run_config_fn_for_partition = canonicalize_backcompat_args(
+            run_config_fn_for_partition,
+            'run_config_fn_for_partition',
+            environment_dict_fn_for_partition,
+            'environment_dict_fn_for_partition',
+            '0.9.0',
+        ) or (lambda _partition: {})
 
         return super(PartitionSetDefinition, cls).__new__(
             cls,
@@ -130,16 +140,20 @@ class PartitionSetDefinition(
                 solid_selection, 'solid_selection', of_type=str
             ),
             mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
-            user_defined_environment_dict_fn_for_partition=check.callable_param(
-                environment_dict_fn_for_partition, 'environment_dict_fn_for_partition'
+            user_defined_run_config_fn_for_partition=check.callable_param(
+                run_config_fn_for_partition, 'run_config_fn_for_partition'
             ),
             user_defined_tags_fn_for_partition=check.callable_param(
                 tags_fn_for_partition, 'tags_fn_for_partition'
             ),
         )
 
+    def run_config_for_partition(self, partition):
+        return self.user_defined_run_config_fn_for_partition(partition)
+
     def environment_dict_for_partition(self, partition):
-        return self.user_defined_environment_dict_fn_for_partition(partition)
+        rename_warning('run_config_for_partition', 'environment_dict_for_partition', '0.9.0')
+        return self.run_config_for_partition(partition)
 
     def tags_for_partition(self, partition):
         user_tags = self.user_defined_tags_fn_for_partition(partition)
@@ -252,19 +266,23 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         name,
         cron_schedule,
         pipeline_name,
-        environment_dict_fn,
         tags_fn,
         solid_selection,
         mode,
         should_execute,
         environment_vars,
         partition_set,
+        environment_dict_fn=None,
+        run_config_fn=None,
     ):
+        run_config_fn = canonicalize_backcompat_args(
+            run_config_fn, 'run_config_fn', environment_dict_fn, 'environment_dict_fn', '0.9.0'
+        )
         super(PartitionScheduleDefinition, self).__init__(
             name=name,
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
-            environment_dict_fn=environment_dict_fn,
+            run_config_fn=run_config_fn,
             tags_fn=tags_fn,
             solid_selection=solid_selection,
             mode=mode,

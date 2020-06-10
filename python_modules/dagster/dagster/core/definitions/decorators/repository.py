@@ -138,7 +138,7 @@ def repository(name=None, description=None):
             name='simple_partition_set',
             pipeline_name='simple_pipeline',
             partition_fn=lambda: range(10),
-            environment_dict_fn_for_partition=(
+            run_config_fn_for_partition=(
                 lambda partition: {
                     'solids': {'return_n': {'config': {'n': partition}}}
                 }
@@ -171,7 +171,7 @@ def repository(name=None, description=None):
             name='expensive_partition_set',
             pipeline_name='expensive_pipeline',
             partition_fn=lambda: range(10),
-            environment_dict_fn_for_partition=(
+            run_config_fn_for_partition=(
                 lambda partition: {
                     'solids': {
                         'return_n_{i}'.format(i=i): {'config': {'n': partition}}

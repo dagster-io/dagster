@@ -28,7 +28,7 @@ def schedule(
 ):
     '''Create a schedule.
 
-    The decorated function will be called as the ``environment_dict_fn`` of the underlying
+    The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
@@ -65,7 +65,7 @@ def schedule(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
-            environment_dict_fn=fn,
+            run_config_fn=fn,
             tags=tags,
             tags_fn=tags_fn,
             solid_selection=solid_selection,
@@ -92,7 +92,7 @@ def monthly_schedule(
 ):
     '''Create a schedule that runs monthly.
 
-    The decorated function will be called as the ``environment_dict_fn`` of the underlying
+    The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
@@ -159,7 +159,7 @@ def monthly_schedule(
             name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
-            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
@@ -190,7 +190,7 @@ def weekly_schedule(
 ):
     '''Create a schedule that runs weekly.
 
-    The decorated function will be called as the ``environment_dict_fn`` of the underlying
+    The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
@@ -257,7 +257,7 @@ def weekly_schedule(
             name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
-            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
@@ -287,7 +287,7 @@ def daily_schedule(
 ):
     '''Create a schedule that runs daily.
 
-    The decorated function will be called as the ``environment_dict_fn`` of the underlying
+    The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
@@ -343,7 +343,7 @@ def daily_schedule(
             name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
-            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
@@ -373,7 +373,7 @@ def hourly_schedule(
 ):
     '''Create a schedule that runs hourly.
 
-    The decorated function will be called as the ``environment_dict_fn`` of the underlying
+    The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
@@ -441,7 +441,7 @@ def hourly_schedule(
             name='{}_partitions'.format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
-            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            run_config_fn_for_partition=lambda partition: fn(partition.value),
             solid_selection=solid_selection,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
