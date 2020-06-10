@@ -74,14 +74,14 @@ Assuming you’ve saved this pipeline as `hello_cereal.py`, we can execute it vi
 mechanisms:
 
 <details className="markdown">
-  <summary>From Python, use Dagster’s Python API</summary>
+  <summary>From the command line, use the Dagster CLI</summary>
 
 <br />
 
 From the directory in which you've saved the pipeline file, just run:
 
 ```bash
-$ dagster pipeline execute -f hello_cereal.py
+dagster pipeline execute -f hello_cereal.py
 ```
 
 You'll see the full stream of events emitted by dagster appear in the console,
@@ -100,7 +100,7 @@ Success!
 </details>
 
 <details className="markdown">
-  <summary>From the command line, use the Dagster CLI</summary>
+  <summary>From Python, use Dagster’s Python API</summary>
 
 <br />
 
@@ -116,7 +116,7 @@ lines:27-29
 Now you can just run:
 
 ```bash
-$ python hello_cereal.py
+python hello_cereal.py
 ```
 
 The <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> function
@@ -133,7 +133,7 @@ To visualize your pipeline (which only has one node) in dagit, from the
 directory in which you've saved the pipeline file, just run:
 
 ```bash
-$ dagit -f hello_cereal.py -a hello_cereal_pipeline
+dagit -f hello_cereal.py
 ```
 
 You'll see output like

@@ -54,9 +54,7 @@ def custom_type_pipeline():
 if __name__ == '__main__':
     run_config = {
         'solids': {
-            'read_csv': {
-                'inputs': {'csv_path': {'value': '../../cereal.csv'}}
-            }
+            'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         }
     }
     result = execute_pipeline(custom_type_pipeline, run_config=run_config)

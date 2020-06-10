@@ -12,7 +12,7 @@ from dagster import check, seven
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, pushd
+from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 
 from .app import create_app_from_workspace
 from .version import __version__
@@ -68,18 +68,8 @@ DEFAULT_DAGIT_PORT = 3000
     default=None,
     type=click.Path(),
 )
-@click.option(
-    '--workdir',
-    help=(
-        "Set this to change the working directory before invoking dagit. Intended to support "
-        "test cases"
-    ),
-    default=None,
-    hidden=True,
-    type=click.Path(),
-)
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, storage_fallback, workdir, **kwargs):
+def ui(host, port, storage_fallback, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -92,11 +82,7 @@ def ui(host, port, storage_fallback, workdir, **kwargs):
     if storage_fallback is None:
         storage_fallback = seven.TemporaryDirectory().name
 
-    if workdir is not None:
-        with pushd(workdir):
-            host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
-    else:
-        host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
+    host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
 
 
 def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):

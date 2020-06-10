@@ -36,7 +36,7 @@ const transform = () => (tree) => {
       const filePath = path.join(root, map.file);
       try {
         const content = fs.readFileSync(filePath).toString();
-        node.value = limitSnippetLines(content, map.lines);
+        node.value = limitSnippetLines(content, map.lines, map.dedent);
       } catch (error) {
         const errorMessage = `Unable to read file at: ${filePath}`;
 

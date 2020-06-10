@@ -10,38 +10,35 @@ import PyObject from 'components/PyObject';
 
 ## Basics of Solids
 
-> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e02_solids/)
-> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/basics/e02_solids/`
+> - You can find the tutorial code on
+>   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e02_solids/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at
+>   `examples/dagster_examples/intro_tutorial/basics/e02_solids/`
 
 ### Parametrizing Solids with Inputs
 
-So far, we've only seen solids whose behavior is the same every time
-they're run:
+So far, we've only seen solids whose behavior is the same every time they're run:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=4 caption=hello_cereal.py
 file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 lines:7-20
 ```
 
-In general, though, rather than relying on hardcoded values like
-`dataset_path`, we'd like to be able to parametrize our solid logic.
-Appropriately parameterized solids are more testable, and also more
-reusable. Consider the following more generic solid:
+In general, though, rather than relying on hardcoded values like `dataset_path`, we'd like to be
+able to parametrize our solid logic. Appropriately parameterized solids are more testable, and also
+more reusable. Consider the following more generic solid:
 
 ```python literalinclude showLines startLine=7 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
 lines:7-15
 ```
 
-Here, rather than hard-coding the value of `dataset_path`, we use an
-input, `csv_path`. It's easy to see why this is better. We can reuse
-the same solid in all the different places we might need to read in a
-CSV from a filepath. We can test the solid by pointing it at some known
-test CSV file. And we can use the output of another upstream solid to
-determine which file to load.
+Here, rather than hard-coding the value of `dataset_path`, we use an input, `csv_path`. It's easy to
+see why this is better. We can reuse the same solid in all the different places we might need to
+read in a CSV from a filepath. We can test the solid by pointing it at some known test CSV file. And
+we can use the output of another upstream solid to determine which file to load.
 
-Let's rebuild a pipeline we've seen before, but this time using our
-newly parameterized solid.
+Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
 ```python literalinclude showLines startLine=1 emphasize-lines=38 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
@@ -57,40 +54,38 @@ new `read_csv` solid in the absence of any upstream solids whose outputs we can 
 provides the ability to stub inputs to solids that aren't satisfied by the pipeline topology as part
 of its flexible configuration facility.
 
-We can specify config for a pipeline execution regardless of
-which modality we use to execute the pipeline — the Python API, the
-Dagit GUI, or the command line:
+We can specify config for a pipeline execution regardless of which modality we use to execute the
+pipeline — the Python API, the Dagit GUI, or the command line:
 
 <details className="markdown">
   <summary>Specifying config in the Python API</summary>
 
 <br />
 
-We previously encountered the <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />function.
-Pipeline configuration is specified by the second argument to this function,
-which must be a dict (the "environment dict").
+We previously encountered the <PyObject module="dagster" object="execute_pipeline"
+displayText="execute_pipeline()" />function. Pipeline run config is specified by the second
+argument to this function, which must be a dict.
 
-This dict contains all of the user-provided configuration with which to
-execute a pipeline. As such, it can have [a lot of sections](/docs/apidocs/execution####config_schema), but
-we'll only use one of them here: per-solid configuration, which is
-specified under the key `solids`:
+This dict contains all of the user-provided configuration with which to execute a pipeline. As such,
+it can have [a lot of sections](/docs/apidocs/execution####config_schema), but we'll only use one of
+them here: per-solid configuration, which is specified under the key `solids`:
 
 ```python literalinclude showLines startLine=41 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
-lines:41-48
+lines:42-46
 dedent:4
 ```
 
-The `solids` dict is keyed by solid name, and each solid is configured
-by a dict that may itself have several sections. In this case we are
-only interested in the `inputs` section, so that we can specify the
-value of the input `csv_path`.
+The `solids` dict is keyed by solid name, and each solid is configured by a dict that may itself
+have several sections. In this case we are only interested in the `inputs` section, so that we can
+specify the value of the input `csv_path`.
 
-Now you can pass this environment dict to <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />:
+Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
+displayText="execute_pipeline()" />:
 
 ```python literalinclude showLines startLine=49 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
-lines:49-51
+lines:47-49
 dedent:4
 ```
 
@@ -101,28 +96,24 @@ dedent:4
 
 <br />
 
-When executing pipelines with the dagster CLI, we'll need to provide the environment
-dict in a config file. We use YAML for the file-based representation of an environment
-dict, but the values are the same as before:
+When executing pipelines with the dagster CLI, we'll need to provide the run config in a file. We
+use YAML for the file-based representation of configuration, but the values are the same as before:
 
 ```YAML literalinclude showLines caption=inputs_env.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
 dedent:4
 ```
 
-We can pass config files in this format to the dagster CLI tool with the
-`-e` flag.
+We can pass config files in this format to the dagster CLI tool with the `-e` flag.
 
 ```bash
-$ dagster pipeline execute -f inputs.py -e inputs_env.yaml
+dagster pipeline execute -f inputs.py -e inputs_env.yaml
 ```
 
-In practice, you might have different sections of your environment dict
-in different yaml files —if, for instance, some sections change more
-often (e.g. in test and prod) while other are more static. In this case,
-you can set multiple instances of the `-e` flag on CLI invocations, and
-the CLI tools will assemble the YAML fragments into a single environment
-dict.
+In practice, you might have different sections of your run config in different yaml files&mdash;if,
+for instance, some sections change more often (e.g. in test and prod) while other are more static.
+In this case, you can set multiple instances of the `-e` flag on CLI invocations, and the CLI tools
+will assemble the YAML fragments into a single run config.
 
 </details>
 
@@ -131,45 +122,42 @@ dict.
 
 <br />
 
-Dagit provides a powerful, schema-aware, typeahead-enabled config editor to enable
-rapid experimentation with and debugging of parameterized pipeline executions. As
-always, run:
+Dagit provides a powerful, schema-aware, typeahead-enabled config editor to enable rapid
+experimentation with and debugging of parameterized pipeline executions. As always, run:
 
 ```bash
-$ dagit -f inputs.py
+dagit -f inputs.py
 ```
 
 Notice that no execution plan appears in the bottom pane of the Playground.
 
 ![inputs_figure_one.png](/assets/images/tutorial/inputs_figure_one.png)
 
-Because Dagit is schema-aware, it knows that this pipeline now requires
-configuration in order to run without errors. In this case, since the pipeline
-is relatively trivial, it wouldn't be especially costly to run the pipeline
-and watch it fail. But when pipelines are complex and slow, it's invaluable to
-get this kind of feedback up front rather than have an unexpected failure deep
+Because Dagit is schema-aware, it knows that this pipeline now requires configuration in order to
+run without errors. In this case, since the pipeline is relatively trivial, it wouldn't be
+especially costly to run the pipeline and watch it fail. But when pipelines are complex and slow,
+it's invaluable to get this kind of feedback up front rather than have an unexpected failure deep
 inside a pipeline.
 
-Recall that the execution plan, which you will ordinarily see above the log
-viewer in the **Execute** tab, is the concrete pipeline that
-Dagster will actually execute. Without a valid config, Dagster can't construct
-a parametrization of the logical pipeline — so no execution plan is available
-for us to preview.
+Recall that the execution plan, which you will ordinarily see above the log viewer in the
+**Execute** tab, is the concrete pipeline that Dagster will actually execute. Without a valid
+config, Dagster can't construct a parametrization of the logical pipeline&mdash;so no execution plan
+is available for us to preview.
 
 Press <kbd>Ctrl</kbd> + <kbd>Space</kbd> in order to bring up the typeahead assistant.
 
 ![inputs_figure_two.png](/assets/images/tutorial/inputs_figure_two.png)
 
-Here you can see all of the sections available in the environment dict. Don't
-worry, we'll get to them all later.
+Here you can see all of the sections available in the run config. Don't worry, we'll get to them all
+later.
 
 Let's enter the config we need in order to execute our pipeline.
 
 ![inputs_figure_three.png](/assets/images/tutorial/inputs_figure_three.png)
 
-Note that as you type and edit the config, the config minimap hovering on the
-right side of the editor pane changes to provide context — so you always know
-where in the nested config schema you are while making changes.
+Note that as you type and edit the config, the config minimap hovering on the right side of the
+editor pane changes to provide context&mdash;youo you always know where in the nested config schema
+you are while making changes.
 
 </details>
 
@@ -177,120 +165,113 @@ where in the nested config schema you are while making changes.
 
 ### Parametrizing Solids with Config
 
-Solids often depend in predictable ways on features of the external world or
-the pipeline in which they're invoked. For example, consider an extended
-version of our CSV-reading solid that implements more of the options available
-in the underlying Python API:
+Solids often depend in predictable ways on features of the external world or the pipeline in which
+they're invoked. For example, consider an extended version of our CSV-reading solid that implements
+more of the options available in the underlying Python API:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=9-15 caption=config_bad_1.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_1.py
 lines:7-29
 ```
 
-We obviously don't want to have to write a separate solid for each permutation
-of these parameters that we use in our pipelines — especially because, in
-more realistic cases like configuring a Spark job or even parametrizing the
-`read_csv` function from a popular package like [Pandas](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv), we
-might have dozens or hundreds of parameters like these.
+We obviously don't want to have to write a separate solid for each permutation of these parameters
+that we use in our pipelines&mdash;especially because, in more realistic cases like configuring a
+Spark job or even parametrizing the `read_csv` function from a popular package like
+[Pandas](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv),
+we might have dozens or hundreds of parameters like these.
 
-But hoisting all of these parameters into the signature of the solid function
-as inputs isn't the right answer either:
+But hoisting all of these parameters into the signature of the solid function as inputs isn't the
+right answer either:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=5-11 caption=config_bad_2.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
 lines:7-39
 ```
 
-Defaults are often sufficient for configuration values like these, and sets of
-parameters are often reusable. And it's unlikely that values like this will be
-provided dynamically by the outputs of other solids in a pipeline.
+Defaults are often sufficient for configuration values like these, and sets of parameters are often
+reusable. Moreover, it's unlikely that values like this will be provided dynamically by the outputs
+of other solids in a pipeline.
 
-Inputs, on the other hand, will usually be provided by the outputs of other
-solids in a pipeline, even though we might sometimes want to stub them using
-the config facility.
+Inputs, on the other hand, will usually be provided by the outputs of other solids in a pipeline,
+even though we might sometimes want to stub them using the config facility.
 
-For all these reasons, it's bad practice to mix configuration values like
-these with true input values.
+For all these reasons, it's bad practice to mix configuration values like these with true input
+values.
 
 The solution is to define a config schema for our solid:
 
 ```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89 caption=config.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config.py
-lines:1-100
+lines:1-104
 ```
 
-First, we pass the `config` argument to the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
-This tells Dagster to give our solid a config field structured
-as a dictionary, whose keys are the keys of this argument, and the types of whose
-values are defined by the values of this argument (instances of <PyObject module="dagster" object="Field" />).
+First, we pass the `config` argument to the <PyObject module="dagster" object="solid"
+displayText="@solid" /> decorator. This tells Dagster to give our solid a config field structured as
+a dictionary, whose keys are the keys of this argument, and the types of whose values are defined by
+the values of this argument (instances of <PyObject module="dagster" object="Field" />).
 
-Then, we define one of these fields, `escapechar`, to be a string,
-setting a default value, making it optional, and setting a human-readable
-description.
+Then, we define one of these fields, `escapechar`, to be a string, setting a default value, making
+it optional, and setting a human-readable description.
 
-Finally, inside the body of the solid function, we access the config value set
-by the user using the `solid_config` field on the familiar <PyObject module="dagster" object="SystemComputeExecutionContext" displayText="context" /> object. When Dagster
-executes our pipeline, the framework will make validated config for each solid available on this object.
+Finally, inside the body of the solid function, we access the config value set by the user using the
+`solid_config` field on the familiar <PyObject module="dagster"
+object="SystemComputeExecutionContext" displayText="context" /> object. When Dagster executes our
+pipeline, the framework will make validated config for each solid available on this object.
 
 Let's see how all of this looks in dagit. As usual, run:
 
 ```bash
-$ dagit -f config.py
+dagit -f config.py
 ```
 
 ![config_figure_one.png](/assets/images/tutorial/config_figure_one.png)
 
-As you may by now expect, Dagit provides a fully type-aware and schema-aware
-config editing environment with a typeahead. The human-readable descriptions
-we provided on our config fields appear in the config context minimap, as well
-as in typeahead tooltips and in the Explore pane when clicking into the
-individual solid definition.
+As you may by now expect, Dagit provides a fully type-aware and schema-aware config editing
+environment with a typeahead. The human-readable descriptions we provided on our config fields
+appear in the config context minimap, as well as in typeahead tooltips and in the Explore pane when
+clicking into the individual solid definition.
 
 ![config_figure_two.png](/assets/images/tutorial/config_figure_two.png)
 
-You can see that we've added a new section to the solid config. In addition to
-the `inputs` section, which we'll still use to set the `csv_path` input, we now have a `config`
-section, where we can set values defined in the `config` argument to <PyObject module="dagster" object="solid" displayText="@solid" />.
+You can see that we've added a new section to the solid config. In addition to the `inputs` section,
+which we'll still use to set the `csv_path` input, we now have a `config` section, where we can set
+values defined in the `config` argument to <PyObject module="dagster" object="solid"
+displayText="@solid" />.
 
 ```YAML literalinclude caption=config_env_bad.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_env_bad.yaml
 ```
 
-Of course, this config won't give us the results we're expecting. The values
-in `cereal.csv` are comma-separated, not semicolon-separated, as
-they might be if this were a CSV from Europe, where commas are frequently
-used in place of the decimal point.
+Of course, this config won't give us the results we're expecting. The values in `cereal.csv` are
+comma-separated, not semicolon-separated, as they might be if this were a CSV from Europe, where
+commas are frequently used in place of the decimal point.
 
-We'll see later how we can use Dagster's facilities for automatic data quality
-checks to guard against semantic issues like this, which won't be caught by
-the type system.
+We'll see later how we can use Dagster's facilities for automatic data quality checks to guard
+against semantic issues like this, which won't be caught by the type system.
 
 <br />
 
 ### Multiple and Conditional Outputs
 
-Solids can have arbitrarily many outputs, and downstream solids can
-depends on any number of these.
+Solids can have arbitrarily many outputs, and downstream solids can depends on any number of these.
 
-What's more, outputs don't necessarily have to be yielded by solids,
-which lets us write pipelines where some solids conditionally execute
-based on the presence of an upstream output.
+What's more, outputs don't necessarily have to be yielded by solids, which lets us write pipelines
+where some solids conditionally execute based on the presence of an upstream output.
 
-Suppose we're interested in splitting hot and cold cereals into
-separate datasets and processing them separately, based on config.
+Suppose we're interested in splitting hot and cold cereals into separate datasets and processing
+them separately, based on config.
 
 ```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26 caption=multiple_outputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
 lines:35-66
 ```
 
-Solids that yield multiple outputs must declare, and name, their outputs
-(passing `output_defs` to the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator).
-Output names must be unique and each <PyObject module="dagster" object="Output" /> yielded by a
-solid's compute function must have a name that corresponds to one of these declared outputs.
+Solids that yield multiple outputs must declare, and name, their outputs (passing `output_defs` to
+the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator). Output names must
+be unique and each <PyObject module="dagster" object="Output" /> yielded by a solid's compute
+function must have a name that corresponds to one of these declared outputs.
 
-We'll define two downstream solids and hook them up to the multiple
-outputs from `split_cereals`.
+We'll define two downstream solids and hook them up to the multiple outputs from `split_cereals`.
 
 ```python literalinclude showLines startLine=58 emphasize-lines=23-25 caption=multiple_outputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
@@ -301,20 +282,18 @@ As usual, we can visualize this in Dagit:
 
 ![multiple_outputs.png](/assets/images/tutorial/multiple_outputs.png)
 
-Notice that the logical DAG corresponding to the pipeline definition
-includes both dependencies -- we won't know about the conditionality in
-the pipeline until runtime, when one of the outputs is not yielded by
-`split_cereal`.
+Notice that the logical DAG corresponding to the pipeline definition includes both dependencies --
+we won't know about the conditionality in the pipeline until runtime, when one of the outputs is not
+yielded by `split_cereal`.
 
 ![multiple_outputs_zoom.png](/assets/images/tutorial/multiple_outputs_zoom.png)
 
-Zooming in, Dagit shows us the details of the multiple outputs from
-`split_cereals` and their downstream dependencies.
+Zooming in, Dagit shows us the details of the multiple outputs from `split_cereals` and their
+downstream dependencies.
 
-When we execute this pipeline with the following config, we'll see that
-the cold cereals output is omitted and that the execution step
-corresponding to the downstream solid is marked skipped in the right
-hand pane:
+When we execute this pipeline with the following config, we'll see that the cold cereals output is
+omitted and that the execution step corresponding to the downstream solid is marked skipped in the
+execution pane:
 
 ```YAML literalinclude showLines caption=multiple_outputs.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.yaml

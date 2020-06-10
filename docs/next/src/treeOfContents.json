@@ -56,6 +56,10 @@
         "path": "/docs/tutorial/testable"
       },
       {
+        "name": "Dagster Types & Expectations",
+        "path": "/docs/tutorial/types"
+      },
+      {
         "name": "Advanced Tutorials",
         "path": "/docs/tutorial/advanced"
       }
