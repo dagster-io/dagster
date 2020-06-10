@@ -26,6 +26,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import * as querystring from "query-string";
 import { PartitionView } from "./PartitionView";
 import { RunStatus } from "../runs/RunUtils";
+import { useScheduleSelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_TICKS_TO_TO_DISPLAY = 5;
@@ -34,7 +35,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
 }>> = ({ match, location }) => {
   const { scheduleName } = match.params;
-
+  const scheduleSelector = useScheduleSelector(scheduleName);
   const { history } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
   const cursor = (qs.cursor as string) || undefined;
@@ -46,7 +47,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
     <Query
       query={SCHEDULE_ROOT_QUERY}
       variables={{
-        scheduleName,
+        scheduleSelector,
         limit: NUM_RUNS_TO_DISPLAY,
         ticksLimit: NUM_TICKS_TO_TO_DISPLAY
       }}
@@ -193,11 +194,11 @@ const TicksTable: React.FunctionComponent<{
 
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery(
-    $scheduleName: String!
+    $scheduleSelector: ScheduleSelector!
     $limit: Int!
     $ticksLimit: Int!
   ) {
-    scheduleOrError(scheduleName: $scheduleName) {
+    scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on RunningSchedule {
         ...ScheduleFragment
         scheduleDefinition {

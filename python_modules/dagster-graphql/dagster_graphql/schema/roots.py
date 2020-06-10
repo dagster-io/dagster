@@ -54,7 +54,11 @@ from dagster_graphql.implementation.utils import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.host_representation import RepositorySelector, RepresentedPipeline
+from dagster.core.host_representation import (
+    RepositorySelector,
+    RepresentedPipeline,
+    ScheduleSelector,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -91,7 +95,7 @@ class DauphinQuery(dauphin.ObjectType):
     schedules = dauphin.Field(dauphin.non_null_list('RunningSchedule'))
     scheduleOrError = dauphin.Field(
         dauphin.NonNull('ScheduleOrError'),
-        schedule_name=dauphin.NonNull(dauphin.String),
+        schedule_selector=dauphin.NonNull('ScheduleSelector'),
         limit=dauphin.Int(),
     )
 
@@ -204,8 +208,10 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_schedules(self, graphene_info):
         return get_schedules_or_error(graphene_info)
 
-    def resolve_scheduleOrError(self, graphene_info, schedule_name):
-        return get_schedule_or_error(graphene_info, schedule_name)
+    def resolve_scheduleOrError(self, graphene_info, schedule_selector):
+        return get_schedule_or_error(
+            graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
+        )
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(

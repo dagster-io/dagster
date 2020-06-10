@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -134,7 +134,7 @@ export interface ScheduleRootQuery {
 }
 
 export interface ScheduleRootQueryVariables {
-  scheduleName: string;
+  scheduleSelector: ScheduleSelector;
   limit: number;
   ticksLimit: number;
 }

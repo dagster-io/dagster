@@ -78,8 +78,8 @@ mutation(
 '''
 
 GET_SCHEDULE = '''
-query getSchedule($scheduleName: String!) {
-  scheduleOrError(scheduleName: $scheduleName) {
+query getSchedule($scheduleSelector: ScheduleSelector!) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
     __typename
     ... on PythonError {
       message
@@ -225,10 +225,11 @@ def test_get_schedule():
             ).get_repository(main_repo_name()),
         )
 
+        schedule_selector = get_legacy_schedule_selector(
+            context, 'partition_based_multi_mode_decorator'
+        )
         result = execute_dagster_graphql(
-            context,
-            GET_SCHEDULE,
-            variables={'scheduleName': 'partition_based_multi_mode_decorator'},
+            context, GET_SCHEDULE, variables={'scheduleSelector': schedule_selector}
         )
 
         assert result.data

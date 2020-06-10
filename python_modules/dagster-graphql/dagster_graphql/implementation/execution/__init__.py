@@ -36,7 +36,6 @@ from ..external import (
     ensure_valid_step_keys,
     get_external_pipeline_or_raise,
 )
-from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
