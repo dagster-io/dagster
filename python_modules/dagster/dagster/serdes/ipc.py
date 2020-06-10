@@ -16,6 +16,19 @@ from dagster.serdes import (
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
+def write_unary_input(input_file, obj):
+    check.str_param(input_file, 'input_file')
+    check.not_none_param(obj, 'obj')
+    with open(os.path.abspath(input_file), 'w') as fp:
+        fp.write(serialize_dagster_namedtuple(obj))
+
+
+def read_unary_input(input_file):
+    check.str_param(input_file, 'input_file')
+    with open(os.path.abspath(input_file), 'r') as fp:
+        return deserialize_json_to_dagster_namedtuple(fp.read())
+
+
 def ipc_write_unary_response(output_file, obj):
     check.not_none_param(obj, 'obj')
     with ipc_write_stream(output_file) as stream:

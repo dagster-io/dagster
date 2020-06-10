@@ -26,9 +26,15 @@ from dagster.core.host_representation import (
 )
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.instance import DagsterInstance
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
-from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, setup_interrupt_support
+from dagster.serdes.ipc import (
+    ipc_write_stream,
+    ipc_write_unary_response,
+    read_unary_input,
+    setup_interrupt_support,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 # Helpers
@@ -138,41 +144,59 @@ def pipeline_subset_snapshot_command(output_file, solid_selection, **kwargs):
     )
 
 
-@click.command(name='execution_plan', help='Create an execution plan and return its snapshot')
-@click.argument('output_file', type=click.Path())
-@legacy_repository_target_argument
-@legacy_pipeline_target_argument
-@click.option('--solid-selection', help="JSON encoded list of solid selections")
-@click.option('--environment-dict', help="JSON encoded environment_dict")
-@click.option('--mode', help="mode")
-@click.option('--step-keys-to-execute', help="JSON encoded step_keys_to_execute")
-@click.option('--snapshot-id', help="Snapshot ID")
-def execution_plan_snapshot_command(
-    output_file,
-    solid_selection,
-    environment_dict,
-    mode,
-    step_keys_to_execute,
-    snapshot_id,
-    **kwargs
+@whitelist_for_serdes
+class ExecutionPlanSnapshotArgs(
+    namedtuple(
+        '_ExecutionPlanSnapshotArgs',
+        'pipeline_origin solid_selection environment_dict mode step_keys_to_execute snapshot_id',
+    )
 ):
-    recon_pipeline = recon_pipeline_for_cli_args(kwargs)
+    def __new__(
+        cls,
+        pipeline_origin,
+        solid_selection,
+        environment_dict,
+        mode,
+        step_keys_to_execute,
+        snapshot_id,
+    ):
+        return super(ExecutionPlanSnapshotArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
+            ),
+            solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
+            environment_dict=check.dict_param(environment_dict, 'environment_dict'),
+            mode=check.str_param(mode, 'mode'),
+            step_keys_to_execute=check.opt_list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            ),
+            snapshot_id=check.str_param(snapshot_id, 'snapshot_id'),
+        )
 
-    environment_dict = json.loads(environment_dict)
-    if step_keys_to_execute:
-        step_keys_to_execute = json.loads(step_keys_to_execute)
-    if solid_selection:
-        solid_selection = json.loads(solid_selection)
-        recon_pipeline = recon_pipeline.subset_for_execution(solid_selection)
+
+@click.command(name='execution_plan', help='Create an execution plan and return its snapshot')
+@click.argument('input_file', type=click.Path())
+@click.argument('output_file', type=click.Path())
+def execution_plan_snapshot_command(input_file, output_file):
+    from dagster.utils.hosted_user_process import recon_pipeline_from_origin
+
+    args = check.inst(read_unary_input(input_file), ExecutionPlanSnapshotArgs)
+
+    recon_pipeline = (
+        recon_pipeline_from_origin(args.pipeline_origin).subset_for_execution(args.solid_selection)
+        if args.solid_selection
+        else recon_pipeline_from_origin(args.pipeline_origin)
+    )
 
     execution_plan_snapshot = snapshot_from_execution_plan(
         create_execution_plan(
             pipeline=recon_pipeline,
-            environment_dict=environment_dict,
-            mode=mode,
-            step_keys_to_execute=step_keys_to_execute,
+            environment_dict=args.environment_dict,
+            mode=args.mode,
+            step_keys_to_execute=args.step_keys_to_execute,
         ),
-        snapshot_id,
+        args.snapshot_id,
     )
 
     ipc_write_unary_response(output_file, execution_plan_snapshot)
