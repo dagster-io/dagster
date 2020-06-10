@@ -93,7 +93,7 @@ def canonicalize_run_config(run_config, environment_dict, stacklevel=3):
     )
 
     if environment_dict is not None:
-        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel)
+        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel + 1)
         return environment_dict
     else:
         return run_config

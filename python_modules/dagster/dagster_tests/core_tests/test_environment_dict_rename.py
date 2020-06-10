@@ -29,7 +29,7 @@ def test_warnings_execute_pipeline():
         warn_mock.assert_any_call(
             '"environment_dict" is deprecated and will be removed in 0.9.0, '
             'use "run_config" instead.',
-            stacklevel=5,
+            stacklevel=6,
         )
 
 
@@ -63,7 +63,7 @@ def test_warnings_execute_pipeline_iterator():
         warn_mock.assert_called_with(
             '"environment_dict" is deprecated and will be removed in 0.9.0, '
             'use "run_config" instead.',
-            stacklevel=4,
+            stacklevel=5,
         )
 
 
