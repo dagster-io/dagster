@@ -6,7 +6,7 @@ from dagster import execute_pipeline, pipeline, solid
 
 @solid
 def load_cereals(context):
-    csv_path = os.path.join(os.path.dirname(__file__), '../../cereal.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), 'cereal.csv')
     with open(csv_path, 'r') as fd:
         cereals = [row for row in csv.DictReader(fd)]
 

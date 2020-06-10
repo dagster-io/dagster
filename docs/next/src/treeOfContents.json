@@ -40,8 +40,20 @@
         "path": "/docs/tutorial/overview"
       },
       {
-        "name": "ETL with Dagster",
-        "path": "/docs/tutorial/basics"
+        "name": "Building Pipelines with Dagster",
+        "path": "/docs/tutorial/execute"
+      },
+      {
+        "name": "Basics of Solids",
+        "path": "/docs/tutorial/basics_solids"
+      },
+      {
+        "name": "Basics of Pipelines",
+        "path": "/docs/tutorial/basics_pipelines"
+      },
+      {
+        "name": "Making Your Pipelines Testable and Maintainable",
+        "path": "/docs/tutorial/testable"
       },
       {
         "name": "Advanced Tutorials",

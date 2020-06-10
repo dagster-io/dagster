@@ -1,0 +1,105 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Basics of Pipelines | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+## Basics of Pipelines
+
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e03_pipelines/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/basics/e03_pipelines/`
+
+<br />
+
+Our pipelines wouldn't be very interesting if they were limited to solids acting in isolation from each other.
+Pipelines are useful because they let us connect solids into arbitrary DAGs ([directed acyclic graphs](https://en.wikipedia.org/wiki/Directed_acyclic_graph))
+of computation.
+
+### Let's Get Serial
+
+We'll add a second solid to the pipeline we worked with in the first
+section of the tutorial.
+
+This new solid will consume the output of the first solid, which read
+the cereal dataset in from disk, and in turn will sort the list of
+cereals by their calorie content per serving.
+
+```python literalinclude emphasize-lines=16,20,38
+file:/dagster_examples/intro_tutorial/basics/e03_pipelines/serial_pipeline.py
+lines:1-40
+```
+
+You'll see that we've modified our existing `load_cereals` solid to
+return an output, in this case the list of dicts into which
+`csv.DictReader <python:csv.DictReader>` reads the cereals dataset.
+
+We've defined our new solid, `sort_by_calories`, to take a user-defined
+input, `cereals`, in addition to the system-provided <PyObject module="dagster" object="SystemComputeExecutionContext" displayText="context" /> object.
+
+We can use inputs and outputs to connect solids to each other. Here we
+tell Dagster that although `load_cereals` doesn't depend on the output
+of any other solid, `sort_by_calories` does -- it depends on the output
+of `load_cereals`.
+
+Let's visualize the DAG we've just defined in dagit.
+
+```bash
+$ dagit -f serial_pipeline.py -n serial_pipeline
+```
+
+Navigate to [http://127.0.0.1:3000/pipeline/serial_pipeline/](http://127.0.0.1:3000/pipeline/serial_pipeline/) or choose
+"serial_pipeline" from the dropdown:
+
+![serial_pipeline_figure_one.png](/assets/images/tutorial/serial_pipeline_figure_one.png)
+
+<br />
+
+### A More Complex DAG
+
+Solids don't need to be wired together serially. The output of one
+solid can be consumed by any number of other solids, and the outputs of
+several different solids can be consumed by a single solid.
+
+```python literalinclude showLines emphasize-lines=55-59 startLine=7 caption=complex_pipeline.py
+file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
+lines:7-66
+```
+
+First we introduce the intermediate variable `cereals` into our pipeline
+definition to represent the output of the `load_cereals` solid. Then we
+make both `sort_by_calories` and `sort_by_protein` consume this output.
+Their outputs are in turn both consumed by `display_results`.
+
+Let's visualize this pipeline in Dagit
+(`dagit -f complex_pipeline.py -n complex_pipeline`):
+
+![complex_pipeline_figure_one.png](/assets/images/tutorial/complex_pipeline_figure_one.png)
+
+When you execute this example from Dagit, you'll see that
+`load_cereals` executes first, followed by `sort_by_calories` and
+`sort_by_protein` -- in any order -- and that `display_results`
+executes last, only after `sort_by_calories` and `sort_by_protein` have
+both executed.
+
+In more sophisticated execution environments, `sort_by_calories` and
+`sort_by_protein` could execute not just in any order, but at the same
+time, since they don't depend on each other's outputs -- but both
+would still have to execute after `load_cereals` (because they depend on
+its output) and before `display_results` (because `display_results`
+depends on both of their outputs).
+
+We'll write a simple test for this pipeline showing how we can assert
+that all four of its solids executed successfully.
+
+```python literalinclude showLines startLine=73 caption=complex_pipeline.py
+file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
+lines:73-80
+```
+
+<br />
+
+<br />

@@ -47,7 +47,7 @@ if __name__ == '__main__':
         'solids': {
             'read_csv': {
                 'inputs': {
-                    'csv_path': {'value': '../../cereal.csv'},
+                    'csv_path': {'value': 'cereal.csv'},
                     'delimiter': {'value': ','},
                     'doublequote': {'value': False},
                     'escapechar': {'value': '\\'},
