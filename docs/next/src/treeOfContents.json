@@ -123,7 +123,6 @@
         "name": "Partitions",
         "path": "/docs/apidocs/partitions"
       },
-
       {
         "name": "Errors",
         "path": "/docs/apidocs/errors"
@@ -175,10 +174,6 @@
       {
         "name": "Databricks (dagster_databricks)",
         "path": "/docs/apidocs/libraries/dagster_databricks"
-      },
-      {
-        "name": "DBT (dagster_dbt)",
-        "path": "/docs/apidocs/libraries/dagster_dbt"
       },
       {
         "name": "GCP (dagster_gcp)",

@@ -59,12 +59,6 @@ def get_lakehouse_pipelines():
     return [simple_lakehouse_pipeline]
 
 
-def get_jaffle_pipelines():
-    from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
-
-    return [jaffle_pipeline]
-
-
 def get_bay_bikes_pipelines():
     from dagster_examples.bay_bikes.pipelines import (
         daily_weather_pipeline,
@@ -85,7 +79,6 @@ def define_internal_dagit_repository():
             get_airline_demo_pipelines()
             + get_bay_bikes_pipelines()
             + get_event_pipelines()
-            + get_jaffle_pipelines()
             + get_pyspark_pipelines()
             + get_lakehouse_pipelines()
             + get_toys_pipelines()

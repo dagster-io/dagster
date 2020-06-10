@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    
+
   <url>
         <loc>https://docs.dagster.io/docs/apidocs/cli</loc>
   </url>
@@ -51,10 +51,6 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_datadog</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_dbt</loc>
   </url>
 
   <url>
@@ -346,4 +342,3 @@
   </url>
 
 </urlset>
-      

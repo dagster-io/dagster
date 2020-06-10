@@ -24,7 +24,6 @@ RUN pip install --no-deps \
 	-e dagster-pyspark \
 	-e dagster-postgres \
 	-e dagster-cron \
-	-e dagster-dbt \
 	-e .
 
 # Then install all dependencies at once so that
@@ -41,7 +40,6 @@ RUN pip install \
 	-e dagster-pyspark \
 	-e dagster-postgres \
 	-e dagster-cron \
-	-e dagster-dbt \
 	-e .
 
 # do separate install because two of the requirements files require
