@@ -21,7 +21,7 @@ PICKLED_STEP_RUN_REF_FILE_NAME = 'step_run_ref.pkl'
 
 
 @resource(
-    config={
+    config_schema={
         'scratch_dir': Field(
             StringSource,
             description='Directory used to pass files between the plan process and step process.',

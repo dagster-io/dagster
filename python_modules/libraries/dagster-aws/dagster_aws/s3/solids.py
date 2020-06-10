@@ -53,7 +53,7 @@ def last_key(key):
 
 
 @solid(
-    config={
+    config_schema={
         'Bucket': Field(
             StringSource, description='The name of the bucket to upload to.', is_required=True
         ),

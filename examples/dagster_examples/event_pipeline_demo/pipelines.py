@@ -88,7 +88,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
 # See https://github.com/dagster-io/dagster/issues/1476
 @solid(
     name='download_from_s3_to_file',
-    config={
+    config_schema={
         'bucket': Field(String, description='S3 bucket name'),
         'key': Field(String, description='S3 key name'),
         'target_folder': Field(

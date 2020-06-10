@@ -214,7 +214,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
         Returns:
             str: The environment dict as YAML.
         '''
-        return yaml.dump(self.environment_dict or {}, default_flow_style=False)
+        return yaml.dump(self.run_config or {}, default_flow_style=False)
 
     def with_additional_config(self, environment_dict):
         '''Return a new PresetDefinition with additional config merged in to the existing config.'''
@@ -227,7 +227,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 name=self.name,
                 solid_selection=self.solid_selection,
                 mode=self.mode,
-                environment_dict=merge_dicts(self.environment_dict, environment_dict),
+                run_config=merge_dicts(self.run_config, environment_dict),
             )
 
     @property

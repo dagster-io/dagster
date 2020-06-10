@@ -12,7 +12,7 @@ from pyspark.sql import DataFrame as SparkDF
 from dagster import ModeDefinition, PresetDefinition, resource
 
 
-@resource(config={'bucket': str, 'prefix': str})
+@resource(config_schema={'bucket': str, 'prefix': str})
 def s3_storage(init_context):
     return S3Storage(init_context.resource_config)
 
@@ -33,7 +33,7 @@ class S3Storage:
         return '/'.join((self._bucket, self._prefix) + path)
 
 
-@resource(config={'root': str})
+@resource(config_schema={'root': str})
 def local_file_system_storage(init_context):
     return LocalFileSystemStorage(init_context.resource_config)
 

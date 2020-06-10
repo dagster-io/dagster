@@ -91,19 +91,19 @@ def _base_compute(context):
     yield Output(1)
 
 
-@solid(config=_base_config())
+@solid(config_schema=_base_config())
 def base_no_input(context):
     for event in _base_compute(context):
         yield event
 
 
-@solid(config=_base_config())
+@solid(config_schema=_base_config())
 def base_one_input(context, _):
     for event in _base_compute(context):
         yield event
 
 
-@solid(config=_base_config())
+@solid(config_schema=_base_config())
 def base_two_inputs(context, _a, _b):
     for event in _base_compute(context):
         yield event
