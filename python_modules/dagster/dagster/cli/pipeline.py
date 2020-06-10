@@ -147,27 +147,15 @@ def get_pipeline_instructions(command_name):
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
-def get_legacy_pipeline_instructions(command_name):
-    return (
-        'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
-        '\n\n1. dagster pipeline {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
-        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -y path/to/{default_filename}'
-        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -n define_some_pipeline'
-        '\n\n4. dagster pipeline {command_name} -m a_module.submodule  -n define_some_pipeline'
-        '\n\n5. dagster pipeline {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
-        '\n\n6. dagster pipeline {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
-    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
-
-
 def get_partitioned_pipeline_instructions(command_name):
     return (
         'This commands targets a partitioned pipeline. The pipeline and partition set must be '
         'defined in a repository, which can be specified in a number of ways:'
         '\n\n1. dagster pipeline {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
-        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -y path/to/{default_filename}'
-        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
-        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
-    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
+        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -w path/to/{default_filename}'
+        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>'
+        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -a define_some_repo -p <<pipeline_name>>'
+    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
 @click.command(
