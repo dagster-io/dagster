@@ -31,6 +31,13 @@ def _run_storage_migration_regex(current_revision, expected_revision=None):
     return _migration_regex(warning, current_revision, expected_revision)
 
 
+def _schedule_storage_migration_regex(current_revision, expected_revision=None):
+    warning = re.escape(
+        'Instance is out of date and must be migrated (Sqlite schedule storage requires migration).'
+    )
+    return _migration_regex(warning, current_revision, expected_revision)
+
+
 def _event_log_migration_regex(run_id, current_revision, expected_revision=None):
     warning = re.escape(
         'Instance is out of date and must be migrated (SqliteEventLogStorage for run {}).'.format(
@@ -288,3 +295,23 @@ def test_event_log_asset_key_migration():
 
         assert get_current_alembic_version(db_path) == 'c39c047fa021'
         assert 'asset_key' in set(get_sqlite3_columns(db_path, 'event_logs'))
+
+
+def test_0_8_0_scheduler_migration():
+    test_dir = file_relative_path(__file__, 'snapshot_0_8_0_scheduler_change')
+    with restore_directory(test_dir):
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        with pytest.raises(
+            DagsterInstanceMigrationRequired,
+            match=_schedule_storage_migration_regex(current_revision='da7cd32b690d'),
+        ):
+            instance.all_stored_schedule_state()
+
+        instance.upgrade()
+
+        # upgrade just drops tables, and user upgrade flow is cli entry - so
+        # emulate by new-ing up instance which will create new tables
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+
+        instance.all_stored_schedule_state()

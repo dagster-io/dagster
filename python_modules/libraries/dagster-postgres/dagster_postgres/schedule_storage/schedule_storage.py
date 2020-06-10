@@ -4,7 +4,12 @@ import sqlalchemy as db
 
 from dagster import check
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    create_engine,
+    get_alembic_config,
+    handle_schema_errors,
+    run_alembic_upgrade,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import pg_config, pg_url_from_config
@@ -31,19 +36,11 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = postgres_url
-        with self.get_engine() as engine:
-            ScheduleStorageSqlMetadata.create_all(engine)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-
-    @contextmanager
-    def get_engine(self):
-        engine = create_engine(
+        self._engine = create_engine(
             self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
         )
-        try:
-            yield engine
-        finally:
-            engine.dispose()
+        ScheduleStorageSqlMetadata.create_all(self._engine)
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -71,11 +68,18 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return PostgresScheduleStorage(postgres_url)
 
     @contextmanager
-    def connect(self, _run_id=None):  # pylint: disable=arguments-differ
-        with self.get_engine() as engine:
-            yield engine
+    def connect(self):
+        try:
+            conn = self._engine.connect()
+            with handle_schema_errors(
+                conn,
+                get_alembic_config(__file__),
+                msg='Postgres schedule storage requires migration',
+            ):
+                yield self._engine
+        finally:
+            conn.close()
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.get_engine() as engine:
-            run_alembic_upgrade(alembic_config, engine)
+        run_alembic_upgrade(alembic_config, self._engine)

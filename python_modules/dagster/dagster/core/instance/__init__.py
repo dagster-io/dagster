@@ -19,6 +19,7 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
@@ -393,11 +394,16 @@ class DagsterInstance:
             return dagster_telemetry_enabled_default
 
     def upgrade(self, print_fn=lambda _: None):
-        print_fn('Updating run storage...')
-        self._run_storage.upgrade()
+        with upgrading_instance(self):
 
-        print_fn('Updating event storage...')
-        self._event_storage.upgrade()
+            print_fn('Updating run storage...')
+            self._run_storage.upgrade()
+
+            print_fn('Updating event storage...')
+            self._event_storage.upgrade()
+
+            print_fn('Updating schedule storage...')
+            self._schedule_storage.upgrade()
 
     def dispose(self):
         self._run_storage.dispose()

@@ -38,7 +38,9 @@ class SqlScheduleStorage(ScheduleStorage):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
     def all_stored_schedule_state(self, repository_origin_id=None):
-        base_query = db.select([ScheduleTable.c.schedule_body]).select_from(ScheduleTable)
+        base_query = db.select(
+            [ScheduleTable.c.schedule_body, ScheduleTable.c.schedule_origin_id]
+        ).select_from(ScheduleTable)
 
         if repository_origin_id:
             query = base_query.where(ScheduleTable.c.repository_origin_id == repository_origin_id)
