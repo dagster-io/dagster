@@ -257,7 +257,7 @@ image = 'dagster-airflow-demo-repository'
 dag, steps = make_airflow_dag_containerized(
     pipeline,
     image,
-    environment_dict={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
+    run_config={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -282,7 +282,7 @@ storage, you can run:
 dag, steps = make_airflow_dag(
     pipeline,
     image,
-    environment_dict={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
+    run_config={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,

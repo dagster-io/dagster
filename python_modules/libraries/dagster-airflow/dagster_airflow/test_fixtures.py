@@ -167,7 +167,7 @@ def dagster_airflow_docker_operator_pipeline():
             pipeline_name=pipeline_name,
             image=image,
             mode=mode,
-            environment_dict=environment_dict,
+            run_config=environment_dict,
             op_kwargs=op_kwargs,
         )
         assert isinstance(dag, DAG)
@@ -227,7 +227,7 @@ def dagster_airflow_k8s_operator_pipeline():
             image=image,
             mode=mode,
             namespace=namespace,
-            environment_dict=environment_dict,
+            run_config=environment_dict,
             op_kwargs=op_kwargs,
         )
         assert isinstance(dag, DAG)

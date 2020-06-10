@@ -133,10 +133,10 @@ def test_error_dag_python():  # pylint: disable=redefined-outer-name
     environment_yaml = [
         os.path.join(environments_path, 'env_filesystem.yaml'),
     ]
-    environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_config = load_yaml_from_glob_list(environment_yaml)
     execution_date = timezone.utcnow()
 
-    dag, tasks = make_airflow_dag_for_handle(handle, pipeline_name, environment_dict)
+    dag, tasks = make_airflow_dag_for_handle(handle, pipeline_name, run_config)
 
     with pytest.raises(AirflowException) as exc_info:
         execute_tasks_in_dag(dag, tasks, run_id=make_new_run_id(), execution_date=execution_date)

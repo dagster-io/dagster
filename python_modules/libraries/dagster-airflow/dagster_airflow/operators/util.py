@@ -104,7 +104,7 @@ def invoke_steps_within_python_operator(
     pipeline_name = invocation_args.pipeline_name
     step_keys = invocation_args.step_keys
     instance_ref = invocation_args.instance_ref
-    environment_dict = invocation_args.environment_dict
+    run_config = invocation_args.run_config
     handle = invocation_args.handle
     pipeline_snapshot = invocation_args.pipeline_snapshot
     execution_plan_snapshot = invocation_args.execution_plan_snapshot
@@ -112,7 +112,7 @@ def invoke_steps_within_python_operator(
 
     run_id = dag_run.run_id
 
-    variables = construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys)
+    variables = construct_variables(mode, run_config, pipeline_name, run_id, step_keys)
     variables = add_airflow_tags(variables, ts)
 
     logging.info(
@@ -125,7 +125,7 @@ def invoke_steps_within_python_operator(
         instance.register_managed_run(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            environment_dict=run_config,
             mode=mode,
             solids_to_execute=None,
             step_keys_to_execute=None,

@@ -12,6 +12,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
+from dagster.utils.backcompat import canonicalize_run_config
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -52,7 +53,7 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         'DagsterOperatorInvocationArgs',
-        'handle pipeline_name environment_dict mode step_keys instance_ref pipeline_snapshot '
+        'handle pipeline_name run_config mode step_keys instance_ref pipeline_snapshot '
         'execution_plan_snapshot parent_pipeline_snapshot',
     )
 ):
@@ -60,7 +61,7 @@ class DagsterOperatorInvocationArgs(
         cls,
         handle,
         pipeline_name,
-        environment_dict,
+        run_config,
         mode,
         step_keys,
         instance_ref,
@@ -72,7 +73,7 @@ class DagsterOperatorInvocationArgs(
             cls,
             handle=handle,
             pipeline_name=pipeline_name,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             step_keys=step_keys,
             instance_ref=instance_ref,
@@ -86,7 +87,7 @@ class DagsterOperatorParameters(
     namedtuple(
         '_DagsterOperatorParameters',
         (
-            'handle pipeline_name environment_dict '
+            'handle pipeline_name run_config '
             'mode task_id step_keys dag instance_ref op_kwargs pipeline_snapshot '
             'execution_plan_snapshot parent_pipeline_snapshot'
         ),
@@ -97,7 +98,7 @@ class DagsterOperatorParameters(
         pipeline_name,
         task_id,
         handle=None,
-        environment_dict=None,
+        run_config=None,
         mode=None,
         step_keys=None,
         dag=None,
@@ -106,15 +107,15 @@ class DagsterOperatorParameters(
         pipeline_snapshot=None,
         execution_plan_snapshot=None,
         parent_pipeline_snapshot=None,
+        environment_dict=None,
     ):
-        check_storage_specified(environment_dict)
+        run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
+        check_storage_specified(run_config)
         return super(DagsterOperatorParameters, cls).__new__(
             cls,
             handle=check.opt_inst_param(handle, 'handle', ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            environment_dict=check.opt_dict_param(
-                environment_dict, 'environment_dict', key_type=str
-            ),
+            run_config=check.opt_dict_param(run_config, 'run_config', key_type=str),
             mode=check.opt_str_param(mode, 'mode'),
             task_id=check.str_param(task_id, 'task_id'),
             step_keys=check.opt_list_param(step_keys, 'step_keys', of_type=str),
@@ -137,7 +138,7 @@ class DagsterOperatorParameters(
         return DagsterOperatorInvocationArgs(
             handle=self.handle,
             pipeline_name=self.pipeline_name,
-            environment_dict=self.environment_dict,
+            run_config=self.run_config,
             mode=self.mode,
             step_keys=self.step_keys,
             instance_ref=self.instance_ref,
@@ -146,11 +147,16 @@ class DagsterOperatorParameters(
             parent_pipeline_snapshot=self.parent_pipeline_snapshot,
         )
 
+    @property
+    def environment_dict(self):
+        # backcompat
+        return self.run_config
+
 
 def _make_airflow_dag(
     handle,
     pipeline_name,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     instance=None,
     dag_id=None,
@@ -161,7 +167,7 @@ def _make_airflow_dag(
 ):
     check.inst_param(handle, 'handle', ReconstructableRepository)
     check.str_param(pipeline_name, 'pipeline_name')
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+    run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
     # Default to use the (persistent) system temp directory rather than a seven.TemporaryDirectory,
     # which would not be consistent between Airflow task invocations.
@@ -192,7 +198,7 @@ def _make_airflow_dag(
     if mode is None:
         mode = pipeline.get_default_mode_name()
 
-    execution_plan = create_execution_plan(pipeline, environment_dict, mode=mode)
+    execution_plan = create_execution_plan(pipeline, run_config, mode=mode)
 
     tasks = {}
 
@@ -204,7 +210,7 @@ def _make_airflow_dag(
         operator_parameters = DagsterOperatorParameters(
             handle=handle,
             pipeline_name=pipeline_name,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             task_id=solid_handle,
             step_keys=step_keys,
@@ -233,13 +239,14 @@ def _make_airflow_dag(
 def make_airflow_dag(
     module_name,
     pipeline_name,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     instance=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    environment_dict=None,
 ):
     '''Construct an Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -258,7 +265,7 @@ def make_airflow_dag(
         module_name (str): The name of the importable module in which the pipeline definition can be
             found.
         pipeline_name (str): The name of the pipeline definition.
-        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The environment config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
@@ -281,10 +288,12 @@ def make_airflow_dag(
 
     handle = ReconstructableRepository.for_module(module_name, pipeline_name)
 
+    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
+
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         instance=instance,
         dag_id=dag_id,
@@ -298,12 +307,13 @@ def make_airflow_dag_for_operator(
     handle,
     pipeline_name,
     operator,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    environment_dict=None,
 ):
     '''Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
@@ -323,7 +333,7 @@ def make_airflow_dag_for_operator(
         pipeline_name (str): The name of the pipeline definition.
         operator (type): The operator to use. Must be a class that inherits from
             :py:class:`BaseOperator <airflow.models.BaseOperator>`
-        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The environment config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
@@ -341,11 +351,12 @@ def make_airflow_dag_for_operator(
         list of its constituent tasks.
     '''
     check.subclass_param(operator, 'operator', BaseOperator)
+    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
 
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
@@ -358,7 +369,7 @@ def make_airflow_dag_for_operator(
 def make_airflow_dag_for_handle(
     handle,
     pipeline_name,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -368,7 +379,7 @@ def make_airflow_dag_for_handle(
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
@@ -381,12 +392,13 @@ def make_airflow_dag_containerized(
     module_name,
     pipeline_name,
     image,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    environment_dict=None,
 ):
     '''Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -406,7 +418,7 @@ def make_airflow_dag_containerized(
         pipeline_name (str): The name of the pipeline definition.
         image (str): The name of the Docker image to use for execution (passed through to
             :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
-        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+        run_config (Optional[dict]): The environment config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
         instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
@@ -427,13 +439,14 @@ def make_airflow_dag_containerized(
     check.str_param(module_name, 'module_name')
 
     handle = ReconstructableRepository.for_module(module_name, pipeline_name)
+    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
 
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
@@ -447,7 +460,7 @@ def make_airflow_dag_containerized_for_handle(
     handle,
     pipeline_name,
     image,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -460,7 +473,7 @@ def make_airflow_dag_containerized_for_handle(
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
@@ -475,7 +488,7 @@ def make_airflow_dag_kubernetized_for_handle(
     pipeline_name,
     image,
     namespace,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     dag_id=None,
     dag_description=None,
@@ -492,7 +505,7 @@ def make_airflow_dag_kubernetized_for_handle(
     return _make_airflow_dag(
         handle=handle,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         dag_id=dag_id,
         dag_description=dag_description,
