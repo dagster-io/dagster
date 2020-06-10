@@ -275,19 +275,6 @@ def partition_data_command(args):
     return external_partition_data_from_def(partition_set_def, partition)
 
 
-def create_snapshot_cli_group():
-    group = click.Group(name="snapshot")
-    group.add_command(repository_snapshot_command)
-    group.add_command(pipeline_subset_snapshot_command)
-    group.add_command(execution_plan_snapshot_command)
-    group.add_command(list_repositories_command)
-    group.add_command(partition_data_command)
-    return group
-
-
-snapshot_cli = create_snapshot_cli_group()
-
-
 # Execution CLI
 
 
@@ -393,8 +380,12 @@ def _execute_run_command_body(
 
 def create_api_cli_group():
     group = click.Group(name="api")
-    group.add_command(snapshot_cli)
     group.add_command(execute_run_command)
+    group.add_command(repository_snapshot_command)
+    group.add_command(pipeline_subset_snapshot_command)
+    group.add_command(execution_plan_snapshot_command)
+    group.add_command(list_repositories_command)
+    group.add_command(partition_data_command)
     return group
 
 

@@ -22,7 +22,6 @@ def execute_api_cli_command(executable_path, command_name, input_obj):
             '-m',
             'dagster',
             'api',
-            'snapshot',
             command_name,
             input_file,
             output_file,
