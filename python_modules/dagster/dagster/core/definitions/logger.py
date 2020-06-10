@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class LoggerDefinition(object):
@@ -13,14 +14,20 @@ class LoggerDefinition(object):
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
             on ``context.log`` are called from within solid compute logic.
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
         description (Optional[str]): A human-readable description of this logger.
     '''
 
-    def __init__(self, logger_fn, config=None, description=None):
+    def __init__(self, logger_fn, config=None, description=None, config_schema=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -29,14 +36,19 @@ class LoggerDefinition(object):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def description(self):
         return self._description
 
 
-def logger(config=None, description=None):
+def logger(config=None, description=None, config_schema=None):
     '''Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -44,7 +56,7 @@ def logger(config=None, description=None):
     :py:class:`LoggerDefinition`.
 
     Args:
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
         description (Optional[str]): A human-readable description of the logger.
     '''
@@ -54,6 +66,12 @@ def logger(config=None, description=None):
         return LoggerDefinition(logger_fn=config)
 
     def _wrap(logger_fn):
-        return LoggerDefinition(logger_fn, config, description)
+        return LoggerDefinition(
+            logger_fn=logger_fn,
+            config_schema=canonicalize_backcompat_args(
+                config_schema, 'config_schema', config, 'config', '0.9.0'
+            ),
+            description=description,
+        )
 
     return _wrap

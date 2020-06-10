@@ -4,6 +4,7 @@ from functools import update_wrapper, wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ...decorator_utils import (
     InvalidDecoratedFunctionInfo,
@@ -27,7 +28,7 @@ class _Solid(object):
         output_defs=None,
         description=None,
         required_resource_keys=None,
-        config=None,
+        config_schema=None,
         tags=None,
     ):
         self.name = check.opt_str_param(name, 'name')
@@ -42,7 +43,7 @@ class _Solid(object):
         self.required_resource_keys = required_resource_keys
 
         # config will be checked within SolidDefinition
-        self.config = config
+        self.config_schema = config_schema
 
         # tags will be checked within ISolidDefinition
         self.tags = tags
@@ -72,7 +73,7 @@ class _Solid(object):
             input_defs=input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
-            config=self.config,
+            config_schema=self.config_schema,
             description=self.description,
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
@@ -90,6 +91,7 @@ def solid(
     config=None,
     required_resource_keys=None,
     tags=None,
+    config_schema=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
 
@@ -119,8 +121,8 @@ def solid(
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available
-            as context.solid_config.
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
+            available as context.solid_config.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -184,6 +186,7 @@ def solid(
         check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         check.invariant(tags is None)
 
@@ -193,7 +196,9 @@ def solid(
         name=name,
         input_defs=input_defs,
         output_defs=output_defs,
-        config=config,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
         description=description,
         required_resource_keys=required_resource_keys,
         tags=tags,

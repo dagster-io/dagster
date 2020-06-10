@@ -2,6 +2,7 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ..composition import (
     InputMappingNode,
@@ -28,7 +29,7 @@ class _CompositeSolid(object):
         input_defs=None,
         output_defs=None,
         description=None,
-        config=None,
+        config_schema=None,
         config_fn=None,
     ):
         self.name = check.opt_str_param(name, 'name')
@@ -36,8 +37,10 @@ class _CompositeSolid(object):
         self.output_defs = check.opt_nullable_list_param(output_defs, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
-        check.opt_dict_param(config, 'config')  # don't want to assign dict below if config is None
-        self.config = config
+        check.opt_dict_param(
+            config_schema, 'config_schema'
+        )  # don't want to assign dict below if config is None
+        self.config_schema = config_schema
         self.config_fn = check.opt_callable_param(config_fn, 'config_fn')
 
     def __call__(self, fn):
@@ -116,7 +119,9 @@ class _CompositeSolid(object):
                 )
             output_mappings.append(mapping)
 
-        config_mapping = _get_validated_config_mapping(self.name, self.config, self.config_fn)
+        config_mapping = _get_validated_config_mapping(
+            self.name, self.config_schema, self.config_fn
+        )
 
         composite_def = CompositeSolidDefinition(
             name=self.name,
@@ -132,20 +137,20 @@ class _CompositeSolid(object):
         return composite_def
 
 
-def _get_validated_config_mapping(name, config, config_fn):
-    '''Config mapping must set composite config and config_fn or neither.
+def _get_validated_config_mapping(name, config_schema, config_fn):
+    '''Config mapping must set composite config_schema and config_fn or neither.
     '''
 
-    if config_fn is None and config is None:
+    if config_fn is None and config_schema is None:
         return None
-    elif config_fn is not None and config is not None:
-        return ConfigMapping(config_fn=config_fn, config=config)
+    elif config_fn is not None and config_schema is not None:
+        return ConfigMapping(config_fn=config_fn, config_schema=config_schema)
     else:
         if config_fn is not None:
             raise DagsterInvalidDefinitionError(
                 '@composite_solid \'{solid_name}\' defines a configuration function {config_fn} '
                 'but does not define a configuration schema. If you intend this composite to take '
-                'no config, you must explicitly specify config={{}}.'.format(
+                'no config_schema, you must explicitly specify config_schema={{}}.'.format(
                     solid_name=name, config_fn=config_fn.__name__
                 )
             )
@@ -157,7 +162,13 @@ def _get_validated_config_mapping(name, config, config_fn):
 
 
 def composite_solid(
-    name=None, input_defs=None, output_defs=None, description=None, config=None, config_fn=None
+    name=None,
+    input_defs=None,
+    output_defs=None,
+    description=None,
+    config=None,
+    config_fn=None,
+    config_schema=None,
 ):
     '''Create a composite solid with the specified parameters from the decorated composition
     function.
@@ -186,14 +197,14 @@ def composite_solid(
             :py:class:`CompositeSolidDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        config (Optional[ConfigSchema]): The schema for the config. Must be combined with the
+        config_schema (Optional[ConfigSchema]): The schema for the config. Must be combined with the
             `config_fn` argument in order to transform this config into the config for the contained
             solids.
         config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.
 
-            Config mappings require the configuration field to be specified as ``config``, which
+            Config mappings require the configuration field to be specified as ``config_schema``, which
             will be exposed as the configuration field for the composite solid, as well as a
             configuration mapping function, ``config_fn``, which maps the config provided to the
             composite solid to the config that will be provided to the child solids.
@@ -219,6 +230,7 @@ def composite_solid(
         check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(config_fn is None)
         return _CompositeSolid()(name)
 
@@ -227,6 +239,8 @@ def composite_solid(
         input_defs=input_defs,
         output_defs=output_defs,
         description=description,
-        config=config,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
         config_fn=config_fn,
     )

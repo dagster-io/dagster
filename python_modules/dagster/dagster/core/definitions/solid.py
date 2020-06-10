@@ -8,6 +8,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
@@ -183,8 +184,8 @@ class SolidDefinition(ISolidDefinition):
             of the solid's ``output_defs``, and additionally may yield other types of Dagster
             events, including :py:class:`Materialization` and :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
-        config (Optional[ConfigSchema): The schema for the config. Configuration data available in
-            `init_context.solid_config`.
+        config_schema (Optional[ConfigSchema): The schema for the config. Configuration data
+            available in `init_context.solid_config`.
         description (Optional[str]): Human-readable description of the solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -221,9 +222,16 @@ class SolidDefinition(ISolidDefinition):
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
+        config_schema=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
@@ -243,7 +251,12 @@ class SolidDefinition(ISolidDefinition):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def required_resource_keys(self):
@@ -251,7 +264,7 @@ class SolidDefinition(ISolidDefinition):
 
     @property
     def has_config_entry(self):
-        return self._config_field or self.has_configurable_inputs or self.has_configurable_outputs
+        return self._config_schema or self.has_configurable_inputs or self.has_configurable_outputs
 
     def all_dagster_types(self):
         for tt in self.all_input_output_types():

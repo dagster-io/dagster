@@ -5,12 +5,13 @@ from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class SystemStorageDefinition(
     namedtuple(
         '_SystemStorageDefinition',
-        'name is_persistent config_field system_storage_creation_fn required_resource_keys',
+        'name is_persistent config_schema system_storage_creation_fn required_resource_keys',
     )
 ):
     '''Defines run metadata and intermediate data storage behaviors.
@@ -35,8 +36,8 @@ class SystemStorageDefinition(
         is_persistent (bool): Whether the storage is persistent in a way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor, or with
             dagster-airflow, requires a persistent storage mode.
-        config (Optional[ConfigSchema]): The schema for the storage's configuration field.
-            Configuration data passed in this field will be made available to the
+        config_schema (Optional[ConfigSchema]): The schema for the storage's configuration schema.
+            Configuration data passed in this schema will be made available to the
             ``system_storage_creation_fn`` under ``init_context.system_storage_config``.
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called to construct the storage. This function should consume the init context and emit
@@ -51,12 +52,19 @@ class SystemStorageDefinition(
         required_resource_keys,
         config=None,
         system_storage_creation_fn=None,
+        config_schema=None,
     ):
         return super(SystemStorageDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             is_persistent=check.bool_param(is_persistent, 'is_persistent'),
-            config_field=check_user_facing_opt_config_param(config, 'config',),
+            config_schema=canonicalize_backcompat_args(
+                check_user_facing_opt_config_param(config_schema, 'config_schema'),
+                'config_schema',
+                check_user_facing_opt_config_param(config, 'config'),
+                'config',
+                '0.9.0',
+            ),
             system_storage_creation_fn=check.opt_callable_param(
                 system_storage_creation_fn, 'system_storage_creation_fn'
             ),
@@ -64,6 +72,11 @@ class SystemStorageDefinition(
                 check.set_param(required_resource_keys, 'required_resource_keys', of_type=str)
             ),
         )
+
+    @property
+    def config_field(self):
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self.config_schema
 
 
 class SystemStorageData(object):
@@ -81,7 +94,9 @@ class SystemStorageData(object):
         self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(required_resource_keys, name=None, is_persistent=True, config=None):
+def system_storage(
+    required_resource_keys, name=None, is_persistent=True, config=None, config_schema=None
+):
     '''Creates a system storage definition.
 
     The decorated function will be passed as the ``system_storage_creation_fn`` to a
@@ -94,29 +109,34 @@ def system_storage(required_resource_keys, name=None, is_persistent=True, config
             the context of dagster-airflow require a persistent storage mode.
         required_resource_keys (Set[str]):
             The resources that this storage needs at runtime to function.
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
     '''
 
     if callable(name):
         check.invariant(is_persistent is True)
         check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         return _SystemStorageDecoratorCallable()(name)
 
     return _SystemStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
-        config=config,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
         required_resource_keys=required_resource_keys,
     )
 
 
 class _SystemStorageDecoratorCallable(object):
-    def __init__(self, name=None, is_persistent=True, config=None, required_resource_keys=None):
+    def __init__(
+        self, name=None, is_persistent=True, config_schema=None, required_resource_keys=None
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config = config  # type check in definition
+        self.config_schema = config_schema  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
@@ -128,7 +148,7 @@ class _SystemStorageDecoratorCallable(object):
         storage_def = SystemStorageDefinition(
             name=self.name,
             is_persistent=self.is_persistent,
-            config=self.config,
+            config_schema=self.config_schema,
             system_storage_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )

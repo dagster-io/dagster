@@ -30,8 +30,8 @@ def define_resource_dictionary_cls(resource_defs):
 
     fields = {}
     for resource_name, resource_def in resource_defs.items():
-        if resource_def.config_field:
-            fields[resource_name] = Field(Shape({'config': resource_def.config_field}))
+        if resource_def.config_schema:
+            fields[resource_name] = Field(Shape({'config': resource_def.config_schema}))
 
     return Shape(fields=fields)
 
@@ -40,14 +40,14 @@ def remove_none_entries(ddict):
     return {k: v for k, v in ddict.items() if v is not None}
 
 
-def define_solid_config_cls(config_field, inputs_field, outputs_field):
-    check_opt_field_param(config_field, 'config_field')
+def define_solid_config_cls(config_schema, inputs_field, outputs_field):
+    check_opt_field_param(config_schema, 'config_schema')
     check_opt_field_param(inputs_field, 'inputs_field')
     check_opt_field_param(outputs_field, 'outputs_field')
 
     return Shape(
         remove_none_entries(
-            {'config': config_field, 'inputs': inputs_field, 'outputs': outputs_field}
+            {'config': config_schema, 'inputs': inputs_field, 'outputs': outputs_field}
         ),
     )
 
@@ -80,7 +80,7 @@ def define_logger_dictionary_cls(creation_data):
 
     for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
-            Shape(remove_none_entries({'config': logger_definition.config_field}),),
+            Shape(remove_none_entries({'config': logger_definition.config_schema}),),
             is_required=False,
         )
 
@@ -120,7 +120,9 @@ def define_storage_config_cls(mode_definition):
 
     for storage_def in mode_definition.system_storage_defs:
         fields[storage_def.name] = Field(
-            Shape(fields={'config': storage_def.config_field} if storage_def.config_field else {},)
+            Shape(
+                fields={'config': storage_def.config_schema} if storage_def.config_schema else {},
+            )
         )
 
     return Selector(fields)
@@ -134,7 +136,7 @@ def define_executor_config_cls(mode_definition):
     for executor_def in mode_definition.executor_defs:
         fields[executor_def.name] = Field(
             Shape(
-                fields={'config': executor_def.config_field} if executor_def.config_field else {},
+                fields={'config': executor_def.config_schema} if executor_def.config_schema else {},
             )
         )
 
@@ -195,7 +197,7 @@ def filtered_system_dict(fields):
     return Field(Shape(remove_none_entries(fields)))
 
 
-def construct_leaf_solid_config(solid, handle, dependency_structure, config_field):
+def construct_leaf_solid_config(solid, handle, dependency_structure, config_schema):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(handle, 'handle', SolidHandle)
     check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
@@ -204,7 +206,7 @@ def construct_leaf_solid_config(solid, handle, dependency_structure, config_fiel
         {
             'inputs': get_inputs_field(solid, handle, dependency_structure),
             'outputs': get_outputs_field(solid, handle),
-            'config': config_field,
+            'config': config_schema,
         }
     )
 
@@ -215,22 +217,22 @@ def define_isolid_field(solid, handle, dependency_structure):
 
     # All solids regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
-    # 1) Vanilla solid definition: a 'config' key with the config_field as the value
-    # 2) Composite with field mapping: a 'config' key with the config_field of
+    # 1) Vanilla solid definition: a 'config' key with the config_schema as the value
+    # 2) Composite with field mapping: a 'config' key with the config_schema of
     #    the config mapping
     # 3) Composite without field mapping: a 'solids' key with recursively defined
     #    solids dictionary
 
     if isinstance(solid.definition, SolidDefinition):
         return construct_leaf_solid_config(
-            solid, handle, dependency_structure, solid.definition.config_field
+            solid, handle, dependency_structure, solid.definition.config_schema
         )
 
     composite_def = check.inst(solid.definition, CompositeSolidDefinition)
 
     if composite_def.has_config_mapping:
         return construct_leaf_solid_config(
-            solid, handle, dependency_structure, composite_def.config_mapping.config_field
+            solid, handle, dependency_structure, composite_def.config_mapping.config_schema
         )
     else:
         return filtered_system_dict(
@@ -264,8 +266,8 @@ def define_solid_dictionary_cls(solids, dependency_structure, parent_handle=None
 def iterate_solid_def_config_types(solid_def):
 
     if isinstance(solid_def, SolidDefinition):
-        if solid_def.config_field:
-            for config_type in iterate_config_types(solid_def.config_field.config_type):
+        if solid_def.config_schema:
+            for config_type in iterate_config_types(solid_def.config_schema.config_type):
                 yield config_type
     elif isinstance(solid_def, CompositeSolidDefinition):
         for solid in solid_def.solids:

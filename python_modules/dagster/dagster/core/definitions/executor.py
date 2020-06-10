@@ -8,14 +8,15 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.retries import Retries, get_retries_config
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class ExecutorDefinition(object):
     '''
     Args:
         name (Optional[str]): The name of the executor.
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
-            `init_context.executor_config`.
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
+            available in `init_context.executor_config`.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -23,9 +24,22 @@ class ExecutorDefinition(object):
 
     '''
 
-    def __init__(self, name, config=None, executor_creation_fn=None, required_resource_keys=None):
+    def __init__(
+        self,
+        name,
+        config=None,
+        executor_creation_fn=None,
+        required_resource_keys=None,
+        config_schema=None,
+    ):
         self._name = check.str_param(name, 'name')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )
@@ -39,7 +53,12 @@ class ExecutorDefinition(object):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def executor_creation_fn(self):
