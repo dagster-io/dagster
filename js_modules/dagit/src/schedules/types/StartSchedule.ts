@@ -9,21 +9,15 @@ import { ScheduleSelector, ScheduleStatus } from "./../../types/globalTypes";
 // GraphQL mutation operation: StartSchedule
 // ====================================================
 
-export interface StartSchedule_startSchedule_RunningScheduleResult_schedule_scheduleDefinition {
-  __typename: "ScheduleDefinition";
-  name: string;
-}
-
-export interface StartSchedule_startSchedule_RunningScheduleResult_schedule {
-  __typename: "RunningSchedule";
+export interface StartSchedule_startSchedule_ScheduleStateResult_scheduleState {
+  __typename: "ScheduleState";
   runningScheduleCount: number;
-  scheduleDefinition: StartSchedule_startSchedule_RunningScheduleResult_schedule_scheduleDefinition;
   status: ScheduleStatus;
 }
 
-export interface StartSchedule_startSchedule_RunningScheduleResult {
-  __typename: "RunningScheduleResult";
-  schedule: StartSchedule_startSchedule_RunningScheduleResult_schedule;
+export interface StartSchedule_startSchedule_ScheduleStateResult {
+  __typename: "ScheduleStateResult";
+  scheduleState: StartSchedule_startSchedule_ScheduleStateResult_scheduleState;
 }
 
 export interface StartSchedule_startSchedule_PythonError {
@@ -32,7 +26,7 @@ export interface StartSchedule_startSchedule_PythonError {
   stack: string[];
 }
 
-export type StartSchedule_startSchedule = StartSchedule_startSchedule_RunningScheduleResult | StartSchedule_startSchedule_PythonError;
+export type StartSchedule_startSchedule = StartSchedule_startSchedule_ScheduleStateResult | StartSchedule_startSchedule_PythonError;
 
 export interface StartSchedule {
   startSchedule: StartSchedule_startSchedule;

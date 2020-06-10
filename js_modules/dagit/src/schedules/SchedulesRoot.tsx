@@ -11,12 +11,14 @@ import { Query, QueryResult } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler,
-  SchedulesRootQuery_schedules
+  SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results
 } from "./types/SchedulesRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 
-import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleFragment } from "./ScheduleRow";
+
+import { useRepositorySelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -63,25 +65,31 @@ const getSchedulerError = (scheduler: SchedulesRootQuery_scheduler) => {
   return null;
 };
 
-export default class SchedulesRoot extends React.Component {
-  render() {
-    return (
-      <Query
-        query={SCHEDULES_ROOT_QUERY}
-        variables={{
-          limit: NUM_RUNS_TO_DISPLAY
-        }}
-        fetchPolicy="cache-and-network"
-        pollInterval={15 * 1000}
-        partialRefetch={true}
-      >
-        {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
-          <Loading queryResult={queryResult} allowStaleData={true}>
-            {result => {
-              const { scheduler, schedules } = result;
+const SchedulesRoot: React.FunctionComponent = () => {
+  const repositorySelector = useRepositorySelector();
 
-              const schedulerError = getSchedulerError(scheduler);
+  return (
+    <Query
+      query={SCHEDULES_ROOT_QUERY}
+      variables={{
+        repositorySelector: repositorySelector,
+        limit: NUM_RUNS_TO_DISPLAY
+      }}
+      fetchPolicy="cache-and-network"
+      pollInterval={15 * 1000}
+      partialRefetch={true}
+    >
+      {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {result => {
+            const { scheduler, scheduleDefinitionsOrError } = result;
 
+            const schedulerError = getSchedulerError(scheduler);
+
+            if (
+              scheduleDefinitionsOrError.__typename === "ScheduleDefinitions"
+            ) {
+              const schedules = scheduleDefinitionsOrError.results;
               if (schedules.length === 0) {
                 return (
                   <ScrollContainer>
@@ -97,35 +105,44 @@ export default class SchedulesRoot extends React.Component {
                 );
               }
 
-              const sortedRunningSchedules = schedules.sort((a, b) =>
-                a.scheduleDefinition.name.localeCompare(
-                  b.scheduleDefinition.name
-                )
+              const sortedScheduleDefinitions = schedules.sort((a, b) =>
+                a.name.localeCompare(b.name)
               );
 
               return (
                 <>
                   <ScrollContainer>
                     {schedulerError}
-                    <ScheduleTable schedules={sortedRunningSchedules} />
+                    <ScheduleWithoutStateTable
+                      schedules={sortedScheduleDefinitions.filter(
+                        s => !s.scheduleState
+                      )}
+                    />
+                    <ScheduleTable
+                      schedules={sortedScheduleDefinitions.filter(
+                        s => s.scheduleState
+                      )}
+                    />
                   </ScrollContainer>
                 </>
               );
-            }}
-          </Loading>
-        )}
-      </Query>
-    );
-  }
-}
+            }
+
+            return null;
+          }}
+        </Loading>
+      )}
+    </Query>
+  );
+};
 
 interface ScheduleTableProps {
-  schedules: SchedulesRootQuery_schedules[];
+  schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
   return (
-    <div>
+    <div style={{ marginTop: 30 }}>
       <Header>{`Schedule (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
@@ -141,20 +158,53 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         </Legend>
       )}
       {props.schedules.map(schedule => (
-        <ScheduleRow
-          schedule={schedule}
-          key={schedule.scheduleDefinition.name}
-        />
+        <ScheduleRow schedule={schedule} key={schedule.name} />
+      ))}
+    </div>
+  );
+};
+
+const ScheduleWithoutStateTable: React.FunctionComponent<ScheduleTableProps> = props => {
+  if (props.schedules.length == 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ marginTop: 10, marginBottom: 10 }}>
+      <Callout intent={Intent.WARNING}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <div>
+            The following schedules are not reconciled. Run{" "}
+            <Code>dagster schedule up</Code> to reconcile.{" "}
+          </div>
+        </div>
+      </Callout>
+      {props.schedules.length > 0 && (
+        <Legend>
+          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn>Pipeline</LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+        </Legend>
+      )}
+      {props.schedules.map(schedule => (
+        <ScheduleRow schedule={schedule} key={schedule.name} />
       ))}
     </div>
   );
 };
 
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery($limit: Int!) {
-    schedules {
-      ...ScheduleFragment
-    }
+  query SchedulesRootQuery(
+    $repositorySelector: RepositorySelector!
+    $limit: Int!
+  ) {
     scheduler {
       __typename
       ... on SchedulerNotDefinedError {
@@ -165,7 +215,16 @@ export const SCHEDULES_ROOT_QUERY = gql`
         stack
       }
     }
+    scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
+      ... on ScheduleDefinitions {
+        results {
+          ...ScheduleDefinitionFragment
+        }
+      }
+    }
   }
 
-  ${ScheduleRowFragment}
+  ${ScheduleFragment}
 `;
+
+export default SchedulesRoot;

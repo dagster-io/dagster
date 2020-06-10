@@ -3,8 +3,8 @@ import * as qs from "query-string";
 import { useMutation } from "@apollo/react-hooks";
 
 import {
-  Button,
   Switch,
+  Button,
   Icon,
   Menu,
   MenuItem,
@@ -18,7 +18,7 @@ import {
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { ScheduleFragment } from "./types/ScheduleFragment";
+import { ScheduleDefinitionFragment } from "./types/ScheduleDefinitionFragment";
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError
@@ -95,58 +95,40 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   );
 };
 
+const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
+  let error:
+    | StartSchedule_startSchedule_PythonError
+    | StopSchedule_stopRunningSchedule_PythonError
+    | null = null;
+
+  if (
+    "startSchedule" in data &&
+    data.startSchedule.__typename === "PythonError"
+  ) {
+    error = data.startSchedule;
+  } else if (
+    "stopRunningSchedule" in data &&
+    data.stopRunningSchedule.__typename === "PythonError"
+  ) {
+    error = data.stopRunningSchedule;
+  }
+
+  if (error) {
+    showCustomAlert({
+      title: "Schedule Response",
+      body: (
+        <>
+          <PythonErrorInfo error={error} />
+        </>
+      )
+    });
+  }
+};
+
 export const ScheduleRow: React.FunctionComponent<{
-  schedule: ScheduleFragment;
+  schedule: ScheduleDefinitionFragment;
 }> = ({ schedule }) => {
-  const {
-    status,
-    scheduleDefinition,
-    runningScheduleCount,
-    stats,
-    ticks,
-    runs,
-    runsCount
-  } = schedule;
-  const {
-    name,
-    cronSchedule,
-    pipelineName,
-    solidSelection,
-    mode,
-    runConfigYaml
-  } = scheduleDefinition;
-
-  const displayScheduleMutationErrors = (
-    data: StartSchedule | StopSchedule
-  ) => {
-    let error:
-      | StartSchedule_startSchedule_PythonError
-      | StopSchedule_stopRunningSchedule_PythonError
-      | null = null;
-
-    if (
-      "startSchedule" in data &&
-      data.startSchedule.__typename === "PythonError"
-    ) {
-      error = data.startSchedule;
-    } else if (
-      "stopRunningSchedule" in data &&
-      data.stopRunningSchedule.__typename === "PythonError"
-    ) {
-      error = data.stopRunningSchedule;
-    }
-
-    if (error) {
-      showCustomAlert({
-        title: "Schedule Response",
-        body: (
-          <>
-            <PythonErrorInfo error={error} />
-          </>
-        )
-      });
-    }
-  };
+  const match = useRouteMatch("/schedules/:scheduleName");
 
   const [startSchedule] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors
@@ -155,11 +137,17 @@ export const ScheduleRow: React.FunctionComponent<{
     onCompleted: displayScheduleMutationErrors
   });
 
-  const match = useRouteMatch("/schedules/:scheduleName");
+  const {
+    name,
+    cronSchedule,
+    pipelineName,
+    mode,
+    solidSelection,
+    runConfigYaml,
+    scheduleState
+  } = schedule;
+
   const scheduleSelector = useScheduleSelector(name);
-
-  const latestTick = ticks.length > 0 ? ticks[0] : null;
-
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
   ) : (
@@ -167,6 +155,63 @@ export const ScheduleRow: React.FunctionComponent<{
       <ScheduleName>{name}</ScheduleName>
     </Link>
   );
+
+  if (!scheduleState) {
+    return (
+      <RowContainer key={name}>
+        <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
+        <RowColumn>
+          <Link to={`/pipeline/${pipelineName}/`}>
+            <Icon icon="diagram-tree" /> {pipelineName}
+          </Link>
+        </RowColumn>
+        <RowColumn
+          style={{
+            maxWidth: 150
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              whiteSpace: "pre-wrap",
+              display: "block"
+            }}
+          >
+            {cronSchedule ? (
+              <Tooltip position={"bottom"} content={cronSchedule}>
+                {getNaturalLanguageCronString(cronSchedule)}
+              </Tooltip>
+            ) : (
+              <div>-</div>
+            )}
+          </div>
+        </RowColumn>
+        <RowColumn
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flex: 1
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div>{`Mode: ${mode}`}</div>
+          </div>
+        </RowColumn>
+      </RowContainer>
+    );
+  }
+
+  const {
+    status,
+    runningScheduleCount,
+    stats,
+    ticks,
+    runs,
+    runsCount
+  } = scheduleState;
+
+  const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
     <RowContainer key={name}>
@@ -355,42 +400,45 @@ export const ScheduleRow: React.FunctionComponent<{
   );
 };
 
-export const ScheduleRowFragment = gql`
-  fragment ScheduleFragment on RunningSchedule {
-    __typename
-    runningScheduleCount
-    scheduleDefinition {
+export const ScheduleFragment = gql`
+  fragment ScheduleDefinitionFragment on ScheduleDefinition {
+    name
+    cronSchedule
+    pipelineName
+    solidSelection
+    mode
+    runConfigYaml
+    partitionSet {
       name
-      cronSchedule
-      pipelineName
-      solidSelection
-      mode
-      runConfigYaml
     }
-    ticks(limit: $limit) {
-      tickId
+    scheduleState {
+      __typename
+      runningScheduleCount
+      ticks(limit: $limit) {
+        tickId
+        status
+      }
+      runsCount
+      runs(limit: 10) {
+        runId
+        tags {
+          key
+          value
+        }
+        pipeline {
+          name
+        }
+        status
+      }
+      stats {
+        ticksStarted
+        ticksSucceeded
+        ticksSkipped
+        ticksFailed
+      }
+      ticksCount
       status
     }
-    runsCount
-    runs(limit: 10) {
-      runId
-      tags {
-        key
-        value
-      }
-      pipeline {
-        name
-      }
-      status
-    }
-    stats {
-      ticksStarted
-      ticksSucceeded
-      ticksSkipped
-      ticksFailed
-    }
-    ticksCount
-    status
   }
 `;
 
@@ -418,14 +466,10 @@ const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
-      ... on RunningScheduleResult {
-        schedule {
+      ... on ScheduleStateResult {
+        scheduleState {
           __typename
           runningScheduleCount
-          scheduleDefinition {
-            __typename
-            name
-          }
           status
         }
       }
@@ -441,14 +485,10 @@ const STOP_SCHEDULE_MUTATION = gql`
   mutation StopSchedule($scheduleSelector: ScheduleSelector!) {
     stopRunningSchedule(scheduleSelector: $scheduleSelector) {
       __typename
-      ... on RunningScheduleResult {
-        schedule {
+      ... on ScheduleStateResult {
+        scheduleState {
           __typename
           runningScheduleCount
-          scheduleDefinition {
-            __typename
-            name
-          }
           status
         }
       }

@@ -696,7 +696,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   runs: [PipelineRun!]!
-  schedules: [RunningSchedule!]!
+  schedules: [ScheduleDefinition!]!
   presets: [PipelinePreset!]!
 }
 
@@ -870,7 +870,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   tags: [PipelineTag!]!
   solidSelection: [String!]
   runs(cursor: String, limit: Int): [PipelineRun!]!
-  schedules: [RunningSchedule!]!
+  schedules: [ScheduleDefinition!]!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
@@ -927,9 +927,9 @@ type Query {
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
-  schedules: [RunningSchedule!]!
-  scheduleOrError(scheduleSelector: ScheduleSelector!, limit: Int): ScheduleOrError!
-  scheduleDefinitions: [ScheduleDefinition!]!
+  scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
+  scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
+  scheduleStatesOrError(repositorySelector: RepositorySelector!): ScheduleStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
@@ -1041,22 +1041,6 @@ type RunLauncher {
   name: String!
 }
 
-type RunningSchedule {
-  scheduleDefinition: ScheduleDefinition!
-  status: ScheduleStatus!
-  runs(limit: Int): [PipelineRun!]!
-  runsCount: Int!
-  ticks(limit: Int): [ScheduleTick!]!
-  ticksCount: Int!
-  stats: ScheduleTickStatsSnapshot!
-  logsPath: String!
-  runningScheduleCount: Int!
-}
-
-type RunningScheduleResult {
-  schedule: RunningSchedule!
-}
-
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   message: String!
   path: [String!]!
@@ -1083,21 +1067,33 @@ type ScheduleDefinition {
   pipelineName: String!
   solidSelection: [String]
   mode: String!
+  scheduleState: ScheduleState
   runConfigYaml: String
   partitionSet: PartitionSet
 }
 
-union ScheduleMutationResult = PythonError | RunningScheduleResult
+type ScheduleDefinitionNotFoundError implements Error {
+  message: String!
+  scheduleName: String!
+}
+
+union ScheduleDefinitionOrError = ScheduleDefinition | ScheduleDefinitionNotFoundError | PythonError
+
+type ScheduleDefinitions {
+  results: [ScheduleDefinition!]!
+}
+
+union ScheduleDefinitionsOrError = ScheduleDefinitions | RepositoryNotFoundError | PythonError
+
+union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleNotFoundError implements Error {
   message: String!
   scheduleName: String!
 }
 
-union ScheduleOrError = RunningSchedule | ScheduleNotFoundError | PythonError
-
 type Scheduler {
-  runningSchedules: [RunningSchedule!]!
+  x: String
 }
 
 type SchedulerNotDefinedError implements Error {
@@ -1106,15 +1102,37 @@ type SchedulerNotDefinedError implements Error {
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
 
-type Schedules {
-  runningSchedules: [RunningSchedule!]!
-}
-
 input ScheduleSelector {
   repositoryName: String
   repositoryLocationName: String
   scheduleName: String
 }
+
+type ScheduleState {
+  status: ScheduleStatus!
+  runs(limit: Int): [PipelineRun!]!
+  runsCount: Int!
+  ticks(limit: Int): [ScheduleTick!]!
+  ticksCount: Int!
+  stats: ScheduleTickStatsSnapshot!
+  logsPath: String!
+  runningScheduleCount: Int!
+}
+
+type ScheduleStateNotFoundError implements Error {
+  message: String!
+  scheduleOriginId: String!
+}
+
+type ScheduleStateResult {
+  scheduleState: ScheduleState!
+}
+
+type ScheduleStates {
+  results: [ScheduleState!]!
+}
+
+union ScheduleStatesOrError = ScheduleStates | RepositoryNotFoundError | PythonError
 
 enum ScheduleStatus {
   RUNNING

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_runs import get_runs
-from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
+from dagster_graphql.implementation.fetch_schedules import get_schedule_definitions_for_pipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
@@ -75,7 +75,7 @@ class DauphinIPipelineSnapshotMixin(object):
     runs = dauphin.Field(
         dauphin.non_null_list('PipelineRun'), cursor=dauphin.String(), limit=dauphin.Int(),
     )
-    schedules = dauphin.non_null_list('RunningSchedule')
+    schedules = dauphin.non_null_list('ScheduleDefinition')
 
     def resolve_pipeline_snapshot_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
@@ -170,15 +170,9 @@ class DauphinIPipelineSnapshotMixin(object):
             # schedules
             return []
 
-        schedules = graphene_info.context.instance.all_stored_schedule_state(
-            represented_pipeline.get_origin().repository_origin.get_id()
-        )
-        return [
-            graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
-            for schedule in schedules
-            if get_dagster_schedule_def(graphene_info, schedule.name).name
-            == self.get_represented_pipeline().name
-        ]
+        pipeline_selector = represented_pipeline.handle.to_selector()
+        schedules = get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector)
+        return schedules
 
 
 class DauphinIPipelineSnapshot(dauphin.Interface):

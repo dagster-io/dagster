@@ -3,6 +3,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
 
 # This is a hard-coded name for the special "in-process" location.
@@ -145,6 +146,9 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
 
     def get_origin(self):
         return PipelinePythonOrigin(self.pipeline_name, self.repository_handle.get_origin())
+
+    def to_selector(self):
+        return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
 class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_handle')):

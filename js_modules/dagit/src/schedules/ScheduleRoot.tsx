@@ -9,13 +9,13 @@ import {
 import { Query, QueryResult } from "react-apollo";
 import {
   ScheduleRootQuery,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
+  ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList,
+  ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData
 } from "./types/ScheduleRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
-import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleFragment } from "./ScheduleRow";
 
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString, assertUnreachable } from "../Util";
@@ -58,16 +58,20 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
       {(queryResult: QueryResult<ScheduleRootQuery, any>) => (
         <Loading queryResult={queryResult} allowStaleData={true}>
           {result => {
-            const { scheduleOrError } = result;
+            const { scheduleDefinitionOrError } = result;
 
-            if (scheduleOrError.__typename === "RunningSchedule") {
+            if (scheduleDefinitionOrError.__typename === "ScheduleDefinition") {
               const partitionSetName =
-                scheduleOrError.scheduleDefinition.partitionSet?.name;
+                scheduleDefinitionOrError.partitionSet?.name;
               return (
                 <ScrollContainer>
                   <Header>Schedules</Header>
-                  <ScheduleRow schedule={scheduleOrError} />
-                  <TicksTable ticks={scheduleOrError.ticksList} />
+                  <ScheduleRow schedule={scheduleDefinitionOrError} />
+                  {scheduleDefinitionOrError.scheduleState && (
+                    <TicksTable
+                      ticks={scheduleDefinitionOrError.scheduleState.ticksList}
+                    />
+                  )}
                   {partitionSetName ? (
                     <PartitionView
                       partitionSetName={partitionSetName}
@@ -88,7 +92,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
 };
 
 const RenderEventSpecificData: React.FunctionComponent<{
-  data: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
+  data: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData | null;
 }> = ({ data }) => {
   if (!data) {
     return null;
@@ -166,7 +170,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
 };
 
 const TicksTable: React.FunctionComponent<{
-  ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
+  ticks: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList[];
 }> = ({ ticks }) => {
   return ticks && ticks.length ? (
     <div style={{ marginTop: 25 }}>
@@ -198,41 +202,35 @@ export const SCHEDULE_ROOT_QUERY = gql`
     $limit: Int!
     $ticksLimit: Int!
   ) {
-    scheduleOrError(scheduleSelector: $scheduleSelector) {
-      ... on RunningSchedule {
-        ...ScheduleFragment
-        scheduleDefinition {
-          name
-          cronSchedule
-          partitionSet {
-            name
-          }
-          pipelineName
-        }
-        ticksList: ticks(limit: $ticksLimit) {
-          tickId
-          status
-          timestamp
-          tickSpecificData {
-            __typename
-            ... on ScheduleTickSuccessData {
-              run {
-                pipeline {
-                  name
+    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+      ... on ScheduleDefinition {
+        ...ScheduleDefinitionFragment
+        scheduleState {
+          ticksList: ticks(limit: $ticksLimit) {
+            tickId
+            status
+            timestamp
+            tickSpecificData {
+              __typename
+              ... on ScheduleTickSuccessData {
+                run {
+                  pipeline {
+                    name
+                  }
+                  status
+                  runId
                 }
-                status
-                runId
               }
-            }
-            ... on ScheduleTickFailureData {
-              error {
-                ...PythonErrorFragment
+              ... on ScheduleTickFailureData {
+                error {
+                  ...PythonErrorFragment
+                }
               }
             }
           }
         }
       }
-      ... on ScheduleNotFoundError {
+      ... on ScheduleDefinitionNotFoundError {
         message
       }
       ... on PythonError {
@@ -242,6 +240,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${ScheduleRowFragment}
+  ${ScheduleFragment}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
