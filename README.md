@@ -179,7 +179,7 @@ Dagster works with the tools and systems that you're already using with your dat
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987557-c2b5e000-7a37-11e9-9310-c274481a4682.png"> </td>
 			<td style="border-left: 0px"><b>AWS</b></td>
 			<td><a href="https://docs.dagster.io/docs/apidocs/libraries/dagster_aws" />dagster-aws</a>
-			<br />A library for interacting with Amazon Web Services. Provides integrations with Cloudwatch, S3, ECS, EMR, and Redshift.
+			<br />A library for interacting with Amazon Web Services. Provides integrations with Cloudwatch, S3, EMR, and Redshift.
 			</td>
 		</tr>
 		<tr>
