@@ -121,9 +121,9 @@ APIs of the resources agree, and the fundamental operations they expose are test
 environment, we can test business logic independent of environments that may be very costly or
 difficult to test against.
 
-```python literalinclude showLines startLine=75 caption=modes.py
+```python literalinclude showLines startLine=77 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-lines:75-84
+lines:77-86
 ```
 
 Even if you're not familiar with SQLAlchemy, it's enough to note that this is a very different
@@ -145,9 +145,10 @@ dagster pipeline execute -f modes.py -e resources.yaml -d unittest
 
 Or, from the Python API:
 
-```python literalinclude showLines startLine=146 emphasize-lines=12 caption=modes.py
+```python literalinclude showLines startLine=149 emphasize-lines=12 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-lines:146-159
+lines:149-161
+dedent:4
 ```
 
 And in Dagit, we can use the "Mode" selector to pick the mode in which we'd like to execute.
@@ -169,9 +170,9 @@ variables.
 
 Dagster calls this a config preset:
 
-```python literalinclude showLines startLine=129 emphasize-lines=14-40 caption=presets.py
+```python literalinclude showLines startLine=131 emphasize-lines=14-40 caption=presets.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
-lines:129-170
+lines:131-172
 ```
 
 We illustrate two ways of defining a preset.
@@ -193,9 +194,9 @@ dagster pipeline execute -f presets.py --preset unittest
 
 From Python, you can use <PyObject module="dagster" object="execute_pipeline" />
 
-```python literalinclude showLines startLine=174 caption=presets.py
+```python literalinclude showLines startLine=177 caption=presets.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
-lines:174
+lines:177
 dedent:4
 ```
 

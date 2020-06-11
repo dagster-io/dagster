@@ -1,3 +1,5 @@
+# for NormalizedCereal.__table__.insert().execute(records)
+# pylint: disable=no-member
 import csv
 import os
 import sqlite3
@@ -82,13 +84,11 @@ class SqlAlchemyPostgresWarehouse(object):
         Base.metadata.bind = self._engine
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
-        # fmt: off
-        NormalizedCereal.__table__.insert().execute(records)  # pylint: disable=no-member
-        # fmt: on
+        NormalizedCereal.__table__.insert().execute(records)
 
 
 @resource(config={'conn_str': Field(String)})
-def sqlachemy_postgres_warehouse_resource(context):
+def sqlalchemy_postgres_warehouse_resource(context):
     return SqlAlchemyPostgresWarehouse(context.resource_config['conn_str'])
 
 
@@ -137,7 +137,7 @@ def normalize_calories(context, cereals):
         ModeDefinition(
             name='dev',
             resource_defs={
-                'warehouse': sqlachemy_postgres_warehouse_resource
+                'warehouse': sqlalchemy_postgres_warehouse_resource
             },
         ),
     ],
