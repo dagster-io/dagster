@@ -15,11 +15,6 @@ export interface OverviewScheduleFragment_scheduleState_ticks {
   status: ScheduleTickStatus;
 }
 
-export interface OverviewScheduleFragment_scheduleState_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface OverviewScheduleFragment_scheduleState_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -40,7 +35,7 @@ export type OverviewScheduleFragment_scheduleState_runs_stats = OverviewSchedule
 export interface OverviewScheduleFragment_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: OverviewScheduleFragment_scheduleState_runs_pipeline;
+  pipelineName: string;
   tags: OverviewScheduleFragment_scheduleState_runs_tags[];
   stats: OverviewScheduleFragment_scheduleState_runs_stats;
   status: PipelineRunStatus;

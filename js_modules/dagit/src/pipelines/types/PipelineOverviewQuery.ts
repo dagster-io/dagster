@@ -288,11 +288,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   status: ScheduleTickStatus;
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -313,7 +308,7 @@ export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sched
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_pipeline;
+  pipelineName: string;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_tags[];
   stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats;
   status: PipelineRunStatus;

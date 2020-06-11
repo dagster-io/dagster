@@ -201,7 +201,7 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
                   }}
                   key={run.runId}
                 >
-                  <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                  <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
                     <Tooltip
                       position={"top"}
                       content={titleForRun(run)}
@@ -308,9 +308,7 @@ const ScheduleFragment = gql`
       runsCount
       runs(limit: 10) {
         runId
-        pipeline {
-          name
-        }
+        pipelineName
         tags {
           key
           value
