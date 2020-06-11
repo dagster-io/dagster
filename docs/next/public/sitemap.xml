@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
+    
   <url>
         <loc>https://docs.dagster.io/docs/apidocs/cli</loc>
   </url>
@@ -238,10 +238,6 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/dagster_pyspark/dagster_pyspark</loc>
-  </url>
-
-  <url>
         <loc>https://docs.dagster.io/docs/learn/guides/dagster_types</loc>
   </url>
 
@@ -326,6 +322,18 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/tutorial/basics_pipelines</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/basics_solids</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/execute</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/tutorial</loc>
   </url>
 
@@ -338,7 +346,12 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/tutorial/testable</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/versions</loc>
   </url>
 
 </urlset>
+      
