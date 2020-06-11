@@ -293,7 +293,6 @@ def test_event_log_asset_key_migration():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         instance.upgrade()
 
-        assert get_current_alembic_version(db_path) == 'c39c047fa021'
         assert 'asset_key' in set(get_sqlite3_columns(db_path, 'event_logs'))
 
 
