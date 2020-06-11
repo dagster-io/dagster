@@ -54,7 +54,9 @@ def get_scheduler_or_error(graphene_info):
     if not instance.scheduler:
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
-    return graphene_info.schema.type_named('Scheduler')()
+    return graphene_info.schema.type_named('Scheduler')(
+        scheduler_class=instance.scheduler.__class__.__name__
+    )
 
 
 @capture_dauphin_error
@@ -135,27 +137,6 @@ def get_schedule_definition_or_error(graphene_info, schedule_selector):
     )
 
 
-@capture_dauphin_error
-def get_schedule_or_error(graphene_info, schedule_selector):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
-    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
-    repository = location.get_repository(schedule_selector.repository_name)
-    instance = graphene_info.context.instance
-
-    schedule = instance.get_schedule_state(
-        repository.get_external_schedule(schedule_selector.schedule_name).get_origin_id()
-    )
-    if not schedule:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('ScheduleNotFoundError')(
-                schedule_name=schedule_selector.schedule_name
-            )
-        )
-
-    return graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
-
-
 def get_schedule_yaml(graphene_info, external_schedule):
     check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
     handle = external_schedule.handle.repository_handle
@@ -166,13 +147,3 @@ def get_schedule_yaml(graphene_info, external_schedule):
         return None
     run_config_yaml = yaml.safe_dump(schedule_execution_data.run_config, default_flow_style=False)
     return run_config_yaml if run_config_yaml else ''
-
-
-def get_dagster_schedule_def(graphene_info, schedule_name):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(schedule_name, 'schedule_name')
-
-    # TODO: Serialize schedule as ExternalScheduleData and add to ExternalRepositoryData
-    repository = graphene_info.context.legacy_get_repository_definition()
-    schedule_definition = repository.get_schedule_def(schedule_name)
-    return schedule_definition

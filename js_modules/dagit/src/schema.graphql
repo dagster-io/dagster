@@ -1093,7 +1093,7 @@ type ScheduleNotFoundError implements Error {
 }
 
 type Scheduler {
-  x: String
+  schedulerClass: String
 }
 
 type SchedulerNotDefinedError implements Error {
