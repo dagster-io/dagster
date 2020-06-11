@@ -1,5 +1,5 @@
 Shell (dagster_shell)
--------------------
+---------------------
 
 .. currentmodule:: dagster_shell
 

@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import gql from "graphql-tag";
+import styled from "styled-components/macro";
 import { NonIdealState, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
@@ -59,16 +60,18 @@ export default class LogsScrollingTable extends React.Component<
         }
       >
         <Headers />
-        <AutoSizer>
-          {({ width, height }) => (
-            <LogsScrollingTableSized
-              width={width}
-              height={height}
-              ref={this.table}
-              {...this.props}
-            />
-          )}
-        </AutoSizer>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <AutoSizer>
+            {({ width, height }) => (
+              <LogsScrollingTableSized
+                width={width}
+                height={height}
+                ref={this.table}
+                {...this.props}
+              />
+            )}
+          </AutoSizer>
+        </div>
       </ColumnWidthsProvider>
     );
   }
@@ -126,7 +129,10 @@ class LogsScrollingTableSized extends React.Component<
 
   attachScrollToBottomObserver() {
     const el = this.listEl;
-    if (!el) return;
+    if (!el) {
+      console.warn(`No container, LogsScrollingTable must render listEl`);
+      return;
+    }
 
     let lastHeight: string | null = null;
 
@@ -199,26 +205,16 @@ class LogsScrollingTableSized extends React.Component<
   };
 
   render() {
-    if (this.props.loading) {
-      return (
-        <div
-          style={{
-            zIndex: 100,
-            position: "absolute",
-            width: "100%",
-            height: "calc(100% - 50px)"
-          }}
-        >
-          <NonIdealState
-            icon={<Spinner size={24} />}
-            title="Fetching logs..."
-          />
-        </div>
-      );
-    }
-
     return (
       <div onScroll={this.onScroll}>
+        {this.props.loading && (
+          <ListEmptyState>
+            <NonIdealState
+              icon={<Spinner size={24} />}
+              title="Fetching logs..."
+            />
+          </ListEmptyState>
+        )}
         <List
           ref={this.list}
           deferredMeasurementCache={this.cache}
@@ -292,3 +288,10 @@ class AutoSizer extends React.Component<{
     );
   }
 }
+
+const ListEmptyState = styled.div`
+  z-index: 100;
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 50px);
+`;

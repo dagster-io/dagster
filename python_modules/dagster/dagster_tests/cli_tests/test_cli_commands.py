@@ -21,7 +21,6 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.check import CheckError
 from dagster.cli.pipeline import (
     execute_backfill_command,
     execute_execute_command,
@@ -263,71 +262,77 @@ def test_list_command():
 def valid_execute_args():
     return [
         {
-            'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-            'pipeline_name': ('foo',),
+            'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+            'pipeline': 'foo',
             'python_file': None,
             'module_name': None,
-            'fn_name': None,
+            'attribute': None,
         },
         {
-            'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
-            'pipeline_name': ('hello_cereal_pipeline',),
+            'workspace': file_relative_path(__file__, 'repository_module.yaml'),
+            'pipeline': 'hello_cereal_pipeline',
             'python_file': None,
             'module_name': None,
-            'fn_name': None,
+            'attribute': None,
         },
         {
-            'repository_yaml': None,
-            'pipeline_name': ('foo',),
+            'workspace': None,
+            'pipeline': 'foo',
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
-            'fn_name': 'bar',
+            'attribute': 'bar',
         },
         {
-            'repository_yaml': None,
-            'pipeline_name': ('hello_cereal_pipeline',),
+            'workspace': None,
+            'pipeline': 'hello_cereal_pipeline',
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'hello_cereal_repository',
+            'attribute': 'hello_cereal_repository',
         },
         {
-            'repository_yaml': None,
-            'pipeline_name': (),
+            'workspace': None,
+            'pipeline': None,
             'python_file': None,
             'module_name': 'dagster_examples.intro_tutorial.repos',
-            'fn_name': 'hello_cereal_pipeline',
+            'attribute': 'hello_cereal_pipeline',
         },
         {
-            'repository_yaml': None,
-            'pipeline_name': (),
+            'workspace': None,
+            'pipeline': None,
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
-            'fn_name': 'define_foo_pipeline',
+            'attribute': 'define_foo_pipeline',
         },
         {
-            'repository_yaml': None,
-            'pipeline_name': (),
+            'workspace': None,
+            'pipeline': None,
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
-            'fn_name': 'foo_pipeline',
+            'attribute': 'foo_pipeline',
         },
     ]
 
 
 def valid_cli_args():
     return [
-        ['-y', file_relative_path(__file__, 'repository_file.yaml'), 'foo'],
-        ['-y', file_relative_path(__file__, 'repository_module.yaml'), 'hello_cereal_pipeline'],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'bar', 'foo',],
+        ['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'],
+        [
+            '-w',
+            file_relative_path(__file__, 'repository_module.yaml'),
+            '-p',
+            'hello_cereal_pipeline',
+        ],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo',],
         [
             '-m',
             'dagster_examples.intro_tutorial.repos',
-            '-n',
+            '-a',
             'hello_cereal_repository',
+            '-p',
             'hello_cereal_pipeline',
         ],
-        ['-m', 'dagster_examples.intro_tutorial.repos', '-n', 'hello_cereal_pipeline'],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'define_foo_pipeline'],
+        ['-m', 'dagster_examples.intro_tutorial.repos', '-a', 'hello_cereal_pipeline'],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'define_foo_pipeline'],
     ]
 
 
@@ -341,11 +346,12 @@ def test_print_command():
     runner = CliRunner()
 
     for cli_args in valid_cli_args():
+
         result = runner.invoke(pipeline_print_command, cli_args)
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stdout
 
         result = runner.invoke(pipeline_print_command, ['--verbose'] + cli_args)
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stdout
 
     res = runner.invoke(
         pipeline_print_command,
@@ -353,12 +359,13 @@ def test_print_command():
             '--verbose',
             '-f',
             file_relative_path(__file__, 'test_cli_commands.py'),
-            '-n',
+            '-a',
             'bar',
+            '-p',
             'baz',
         ],
     )
-    assert res.exit_code == 0
+    assert res.exit_code == 0, res.stdout
 
 
 def test_execute_mode_command():
@@ -367,12 +374,13 @@ def test_execute_mode_command():
     add_result = runner_pipeline_execute(
         runner,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(__file__, '../environments/multi_mode_with_resources/add_mode.yaml'),
             '-d',
             'add_mode',
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
@@ -382,14 +390,15 @@ def test_execute_mode_command():
     mult_result = runner_pipeline_execute(
         runner,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/mult_mode.yaml'
             ),
             '-d',
             'mult_mode',
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
@@ -399,14 +408,15 @@ def test_execute_mode_command():
     double_adder_result = runner_pipeline_execute(
         runner,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
             ),
             '-d',
             'double_adder_mode',
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
@@ -419,28 +429,30 @@ def test_execute_preset_command():
     add_result = runner_pipeline_execute(
         runner,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '-p',
+            '--preset',
             'add',
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
 
     assert 'PIPELINE_SUCCESS' in add_result.output
 
-    # Can't use -p with --env
+    # Can't use --preset with --config
     bad_res = runner.invoke(
         pipeline_execute_command,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '-p',
+            '--preset',
             'add',
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
             ),
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
@@ -462,29 +474,18 @@ def test_execute_command():
         runner_pipeline_execute(runner, cli_args)
 
         runner_pipeline_execute(
-            runner, ['--env', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args
+            runner,
+            ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
         )
-
-    res = runner.invoke(
-        pipeline_execute_command,
-        [
-            '-y',
-            file_relative_path(__file__, 'repository_module.yaml'),
-            'hello_cereal_pipeline',
-            'foo',
-        ],
-    )
-    assert res.exit_code == 1
-    assert isinstance(res.exception, CheckError)
-    assert 'Can only handle zero or one pipeline args.' in str(res.exception)
 
 
 def test_stdout_execute_command():
     runner = CliRunner()
     result = runner_pipeline_execute(
         runner,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'stdout_pipeline'],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'stdout_pipeline'],
     )
+    assert result.exit_code == 0, result.stdout
     assert 'HELLO WORLD' in result.output
 
 
@@ -492,24 +493,44 @@ def test_stderr_execute_command():
     runner = CliRunner()
     result = runner.invoke(
         pipeline_execute_command,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'stderr_pipeline',],
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'stderr_pipeline'],
     )
     assert result.exit_code != 0
     assert 'I AM SUPPOSED TO FAIL' in result.output
 
 
-def test_fn_not_found_execute():
+def test_more_than_one_pipeline():
     with pytest.raises(
-        DagsterInvariantViolationError, match='nope not found at module scope in file'
+        UsageError,
+        match=re.escape(
+            "Must provide --pipeline as there is more than one pipeline in bar. "
+            "Options are: ['baz', 'foo']."
+        ),
     ):
         execute_execute_command(
             env=None,
             cli_args={
                 'repository_yaml': None,
-                'pipeline_name': (),
+                'pipeline': None,
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
-                'fn_name': 'nope',
+                'attribute': None,
+            },
+        )
+
+
+def test_attribute_not_found():
+    with pytest.raises(
+        DagsterInvariantViolationError, match=re.escape('nope not found at module scope in file')
+    ):
+        execute_execute_command(
+            env=None,
+            cli_args={
+                'repository_yaml': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'nope',
             },
         )
 
@@ -521,34 +542,42 @@ def not_a_repo_or_pipeline_fn():
 not_a_repo_or_pipeline = 123
 
 
-def test_fn_is_wrong_thing():
+def test_attribute_is_wrong_thing():
     with pytest.raises(
-        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+        DagsterInvariantViolationError,
+        match=re.escape(
+            'Loadable attributes must be either a PipelineDefinition or a '
+            'RepositoryDefinition. Got 123.'
+        ),
     ):
         execute_execute_command(
             env=[],
             cli_args={
                 'repository_yaml': None,
-                'pipeline_name': (),
+                'pipeline': None,
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
-                'fn_name': 'not_a_repo_or_pipeline',
+                'attribute': 'not_a_repo_or_pipeline',
             },
         )
 
 
-def test_fn_returns_wrong_thing():
+def test_attribute_fn_returns_wrong_thing():
     with pytest.raises(
-        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+        DagsterInvariantViolationError,
+        match=re.escape(
+            "Loadable attributes must be either a PipelineDefinition or a "
+            "RepositoryDefinition. Got 'kdjfkjdf'."
+        ),
     ):
         execute_execute_command(
             env=[],
             cli_args={
                 'repository_yaml': None,
-                'pipeline_name': (),
+                'pipeline': None,
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
-                'fn_name': 'not_a_repo_or_pipeline_fn',
+                'attribute': 'not_a_repo_or_pipeline_fn',
             },
         )
 
@@ -583,17 +612,17 @@ def test_scaffold_command():
         result = runner.invoke(pipeline_scaffold_command, cli_args)
         assert result.exit_code == 0
 
-        result = runner.invoke(pipeline_scaffold_command, ['-p'] + cli_args)
+        result = runner.invoke(pipeline_scaffold_command, ['--print-only-required'] + cli_args)
         assert result.exit_code == 0
 
 
 def test_default_memory_run_storage():
     cli_args = {
-        'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-        'pipeline_name': ('foo',),
+        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'pipeline': 'foo',
         'python_file': None,
         'module_name': None,
-        'fn_name': None,
+        'attribute': None,
     }
     result = execute_execute_command(env=None, cli_args=cli_args)
     assert result.success
@@ -601,11 +630,11 @@ def test_default_memory_run_storage():
 
 def test_override_with_in_memory_storage():
     cli_args = {
-        'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-        'pipeline_name': ('foo',),
+        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'pipeline': 'foo',
         'python_file': None,
         'module_name': None,
-        'fn_name': None,
+        'attribute': None,
     }
     result = execute_execute_command(
         env=[file_relative_path(__file__, 'in_memory_env.yaml')], cli_args=cli_args
@@ -615,11 +644,11 @@ def test_override_with_in_memory_storage():
 
 def test_override_with_filesystem_storage():
     cli_args = {
-        'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-        'pipeline_name': ('foo',),
+        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'pipeline': 'foo',
         'python_file': None,
         'module_name': None,
-        'fn_name': None,
+        'attribute': None,
     }
     result = execute_execute_command(
         env=[file_relative_path(__file__, 'filesystem_env.yaml')], cli_args=cli_args
@@ -884,10 +913,11 @@ def test_multiproc():
         add_result = runner_pipeline_execute(
             runner,
             [
-                '-y',
+                '-w',
                 file_relative_path(__file__, '../repository.yaml'),
-                '-p',
+                '--preset',
                 'multiproc',
+                '-p',
                 'multi_mode_with_resources',  # pipeline name
             ],
         )
@@ -900,10 +930,11 @@ def test_multiproc_invalid():
     add_result = runner_pipeline_execute(
         runner,
         [
-            '-y',
+            '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '-p',
+            '--preset',
             'multiproc',
+            '-p',
             'multi_mode_with_resources',  # pipeline name
         ],
     )
@@ -942,29 +973,12 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         check.not_implemented('Termintation not supported')
 
 
-def backfill_execute_args(execution_args):
-    backfill_args = {
-        'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
-        'noprompt': True,
-    }
-    pipeline_name = execution_args.get('pipeline_name')
-    if pipeline_name:
-        backfill_args['pipeline_name'] = (pipeline_name,)
-    for name, value in execution_args.items():
-        if name != 'pipeline_name':
-            backfill_args[name] = value
-    return backfill_args
-
-
 def backfill_cli_runner_args(execution_args):
-    backfill_args = ['-y', file_relative_path(__file__, 'repository_file.yaml'), '--noprompt']
-    pipeline_name = execution_args.get('pipeline_name')
-    if pipeline_name:
-        backfill_args.append(pipeline_name)
-    for name, value in execution_args.items():
-        if name != 'pipeline_name':
-            backfill_args.extend(['--{}'.format(name.replace('_', '-')), value])
-    return backfill_args
+    return [
+        '-w',
+        file_relative_path(__file__, 'repository_file.yaml'),
+        '--noprompt',
+    ] + execution_args
 
 
 def run_test_backfill(execution_args, expected_count=None, error_message=None):
@@ -982,55 +996,50 @@ def run_test_backfill(execution_args, expected_count=None, error_message=None):
         with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
             _instance.return_value = instance
 
-            if error_message:
-                with pytest.raises(UsageError) as error_info:
-                    execute_backfill_command(backfill_execute_args(execution_args), no_print)
-                assert error_info and error_message in error_info.value.message
-
             result = runner.invoke(
                 pipeline_backfill_command, backfill_cli_runner_args(execution_args)
             )
             if error_message:
-                assert result.exit_code == 2
+                assert result.exit_code == 2, result.stdout
             else:
-                assert result.exit_code == 0
+                assert result.exit_code == 0, result.stdout
                 if expected_count:
                     assert len(run_launcher.queue()) == expected_count
 
 
 def test_backfill_no_pipeline():
-    args = {'pipeline_name': 'nonexistent'}
+    args = ['--pipeline', 'nonexistent']
     run_test_backfill(args, error_message='No pipeline found')
 
 
 def test_backfill_no_partition_sets():
-    args = {'pipeline_name': 'foo'}
+    args = ['--pipeline', 'foo']
     run_test_backfill(args, error_message='No partition sets found')
 
 
 def test_backfill_no_named_partition_set():
-    args = {'pipeline_name': 'baz', 'partition_set': 'nonexistent'}
+    args = ['--pipeline', 'baz', '--partition-set', 'nonexistent']
     run_test_backfill(args, error_message='No partition set found')
 
 
 def test_backfill_launch():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions']
     run_test_backfill(args, expected_count=len(string.ascii_lowercase))
 
 
 def test_backfill_partition_range():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'x'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'x']
     run_test_backfill(args, expected_count=3)
 
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'to': 'c'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--to', 'c']
     run_test_backfill(args, expected_count=3)
 
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'c', 'to': 'f'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'c', '--to', 'f']
     run_test_backfill(args, expected_count=4)
 
 
 def test_backfill_partition_enum():
-    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'partitions': 'c,x,z'}
+    args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--partitions', 'c,x,z']
     run_test_backfill(args, expected_count=3)
 
 
@@ -1050,7 +1059,7 @@ def run_launch(execution_args, expected_count=None):
             _instance.return_value = instance
 
             result = runner.invoke(pipeline_launch_command, execution_args)
-            assert result.exit_code == 0
+            assert result.exit_code == 0, result.stdout
             if expected_count:
                 assert len(run_launcher.queue()) == expected_count
 
@@ -1082,10 +1091,11 @@ def test_tags_pipeline():
         result = runner.invoke(
             pipeline_execute_command,
             [
-                '-y',
+                '-w',
                 file_relative_path(__file__, 'repository_module.yaml'),
                 '--tags',
                 '{ "foo": "bar" }',
+                '-p',
                 'hello_cereal_pipeline',
             ],
         )
@@ -1100,12 +1110,13 @@ def test_tags_pipeline():
         result = runner.invoke(
             pipeline_execute_command,
             [
-                '-y',
+                '-w',
                 file_relative_path(__file__, '../repository.yaml'),
-                '-p',
+                '--preset',
                 'add',
                 '--tags',
                 '{ "foo": "bar" }',
+                '-p',
                 'multi_mode_with_resources',  # pipeline name
             ],
         )
@@ -1120,7 +1131,7 @@ def test_tags_pipeline():
         result = runner.invoke(
             pipeline_backfill_command,
             [
-                '-y',
+                '-w',
                 file_relative_path(__file__, 'repository_file.yaml'),
                 '--noprompt',
                 '--partition-set',
@@ -1129,10 +1140,11 @@ def test_tags_pipeline():
                 'c',
                 '--tags',
                 '{ "foo": "bar" }',
+                '-p',
                 'baz',
             ],
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stdout
         runs = instance.run_launcher.queue()
         assert len(runs) == 1
         run = runs[0]
@@ -1149,7 +1161,7 @@ def test_execute_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'do_something',
@@ -1169,7 +1181,7 @@ def test_execute_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+',
@@ -1189,7 +1201,7 @@ def test_execute_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+,do_input',
@@ -1209,7 +1221,7 @@ def test_execute_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'a, b',
@@ -1230,7 +1242,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'do_something',
@@ -1250,7 +1262,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+',
@@ -1270,7 +1282,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 '*do_something+,do_input',
@@ -1290,7 +1302,7 @@ def test_launch_subset_pipeline():
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
-                '-n',
+                '-a',
                 'foo_pipeline',
                 '--solid-selection',
                 'a, b',

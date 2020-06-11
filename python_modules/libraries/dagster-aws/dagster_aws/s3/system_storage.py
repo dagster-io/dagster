@@ -9,7 +9,7 @@ from .intermediate_store import S3IntermediateStore
 @system_storage(
     name='s3',
     is_persistent=True,
-    config={
+    config_schema={
         's3_bucket': Field(StringSource),
         's3_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },

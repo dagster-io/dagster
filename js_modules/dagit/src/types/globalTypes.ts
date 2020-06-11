@@ -106,6 +106,12 @@ export interface RepositorySelector {
   repositoryLocationName: string;
 }
 
+export interface ScheduleSelector {
+  repositoryName?: string | null;
+  repositoryLocationName?: string | null;
+  scheduleName?: string | null;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

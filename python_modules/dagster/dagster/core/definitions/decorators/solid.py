@@ -4,6 +4,7 @@ from functools import update_wrapper, wraps
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ...decorator_utils import (
     InvalidDecoratedFunctionInfo,
@@ -27,7 +28,7 @@ class _Solid(object):
         output_defs=None,
         description=None,
         required_resource_keys=None,
-        config=None,
+        config_schema=None,
         tags=None,
     ):
         self.name = check.opt_str_param(name, 'name')
@@ -42,7 +43,7 @@ class _Solid(object):
         self.required_resource_keys = required_resource_keys
 
         # config will be checked within SolidDefinition
-        self.config = config
+        self.config_schema = config_schema
 
         # tags will be checked within ISolidDefinition
         self.tags = tags
@@ -72,7 +73,7 @@ class _Solid(object):
             input_defs=input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
-            config=self.config,
+            config_schema=self.config_schema,
             description=self.description,
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
@@ -87,9 +88,10 @@ def solid(
     description=None,
     input_defs=None,
     output_defs=None,
-    config=None,
+    config_schema=None,
     required_resource_keys=None,
     tags=None,
+    config=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
 
@@ -119,29 +121,8 @@ def solid(
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
-        config (Optional[Any]): The schema for the config. Configuration data available
-            as context.solid_config. This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
+            available as context.solid_config.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -205,6 +186,7 @@ def solid(
         check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         check.invariant(tags is None)
 
@@ -214,7 +196,9 @@ def solid(
         name=name,
         input_defs=input_defs,
         output_defs=output_defs,
-        config=config,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
         description=description,
         required_resource_keys=required_resource_keys,
         tags=tags,

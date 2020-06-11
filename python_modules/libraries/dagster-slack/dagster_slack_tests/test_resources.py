@@ -25,7 +25,7 @@ def test_slack_resource():
 
     result = execute_solid(
         slack_solid,
-        environment_dict={
+        run_config={
             'resources': {'slack': {'config': {'token': 'xoxp-1234123412341234-12341234-1234'}}}
         },
         mode_def=ModeDefinition(resource_defs={'slack': slack_resource}),

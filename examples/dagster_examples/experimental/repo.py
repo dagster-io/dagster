@@ -71,7 +71,7 @@ def save_metrics(context, data_path):
     preset_defs=[
         PresetDefinition(
             name="test",
-            environment_dict={
+            run_config={
                 "solids": {
                     "save_metrics": {
                         "inputs": {"data_path": {"value": "s3://bucket-name/test_data"}}
@@ -94,7 +94,7 @@ def rollup_data(context, data_path):
     preset_defs=[
         PresetDefinition(
             name="test",
-            environment_dict={
+            run_config={
                 "solids": {
                     "rollup_data": {
                         "inputs": {"data_path": {"value": "s3://bucket-name/test_data"}}

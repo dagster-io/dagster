@@ -15,7 +15,7 @@ def stock_data_partitions():
     ]
 
 
-def environment_dict_fn_for_date(partition):
+def run_config_fn_for_date(partition):
     date = partition.value
 
     previous_month_last_day = date - datetime.timedelta(days=1)
@@ -42,7 +42,7 @@ stock_data_partitions_set = PartitionSetDefinition(
         end=datetime.datetime(2019, 1, 1),
         delta=relativedelta(months=1),
     ),
-    environment_dict_fn_for_partition=environment_dict_fn_for_date,
+    run_config_fn_for_partition=run_config_fn_for_date,
 )
 
 

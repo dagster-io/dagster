@@ -114,7 +114,7 @@ find and execute this code, dynamically creating an Airflow DAG and
 steps corresponding to your Dagster pipeline.
 
 Note that an extra `storage` parameter will be injected into your
-environment dict if it is not set. By default, this will use filesystem
+run config if it is not set. By default, this will use filesystem
 storage, but if your Airflow executors are running on multiple nodes,
 you will need either to configure this to point at a network filesystem,
 or consider an alternative such as S3 or GCS storage.
@@ -257,7 +257,7 @@ image = 'dagster-airflow-demo-repository'
 dag, steps = make_airflow_dag_containerized(
     pipeline,
     image,
-    environment_dict={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
+    run_config={'storage': {'filesystem': {'config': {'base_dir': '/tmp'}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,
@@ -282,7 +282,7 @@ storage, you can run:
 dag, steps = make_airflow_dag(
     pipeline,
     image,
-    environment_dict={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
+    run_config={'storage': {'filesystem': {'config' : {'base_dir': '/container_tmp'}}}},
     dag_id=None,
     dag_description=None,
     dag_kwargs=None,

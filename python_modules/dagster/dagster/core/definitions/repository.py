@@ -383,6 +383,11 @@ class RepositoryData(object):
 
         return self._schedules.get_definition(schedule_name)
 
+    def has_schedule(self, schedule_name):
+        check.str_param(schedule_name, 'schedule_name')
+
+        return self._schedules.has_definition(schedule_name)
+
     def get_all_solid_defs(self):
         if self._all_solids is not None:
             return self._all_solids
@@ -547,3 +552,6 @@ class RepositoryDefinition(object):
 
     def get_schedule_def(self, name):
         return self._repository_data.get_schedule(name)
+
+    def has_schedule_def(self, name):
+        return self._repository_data.has_schedule(name)

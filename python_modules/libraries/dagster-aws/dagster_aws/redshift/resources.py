@@ -333,7 +333,7 @@ def redshift_resource(context):
 
             result = execute_solid(
                 example_redshift_solid,
-                environment_dict={
+                run_config={
                     'resources': {
                         'redshift': {
                             'config': {

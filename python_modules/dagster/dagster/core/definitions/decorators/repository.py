@@ -89,36 +89,43 @@ class _Repository(object):
 def repository(name=None, description=None):
     '''Create a repository from the decorated function.
 
+    The decorated function should take no arguments and its return value should one of:
+
+    1. ``List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition]]``. Use this
+        form when you have no need to lazy load pipelines or other definitions. This is the
+        typical use case.
+
+    2. A dict of the form:
+
+    .. code-block:: python
+
+        {
+            'pipelines': Dict[str, Callable[[], PipelineDefinition]],
+            'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+        }
+
+    This form is intended to allow definitions to be created lazily when accessed by name,
+    which can be helpful for performance when there are many definitions in a repository, or
+    when constructing the definitions is costly.
+
+    3. An object of type :py:class:`RepositoryData`. Return this object if you need fine-grained
+        control over the construction and indexing of definitions within the repository, e.g., to
+        create definitions dynamically from .yaml files in a directory.
+
     Args:
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
 
-    The decorated function should take no arguments and its return value should one of:
+    Example:
 
-        1. List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition]]. Use this
-           form when you have no need to lazy load pipelines or other definitions. This is the
-           typical use case.
+    .. code-block:: python
 
-        2. A dict of the form:
-
-                {
-                    'pipelines': Dict[str, Callable[[], PipelineDefinition]],
-                    'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
-                    'schedules': Dict[str, Callable[[], ScheduleDefinition]]
-                }
-
-            This form is intended to allow definitions to be created lazily when accessed by name,
-            which can be helpful for performance when there are many definitions in a repository, or
-            when constructing the definitions is costly.
-
-        3. An object of type :py:class:`RepositoryData`. Return this object if you need fine-grained
-           control over the construction and indexing of definitions within the repository, e.g., to
-           create definitions dynamically from .yaml files in a directory.
-
-    Examples:
-
+        ######################################################################
         # A simple repository using the first form of the decorated function
+        ######################################################################
+
         @solid(config={n: Field(Int)})
         def return_n(context):
             return context.solid_config['n']
@@ -126,12 +133,12 @@ def repository(name=None, description=None):
         @pipeline(name='simple_pipeline')
         def simple_pipeline():
             return_n()
-    
+
         simple_partition_set = PartitionSetDefinition(
             name='simple_partition_set',
             pipeline_name='simple_pipeline',
             partition_fn=lambda: range(10),
-            environment_dict_fn_for_partition=(
+            run_config_fn_for_partition=(
                 lambda partition: {
                     'solids': {'return_n': {'config': {'n': partition}}}
                 }
@@ -149,21 +156,22 @@ def repository(name=None, description=None):
 
 
         ######################################################################
-
         # A lazy-loaded repository
+        ######################################################################
+
         def make_expensive_pipeline():
             @pipeline(name='expensive_pipeline')
             def expensive_pipeline():
                 for i in range(10000):
                     return_n.alias('return_n_{i}'.format(i=i))()
-            
+
             return expensive_pipeline
 
         expensive_partition_set = PartitionSetDefinition(
             name='expensive_partition_set',
             pipeline_name='expensive_pipeline',
             partition_fn=lambda: range(10),
-            environment_dict_fn_for_partition=(
+            run_config_fn_for_partition=(
                 lambda partition: {
                     'solids': {
                         'return_n_{i}'.format(i=i): {'config': {'n': partition}}
@@ -186,14 +194,14 @@ def repository(name=None, description=None):
                 'partition_sets': {
                     'expensive_partition_set': expensive_partition_set
                 },
-                'schedules': {'expensive_schedule: make_expensive_schedule}                
+                'schedules': {'expensive_schedule: make_expensive_schedule}
             }
 
 
         ######################################################################
-
         # A complex repository that lazily construct pipelines from a directory
         # of files in a bespoke YAML format
+        ######################################################################
 
         class ComplexRepositoryData(RepositoryData):
             def __init__(self, yaml_directory):

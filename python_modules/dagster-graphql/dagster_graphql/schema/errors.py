@@ -498,27 +498,6 @@ class DauphinLaunchPipelineExecutionResult(dauphin.Union):
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
 
-class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ScheduledExecutionBlocked'
-
-    message = dauphin.NonNull(dauphin.String)
-
-
-class DauphinLaunchScheduledExecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'LaunchScheduledExecutionResult'
-        types = (
-            (
-                DauphinScheduleNotFoundError,
-                DauphinSchedulerNotDefinedError,
-                DauphinScheduledExecutionBlocked,
-            )
-            + launch_pipeline_run_result_types
-            + pipeline_execution_error_types
-        )
-
-
 class DauphinExecutePlanSuccess(dauphin.ObjectType):
     class Meta(object):
         name = 'ExecutePlanSuccess'
@@ -621,6 +600,36 @@ class DauphinRunGroupsOrError(dauphin.ObjectType):
     results = dauphin.non_null_list('RunGroup')
 
 
+class DauphinScheduleDefinitionNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleDefinitionNotFoundError'
+        interfaces = (DauphinError,)
+
+    schedule_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, schedule_name):
+        super(DauphinScheduleDefinitionNotFoundError, self).__init__()
+        self.schedule_name = check.str_param(schedule_name, 'schedule_name')
+        self.message = 'Schedule {schedule_name} could not be found.'.format(
+            schedule_name=self.schedule_name
+        )
+
+
+class DauphinScheduleStateNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleStateNotFoundError'
+        interfaces = (DauphinError,)
+
+    schedule_origin_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, schedule_origin_id):
+        super(DauphinScheduleStateNotFoundError, self).__init__()
+        self.schedule_origin_id = check.str_param(schedule_origin_id, 'schedule_origin_id')
+        self.message = 'State for schedule {schedule_origin_id} could not be found.'.format(
+            schedule_origin_id=self.schedule_origin_id
+        )
+
+
 class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'PartitionSetNotFoundError'
@@ -636,10 +645,10 @@ class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
         )
 
 
-class DauphinRepositoryLocationsOrError(dauphin.Union):
+class DauphinRepositoriesOrError(dauphin.Union):
     class Meta(object):
-        name = 'RepositoryLocationsOrError'
-        types = ('RepositoryLocationConnection', DauphinPythonError)
+        name = 'RepositoriesOrError'
+        types = ('RepositoryConnection', DauphinPythonError)
 
 
 class DauphinRepositoryNotFoundError(dauphin.ObjectType):

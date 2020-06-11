@@ -20,6 +20,4 @@ def resource_error_pipeline():
 
 
 if __name__ == '__main__':
-    result = execute_pipeline(
-        resource_error_pipeline, environment_dict={'storage': {'filesystem': {}}}
-    )
+    result = execute_pipeline(resource_error_pipeline, run_config={'storage': {'filesystem': {}}})

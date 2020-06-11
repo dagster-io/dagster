@@ -6,10 +6,17 @@ const JOIN_PATTERN = '\n';
  * using the ::literalinclude directive
  * @param {string} content - Whole file snippet contents
  * @param {string} fromTo - Usually in the following format: '26-28'
+ * @param {int} dedent - Optional line dedent
  */
-const limitSnippetLines = (content, fromTo) => {
+const limitSnippetLines = (content, fromTo, dedent) => {
   if (!fromTo) return content;
-  let elements = content.split(SPLIT_PATTERN);
+
+  const dedentLevel = dedent ? parseInt(dedent) : 0;
+
+  let elements = content
+    .split(SPLIT_PATTERN)
+    .map((x) => x.substring(dedentLevel));
+
   const [from, to] = fromTo ? fromTo.split('-') : [];
   const start = (from ? parseInt(from) : undefined) || 1;
   const end = to ? to - start + 1 : elements.length;

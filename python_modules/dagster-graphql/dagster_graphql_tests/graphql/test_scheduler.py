@@ -1,57 +1,89 @@
-import os
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    get_legacy_repository_selector,
+    get_legacy_schedule_selector,
+)
 
-import mock
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster.core.scheduler.scheduler import ScheduleStatus
 
-from dagster import seven
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.storage.schedules import SqliteScheduleStorage
-from dagster.utils.test import FilesystemTestScheduler
+from .setup import main_repo_location_name, main_repo_name
 
-from .setup import define_test_context, main_repo_location_name, main_repo_name
-
-GET_SCHEDULES_QUERY = '''
-{
-    scheduler {
-      ... on Scheduler {
-        runningSchedules {
-          scheduleDefinition {
-            name
-            pipelineName
-            mode
-            solidSelection
-            runConfigYaml
-          }
-          runs {
-              runId
-          }
-          runsCount
-          status
+GET_SCHEDULE_STATES_QUERY = '''
+query ScheduleStateQuery($repositorySelector: RepositorySelector!) {
+  scheduleStatesOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on ScheduleStates {
+      results {
+        runs {
+            runId
         }
+        runsCount
+        status
       }
     }
+  }
 }
 '''
 
+GET_SCHEDULE_DEFINITIONS_QUERY = '''
+query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
+  scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on ScheduleDefinitions {
+      results {
+        name
+        cronSchedule
+        pipelineName
+        solidSelection
+        mode
+        runConfigYaml
+      }
+    }
+  }
+}
+'''
+
+GET_SCHEDULE_DEFINITION = '''
+query getScheduleDefinition($scheduleSelector: ScheduleSelector!) {
+  scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on ScheduleDefinition {
+      name
+      partitionSet {
+        name
+      }
+    }
+  }
+}
+'''
+
+
 START_SCHEDULES_QUERY = '''
 mutation(
-  $scheduleName: String!
+  $scheduleSelector: ScheduleSelector!
 ) {
   startSchedule(
-    scheduleName: $scheduleName,
+    scheduleSelector: $scheduleSelector,
   ) {
     ... on PythonError {
       message
       className
       stack
     }
-    ... on RunningScheduleResult {
-      schedule {
+    ... on ScheduleStateResult {
+      scheduleState {
         status
       }
     }
@@ -62,44 +94,23 @@ mutation(
 
 STOP_SCHEDULES_QUERY = '''
 mutation(
-  $scheduleName: String!
+  $scheduleSelector: ScheduleSelector!
 ) {
   stopRunningSchedule(
-    scheduleName: $scheduleName,
+    scheduleSelector: $scheduleSelector,
   ) {
     ... on PythonError {
       message
       className
       stack
     }
-    ... on RunningScheduleResult {
-      schedule {
+    ... on ScheduleStateResult {
+      scheduleState {
         status
       }
     }
   }
 }
-'''
-
-GET_SCHEDULE = '''
-query getSchedule($scheduleName: String!) {
-  scheduleOrError(scheduleName: $scheduleName) {
-    __typename
-    ... on PythonError {
-      message
-      stack
-    }
-    ... on RunningSchedule {
-      scheduleDefinition {
-        name
-        partitionSet {
-          name
-        }
-      }
-    }
-  }
-}
-
 '''
 
 
@@ -111,129 +122,118 @@ def default_execution_params():
     }
 
 
-@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
-def test_start_stop_schedule():
+def test_get_schedule_definitions_for_repository(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_DEFINITIONS_QUERY, variables={'repositorySelector': selector},
+    )
 
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(),
-            schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesystemTestScheduler(temp_dir),
-            run_launcher=SyncInMemoryRunLauncher(),
-        )
+    assert result.data
+    assert result.data['scheduleDefinitionsOrError']
+    assert result.data['scheduleDefinitionsOrError']['__typename'] == 'ScheduleDefinitions'
 
-        context = define_test_context(instance)
-        # Initialize scheduler
-        external_repository = context.get_repository_location(
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    results = result.data['scheduleDefinitionsOrError']['results']
+    assert len(results) == len(external_repository.get_external_schedules())
+
+
+def test_get_schedule_states_for_repository(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
+    )
+
+    assert result.data
+    assert result.data['scheduleStatesOrError']
+    assert result.data['scheduleStatesOrError']['__typename'] == 'ScheduleStates'
+
+    # Since we haven't run reconcile yet, there should be no states in storage
+    results = result.data['scheduleStatesOrError']['results']
+    assert len(results) == 0
+
+    for schedule in results:
+        if schedule['name'] == 'environment_dict_error_schedule':
+            assert schedule['runConfigYaml'] is None
+        elif schedule['name'] == 'invalid_config_schedule':
+            assert schedule['runConfigYaml'] == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+        else:
+            assert schedule['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
+
+
+def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
+    )
+
+    assert result.data
+    assert result.data['scheduleStatesOrError']
+    assert result.data['scheduleStatesOrError']['__typename'] == 'ScheduleStates'
+
+    results = result.data['scheduleStatesOrError']['results']
+    assert len(results) == len(external_repository.get_external_schedules())
+
+    for schedule_state in results:
+        assert schedule_state['status'] == ScheduleStatus.STOPPED.value
+
+
+def test_start_and_stop_schedule(graphql_context):
+    # selector = get_legacy_repository_selector(graphql_context)
+
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    schedule_selector = get_legacy_schedule_selector(
+        graphql_context, 'no_config_pipeline_hourly_schedule'
+    )
+
+    # Start a single schedule
+    start_result = execute_dagster_graphql(
+        graphql_context, START_SCHEDULES_QUERY, variables={'scheduleSelector': schedule_selector},
+    )
+    assert (
+        start_result.data['startSchedule']['scheduleState']['status']
+        == ScheduleStatus.RUNNING.value
+    )
+
+    # Stop a single schedule
+    stop_result = execute_dagster_graphql(
+        graphql_context, STOP_SCHEDULES_QUERY, variables={'scheduleSelector': schedule_selector},
+    )
+    assert (
+        stop_result.data['stopRunningSchedule']['scheduleState']['status']
+        == ScheduleStatus.STOPPED.value
+    )
+
+
+def test_get_single_schedule_definition(graphql_context):
+    context = graphql_context
+    instance = context.instance
+
+    instance.reconcile_scheduler_state(
+        external_repository=context.get_repository_location(
             main_repo_location_name()
-        ).get_repository(main_repo_name())
-        instance.reconcile_scheduler_state(external_repository)
+        ).get_repository(main_repo_name()),
+    )
 
-        # Start schedule
-        start_result = execute_dagster_graphql(
-            context,
-            START_SCHEDULES_QUERY,
-            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
-        )
-        assert start_result.data['startSchedule']['schedule']['status'] == 'RUNNING'
+    schedule_selector = get_legacy_schedule_selector(
+        context, 'partition_based_multi_mode_decorator'
+    )
+    result = execute_dagster_graphql(
+        context, GET_SCHEDULE_DEFINITION, variables={'scheduleSelector': schedule_selector}
+    )
 
-        # Stop schedule
-        stop_result = execute_dagster_graphql(
-            context,
-            STOP_SCHEDULES_QUERY,
-            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
-        )
-        assert stop_result.data['stopRunningSchedule']['schedule']['status'] == 'STOPPED'
-
-
-@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
-def test_get_all_schedules():
-
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(),
-            schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesystemTestScheduler(temp_dir),
-            run_launcher=SyncInMemoryRunLauncher(),
-        )
-
-        context = define_test_context(instance)
-        external_repository = context.get_repository_location(
-            main_repo_location_name()
-        ).get_repository(main_repo_name())
-        instance.reconcile_scheduler_state(external_repository)
-
-        # Initialize scheduler
-        instance.reconcile_scheduler_state(external_repository)
-
-        # Start schedule
-        schedule = instance.start_schedule_and_update_storage_state(
-            external_repository.get_external_schedule("no_config_pipeline_hourly_schedule")
-        )
-
-        # Query Scheduler + all Schedules
-        scheduler_result = execute_dagster_graphql(context, GET_SCHEDULES_QUERY)
-
-        # These schedules are defined in dagster_graphql_tests/graphql/setup_scheduler.py
-        # If you add a schedule there, be sure to update the number of schedules below
-        assert scheduler_result.data
-
-        assert scheduler_result.data['scheduler']
-        assert scheduler_result.data['scheduler']['runningSchedules']
-        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 18
-
-        for schedule in scheduler_result.data['scheduler']['runningSchedules']:
-            if schedule['scheduleDefinition']['name'] == 'no_config_pipeline_hourly_schedule':
-                assert schedule['status'] == 'RUNNING'
-
-            if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':
-                assert schedule['scheduleDefinition']['runConfigYaml'] is None
-            elif schedule['scheduleDefinition']['name'] == 'invalid_config_schedule':
-                assert (
-                    schedule['scheduleDefinition']['runConfigYaml']
-                    == 'solids:\n  takes_an_enum:\n    config: invalid\n'
-                )
-            else:
-                assert (
-                    schedule['scheduleDefinition']['runConfigYaml']
-                    == 'storage:\n  filesystem: {}\n'
-                )
-
-
-def test_get_schedule():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(),
-            schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
-            scheduler=FilesystemTestScheduler(temp_dir),
-            run_launcher=SyncInMemoryRunLauncher(),
-        )
-
-        context = define_test_context(instance)
-        instance.reconcile_scheduler_state(
-            external_repository=context.get_repository_location(
-                main_repo_location_name()
-            ).get_repository(main_repo_name()),
-        )
-
-        result = execute_dagster_graphql(
-            context,
-            GET_SCHEDULE,
-            variables={'scheduleName': 'partition_based_multi_mode_decorator'},
-        )
-
-        assert result.data
-        assert result.data['scheduleOrError']['__typename'] == 'RunningSchedule'
-        assert result.data['scheduleOrError']['scheduleDefinition']['partitionSet']
+    assert result.data
+    assert result.data['scheduleDefinitionOrError']['__typename'] == 'ScheduleDefinition'
+    assert result.data['scheduleDefinitionOrError']['partitionSet']

@@ -29,7 +29,7 @@ def sleeper(context, units):
 
 
 @solid(
-    config=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
+    config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
     output_defs=[
         OutputDefinition(List[Int], 'out_1'),
         OutputDefinition(List[Int], 'out_2'),

@@ -86,3 +86,8 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
     def wipe(self):
         '''Delete all schedules from storage
         '''
+
+    @abc.abstractmethod
+    def upgrade(self):
+        '''Perform any needed migrations
+        '''

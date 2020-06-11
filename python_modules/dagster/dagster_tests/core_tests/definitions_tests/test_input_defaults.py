@@ -85,7 +85,7 @@ def test_mismatch():
 def test_env_precedence():
     result = execute_solid(
         bad_default,
-        environment_dict={'solids': {'bad_default': {'inputs': {'x': 1}}}},
+        run_config={'solids': {'bad_default': {'inputs': {'x': 1}}}},
         raise_on_error=False,
     )
     assert result.success == True

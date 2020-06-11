@@ -41,6 +41,7 @@ from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import ConfigurableClass
+from dagster.utils.backcompat import canonicalize_run_config
 
 # pylint: disable=unused-import
 from ..temp_file import (
@@ -62,15 +63,11 @@ def create_test_pipeline_execution_context(logger_defs=None):
     pipeline_def = PipelineDefinition(
         name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
-    environment_dict = {'loggers': {key: {} for key in loggers}}
-    pipeline_run = PipelineRun(
-        pipeline_name='test_legacy_context', environment_dict=environment_dict
-    )
+    run_config = {'loggers': {key: {} for key in loggers}}
+    pipeline_run = PipelineRun(pipeline_name='test_legacy_context', run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, environment_dict=environment_dict)
-    creation_data = create_context_creation_data(
-        execution_plan, environment_dict, pipeline_run, instance
-    )
+    execution_plan = create_execution_plan(pipeline=pipeline_def, environment_dict=run_config)
+    creation_data = create_context_creation_data(execution_plan, run_config, pipeline_run, instance)
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
     executor_config = create_executor_config(creation_data)
@@ -134,11 +131,12 @@ def execute_solids_within_pipeline(
     pipeline_def,
     solid_names,
     inputs=None,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
     instance=None,
+    environment_dict=None,
 ):
     '''Execute a set of solids within an existing pipeline.
 
@@ -149,8 +147,8 @@ def execute_solids_within_pipeline(
         solid_names (FrozenSet[str]): A set of the solid names, or the aliased solids, to execute.
         inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
             dicts of input names to input values, used to pass input values to the solids directly.
-            You may also use the ``environment_dict`` to configure any inputs that are configurable.
-        environment_dict (Optional[dict]): The environment configuration that parameterized this
+            You may also use the ``run_config`` to configure any inputs that are configurable.
+        run_config (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -169,11 +167,14 @@ def execute_solids_within_pipeline(
     check.set_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
 
+    # backcompact
+    run_config = canonicalize_run_config(run_config, environment_dict)
+
     sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(
         stubbed_pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
@@ -187,11 +188,12 @@ def execute_solid_within_pipeline(
     pipeline_def,
     solid_name,
     inputs=None,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
     instance=None,
+    environment_dict=None,
 ):
     '''Execute a single solid within an existing pipeline.
 
@@ -201,9 +203,9 @@ def execute_solid_within_pipeline(
         pipeline_def (PipelineDefinition): The pipeline within which to execute the solid.
         solid_name (str): The name of the solid, or the aliased solid, to execute.
         inputs (Optional[Dict[str, Any]]): A dict of input names to input values, used to
-            pass input values to the solid directly. You may also use the ``environment_dict`` to
+            pass input values to the solid directly. You may also use the ``run_config`` to
             configure any inputs that are configurable.
-        environment_dict (Optional[dict]): The environment configuration that parameterized this
+        run_config (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -218,11 +220,14 @@ def execute_solid_within_pipeline(
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
     '''
+    # backcompact
+    run_config = canonicalize_run_config(run_config, environment_dict)
+
     return execute_solids_within_pipeline(
         pipeline_def,
         solid_names={solid_name},
         inputs={solid_name: inputs} if inputs else None,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
@@ -262,8 +267,9 @@ def execute_solid(
     mode_def=None,
     input_values=None,
     tags=None,
-    environment_dict=None,
+    run_config=None,
     raise_on_error=True,
+    environment_dict=None,
 ):
     '''Execute a single solid in an ephemeral pipeline.
 
@@ -275,11 +281,11 @@ def execute_solid(
         mode_def (Optional[ModeDefinition]): The mode within which to execute the solid. Use this
             if, e.g., custom resources, loggers, or executors are desired.
         input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
-            pass inputs to the solid directly. You may also use the ``environment_dict`` to
+            pass inputs to the solid directly. You may also use the ``run_config`` to
             configure any inputs that are configurable.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        environment_dict (Optional[dict]): The environment configuration that parameterized this
+        run_config (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
@@ -291,6 +297,8 @@ def execute_solid(
     check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
     input_values = check.opt_dict_param(input_values, 'input_values', key_type=str)
+    # backcompact
+    run_config = canonicalize_run_config(run_config, environment_dict)
 
     solid_defs = [solid_def]
 
@@ -314,7 +322,7 @@ def execute_solid(
             dependencies=dependencies,
             mode_defs=[mode_def] if mode_def else None,
         ),
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode_def.name if mode_def else None,
         tags=tags,
         raise_on_error=raise_on_error,

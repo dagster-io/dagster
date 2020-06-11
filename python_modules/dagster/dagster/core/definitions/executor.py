@@ -8,37 +8,15 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.retries import Retries, get_retries_config
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class ExecutorDefinition(object):
     '''
     Args:
         name (Optional[str]): The name of the executor.
-        config (Optional[Any]): The schema for the config. Configuration data available in
-            `init_context.executor_config`.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
+            available in `init_context.executor_config`.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -46,9 +24,22 @@ class ExecutorDefinition(object):
 
     '''
 
-    def __init__(self, name, config=None, executor_creation_fn=None, required_resource_keys=None):
+    def __init__(
+        self,
+        name,
+        config_schema=None,
+        executor_creation_fn=None,
+        required_resource_keys=None,
+        config=None,
+    ):
         self._name = check.str_param(name, 'name')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )
@@ -62,7 +53,12 @@ class ExecutorDefinition(object):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def executor_creation_fn(self):
@@ -73,7 +69,7 @@ class ExecutorDefinition(object):
         return self._required_resource_keys
 
 
-def executor(name=None, config=None, required_resource_keys=None):
+def executor(name=None, config_schema=None, required_resource_keys=None, config=None):
     '''Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -81,48 +77,30 @@ def executor(name=None, config=None, required_resource_keys=None):
 
     Args:
         name (Optional[str]): The name of the executor.
-        config (Optional[Any]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''
     if callable(name):
-        check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
+        check.invariant(config is None)
         return _ExecutorDecoratorCallable()(name)
 
     return _ExecutorDecoratorCallable(
-        name=name, config=config, required_resource_keys=required_resource_keys,
+        name=name,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
+        required_resource_keys=required_resource_keys,
     )
 
 
 class _ExecutorDecoratorCallable(object):
-    def __init__(self, name=None, config=None, required_resource_keys=None):
+    def __init__(self, name=None, config_schema=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, 'name')
-        self.config = config  # type check in definition
+        self.config_schema = config_schema  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
@@ -133,7 +111,7 @@ class _ExecutorDecoratorCallable(object):
 
         executor_def = ExecutorDefinition(
             name=self.name,
-            config=self.config,
+            config_schema=self.config_schema,
             executor_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
@@ -145,7 +123,10 @@ class _ExecutorDecoratorCallable(object):
 
 @executor(
     name='in_process',
-    config={'retries': get_retries_config(), 'marker_to_close': Field(str, is_required=False),},
+    config_schema={
+        'retries': get_retries_config(),
+        'marker_to_close': Field(str, is_required=False),
+    },
 )
 def in_process_executor(init_context):
     '''The default in-process executor.
@@ -176,7 +157,7 @@ def in_process_executor(init_context):
 
 @executor(
     name='multiprocess',
-    config={
+    config_schema={
         'max_concurrent': Field(Int, is_required=False, default_value=0),
         'retries': get_retries_config(),
     },

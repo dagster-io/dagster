@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as qs from "query-string";
-import { useMutation } from "@apollo/react-hooks";
+import { useMutation, useQuery } from "@apollo/react-hooks";
 
 import {
-  Button,
   Switch,
+  Button,
   Icon,
   Menu,
   MenuItem,
@@ -14,11 +14,12 @@ import {
   Tag,
   Intent,
   PopoverInteractionKind,
-  Position
+  Position,
+  Spinner
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { ScheduleFragment } from "./types/ScheduleFragment";
+import { ScheduleDefinitionFragment } from "./types/ScheduleDefinitionFragment";
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError
@@ -36,6 +37,7 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
 import { titleForRun, RunStatus } from "../runs/RunUtils";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { useScheduleSelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -57,7 +59,7 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   const errors = [];
   if (status === ScheduleStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
-      "Schedule is set to be running, but the scheduler is not running the schedule"
+      "Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule"
     );
   } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
     errors.push(
@@ -94,69 +96,72 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   );
 };
 
+const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
+  let error:
+    | StartSchedule_startSchedule_PythonError
+    | StopSchedule_stopRunningSchedule_PythonError
+    | null = null;
+
+  if (
+    "startSchedule" in data &&
+    data.startSchedule.__typename === "PythonError"
+  ) {
+    error = data.startSchedule;
+  } else if (
+    "stopRunningSchedule" in data &&
+    data.stopRunningSchedule.__typename === "PythonError"
+  ) {
+    error = data.stopRunningSchedule;
+  }
+
+  if (error) {
+    showCustomAlert({
+      title: "Schedule Response",
+      body: (
+        <>
+          <PythonErrorInfo error={error} />
+        </>
+      )
+    });
+  }
+};
+
 export const ScheduleRow: React.FunctionComponent<{
-  schedule: ScheduleFragment;
+  schedule: ScheduleDefinitionFragment;
 }> = ({ schedule }) => {
-  const {
-    status,
-    scheduleDefinition,
-    runningScheduleCount,
-    stats,
-    ticks,
-    runs,
-    runsCount
-  } = schedule;
+  const match = useRouteMatch("/schedules/:scheduleName");
+
+  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(
+    START_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors
+    }
+  );
+  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(
+    STOP_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors
+    }
+  );
+
   const {
     name,
     cronSchedule,
     pipelineName,
-    solidSelection,
     mode,
-    runConfigYaml
-  } = scheduleDefinition;
+    solidSelection,
+    scheduleState
+  } = schedule;
 
-  const displayScheduleMutationErrors = (
-    data: StartSchedule | StopSchedule
-  ) => {
-    let error:
-      | StartSchedule_startSchedule_PythonError
-      | StopSchedule_stopRunningSchedule_PythonError
-      | null = null;
+  const scheduleSelector = useScheduleSelector(name);
 
-    if (
-      "startSchedule" in data &&
-      data.startSchedule.__typename === "PythonError"
-    ) {
-      error = data.startSchedule;
-    } else if (
-      "stopRunningSchedule" in data &&
-      data.stopRunningSchedule.__typename === "PythonError"
-    ) {
-      error = data.stopRunningSchedule;
-    }
+  const [configRequested, setConfigRequested] = React.useState(false);
 
-    if (error) {
-      showCustomAlert({
-        title: "Schedule Response",
-        body: (
-          <>
-            <PythonErrorInfo error={error} />
-          </>
-        )
-      });
-    }
-  };
-
-  const [startSchedule] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
+  const { data, loading: yamlLoading } = useQuery(FETCH_SCHEDULE_YAML, {
+    variables: { scheduleSelector },
+    skip: !configRequested
   });
-  const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
-  });
-
-  const match = useRouteMatch("/schedules/:scheduleName");
-
-  const latestTick = ticks.length > 0 ? ticks[0] : null;
+  const runConfigYaml = data?.scheduleDefinitionOrError?.runConfigYaml;
 
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
@@ -166,22 +171,80 @@ export const ScheduleRow: React.FunctionComponent<{
     </Link>
   );
 
+  if (!scheduleState) {
+    return (
+      <RowContainer key={name}>
+        <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
+        <RowColumn>
+          <Link to={`/pipeline/${pipelineName}/`}>
+            <Icon icon="diagram-tree" /> {pipelineName}
+          </Link>
+        </RowColumn>
+        <RowColumn
+          style={{
+            maxWidth: 150
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              whiteSpace: "pre-wrap",
+              display: "block"
+            }}
+          >
+            {cronSchedule ? (
+              <Tooltip position={"bottom"} content={cronSchedule}>
+                {getNaturalLanguageCronString(cronSchedule)}
+              </Tooltip>
+            ) : (
+              <div>-</div>
+            )}
+          </div>
+        </RowColumn>
+        <RowColumn
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flex: 1
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div>{`Mode: ${mode}`}</div>
+          </div>
+        </RowColumn>
+      </RowContainer>
+    );
+  }
+
+  const {
+    status,
+    runningScheduleCount,
+    stats,
+    ticks,
+    runs,
+    runsCount
+  } = scheduleState;
+
+  const latestTick = ticks.length > 0 ? ticks[0] : null;
+
   return (
     <RowContainer key={name}>
       <RowColumn style={{ maxWidth: 60, paddingLeft: 0, textAlign: "center" }}>
         <Switch
           checked={status === ScheduleStatus.RUNNING}
           large={true}
+          disabled={toggleOffInFlight || toggleOnInFlight}
           innerLabelChecked="on"
           innerLabel="off"
           onChange={() => {
             if (status === ScheduleStatus.RUNNING) {
               stopSchedule({
-                variables: { scheduleName: name }
+                variables: { scheduleSelector }
               });
             } else {
               startSchedule({
-                variables: { scheduleName: name }
+                variables: { scheduleSelector }
               });
             }
           }}
@@ -305,27 +368,30 @@ export const ScheduleRow: React.FunctionComponent<{
         </div>
         <Popover
           content={
-            <Menu>
-              <MenuItem
-                text="View Configuration..."
-                icon="share"
-                onClick={() =>
-                  showCustomAlert({
-                    title: "Config",
-                    body: (
-                      <HighlightedCodeBlock
-                        value={runConfigYaml || "Unable to resolve config"}
-                        languages={["yaml"]}
-                      />
-                    )
-                  })
-                }
-              />
-              {runConfigYaml !== null ? (
+            yamlLoading ? (
+              <Spinner size={32} />
+            ) : (
+              <Menu>
+                <MenuItem
+                  text="View Configuration..."
+                  icon="share"
+                  onClick={() =>
+                    showCustomAlert({
+                      title: "Config",
+                      body: (
+                        <HighlightedCodeBlock
+                          value={runConfigYaml || "Unable to resolve config"}
+                          languages={["yaml"]}
+                        />
+                      )
+                    })
+                  }
+                />
                 <MenuItem
                   text="Open in Playground..."
                   icon="edit"
                   target="_blank"
+                  disabled={!runConfigYaml}
                   href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
                     {
                       mode,
@@ -334,61 +400,64 @@ export const ScheduleRow: React.FunctionComponent<{
                     }
                   )}`}
                 />
-              ) : (
-                <MenuItem
-                  text="Open in Playground..."
-                  icon="edit"
-                  disabled={true}
-                />
-              )}
-              <MenuDivider />
-            </Menu>
+                <MenuDivider />
+              </Menu>
+            )
           }
           position={"bottom"}
         >
-          <Button minimal={true} icon="chevron-down" />
+          <Button
+            minimal={true}
+            icon="chevron-down"
+            onClick={() => {
+              setConfigRequested(true);
+            }}
+          />
         </Popover>
       </RowColumn>
     </RowContainer>
   );
 };
 
-export const ScheduleRowFragment = gql`
-  fragment ScheduleFragment on RunningSchedule {
-    __typename
-    runningScheduleCount
-    scheduleDefinition {
+export const ScheduleFragment = gql`
+  fragment ScheduleDefinitionFragment on ScheduleDefinition {
+    name
+    cronSchedule
+    pipelineName
+    solidSelection
+    mode
+    partitionSet {
       name
-      cronSchedule
-      pipelineName
-      solidSelection
-      mode
-      runConfigYaml
     }
-    ticks(limit: $limit) {
-      tickId
+    scheduleState {
+      __typename
+      id
+      runningScheduleCount
+      ticks(limit: $limit) {
+        tickId
+        status
+      }
+      runsCount
+      runs(limit: 10) {
+        runId
+        tags {
+          key
+          value
+        }
+        pipeline {
+          name
+        }
+        status
+      }
+      stats {
+        ticksStarted
+        ticksSucceeded
+        ticksSkipped
+        ticksFailed
+      }
+      ticksCount
       status
     }
-    runsCount
-    runs(limit: 10) {
-      runId
-      tags {
-        key
-        value
-      }
-      pipeline {
-        name
-      }
-      status
-    }
-    stats {
-      ticksStarted
-      ticksSucceeded
-      ticksSkipped
-      ticksFailed
-    }
-    ticksCount
-    status
   }
 `;
 
@@ -412,18 +481,25 @@ const ErrorTag = styled.div`
   margin-top: 8px;
 `;
 
+const FETCH_SCHEDULE_YAML = gql`
+  query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
+    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+      ... on ScheduleDefinition {
+        runConfigYaml
+      }
+    }
+  }
+`;
+
 const START_SCHEDULE_MUTATION = gql`
-  mutation StartSchedule($scheduleName: String!) {
-    startSchedule(scheduleName: $scheduleName) {
+  mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
+    startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
-      ... on RunningScheduleResult {
-        schedule {
+      ... on ScheduleStateResult {
+        scheduleState {
           __typename
+          id
           runningScheduleCount
-          scheduleDefinition {
-            __typename
-            name
-          }
           status
         }
       }
@@ -436,17 +512,14 @@ const START_SCHEDULE_MUTATION = gql`
 `;
 
 const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleName: String!) {
-    stopRunningSchedule(scheduleName: $scheduleName) {
+  mutation StopSchedule($scheduleSelector: ScheduleSelector!) {
+    stopRunningSchedule(scheduleSelector: $scheduleSelector) {
       __typename
-      ... on RunningScheduleResult {
-        schedule {
+      ... on ScheduleStateResult {
+        scheduleState {
           __typename
+          id
           runningScheduleCount
-          scheduleDefinition {
-            __typename
-            name
-          }
           status
         }
       }

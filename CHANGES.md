@@ -33,7 +33,6 @@
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
 
-- `RemoteDagitRunLauncher` has been deleted.
 - The deprecated `is_optional` parameter to `Field` and `OutputDefinition` has been removed.
   Use `is_required` instead.
 - The deprecated `runtime_type` property on `InputDefinition` and `OutputDefinition` has been

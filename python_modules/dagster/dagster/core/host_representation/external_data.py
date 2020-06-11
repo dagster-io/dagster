@@ -15,7 +15,8 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster.core.definitions.partition import Partition, PartitionScheduleDefinition
+from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.errors import PartitionScheduleExecutionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -167,6 +168,18 @@ class ExternalScheduleData(
 
 
 @whitelist_for_serdes
+class ExternalScheduleExecutionData(
+    namedtuple('_ExternalScheduleExecutionData', 'run_config error')
+):
+    def __new__(cls, run_config=None, error=None):
+        return super(ExternalScheduleExecutionData, cls).__new__(
+            cls,
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     namedtuple(
         '_ExternalPartitionSetData', 'name partition_names pipeline_name solid_selection mode'
@@ -184,13 +197,14 @@ class ExternalPartitionSetData(
 
 
 @whitelist_for_serdes
-class ExternalPartitionData(namedtuple('_ExternalPartitionSetData', 'name tags run_config')):
-    def __new__(cls, name, tags, run_config):
+class ExternalPartitionData(namedtuple('_ExternalPartitionSetData', 'name tags run_config error')):
+    def __new__(cls, name, tags=None, run_config=None, error=None):
         return super(ExternalPartitionData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             tags=check.opt_dict_param(tags, 'tags'),
             run_config=check.opt_dict_param(run_config, 'run_config'),
+            error=check.opt_inst_param(error, 'error', PartitionScheduleExecutionError),
         )
 
 
@@ -257,15 +271,7 @@ def external_preset_data_from_def(preset_def):
     check.inst_param(preset_def, 'preset_def', PresetDefinition)
     return ExternalPresetData(
         name=preset_def.name,
-        environment_dict=preset_def.environment_dict,
+        environment_dict=preset_def.run_config,
         solid_selection=preset_def.solid_selection,
         mode=preset_def.mode,
     )
-
-
-def external_partition_data_from_def(partition_set_def, partition):
-    check.inst_param(partition_set_def, 'partition_set_def', PartitionSetDefinition)
-    check.inst_param(partition, 'partition', Partition)
-    run_config = partition_set_def.environment_dict_for_partition(partition)
-    tags = partition_set_def.tags_for_partition(partition)
-    return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)

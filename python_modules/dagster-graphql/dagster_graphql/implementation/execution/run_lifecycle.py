@@ -57,49 +57,6 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
     )
 
 
-def create_possibly_invalid_run(
-    graphene_info, external_pipeline, execution_params,
-):
-    mode, environment_dict, step_keys = (
-        execution_params.mode,
-        execution_params.environment_dict,
-        execution_params.step_keys,
-    )
-    validation_result = validate_config_from_snap(
-        external_pipeline.config_schema_snapshot,
-        external_pipeline.root_config_key_for_mode(mode),
-        environment_dict,
-    )
-
-    external_execution_plan = (
-        graphene_info.context.get_external_execution_plan(
-            external_pipeline, environment_dict, mode, step_keys
-        )
-        if validation_result.success
-        else None
-    )
-
-    return graphene_info.context.instance.create_run(
-        pipeline_name=external_pipeline.name,
-        run_id=None,
-        environment_dict=environment_dict,
-        mode=mode,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
-        else None,
-        step_keys_to_execute=step_keys,
-        status=None,
-        tags=merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags),
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot
-        if external_execution_plan
-        else None,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-    )
-
-
 RunExecutionInfo = namedtuple('_RunExecutionInfo', 'external_pipeline pipeline_run')
 
 

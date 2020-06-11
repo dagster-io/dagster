@@ -127,7 +127,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                   ? schedules.map(schedule => (
                       <OverviewSchedule
                         schedule={schedule}
-                        key={schedule.scheduleDefinition.name}
+                        key={schedule.name}
                       />
                     ))
                   : "No pipeline schedules"}
@@ -176,42 +176,44 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
 };
 
 const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
-  const lastRun = schedule.runs.length && schedule.runs[0];
+  const lastRun =
+    schedule.scheduleState &&
+    schedule.scheduleState.runs.length &&
+    schedule.scheduleState.runs[0];
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn>
-        <Link to={`/schedules/${schedule.scheduleDefinition.name}`}>
-          {schedule.scheduleDefinition.name}
-        </Link>
+        <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
         {lastRun && lastRun.stats.__typename === "PipelineRunStatsSnapshot" ? (
           <div style={{ color: Colors.GRAY3, fontSize: 12, marginTop: 2 }}>
             Last Run: {unixTimestampToString(lastRun.stats.endTime)}
           </div>
         ) : null}
         <div style={{ marginTop: 5 }}>
-          {schedule.runs.map(run => {
-            return (
-              <div
-                style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
-                }}
-                key={run.runId}
-              >
-                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
-                  <Tooltip
-                    position={"top"}
-                    content={titleForRun(run)}
-                    wrapperTagName="div"
-                    targetTagName="div"
-                  >
-                    <RunStatus status={run.status} />
-                  </Tooltip>
-                </Link>
-              </div>
-            );
-          })}
+          {schedule.scheduleState &&
+            schedule.scheduleState.runs.map(run => {
+              return (
+                <div
+                  style={{
+                    display: "inline-block",
+                    cursor: "pointer",
+                    marginRight: 5
+                  }}
+                  key={run.runId}
+                >
+                  <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                    <Tooltip
+                      position={"top"}
+                      content={titleForRun(run)}
+                      wrapperTagName="div"
+                      targetTagName="div"
+                    >
+                      <RunStatus status={run.status} />
+                    </Tooltip>
+                  </Link>
+                </div>
+              );
+            })}
         </div>
       </RowColumn>
     </RowContainer>
@@ -290,45 +292,45 @@ const SecondaryContainer = ({ children }: { children: React.ReactNode }) => (
 );
 
 const ScheduleFragment = gql`
-  fragment OverviewScheduleFragment on RunningSchedule {
+  fragment OverviewScheduleFragment on ScheduleDefinition {
     __typename
-    scheduleDefinition {
-      name
-      cronSchedule
-      pipelineName
-      solidSelection
-      mode
-      runConfigYaml
-    }
-    ticks(limit: 1) {
-      tickId
-      status
-    }
-    runsCount
-    runs(limit: 10) {
-      runId
-      pipeline {
-        name
+    name
+    cronSchedule
+    pipelineName
+    solidSelection
+    mode
+    runConfigYaml
+    scheduleState {
+      ticks(limit: 1) {
+        tickId
+        status
       }
-      tags {
-        key
-        value
+      runsCount
+      runs(limit: 10) {
+        runId
+        pipeline {
+          name
+        }
+        tags {
+          key
+          value
+        }
+        stats {
+          ... on PipelineRunStatsSnapshot {
+            endTime
+          }
+        }
+        status
       }
       stats {
-        ... on PipelineRunStatsSnapshot {
-          endTime
-        }
+        ticksStarted
+        ticksSucceeded
+        ticksSkipped
+        ticksFailed
       }
+      ticksCount
       status
     }
-    stats {
-      ticksStarted
-      ticksSucceeded
-      ticksSkipped
-      ticksFailed
-    }
-    ticksCount
-    status
   }
 `;
 

@@ -19,6 +19,7 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
@@ -393,11 +394,16 @@ class DagsterInstance:
             return dagster_telemetry_enabled_default
 
     def upgrade(self, print_fn=lambda _: None):
-        print_fn('Updating run storage...')
-        self._run_storage.upgrade()
+        with upgrading_instance(self):
 
-        print_fn('Updating event storage...')
-        self._event_storage.upgrade()
+            print_fn('Updating run storage...')
+            self._run_storage.upgrade()
+
+            print_fn('Updating event storage...')
+            self._event_storage.upgrade()
+
+            print_fn('Updating schedule storage...')
+            self._schedule_storage.upgrade()
 
     def dispose(self):
         self._run_storage.dispose()
@@ -886,7 +892,9 @@ class DagsterInstance:
         return self._scheduler.stop_schedule_and_delete_from_storage(self, schedule_origin_id)
 
     def running_schedule_count(self, schedule_origin_id):
-        return self._scheduler.running_schedule_count(schedule_origin_id)
+        if self._scheduler:
+            return self._scheduler.running_schedule_count(schedule_origin_id)
+        return 0
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
@@ -920,8 +928,8 @@ class DagsterInstance:
                 schedule_state.name: {
                     "status": schedule_state.status.value,
                     "cron_schedule": schedule_state.cron_schedule,
-                    "python_path": schedule_state.reconstruction_info.executable_path,
-                    "repository_pointer": schedule_state.reconstruction_info.get_repo_pointer().describe(),
+                    "python_path": schedule_state.pipeline_origin.executable_path,
+                    "repository_pointer": schedule_state.pipeline_origin.get_repo_pointer().describe(),
                     "schedule_origin_id": schedule_state.schedule_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }

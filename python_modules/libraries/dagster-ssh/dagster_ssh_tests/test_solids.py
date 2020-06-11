@@ -14,7 +14,7 @@ def test_sftp_solid(sftpserver):
         result = execute_solid(
             sftp_solid,
             ModeDefinition(resource_defs={'ssh_resource': ssh_resource}),
-            environment_dict={
+            run_config={
                 'solids': {
                     'sftp_solid': {
                         'config': {

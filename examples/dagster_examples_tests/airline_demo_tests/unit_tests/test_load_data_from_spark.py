@@ -39,7 +39,7 @@ def test_airline_demo_load_df():
 
     solid_result = execute_pipeline(
         load_df_test,
-        environment_dict={
+        run_config={
             'solids': {'load_data_to_database_from_spark': {'config': {'table_name': 'foo'}}}
         },
     ).result_for_solid('load_data_to_database_from_spark')

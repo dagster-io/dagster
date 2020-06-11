@@ -90,13 +90,11 @@ def resources_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
-    result = execute_pipeline(
-        resources_pipeline, environment_dict=environment_dict
-    )
+    result = execute_pipeline(resources_pipeline, run_config=run_config)
     assert result.success

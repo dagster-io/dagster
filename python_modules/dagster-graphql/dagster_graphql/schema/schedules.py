@@ -1,7 +1,6 @@
-import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import (
-    get_dagster_schedule_def,
+    get_schedule_yaml,
     start_schedule,
     stop_schedule,
 )
@@ -12,9 +11,7 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
-from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
-from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
-from dagster.core.host_representation import ExternalSchedule
+from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.scheduler import ScheduleState, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -55,20 +52,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     partition_set = dauphin.Field('PartitionSet')
 
     def resolve_run_config_yaml(self, graphene_info):
-        schedule_def = self._schedule_def
-        schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
-        try:
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
-                '{schedule_name}'.format(schedule_name=schedule_def.name),
-            ):
-                environment_config = schedule_def.get_environment_dict(schedule_context)
-        except ScheduleExecutionError:
-            return None
-
-        run_config_yaml = yaml.dump(environment_config, default_flow_style=False)
-        return run_config_yaml if run_config_yaml else ''
+        return get_schedule_yaml(graphene_info, self._external_schedule)
 
     def resolve_partition_set(self, graphene_info):
         if self._external_schedule.partition_set_name is None:
@@ -86,8 +70,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             external_partition_set=external_partition_set,
         )
 
-    def __init__(self, schedule_def, external_schedule):
-        self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
+    def __init__(self, external_schedule):
         self._external_schedule = check.inst_param(
             external_schedule, 'external_schedule', ExternalSchedule
         )
@@ -191,11 +174,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         # wont always have the schedule - should always have the ID
         self._external_schedule = external_repository.get_external_schedule(schedule.name)
 
-        self._external_schedule_origin_id = self._external_schedule.get_reconstruction_id()
+        self._external_schedule_origin_id = self._external_schedule.get_origin_id()
 
         super(DauphinRunningSchedule, self).__init__(
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
-                schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
                 external_schedule=self._external_schedule,
             ),
             status=schedule.status,
@@ -260,6 +242,13 @@ class DauphinScheduler(dauphin.ObjectType):
     runningSchedules = dauphin.non_null_list('RunningSchedule')
 
 
+class DauphinSchedules(dauphin.ObjectType):
+    class Meta(object):
+        name = 'Schedules'
+
+    runningSchedules = dauphin.non_null_list('RunningSchedule')
+
+
 class DauphinRunningScheduleResult(dauphin.ObjectType):
     class Meta(object):
         name = 'RunningScheduleResult'
@@ -278,12 +267,12 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
         name = 'StartScheduleMutation'
 
     class Arguments(object):
-        schedule_name = dauphin.NonNull(dauphin.String)
+        schedule_selector = dauphin.NonNull('ScheduleSelector')
 
     Output = dauphin.NonNull('ScheduleMutationResult')
 
-    def mutate(self, graphene_info, schedule_name):
-        return start_schedule(graphene_info, schedule_name)
+    def mutate(self, graphene_info, schedule_selector):
+        return start_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
 
 
 class DauphinStopRunningScheduleMutation(dauphin.Mutation):
@@ -291,9 +280,9 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
         name = 'StopRunningScheduleMutation'
 
     class Arguments(object):
-        schedule_name = dauphin.NonNull(dauphin.String)
+        schedule_selector = dauphin.NonNull('ScheduleSelector')
 
     Output = dauphin.NonNull('ScheduleMutationResult')
 
-    def mutate(self, graphene_info, schedule_name):
-        return stop_schedule(graphene_info, schedule_name)
+    def mutate(self, graphene_info, schedule_selector):
+        return stop_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))

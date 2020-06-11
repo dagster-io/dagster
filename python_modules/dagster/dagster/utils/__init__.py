@@ -38,6 +38,7 @@ PICKLE_PROTOCOL = 2
 
 
 DEFAULT_REPOSITORY_YAML_FILENAME = 'repository.yaml'
+DEFAULT_WORKSPACE_YAML_FILENAME = 'workspace.yaml'
 
 
 def file_relative_path(dunderfile, relative_path):
@@ -226,10 +227,10 @@ def check_script(path, return_code=0):
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
-    cli_cmd = ['python', '-m', 'dagster', 'pipeline', 'execute', '-f', path, '-n', pipeline_fn_name]
+    cli_cmd = ['python', '-m', 'dagster', 'pipeline', 'execute', '-f', path, '-a', pipeline_fn_name]
 
     if env_file:
-        cli_cmd.append('-e')
+        cli_cmd.append('-c')
         cli_cmd.append(env_file)
 
     try:

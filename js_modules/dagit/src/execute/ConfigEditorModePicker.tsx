@@ -2,18 +2,17 @@ import * as React from "react";
 import { Button, Intent, Menu } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Select } from "@blueprintjs/select";
-import { PipelineDetailsFragment_modes } from "./types/PipelineDetailsFragment";
 import { ModeNotFoundError } from "./ExecutionSessionContainer";
-
-interface ConfigEditorModePickerProps {
-  modes: PipelineDetailsFragment_modes[];
-  modeError?: ModeNotFoundError;
-  modeName: string | null;
-  onModeChange: (mode: string) => void;
-}
 
 interface Mode {
   name: string;
+}
+
+interface ConfigEditorModePickerProps {
+  modes: Mode[];
+  modeError?: ModeNotFoundError;
+  modeName: string | null;
+  onModeChange: (mode: string) => void;
 }
 
 const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeline.`;

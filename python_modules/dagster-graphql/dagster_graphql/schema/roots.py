@@ -7,15 +7,14 @@ from dagster_graphql.implementation.execution import (
     get_pipeline_run_observable,
     launch_pipeline_execution,
     launch_pipeline_reexecution,
-    launch_scheduled_execution,
     terminate_pipeline_execution,
 )
 from dagster_graphql.implementation.execution.execute_run_in_process import (
     execute_run_in_graphql_process,
 )
 from dagster_graphql.implementation.external import (
+    fetch_repositories,
     fetch_repository,
-    fetch_repository_locations,
     get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
@@ -38,7 +37,9 @@ from dagster_graphql.implementation.fetch_runs import (
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_schedules import (
-    get_schedule_or_error,
+    get_schedule_definition_or_error,
+    get_schedule_definitions_or_error,
+    get_schedule_states_or_error,
     get_scheduler_or_error,
 )
 from dagster_graphql.implementation.run_config_schema import (
@@ -53,7 +54,11 @@ from dagster_graphql.implementation.utils import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.host_representation import RepositorySelector, RepresentedPipeline
+from dagster.core.host_representation import (
+    RepositorySelector,
+    RepresentedPipeline,
+    ScheduleSelector,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -70,12 +75,10 @@ class DauphinQuery(dauphin.ObjectType):
 
     version = dauphin.NonNull(dauphin.String)
 
-    repositoryLocationsOrError = dauphin.NonNull('RepositoryLocationsOrError')
-
+    repositoriesOrError = dauphin.NonNull('RepositoriesOrError')
     repositoryOrError = dauphin.Field(
         dauphin.NonNull('RepositoryOrError'),
-        repositoryLocationName=dauphin.String(),
-        repositoryName=dauphin.String(),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
     )
 
     pipelineOrError = dauphin.Field(
@@ -89,10 +92,18 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
-    scheduleOrError = dauphin.Field(
-        dauphin.NonNull('ScheduleOrError'),
-        schedule_name=dauphin.NonNull(dauphin.String),
-        limit=dauphin.Int(),
+
+    scheduleDefinitionOrError = dauphin.Field(
+        dauphin.NonNull('ScheduleDefinitionOrError'),
+        schedule_selector=dauphin.NonNull('ScheduleSelector'),
+    )
+    scheduleDefinitionsOrError = dauphin.Field(
+        dauphin.NonNull('ScheduleDefinitionsOrError'),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
+    )
+    scheduleStatesOrError = dauphin.Field(
+        dauphin.NonNull('ScheduleStatesOrError'),
+        repositorySelector=dauphin.NonNull('RepositorySelector'),
     )
 
     partitionSetsOrError = dauphin.Field(
@@ -165,11 +176,13 @@ class DauphinQuery(dauphin.ObjectType):
         assetKey=dauphin.Argument(dauphin.NonNull('AssetKeyInput')),
     )
 
-    def resolve_repositoryLocationsOrError(self, graphene_info):
-        return fetch_repository_locations(graphene_info)
+    def resolve_repositoriesOrError(self, graphene_info):
+        return fetch_repositories(graphene_info)
 
-    def resolve_repositoryOrError(self, graphene_info, repositoryLocationName, repositoryName):
-        return fetch_repository(graphene_info, repositoryLocationName, repositoryName)
+    def resolve_repositoryOrError(self, graphene_info, **kwargs):
+        return fetch_repository(
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+        )
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get('snapshotId')
@@ -199,8 +212,20 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
 
-    def resolve_scheduleOrError(self, graphene_info, schedule_name):
-        return get_schedule_or_error(graphene_info, schedule_name)
+    def resolve_scheduleDefinitionOrError(self, graphene_info, schedule_selector):
+        return get_schedule_definition_or_error(
+            graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
+        )
+
+    def resolve_scheduleDefinitionsOrError(self, graphene_info, **kwargs):
+        return get_schedule_definitions_or_error(
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get('repositorySelector'))
+        )
+
+    def resolve_scheduleStatesOrError(self, graphene_info, **kwargs):
+        return get_schedule_states_or_error(
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get('repositorySelector'))
+        )
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(
@@ -342,19 +367,6 @@ class DauphinTerminatePipelineExecutionResult(dauphin.Union):
             'PipelineRunNotFoundError',
             'PythonError',
         )
-
-
-class DauphinLaunchScheduledExecutionMutation(dauphin.Mutation):
-    class Meta(object):
-        name = 'StartScheduledExecutionMutation'
-
-    class Arguments(object):
-        scheduleName = dauphin.NonNull(dauphin.String)
-
-    Output = dauphin.NonNull('LaunchScheduledExecutionResult')
-
-    def mutate(self, graphene_info, scheduleName):
-        return launch_scheduled_execution(graphene_info, schedule_name=scheduleName)
 
 
 class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
@@ -562,7 +574,6 @@ class DauphinMutation(dauphin.ObjectType):
     class Meta(object):
         name = 'Mutation'
 
-    launch_scheduled_execution = DauphinLaunchScheduledExecutionMutation.Field()
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     launch_pipeline_reexecution = DauphinLaunchPipelineReexecutionMutation.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
@@ -654,6 +665,16 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
     repositoryName = dauphin.Field(dauphin.String)
     repositoryLocationName = dauphin.Field(dauphin.String)
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
+
+
+class DauphinScheduleSelector(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'ScheduleSelector'
+        description = '''This type represents the fields necessary to identify a schedule.'''
+
+    repositoryName = dauphin.Field(dauphin.String)
+    repositoryLocationName = dauphin.Field(dauphin.String)
+    scheduleName = dauphin.Field(dauphin.String)
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

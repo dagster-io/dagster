@@ -144,7 +144,7 @@ def normalize_calories(context, cereals):
     preset_defs=[
         PresetDefinition(
             'unittest',
-            environment_dict={
+            run_config={
                 'solids': {
                     'read_csv': {
                         'inputs': {'csv_path': {'value': '../../cereal.csv'}}

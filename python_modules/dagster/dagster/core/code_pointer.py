@@ -95,7 +95,7 @@ class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), Cod
         return '{self.python_file}::{self.fn_name}'.format(self=self)
 
     def get_cli_args(self):
-        return '-f {python_file} -n {fn_name}'.format(
+        return '-f {python_file} -a {fn_name}'.format(
             python_file=os.path.abspath(os.path.expanduser(self.python_file)), fn_name=self.fn_name
         )
 
@@ -122,7 +122,7 @@ class ModuleCodePointer(namedtuple('_ModuleCodePointer', 'module fn_name'), Code
         return 'from {self.module} import {self.fn_name}'.format(self=self)
 
     def get_cli_args(self):
-        return '-m {module} -n {fn_name}'.format(module=self.module, fn_name=self.fn_name)
+        return '-m {module} -a {fn_name}'.format(module=self.module, fn_name=self.fn_name)
 
 
 def get_python_file_from_previous_stack_frame():

@@ -45,7 +45,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-datadog \
-				-e python_modules/libraries/dagster-dbt \
 				-e python_modules/libraries/dagster-gcp \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \

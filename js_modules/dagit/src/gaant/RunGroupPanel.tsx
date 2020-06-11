@@ -54,7 +54,7 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({
           to={`/runs/${g.pipeline.name}/${g.runId}`}
           selected={g.runId === runId}
         >
-          {idx < runs.length - 1 && <ThinLine style={{ height: 40 }} />}
+          {idx < runs.length - 1 && <ThinLine style={{ height: 36 }} />}
           <div>
             <RunStatus status={g.status} />
           </div>
@@ -148,7 +148,7 @@ const ThinLine = styled.div`
   top: 17px;
   width: 1px;
   border-right: 1px solid rgba(0, 0, 0, 0.2);
-  left: 10.5px;
+  left: 11px;
   z-index: 2;
 `;
 

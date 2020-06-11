@@ -45,16 +45,14 @@ def test_resource_pipeline_no_config():
 
 
 def test_resource_pipeline_with_config():
-    result = execute_pipeline(
-        resource_pipeline, environment_dict={'resources': {'R1': {'config': 2}}}
-    )
+    result = execute_pipeline(resource_pipeline, run_config={'resources': {'R1': {'config': 2}}})
     assert result.result_for_solid('one').output_value() == 3
 
 
 def test_error_monster_success():
     assert execute_pipeline(
         error_monster,
-        environment_dict={
+        run_config={
             'solids': {
                 'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                 'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -67,7 +65,7 @@ def test_error_monster_success():
     assert execute_pipeline(
         pipeline=error_monster,
         mode='errorable_mode',
-        environment_dict={
+        run_config={
             'solids': {
                 'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                 'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -83,7 +81,7 @@ def test_error_monster_wrong_mode():
         execute_pipeline(
             pipeline=error_monster,
             mode='nope',
-            environment_dict={
+            run_config={
                 'solids': {
                     'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                     'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -98,7 +96,7 @@ def test_error_monster_success_error_on_resource():
     with pytest.raises(DagsterResourceFunctionError):
         execute_pipeline(
             error_monster,
-            environment_dict={
+            run_config={
                 'solids': {
                     'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                     'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -113,7 +111,7 @@ def test_error_monster_type_error():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(
             error_monster,
-            environment_dict={
+            run_config={
                 'solids': {
                     'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
                     'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
@@ -127,7 +125,7 @@ def test_error_monster_type_error():
 def test_config_mapping():
     assert execute_pipeline(
         config_mapping_pipeline,
-        environment_dict={
+        run_config={
             'solids': {
                 'outer_wrap': {
                     'config': {'outer_first': 'foo', 'outer_second': 'bar', 'outer_third': 3}
@@ -139,9 +137,7 @@ def test_config_mapping():
 
 def test_error_resource(snapshot):
     result = execute_pipeline(
-        resource_error_pipeline,
-        environment_dict={'storage': {'filesystem': {}}},
-        raise_on_error=False,
+        resource_error_pipeline, run_config={'storage': {'filesystem': {}}}, raise_on_error=False,
     )
 
     assert not result.success
@@ -154,7 +150,7 @@ def test_error_resource(snapshot):
 
 def test_composition_pipeline():
     result = execute_pipeline(
-        composition, environment_dict={'solids': {'add_four': {'inputs': {'num': 3}}}},
+        composition, run_config={'solids': {'add_four': {'inputs': {'num': 3}}}},
     )
 
     assert result.success

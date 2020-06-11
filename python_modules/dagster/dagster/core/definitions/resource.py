@@ -5,6 +5,7 @@ from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.errors import DagsterUnknownResourceError
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class ResourceDefinition(object):
@@ -25,37 +26,20 @@ class ResourceDefinition(object):
         resource_fn (Callable[[InitResourceContext], Any]): User-provided function to instantiate
             the resource, which will be made available to solid executions keyed on the
             ``context.resources`` object.
-        config (Optional[Any]): The schema for the config. Configuration data available in
-            `init_context.resource_config`.
-
-            This value can be:
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
+            available in `init_context.resource_config`.
         description (Optional[str]): A human-readable description of the resource.
     '''
 
-    def __init__(self, resource_fn, config=None, description=None):
+    def __init__(self, resource_fn, config_schema=None, description=None, config=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -64,7 +48,12 @@ class ResourceDefinition(object):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def description(self):
@@ -88,15 +77,15 @@ class ResourceDefinition(object):
 
 
 class _ResourceDecoratorCallable(object):
-    def __init__(self, config=None, description=None):
-        self.config = check_user_facing_opt_config_param(config, 'config')
+    def __init__(self, config_schema=None, description=None):
+        self.config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
 
         resource_def = ResourceDefinition(
-            resource_fn=fn, config=self.config, description=self.description,
+            resource_fn=fn, config_schema=self.config_schema, description=self.description,
         )
 
         update_wrapper(resource_def, wrapped=fn)
@@ -104,7 +93,7 @@ class _ResourceDecoratorCallable(object):
         return resource_def
 
 
-def resource(config=None, description=None):
+def resource(config_schema=None, description=None, config=None):
     '''Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -117,39 +106,23 @@ def resource(config=None, description=None):
     to write their own teardown/cleanup logic.
 
     Args:
-        config (Optional[Any]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
         description(Optional[str]): A human-readable description of the resource.
     '''
 
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
-    if callable(config) and not is_callable_valid_config_arg(config):
-        return _ResourceDecoratorCallable()(config)
+    if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+        return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn):
-        return _ResourceDecoratorCallable(config=config, description=description)(resource_fn)
+        return _ResourceDecoratorCallable(
+            config_schema=canonicalize_backcompat_args(
+                config_schema, 'config_schema', config, 'config', '0.9.0'
+            ),
+            description=description,
+        )(resource_fn)
 
     return _wrap
 

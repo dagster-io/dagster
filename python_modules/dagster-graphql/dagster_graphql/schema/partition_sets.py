@@ -51,6 +51,12 @@ class DauphinPartition(dauphin.ObjectType):
             self._external_partition_set.name,
             self._partition_name,
         )
+
+        if run_config is None:
+            # TODO: surface user-facing error here
+            # https://github.com/dagster-io/dagster/issues/2576
+            return ''
+
         return yaml.dump(run_config, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):
@@ -59,6 +65,12 @@ class DauphinPartition(dauphin.ObjectType):
             self._external_partition_set.name,
             self._partition_name,
         )
+
+        if tags is None:
+            # TODO: surface user-facing error here
+            # https://github.com/dagster-io/dagster/issues/2576
+            return []
+
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in tags.items()

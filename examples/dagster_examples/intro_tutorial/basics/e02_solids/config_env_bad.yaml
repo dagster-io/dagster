@@ -4,4 +4,4 @@ solids:
       delimiter: ";"
     inputs:
       csv_path:
-        value: "../../cereal.csv"
+        value: "cereal.csv"

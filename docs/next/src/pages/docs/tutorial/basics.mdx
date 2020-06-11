@@ -78,7 +78,7 @@ mechanisms:
 From the directory in which you've saved the pipeline file, just run:
 
 ```bash
-$ dagster pipeline execute -f hello_cereal.py -n hello_cereal_pipeline
+$ dagster pipeline execute -f hello_cereal.py
 ```
 
 You'll see the full stream of events emitted by dagster appear in the console,
@@ -130,7 +130,7 @@ To visualize your pipeline (which only has one node) in dagit, from the
 directory in which you've saved the pipeline file, just run:
 
 ```bash
-$ dagit -f hello_cereal.py -n hello_cereal_pipeline
+$ dagit -f hello_cereal.py
 ```
 
 You'll see output like
@@ -198,7 +198,7 @@ file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
 lines:7-15
 ```
 
-Here, rather than hardcoding the value of `dataset_path`, we use an
+Here, rather than hard-coding the value of `dataset_path`, we use an
 input, `csv_path`. It's easy to see why this is better. We can reuse
 the same solid in all the different places we might need to read in a
 .csv from a filepath. We can test the solid by pointing it at some known
@@ -233,7 +233,7 @@ Dagit GUI, or the command line:
 
 We previously encountered the <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />function.
 Pipeline configuration is specified by the second argument to this function,
-which must be a dict (the "environment dict").
+which must be a dict (the "run config").
 
 This dict contains all of the user-provided configuration with which to
 execute a pipeline. As such, it can have [a lot of sections](/docs/apidocs/execution####config_schema), but
@@ -251,7 +251,7 @@ by a dict that may itself have several sections. In this case we are
 only interested in the `inputs` section, so that we can specify the
 value of the input `csv_path`.
 
-Now you can pass this environment dict to <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />:
+Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />:
 
 ```python literalinclude showLines startLine=49 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
@@ -279,10 +279,10 @@ We can pass config files in this format to the dagster CLI tool with the
 `-e` flag.
 
 ```bash
-$ dagster pipeline execute -f inputs.py -n inputs_pipeline -e inputs_env.yaml
+$ dagster pipeline execute -f inputs.py -c inputs_env.yaml
 ```
 
-In practice, you might have different sections of your environment dict
+In practice, you might have different sections of your run config
 in different yaml files —if, for instance, some sections change more
 often (e.g. in test and prod) while other are more static. In this case,
 you can set multiple instances of the `-e` flag on CLI invocations, and
@@ -301,7 +301,7 @@ rapid experimentation with and debugging of parameterized pipeline executions. A
 always, run:
 
 ```bash
-$ dagit -f inputs.py -n inputs_pipeline
+$ dagit -f inputs.py
 ```
 
 Notice that no execution plan appears in the bottom pane of the Playground.
@@ -325,7 +325,7 @@ Press _CTRL-Space_ in order to bring up the typeahead assistant.
 
 ![inputs_figure_two.png](/assets/images/tutorial/inputs_figure_two.png)
 
-Here you can see all of the sections available in the environment dict. Don't
+Here you can see all of the sections available in the run config. Don't
 worry, we'll get to them all later.
 
 Let's enter the config we need in order to execute our pipeline.
@@ -366,7 +366,7 @@ file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
 lines:7-39
 ```
 
-Defaults are often sufficient for configuation values like these, and sets of
+Defaults are often sufficient for configuration values like these, and sets of
 parameters are often reusable. And it's unlikely that values like this will be
 provided dynamically by the outputs of other solids in a pipeline.
 
@@ -400,7 +400,7 @@ executes our pipeline, the framework will make validated config for each solid a
 Let's see how all of this looks in dagit. As usual, run:
 
 ```bash
-$ dagit -f config.py -n config_pipeline
+$ dagit -f config.py
 ```
 
 ![config_figure_one.png](/assets/images/tutorial/config_figure_one.png)
@@ -531,7 +531,7 @@ of `load_cereals`.
 Let's visualize the DAG we've just defined in dagit.
 
 ```bash
-$ dagit -f serial_pipeline.py -n serial_pipeline
+$ dagit -f serial_pipeline.py
 ```
 
 Navigate to [http://127.0.0.1:3000/pipeline/serial_pipeline/](http://127.0.0.1:3000/pipeline/serial_pipeline/) or choose
@@ -763,7 +763,7 @@ input and output to this solid are indeed instances of SimpleDataFrame.
 As usual, run:
 
 ```bash
-$ dagit -f custom_types.py -n custom_type_pipeline
+$ dagit -f custom_types.py
 ```
 
 ![custom_types_figure_one.png](/assets/images/tutorial/custom_types_figure_one.png)
@@ -917,7 +917,7 @@ lines:21-47
 ```
 
 If one wishes to use type annotations exclusively but still use dagster
-types without a 1:1 python type counterpart, the typechecking behavior
+types without a 1:1 python type counterpart, the type checking behavior
 must be modified. For this we recommend using the `typing.TYPE_CHECKING`
 property in the python typing module.
 

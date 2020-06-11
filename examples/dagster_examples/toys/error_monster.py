@@ -29,7 +29,9 @@ def resource_init(init_context):
 def define_errorable_resource():
     return ResourceDefinition(
         resource_fn=resource_init,
-        config={'throw_on_resource_init': Field(bool, is_required=False, default_value=False)},
+        config_schema={
+            'throw_on_resource_init': Field(bool, is_required=False, default_value=False)
+        },
     )
 
 
@@ -58,7 +60,7 @@ def _act_on_config(solid_config):
 
 @solid(
     output_defs=[OutputDefinition(Int)],
-    config=solid_throw_config,
+    config_schema=solid_throw_config,
     required_resource_keys={'errorable_resource'},
 )
 def emit_num(context):
@@ -73,7 +75,7 @@ def emit_num(context):
 @solid(
     input_defs=[InputDefinition('num', Int)],
     output_defs=[OutputDefinition(String)],
-    config=solid_throw_config,
+    config_schema=solid_throw_config,
     required_resource_keys={'errorable_resource'},
 )
 def num_to_str(context, num):
@@ -88,7 +90,7 @@ def num_to_str(context, num):
 @solid(
     input_defs=[InputDefinition('string', String)],
     output_defs=[OutputDefinition(Int)],
-    config=solid_throw_config,
+    config_schema=solid_throw_config,
     required_resource_keys={'errorable_resource'},
 )
 def str_to_num(context, string):

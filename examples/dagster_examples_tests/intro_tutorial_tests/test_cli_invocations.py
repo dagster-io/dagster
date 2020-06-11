@@ -18,17 +18,15 @@ from dagster.utils import (
 
 PIPELINES_OR_ERROR_QUERY = '''
 {
-    repositoryLocationsOrError {
+    repositoriesOrError {
         ... on PythonError {
             message
             stack
         }
-        ... on RepositoryLocationConnection {
+        ... on RepositoryConnection {
             nodes {
-                repositories {
-                    pipelines {
-                        name
-                    }
+                pipelines {
+                    name
                 }
             }
         }
@@ -51,16 +49,9 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     res = client.get('/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY))
     json_res = json.loads(res.data.decode('utf-8'))
     assert 'data' in json_res
-    assert 'repositoryLocationsOrError' in json_res['data']
-    assert 'nodes' in json_res['data']['repositoryLocationsOrError']
-    assert (
-        len(
-            json_res['data']['repositoryLocationsOrError']['nodes'][0]['repositories'][0][
-                'pipelines'
-            ]
-        )
-        == n_pipelines
-    )
+    assert 'repositoriesOrError' in json_res['data']
+    assert 'nodes' in json_res['data']['repositoriesOrError']
+    assert len(json_res['data']['repositoriesOrError']['nodes'][0]['pipelines']) == n_pipelines
 
     return res
 
@@ -158,16 +149,16 @@ def test_load_pipeline(filename, fn_name, _env_yaml, _mode, _preset, _return_cod
 
 
 @pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,return_code,_exception', cli_args)
-# dagster pipeline execute -f filename -n fn_name -e env_yaml -p preset
+# dagster pipeline execute -f filename -n fn_name -e env_yaml --preset preset
 def test_dagster_pipeline_execute(
     filename, fn_name, env_yaml, mode, preset, return_code, _exception
 ):
     with pushd(path_to_tutorial_file('')):
         dagster_pipeline_execute(
-            ['-f', path_to_tutorial_file(filename), '-n', fn_name]
-            + (['-e', env_yaml] if env_yaml else [])
+            ['-f', path_to_tutorial_file(filename), '-a', fn_name]
+            + (['-c', env_yaml] if env_yaml else [])
             + (['-d', mode] if mode else [])
-            + (['-p', preset] if preset else []),
+            + (['--preset', preset] if preset else []),
             return_code,
         )
 

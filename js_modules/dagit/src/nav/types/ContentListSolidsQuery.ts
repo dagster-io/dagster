@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RepositorySelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: ContentListSolidsQuery
 // ====================================================
@@ -44,6 +46,5 @@ export interface ContentListSolidsQuery {
 }
 
 export interface ContentListSolidsQueryVariables {
-  repositoryName: string;
-  repositoryLocationName: string;
+  repositorySelector: RepositorySelector;
 }

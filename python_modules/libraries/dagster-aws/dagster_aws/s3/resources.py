@@ -44,7 +44,7 @@ def s3_resource(context):
 
             result = execute_solid(
                 example_s3_solid,
-                environment_dict={
+                run_config={
                     'resources': {
                         's3': {
                             'config': {

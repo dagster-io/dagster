@@ -64,7 +64,7 @@ if __name__ == '__main__':
         {
             'solids': {
                 'bad_read_csv': {
-                    'inputs': {'csv_path': {'value': '../../cereal.csv'}}
+                    'inputs': {'csv_path': {'value': 'cereal.csv'}}
                 }
             }
         },

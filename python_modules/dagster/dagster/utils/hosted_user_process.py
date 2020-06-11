@@ -25,17 +25,26 @@ from dagster.core.host_representation.handle import (
     InProcessRepositoryLocationHandle,
     PythonEnvRepositoryLocationHandle,
 )
-from dagster.core.reconstruction import PipelineReconstructionInfo
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 
-def recon_pipeline_from_reconstruction_info(local_target):
-    check.inst_param(local_target, 'local_target', PipelineReconstructionInfo)
-    recon_repo = ReconstructableRepository(local_target.get_repo_pointer())
-    return recon_repo.get_reconstructable_pipeline(local_target.pipeline_name)
+def recon_pipeline_from_origin(origin):
+    check.inst_param(origin, 'origin', PipelinePythonOrigin)
+    recon_repo = ReconstructableRepository(origin.get_repo_pointer())
+    return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
+
+
+def recon_repository_from_origin(origin):
+    check.inst_param(origin, 'origin', RepositoryPythonOrigin)
+    return ReconstructableRepository(origin.code_pointer)
 
 
 def external_repo_from_def(repository_def, repository_handle):
     return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
+
+
+def recon_repo_from_external_repo(external_repo):
+    return ReconstructableRepository(external_repo.get_origin().code_pointer)
 
 
 def external_pipeline_from_recon_pipeline(recon_pipeline, solid_selection, repository_handle):
@@ -70,4 +79,4 @@ def repository_def_from_repository_handle(repository_handle):
         'In order to use this function the location of the repository must be in process '
         'or it must a python environment with the exact same executable.',
     )
-    return repository_def_from_pointer(repository_handle.get_reconstruction_info().code_pointer)
+    return repository_def_from_pointer(repository_handle.get_origin().code_pointer)

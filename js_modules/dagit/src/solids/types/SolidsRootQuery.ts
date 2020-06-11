@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RepositorySelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: SolidsRootQuery
 // ====================================================
@@ -72,6 +74,5 @@ export interface SolidsRootQuery {
 }
 
 export interface SolidsRootQueryVariables {
-  repositoryName: string;
-  repositoryLocationName: string;
+  repositorySelector: RepositorySelector;
 }

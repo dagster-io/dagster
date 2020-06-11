@@ -67,7 +67,7 @@ def define_hello_world_config_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_config',
         nb_test_path('hello_world_config'),
-        config={'greeting': Field(String, is_required=False, default_value='hello')},
+        config_schema={'greeting': Field(String, is_required=False, default_value='hello')},
     )
 
 
@@ -185,7 +185,7 @@ def define_add_pipeline():
     )
 
 
-@solid(input_defs=[], config=Int)
+@solid(input_defs=[], config_schema=Int)
 def load_constant(context):
     return context.solid_config
 
@@ -317,7 +317,7 @@ class FilePickleList(object):
         self.closed = True
 
 
-@resource(config=Field(String))
+@resource(config_schema=Field(String))
 def filepicklelist_resource(init_context):
     filepicklelist = FilePickleList(init_context.resource_config)
     try:

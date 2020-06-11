@@ -49,6 +49,7 @@ interface ConfigEditorProps {
   onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
 }
 
+const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
   editor.performLint();
 }, 1000);
@@ -103,6 +104,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
+      prevProps.runConfigSchema !== this.props.runConfigSchema ||
       prevProps.showWhitespace !== this.props.showWhitespace
     );
   }
@@ -236,6 +238,11 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           }}
           onBlur={(editor: any) => {
             performLint(editor);
+          }}
+          onKeyUp={(editor, event: KeyboardEvent) => {
+            if (AUTO_COMPLETE_AFTER_KEY.test(event.key)) {
+              editor.execCommand("autocomplete");
+            }
           }}
         />
       </div>

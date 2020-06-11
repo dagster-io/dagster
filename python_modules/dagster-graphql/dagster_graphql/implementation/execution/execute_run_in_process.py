@@ -1,5 +1,5 @@
 from dagster.core.execution.api import execute_run
-from dagster.utils.hosted_user_process import recon_pipeline_from_reconstruction_info
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 from ..utils import capture_dauphin_error
 from .run_lifecycle import RunExecutionInfo, get_run_execution_info_for_created_run_or_error
@@ -30,9 +30,7 @@ def _synchronously_execute_run_within_hosted_user_process(
         return run_info_or_error
 
     external_pipeline, pipeline_run = run_info_or_error
-    recon_pipeline = recon_pipeline_from_reconstruction_info(
-        external_pipeline.get_reconstruction_info()
-    )
+    recon_pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
     execute_run(recon_pipeline, pipeline_run, graphene_info.context.instance)
     return graphene_info.schema.type_named('ExecuteRunInProcessSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)

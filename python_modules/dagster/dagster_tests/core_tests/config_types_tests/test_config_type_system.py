@@ -506,7 +506,7 @@ def test_solid_list_config():
         solid_list_config()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'solid_list_config': {'config': value}}}
+        pipeline_def, run_config={'solids': {'solid_list_config': {'config': value}}}
     )
 
     assert result.success
@@ -522,9 +522,7 @@ def test_two_list_types():
 
     assert execute_solid(
         two_list_type,
-        environment_dict={
-            'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}
-        },
+        run_config={'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}},
     ).output_value() == {'list_one': [1], 'list_two': [2]}
 
     @solid(
@@ -535,7 +533,7 @@ def test_two_list_types():
 
     assert execute_solid(
         two_list_type_condensed_syntax,
-        environment_dict={
+        run_config={
             'solids': {
                 'two_list_type_condensed_syntax': {'config': {'list_one': [1], 'list_two': [2]}}
             }
@@ -550,7 +548,7 @@ def test_two_list_types():
 
     assert execute_solid(
         two_list_type_condensed_syntax_primitives,
-        environment_dict={
+        run_config={
             'solids': {
                 'two_list_type_condensed_syntax_primitives': {
                     'config': {'list_one': [1], 'list_two': [2]}
@@ -570,15 +568,13 @@ def test_multilevel_default_handling():
     )
 
     assert execute_pipeline(pipeline_def).success
-    assert execute_pipeline(pipeline_def, environment_dict=None).success
-    assert execute_pipeline(pipeline_def, environment_dict={}).success
-    assert execute_pipeline(pipeline_def, environment_dict={'solids': {}}).success
-    assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': {}}}
-    ).success
+    assert execute_pipeline(pipeline_def, run_config=None).success
+    assert execute_pipeline(pipeline_def, run_config={}).success
+    assert execute_pipeline(pipeline_def, run_config={'solids': {}}).success
+    assert execute_pipeline(pipeline_def, run_config={'solids': {'has_default_value': {}}}).success
 
     assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': {'config': 234}}}
+        pipeline_def, run_config={'solids': {'has_default_value': {'config': 234}}}
     ).success
 
 
@@ -620,7 +616,7 @@ def test_root_extra_field():
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment_dict={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
+            run_config={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
         )
 
     pe = pe_info.value
@@ -641,7 +637,7 @@ def test_deeper_path():
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
-            pipeline_def, environment_dict={'solids': {'required_int_solid': {'config': 'asdf'}}}
+            pipeline_def, run_config={'solids': {'required_int_solid': {'config': 'asdf'}}}
         )
 
     pe = pe_info.value
@@ -663,7 +659,7 @@ def test_working_list_path():
         required_list_int_solid()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
+        pipeline_def, run_config={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
     )
 
     assert result.success
@@ -685,7 +681,7 @@ def test_item_error_list_path():
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment_dict={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
+            run_config={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
         )
 
     pe = pe_info.value
@@ -718,7 +714,7 @@ def test_required_resource_not_given():
         pass
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'resources': None})
+        execute_pipeline(pipeline_def, run_config={'resources': None})
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
@@ -727,7 +723,7 @@ def test_required_resource_not_given():
     )
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'resources': {}})
+        execute_pipeline(pipeline_def, run_config={'resources': {}})
 
     pe = pe_info.value
     error = pe.errors[0]
@@ -748,7 +744,7 @@ def test_multilevel_good_error_handling_solids():
         good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': None})
+        execute_pipeline(pipeline_def, run_config={'solids': None})
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
@@ -756,7 +752,7 @@ def test_multilevel_good_error_handling_solids():
     )
 
     with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': {}})
+        execute_pipeline(pipeline_def, run_config={'solids': {}})
 
     assert len(missing_field_pe_info.value.errors) == 1
     assert missing_field_pe_info.value.errors[0].message == (
@@ -775,7 +771,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
         good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
+        execute_pipeline(pipeline_def, run_config={'solids': {'good_error_handling': {}}})
 
     assert len(pe_info.value.errors) == 1
     assert pe_info.value.errors[0].message == (
@@ -793,9 +789,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     def pipeline_def():
         good_error_handling()
 
-    execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'good_error_handling': {'config': None}}}
-    )
+    execute_pipeline(pipeline_def, run_config={'solids': {'good_error_handling': {'config': None}}})
 
 
 def test_invalid_default_values():

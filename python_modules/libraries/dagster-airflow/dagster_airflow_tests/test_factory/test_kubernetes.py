@@ -81,7 +81,7 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]
-    environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_config = load_yaml_from_glob_list(environment_yaml)
 
     run_id = make_new_run_id()
     execution_date = timezone.utcnow()
@@ -91,7 +91,7 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
         pipeline_name=pipeline_name,
         image=dagster_docker_image,
         namespace='default',
-        environment_dict=environment_dict,
+        run_config=run_config,
         op_kwargs={
             'config_file': os.environ['KUBECONFIG'],
             'env_vars': {

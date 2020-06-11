@@ -120,13 +120,13 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]
-    environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_config = load_yaml_from_glob_list(environment_yaml)
 
     run_id = make_new_run_id()
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_containerized_for_handle(
-        handle, pipeline_name, dagster_docker_image, environment_dict
+        handle, pipeline_name, dagster_docker_image, run_config
     )
 
     with pytest.raises(AirflowException) as exc_info:

@@ -225,66 +225,6 @@ mutation(
     + EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT
 )
 
-LAUNCH_SCHEDULED_EXECUTION_MUTATION = '''
-mutation(
-  $scheduleName: String!
-) {
-  launchScheduledExecution(
-    scheduleName: $scheduleName,
-  ) {
-    __typename
-    ...on ScheduleNotFoundError {
-      message
-      scheduleName
-    }
-    ...on SchedulerNotDefinedError {
-      message
-    }
-    ...on ScheduledExecutionBlocked {
-      message
-    }
-    ... on InvalidStepError {
-      invalidStepKey
-    }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
-    }
-    ... on PipelineConfigValidationInvalid {
-      pipelineName
-      errors {
-        __typename
-        message
-        path
-        reason
-      }
-    }
-    ... on PipelineNotFoundError {
-      message
-      pipelineName
-    }
-    ... on PythonError {
-      message
-      stack
-      cause {
-        message
-        stack
-      }
-    }
-    ... on LaunchPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-      }
-    }
-
-  }
-}
-'''
-
 EXECUTE_PLAN_MUTATION = (
     '''
 mutation(

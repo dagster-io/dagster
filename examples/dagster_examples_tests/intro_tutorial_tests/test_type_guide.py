@@ -105,16 +105,16 @@ def test_even_type_hydration_config():
                 even_num: 2
     '''
 
-    assert execute_solid(double_even, environment_dict=yaml.safe_load(yaml_doc)).success
+    assert execute_solid(double_even, run_config=yaml.safe_load(yaml_doc)).success
 
     assert execute_solid(
-        double_even, environment_dict={'solids': {'double_even': {'inputs': {'even_num': 2}}}}
+        double_even, run_config={'solids': {'double_even': {'inputs': {'even_num': 2}}}}
     ).success
 
     # Same same as above w/r/t chatting to prha
     with pytest.raises(AssertionError):
         execute_solid(
-            double_even, environment_dict={'solids': {'double_even': {'inputs': {'even_num': 3}}}}
+            double_even, run_config={'solids': {'double_even': {'inputs': {'even_num': 3}}}}
         )
 
 
@@ -153,7 +153,7 @@ solids:
         solid_result = execute_solid(
             double_even,
             input_values={'even_num': EvenType(2)},
-            environment_dict=yaml.safe_load(yaml_doc.format(path=path)),
+            run_config=yaml.safe_load(yaml_doc.format(path=path)),
         )
         assert solid_result.success
 

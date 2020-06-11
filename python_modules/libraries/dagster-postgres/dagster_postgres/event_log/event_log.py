@@ -43,6 +43,9 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
        :lines: 12-21
        :language: YAML
 
+    Note that the fields in this config are :py:class:`~dagster.StringSource` and
+    :py:class:`~dagster.IntSource` and can be configured from environment variables.
+
     '''
 
     def __init__(self, postgres_url, inst_data=None):

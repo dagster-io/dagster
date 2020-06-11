@@ -280,7 +280,7 @@ def test_any_config_field():
         called['yup'] = True
 
     result = execute_solid(
-        hello_world, environment_dict={'solids': {'hello_world': {'config': conf_value}}}
+        hello_world, run_config={'solids': {'hello_world': {'config': conf_value}}}
     )
 
     assert called['yup']
@@ -304,7 +304,7 @@ def test_scheduler():
                 name="my_schedule",
                 cron_schedule="* * * * *",
                 pipeline_name="test_pipeline",
-                environment_dict={},
+                run_config={},
             )
         ]
 

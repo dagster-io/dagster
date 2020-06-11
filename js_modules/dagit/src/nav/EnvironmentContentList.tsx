@@ -32,13 +32,14 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
   const pipelineTab = tabForPipelinePathComponent(tab);
   const [q, setQ] = React.useState<string>("");
-
   // Load solids, but only if the user clicks on the Solid option
   const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
     fetchPolicy: "cache-first",
     variables: {
-      repositoryLocationName: repo.repositoryLocation.name,
-      repositoryName: repo.repository.name
+      repositorySelector: {
+        repositoryLocationName: repo.repositoryLocation.name,
+        repositoryName: repo.repository.name
+      }
     }
   });
   React.useEffect(() => {
@@ -208,14 +209,8 @@ const SelectedItemTooltipStyle = JSON.stringify({
 });
 
 export const CONTENT_LIST_SOLIDS_QUERY = gql`
-  query ContentListSolidsQuery(
-    $repositoryName: String!
-    $repositoryLocationName: String!
-  ) {
-    repositoryOrError(
-      repositoryLocationName: $repositoryLocationName
-      repositoryName: $repositoryName
-    ) {
+  query ContentListSolidsQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         usedSolids {
           __typename

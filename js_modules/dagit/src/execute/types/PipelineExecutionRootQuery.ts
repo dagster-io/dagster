@@ -3,11 +3,13 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector } from "./../../types/globalTypes";
-
 // ====================================================
 // GraphQL query operation: PipelineExecutionRootQuery
 // ====================================================
+
+export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+}
 
 export interface PipelineExecutionRootQuery_pipelineOrError_PipelineNotFoundError {
   __typename: "PipelineNotFoundError";
@@ -19,10 +21,12 @@ export interface PipelineExecutionRootQuery_pipelineOrError_PythonError {
   message: string;
 }
 
-export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes {
-  __typename: "Mode";
+export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets {
+  __typename: "PipelinePreset";
   name: string;
-  description: string | null;
+  mode: string;
+  solidSelection: string[] | null;
+  runConfigYaml: string;
 }
 
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags {
@@ -31,130 +35,53 @@ export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags {
   value: string;
 }
 
-export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline {
-  __typename: "Pipeline";
-  name: string;
-  modes: PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes[];
-  tags: PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags[];
-}
-
-export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline_modes {
+export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes {
   __typename: "Mode";
   name: string;
   description: string | null;
 }
 
-export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
-export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline {
+export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
   name: string;
-  modes: PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline_modes[];
-  tags: PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline_tags[];
+  presets: PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets[];
+  tags: PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags[];
+  modes: PipelineExecutionRootQuery_pipelineOrError_Pipeline_modes[];
 }
 
-export interface PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError {
-  __typename: "InvalidSubsetError";
-  message: string;
-  pipeline: PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError_pipeline;
-}
+export type PipelineExecutionRootQuery_pipelineOrError = PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError | PipelineExecutionRootQuery_pipelineOrError_PipelineNotFoundError | PipelineExecutionRootQuery_pipelineOrError_PythonError | PipelineExecutionRootQuery_pipelineOrError_Pipeline;
 
-export type PipelineExecutionRootQuery_pipelineOrError = PipelineExecutionRootQuery_pipelineOrError_PipelineNotFoundError | PipelineExecutionRootQuery_pipelineOrError_PythonError | PipelineExecutionRootQuery_pipelineOrError_Pipeline | PipelineExecutionRootQuery_pipelineOrError_InvalidSubsetError;
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_rootConfigType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
-  key: string;
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType_values {
-  __typename: "EnumConfigValue";
-  value: string;
-  description: string | null;
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  givenName: string;
-  values: PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType_values[];
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
+export interface PipelineExecutionRootQuery_partitionSetsOrError_PartitionSets_results {
+  __typename: "PartitionSet";
   name: string;
-  description: string | null;
-  isOptional: boolean;
-  configTypeKey: string;
+  mode: string;
+  solidSelection: string[] | null;
 }
 
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  fields: PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType_fields[];
+export interface PipelineExecutionRootQuery_partitionSetsOrError_PartitionSets {
+  __typename: "PartitionSets";
+  results: PipelineExecutionRootQuery_partitionSetsOrError_PartitionSets_results[];
 }
 
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ScalarUnionConfigType {
-  __typename: "ScalarUnionConfigType";
-  key: string;
-  description: string | null;
-  isSelector: boolean;
-  typeParamKeys: string[];
-  scalarTypeKey: string;
-  nonScalarTypeKey: string;
-}
-
-export type PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes = PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType | PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_RegularConfigType | PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType | PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType | PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ScalarUnionConfigType;
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema {
-  __typename: "RunConfigSchema";
-  rootConfigType: PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_rootConfigType;
-  allConfigTypes: PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes[];
-}
-
-export interface PipelineExecutionRootQuery_runConfigSchemaOrError_ModeNotFoundError {
-  __typename: "ModeNotFoundError";
+export interface PipelineExecutionRootQuery_partitionSetsOrError_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
   message: string;
 }
 
-export type PipelineExecutionRootQuery_runConfigSchemaOrError = PipelineExecutionRootQuery_runConfigSchemaOrError_PipelineNotFoundError | PipelineExecutionRootQuery_runConfigSchemaOrError_RunConfigSchema | PipelineExecutionRootQuery_runConfigSchemaOrError_ModeNotFoundError;
+export interface PipelineExecutionRootQuery_partitionSetsOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+}
+
+export type PipelineExecutionRootQuery_partitionSetsOrError = PipelineExecutionRootQuery_partitionSetsOrError_PartitionSets | PipelineExecutionRootQuery_partitionSetsOrError_PipelineNotFoundError | PipelineExecutionRootQuery_partitionSetsOrError_PythonError;
 
 export interface PipelineExecutionRootQuery {
   pipelineOrError: PipelineExecutionRootQuery_pipelineOrError;
-  runConfigSchemaOrError: PipelineExecutionRootQuery_runConfigSchemaOrError;
+  partitionSetsOrError: PipelineExecutionRootQuery_partitionSetsOrError;
 }
 
 export interface PipelineExecutionRootQueryVariables {
-  selector: PipelineSelector;
-  mode?: string | null;
+  pipelineName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
 }

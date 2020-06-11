@@ -1,7 +1,10 @@
 import * as React from "react";
 import { useQuery, QueryResult } from "react-apollo";
 import { RunsSearchSpaceQuery } from "./types/RunsSearchSpaceQuery";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
 import {
   TokenizingField,
   TokenizingFieldValue,
@@ -88,14 +91,12 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   const { repositoryLocation, repository } = React.useContext(
     DagsterRepositoryContext
   );
+  const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
       fetchPolicy: "cache-and-network",
       skip: !repository || !repositoryLocation,
-      variables: {
-        repositoryLocationName: repositoryLocation?.name,
-        repositoryName: repository?.name
-      }
+      variables: { repositorySelector }
     }),
     enabledFilters
   );
@@ -144,14 +145,8 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
 };
 
 export const RUNS_SEARCH_SPACE_QUERY = gql`
-  query RunsSearchSpaceQuery(
-    $repositoryLocationName: String!
-    $repositoryName: String!
-  ) {
-    repositoryOrError(
-      repositoryLocationName: $repositoryLocationName
-      repositoryName: $repositoryName
-    ) {
+  query RunsSearchSpaceQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         pipelines {
           name

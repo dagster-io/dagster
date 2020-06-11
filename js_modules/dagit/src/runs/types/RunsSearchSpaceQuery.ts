@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RepositorySelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: RunsSearchSpaceQuery
 // ====================================================
@@ -35,6 +37,5 @@ export interface RunsSearchSpaceQuery {
 }
 
 export interface RunsSearchSpaceQueryVariables {
-  repositoryLocationName: string;
-  repositoryName: string;
+  repositorySelector: RepositorySelector;
 }

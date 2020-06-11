@@ -7,14 +7,13 @@ import textwrap
 import time
 
 import click
-import six
 import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
-from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
-from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
 from dagster.cli.workspace.cli_target import (
+    get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
+    pipeline_target_argument,
     repository_target_argument,
 )
 from dagster.core.definitions.executable import ExecutablePipeline
@@ -26,9 +25,19 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster.utils import (
+    DEFAULT_REPOSITORY_YAML_FILENAME,
+    DEFAULT_WORKSPACE_YAML_FILENAME,
+    load_yaml_from_glob_list,
+    merge_dicts,
+)
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import repository_def_from_repository_handle
+from dagster.utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    recon_repo_from_external_repo,
+    repository_def_from_repository_handle,
+)
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -45,10 +54,8 @@ def create_pipeline_cli_group():
     return group
 
 
-REPO_TARGET_WARNING = (
-    'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
-)
-REPO_ARG_NAMES = ['repository_yaml', 'module_name', 'fn_name', 'python_file']
+WORKSPACE_TARGET_WARNING = 'Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m.'
+WORKSPACE_ARG_NAMES = ['workspace', 'module_name', 'python_file', 'attribute']
 
 
 def apply_click_params(command, *click_params):
@@ -85,32 +92,9 @@ def legacy_repository_target_argument(f):
     )
 
 
-def legacy_pipeline_target_argument(f):
-    # f = repository_config_argument(f)
-    # nargs=-1 is used right now to make this argument optional
-    # it can only handle 0 or 1 pipeline names
-    # see .pipeline.recon_pipeline_for_cli_args
-    return apply_click_params(
-        f,
-        click.option(
-            '--repository-yaml',
-            '-y',
-            type=click.Path(exists=True),
-            help=(
-                'Path to config file. Defaults to ./{default_filename} if --python-file '
-                'and --module-name are not specified'
-            ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
-        ),
-        click.argument('pipeline_name', nargs=-1),
-        click.option('--python-file', '-f', type=click.Path(exists=True)),
-        click.option('--module-name', '-m'),
-        click.option('--fn-name', '-n'),
-    )
-
-
 @click.command(
     name='list',
-    help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
+    help="List the pipelines in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
@@ -119,6 +103,8 @@ def pipeline_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn):
     external_repository = get_external_repository_from_kwargs(cli_args)
+    # We should move this to use external repository
+    # https://github.com/dagster-io/dagster/issues/2556
     repository = repository_def_from_repository_handle(external_repository.handle)
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -153,13 +139,13 @@ def format_description(desc, indent):
 def get_pipeline_instructions(command_name):
     return (
         'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
-        '\n\n1. dagster pipeline {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
-        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -y path/to/{default_filename}'
-        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -n define_some_pipeline'
-        '\n\n4. dagster pipeline {command_name} -m a_module.submodule  -n define_some_pipeline'
-        '\n\n5. dagster pipeline {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
-        '\n\n6. dagster pipeline {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
-    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
+        '\n\n1. dagster pipeline {command_name} -p <<pipeline_name>> (works if .{default_filename} exists)'
+        '\n\n2. dagster pipeline {command_name} -p <<pipeline_name>> -w path/to/{default_filename}'
+        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_pipeline'
+        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -a define_some_pipeline'
+        '\n\n5. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>'
+        '\n\n6. dagster pipeline {command_name} -m a_module.submodule -a define_some_repo -p <<pipeline_name>>'
+    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
 def get_partitioned_pipeline_instructions(command_name):
@@ -167,10 +153,10 @@ def get_partitioned_pipeline_instructions(command_name):
         'This commands targets a partitioned pipeline. The pipeline and partition set must be '
         'defined in a repository, which can be specified in a number of ways:'
         '\n\n1. dagster pipeline {command_name} <<pipeline_name>> (works if .{default_filename} exists)'
-        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -y path/to/{default_filename}'
-        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -n define_some_repo <<pipeline_name>>'
-        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -n define_some_repo <<pipeline_name>>'
-    ).format(command_name=command_name, default_filename=DEFAULT_REPOSITORY_YAML_FILENAME)
+        '\n\n2. dagster pipeline {command_name} <<pipeline_name>> -w path/to/{default_filename}'
+        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>'
+        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -a define_some_repo -p <<pipeline_name>>'
+    ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
 @click.command(
@@ -180,14 +166,14 @@ def get_partitioned_pipeline_instructions(command_name):
     ),
 )
 @click.option('--verbose', is_flag=True)
-@click.option('--image', type=click.STRING, help="Built image name:tag that holds user code.")
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
     return execute_print_command(verbose, cli_args, click.echo)
 
 
 def execute_print_command(verbose, cli_args, print_fn):
-    pipeline_snapshot = get_pipeline_snapshot_from_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    pipeline_snapshot = external_pipeline.pipeline_snapshot
 
     if verbose:
         print_pipeline(pipeline_snapshot, print_fn=print_fn)
@@ -252,28 +238,27 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         instructions=get_pipeline_instructions('execute')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.Path(exists=True),
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline execute -p pandas_hello_world -c "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline execute -p pandas_hello_world -c pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
 @click.option(
-    '-p',
     '--preset',
     type=click.STRING,
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
@@ -298,8 +283,31 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c, --config to specify one or more run config files. '
+        '-e, --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
 @telemetry_wrapper
-def pipeline_execute_command(env, preset, mode, **kwargs):
+def pipeline_execute_command(config, preset, mode, **kwargs):
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None),
+            '--config',
+            (kwargs.get('env') if kwargs.get('env') else None),
+            '--env',
+            '0.9.0',
+            stacklevel=2,  # this stacklevel can point the warning to this line
+        )
+        or tuple()  # back to default empty tuple
+    )
+
     check.invariant(isinstance(env, tuple))
 
     if preset:
@@ -316,13 +324,20 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
 
 
 def execute_execute_command(env, cli_args, mode=None, tags=None):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
     solid_selection = get_solid_selection_from_args(cli_args)
     return do_execute_command(pipeline, env, mode, tags, solid_selection)
 
 
 def execute_execute_command_with_preset(preset_name, cli_args, _mode):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
+
     tags = get_tags_from_args(cli_args)
     solid_selection = get_solid_selection_from_args(cli_args)
 
@@ -340,11 +355,11 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
-    environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+    run_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
         pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         tags=tags,
         instance=DagsterInstance.get(),
@@ -359,30 +374,28 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
         instructions=get_pipeline_instructions('launch')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.Path(exists=True),
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline launch pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline launch pandas_hello_world -c "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline launch pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline launch pandas_hello_world -c pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
 @click.option(
-    '-p',
     '--preset-name',
-    '--preset',
     type=click.STRING,
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
@@ -406,22 +419,49 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c, --config to specify one or more run config files. '
+        '-e, --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
 @telemetry_wrapper
-def pipeline_launch_command(env, preset_name, mode, **kwargs):
+def pipeline_launch_command(config, preset_name, mode, **kwargs):
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None),
+            '--config',
+            (kwargs.get('env') if kwargs.get('env') else None),
+            '--env',
+            '0.9.0',
+            stacklevel=2,  # this stacklevel can point the warning to this line
+        )
+        or tuple()  # back to default empty tuple
+    )
+
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
-    pipeline = recon_pipeline_for_cli_args(kwargs)
+
+    external_pipeline = get_external_pipeline_from_kwargs(kwargs)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
 
     instance = DagsterInstance.get()
     log_repo_stats(instance=instance, pipeline=pipeline, source='pipeline_launch_command')
 
     if preset_name:
         if env:
-            raise click.UsageError('Can not use --preset with --env.')
+            raise click.UsageError('Can not use --preset with --config.')
 
         if mode:
             raise click.UsageError('Can not use --preset with --mode.')
 
-        preset = pipeline.get_preset(preset_name)
+        preset = pipeline.get_definition().get_preset(preset_name)
     else:
         preset = None
 
@@ -450,7 +490,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         pipeline_def=pipeline.get_definition(),
         solid_selection=solid_selection,
         solids_to_execute=pipeline.solids_to_execute,
-        environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
+        environment_dict=preset.run_config if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,
     )
@@ -473,14 +513,17 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         instructions=get_pipeline_instructions('scaffold_config')
     ),
 )
-@legacy_pipeline_target_argument
-@click.option('-p', '--print-only-required', default=False, is_flag=True)
+@pipeline_target_argument
+@click.option('--print-only-required', default=False, is_flag=True)
 def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    pipeline = recon_pipeline_for_cli_args(cli_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
     skip_non_required = cli_args['print_only_required']
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 
@@ -590,9 +633,8 @@ def validate_partition_slice(partitions, name, value):
         instructions=get_partitioned_pipeline_instructions('backfill')
     ),
 )
-@legacy_pipeline_target_argument
+@pipeline_target_argument
 @click.option(
-    '-p',
     '--partitions',
     type=click.STRING,
     help='Comma-separated list of partition names that we want to backfill',
@@ -603,7 +645,7 @@ def validate_partition_slice(partitions, name, value):
     help='The name of the partition set over which we want to backfill.',
 )
 @click.option(
-    '-a', '--all', type=click.STRING, help='Specify to select all partitions to backfill.',
+    '--all', type=click.STRING, help='Specify to select all partitions to backfill.',
 )
 @click.option(
     '--from',
@@ -630,28 +672,18 @@ def pipeline_backfill_command(**kwargs):
 
 
 def execute_backfill_command(cli_args, print_fn, instance=None):
-    pipeline_name = cli_args.pop('pipeline_name')
-    repo_args = {k: v for k, v in cli_args.items() if k in REPO_ARG_NAMES}
-    if pipeline_name and not isinstance(pipeline_name, six.string_types):
-        if len(pipeline_name) == 1:
-            pipeline_name = pipeline_name[0]
-
     instance = instance or DagsterInstance.get()
-    recon_repo = recon_repo_for_cli_args(repo_args)
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args)
+    external_repository = get_external_repository_from_kwargs(cli_args)
+
+    # We should move this to use external repository
+    # https://github.com/dagster-io/dagster/issues/2556
+    recon_repo = recon_repo_from_external_repo(external_repository)
     repo_def = recon_repo.get_definition()
+
     noprompt = cli_args.get('noprompt')
 
-    # Resolve pipeline
-    if not pipeline_name and noprompt:
-        raise click.UsageError('No pipeline specified')
-    if not pipeline_name:
-        pipeline_name = click.prompt(
-            'Select a pipeline to backfill: {}'.format(', '.join(repo_def.pipeline_names))
-        )
-    if not repo_def.has_pipeline(pipeline_name):
-        raise click.UsageError('No pipeline found named `{}`'.format(pipeline_name))
-
-    pipeline_def = repo_def.get_pipeline(pipeline_name)
+    pipeline_def = repo_def.get_pipeline(external_pipeline.name)
 
     # Resolve partition set
     all_partition_sets = repo_def.partition_set_defs + [
@@ -691,12 +723,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     print_fn('Partition set: {}'.format(partition_set.name))
     print_fn('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
 
-    # This whole CLI tool should move to more of a "host process" model - but this is how we start
-    repo_location = InProcessRepositoryLocation(recon_repo)
-    external_pipeline = (
-        repo_location.get_repository(repo_def.name).get_full_external_pipeline(pipeline_name),
-    )
-
     # Confirm and launch
     if noprompt or click.confirm(
         'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
@@ -716,7 +742,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
                 solids_to_execute=frozenset(partition_set.solid_selection)
                 if partition_set and partition_set.solid_selection
                 else None,
-                environment_dict=partition_set.environment_dict_for_partition(partition),
+                environment_dict=partition_set.run_config_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
 

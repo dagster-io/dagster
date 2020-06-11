@@ -26,7 +26,7 @@ class CredentialsVault(object):
         return cls(credentials)
 
 
-@resource(config={'environment_variable_names': [str]})
+@resource(config_schema={'environment_variable_names': [str]})
 def credentials_vault(context):
     return CredentialsVault.instantiate_vault_from_environment_variables(
         context.resource_config['environment_variable_names']
@@ -39,7 +39,7 @@ def temporary_directory_mount(_):
         yield tmpdir_path
 
 
-@resource(config={'mount_location': str})
+@resource(config_schema={'mount_location': str})
 def mount(context):
     mount_location = context.resource_config['mount_location']
     if os.path.exists(mount_location):

@@ -1,5 +1,6 @@
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AssetKey,
@@ -246,6 +247,7 @@ __all__ = [
     'usable_as_dagster_type',
     # config
     'Array',
+    'ConfigSchema',
     'Noneable',
     'Permissive',
     'ScalarUnion',

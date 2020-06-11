@@ -5,7 +5,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError
 from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.reconstruction import RepositoryReconstructionInfo, ScheduleReconstructionInfo
+from dagster.core.origin import RepositoryPythonOrigin, SchedulePythonOrigin
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
 from dagster.utils.error import SerializableErrorInfo
@@ -38,13 +38,13 @@ class TestScheduleStorage:
 
     @staticmethod
     def fake_repo_target():
-        return RepositoryReconstructionInfo(sys.executable, ModuleCodePointer('fake', 'fake'))
+        return RepositoryPythonOrigin(sys.executable, ModuleCodePointer('fake', 'fake'))
 
     @classmethod
     def build_schedule(
         cls, schedule_name, cron_schedule, status=ScheduleStatus.STOPPED,
     ):
-        fake_target = ScheduleReconstructionInfo(schedule_name, cls.fake_repo_target())
+        fake_target = SchedulePythonOrigin(schedule_name, cls.fake_repo_target())
 
         return ScheduleState(fake_target, status, cron_schedule)
 

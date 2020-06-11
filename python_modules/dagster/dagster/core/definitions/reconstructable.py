@@ -12,7 +12,7 @@ from dagster.core.code_pointer import (
     get_python_file_from_previous_stack_frame,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.reconstruction import PipelineReconstructionInfo, RepositoryReconstructionInfo
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
@@ -38,6 +38,9 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipeline(self, name)
 
+    def get_reconstructable_schedule(self, name):
+        return ReconstructableSchedule(self, name)
+
     @classmethod
     def for_file(cls, file, fn_name):
         return cls(FileCodePointer(file, fn_name))
@@ -55,13 +58,11 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
         absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
         return cls(pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path))
 
-    def get_reconstruction_info(self):
-        return RepositoryReconstructionInfo(
-            executable_path=sys.executable, code_pointer=self.pointer
-        )
+    def get_origin(self):
+        return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=self.pointer)
 
-    def get_reconstruction_id(self):
-        return self.get_reconstruction_info().get_id()
+    def get_origin_id(self):
+        return self.get_origin().get_id()
 
 
 @whitelist_for_serdes
@@ -86,7 +87,7 @@ class ReconstructablePipeline(
 
     @property
     def solid_selection(self):
-        return seven.json.loads(self.solid_selection_str)
+        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     @lru_cache(maxsize=1)
     def get_definition(self):
@@ -117,7 +118,7 @@ class ReconstructablePipeline(
             pipe = ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection),
+                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=frozenset(solids_to_execute),
             )
         else:
@@ -173,13 +174,33 @@ class ReconstructablePipeline(
         )
         return inst
 
-    def get_reconstruction_info(self):
-        return PipelineReconstructionInfo(
-            self.pipeline_name, self.repository.get_reconstruction_info()
+    def get_origin(self):
+        return PipelinePythonOrigin(self.pipeline_name, self.repository.get_origin())
+
+    def get_origin_id(self):
+        return self.get_origin().get_id()
+
+
+@whitelist_for_serdes
+class ReconstructableSchedule(namedtuple('_ReconstructableSchedule', 'repository schedule_name',)):
+    def __new__(
+        cls, repository, schedule_name,
+    ):
+        return super(ReconstructableSchedule, cls).__new__(
+            cls,
+            repository=check.inst_param(repository, 'repository', ReconstructableRepository),
+            schedule_name=check.str_param(schedule_name, 'schedule_name'),
         )
 
-    def get_reconstruction_id(self):
-        return self.get_reconstruction_info().get_id()
+    def get_origin(self):
+        return SchedulePythonOrigin(self.schedule_name, self.repository.get_origin())
+
+    def get_origin_id(self):
+        return self.get_origin().get_id()
+
+    @lru_cache(maxsize=1)
+    def get_definition(self):
+        return self.repository.get_definition().get_schedule_def(self.schedule_name)
 
 
 def reconstructable(target):
@@ -209,9 +230,14 @@ def reconstructable(target):
             'defined at module scope instead.'.format(target=target)
         )
 
-    pointer = FileCodePointer(
-        python_file=get_python_file_from_previous_stack_frame(), fn_name=target.__name__,
-    )
+    python_file = get_python_file_from_previous_stack_frame()
+    if python_file.endswith('<stdin>'):
+        raise DagsterInvariantViolationError(
+            'reconstructable() can not reconstruct pipelines from <stdin>, unable to target file {}. '.format(
+                python_file
+            )
+        )
+    pointer = FileCodePointer(python_file=python_file, fn_name=target.__name__,)
 
     return bootstrap_standalone_recon_pipeline(pointer)
 
@@ -227,16 +253,31 @@ def bootstrap_standalone_recon_pipeline(pointer):
     )
 
 
+def _check_is_loadable(definition):
+    from .pipeline import PipelineDefinition
+    from .repository import RepositoryDefinition
+
+    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition)):
+        raise DagsterInvariantViolationError(
+            (
+                'Loadable attributes must be either a PipelineDefinition or a '
+                'RepositoryDefinition. Got {definition}.'
+            ).format(definition=repr(definition))
+        )
+    return definition
+
+
 def def_from_pointer(pointer):
     target = pointer.load_target()
 
     if not callable(target):
-        return target
+        return _check_is_loadable(target)
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
     try:
-        return target()
+        return _check_is_loadable(target())
+
     except TypeError as t_e:
         six.raise_from(
             DagsterInvariantViolationError(

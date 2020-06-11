@@ -1890,7 +1890,7 @@ snapshots['TestComposites.test_composites[readonly_sqlite_instance_out_of_proces
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_out_of_process_env0] 1'] = {
+snapshots['TestComposites.test_composites[readonly_in_memory_instance_multi_location] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',
@@ -2361,7 +2361,7 @@ snapshots['TestComposites.test_composites[readonly_sqlite_instance_out_of_proces
     }
 }
 
-snapshots['TestComposites.test_composites[readonly_sqlite_instance_out_of_process_env1] 1'] = {
+snapshots['TestComposites.test_composites[readonly_sqlite_instance_multi_location] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',

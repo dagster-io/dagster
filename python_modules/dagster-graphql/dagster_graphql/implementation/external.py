@@ -6,6 +6,7 @@ from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
     PipelineSelector,
+    RepositorySelector,
 )
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
@@ -121,27 +122,32 @@ def get_external_execution_plan_or_raise(
 
 
 @capture_dauphin_error
-def fetch_repository_locations(graphene_info):
+def fetch_repositories(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    return graphene_info.schema.type_named('RepositoryLocationConnection')(
+    return graphene_info.schema.type_named('RepositoryConnection')(
         nodes=[
-            graphene_info.schema.type_named('RepositoryLocation')(location=location)
+            graphene_info.schema.type_named('Repository')(
+                repository=repository, repository_location=location
+            )
             for location in graphene_info.context.repository_locations
+            for repository in location.get_repositories().values()
         ]
     )
 
 
 @capture_dauphin_error
-def fetch_repository(graphene_info, repository_location_name, repository_name):
+def fetch_repository(graphene_info, repository_selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
 
-    if graphene_info.context.has_repository_location(repository_location_name):
-        repo_loc = graphene_info.context.get_repository_location(repository_location_name)
-        if repo_loc.has_repository(repository_name):
+    if graphene_info.context.has_repository_location(repository_selector.location_name):
+        repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
+        if repo_loc.has_repository(repository_selector.repository_name):
             return graphene_info.schema.type_named('Repository')(
-                repo_loc.get_repository(repository_name)
+                repository=repo_loc.get_repository(repository_selector.repository_name),
+                repository_location=repo_loc,
             )
 
     return graphene_info.schema.type_named('RepositoryNotFoundError')(
-        repository_location_name, repository_name
+        repository_selector.location_name, repository_selector.repository_name
     )

@@ -14,7 +14,7 @@ def create_spark_solid(
     @solid(
         name=name,
         description=description,
-        config=define_spark_config(),
+        config_schema=define_spark_config(),
         input_defs=[InputDefinition('start', Nothing)],
         output_defs=[OutputDefinition(Nothing)],
         tags={'kind': 'spark', 'main_class': main_class},

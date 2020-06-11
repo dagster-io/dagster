@@ -7,6 +7,8 @@ from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
     get_alembic_config,
+    handle_schema_errors,
+    run_alembic_upgrade,
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string
@@ -49,7 +51,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         connection = engine.connect()
         alembic_config = get_alembic_config(__file__)
         db_revision, head_revision = check_alembic_revision(alembic_config, connection)
-        if not (db_revision and head_revision and db_revision == head_revision):
+        if not (db_revision and head_revision):
             stamp_alembic_rev(alembic_config, engine)
 
         return SqliteScheduleStorage(conn_string, inst_data)
@@ -59,9 +61,16 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            yield conn
+            with handle_schema_errors(
+                conn,
+                get_alembic_config(__file__),
+                msg='Sqlite schedule storage requires migration',
+            ):
+                yield conn
         finally:
             conn.close()
 
     def upgrade(self):
-        pass
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)

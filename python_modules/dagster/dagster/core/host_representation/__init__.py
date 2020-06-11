@@ -21,7 +21,7 @@ from .external_data import (
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalScheduleData,
-    external_partition_data_from_def,
+    ExternalScheduleExecutionData,
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
@@ -40,4 +40,4 @@ from .repository_location import (
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline
-from .selector import PipelineSelector, RepositorySelector
+from .selector import PipelineSelector, RepositorySelector, ScheduleSelector

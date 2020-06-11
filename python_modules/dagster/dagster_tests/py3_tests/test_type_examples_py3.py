@@ -228,7 +228,7 @@ def test_set_solid():
 def test_set_solid_configable_input():
     res = execute_solid(
         set_solid,
-        environment_dict={
+        run_config={
             'solids': {
                 'set_solid': {
                     'inputs': {'set_input': [{'value': 'foo'}, {'value': 'bar'}, {'value': 'baz'}]}
@@ -243,9 +243,7 @@ def test_set_solid_configable_input_bad():
     with pytest.raises(DagsterInvalidConfigError,) as exc_info:
         execute_solid(
             set_solid,
-            environment_dict={
-                'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}
-            },
+            run_config={'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}},
         )
 
     expected = (
@@ -264,7 +262,7 @@ def test_tuple_solid():
 def test_tuple_solid_configable_input():
     res = execute_solid(
         tuple_solid,
-        environment_dict={
+        run_config={
             'solids': {
                 'tuple_solid': {
                     'inputs': {'tuple_input': [{'value': 'foo'}, {'value': 1}, {'value': 3.1}]}
@@ -371,50 +369,46 @@ def partially_specified_config(context) -> List:
 
 
 def test_any_config():
-    res = execute_solid(any_config, environment_dict={'solids': {'any_config': {'config': 'foo'}}})
+    res = execute_solid(any_config, run_config={'solids': {'any_config': {'config': 'foo'}}})
     assert res.output_value() == 'foo'
 
     res = execute_solid(
-        any_config, environment_dict={'solids': {'any_config': {'config': {'zip': 'zowie'}}}}
+        any_config, run_config={'solids': {'any_config': {'config': {'zip': 'zowie'}}}}
     )
     assert res.output_value() == {'zip': 'zowie'}
 
 
 def test_bool_config():
-    res = execute_solid(bool_config, environment_dict={'solids': {'bool_config': {'config': True}}})
+    res = execute_solid(bool_config, run_config={'solids': {'bool_config': {'config': True}}})
     assert res.output_value() == 'true'
 
-    res = execute_solid(
-        bool_config, environment_dict={'solids': {'bool_config': {'config': False}}}
-    )
+    res = execute_solid(bool_config, run_config={'solids': {'bool_config': {'config': False}}})
     assert res.output_value() == 'false'
 
 
 def test_add_n():
     res = execute_solid(
-        add_n, input_values={'x': 3}, environment_dict={'solids': {'add_n': {'config': 7}}}
+        add_n, input_values={'x': 3}, run_config={'solids': {'add_n': {'config': 7}}}
     )
     assert res.output_value() == 10
 
 
 def test_div_y():
     res = execute_solid(
-        div_y, input_values={'x': 3.0}, environment_dict={'solids': {'div_y': {'config': 2.0}}}
+        div_y, input_values={'x': 3.0}, run_config={'solids': {'div_y': {'config': 2.0}}}
     )
     assert res.output_value() == 1.5
 
 
 def test_div_y_var():
     res = execute_solid(
-        div_y_var,
-        input_values={'x': 3.0},
-        environment_dict={'solids': {'div_y_var': {'config': 2.0}}},
+        div_y_var, input_values={'x': 3.0}, run_config={'solids': {'div_y_var': {'config': 2.0}}},
     )
     assert res.output_value() == 1.5
 
 
 def test_hello():
-    res = execute_solid(hello, environment_dict={'solids': {'hello': {'config': 'Max'}}})
+    res = execute_solid(hello, run_config={'solids': {'hello': {'config': 'Max'}}})
     assert res.output_value() == 'Hello, Max!'
 
 
@@ -423,16 +417,13 @@ def test_unpickle():
         filename = os.path.join(tmpdir, 'foo.pickle')
         with open(filename, 'wb') as f:
             pickle.dump('foo', f)
-        res = execute_solid(
-            unpickle, environment_dict={'solids': {'unpickle': {'config': filename}}}
-        )
+        res = execute_solid(unpickle, run_config={'solids': {'unpickle': {'config': filename}}})
         assert res.output_value() == 'foo'
 
 
 def test_concat_config():
     res = execute_solid(
-        concat_config,
-        environment_dict={'solids': {'concat_config': {'config': ['foo', 'bar', 'baz']}}},
+        concat_config, run_config={'solids': {'concat_config': {'config': ['foo', 'bar', 'baz']}}},
     )
     assert res.output_value() == 'foobarbaz'
 
@@ -440,9 +431,7 @@ def test_concat_config():
 def test_concat_typeless_config():
     res = execute_solid(
         concat_typeless_list_config,
-        environment_dict={
-            'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}
-        },
+        run_config={'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}},
     )
     assert res.output_value() == 'foobarbaz'
 
@@ -450,7 +439,7 @@ def test_concat_typeless_config():
 def test_repeat_config():
     res = execute_solid(
         repeat_config,
-        environment_dict={'solids': {'repeat_config': {'config': {'word': 'foo', 'times': 3}}}},
+        run_config={'solids': {'repeat_config': {'config': {'word': 'foo', 'times': 3}}}},
     )
     assert res.output_value() == 'foofoofoo'
 
@@ -465,7 +454,7 @@ def test_tuple_none_config():
 
 def test_selector_config():
     res = execute_solid(
-        hello_world, environment_dict={'solids': {'hello_world': {'config': {'haw': {}}}}}
+        hello_world, run_config={'solids': {'hello_world': {'config': {'haw': {}}}}}
     )
     assert res.output_value() == 'Aloha honua!'
 
@@ -476,13 +465,13 @@ def test_selector_config_default():
 
     res = execute_solid(
         hello_world_default,
-        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {}}}}},
+        run_config={'solids': {'hello_world_default': {'config': {'haw': {}}}}},
     )
     assert res.output_value() == 'Aloha honua!'
 
     res = execute_solid(
         hello_world_default,
-        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {'whom': 'Max'}}}}},
+        run_config={'solids': {'hello_world_default': {'config': {'haw': {'whom': 'Max'}}}}},
     )
     assert res.output_value() == 'Aloha Max!'
 
@@ -490,7 +479,7 @@ def test_selector_config_default():
 def test_permissive_config():
     res = execute_solid(
         partially_specified_config,
-        environment_dict={
+        run_config={
             'solids': {
                 'partially_specified_config': {'config': {'required': 'yes', 'also': 'this'}}
             }
