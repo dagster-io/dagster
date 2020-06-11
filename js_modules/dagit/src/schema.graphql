@@ -1117,6 +1117,7 @@ type ScheduleState {
   stats: ScheduleTickStatsSnapshot!
   logsPath: String!
   runningScheduleCount: Int!
+  id: ID!
 }
 
 type ScheduleStateNotFoundError implements Error {

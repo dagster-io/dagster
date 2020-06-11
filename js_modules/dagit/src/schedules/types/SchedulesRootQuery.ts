@@ -70,6 +70,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   runningScheduleCount: number;
   ticks: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks[];
   runsCount: number;
@@ -86,7 +87,6 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  runConfigYaml: string | null;
   partitionSet: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_partitionSet | null;
   scheduleState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState | null;
 }

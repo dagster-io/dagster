@@ -43,12 +43,16 @@ class DauphinScheduleState(dauphin.ObjectType):
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
     logs_path = dauphin.NonNull(dauphin.String)
     running_schedule_count = dauphin.NonNull(dauphin.Int)
+    id = dauphin.NonNull(dauphin.ID)
 
     def __init__(self, _graphene_info, schedule_state):
         self._schedule_state = check.inst_param(schedule_state, 'schedule', ScheduleState)
         self._external_schedule_origin_id = self._schedule_state.schedule_origin_id
 
         super(DauphinScheduleState, self).__init__(status=schedule_state.status)
+
+    def resolve_id(self, _graphene_info):
+        return self._external_schedule_origin_id
 
     def resolve_running_schedule_count(self, graphene_info):
         running_schedule_count = graphene_info.context.instance.running_schedule_count(

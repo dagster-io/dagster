@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as qs from "query-string";
-import { useMutation } from "@apollo/react-hooks";
+import { useMutation, useQuery } from "@apollo/react-hooks";
 
 import {
   Switch,
@@ -14,7 +14,8 @@ import {
   Tag,
   Intent,
   PopoverInteractionKind,
-  Position
+  Position,
+  Spinner
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
@@ -130,12 +131,18 @@ export const ScheduleRow: React.FunctionComponent<{
 }> = ({ schedule }) => {
   const match = useRouteMatch("/schedules/:scheduleName");
 
-  const [startSchedule] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
-  });
-  const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
-  });
+  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(
+    START_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors
+    }
+  );
+  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(
+    STOP_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors
+    }
+  );
 
   const {
     name,
@@ -143,11 +150,19 @@ export const ScheduleRow: React.FunctionComponent<{
     pipelineName,
     mode,
     solidSelection,
-    runConfigYaml,
     scheduleState
   } = schedule;
 
   const scheduleSelector = useScheduleSelector(name);
+
+  const [configRequested, setConfigRequested] = React.useState(false);
+
+  const { data, loading: yamlLoading } = useQuery(FETCH_SCHEDULE_YAML, {
+    variables: { scheduleSelector },
+    skip: !configRequested
+  });
+  const runConfigYaml = data?.scheduleDefinitionOrError?.runConfigYaml;
+
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
   ) : (
@@ -219,6 +234,7 @@ export const ScheduleRow: React.FunctionComponent<{
         <Switch
           checked={status === ScheduleStatus.RUNNING}
           large={true}
+          disabled={toggleOffInFlight || toggleOnInFlight}
           innerLabelChecked="on"
           innerLabel="off"
           onChange={() => {
@@ -352,27 +368,30 @@ export const ScheduleRow: React.FunctionComponent<{
         </div>
         <Popover
           content={
-            <Menu>
-              <MenuItem
-                text="View Configuration..."
-                icon="share"
-                onClick={() =>
-                  showCustomAlert({
-                    title: "Config",
-                    body: (
-                      <HighlightedCodeBlock
-                        value={runConfigYaml || "Unable to resolve config"}
-                        languages={["yaml"]}
-                      />
-                    )
-                  })
-                }
-              />
-              {runConfigYaml !== null ? (
+            yamlLoading ? (
+              <Spinner size={32} />
+            ) : (
+              <Menu>
+                <MenuItem
+                  text="View Configuration..."
+                  icon="share"
+                  onClick={() =>
+                    showCustomAlert({
+                      title: "Config",
+                      body: (
+                        <HighlightedCodeBlock
+                          value={runConfigYaml || "Unable to resolve config"}
+                          languages={["yaml"]}
+                        />
+                      )
+                    })
+                  }
+                />
                 <MenuItem
                   text="Open in Playground..."
                   icon="edit"
                   target="_blank"
+                  disabled={!runConfigYaml}
                   href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
                     {
                       mode,
@@ -381,19 +400,19 @@ export const ScheduleRow: React.FunctionComponent<{
                     }
                   )}`}
                 />
-              ) : (
-                <MenuItem
-                  text="Open in Playground..."
-                  icon="edit"
-                  disabled={true}
-                />
-              )}
-              <MenuDivider />
-            </Menu>
+                <MenuDivider />
+              </Menu>
+            )
           }
           position={"bottom"}
         >
-          <Button minimal={true} icon="chevron-down" />
+          <Button
+            minimal={true}
+            icon="chevron-down"
+            onClick={() => {
+              setConfigRequested(true);
+            }}
+          />
         </Popover>
       </RowColumn>
     </RowContainer>
@@ -407,12 +426,12 @@ export const ScheduleFragment = gql`
     pipelineName
     solidSelection
     mode
-    runConfigYaml
     partitionSet {
       name
     }
     scheduleState {
       __typename
+      id
       runningScheduleCount
       ticks(limit: $limit) {
         tickId
@@ -462,6 +481,16 @@ const ErrorTag = styled.div`
   margin-top: 8px;
 `;
 
+const FETCH_SCHEDULE_YAML = gql`
+  query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
+    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+      ... on ScheduleDefinition {
+        runConfigYaml
+      }
+    }
+  }
+`;
+
 const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
@@ -469,6 +498,7 @@ const START_SCHEDULE_MUTATION = gql`
       ... on ScheduleStateResult {
         scheduleState {
           __typename
+          id
           runningScheduleCount
           status
         }
@@ -488,6 +518,7 @@ const STOP_SCHEDULE_MUTATION = gql`
       ... on ScheduleStateResult {
         scheduleState {
           __typename
+          id
           runningScheduleCount
           status
         }

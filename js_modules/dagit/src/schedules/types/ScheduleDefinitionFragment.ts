@@ -49,6 +49,7 @@ export interface ScheduleDefinitionFragment_scheduleState_stats {
 
 export interface ScheduleDefinitionFragment_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   runningScheduleCount: number;
   ticks: ScheduleDefinitionFragment_scheduleState_ticks[];
   runsCount: number;
@@ -65,7 +66,6 @@ export interface ScheduleDefinitionFragment {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  runConfigYaml: string | null;
   partitionSet: ScheduleDefinitionFragment_partitionSet | null;
   scheduleState: ScheduleDefinitionFragment_scheduleState | null;
 }
