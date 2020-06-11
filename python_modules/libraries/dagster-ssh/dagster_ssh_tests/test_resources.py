@@ -1,12 +1,15 @@
 import logging
+import os
 
 import six
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_ssh.resources import SSHResource, key_from_str
+from dagster_ssh.resources import ssh_resource as sshresource
 
-from dagster.seven import mock
+from dagster import Field, ModeDefinition, execute_solid, solid
+from dagster.seven import get_system_temp_directory, mock
 
 
 def generate_ssh_key():
@@ -204,3 +207,52 @@ def test_tunnel_with_string_key(ssh_mock):
             host_pkey_directories=[],
             logger=ssh_resource.log,
         )
+
+
+def test_ssh_sftp(sftpserver):
+    tmp_path = get_system_temp_directory()
+    readme_file = os.path.join(tmp_path, 'readme.txt')
+
+    @solid(
+        config_schema={
+            'local_filepath': Field(str, is_required=True, description='local file path to get'),
+            'remote_filepath': Field(str, is_required=True, description='remote file path to get'),
+        },
+        required_resource_keys={'ssh_resource'},
+    )
+    def sftp_solid_get(context):
+        local_filepath = context.solid_config.get('local_filepath')
+        remote_filepath = context.solid_config.get('remote_filepath')
+        return context.resources.ssh_resource.sftp_get(remote_filepath, local_filepath)
+
+    with sftpserver.serve_content({'a_dir': {'readme.txt': 'hello, world'}}):
+        result = execute_solid(
+            sftp_solid_get,
+            ModeDefinition(resource_defs={'ssh_resource': sshresource}),
+            run_config={
+                'solids': {
+                    'sftp_solid_get': {
+                        'config': {
+                            'local_filepath': readme_file,
+                            'remote_filepath': 'a_dir/readme.txt',
+                        }
+                    }
+                },
+                'resources': {
+                    'ssh_resource': {
+                        'config': {
+                            'remote_host': sftpserver.host,
+                            'remote_port': sftpserver.port,
+                            'username': 'user',
+                            'password': 'pw',
+                            'no_host_key_check': True,
+                        }
+                    }
+                },
+            },
+        )
+        assert result.success
+
+    with open(readme_file, 'rb') as f:
+        contents = f.read()
+        assert b'hello, world' in contents

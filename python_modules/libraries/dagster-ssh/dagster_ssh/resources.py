@@ -7,7 +7,7 @@ from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
 from dagster import Field, StringSource, check, resource
-from dagster.utils import merge_dicts
+from dagster.utils import merge_dicts, mkdir_p
 
 
 def key_from_str(key_str):
@@ -170,6 +170,39 @@ class SSHResource(object):
             )
 
         return client
+
+    def sftp_get(self, remote_filepath, local_filepath):
+        check.str_param(remote_filepath, 'remote_filepath')
+        check.str_param(local_filepath, 'local_filepath')
+        conn = self.get_connection()
+        with conn.open_sftp() as sftp_client:
+            local_folder = os.path.dirname(local_filepath)
+
+            # Create intermediate directories if they don't exist
+            mkdir_p(local_folder)
+
+            self.log.info(
+                'Starting to transfer from {0} to {1}'.format(remote_filepath, local_filepath)
+            )
+
+            sftp_client.get(remote_filepath, local_filepath)
+
+        conn.close()
+        return local_filepath
+
+    def sftp_put(self, remote_filepath, local_filepath, confirm=True):
+        check.str_param(remote_filepath, 'remote_filepath')
+        check.str_param(local_filepath, 'local_filepath')
+        conn = self.get_connection()
+        with conn.open_sftp() as sftp_client:
+            self.log.info(
+                'Starting to transfer file from {0} to {1}'.format(local_filepath, remote_filepath)
+            )
+
+            sftp_client.put(local_filepath, remote_filepath, confirm=confirm)
+
+        conn.close()
+        return local_filepath
 
 
 @resource(
