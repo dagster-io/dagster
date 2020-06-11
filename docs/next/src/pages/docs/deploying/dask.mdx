@@ -97,7 +97,7 @@ In Dask, you'd set this up by launching your workers with resource
 specifications:
 
 ```shell
-$ dask-worker scheduler:8786 --resources "GPU=2"
+dask-worker scheduler:8786 --resources "GPU=2"
 ```
 
 and then when submitting tasks to the Dask cluster, specifying resource

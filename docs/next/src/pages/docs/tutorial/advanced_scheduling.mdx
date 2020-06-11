@@ -1,0 +1,149 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Advanced Tutorials | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+# Advanced: Scheduling Pipeline Runs
+
+Dagster includes a simple built-in scheduler that works with Dagit, which is useful when you need to
+schedule pipelines to run at regular intervals, e.g. daily or hourly.
+
+Suppose that we need to run our simple cereal pipeline every morning before breakfast, at 6:45 AM.
+
+> - You can find the tutorial code on
+>   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/scheduling/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at
+>   `examples/dagster_examples/intro_tutorial/advanced/scheduling/`
+
+## Requirements
+
+You'll need to install the `dagster-cron` library.
+
+```bash
+pip install dagster-cron
+```
+
+You must also ensure that `cron` is installed on the machine you're running the scheduler on.
+
+## Pipeline
+
+```python literalinclude showLines caption=scheduler.py
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
+lines:1-34
+```
+
+As before, we've defined some solids, a pipeline, and a repository.
+
+## Defining the scheduler
+
+We first need to define the Scheduler on our <PyObject module="dagster.core.instance"
+object="DagsterInstance" />. For now, the only implemented scheduler is <PyObject
+module="dagster_cron" object="SystemCronScheduler"/>, but this is pluggable (and you can write your
+own). To use the scheduler, add the following lines to your `$DAGSTER_HOME/dagster.yaml`:
+
+```yaml
+scheduler:
+  module: dagster_cron.cron_scheduler
+  class: SystemCronScheduler
+```
+
+## Defining schedules
+
+Now we'll write a <PyObject module="dagster" object="ScheduleDefinition" /> to define the schedule
+we want. We pass the `cron_schedule` parameter to this class to define when the pipeline should run
+using the standard cron syntax; the other parameters determine other familiar aspects of how the
+pipeline will run, such as its config.
+
+We wrap the schedule definition in a function decorated with <PyObject module="dagster"
+object="schedules" displayText="@schedules" />
+
+```python literalinclude showLines startLine=36 caption=scheduler.py
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
+lines:36-45
+```
+
+To complete the picture, we'll need to extend the `repository.yaml` structure we've met before with
+a new key, `scheduler`.
+
+```YAML literalinclude caption=scheduler.yaml
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.yaml
+```
+
+## Starting schedules
+
+Whenever we make changes to schedule definitions, we need to run `dagster schedule up`. This utility
+will create, update, or remove schedules in the underlying system cron file as appropriate to assure
+it is consistent with the schedule definitions in code.
+
+To preview the changes, first run:
+
+```bash
+dagster schedule up --preview -y scheduler.yaml
+Planned Changes:
+  + good_morning (add)
+```
+
+After confirming schedule changes are as expected, run:
+
+```bash
+dagster schedule up -y scheduler.yaml
+Changes:
+  + good_morning (add)
+```
+
+Verify that the `good_morning` scheduled job has been added to `cron`:
+
+```bash
+crontab -l
+```
+
+If the `good_morning` job is not listed, you may have to start it with:
+
+```bash
+dagster schedule start good_morning
+```
+
+Now, we can load dagit to view the schedule and monitor runs:
+
+```bash
+dagit -y scheduler.yaml
+```
+
+### Cron filters
+
+If you need to define a more specific schedule than cron allows, you can pass a function in the
+`should_execute` argument to <PyObject module="dagster" object="ScheduleDefinition" />.
+
+For example, we can define a filter that only returns _`True`_ on weekdays:
+
+```python
+import datetime
+
+def weekday_filter():
+    weekno = datetime.datetime.today().weekday()
+    # Returns true if current day is a weekday
+    return weekno < 5
+```
+
+If we combine this _should_execute_ filter with a
+_cron_schedule_ that runs at 6:45am every day, then we'll
+have a schedule that runs at 6:45am only on weekdays.
+
+```python
+good_weekday_morning = ScheduleDefinition(
+    name="good_weekday_morning",
+    cron_schedule="45 6 * * *",
+    pipeline_name="hello_cereal_pipeline",
+    run_config={"storage": {"filesystem": {}}},
+    should_execute=weekday_filter,
+)
+```
+
+<br />
+
+<br />

@@ -13,7 +13,7 @@ If you're new to Dagster, we recommend working through this tutorial to become
 familiar with Dagster's feature set and tooling, using small examples that are
 intended to be illustrative of real data problems.
 
-## Before We Start
+## Tutorials
 
 The tutorial is divided into several sections:
 
@@ -30,10 +30,24 @@ The tutorial is divided into several sections:
   to test your pipelines.
 - [**Dagster Types & Expectations**](/docs/tutorial/types) covers Dagster's type system and
   defining expectations.
-- [**Advanced Tutorials**](/docs/tutorial/advanced) will showcase Dagster's advanced features like
-  scheduling and materializations.
 
-### What Are We Building
+## Advanced Tutorials
+
+These sections will introduce some advanced features and give you deeper insight into Dagster. It's
+worth reading if you have needs including things like:
+
+- [**Advanced: Solids**](/docs/tutorial/advanced_solids) demonstrates more ways you can
+  use solids, e.g. by creating reusable solids.
+- [**Advanced: Pipelines**](/docs/tutorial/advanced_pipelines) demonstrates configuring
+  pipeline-wide facilities to avoiding repeated code or config with unchanged business logic.
+- [**Advanced: Intermediates**](/docs/tutorial/advanced_intermediates) demonstrates the use of
+  intermediates storage, for persisting the serialized "intermediate" values passed between solids.
+- [**Advanced: Organizing Pipelines in Repositories & Workspaces**](/docs/tutorial/advanced_intermediates)
+  these constructs are useful when you have many pipelines that you need to organize.
+- [**Advanced: Scheduling Pipeline Runs**](/docs/tutorial/advanced_scheduling) will show you how to
+  schedule pipelines to run at regular intervals using cron.
+
+## What Are We Building?
 
 We'll build examples around a simple but scary CSV dataset, `cereal.csv`, which contains nutritional
 facts about 80 breakfast cereals. You can find this dataset on

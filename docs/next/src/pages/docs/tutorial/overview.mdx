@@ -16,26 +16,31 @@ Now that you’re set up, let’s get an overview of Dagster!
   <img src="/assets/images/tutorial/overview.png" width="500px" />
 </p>
 
-In the `hello_pipeline` example, you may find that there are some new concepts that you are not familiar with,
-such as solids and pipelines. The **pipeline** can be visualized as above, in which **solid** `get_name` returns a name of
-`'dagster'` and passes that **output** to solid `hello`.
+In the `hello_pipeline` example, you may find that there are some new concepts that you are not
+familiar with, such as solids and pipelines. The **pipeline** can be visualized as above, in which
+**solid** `get_name` returns a name of `'dagster'` and passes that **output** to solid `hello`.
 
 <p align="center">
   <img src="/assets/images/tutorial/overview_w_concepts.png" width="500px" />
 </p>
 
-So now that we've encountered some basic Dagster concepts, we'll give more concrete definitions of these terms:
+With these basic Dagster concepts, we'll give more concrete definitions of these terms:
 
-- **[Solid](/docs/learn/concepts#solid):** a solid is a functional unit of computation with defined inputs and outputs
+- **[Solid](/docs/learn/concepts#solid):** a solid is a functional unit of computation with defined
+  inputs and outputs
 
-- **[Pipeline](/docs/learn/concepts#pipelines-dags):** in Dagster, pipelines are directed acyclic graphs (DAGs) of solids – that is, they are made up of a
+- **[Pipeline](/docs/learn/concepts#pipelines-dags):** in Dagster, pipelines are directed acyclic
+  graphs (DAGs) of solids – that is, they are made up of a
   number of solids which have data dependencies on each other (but no circular dependencies).
 
-- **[Output](/docs/learn/concepts#outputs):** an output is how a solid’s compute function communicates the name and value of an output to Dagster.
+- **[Output](/docs/learn/concepts#outputs):** an output is how a solid’s compute function
+  communicates the name and value of an output to Dagster.
 
 - **[Dependencies](/docs/learn/concepts#dependencies):** solids are linked together into pipelines
   by defining the dependencies between their inputs and outputs. An important difference between
-  Dagster and other workflow systems is that in Dagster, dependencies are expressed as data dependencies ("A requires a particular output from B"), not only ordering dependencies ("A runs after B").
+  Dagster and other workflow systems is that in Dagster, dependencies are expressed as data
+  dependencies ("A requires a particular output from B"), not only ordering dependencies ("A runs
+  after B").
 
 You can learn more about Dagster concepts by reading the [Concepts](/docs/learn/concepts) page.
 

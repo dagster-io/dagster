@@ -1,0 +1,119 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Advanced: Intermediates | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+# Advanced: Intermediates
+
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/intermediates/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/intermediates/`
+
+We've already seen how solids can describe their persistent artifacts to the
+system using [materializations](#materializations).
+
+Dagster also has a facility for automatically materializing the intermediate
+values that actually pass between solids.
+
+This can be very useful for debugging, when you want to inspect the value
+output by a solid and ensure that it is as you expect; for audit, when you
+want to understand how a particular downstream output was created; and for
+re-executing downstream solids with cached results from expensive upstream
+computations.
+
+To turn intermediate storage on, just set another key in the pipeline config:
+
+```YAML literalinclude caption=intermediates.yaml emphasize-lines:6-7
+file:/dagster_examples/intro_tutorial/intermediates.yaml
+```
+
+When you execute the pipeline using this config, you'll see new structured
+entries in the Dagit log viewer indicating that intermediates have been stored
+on the filesystem.
+
+![intermediates.png](/assets/images/tutorial/intermediates.png)
+
+## Intermediate Storage for Custom Data Types
+
+By default, Dagster will try to pickle intermediate values to store them on
+the filesystem. Some custom data types cannot be pickled (for instance, a
+Spark RDD), so you will need to tell Dagster how to serialize them.
+
+Our toy `LessSimpleDataFrame` is, of course, pickleable, but
+supposing it was not, let's set a custom **`SerializationStrategy`** on
+it to tell Dagster how to store intermediates of this type.
+
+```python literalinclude showLines startLine=16 caption=serialization_strategy.py
+file:/dagster_examples/intro_tutorial/advanced/intermediates/serialization_strategy.py
+lines:16-39
+```
+
+Now, when we set the `storage` key in pipeline config and run this
+pipeline, we'll see that our intermediate is automatically persisted as a
+human-readable .csv:
+
+![serialization_strategy.png](/assets/images/tutorial/serialization_strategy.png)
+
+## Re-execution
+
+Once intermediates are being stored, Dagit makes it possible to individually
+execute solids whose outputs are satisfied by previously materialized
+intermediates.
+
+Click on the `sort_by_calories.compute` execution step, and you'll
+see the option appear to reexecute only this step, using the automatically
+materialized intermediate output of the previous solid.
+
+![reexecution.png](/assets/images/tutorial/reexecution.png)
+
+![reexecution_results.png](/assets/images/tutorial/reexecution_results.png)
+
+Reexecuting individual solids can be very helpful while you're writing solids,
+or while you're actively debugging them.
+
+You can also manually specify intermediates from previous runs as inputs to
+solids. Recall the syntax we used to set input values using the config system:
+
+```YAML literalinclude caption=inputs_env.yaml
+file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
+```
+
+Instead of setting the key `value` (i.e., providing a ), we can
+also set `pickle`, as follows:
+
+```YAML literalinclude caption=reexecution_env.yaml
+file:/dagster_examples/intro_tutorial//advanced/intermediates/reexecution_env.yaml
+```
+
+(Of course, you'll need to use the path to an intermediate that is actually
+present on your filesystem.)
+
+If you directly substitute this config into Dagit, you'll see an error,
+because the system still expects the input to `sort_by_calories` to
+be satisfied by the output from `read_csv`.
+
+![reexecution_errors.png](/assets/images/tutorial/reexecution_errors.png)
+
+To make this config valid, we'll need to tell Dagit to execute only a subset
+of the pipeline --just the `sort_by_calories` solid. Click on the
+subset-selector button in the top left of the playground, to the left of the
+Mode selector (which, when no subset has been specified, will read "\*"):
+
+![subset_selection.png](/assets/images/tutorial/subset_selection.png)
+
+Hit "Apply", and this config will now pass validation, and the individual
+solid can be reexecuted:
+
+![subset_config.png](/assets/images/tutorial/subset_config.png)
+
+This facility is especially valuable during test, since it allows you to
+validate newly written solids against values generated during previous runs of
+a known good pipeline.
+
+<br />
+
+<br />

@@ -11,8 +11,8 @@ To check that Python and the pip package manager are already installed
 in your environment, you can run:
 
 ```console
-$ python --version
-$ pip --version
+python --version
+pip --version
 ```
 
 If you're running Python 3.3 or later, you already have the venv
@@ -20,7 +20,7 @@ package for managing virtualenvs. On Python 2.7, you can check whether
 you have the virtualenv tool installed by running:
 
 ```console
-$ virtualenv --version
+virtualenv --version
 ```
 
 If these tools aren't present on your system, you can install them as
@@ -29,8 +29,8 @@ follows:
 **Installing Python on Ubuntu**
 
 ```console
-$ sudo apt update
-$ sudo apt install python3-dev python3-pip
+sudo apt update
+sudo apt install python3-dev python3-pip
 ```
 
 This will install Python 3 and pip on your system.
@@ -40,8 +40,8 @@ This will install Python 3 and pip on your system.
 Using [Homebrew](https://brew.sh/):
 
 ```console
-$ brew update
-$ brew install python  # Python 3
+brew update
+brew install python  # Python 3
 ```
 
 This will install Python 3 on your system.
@@ -50,7 +50,7 @@ If you are using the macOS-provided Python 2.7, you can install
 virtualenv with:
 
 ```console
-$ sudo pip install -U virtualenv  # system-wide install
+sudo pip install -U virtualenv  # system-wide install
 ```
 
 **Installing Python on Windows**
@@ -78,7 +78,7 @@ environment.
 To create a virtual environment on Python 3, you can just run:
 
 ```console
-$ python3 -m venv ~/.venvs/dagster
+python3 -m venv ~/.venvs/dagster
 ```
 
 This will create a new Python environment whose interpreter and
@@ -91,14 +91,14 @@ On Python 2, you can use a tool like
 to manage your virtual environments, or just run:
 
 ```console
-$ virtualenv ~/.venvs/dagster
+virtualenv ~/.venvs/dagster
 ```
 
 You'll then need to 'activate' the virtualenvironment, in bash by
 running:
 
 ```console
-$ source ~/.venvs/dagster/bin/activate
+source ~/.venvs/dagster/bin/activate
 ```
 
 (For other shells, see the [venv
@@ -107,17 +107,17 @@ documentation](https://docs.python.org/3/library/venv.html#creating-virtual-envi
 If you are using Anaconda, you can run:
 
 ```console
-$ conda create --name dagster
+conda create --name dagster
 ```
 
 And then, on macOS or Ubuntu:
 
 ```console
-$ source activate dagster
+source activate dagster
 ```
 
 Or, on Windows:
 
 ```console
-$ activate dagster
+activate dagster
 ```

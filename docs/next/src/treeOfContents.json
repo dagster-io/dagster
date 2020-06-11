@@ -60,8 +60,24 @@
         "path": "/docs/tutorial/types"
       },
       {
-        "name": "Advanced Tutorials",
-        "path": "/docs/tutorial/advanced"
+        "name": "Advanced: Solids",
+        "path": "/docs/tutorial/advanced_solids"
+      },
+      {
+        "name": "Advanced: Pipelines",
+        "path": "/docs/tutorial/advanced_pipelines"
+      },
+      {
+        "name": "Advanced: Intermediates",
+        "path": "/docs/tutorial/advanced_intermediates"
+      },
+      {
+        "name": "Advanced: Organizing Pipelines in Repositories & Workspaces",
+        "path": "/docs/tutorial/advanced_repositories"
+      },
+      {
+        "name": "Advanced: Scheduling Pipeline Runs",
+        "path": "/docs/tutorial/advanced_scheduling"
       }
     ]
   },

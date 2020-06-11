@@ -22,10 +22,12 @@ curl -O https://raw.githubusercontent.com/dagster-io/dagster/master/examples/dag
 
 ## Executing Your First Pipeline
 
-> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e01_first_pipeline/)
-> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/basics/e01_first_pipeline/`
+> - You can find the tutorial code on
+>   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e01_first_pipeline/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at
+>   `examples/dagster_examples/intro_tutorial/basics/e01_first_pipeline/`
 
-### Hello, Solid!
+## Hello, Solid!
 
 Let's write our first Dagster solid and save it as `hello_cereal.py`.
 
@@ -48,7 +50,7 @@ worry, we'll soon encounter solids that are much more dynamic.
 
 <br />
 
-### Hello, Pipeline!
+## Hello, Pipeline!
 
 To execute our solid, we'll embed it in an equally simple pipeline. A pipeline is a set of solids
 arranged into a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph)) of computation. You'll
@@ -68,10 +70,10 @@ other solids by calling it with no arguments.
 
 <br />
 
-### Executing Our First Pipeline
+## Executing Our First Pipeline
 
-Assuming you’ve saved this pipeline as `hello_cereal.py`, we can execute it via any of three different
-mechanisms:
+Assuming you’ve saved this pipeline as `hello_cereal.py`, we can execute it via any of three
+different mechanisms:
 
 <details className="markdown">
   <summary>From the command line, use the Dagster CLI</summary>
@@ -142,8 +144,10 @@ You'll see output like
 Loading repository... Serving on http://127.0.0.1:3000
 ```
 
-You should be able to navigate to [http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/](http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/) in your web browser and view your pipeline.
-It isn't very interesting yet, because it only has one node.
+You should be able to navigate to
+[http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/](http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/)
+in your web browser and view your pipeline. It isn't very interesting yet, because it only has one
+node.
 
 ![hello_cereal_figure_one.png](/assets/images/tutorial/hello_cereal_figure_one.png)
 
@@ -151,24 +155,22 @@ Click on the "Playground" tab and you'll see the view below.
 
 ![hello_cereal_figure_two.png](/assets/images/tutorial/hello_cereal_figure_two.png)
 
-The top pane is empty here, but in more complicated pipelines, this is where
-you'll be able to edit pipeline configuration on the fly.
+The top pane is empty here, but in more complicated pipelines, this is where you'll be able to edit
+pipeline configuration on the fly.
 
-The bottom pane shows the concrete execution plan corresponding to the logical
-structure of the pipeline&mdash;which also only has one node, `hello_cereal.compute`.
+The bottom pane shows the concrete execution plan corresponding to the logical structure of the
+pipeline&mdash;which also only has one node, `hello_cereal.compute`.
 
-Click the "Launch Execution" button to execute this plan directly from dagit. A
-new window should open, and you'll see a much more structured view of the
-stream of Dagster events start to appear in the left-hand pane.
+Click the "Launch Execution" button to execute this plan directly from dagit. A new window should
+open, and you'll see a much more structured view of the stream of Dagster events start to appear in
+the left-hand pane.
 
-(If you have pop-up blocking enabled, you may need to tell your browser to
-allow pop-ups from 127.0.0.1&mdash;or, just navigate to the "Runs" tab to see
-this, and every run of your pipeline.)
+If you have pop-up blocking enabled, you may need to tell your browser to allow pop-ups from
+127.0.0.1&mdash;or, just navigate to the "Runs" tab to see this, and every run of your pipeline.
 
 ![hello_cereal_figure_three.png](/assets/images/tutorial/hello_cereal_figure_three.png)
 
-In this view, you can filter and search through the logs corresponding to your
-pipeline run.
+In this view, you can filter and search through the logs corresponding to your pipeline run.
 
 </details>
 

@@ -1,0 +1,121 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Advanced: Organizing Pipelines in Repositories &amp; Workspaces | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+# Advanced: Organizing Pipelines in Repositories & Workspaces
+
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/repositories/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/repositories/`
+
+In all of the examples we've seen so far, we've specified a file (`-f`) or a module (`-m`) and named
+a pipeline definition function (`-n`) in order to tell the CLI tools how to load a pipeline, e.g.:
+
+```bash
+dagit -f hello_cereal.py
+dagster pipeline execute -f hello_cereal.py
+```
+
+But most of the time, especially when working on long-running projects with other people, we will
+want to be able to target many pipelines at once with our tools.
+
+Dagster provides the concept of a repository, a collection of pipelines (and other definitions) that
+the Dagster tools can target as a whole. Repositories are declared using the <PyObject
+module="dagster" object="RepositoryDefinition" /> API as follows:
+
+```python literalinclude showLines startLine=14 caption=repos.py
+file:/dagster_examples/intro_tutorial/advanced/repositories/repos.py
+lines:14-16
+```
+
+One can return a list of items, each one of which can be a pipeline, a schedule, or a partition set.
+If you save this file as `repos.py`, you can then run the command line tools on it. Try running:
+
+```bash
+dagit -f repos.py -n define_repo
+```
+
+## Lazy Construction
+
+Notice that this requires eager construction of all its member definitions. In large codebases,
+pipeline construction time can be large. In these cases, it may behoove you to only construct them
+on demand. For that, you can also return a dictionary of function references, which are constructed
+on demand:
+
+```python literalinclude showLines startLine=14 caption=repos.py
+file:/dagster_examples/intro_tutorial/advanced/repositories/lazy_repos.py
+lines:15-25
+```
+
+Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared for
+it in its `pipeline` (the default is the function name). Don't worry, if these names don't match,
+you'll see a helpful error message.
+
+## Repositories in Dagit
+
+Now you can see the list of all pipelines in the repo via the dropdown at the top:
+
+![repos.png](/assets/images/tutorial/repos.png)
+
+## Workspaces
+
+Loading repositories via the `-f` or `-m` options is actually just a convenience function. The
+underlying abstraction is the "workspace", which determines all of the available repositories
+available to dagit.
+
+We have a file format for building workspaces called `workspace.yaml`. It is a convenience: it
+prevents you from having to type the same `-f` or `-m` flag repeatedly. But as you'll see below it
+enables more capabilities.
+
+```YAML literalinclude caption=workspace.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/workspace.yaml
+```
+
+Dagit will look for workspace.yaml in the current directory by default, so now you can launch dagit
+from that directory with no arguments.
+
+```bash
+dagit
+```
+
+### Supporting multiple repositories
+
+You can also use `workspace.yaml` to load multiple repositories. This can be useful for organization
+purposes, in order to group pipelines and other artifacts by team.
+
+```YAML literalinclude caption=multi_repo_workspace.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
+```
+
+Load it:
+
+```bash
+dagit -w multi_repo_workspace.yaml
+```
+
+And now you can switch between repositories in dagit.
+
+### Multi-environment repositories
+
+Sometimes teams desire different Python versions or virtual environments. To support this, Dagster
+allows repositories to live in completely separate processes from each other, and tools like Dagit
+communicate with those repositories using a cross-process RPC protocol.
+
+Via the workspace, you can configure where to launch repositories. See example:
+
+```YAML literalinclude caption=multi_python_env_workspace_example.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
+```
+
+For this example to work, you need to change the executable path to point a virtual environment
+available in your system, and point to a python module or file that is available and loadable by
+that executable.
+
+<br />
+
+<br />

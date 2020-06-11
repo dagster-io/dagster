@@ -78,9 +78,7 @@ def reusable_solids_pipeline():
 if __name__ == '__main__':
     run_config = {
         'solids': {
-            'read_csv': {
-                'inputs': {'csv_path': {'value': '../../cereal.csv'}}
-            },
+            'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}},
             'sort_cold_cereals': {'config': 'cold'},
             'sort_hot_cereals': {'config': 'hot'},
         }

@@ -143,7 +143,7 @@ if __name__ == '__main__':
             'load_cereals': {
                 'solids': {
                     'read_cereals': {
-                        'inputs': {'csv_path': {'value': '../../cereal.csv'}}
+                        'inputs': {'csv_path': {'value': 'cereal.csv'}}
                     },
                     'read_manufacturers': {
                         'config': {'delimiter': ';'},

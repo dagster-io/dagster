@@ -8,7 +8,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 import AnchorHeading from 'components/AnchorHeading';
 import PyObject from 'components/PyObject';
 
-## Making Your Pipelines Testable and Maintainable
+# Making Your Pipelines Testable and Maintainable
 
 The reality of building data applications is that they are notoriously difficult to test and are
 therefore typically un- or under-tested. Besides, pipeline authors generally do not have control
@@ -24,7 +24,7 @@ talk about how you can build maintainable and testable data applications with Da
 > - If you’ve cloned the dagster git repository, you’ll find this example at
 >   `examples/dagster_examples/intro_tutorial/basics/e04_quality/`
 
-### Testing solids and pipelines
+## Testing solids and pipelines
 
 Let's go back to our first solid and pipeline [`hello_cereal.py`](#execute-our-first-pipeline).
 
@@ -32,11 +32,11 @@ It wouldn't be complete without some tests to ensure they're working as expected
 to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" />
 to test our solid in isolation.
 
-These functions synchronously execute a pipeline or solid and return results
-objects (the <PyObject module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster" object="PipelineExecutionResult" />)
-whose methods let us investigate, in detail, the success or failure of execution,
-the outputs produced by solids, and (as we'll see later) other events associated
-with execution.
+These functions synchronously execute a pipeline or solid and return results objects (the <PyObject
+module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster"
+object="PipelineExecutionResult" />) whose methods let us investigate, in detail, the success or
+failure of execution, the outputs produced by solids, and (as we'll see later) other events
+associated with execution.
 
 ```python literalinclude showLines startLine=32 caption=hello_cereal.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
@@ -63,7 +63,7 @@ Guide](/docs/learn/guides/testing/testing).
 
 <br />
 
-### Type-checking Inputs with Python Type Annotations
+## Type-checking Inputs with Python Type Annotations
 
 **Note:** _this section requires Python 3._
 
@@ -76,8 +76,7 @@ By default, every untyped value in Dagster is assigned the catch-all type <PyObj
 This means that any errors in the config won't be surfaced until the pipeline
 is executed.
 
-For example, when we execute our pipeline with this config, it'll fail at
-runtime:
+For example, when we execute our pipeline with this config, it'll fail at runtime:
 
 ```YAML literalinclude caption=inputs_env_bad.yaml
 file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
@@ -93,19 +92,19 @@ stack trace will pop up.
 
 ![inputs_figure_six.png](/assets/images/tutorial/inputs_figure_six.png)
 
-It would be better if we could catch this error earlier, when we specify the
-config. So let's make the inputs typed.
+It would be better if we could catch this error earlier, when we specify the config. So let's make
+the inputs typed.
 
-A user can apply types to inputs and outputs using Python 3's type annotation
-syntax. In this case, we just want to type the input as the built-in `str`.
+A user can apply types to inputs and outputs using Python 3's type annotation syntax. In this case,
+we just want to type the input as the built-in `str`.
 
 ```python literalinclude showLines startLine=7 emphasize-lines=2 caption=inputs_typed.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
 lines:7-15
 ```
 
-By using typed input instead we can catch this error prior to execution, and
-reduce the surface area we need to test and guard against in user code.
+By using typed input instead we can catch this error prior to execution, and reduce the surface area
+we need to test and guard against in user code.
 
 ![inputs_figure_seven.png](/assets/images/tutorial/inputs_figure_seven.png)
 

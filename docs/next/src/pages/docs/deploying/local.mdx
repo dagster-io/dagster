@@ -15,13 +15,13 @@ Ensure that you are running a recent Python version. Typically, you'll want to r
 libraries you might need.
 
 ```shell
-$ pip install dagit
+pip install dagit
 ```
 
 To run Dagit, use a command like the following:
 
 ```shell
-$ DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
+DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
 ```
 
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on
