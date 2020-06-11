@@ -38,6 +38,7 @@ import styled from "styled-components/macro";
 import { titleForRun, RunStatus } from "../runs/RunUtils";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
+import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -419,7 +420,120 @@ export const ScheduleRow: React.FunctionComponent<{
   );
 };
 
+export const ScheduleStateRow: React.FunctionComponent<{
+  scheduleState: ScheduleStateFragment;
+}> = ({ scheduleState }) => {
+  const { scheduleOriginId, stats, ticks, runs, runsCount } = scheduleState;
+
+  const latestTick = ticks.length > 0 ? ticks[0] : null;
+
+  return (
+    <RowContainer key={scheduleOriginId}>
+      <RowColumn style={{ flex: 1.4 }}>{scheduleOriginId}</RowColumn>
+      <RowColumn style={{ flex: 1, textAlign: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around"
+          }}
+        >
+          <Stat>
+            <StatNumber>{stats.ticksStarted}</StatNumber> Running
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksSkipped}</StatNumber> Skipped
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksSucceeded}</StatNumber> Succeeded
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksFailed}</StatNumber> Failed
+          </Stat>
+        </div>
+        <div>
+          {latestTick && latestTick.status === ScheduleTickStatus.FAILURE && (
+            <ErrorTag>
+              <Tag fill={true} minimal={true} intent={Intent.WARNING}>
+                Latest Attempt failed
+              </Tag>
+            </ErrorTag>
+          )}
+        </div>
+      </RowColumn>
+      <RowColumn
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}
+      >
+        <div>
+          {runs.map(run => {
+            return (
+              <div
+                style={{
+                  display: "inline-block",
+                  cursor: "pointer",
+                  marginRight: 5
+                }}
+                key={run.runId}
+              >
+                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                  <Tooltip
+                    position={"top"}
+                    content={titleForRun(run)}
+                    wrapperTagName="div"
+                    targetTagName="div"
+                  >
+                    <RunStatus status={run.status} />
+                  </Tooltip>
+                </Link>
+              </div>
+            );
+          })}
+
+          {runsCount > NUM_RUNS_TO_DISPLAY && (
+            <div>{runsCount - NUM_RUNS_TO_DISPLAY}</div>
+          )}
+        </div>
+      </RowColumn>
+    </RowContainer>
+  );
+};
+
 export const ScheduleFragment = gql`
+  fragment ScheduleStateFragment on ScheduleState {
+    __typename
+    id
+    scheduleOriginId
+    runningScheduleCount
+    ticks(limit: $limit) {
+      tickId
+      status
+    }
+    runsCount
+    runs(limit: 10) {
+      runId
+      tags {
+        key
+        value
+      }
+      pipeline {
+        name
+      }
+      status
+    }
+    stats {
+      ticksStarted
+      ticksSucceeded
+      ticksSkipped
+      ticksFailed
+    }
+    ticksCount
+    status
+  }
+
   fragment ScheduleDefinitionFragment on ScheduleDefinition {
     name
     cronSchedule
@@ -430,33 +544,7 @@ export const ScheduleFragment = gql`
       name
     }
     scheduleState {
-      __typename
-      id
-      runningScheduleCount
-      ticks(limit: $limit) {
-        tickId
-        status
-      }
-      runsCount
-      runs(limit: 10) {
-        runId
-        tags {
-          key
-          value
-        }
-        pipeline {
-          name
-        }
-        status
-      }
-      stats {
-        ticksStarted
-        ticksSucceeded
-        ticksSkipped
-        ticksFailed
-      }
-      ticksCount
-      status
+      ...ScheduleStateFragment
     }
   }
 `;

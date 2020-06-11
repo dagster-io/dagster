@@ -104,6 +104,7 @@ class DauphinQuery(dauphin.ObjectType):
     scheduleStatesOrError = dauphin.Field(
         dauphin.NonNull('ScheduleStatesOrError'),
         repositorySelector=dauphin.NonNull('RepositorySelector'),
+        withNoScheduleDefinition=dauphin.Boolean(),
     )
 
     partitionSetsOrError = dauphin.Field(
@@ -224,7 +225,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_scheduleStatesOrError(self, graphene_info, **kwargs):
         return get_schedule_states_or_error(
-            graphene_info, RepositorySelector.from_graphql_input(kwargs.get('repositorySelector'))
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+            kwargs.get('withNoScheduleDefinition'),
         )
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):

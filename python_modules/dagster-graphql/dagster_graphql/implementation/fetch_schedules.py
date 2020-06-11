@@ -60,9 +60,14 @@ def get_scheduler_or_error(graphene_info):
 
 
 @capture_dauphin_error
-def get_schedule_states_or_error(graphene_info, repository_selector):
+def get_schedule_states_or_error(
+    graphene_info, repository_selector, with_no_schedule_definition_filter=None
+):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+    check.opt_bool_param(
+        with_no_schedule_definition_filter, 'with_no_schedule_definition_filter', default=False
+    )
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
@@ -77,6 +82,22 @@ def get_schedule_states_or_error(graphene_info, repository_selector):
             repository_origin_id=repository_origin_id
         )
     ]
+
+    if with_no_schedule_definition_filter:
+        external_schedules = repository.get_external_schedules()
+        external_schedule_origin_ids = set(
+            external_schedule.get_origin_id() for external_schedule in external_schedules
+        )
+
+        # Filter for all schedule states for which there are no matching external schedules with the
+        # same origin id
+        results = list(
+            filter(
+                lambda schedule_state: schedule_state.schedule_origin_id
+                not in external_schedule_origin_ids,
+                results,
+            )
+        )
 
     return graphene_info.schema.type_named('ScheduleStates')(results=results)
 

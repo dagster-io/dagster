@@ -29,6 +29,27 @@ query ScheduleStateQuery($repositorySelector: RepositorySelector!) {
 }
 '''
 
+GET_SCHEDULE_STATES_WITHOUT_DEFINITIONS_QUERY = '''
+query ScheduleStateQuery($repositorySelector: RepositorySelector!) {
+  scheduleStatesOrError(repositorySelector: $repositorySelector, withNoScheduleDefinition: true) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on ScheduleStates {
+      results {
+        runs {
+            runId
+        }
+        runsCount
+        status
+      }
+    }
+  }
+}
+'''
+
 GET_SCHEDULE_DEFINITIONS_QUERY = '''
 query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
   scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
@@ -139,6 +160,14 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     results = result.data['scheduleDefinitionsOrError']['results']
     assert len(results) == len(external_repository.get_external_schedules())
 
+    for schedule in results:
+        if schedule['name'] == 'environment_dict_error_schedule':
+            assert schedule['runConfigYaml'] is None
+        elif schedule['name'] == 'invalid_config_schedule':
+            assert schedule['runConfigYaml'] == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+        else:
+            assert schedule['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
+
 
 def test_get_schedule_states_for_repository(graphql_context):
     selector = get_legacy_repository_selector(graphql_context)
@@ -154,13 +183,20 @@ def test_get_schedule_states_for_repository(graphql_context):
     results = result.data['scheduleStatesOrError']['results']
     assert len(results) == 0
 
-    for schedule in results:
-        if schedule['name'] == 'environment_dict_error_schedule':
-            assert schedule['runConfigYaml'] is None
-        elif schedule['name'] == 'invalid_config_schedule':
-            assert schedule['runConfigYaml'] == 'solids:\n  takes_an_enum:\n    config: invalid\n'
-        else:
-            assert schedule['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
+
+def test_get_schedule_state_with_for_repository_not_reconciled(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
+    )
+
+    assert result.data
+    assert result.data['scheduleStatesOrError']
+    assert result.data['scheduleStatesOrError']['__typename'] == 'ScheduleStates'
+
+    # Since we haven't run reconcile yet, there should be no states in storage
+    results = result.data['scheduleStatesOrError']['results']
+    assert len(results) == 0
 
 
 def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
@@ -184,6 +220,26 @@ def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
 
     for schedule_state in results:
         assert schedule_state['status'] == ScheduleStatus.STOPPED.value
+
+
+def test_get_schedule_states_for_repository_with_removed_schedule_definitions(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATES_WITHOUT_DEFINITIONS_QUERY,
+        variables={'repositorySelector': selector},
+    )
+
+    assert result.data['scheduleStatesOrError']
+    assert result.data['scheduleStatesOrError']['__typename'] == 'ScheduleStates'
+    results = result.data['scheduleStatesOrError']['results']
+    assert len(results) == 0
 
 
 def test_start_and_stop_schedule(graphql_context):

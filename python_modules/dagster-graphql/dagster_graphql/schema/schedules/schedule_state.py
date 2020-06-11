@@ -35,6 +35,8 @@ class DauphinScheduleState(dauphin.ObjectType):
     class Meta(object):
         name = 'ScheduleState'
 
+    schedule_origin_id = dauphin.NonNull(dauphin.String)
+
     status = dauphin.NonNull('ScheduleStatus')
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
@@ -49,7 +51,9 @@ class DauphinScheduleState(dauphin.ObjectType):
         self._schedule_state = check.inst_param(schedule_state, 'schedule', ScheduleState)
         self._external_schedule_origin_id = self._schedule_state.schedule_origin_id
 
-        super(DauphinScheduleState, self).__init__(status=schedule_state.status)
+        super(DauphinScheduleState, self).__init__(
+            schedule_origin_id=schedule_state.schedule_origin_id, status=schedule_state.status,
+        )
 
     def resolve_id(self, _graphene_info):
         return self._external_schedule_origin_id

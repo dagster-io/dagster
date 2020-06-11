@@ -50,6 +50,7 @@ export interface ScheduleDefinitionFragment_scheduleState_stats {
 export interface ScheduleDefinitionFragment_scheduleState {
   __typename: "ScheduleState";
   id: string;
+  scheduleOriginId: string;
   runningScheduleCount: number;
   ticks: ScheduleDefinitionFragment_scheduleState_ticks[];
   runsCount: number;

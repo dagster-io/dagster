@@ -71,6 +71,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState {
   __typename: "ScheduleState";
   id: string;
+  scheduleOriginId: string;
   runningScheduleCount: number;
   ticks: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks[];
   runsCount: number;
@@ -98,9 +99,67 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
 
 export type SchedulesRootQuery_scheduleDefinitionsOrError = SchedulesRootQuery_scheduleDefinitionsOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions;
 
+export interface SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError {
+  __typename: "RepositoryNotFoundError" | "PythonError";
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks {
+  __typename: "ScheduleTick";
+  tickId: string;
+  status: ScheduleTickStatus;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
+  name: string;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs {
+  __typename: "PipelineRun";
+  runId: string;
+  tags: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags[];
+  pipeline: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_pipeline;
+  status: PipelineRunStatus;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_stats {
+  __typename: "ScheduleTickStatsSnapshot";
+  ticksStarted: number;
+  ticksSucceeded: number;
+  ticksSkipped: number;
+  ticksFailed: number;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results {
+  __typename: "ScheduleState";
+  id: string;
+  scheduleOriginId: string;
+  runningScheduleCount: number;
+  ticks: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks[];
+  runsCount: number;
+  runs: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs[];
+  stats: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_stats;
+  ticksCount: number;
+  status: ScheduleStatus;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates {
+  __typename: "ScheduleStates";
+  results: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
+}
+
+export type SchedulesRootQuery_scheduleStatesOrError = SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates;
+
 export interface SchedulesRootQuery {
   scheduler: SchedulesRootQuery_scheduler;
   scheduleDefinitionsOrError: SchedulesRootQuery_scheduleDefinitionsOrError;
+  scheduleStatesOrError: SchedulesRootQuery_scheduleStatesOrError;
 }
 
 export interface SchedulesRootQueryVariables {
