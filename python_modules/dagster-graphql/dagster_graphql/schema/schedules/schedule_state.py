@@ -36,8 +36,10 @@ class DauphinScheduleState(dauphin.ObjectType):
         name = 'ScheduleState'
 
     schedule_origin_id = dauphin.NonNull(dauphin.String)
-
+    schedule_name = dauphin.NonNull(dauphin.String)
+    cron_schedule = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('ScheduleStatus')
+
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
     ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
@@ -52,7 +54,10 @@ class DauphinScheduleState(dauphin.ObjectType):
         self._external_schedule_origin_id = self._schedule_state.schedule_origin_id
 
         super(DauphinScheduleState, self).__init__(
-            schedule_origin_id=schedule_state.schedule_origin_id, status=schedule_state.status,
+            schedule_origin_id=schedule_state.schedule_origin_id,
+            schedule_name=schedule_state.name,
+            cron_schedule=schedule_state.cron_schedule,
+            status=schedule_state.status,
         )
 
     def resolve_id(self, _graphene_info):

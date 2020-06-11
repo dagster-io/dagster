@@ -14,6 +14,19 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
+def reconcile_scheduler_state(graphene_info, repository_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
+    instance = graphene_info.context.instance
+
+    instance.reconcile_scheduler_state(repository)
+    return graphene_info.schema.type_named('ReconcileSchedulerStateSuccess')(message="Success")
+
+
+@capture_dauphin_error
 def start_schedule(graphene_info, schedule_selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)

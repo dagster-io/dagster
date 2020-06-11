@@ -423,13 +423,44 @@ export const ScheduleRow: React.FunctionComponent<{
 export const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: ScheduleStateFragment;
 }> = ({ scheduleState }) => {
-  const { scheduleOriginId, stats, ticks, runs, runsCount } = scheduleState;
+  const {
+    scheduleName,
+    cronSchedule,
+    stats,
+    ticks,
+    runs,
+    runsCount
+  } = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
-    <RowContainer key={scheduleOriginId}>
-      <RowColumn style={{ flex: 1.4 }}>{scheduleOriginId}</RowColumn>
+    <RowContainer key={scheduleName}>
+      <RowColumn style={{ flex: 1.4 }}>
+        <div>{scheduleName}</div>
+      </RowColumn>
+      <RowColumn
+        style={{
+          maxWidth: 150
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            whiteSpace: "pre-wrap",
+            display: "block"
+          }}
+        >
+          {cronSchedule ? (
+            <Tooltip position={"bottom"} content={cronSchedule}>
+              {getNaturalLanguageCronString(cronSchedule)}
+            </Tooltip>
+          ) : (
+            <div>-</div>
+          )}
+        </div>
+      </RowColumn>
       <RowColumn style={{ flex: 1, textAlign: "center" }}>
         <div
           style={{
@@ -494,7 +525,15 @@ export const ScheduleStateRow: React.FunctionComponent<{
           })}
 
           {runsCount > NUM_RUNS_TO_DISPLAY && (
-            <div>{runsCount - NUM_RUNS_TO_DISPLAY}</div>
+            <Link
+              to={`/runs/?q=${encodeURIComponent(
+                `tag:dagster/schedule_name=${scheduleName}`
+              )}`}
+              style={{ verticalAlign: "top" }}
+            >
+              {" "}
+              +{runsCount - NUM_RUNS_TO_DISPLAY} more
+            </Link>
           )}
         </div>
       </RowColumn>
@@ -507,6 +546,8 @@ export const ScheduleFragment = gql`
     __typename
     id
     scheduleOriginId
+    scheduleName
+    cronSchedule
     runningScheduleCount
     ticks(limit: $limit) {
       tickId

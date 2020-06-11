@@ -567,6 +567,7 @@ type ModeNotFoundError implements Error {
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
+  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
@@ -948,6 +949,12 @@ type Query {
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
 }
 
+union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
+
+type ReconcileSchedulerStateSuccess {
+  message: String!
+}
+
 type RegularConfigType implements ConfigType {
   key: String!
   description: String
@@ -1114,6 +1121,8 @@ input ScheduleSelector {
 
 type ScheduleState {
   scheduleOriginId: String!
+  scheduleName: String!
+  cronSchedule: String!
   status: ScheduleStatus!
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!

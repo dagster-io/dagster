@@ -66,7 +66,11 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 
 from .config_types import to_dauphin_config_type
 from .runs import DauphinPipelineRunStatus
-from .schedules import DauphinStartScheduleMutation, DauphinStopRunningScheduleMutation
+from .schedules import (
+    DauphinReconcileSchedulerStateMutation,
+    DauphinStartScheduleMutation,
+    DauphinStopRunningScheduleMutation,
+)
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -579,6 +583,7 @@ class DauphinMutation(dauphin.ObjectType):
 
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     launch_pipeline_reexecution = DauphinLaunchPipelineReexecutionMutation.Field()
+    reconcile_scheduler_state = DauphinReconcileSchedulerStateMutation.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()

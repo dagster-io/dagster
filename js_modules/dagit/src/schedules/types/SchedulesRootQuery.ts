@@ -72,6 +72,8 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  scheduleName: string;
+  cronSchedule: string;
   runningScheduleCount: number;
   ticks: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks[];
   runsCount: number;
@@ -140,6 +142,8 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  scheduleName: string;
+  cronSchedule: string;
   runningScheduleCount: number;
   ticks: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks[];
   runsCount: number;

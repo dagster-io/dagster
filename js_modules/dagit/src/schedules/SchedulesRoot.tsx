@@ -6,7 +6,9 @@ import {
   Intent,
   Code,
   Card,
-  Colors
+  Colors,
+  Button,
+  Spinner
 } from "@blueprintjs/core";
 import {
   Header,
@@ -14,7 +16,7 @@ import {
   LegendColumn,
   ScrollContainer
 } from "../ListComponents";
-import { useQuery } from "react-apollo";
+import { useQuery, useMutation } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler,
@@ -73,12 +75,37 @@ const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
   return null;
 };
 
-const getStaleReconcileSection = (
-  scheduleDefinitions: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[],
-  scheduleStates: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[]
-) => {
-  if (scheduleDefinitions.length === 0 && scheduleStates.length === 0) {
+const GetStaleReconcileSection: React.FunctionComponent<{
+  scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
+  scheduleStatesWithoutDefinitions: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
+}> = ({
+  scheduleDefinitionsWithoutState,
+  scheduleStatesWithoutDefinitions
+}) => {
+  const repositorySelector = useRepositorySelector();
+  const refetchQueries = [
+    {
+      query: SCHEDULES_ROOT_QUERY,
+      variables: {
+        repositorySelector: repositorySelector,
+        limit: NUM_RUNS_TO_DISPLAY
+      }
+    }
+  ];
+  const [
+    reconcileScheduleState,
+    { loading: reconcileInFlight }
+  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, { refetchQueries });
+
+  if (
+    scheduleDefinitionsWithoutState.length === 0 &&
+    scheduleStatesWithoutDefinitions.length === 0
+  ) {
     return null;
+  }
+
+  if (reconcileInFlight) {
+    return <Spinner />;
   }
 
   return (
@@ -92,16 +119,33 @@ const getStaleReconcileSection = (
           }}
         >
           <div>
-            There have been changes to the list of schedule definitions in this
-            repository since the last time the scheduler state had been
-            reconciled. For the dagster scheduler to run schedules, schedule
-            definitions need to be reconciled with the internal schedule storage
-            database. To do this, run <Code>dagster schedule reconcile</Code>.
+            <p>
+              There have been changes to the list of schedule definitions in
+              this repository since the last time the scheduler state had been
+              reconciled. For the dagster scheduler to run schedules, schedule
+              definitions need to be reconciled with the internal schedule
+              storage database.
+            </p>
+            <p>
+              To reconcile schedule state, run{" "}
+              <Code>dagster schedule reconcile</Code> or click{" "}
+              <Button
+                small={true}
+                intent={Intent.SUCCESS}
+                onClick={() =>
+                  reconcileScheduleState({ variables: { repositorySelector } })
+                }
+              >
+                Reconcile
+              </Button>
+            </p>
           </div>
         </div>
       </Callout>
-      <ScheduleWithoutStateTable schedules={scheduleDefinitions} />
-      <ScheduleStatesWithoutDefinitionsTable scheduleStates={scheduleStates} />
+      <ScheduleWithoutStateTable schedules={scheduleDefinitionsWithoutState} />
+      <ScheduleStatesWithoutDefinitionsTable
+        scheduleStates={scheduleStatesWithoutDefinitions}
+      />
     </Card>
   );
 };
@@ -157,9 +201,15 @@ const SchedulesRoot: React.FunctionComponent = () => {
           ) {
             const scheduleStatesWithoutDefinitions =
               scheduleStatesWithoutDefinitionsOrError.results;
-            staleReconcileSection = getStaleReconcileSection(
-              scheduleDefinitionsWithoutState,
-              scheduleStatesWithoutDefinitions
+            staleReconcileSection = (
+              <GetStaleReconcileSection
+                scheduleDefinitionsWithoutState={
+                  scheduleDefinitionsWithoutState
+                }
+                scheduleStatesWithoutDefinitions={
+                  scheduleStatesWithoutDefinitions
+                }
+              />
             );
           }
         }
@@ -181,9 +231,13 @@ interface ScheduleTableProps {
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
+  if (props.schedules.length === 0) {
+    return null;
+  }
+
   return (
     <div style={{ marginTop: 30 }}>
-      <Header>{`Schedule (${props.schedules.length})`}</Header>
+      <Header>{`Schedules (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
           <LegendColumn
@@ -252,7 +306,8 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
       </p>
       {props.scheduleStates.length > 0 && (
         <Legend>
-          <LegendColumn style={{ flex: 1.4 }}>Schedule Origin ID</LegendColumn>
+          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Schedule Tick Stats</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
         </Legend>
@@ -266,6 +321,22 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
     </div>
   );
 };
+
+const RECONCILE_SCHEDULE_STATE_MUTATION = gql`
+  mutation ReconcileSchedulerState($repositorySelector: RepositorySelector!) {
+    reconcileSchedulerState(repositorySelector: $repositorySelector) {
+      __typename
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on ReconcileSchedulerStateSuccess {
+        __typename
+        message
+      }
+    }
+  }
+`;
 
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery(

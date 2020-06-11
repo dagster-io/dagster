@@ -1,5 +1,9 @@
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import start_schedule, stop_schedule
+from dagster_graphql.implementation.fetch_schedules import (
+    reconcile_scheduler_state,
+    start_schedule,
+    stop_schedule,
+)
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
@@ -10,6 +14,7 @@ from dagster_graphql.schema.errors import (
 
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
+from dagster.core.host_representation.selector import RepositorySelector
 from dagster.core.scheduler import ScheduleState, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -103,6 +108,34 @@ class DauphinScheduler(dauphin.ObjectType):
         name = 'Scheduler'
 
     scheduler_class = dauphin.String()
+
+
+class DauphinReconcileSchedulerStateSuccess(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ReconcileSchedulerStateSuccess'
+
+    message = dauphin.NonNull(dauphin.String)
+
+
+class DauphinReconcilScheduleStateMutationResult(dauphin.Union):
+    class Meta(object):
+        name = 'ReconcileSchedulerStateMutationResult'
+        types = (DauphinPythonError, DauphinReconcileSchedulerStateSuccess)
+
+
+class DauphinReconcileSchedulerStateMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'ReconcileSchedulerStateMutation'
+
+    class Arguments(object):
+        repository_selector = dauphin.NonNull('RepositorySelector')
+
+    Output = dauphin.NonNull('ReconcileSchedulerStateMutationResult')
+
+    def mutate(self, graphene_info, repository_selector):
+        return reconcile_scheduler_state(
+            graphene_info, RepositorySelector.from_graphql_input(repository_selector)
+        )
 
 
 class DauphinScheduleStateResult(dauphin.ObjectType):

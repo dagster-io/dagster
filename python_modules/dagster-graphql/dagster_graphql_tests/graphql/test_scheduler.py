@@ -90,6 +90,24 @@ query getScheduleDefinition($scheduleSelector: ScheduleSelector!) {
 }
 '''
 
+RECONCILE_SCHEDULER_STATE_QUERY = '''
+mutation(
+  $repositorySelector: RepositorySelector!
+) {
+  reconcileSchedulerState(
+    repositorySelector: $repositorySelector,
+  ) {
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on ReconcileSchedulerStateSuccess {
+        message
+      }
+    }
+}
+'''
+
 
 START_SCHEDULES_QUERY = '''
 mutation(
@@ -206,6 +224,38 @@ def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
         main_repo_location_name()
     ).get_repository(main_repo_name())
     graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
+    )
+
+    assert result.data
+    assert result.data['scheduleStatesOrError']
+    assert result.data['scheduleStatesOrError']['__typename'] == 'ScheduleStates'
+
+    results = result.data['scheduleStatesOrError']['results']
+    assert len(results) == len(external_repository.get_external_schedules())
+
+    for schedule_state in results:
+        assert schedule_state['status'] == ScheduleStatus.STOPPED.value
+
+
+def test_get_schedule_states_for_repository_after_reconcile_using_mutation(graphql_context):
+    selector = get_legacy_repository_selector(graphql_context)
+
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        RECONCILE_SCHEDULER_STATE_QUERY,
+        variables={'repositorySelector': selector},
+    )
+
+    assert result.data
+    assert result.data['reconcileSchedulerState']
+    assert result.data['reconcileSchedulerState']['message'] == "Success"
 
     result = execute_dagster_graphql(
         graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},

@@ -96,6 +96,8 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  scheduleName: string;
+  cronSchedule: string;
   runningScheduleCount: number;
   ticks: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks[];
   runsCount: number;
