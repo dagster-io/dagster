@@ -178,8 +178,8 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
 const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
   const lastRun =
     schedule.scheduleState &&
-    schedule.scheduleState.runs.length &&
-    schedule.scheduleState.runs[0];
+    schedule.scheduleState.lastRuns.length &&
+    schedule.scheduleState.lastRuns[0];
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn>
@@ -295,38 +295,20 @@ const ScheduleFragment = gql`
   fragment OverviewScheduleFragment on ScheduleDefinition {
     __typename
     name
-    cronSchedule
-    pipelineName
-    solidSelection
-    mode
-    runConfigYaml
     scheduleState {
-      ticks(limit: 1) {
-        tickId
-        status
-      }
       runsCount
-      runs(limit: 10) {
-        runId
-        pipelineName
-        tags {
-          key
-          value
-        }
+      lastRuns: runs(limit: 1) {
         stats {
           ... on PipelineRunStatsSnapshot {
             endTime
           }
         }
+      }
+      runs(limit: 10) {
+        runId
+        pipelineName
         status
       }
-      stats {
-        ticksStarted
-        ticksSucceeded
-        ticksSkipped
-        ticksFailed
-      }
-      ticksCount
       status
     }
   }

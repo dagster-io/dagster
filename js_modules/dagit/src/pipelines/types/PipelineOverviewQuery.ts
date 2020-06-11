@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunStatus, ScheduleTickStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineOverviewQuery
@@ -282,64 +282,40 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   assets: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets[];
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_ticks {
-  __typename: "ScheduleTick";
-  tickId: string;
-  status: ScheduleTickStatus;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats_PythonError {
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats_PipelineRunStatsSnapshot {
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   endTime: number | null;
 }
 
-export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats_PythonError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats_PipelineRunStatsSnapshot;
+export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PythonError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PipelineRunStatsSnapshot;
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns {
+  __typename: "PipelineRun";
+  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats;
+}
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
   pipelineName: string;
-  tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_tags[];
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs_stats;
   status: PipelineRunStatus;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_stats {
-  __typename: "ScheduleTickStatsSnapshot";
-  ticksStarted: number;
-  ticksSucceeded: number;
-  ticksSkipped: number;
-  ticksFailed: number;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState {
   __typename: "ScheduleState";
-  ticks: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_ticks[];
   runsCount: number;
+  lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs[];
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_stats;
-  ticksCount: number;
   status: ScheduleStatus;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
   __typename: "ScheduleDefinition";
   name: string;
-  cronSchedule: string;
-  pipelineName: string;
-  solidSelection: (string | null)[] | null;
-  mode: string;
-  runConfigYaml: string | null;
   scheduleState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState | null;
 }
 
