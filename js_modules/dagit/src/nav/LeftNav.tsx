@@ -23,16 +23,19 @@ const INSTANCE_TABS = [
     label: "Runs"
   },
   {
-    to: `/schedules`,
-    tab: `schedules`,
-    icon: <Icon icon="calendar" iconSize={18} />,
-    label: "Schedules"
-  },
-  {
     to: `/assets`,
     tab: `assets`,
     icon: <Icon icon="panel-table" iconSize={18} />,
     label: "Assets"
+  }
+];
+
+const REPO_SCOPE_TABS = [
+  {
+    to: `/schedules`,
+    tab: `schedules`,
+    icon: <Icon icon="calendar" iconSize={18} />,
+    label: "Schedules"
   }
 ];
 
@@ -97,6 +100,17 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
         }}
       >
         <EnvironmentPicker options={options} repo={repo} setRepo={setRepo} />
+        {repo &&
+          REPO_SCOPE_TABS.map(t => (
+            <Tab
+              to={t.to}
+              key={t.tab}
+              className={match?.params.tab === t.tab ? "selected" : ""}
+            >
+              {t.icon}
+              <TabLabel>{t.label}</TabLabel>
+            </Tab>
+          ))}
         {repo && <EnvironmentContentList {...match?.params} repo={repo} />}
         <div style={{ flex: 1 }} />
       </div>
@@ -123,7 +137,7 @@ const LeftNavContainer = styled.div`
 `;
 
 const Tab = styled(Link)`
-  color: ${Colors.LIGHT_GRAY1};
+  color: ${Colors.LIGHT_GRAY1} !important;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   display: flex;
@@ -132,14 +146,14 @@ const Tab = styled(Link)`
   align-items: center;
   outline: 0;
   &:hover {
-    color: ${Colors.WHITE};
+    color: ${Colors.WHITE} !important;
     text-decoration: none;
   }
   &:focus {
     outline: 0;
   }
   &.selected {
-    color: ${Colors.WHITE};
+    color: ${Colors.WHITE} !important;
     border-left: 4px solid ${Colors.COBALT3};
     font-weight: 600;
   }

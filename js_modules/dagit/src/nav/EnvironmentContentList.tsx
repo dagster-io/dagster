@@ -53,7 +53,14 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
       : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        borderTop: `1px solid ${Colors.DARK_GRAY4}`
+      }}
+    >
       <Header>
         <InputGroup
           type="text"
