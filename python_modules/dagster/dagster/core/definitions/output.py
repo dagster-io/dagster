@@ -24,20 +24,13 @@ class OutputDefinition(object):
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        is_optional (Optional[bool]) (deprecated): Whether the presence of this field is optional.
-            Use ``is_required`` instead.
     '''
 
-    def __init__(
-        self, dagster_type=None, name=None, description=None, is_optional=None, is_required=None
-    ):
+    def __init__(self, dagster_type=None, name=None, description=None, is_required=None):
         self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, 'description')
-        check.opt_bool_param(is_optional, 'is_optional')
-        check.opt_bool_param(is_required, 'is_required')
-
-        self._optional = False if (is_required is None) else not is_required
+        self._is_required = check.opt_bool_param(is_required, 'is_required', default=True)
 
     @property
     def name(self):
@@ -53,11 +46,11 @@ class OutputDefinition(object):
 
     @property
     def optional(self):
-        return self._optional
+        return not self._is_required
 
     @property
     def is_required(self):
-        return not self._optional
+        return self._is_required
 
     def mapping_from(self, solid_name, output_name=None):
         '''Create an output mapping from an output of a child solid.

@@ -35,7 +35,7 @@ def test_missing_column_validation():
 def test_missing_column_validation_with_optional_column():
     column_constraints = [
         PandasColumn(
-            name='qux', constraints=[ColumnDTypeInSetConstraint({'object'})], is_optional=True
+            name='qux', constraints=[ColumnDTypeInSetConstraint({'object'})], is_required=False
         ),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})

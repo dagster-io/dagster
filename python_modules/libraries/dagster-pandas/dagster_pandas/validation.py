@@ -47,21 +47,21 @@ class PandasColumn:
     Args:
         name (str): Name of the column. This must match up with the column name in the dataframe you
             expect to receive.
-        is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the
-            column exists, the validate function will validate the column. Defaults to False.
+        is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+            If th column exists, the validate function will validate the column. Defaults to True.
         constraints (Optional[List[Constraint]]): List of constraint objects that indicate the
             validation rules for the pandas column.
     '''
 
-    def __init__(self, name, constraints=None, is_optional=False):
+    def __init__(self, name, constraints=None, is_required=None):
         self.name = check.str_param(name, 'name')
-        self.is_optional = check.opt_bool_param(is_optional, 'is_optional')
+        self.is_required = check.opt_bool_param(is_required, 'is_required', default=True)
         self.constraints = check.opt_list_param(constraints, 'constraints', of_type=Constraint)
 
     def validate(self, dataframe):
         if self.name not in dataframe.columns:
-            # Ignore validation if column is missing from dataframe and is optional
-            if not self.is_optional:
+            # Ignore validation if column is missing from dataframe and is not required
+            if self.is_required:
                 raise ConstraintViolationException(
                     "Required column {column_name} not in dataframe with columns {dataframe_columns}".format(
                         column_name=self.name, dataframe_columns=dataframe.columns
@@ -72,9 +72,7 @@ class PandasColumn:
                 constraint.validate(dataframe, self.name)
 
     @staticmethod
-    def exists(
-        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
-    ):
+    def exists(name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None):
         '''
         Simple constructor for PandasColumns that expresses existence constraints.
 
@@ -86,20 +84,20 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=_construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
     def boolean_column(
-        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
+        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None
     ):
         '''
         Simple constructor for PandasColumns that expresses boolean constraints on boolean dtypes.
@@ -112,8 +110,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -121,7 +119,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
@@ -132,7 +130,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
-        is_optional=False,
+        is_required=None,
     ):
         '''
         Simple constructor for PandasColumns that expresses numeric constraints numeric dtypes.
@@ -147,8 +145,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -163,7 +161,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
@@ -174,7 +172,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
-        is_optional=False,
+        is_required=None,
     ):
         '''
         Simple constructor for PandasColumns that expresses numeric constraints on integer dtypes.
@@ -189,8 +187,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -205,7 +203,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
@@ -216,7 +214,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
-        is_optional=False,
+        is_required=None,
     ):
         '''
         Simple constructor for PandasColumns that expresses numeric constraints on float dtypes.
@@ -231,8 +229,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -247,7 +245,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
@@ -258,7 +256,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
-        is_optional=False,
+        is_required=None,
     ):
         '''
         Simple constructor for PandasColumns that expresses datetime constraints on 'datetime64[ns]' dtypes.
@@ -275,8 +273,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -289,12 +287,12 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
     def string_column(
-        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
+        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None
     ):
         '''
         Simple constructor for PandasColumns that expresses constraints on string dtypes.
@@ -307,8 +305,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the constraint will
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -316,7 +314,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
     @staticmethod
@@ -327,7 +325,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
-        is_optional=False,
+        is_required=None,
     ):
         '''
         Simple constructor for PandasColumns that expresses categorical constraints on specified dtypes.
@@ -343,8 +341,8 @@ class PandasColumn:
             unique (Optional[bool]): If true, this column will enforce a uniqueness constraint on the column values.
             ignore_missing_vals (Optional[bool]): A flag that is passed into most constraints. If true, the
                 constraint will only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
-            is_optional (Optional[bool]): Flag indicating the optional presence of the column. If the column exists
-                the validate function will validate the column.
+            is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
+                If the column exists the validate function will validate the column. Default to True.
         '''
         of_types = {of_types} if isinstance(of_types, str) else of_types
         return PandasColumn(
@@ -356,7 +354,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
-            is_optional=is_optional,
+            is_required=is_required,
         )
 
 
