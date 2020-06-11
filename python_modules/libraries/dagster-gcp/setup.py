@@ -45,6 +45,8 @@ def _do_setup(name='dagster-gcp'):
             'google-cloud-bigquery>=1.19.*',
             'google-cloud-storage',
             'oauth2client',
+            # RSA 4.1+ is incompatible with py2.7
+            'rsa<=4.0; python_version<"3"',
         ],
         extras_require={'pyarrow': ['pyarrow']},
         zip_safe=False,
