@@ -29,6 +29,7 @@ export interface ExecutionSessionContainerPipelineFragment_modes {
 
 export interface ExecutionSessionContainerPipelineFragment {
   __typename: "Pipeline";
+  id: string;
   name: string;
   presets: ExecutionSessionContainerPipelineFragment_presets[];
   tags: ExecutionSessionContainerPipelineFragment_tags[];

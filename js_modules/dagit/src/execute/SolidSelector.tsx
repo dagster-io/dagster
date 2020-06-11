@@ -70,6 +70,7 @@ const SOLID_SELECTOR_QUERY = gql`
     pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
+        id
         name
         solids {
           name

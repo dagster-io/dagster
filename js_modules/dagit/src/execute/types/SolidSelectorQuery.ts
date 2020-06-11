@@ -227,6 +227,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids {
 
 export interface SolidSelectorQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
   solids: SolidSelectorQuery_pipelineOrError_Pipeline_solids[];
 }

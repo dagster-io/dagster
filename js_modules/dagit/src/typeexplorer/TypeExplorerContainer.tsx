@@ -59,6 +59,7 @@ export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
     pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
+        id
         dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
           __typename
           ... on RegularDagsterType {

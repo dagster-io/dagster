@@ -212,6 +212,7 @@ export const CONTENT_LIST_SOLIDS_QUERY = gql`
   query ContentListSolidsQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
+        id
         usedSolids {
           __typename
           definition {

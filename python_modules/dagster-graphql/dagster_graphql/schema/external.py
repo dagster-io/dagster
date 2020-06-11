@@ -22,11 +22,15 @@ class DauphinRepository(dauphin.ObjectType):
         )
         super(DauphinRepository, self).__init__(name=repository.name)
 
+    id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
     location = dauphin.NonNull('RepositoryLocation')
     pipelines = dauphin.non_null_list('Pipeline')
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
     usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
+
+    def resolve_id(self, _graphene_info):
+        return self._repository.get_origin_id()
 
     def resolve_location(self, graphene_info):
         return graphene_info.schema.type_named('RepositoryLocation')(self._repository_location)

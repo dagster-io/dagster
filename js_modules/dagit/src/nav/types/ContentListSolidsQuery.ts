@@ -36,6 +36,7 @@ export interface ContentListSolidsQuery_repositoryOrError_Repository_usedSolids 
 
 export interface ContentListSolidsQuery_repositoryOrError_Repository {
   __typename: "Repository";
+  id: string;
   usedSolids: ContentListSolidsQuery_repositoryOrError_Repository_usedSolids[];
 }
 

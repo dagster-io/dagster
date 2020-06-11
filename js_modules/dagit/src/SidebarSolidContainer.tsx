@@ -81,6 +81,7 @@ export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
     pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
+        id
         name
         solidHandle(handleID: $handleID) {
           solid {

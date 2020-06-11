@@ -165,7 +165,7 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
 };
 
 const ScheduleWithoutStateTable: React.FunctionComponent<ScheduleTableProps> = props => {
-  if (props.schedules.length == 0) {
+  if (props.schedules.length === 0) {
     return null;
   }
 

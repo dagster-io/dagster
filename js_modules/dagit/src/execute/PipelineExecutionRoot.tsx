@@ -188,6 +188,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
         message
       }
       ... on Pipeline {
+        id
         ...ExecutionSessionContainerPipelineFragment
       }
     }

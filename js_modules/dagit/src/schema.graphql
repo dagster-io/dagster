@@ -697,6 +697,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   tags: [PipelineTag!]!
   runs: [PipelineRun!]!
   schedules: [ScheduleDefinition!]!
+  id: ID!
   presets: [PipelinePreset!]!
 }
 
@@ -971,6 +972,7 @@ type RegularDagsterType implements DagsterType {
 union RepositoriesOrError = RepositoryConnection | PythonError
 
 type Repository {
+  id: ID!
   name: String!
   location: RepositoryLocation!
   pipelines: [Pipeline!]!

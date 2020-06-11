@@ -88,6 +88,7 @@ export const USED_SOLID_DETAILS_QUERY = gql`
   ) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
+        id
         usedSolid(name: $name) {
           __typename
           definition {

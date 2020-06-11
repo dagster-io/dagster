@@ -534,6 +534,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid {
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository {
   __typename: "Repository";
+  id: string;
   usedSolid: UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid | null;
 }
 

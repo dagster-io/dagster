@@ -404,6 +404,7 @@ const PickerContainer = styled.div`
 
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
+    id
     name
     presets {
       __typename

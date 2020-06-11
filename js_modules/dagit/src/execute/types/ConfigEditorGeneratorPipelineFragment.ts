@@ -23,6 +23,7 @@ export interface ConfigEditorGeneratorPipelineFragment_tags {
 
 export interface ConfigEditorGeneratorPipelineFragment {
   __typename: "Pipeline";
+  id: string;
   name: string;
   presets: ConfigEditorGeneratorPipelineFragment_presets[];
   tags: ConfigEditorGeneratorPipelineFragment_tags[];

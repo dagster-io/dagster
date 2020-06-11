@@ -699,6 +699,7 @@ export type TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrErr
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
+  id: string;
   dagsterTypeOrError: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError;
 }
 

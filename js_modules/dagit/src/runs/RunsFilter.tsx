@@ -148,6 +148,7 @@ export const RUNS_SEARCH_SPACE_QUERY = gql`
   query RunsSearchSpaceQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
+        id
         pipelines {
           name
         }

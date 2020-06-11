@@ -203,6 +203,7 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         name = 'Pipeline'
         interfaces = (DauphinSolidContainer, DauphinIPipelineSnapshot)
 
+    id = dauphin.NonNull(dauphin.ID)
     presets = dauphin.non_null_list('PipelinePreset')
     runs = dauphin.non_null_list('PipelineRun')
 
@@ -210,6 +211,9 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         self._external_pipeline = check.inst_param(
             external_pipeline, 'external_pipeline', ExternalPipeline
         )
+
+    def resolve_id(self, _graphene_info):
+        return self._external_pipeline.get_origin_id()
 
     def get_represented_pipeline(self):
         return self._external_pipeline

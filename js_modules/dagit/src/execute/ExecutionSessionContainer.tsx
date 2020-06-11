@@ -85,6 +85,7 @@ export default class ExecutionSessionContainer extends React.Component<
   static fragments = {
     ExecutionSessionContainerPipelineFragment: gql`
       fragment ExecutionSessionContainerPipelineFragment on Pipeline {
+        id
         ...ConfigEditorGeneratorPipelineFragment
         modes {
           name

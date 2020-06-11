@@ -297,6 +297,7 @@ export const SOLIDS_ROOT_QUERY = gql`
   query SolidsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
+        id
         usedSolids {
           __typename
           definition {

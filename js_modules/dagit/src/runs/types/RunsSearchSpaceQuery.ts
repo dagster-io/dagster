@@ -20,6 +20,7 @@ export interface RunsSearchSpaceQuery_repositoryOrError_Repository_pipelines {
 
 export interface RunsSearchSpaceQuery_repositoryOrError_Repository {
   __typename: "Repository";
+  id: string;
   pipelines: RunsSearchSpaceQuery_repositoryOrError_Repository_pipelines[];
 }
 

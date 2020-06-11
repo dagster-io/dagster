@@ -64,6 +64,7 @@ export interface SolidsRootQuery_repositoryOrError_Repository_usedSolids {
 
 export interface SolidsRootQuery_repositoryOrError_Repository {
   __typename: "Repository";
+  id: string;
   usedSolids: SolidsRootQuery_repositoryOrError_Repository_usedSolids[];
 }
 

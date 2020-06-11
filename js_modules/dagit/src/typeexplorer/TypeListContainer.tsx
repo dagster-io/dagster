@@ -41,6 +41,7 @@ export const TYPE_LIST_CONTAINER_QUERY = gql`
     pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
+        id
         name
         dagsterTypes {
           ...TypeListFragment
