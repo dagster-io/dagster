@@ -153,7 +153,10 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
 
 @unary_api_cli_command(
     name='list_repositories',
-    help_str='Return the snapshot for the given repository',
+    help_str=(
+        '[INTERNAL] Return the snapshot for the given repository. This is an internal utility. '
+        'Users should generally not invoke this command interactively.'
+    ),
     input_cls=ListRepositoriesInput,
     output_cls=ListRepositoriesResponse,
 )
@@ -184,8 +187,9 @@ def _get_loadable_targets(python_file, module_name):
 @unary_api_cli_command(
     name='repository',
     help_str=(
-        'Return all repository symbols in a given python_file or module name. '
-        'Used to bootstrap workspace creation process'
+        '[INTERNAL] Return all repository symbols in a given python_file or module name. '
+        'Used to bootstrap workspace creation process. This is an internal utility. Users should '
+        'generally not invoke this command interactively.'
     ),
     input_cls=RepositoryPythonOrigin,
     output_cls=ExternalRepositoryData,
@@ -214,7 +218,10 @@ class PipelineSubsetSnapshotArgs(
 
 @unary_api_cli_command(
     name='pipeline_subset',
-    help_str='Return ExternalPipelineSubsetResult for the given pipeline',
+    help_str=(
+        '[INTERNAL] Return ExternalPipelineSubsetResult for the given pipeline. This is an '
+        'internal utility. Users should generally not invoke this command interactively.'
+    ),
     input_cls=PipelineSubsetSnapshotArgs,
     output_cls=ExternalPipelineSubsetResult,
 )
@@ -251,7 +258,10 @@ class ExecutionPlanSnapshotArgs(
 
 @unary_api_cli_command(
     name='execution_plan',
-    help_str='Create an execution plan and return its snapshot',
+    help_str=(
+        '[INTERNAL] Create an execution plan and return its snapshot. This is an internal utility. '
+        'Users should generally not invoke this command interactively.'
+    ),
     input_cls=ExecutionPlanSnapshotArgs,
     output_cls=ExecutionPlanSnapshot,
 )
@@ -285,7 +295,10 @@ class PartitionApiCommandArgs(
 
 @unary_api_cli_command(
     name='partition',
-    help_str='Return the config for a partition',
+    help_str=(
+        '[INTERNAL] Return the config for a partition. This is an internal utility. Users should '
+        'generally not invoke this command interactively.'
+    ),
     input_cls=PartitionApiCommandArgs,
     output_cls=ExternalPartitionData,
 )
@@ -319,7 +332,10 @@ class ScheduleExecutionDataCommandArgs(
 
 @unary_api_cli_command(
     name='schedule_config',
-    help_str='Return the config for a schedule',
+    help_str=(
+        '[INTERNAL] Return the config for a schedule. This is an internal utility. Users should '
+        'generally not invoke this command interactively.'
+    ),
     input_cls=ScheduleExecutionDataCommandArgs,
     output_cls=ExternalScheduleExecutionData,
 )
@@ -357,7 +373,13 @@ class ExecuteRunArgsLoadComplete(namedtuple('_ExecuteRunArgsLoadComplete', '')):
     pass
 
 
-@click.command(name='execute_run')
+@click.command(
+    name='execute_run',
+    help=(
+        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
+        'interactively.'
+    ),
+)
 @click.argument('input_file', type=click.Path())
 @click.argument('output_file', type=click.Path())
 def execute_run_command(input_file, output_file):
@@ -451,7 +473,13 @@ def _schedule_tick_state(instance, tick_data):
 ###################################################################################################
 # WARNING: these cli args are encoded in cron, so are not safely changed without migration
 ###################################################################################################
-@click.command(name='launch_scheduled_execution')
+@click.command(
+    name='launch_scheduled_execution',
+    help=(
+        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
+        'interactively.'
+    ),
+)
 @click.argument('output_file', type=click.Path())
 @origin_target_argument
 @click.option('--schedule_name')
@@ -611,7 +639,13 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
 
 
 def create_api_cli_group():
-    group = click.Group(name="api")
+    group = click.Group(
+        name='api',
+        help=(
+            '[INTERNAL] These commands are intended to support internal use cases. Users should '
+            'generally not invoke these commands interactively.'
+        ),
+    )
     group.add_command(execute_run_command)
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
