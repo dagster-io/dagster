@@ -376,7 +376,7 @@ def test_execute_mode_command():
         [
             '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(__file__, '../environments/multi_mode_with_resources/add_mode.yaml'),
             '-d',
             'add_mode',
@@ -392,7 +392,7 @@ def test_execute_mode_command():
         [
             '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/mult_mode.yaml'
             ),
@@ -410,7 +410,7 @@ def test_execute_mode_command():
         [
             '-w',
             file_relative_path(__file__, '../repository.yaml'),
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
             ),
@@ -440,7 +440,7 @@ def test_execute_preset_command():
 
     assert 'PIPELINE_SUCCESS' in add_result.output
 
-    # Can't use --preset with --env
+    # Can't use --preset with --config
     bad_res = runner.invoke(
         pipeline_execute_command,
         [
@@ -448,7 +448,7 @@ def test_execute_preset_command():
             file_relative_path(__file__, '../repository.yaml'),
             '--preset',
             'add',
-            '--env',
+            '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
             ),
@@ -474,7 +474,8 @@ def test_execute_command():
         runner_pipeline_execute(runner, cli_args)
 
         runner_pipeline_execute(
-            runner, ['--env', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args
+            runner,
+            ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
         )
 
 

@@ -252,7 +252,7 @@ From the command line, we can set `-d` or `--mode` and select the name
 of the mode:
 
 ```bash
-$ dagster pipeline execute -f modes.py -e resources.yaml -d unittest
+$ dagster pipeline execute -f modes.py -c resources.yaml -d unittest
 ```
 
 Or, from the Python API:
@@ -587,9 +587,9 @@ top:
 
 Loading repositories via the `-f` or `-m` options is actually just a convenience function.
 The underlying abstraction is the "workspace", which determines all of the available
-repositories available to dagit. 
+repositories available to dagit.
 
-We have a file format for building workspaces called `workspace.yaml`. 
+We have a file format for building workspaces called `workspace.yaml`.
 It is a convenience: it prevents you from having to type the same `-f` or `-m` flag repeatedly.
 But as you'll see below it enables more capabilities.
 
@@ -604,7 +604,7 @@ you can launch dagit from that directory with no arguments.
 $ dagit
 ```
 
-### Multiple repositories 
+### Multiple repositories
 
 You can also use the workspace.yaml to load multiple repositories. This can often be
 useful for organization purposes, in order to group pipelines and other artifacts by team.

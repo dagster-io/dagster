@@ -8,6 +8,7 @@ import yaml
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
@@ -15,7 +16,7 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
     # Load environment dict from either a preset or yaml file globs
     if preset_name:
         if env:
-            raise click.UsageError('Can not use --preset with --env.')
+            raise click.UsageError('Can not use --preset with --config.')
 
         cli_args = {
             'fn_name': pipeline_name,
@@ -123,13 +124,13 @@ def main():
     default=os.getenv('AIRFLOW_HOME'),
 )
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.STRING,
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precendence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
@@ -142,8 +143,25 @@ def main():
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
 )
-def scaffold(module_name, pipeline_name, output_path, env, preset):
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c / --config to specify one or more run config files. '
+        '-e / --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
+def scaffold(module_name, pipeline_name, output_path, config, preset, env):
     '''Creates a DAG file for a specified dagster pipeline'''
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None), '--config', (env if env else None), '--env', '0.9.0',
+        )
+        or tuple()  # back to default empty tuple
+    )
 
     check.invariant(isinstance(env, tuple))
     check.invariant(

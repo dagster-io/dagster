@@ -156,7 +156,7 @@ def test_dagster_pipeline_execute(
     with pushd(path_to_tutorial_file('')):
         dagster_pipeline_execute(
             ['-f', path_to_tutorial_file(filename), '-a', fn_name]
-            + (['-e', env_yaml] if env_yaml else [])
+            + (['-c', env_yaml] if env_yaml else [])
             + (['-d', mode] if mode else [])
             + (['--preset', preset] if preset else []),
             return_code,

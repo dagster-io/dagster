@@ -228,17 +228,11 @@ def pipeline_subset_snapshot_command(args):
 class ExecutionPlanSnapshotArgs(
     namedtuple(
         '_ExecutionPlanSnapshotArgs',
-        'pipeline_origin solid_selection environment_dict mode step_keys_to_execute snapshot_id',
+        'pipeline_origin solid_selection run_config mode step_keys_to_execute snapshot_id',
     )
 ):
     def __new__(
-        cls,
-        pipeline_origin,
-        solid_selection,
-        environment_dict,
-        mode,
-        step_keys_to_execute,
-        snapshot_id,
+        cls, pipeline_origin, solid_selection, run_config, mode, step_keys_to_execute, snapshot_id,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -246,7 +240,7 @@ class ExecutionPlanSnapshotArgs(
                 pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
             ),
             solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
-            environment_dict=check.dict_param(environment_dict, 'environment_dict'),
+            run_config=check.dict_param(run_config, 'run_config'),
             mode=check.str_param(mode, 'mode'),
             step_keys_to_execute=check.opt_list_param(
                 step_keys_to_execute, 'step_keys_to_execute', of_type=str
@@ -274,7 +268,7 @@ def execution_plan_snapshot_command(args):
     return snapshot_from_execution_plan(
         create_execution_plan(
             pipeline=recon_pipeline,
-            environment_dict=args.environment_dict,
+            environment_dict=args.run_config,
             mode=args.mode,
             step_keys_to_execute=args.step_keys_to_execute,
         ),
@@ -338,10 +332,10 @@ def schedule_execution_data_command(args):
     try:
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
+            lambda: 'Error occurred during the execution of run_config_fn for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
-            run_config = schedule_def.get_environment_dict(schedule_context)
+            run_config = schedule_def.get_run_config(schedule_context)
             schedule_execution_data = ExternalScheduleExecutionData(run_config=run_config)
     except ScheduleExecutionError:
         schedule_execution_data = ExternalScheduleExecutionData(

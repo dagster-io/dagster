@@ -31,6 +31,7 @@ from dagster.utils import (
     load_yaml_from_glob_list,
     merge_dicts,
 )
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -239,21 +240,21 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 )
 @pipeline_target_argument
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.Path(exists=True),
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute -p pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline execute -p pandas_hello_world -c "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute -p pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline execute -p pandas_hello_world -c pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
@@ -282,8 +283,31 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c, --config to specify one or more run config files. '
+        '-e, --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
 @telemetry_wrapper
-def pipeline_execute_command(env, preset, mode, **kwargs):
+def pipeline_execute_command(config, preset, mode, **kwargs):
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None),
+            '--config',
+            (kwargs.get('env') if kwargs.get('env') else None),
+            '--env',
+            '0.9.0',
+            stacklevel=2,  # this stacklevel can point the warning to this line
+        )
+        or tuple()  # back to default empty tuple
+    )
+
     check.invariant(isinstance(env, tuple))
 
     if preset:
@@ -352,21 +376,21 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
 )
 @pipeline_target_argument
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.Path(exists=True),
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline launch pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        'dagster pipeline launch pandas_hello_world -c "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline launch pandas_hello_world -e pandas_hello_world/solids.yaml '
+        'dagster pipeline launch pandas_hello_world -c pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
     ),
 )
@@ -395,8 +419,31 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c, --config to specify one or more run config files. '
+        '-e, --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
 @telemetry_wrapper
-def pipeline_launch_command(env, preset_name, mode, **kwargs):
+def pipeline_launch_command(config, preset_name, mode, **kwargs):
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None),
+            '--config',
+            (kwargs.get('env') if kwargs.get('env') else None),
+            '--env',
+            '0.9.0',
+            stacklevel=2,  # this stacklevel can point the warning to this line
+        )
+        or tuple()  # back to default empty tuple
+    )
+
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
 
     external_pipeline = get_external_pipeline_from_kwargs(kwargs)
@@ -409,7 +456,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     if preset_name:
         if env:
-            raise click.UsageError('Can not use --preset with --env.')
+            raise click.UsageError('Can not use --preset with --config.')
 
         if mode:
             raise click.UsageError('Can not use --preset with --mode.')

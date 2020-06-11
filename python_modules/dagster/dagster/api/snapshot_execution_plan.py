@@ -29,7 +29,7 @@ def sync_get_external_execution_plan(
             ExecutionPlanSnapshotArgs(
                 pipeline_origin=pipeline_origin,
                 solid_selection=solid_selection,
-                environment_dict=environment_dict,
+                run_config=environment_dict,
                 mode=mode,
                 step_keys_to_execute=step_keys_to_execute,
                 snapshot_id=snapshot_id,

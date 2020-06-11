@@ -62,9 +62,16 @@ pipeline — the Python API, the Dagit GUI, or the command line:
 
 <br />
 
+<<<<<<< HEAD
 We previously encountered the <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />function. Pipeline run config is specified by the second
 argument to this function, which must be a dict.
+=======
+We previously encountered the <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />function.
+Pipeline configuration is specified by the second argument to this function,
+which must be a dict (the "run config").
+
+> > > > > > > (rename-environment-dict-to-run-config-4) public cli and more docs
 
 This dict contains all of the user-provided configuration with which to execute a pipeline. As such,
 it can have [a lot of sections](/docs/apidocs/execution####config_schema), but we'll only use one of
@@ -80,8 +87,13 @@ The `solids` dict is keyed by solid name, and each solid is configured by a dict
 have several sections. In this case we are only interested in the `inputs` section, so that we can
 specify the value of the input `csv_path`.
 
+<<<<<<< HEAD
 Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />:
+=======
+Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />:
+
+> > > > > > > (rename-environment-dict-to-run-config-4) public cli and more docs
 
 ```python literalinclude showLines startLine=49 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
@@ -107,6 +119,7 @@ dedent:4
 We can pass config files in this format to the dagster CLI tool with the `-e` flag.
 
 ```bash
+<<<<<<< HEAD
 dagster pipeline execute -f inputs.py -e inputs_env.yaml
 ```
 
@@ -114,6 +127,18 @@ In practice, you might have different sections of your run config in different y
 for instance, some sections change more often (e.g. in test and prod) while other are more static.
 In this case, you can set multiple instances of the `-e` flag on CLI invocations, and the CLI tools
 will assemble the YAML fragments into a single run config.
+=======
+\$ dagster pipeline execute -f inputs.py -c inputs_env.yaml
+
+````
+
+In practice, you might have different sections of your run config
+in different yaml files —if, for instance, some sections change more
+often (e.g. in test and prod) while other are more static. In this case,
+you can set multiple instances of the `-e` flag on CLI invocations, and
+the CLI tools will assemble the YAML fragments into a single environment
+dict.
+>>>>>>> (rename-environment-dict-to-run-config-4) public cli and more docs
 
 </details>
 
@@ -127,7 +152,7 @@ experimentation with and debugging of parameterized pipeline executions. As alwa
 
 ```bash
 dagit -f inputs.py
-```
+````
 
 Notice that no execution plan appears in the bottom pane of the Playground.
 
