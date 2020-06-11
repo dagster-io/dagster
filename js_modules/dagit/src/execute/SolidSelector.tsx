@@ -93,7 +93,7 @@ const SOLID_SELECTOR_QUERY = gql`
 
 export default (props: ISolidSelectorProps) => {
   const { serverProvidedSubsetError, query, onChange } = props;
-  const [pending, setPending] = React.useState<string>(query || "");
+  const [pending, setPending] = React.useState<string>(query || "*");
   const [focused, setFocused] = React.useState(false);
   const selector = usePipelineSelector(props.pipelineName);
   const { data, loading } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
@@ -102,7 +102,7 @@ export default (props: ISolidSelectorProps) => {
   });
 
   React.useEffect(() => {
-    setPending(query || "");
+    setPending(query || "*");
   }, [query, focused]);
 
   const queryResultSolids =
