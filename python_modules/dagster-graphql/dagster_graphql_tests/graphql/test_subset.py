@@ -2,7 +2,7 @@ import re
 import sys
 
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
 
@@ -51,7 +51,7 @@ def types_dict_of_result(subset_result, top_key):
 
 class TestSolidSelections(LegacyReadonlyGraphQLContextTestMatrix):
     def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world', ['nope'])
         result = execute_dagster_graphql(
             graphql_context, SCHEMA_OR_ERROR_SUBSET_QUERY, {'selector': selector}
         )
@@ -63,7 +63,7 @@ class TestSolidSelections(LegacyReadonlyGraphQLContextTestMatrix):
 
     @pytest.mark.skipif(sys.version_info.major < 3, reason='Exception cause only available on py3+')
     def test_pipeline_with_invalid_definition_error(self, graphql_context):
-        selector = get_legacy_pipeline_selector(
+        selector = infer_pipeline_selector(
             graphql_context, 'pipeline_with_invalid_definition_error', ['fail_subset']
         )
         result = execute_dagster_graphql(

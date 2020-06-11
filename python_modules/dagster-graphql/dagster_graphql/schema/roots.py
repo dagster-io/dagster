@@ -666,12 +666,9 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
         description = '''This type represents the fields necessary to identify a
         pipeline or pipeline subset.'''
 
-    # legacy_
-    name = dauphin.Field(dauphin.String)
-
-    pipelineName = dauphin.Field(dauphin.String)
-    repositoryName = dauphin.Field(dauphin.String)
-    repositoryLocationName = dauphin.Field(dauphin.String)
+    pipelineName = dauphin.NonNull(dauphin.String)
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
@@ -680,9 +677,9 @@ class DauphinScheduleSelector(dauphin.InputObjectType):
         name = 'ScheduleSelector'
         description = '''This type represents the fields necessary to identify a schedule.'''
 
-    repositoryName = dauphin.Field(dauphin.String)
-    repositoryLocationName = dauphin.Field(dauphin.String)
-    scheduleName = dauphin.Field(dauphin.String)
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
+    scheduleName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

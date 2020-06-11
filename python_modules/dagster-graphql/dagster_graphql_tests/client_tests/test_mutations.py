@@ -42,12 +42,15 @@ def test_execute_execute_plan_mutation():
     )
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
-
     variables = {
         'executionParams': {
             'runConfigData': {},
             'mode': 'default',
-            'selector': {'name': pipeline_name},
+            'selector': {
+                'repositoryLocationName': pipeline_name,
+                'repositoryName': '<<unnamed>>',
+                'pipelineName': pipeline_name,
+            },
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
@@ -72,7 +75,11 @@ def test_execute_execute_plan_mutation_raw():
         'executionParams': {
             'runConfigData': {},
             'mode': 'default',
-            'selector': {'name': pipeline_name},
+            'selector': {
+                'repositoryLocationName': pipeline_name,
+                'repositoryName': '<<unnamed>>',
+                'pipelineName': pipeline_name,
+            },
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }

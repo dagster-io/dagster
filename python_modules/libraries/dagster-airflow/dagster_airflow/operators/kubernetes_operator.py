@@ -49,6 +49,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         self.environment_dict = operator_parameters.environment_dict
         self.mode = operator_parameters.mode
         self.step_keys = operator_parameters.step_keys
+        self.recon_repo = operator_parameters.recon_repo
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
@@ -94,7 +95,12 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
     @property
     def query(self):
         variables = construct_variables(
-            self.mode, self.environment_dict, self.pipeline_name, self.run_id, self.step_keys,
+            self.recon_repo,
+            self.mode,
+            self.environment_dict,
+            self.pipeline_name,
+            self.run_id,
+            self.step_keys,
         )
         variables = add_airflow_tags(variables, self.airflow_ts)
 

@@ -86,8 +86,13 @@ def test_basic_repositories():
 
 
 def test_basic_variables():
-    query = 'query FooBar($pipelineName: String!){ pipelineOrError(params:{name: $pipelineName}){ ... on Pipeline { name } } }'
-    variables = '{"pipelineName": "math"}'
+    query = '''
+    query FooBar($pipelineName: String! $repositoryName: String! $repositoryLocationName: String!){
+        pipelineOrError(params:{pipelineName: $pipelineName repositoryName: $repositoryName repositoryLocationName: $repositoryLocationName})
+        { ... on Pipeline { name } }
+    }
+    '''
+    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "<<in_process>>"}'
     workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
@@ -129,7 +134,11 @@ def test_start_execution_text():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
+                },
                 'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
@@ -159,7 +168,11 @@ def test_start_execution_file():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
+                'selector': {
+                    'pipelineName': 'math',
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                },
                 'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
@@ -196,7 +209,11 @@ def test_start_execution_save_output():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
+                },
                 'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
@@ -239,7 +256,11 @@ def test_start_execution_predefined():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
+                },
                 'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
@@ -266,7 +287,11 @@ def test_logs_in_start_execution_predefined():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
+                },
                 'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }

@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 LOGGER_QUERY = '''
 query LoggerQuery($selector: PipelineSelector!) {
@@ -33,7 +33,7 @@ query LoggerQuery($selector: PipelineSelector!) {
 # Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
 # as the existing snapshot and then run update snapshot
 def test_mode_fetch_loggers(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, "multi_mode_with_loggers")
+    selector = infer_pipeline_selector(graphql_context, "multi_mode_with_loggers")
     result = execute_dagster_graphql(graphql_context, LOGGER_QUERY, {'selector': selector})
 
     assert not result.errors

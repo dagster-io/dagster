@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_run_log_data
@@ -28,7 +28,7 @@ COMPUTE_LOGS_SUBSCRIPTION = '''
 
 class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
     def test_get_compute_logs_over_graphql(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'spew_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'spew_pipeline')
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={'executionParams': {'selector': selector, 'mode': 'default'}},
@@ -44,7 +44,7 @@ class TestComputeLogs(ExecutingGraphQLContextTestMatrix):
         snapshot.assert_match(compute_logs)
 
     def test_compute_logs_subscription_graphql(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'spew_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'spew_pipeline')
         payload = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={'executionParams': {'selector': selector, 'mode': 'default'}},

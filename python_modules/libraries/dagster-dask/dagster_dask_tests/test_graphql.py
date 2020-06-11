@@ -1,14 +1,12 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessRepositoryLocation,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
@@ -24,7 +22,7 @@ def test_execute_hammer_through_dagit():
         locations=[InProcessRepositoryLocation(recon_repo)], instance=instance,
     )
 
-    selector = get_legacy_pipeline_selector(context, 'hammer_pipeline')
+    selector = infer_pipeline_selector(context, 'hammer_pipeline')
 
     executor = SyncExecutor()
 

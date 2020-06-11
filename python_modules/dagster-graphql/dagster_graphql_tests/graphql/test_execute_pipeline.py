@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pytest
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
 from dagster import check, seven
@@ -20,7 +20,7 @@ from .utils import sync_execute_get_run_log_data
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
     def test_start_pipeline_execution(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -44,7 +44,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -62,7 +62,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_basic_start_pipeline_execution_with_pipeline_def_tags(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'hello_world_with_tags')
+        selector = infer_pipeline_selector(graphql_context, 'hello_world_with_tags')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -83,7 +83,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         with pytest.raises(UserFacingGraphQLError) as exc_info:
             execute_dagster_graphql(
                 graphql_context,
@@ -99,7 +99,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_basic_start_pipeline_execution_with_preset_failure(self, graphql_context):
-        subset_selector = get_legacy_pipeline_selector(
+        subset_selector = infer_pipeline_selector(
             graphql_context, 'csv_hello_world', ['sum_sq_solid']
         )
         # These should check for proper graphql errors rather than check errors
@@ -113,7 +113,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 },
             )
 
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         with pytest.raises(check.CheckError):
             execute_dagster_graphql(
                 graphql_context,
@@ -141,7 +141,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             )
 
     def test_basic_start_pipeline_execution_config_failure(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -162,7 +162,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_basis_start_pipeline_not_found_error(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'sjkdfkdjkf')
+        selector = infer_pipeline_selector(graphql_context, 'sjkdfkdjkf')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -183,7 +183,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data['launchPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
     def test_basic_start_pipeline_execution_and_subscribe(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
@@ -222,7 +222,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert non_engine_event_types == expected_non_engine_event_types
 
     def test_subscription_query_error(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'naughty_programmer_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'naughty_programmer_pipeline')
         run_logs = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={'executionParams': {'selector': selector, 'mode': 'default',}},
@@ -263,7 +263,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert subscribe_result.data['pipelineRunLogs']['missingRunId'] == 'nope'
 
     def test_basic_sync_execution_no_config(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'no_config_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'no_config_pipeline')
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
@@ -277,7 +277,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
     def test_basic_inmemory_sync_execution(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
@@ -301,7 +301,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert sum_solid_output['step']['key'] == 'sum_solid.compute'
 
     def test_basic_filesystem_sync_execution(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = sync_execute_get_run_log_data(
             context=graphql_context,
             variables={
@@ -328,7 +328,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert sum_solid_output['outputName'] == 'result'
 
     def test_basic_start_pipeline_execution_with_tags(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -363,7 +363,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert runs_with_tag[0].run_id == run_id
 
     def test_basic_start_pipeline_execution_with_materialization(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
 
         with get_temp_file_name() as out_csv_path:
 

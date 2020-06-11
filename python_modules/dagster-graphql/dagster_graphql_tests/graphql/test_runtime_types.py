@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 RUNTIME_TYPE_QUERY = '''
 query DagsterTypeQuery($selector: PipelineSelector! $dagsterTypeName: String!)
@@ -82,7 +82,7 @@ fragment dagsterTypeFragment on DagsterType {
 
 
 def test_dagster_type_query_works(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         RUNTIME_TYPE_QUERY,
@@ -98,7 +98,7 @@ def test_dagster_type_query_works(graphql_context):
 
 
 def test_dagster_type_builtin_query(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'Int',},
     )
@@ -113,7 +113,7 @@ def test_dagster_type_builtin_query(graphql_context):
 
 
 def test_dagster_type_or_error_pipeline_not_found(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'nope')
+    selector = infer_pipeline_selector(graphql_context, 'nope')
     result = execute_dagster_graphql(
         graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
     )
@@ -125,7 +125,7 @@ def test_dagster_type_or_error_pipeline_not_found(graphql_context):
 
 
 def test_dagster_type_or_error_type_not_found(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
     )

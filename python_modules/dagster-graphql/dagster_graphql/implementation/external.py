@@ -9,7 +9,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
 )
 
-from .utils import UserFacingGraphQLError, capture_dauphin_error, legacy_pipeline_selector
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 def get_full_external_pipeline_or_raise(graphene_info, selector):
@@ -22,16 +22,6 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
         )
 
     return graphene_info.context.get_full_external_pipeline(selector)
-
-
-def legacy_get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_selection):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
-
-    return graphene_info.context.get_subset_external_pipeline(
-        legacy_pipeline_selector(graphene_info.context, pipeline_name, solid_selection)
-    )
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):

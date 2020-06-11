@@ -208,8 +208,8 @@ export function getReexecutionVariables(input: {
   stepKeys?: string[];
   stepQuery?: string;
   resumeRetry?: boolean;
-  repositoryLocationName?: string;
-  repositoryName?: string;
+  repositoryLocationName: string;
+  repositoryName: string;
 }) {
   const {
     run,

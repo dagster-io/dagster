@@ -113,9 +113,14 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                     environment_dict = dict(
                         pipeline_context.environment_dict, execution={'in_process': {}}
                     )
+                    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
                     variables = {
                         'executionParams': {
-                            'selector': {'name': pipeline_name},
+                            'selector': {
+                                'pipelineName': pipeline_name,
+                                'repositoryName': recon_repo.get_definition().name,
+                                'repositoryLocationName': '<<in_process>>',
+                            },
                             'runConfigData': environment_dict,
                             'mode': pipeline_context.mode_def.name,
                             'executionMetadata': {'runId': pipeline_context.pipeline_run.run_id},

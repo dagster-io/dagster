@@ -10,6 +10,7 @@ from dagster_graphql.client.util import construct_variables
 from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
+from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 
 def check_events_for_failures(events):
@@ -105,14 +106,14 @@ def invoke_steps_within_python_operator(
     step_keys = invocation_args.step_keys
     instance_ref = invocation_args.instance_ref
     run_config = invocation_args.run_config
-    workspace = invocation_args.workspace
+    recon_repo = invocation_args.recon_repo
     pipeline_snapshot = invocation_args.pipeline_snapshot
     execution_plan_snapshot = invocation_args.execution_plan_snapshot
     parent_pipeline_snapshot = invocation_args.parent_pipeline_snapshot
 
     run_id = dag_run.run_id
 
-    variables = construct_variables(mode, run_config, pipeline_name, run_id, step_keys)
+    variables = construct_variables(recon_repo, mode, run_config, pipeline_name, run_id, step_keys)
     variables = add_airflow_tags(variables, ts)
 
     logging.info(
@@ -137,6 +138,7 @@ def invoke_steps_within_python_operator(
             parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
+    workspace = create_in_process_ephemeral_workspace(pointer=recon_repo.pointer)
     events = execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref,)
     check_events_for_failures(events)
     check_events_for_skips(events)

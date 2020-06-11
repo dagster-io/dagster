@@ -130,9 +130,14 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
     for step_level in step_levels:
         for step in step_level:
+
             variables = {
                 'executionParams': {
-                    'selector': {'name': pipeline_def.name},
+                    'selector': {
+                        'repositoryLocationName': 'test_events',
+                        'repositoryName': '<<unnamed>>',
+                        'pipelineName': pipeline_def.name,
+                    },
                     'runConfigData': {'storage': {'filesystem': {}}},
                     'mode': mode,
                     'executionMetadata': {'runId': pipeline_run.run_id},

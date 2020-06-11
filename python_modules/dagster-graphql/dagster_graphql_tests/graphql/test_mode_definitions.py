@@ -1,6 +1,6 @@
 import graphql
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
@@ -37,14 +37,14 @@ def get_step_output(logs, step_key):
 
 
 def execute_modes_query(context, pipeline_name, mode):
-    selector = get_legacy_pipeline_selector(context, pipeline_name)
+    selector = infer_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(
         context, MODE_QUERY, variables={'selector': selector, 'mode': mode,},
     )
 
 
 def test_multi_mode_successful(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
+    selector = infer_pipeline_selector(graphql_context, 'multi_mode_with_resources')
     add_mode_logs = sync_execute_get_events(
         context=graphql_context,
         variables={

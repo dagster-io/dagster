@@ -1,4 +1,4 @@
-from .utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from .utils import execute_dagster_graphql, infer_pipeline_selector
 
 PRESETS_QUERY = '''
 query PresetsQuery($selector: PipelineSelector!) {
@@ -19,5 +19,5 @@ query PresetsQuery($selector: PipelineSelector!) {
 
 
 def execute_preset_query(pipeline_name, context):
-    selector = get_legacy_pipeline_selector(context, pipeline_name)
+    selector = infer_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(context, PRESETS_QUERY, variables={'selector': selector})

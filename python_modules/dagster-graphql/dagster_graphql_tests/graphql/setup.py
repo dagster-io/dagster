@@ -5,14 +5,11 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessRepositoryLocation,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.utils import (
     define_context_for_file,
     define_subprocess_context_for_file,
-    get_legacy_pipeline_selector,
+    infer_pipeline_selector,
 )
 
 from dagster import (
@@ -56,6 +53,7 @@ from dagster import (
 )
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
@@ -771,7 +769,7 @@ def retry_multi_input_early_terminate_pipeline():
 
 
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
-    selector = get_legacy_pipeline_selector(graphql_context, 'retry_multi_output_pipeline')
+    selector = infer_pipeline_selector(graphql_context, 'retry_multi_output_pipeline')
     return {
         'mode': 'default',
         'selector': selector,

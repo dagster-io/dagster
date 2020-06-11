@@ -3,7 +3,7 @@ import copy
 from dagster_graphql.test.utils import (
     define_context_for_file,
     execute_dagster_graphql,
-    get_legacy_pipeline_selector,
+    infer_pipeline_selector,
 )
 
 from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
@@ -153,7 +153,7 @@ def test_get_runs_over_graphql(graphql_context):
     # other code in this file which reads itself to load a repo
     from .utils import sync_execute_get_run_log_data
 
-    selector = get_legacy_pipeline_selector(graphql_context, "multi_mode_with_resources")
+    selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
 
     payload_one = sync_execute_get_run_log_data(
         context=graphql_context,

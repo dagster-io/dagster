@@ -1,7 +1,7 @@
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    get_legacy_repository_selector,
-    get_legacy_schedule_selector,
+    infer_repository_selector,
+    infer_schedule_selector,
 )
 
 from dagster.core.scheduler.scheduler import ScheduleStatus
@@ -162,7 +162,7 @@ def default_execution_params():
 
 
 def test_get_schedule_definitions_for_repository(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context, GET_SCHEDULE_DEFINITIONS_QUERY, variables={'repositorySelector': selector},
     )
@@ -188,7 +188,7 @@ def test_get_schedule_definitions_for_repository(graphql_context):
 
 
 def test_get_schedule_states_for_repository(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
     )
@@ -203,7 +203,7 @@ def test_get_schedule_states_for_repository(graphql_context):
 
 
 def test_get_schedule_state_with_for_repository_not_reconciled(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
         graphql_context, GET_SCHEDULE_STATES_QUERY, variables={'repositorySelector': selector},
     )
@@ -218,7 +218,7 @@ def test_get_schedule_state_with_for_repository_not_reconciled(graphql_context):
 
 
 def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
 
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
@@ -241,7 +241,7 @@ def test_get_schedule_states_for_repository_after_reconcile(graphql_context):
 
 
 def test_get_schedule_states_for_repository_after_reconcile_using_mutation(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
 
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
@@ -273,7 +273,7 @@ def test_get_schedule_states_for_repository_after_reconcile_using_mutation(graph
 
 
 def test_get_schedule_states_for_repository_with_removed_schedule_definitions(graphql_context):
-    selector = get_legacy_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context)
 
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
@@ -293,14 +293,14 @@ def test_get_schedule_states_for_repository_with_removed_schedule_definitions(gr
 
 
 def test_start_and_stop_schedule(graphql_context):
-    # selector = get_legacy_repository_selector(graphql_context)
+    # selector = infer_repository_selector(graphql_context)
 
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
     graphql_context.instance.reconcile_scheduler_state(external_repository)
 
-    schedule_selector = get_legacy_schedule_selector(
+    schedule_selector = infer_schedule_selector(
         graphql_context, 'no_config_pipeline_hourly_schedule'
     )
 
@@ -333,9 +333,7 @@ def test_get_single_schedule_definition(graphql_context):
         ).get_repository(main_repo_name()),
     )
 
-    schedule_selector = get_legacy_schedule_selector(
-        context, 'partition_based_multi_mode_decorator'
-    )
+    schedule_selector = infer_schedule_selector(context, 'partition_based_multi_mode_decorator')
     result = execute_dagster_graphql(
         context, GET_SCHEDULE_DEFINITION, variables={'scheduleSelector': schedule_selector}
     )

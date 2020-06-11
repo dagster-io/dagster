@@ -2,7 +2,7 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster.core.utils import make_new_run_id
 
@@ -40,7 +40,7 @@ def sanitize_result_data(result_data):
 
 class TestReexecution(ExecutingGraphQLContextTestMatrix):
     def test_full_pipeline_reexecution_fs_storage(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql(
             graphql_context,
@@ -88,7 +88,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
     def test_full_pipeline_reexecution_in_memory_storage(self, graphql_context, snapshot):
         run_id = make_new_run_id()
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result_one = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_SNAPSHOT_FRIENDLY,
@@ -135,7 +135,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
 
     def test_pipeline_reexecution_successful_launch(self, graphql_context):
         instance = graphql_context.instance
-        selector = get_legacy_pipeline_selector(graphql_context, 'no_config_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'no_config_pipeline')
         run_id = make_new_run_id()
         result = execute_dagster_graphql(
             context=graphql_context,

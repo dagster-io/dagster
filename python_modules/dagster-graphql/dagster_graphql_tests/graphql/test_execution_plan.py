@@ -1,6 +1,6 @@
 import re
 
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import check
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -156,7 +156,7 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
     pipeline_run = graphql_context.instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
@@ -194,7 +194,7 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
 
 def test_success_whole_execution_plan_with_filesystem_config(graphql_context, snapshot):
     instance = graphql_context.instance
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
@@ -235,7 +235,7 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
 
 def test_success_whole_execution_plan_with_in_memory_config(graphql_context, snapshot):
     instance = graphql_context.instance
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
@@ -282,7 +282,7 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -346,7 +346,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result_one = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
@@ -422,7 +422,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
 
 class TestExecutionPlan(LegacyReadonlyGraphQLContextTestMatrix):
     def test_invalid_config_fetch_execute_plan(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             EXECUTION_PLAN_QUERY,
@@ -452,7 +452,7 @@ class TestExecutionPlan(LegacyReadonlyGraphQLContextTestMatrix):
 
 
 def test_invalid_config_execute_plan(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
@@ -488,7 +488,7 @@ def test_invalid_config_execute_plan(graphql_context, snapshot):
 
 
 def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
-    selector = get_legacy_pipeline_selector(graphql_context, 'nope')
+    selector = infer_pipeline_selector(graphql_context, 'nope')
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_PLAN_QUERY,
@@ -515,7 +515,7 @@ def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
 
 
 def test_basic_execute_plan_with_materialization(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     with get_temp_file_name() as out_csv_path:
 
         environment_dict = {

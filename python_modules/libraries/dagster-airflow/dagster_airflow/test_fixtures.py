@@ -48,16 +48,16 @@ def dagster_airflow_python_operator_pipeline():
         def test_airflow(dagster_airflow_python_operator_pipeline):
             results = dagster_airflow_python_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=reconstructable(define_pipeline),
+                recon_repo=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml']
             )
             assert len(results) == 3
     '''
-    from .factory import make_airflow_dag_for_handle
+    from .factory import make_airflow_dag_for_recon_repo
     from .vendor.python_operator import PythonOperator
 
     def _pipeline_fn(
-        handle,
+        recon_repo,
         pipeline_name,
         environment_dict=None,
         environment_yaml=None,
@@ -68,8 +68,8 @@ def dagster_airflow_python_operator_pipeline():
         if environment_dict is None and environment_yaml is not None:
             environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-        dag, tasks = make_airflow_dag_for_handle(
-            handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
+        dag, tasks = make_airflow_dag_for_recon_repo(
+            recon_repo, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
         )
         assert isinstance(dag, DAG)
 
@@ -93,7 +93,7 @@ def dagster_airflow_custom_operator_pipeline():
         def test_airflow(dagster_airflow_python_operator_pipeline):
             results = dagster_airflow_custom_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=reconstructable(define_pipeline),
+                recon_repo=reconstructable(define_pipeline),
                 operator=MyCustomOperator,
                 environment_yaml=['environments/test_*.yaml']
             )
@@ -103,7 +103,7 @@ def dagster_airflow_custom_operator_pipeline():
     from .vendor.python_operator import PythonOperator
 
     def _pipeline_fn(
-        handle,
+        recon_repo,
         pipeline_name,
         operator,
         environment_dict=None,
@@ -116,7 +116,7 @@ def dagster_airflow_custom_operator_pipeline():
             environment_dict = load_yaml_from_glob_list(environment_yaml)
 
         dag, tasks = make_airflow_dag_for_operator(
-            handle, pipeline_name, operator, environment_dict, mode=mode, op_kwargs=op_kwargs
+            recon_repo, pipeline_name, operator, environment_dict, mode=mode, op_kwargs=op_kwargs
         )
         assert isinstance(dag, DAG)
 
@@ -140,17 +140,17 @@ def dagster_airflow_docker_operator_pipeline():
         def test_airflow(dagster_airflow_docker_operator_pipeline):
             results = dagster_airflow_docker_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=reconstructable(define_pipeline),
+                recon_repo=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml'],
                 image='myimage:latest'
             )
             assert len(results) == 3
     '''
-    from .factory import make_airflow_dag_containerized_for_handle
+    from .factory import make_airflow_dag_containerized_for_recon_repo
     from .operators.docker_operator import DagsterDockerOperator
 
     def _pipeline_fn(
-        handle,
+        recon_repo,
         pipeline_name,
         image,
         environment_dict=None,
@@ -162,8 +162,8 @@ def dagster_airflow_docker_operator_pipeline():
         if environment_dict is None and environment_yaml is not None:
             environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-        dag, tasks = make_airflow_dag_containerized_for_handle(
-            handle=handle,
+        dag, tasks = make_airflow_dag_containerized_for_recon_repo(
+            recon_repo=recon_repo,
             pipeline_name=pipeline_name,
             image=image,
             mode=mode,
@@ -192,17 +192,17 @@ def dagster_airflow_k8s_operator_pipeline():
         def test_airflow(dagster_airflow_k8s_operator_pipeline):
             results = dagster_airflow_k8s_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=reconstructable(define_pipeline),
+                recon_repo=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml'],
                 image='myimage:latest'
             )
             assert len(results) == 3
     '''
-    from .factory import make_airflow_dag_kubernetized_for_handle
+    from .factory import make_airflow_dag_kubernetized_for_recon_repo
     from .operators.kubernetes_operator import DagsterKubernetesPodOperator
 
     def _pipeline_fn(
-        handle,
+        recon_repo,
         pipeline_name,
         image,
         environment_dict=None,
@@ -221,8 +221,8 @@ def dagster_airflow_k8s_operator_pipeline():
         # time on a BK node, which can take a long time.
         op_kwargs['startup_timeout_seconds'] = 300
 
-        dag, tasks = make_airflow_dag_kubernetized_for_handle(
-            handle=handle,
+        dag, tasks = make_airflow_dag_kubernetized_for_recon_repo(
+            recon_repo=recon_repo,
             pipeline_name=pipeline_name,
             image=image,
             mode=mode,

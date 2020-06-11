@@ -1,5 +1,5 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -26,7 +26,7 @@ class TestBasicLaunch(
     )
 ):
     def test_run_launcher(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'no_config_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'no_config_pipeline')
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -47,7 +47,7 @@ class TestBasicLaunch(
         assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
 
     def test_run_launcher_subset(self, graphql_context):
-        selector = get_legacy_pipeline_selector(
+        selector = infer_pipeline_selector(
             graphql_context, 'more_complicated_config', ['noop_solid']
         )
         result = execute_dagster_graphql(

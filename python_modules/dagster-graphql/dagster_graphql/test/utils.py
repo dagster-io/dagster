@@ -1,12 +1,10 @@
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessRepositoryLocation,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
 
 
@@ -79,7 +77,7 @@ def infer_repository(graphql_context):
     return repository_location.get_repository('test_repo')
 
 
-def get_legacy_repository_selector(graphql_context):
+def infer_repository_selector(graphql_context):
     if len(graphql_context.repository_locations) == 1:
         # This is to account for having a single in process repository
         repository_location = graphql_context.repository_locations[0]
@@ -96,13 +94,13 @@ def get_legacy_repository_selector(graphql_context):
     }
 
 
-def get_legacy_pipeline_selector(graphql_context, pipeline_name, solid_selection=None):
-    selector = get_legacy_repository_selector(graphql_context)
+def infer_pipeline_selector(graphql_context, pipeline_name, solid_selection=None):
+    selector = infer_repository_selector(graphql_context)
     selector.update({'pipelineName': pipeline_name, 'solidSelection': solid_selection})
     return selector
 
 
-def get_legacy_schedule_selector(graphql_context, schedule_name):
-    selector = get_legacy_repository_selector(graphql_context)
+def infer_schedule_selector(graphql_context, schedule_name):
+    selector = infer_repository_selector(graphql_context)
     selector.update({'scheduleName': schedule_name})
     return selector

@@ -90,7 +90,7 @@ export const useRepositorySelector = () => {
 };
 
 export const usePipelineSelector = (
-  pipelineName?: string,
+  pipelineName: string,
   solidSelection?: string[]
 ) => {
   const repositorySelector = useRepositorySelector();

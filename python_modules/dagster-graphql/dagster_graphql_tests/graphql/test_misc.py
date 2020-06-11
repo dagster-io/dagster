@@ -1,7 +1,7 @@
 import csv
 from collections import OrderedDict
 
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import (
     DependencyDefinition,
@@ -44,7 +44,7 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 
 def test_enum_query(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, "pipeline_with_enum_config")
+    selector = infer_pipeline_selector(graphql_context, "pipeline_with_enum_config")
 
     ENUM_QUERY = '''
     query EnumQuery($selector: PipelineSelector!) {
@@ -131,7 +131,7 @@ query TypeRenderQuery($selector: PipelineSelector!) {
 
 
 def test_type_rendering(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, "more_complicated_nested_config")
+    selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
     result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY, {'selector': selector})
     assert not result.errors
     assert result.data
@@ -158,7 +158,7 @@ def test_repository():
 
 
 def test_pipeline_or_error_by_name(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, "csv_hello_world_two")
+    selector = infer_pipeline_selector(graphql_context, "csv_hello_world_two")
     result = execute_dagster_graphql(
         graphql_context,
         '''
@@ -178,7 +178,7 @@ def test_pipeline_or_error_by_name(graphql_context):
 
 
 def test_pipeline_or_error_by_name_not_found(graphql_context):
-    selector = get_legacy_pipeline_selector(graphql_context, "foobar")
+    selector = infer_pipeline_selector(graphql_context, "foobar")
     result = execute_dagster_graphql(
         graphql_context,
         '''

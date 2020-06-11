@@ -2,10 +2,9 @@ import os
 import subprocess
 import sys
 
-from dagster_graphql.implementation.context import InProcessRepositoryLocation
-
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None

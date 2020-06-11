@@ -30,45 +30,10 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def legacy_pipeline_selector(context, name, solid_selection):
-    from dagster_graphql.implementation.context import DagsterGraphQLContext
-
-    check.inst_param(context, 'context', DagsterGraphQLContext)
-
-    return PipelineSelector(
-        location_name=context.legacy_location.name,
-        repository_name=context.legacy_external_repository.name,
-        pipeline_name=name,
-        solid_selection=solid_selection,
-    )
-
-
 def pipeline_selector_from_graphql(context, data):
     from dagster_graphql.implementation.context import DagsterGraphQLContext
 
     check.inst_param(context, 'context', DagsterGraphQLContext)
-
-    # legacy case
-    if data.get('name'):
-        check.invariant(
-            data.get('repositoryLocationName') is None
-            and data.get('repositoryName') is None
-            and data.get('pipelineName') is None,
-            'Invalid legacy PipelineSelector, contains modern name fields',
-        )
-
-        return legacy_pipeline_selector(
-            context, name=data['name'], solid_selection=data.get('solidSelection'),
-        )
-
-    # can be removed once DauphinPipelineSelector fields
-    # can be made NonNull
-    check.invariant(
-        data.get('repositoryLocationName')
-        and data.get('repositoryName')
-        and data.get('pipelineName'),
-        'Invalid PipelineSelector, must have all name fields',
-    )
 
     return PipelineSelector(
         location_name=data['repositoryLocationName'],

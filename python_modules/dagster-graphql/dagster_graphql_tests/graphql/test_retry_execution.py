@@ -3,7 +3,7 @@ from time import sleep
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
-    get_legacy_pipeline_selector,
+    infer_pipeline_selector,
 )
 
 from dagster import DagsterEventType
@@ -118,7 +118,7 @@ def get_step_output_event(logs, step_key, output_name='result'):
 
 class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
     def test_retry_pipeline_execution(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'eventually_successful')
+        selector = infer_pipeline_selector(graphql_context, 'eventually_successful')
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -227,7 +227,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_resource_pipeline(self, graphql_context):
         context = graphql_context
-        selector = get_legacy_pipeline_selector(graphql_context, 'retry_resource_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'retry_resource_pipeline')
         result = execute_dagster_graphql_and_finish_runs(
             context,
             LAUNCH_PIPELINE_EXECUTION_QUERY,
@@ -334,7 +334,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, 'grandchild_fail.compute')
 
     def test_successful_pipeline_reexecution(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -432,7 +432,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
     def test_pipeline_reexecution_info_query(self, graphql_context, snapshot):
         context = graphql_context
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
 
         run_id = make_new_run_id()
         execute_dagster_graphql_and_finish_runs(
@@ -487,7 +487,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
     def test_pipeline_reexecution_invalid_step_in_subset(self, graphql_context):
         run_id = make_new_run_id()
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
@@ -529,7 +529,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
-    selector = get_legacy_pipeline_selector(graphql_context, 'eventually_successful')
+    selector = infer_pipeline_selector(graphql_context, 'eventually_successful')
     logs = sync_execute_get_events(
         context=graphql_context,
         variables={
@@ -602,7 +602,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
-        selector = get_legacy_pipeline_selector(
+        selector = infer_pipeline_selector(
             graphql_context, 'retry_multi_input_early_terminate_pipeline'
         )
         run_id = make_new_run_id()

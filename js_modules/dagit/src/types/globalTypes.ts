@@ -94,10 +94,9 @@ export interface PipelineRunsFilter {
 }
 
 export interface PipelineSelector {
-  name?: string | null;
-  pipelineName?: string | null;
-  repositoryName?: string | null;
-  repositoryLocationName?: string | null;
+  pipelineName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
   solidSelection?: string[] | null;
 }
 
@@ -107,9 +106,9 @@ export interface RepositorySelector {
 }
 
 export interface ScheduleSelector {
-  repositoryName?: string | null;
-  repositoryLocationName?: string | null;
-  scheduleName?: string | null;
+  repositoryName: string;
+  repositoryLocationName: string;
+  scheduleName: string;
 }
 
 //==============================================================

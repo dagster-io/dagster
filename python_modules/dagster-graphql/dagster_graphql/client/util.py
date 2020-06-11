@@ -1,6 +1,7 @@
 from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
 from dagster.core.definitions.events import PythonArtifactMetadataEntryData
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -207,7 +208,8 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     )
 
 
-def construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys):
+def construct_variables(recon_repo, mode, environment_dict, pipeline_name, run_id, step_keys):
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(mode, 'mode')
     check.dict_param(environment_dict, 'environment_dict')
     check.str_param(pipeline_name, 'pipeline_name')
@@ -218,7 +220,11 @@ def construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys
         'executionParams': {
             'runConfigData': environment_dict,
             'mode': mode,
-            'selector': {'name': pipeline_name},
+            'selector': {
+                'repositoryLocationName': '<<in_process>>',
+                'repositoryName': recon_repo.get_definition().name,
+                'pipelineName': pipeline_name,
+            },
             'executionMetadata': {'runId': run_id},
             'stepKeys': step_keys,
         }

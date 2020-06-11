@@ -1,13 +1,14 @@
 import os
 import time
 
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import execute_pipeline
 from dagster.utils import safe_tempfile_path
 
 from .execution_queries import LAUNCH_PIPELINE_EXECUTION_QUERY
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .setup import main_repo_location_name
 
 RUN_CANCELLATION_QUERY = '''
 mutation($runId: String!) {
@@ -38,7 +39,7 @@ class TestRunVariantTermination(
     )
 ):
     def test_basic_termination(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -83,7 +84,7 @@ class TestRunVariantTermination(
         assert result.data['terminatePipelineExecution']['__typename'] == 'PipelineRunNotFoundError'
 
     def test_terminate_failed(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'infinite_loop_pipeline')
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.instance.run_launcher.terminate
             graphql_context.instance.run_launcher.terminate = lambda _run_id: False
@@ -135,10 +136,11 @@ class TestRunVariantTermination(
 
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance
-        pipeline_result = execute_pipeline(
-            graphql_context.legacy_location.get_reconstructable_pipeline('noop_pipeline'),
-            instance=instance,
-        )
+        pipeline = graphql_context.get_repository_location(
+            main_repo_location_name()
+        ).get_reconstructable_pipeline('noop_pipeline')
+
+        pipeline_result = execute_pipeline(pipeline, instance=instance)
         assert pipeline_result.success
         assert pipeline_result.run_id
 

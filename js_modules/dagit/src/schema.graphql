@@ -854,10 +854,9 @@ type PipelineRunStepStats {
 }
 
 input PipelineSelector {
-  name: String
-  pipelineName: String
-  repositoryName: String
-  repositoryLocationName: String
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
   solidSelection: [String!]
 }
 
@@ -1114,9 +1113,9 @@ type SchedulerNotDefinedError implements Error {
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
 
 input ScheduleSelector {
-  repositoryName: String
-  repositoryLocationName: String
-  scheduleName: String
+  repositoryName: String!
+  repositoryLocationName: String!
+  scheduleName: String!
 }
 
 type ScheduleState {

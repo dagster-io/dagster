@@ -3,11 +3,7 @@ from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 from dagster_graphql.schema.pipelines import DauphinPipeline
 
 from dagster import check
-from dagster.core.host_representation import (
-    InProcessRepositoryLocation,
-    PipelineSelector,
-    RepositoryLocation,
-)
+from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 
@@ -108,28 +104,6 @@ class DagsterGraphQLContext:
         return self._repository_locations[external_pipeline.handle.location_name].execute_pipeline(
             instance=self.instance, external_pipeline=external_pipeline, pipeline_run=pipeline_run
         )
-
-    # Legacy family of methods for assuming one in process location with one repository
-
-    @property
-    def legacy_location(self):
-        check.invariant(
-            len(self._repository_locations) == 1, '[legacy] must have only one location'
-        )
-        return next(iter(self._repository_locations.values()))
-
-    @property
-    def legacy_external_repository(self):
-        repos = self.legacy_location.get_repositories()
-        check.invariant(len(repos) == 1, '[legacy] must have only one repository')
-        return next(iter(repos.values()))
-
-    def legacy_get_repository_definition(self):
-        check.invariant(
-            isinstance(self.legacy_location, InProcessRepositoryLocation),
-            '[legacy] must be in process loc',
-        )
-        return self.legacy_location.get_reconstructable_repository().get_definition()
 
     def drain_outstanding_executions(self):
         '''

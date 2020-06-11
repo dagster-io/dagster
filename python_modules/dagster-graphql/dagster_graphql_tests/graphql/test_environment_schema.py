@@ -1,7 +1,7 @@
 import sys
 
 import pytest
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
@@ -109,7 +109,7 @@ query PipelineQuery(
 
 class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
     def test_successful_run_config_schema(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
+        selector = infer_pipeline_selector(graphql_context, 'multi_mode_with_resources')
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -118,7 +118,7 @@ class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
         assert result.data['runConfigSchemaOrError']['__typename'] == 'RunConfigSchema'
 
     def test_run_config_schema_pipeline_not_found(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'jkdjfkdjfd')
+        selector = infer_pipeline_selector(graphql_context, 'jkdjfkdjfd')
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -127,7 +127,7 @@ class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
         assert result.data['runConfigSchemaOrError']['__typename'] == 'PipelineNotFoundError'
 
     def test_run_config_schema_solid_not_found(self, graphql_context):
-        selector = get_legacy_pipeline_selector(
+        selector = infer_pipeline_selector(
             graphql_context, 'multi_mode_with_resources', ['kdjfkdj']
         )
         result = execute_dagster_graphql(
@@ -138,7 +138,7 @@ class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
         assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
 
     def test_run_config_schema_mode_not_found(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'multi_mode_with_resources')
+        selector = infer_pipeline_selector(graphql_context, 'multi_mode_with_resources')
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
@@ -147,7 +147,7 @@ class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
         assert result.data['runConfigSchemaOrError']['__typename'] == 'ModeNotFoundError'
 
     def test_basic_valid_config_on_run_config_schema(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
@@ -168,7 +168,7 @@ class TestEnvironmentSchema(LegacyReadonlyGraphQLContextTestMatrix):
 
     @pytest.mark.skipif(sys.version_info < (3,), reason="Snapshot not working correctly on py2")
     def test_basic_invalid_config_on_run_config_schema(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,

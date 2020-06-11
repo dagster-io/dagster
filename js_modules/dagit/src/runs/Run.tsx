@@ -217,8 +217,8 @@ interface RunWithDataProps {
     stepKeys?: string[];
     stepQuery?: string;
     resumeRetry?: boolean;
-    repositoryLocationName?: string;
-    repositoryName?: string;
+    repositoryLocationName: string;
+    repositoryName: string;
   }) => LaunchPipelineReexecutionVariables | undefined;
 }
 

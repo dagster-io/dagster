@@ -180,6 +180,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         self.parent_pipeline_snapshot = dagster_operator_parameters.parent_pipeline_snapshot
         self.mode = dagster_operator_parameters.mode
         self.step_keys = dagster_operator_parameters.step_keys
+        self.recon_repo = dagster_operator_parameters.recon_repo
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
@@ -229,7 +230,12 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     @property
     def query(self):
         variables = construct_variables(
-            self.mode, self.environment_dict, self.pipeline_name, self.run_id, self.step_keys,
+            self.recon_repo,
+            self.mode,
+            self.environment_dict,
+            self.pipeline_name,
+            self.run_id,
+            self.step_keys,
         )
         variables = add_airflow_tags(variables, self.airflow_ts)
 

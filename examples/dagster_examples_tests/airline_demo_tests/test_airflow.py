@@ -20,7 +20,7 @@ except ImportError:
 @pytest.mark.slow
 @pytest.mark.airflow
 class TestAirflowPython_0IngestExecution(object):
-    handle = reconstructable(define_airline_demo_ingest_pipeline)
+    recon_repo = reconstructable(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     environment_yaml = [
         script_relative_path(
@@ -53,7 +53,7 @@ class TestAirflowPython_0IngestExecution(object):
 @pytest.mark.slow
 @pytest.mark.airflow
 class TestAirflowPython_1WarehouseExecution(object):
-    handle = reconstructable(define_airline_demo_warehouse_pipeline)
+    recon_repo = reconstructable(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
     environment_yaml = [
         script_relative_path(

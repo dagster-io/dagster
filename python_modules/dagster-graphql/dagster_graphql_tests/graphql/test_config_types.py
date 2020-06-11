@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
@@ -98,7 +98,7 @@ def find_errors(result, field_stack_to_find, reason):
 
 
 def execute_config_graphql(context, pipeline_name, environment_dict, mode):
-    selector = get_legacy_pipeline_selector(context, pipeline_name)
+    selector = infer_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
@@ -528,7 +528,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         assert last_entry['listIndex'] == 1
 
     def test_smoke_test_config_type_system(self, graphql_context):
-        selector = get_legacy_pipeline_selector(graphql_context, 'more_complicated_nested_config')
+        selector = infer_pipeline_selector(graphql_context, 'more_complicated_nested_config')
         result = execute_dagster_graphql(
             graphql_context, ALL_CONFIG_TYPES_QUERY, {'selector': selector, 'mode': 'default'},
         )

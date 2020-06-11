@@ -1,4 +1,4 @@
-from dagster_graphql.test.utils import get_legacy_pipeline_selector
+from dagster_graphql.test.utils import infer_pipeline_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
@@ -6,7 +6,7 @@ from .utils import sync_execute_get_events
 
 class TestMaterializations(ExecutingGraphQLContextTestMatrix):
     def test_materializations(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'materialization_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'materialization_pipeline')
         logs = sync_execute_get_events(
             context=graphql_context,
             variables={'executionParams': {'selector': selector, 'mode': 'default',}},

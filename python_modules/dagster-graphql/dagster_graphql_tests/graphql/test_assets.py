@@ -1,5 +1,5 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, get_legacy_pipeline_selector
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -56,7 +56,7 @@ class TestAssetAwareEventLog(
     )
 ):
     def test_get_all_asset_keys(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'multi_asset_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'multi_asset_pipeline')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -69,7 +69,7 @@ class TestAssetAwareEventLog(
         snapshot.assert_match(result.data)
 
     def test_get_asset_key_materialization(self, graphql_context, snapshot):
-        selector = get_legacy_pipeline_selector(graphql_context, 'single_asset_pipeline')
+        selector = infer_pipeline_selector(graphql_context, 'single_asset_pipeline')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -83,8 +83,8 @@ class TestAssetAwareEventLog(
         snapshot.assert_match(result.data)
 
     def test_get_asset_runs(self, graphql_context):
-        single_selector = get_legacy_pipeline_selector(graphql_context, 'single_asset_pipeline')
-        multi_selector = get_legacy_pipeline_selector(graphql_context, 'multi_asset_pipeline')
+        single_selector = infer_pipeline_selector(graphql_context, 'single_asset_pipeline')
+        multi_selector = infer_pipeline_selector(graphql_context, 'multi_asset_pipeline')
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
