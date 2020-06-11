@@ -239,7 +239,7 @@ const OverviewRun = ({ run }: { run: Run }) => {
         <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+        <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
         <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>

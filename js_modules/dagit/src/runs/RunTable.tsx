@@ -42,16 +42,8 @@ export class RunTable extends React.Component<RunTableProps> {
         rootRunId
         parentRunId
         pipelineSnapshotId
-        pipeline {
-          __typename
-          ... on PipelineReference {
-            name
-            solidSelection
-          }
-          ... on PipelineSnapshot {
-            pipelineSnapshotId
-          }
-        }
+        pipelineName
+        solidSelection
         tags {
           key
           value
@@ -108,14 +100,7 @@ const RunRow: React.FunctionComponent<{
     onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
   };
 
-  let pipelineLink = `/pipeline/${run.pipeline.name}@${run.pipelineSnapshotId}/`;
-  if (
-    run.pipeline.__typename === "PipelineSnapshot" &&
-    run.pipeline.pipelineSnapshotId === run.pipelineSnapshotId
-  ) {
-    // If the pipeline snapshot is still current, go to the live view not the snapshot.
-    pipelineLink = `/pipeline/${run.pipeline.name}/`;
-  }
+  const pipelineLink = `/pipeline/${run.pipelineName}@${run.pipelineSnapshotId}/`;
 
   const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
 
@@ -132,14 +117,14 @@ const RunRow: React.FunctionComponent<{
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
       <RowColumn style={{ maxWidth: 90, fontFamily: "monospace" }}>
-        <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+        <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
       </RowColumn>
       <RowColumn style={{ flex: 5 }}>
         <div style={{ display: "flex" }}>
           <Link to={pipelineLink}>
-            <Icon icon="diagram-tree" /> {run.pipeline.name}
+            <Icon icon="diagram-tree" /> {run.pipelineName}
           </Link>
         </div>
         <RunTags tags={run.tags} onClick={onTagClick} />

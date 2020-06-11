@@ -115,21 +115,6 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
 }
 
-export interface AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
-  name: string;
-  solidSelection: string[] | null;
-}
-
-export interface AssetQuery_assetOrError_Asset_runs_pipeline_PipelineSnapshot {
-  __typename: "PipelineSnapshot";
-  name: string;
-  solidSelection: string[] | null;
-  pipelineSnapshotId: string;
-}
-
-export type AssetQuery_assetOrError_Asset_runs_pipeline = AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline | AssetQuery_assetOrError_Asset_runs_pipeline_PipelineSnapshot;
-
 export interface AssetQuery_assetOrError_Asset_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -167,7 +152,8 @@ export interface AssetQuery_assetOrError_Asset_runs {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
-  pipeline: AssetQuery_assetOrError_Asset_runs_pipeline;
+  pipelineName: string;
+  solidSelection: string[] | null;
   tags: AssetQuery_assetOrError_Asset_runs_tags[];
   stats: AssetQuery_assetOrError_Asset_runs_stats;
 }

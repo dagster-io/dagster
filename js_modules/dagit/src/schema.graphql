@@ -768,6 +768,8 @@ type PipelineRun {
   pipelineSnapshotId: String
   status: PipelineRunStatus!
   pipeline: PipelineReference!
+  pipelineName: String!
+  solidSelection: [String!]
   stats: PipelineRunStatsOrError!
   stepStats: [PipelineRunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!

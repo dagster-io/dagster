@@ -230,21 +230,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   solid: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid;
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
-  name: string;
-  solidSelection: string[] | null;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_PipelineSnapshot {
-  __typename: "PipelineSnapshot";
-  name: string;
-  solidSelection: string[] | null;
-  pipelineSnapshotId: string;
-}
-
-export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_PipelineSnapshot;
-
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -286,7 +271,9 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   __typename: "PipelineRun";
   runId: string;
   rootRunId: string | null;
-  pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline;
+  pipelineName: string;
+  solidSelection: string[] | null;
+  pipelineSnapshotId: string | null;
   mode: string;
   canTerminate: boolean;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags[];

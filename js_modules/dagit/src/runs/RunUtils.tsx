@@ -265,8 +265,8 @@ export function getReexecutionVariables(input: {
         selector: {
           repositoryLocationName,
           repositoryName,
-          pipelineName: run.pipeline.name,
-          solidSelection: run.pipeline.solidSelection
+          pipelineName: run.pipelineName,
+          solidSelection: run.solidSelection
         },
         executionMetadata: getExecutionMetadata(run)
       }
@@ -435,8 +435,7 @@ export const RunActionsMenu: React.FunctionComponent<{
   );
 
   const envYaml = data?.pipelineRunOrError?.runConfigYaml;
-  const infoReady =
-    run.pipeline.__typename === "PipelineSnapshot" && envYaml != null;
+  const infoReady = called ? !loading : false;
   return (
     <Popover
       content={
@@ -470,11 +469,11 @@ export const RunActionsMenu: React.FunctionComponent<{
               icon="edit"
               target="_blank"
               href={`/pipeline/${
-                run.pipeline.name
+                run.pipelineName
               }/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
-                solidSelection: run.pipeline.solidSelection
+                solidSelection: run.solidSelection
               })}`}
             />
           </Tooltip>
@@ -497,7 +496,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                     repositoryName: repository?.name
                   })
                 });
-                handleReexecutionResult(run.pipeline.name, result, {
+                handleReexecutionResult(run.pipelineName, result, {
                   openInNewWindow: false
                 });
               }}
@@ -683,16 +682,9 @@ export const RunComponentFragments = {
     fragment RunActionMenuFragment on PipelineRun {
       runId
       rootRunId
-      pipeline {
-        __typename
-        ... on PipelineReference {
-          name
-          solidSelection
-        }
-        ... on PipelineSnapshot {
-          pipelineSnapshotId
-        }
-      }
+      pipelineName
+      solidSelection
+      pipelineSnapshotId
       mode
       canTerminate
       tags {

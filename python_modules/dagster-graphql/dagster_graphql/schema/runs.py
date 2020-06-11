@@ -104,6 +104,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipelineSnapshotId = dauphin.String()
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
+    pipelineName = dauphin.NonNull(dauphin.String)
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
     stats = dauphin.NonNull('PipelineRunStatsOrError')
     stepStats = dauphin.non_null_list('PipelineRunStepStats')
     computeLogs = dauphin.Field(
@@ -131,6 +133,12 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_pipeline(self, graphene_info):
         return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run,)
+
+    def resolve_pipelineName(self, _graphene_info):
+        return self._pipeline_run.pipeline_name
+
+    def resolve_solidSelection(self, _graphene_info):
+        return self._pipeline_run.solid_selection
 
     def resolve_pipelineSnapshotId(self, _):
         return self._pipeline_run.pipeline_snapshot_id
