@@ -102,7 +102,7 @@ const AssetLastMaterialization = ({
           </RowColumn>
           <RowColumn style={{ maxWidth: 250 }}>
             {run ? (
-              <a href={`/runs/${run.pipeline.name}/${run.runId}`}>
+              <a href={`/runs/${run.pipelineName}/${run.runId}`}>
                 {titleForRun(run)}
               </a>
             ) : (
@@ -211,9 +211,7 @@ export const ASSET_QUERY = gql`
                 value
               }
               status
-              pipeline {
-                name
-              }
+              pipelineName
             }
           }
           materializationEvent {

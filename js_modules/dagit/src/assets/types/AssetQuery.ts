@@ -28,17 +28,12 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_
   value: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
   runId: string;
   tags: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_tags[];
   status: PipelineRunStatus;
-  pipeline: AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun_pipeline;
+  pipelineName: string;
 }
 
 export type AssetQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRunNotFoundError | AssetQuery_assetOrError_Asset_assetMaterializations_runOrError_PipelineRun;
