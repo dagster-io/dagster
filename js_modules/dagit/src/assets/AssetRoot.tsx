@@ -5,7 +5,10 @@ import { Colors } from "@blueprintjs/core";
 import { useQuery } from "react-apollo";
 import Loading from "../Loading";
 import { AssetsRootQuery_assetsOrError_AssetConnection_nodes_key } from "./types/AssetsRootQuery";
-import { AssetQuery_assetOrError_Asset_assetMaterializations } from "./types/AssetQuery";
+import {
+  AssetQuery_assetOrError_Asset_graphMaterializations,
+  AssetQuery_assetOrError_Asset_lastMaterializations
+} from "./types/AssetQuery";
 import {
   Header,
   Legend,
@@ -21,7 +24,8 @@ import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
 
 type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
-type AssetMaterialization = AssetQuery_assetOrError_Asset_assetMaterializations;
+type GraphMaterialization = AssetQuery_assetOrError_Asset_graphMaterializations;
+type LastMaterialization = AssetQuery_assetOrError_Asset_lastMaterializations;
 
 export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
   const queryResult = useQuery(ASSET_QUERY, {
@@ -33,7 +37,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
         if (assetOrError.__typename !== "Asset") {
           return null;
         }
-        if (!assetOrError.assetMaterializations.length) {
+        if (!assetOrError.lastMaterializations.length) {
           return (
             <Container>
               <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
@@ -41,7 +45,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
           );
         }
 
-        const lastMaterialization = assetOrError.assetMaterializations[0];
+        const lastMaterialization = assetOrError.lastMaterializations[0];
         return (
           <Container>
             <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
@@ -54,7 +58,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
             </div>
             <AssetValueGraph
               assetKey={assetKey}
-              values={assetOrError.assetMaterializations}
+              values={assetOrError.graphMaterializations}
             />
           </Container>
         );
@@ -66,7 +70,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
 const AssetLastMaterialization = ({
   assetMaterialization
 }: {
-  assetMaterialization: AssetMaterialization;
+  assetMaterialization: LastMaterialization;
 }) => {
   const run =
     assetMaterialization.runOrError.__typename === "PipelineRun"
@@ -133,9 +137,9 @@ const AssetLastMaterialization = ({
 
 const AssetValueGraph = (props: any) => {
   const dataByLabel = {};
-  props.values.forEach((assetMaterialization: AssetMaterialization) => {
-    const timestamp = assetMaterialization.materializationEvent.timestamp;
-    assetMaterialization.materializationEvent.materialization.metadataEntries.forEach(
+  props.values.forEach((graphMaterialization: GraphMaterialization) => {
+    const timestamp = graphMaterialization.materializationEvent.timestamp;
+    graphMaterialization.materializationEvent.materialization.metadataEntries.forEach(
       entry => {
         if (entry.__typename === "EventFloatMetadataEntry") {
           dataByLabel[entry.label] = [
@@ -202,14 +206,20 @@ export const ASSET_QUERY = gql`
         key {
           path
         }
-        assetMaterializations {
+        graphMaterializations: assetMaterializations {
+          materializationEvent {
+            timestamp
+            materialization {
+              metadataEntries {
+                ...MetadataEntryFragment
+              }
+            }
+          }
+        }
+        lastMaterializations: assetMaterializations(limit: 1) {
           runOrError {
             ... on PipelineRun {
               runId
-              tags {
-                key
-                value
-              }
               status
               pipelineName
             }
@@ -226,6 +236,7 @@ export const ASSET_QUERY = gql`
             }
           }
         }
+
         runs(limit: 10) {
           ...RunTableRunFragment
         }
