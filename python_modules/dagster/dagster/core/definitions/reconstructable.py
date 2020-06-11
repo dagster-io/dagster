@@ -230,9 +230,14 @@ def reconstructable(target):
             'defined at module scope instead.'.format(target=target)
         )
 
-    pointer = FileCodePointer(
-        python_file=get_python_file_from_previous_stack_frame(), fn_name=target.__name__,
-    )
+    python_file = get_python_file_from_previous_stack_frame()
+    if python_file.endswith('<stdin>'):
+        raise DagsterInvariantViolationError(
+            'reconstructable() can not reconstruct pipelines from <stdin>, unable to target file {}. '.format(
+                python_file
+            )
+        )
+    pointer = FileCodePointer(python_file=python_file, fn_name=target.__name__,)
 
     return bootstrap_standalone_recon_pipeline(pointer)
 
