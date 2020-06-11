@@ -1,11 +1,40 @@
 import pytest
 
 from dagster import seven
-from dagster.api.execute_run import sync_cli_api_execute_run
+from dagster.api.execute_run import cli_api_execute_run
 from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
+from dagster.serdes.ipc import ipc_read_event_stream
+from dagster.utils import safe_tempfile_path
 
 from .utils import get_foo_pipeline_handle, legacy_get_foo_pipeline_handle
+
+
+# mostly for test
+def sync_cli_api_execute_run(
+    instance, pipeline_origin, pipeline_name, environment_dict, mode, solids_to_execute
+):
+    with safe_tempfile_path() as output_file_path:
+        pipeline_run = instance.create_run(
+            pipeline_name=pipeline_name,
+            run_id=None,
+            environment_dict=environment_dict,
+            mode=mode,
+            solids_to_execute=solids_to_execute,
+            step_keys_to_execute=None,
+            status=None,
+            tags=None,
+            root_run_id=None,
+            parent_run_id=None,
+            pipeline_snapshot=None,
+            execution_plan_snapshot=None,
+            parent_pipeline_snapshot=None,
+        )
+        process = cli_api_execute_run(output_file_path, instance, pipeline_origin, pipeline_run)
+
+        _stdout, _stderr = process.communicate()
+        for message in ipc_read_event_stream(output_file_path):
+            yield message
 
 
 @pytest.mark.parametrize(

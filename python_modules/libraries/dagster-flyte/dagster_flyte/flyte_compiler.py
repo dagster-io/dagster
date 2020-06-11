@@ -20,6 +20,7 @@ from dagster.core.execution.api import (
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import ExecutionStep, StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
 # TODO: Schema
 FLYTE_TYPES = {
@@ -102,9 +103,11 @@ class DagsterFlyteCompiler:
             tags=None,
             root_run_id=None,
             parent_run_id=None,
-            pipeline_snapshot=None,
-            execution_plan_snapshot=None,
-            parent_pipeline_snapshot=None,
+            pipeline_snapshot=self.execution_plan.pipeline_def.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                self.execution_plan, self.execution_plan.pipeline_def.get_pipeline_snapshot_id()
+            ),
+            parent_pipeline_snapshot=self.execution_plan.pipeline_def.get_parent_pipeline_snapshot(),
         )
 
         initialization_manager = pipeline_initialization_manager(

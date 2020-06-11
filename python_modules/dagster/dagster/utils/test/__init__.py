@@ -34,6 +34,7 @@ from dagster.core.execution.context_creation_pipeline import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleStatus, Scheduler
 from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
+from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -238,9 +239,13 @@ def execute_solid_within_pipeline(
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
     pipeline = InMemoryExecutablePipeline(PipelineDefinition([]))
+    pipeline_def = pipeline.get_definition()
     instance = check.opt_inst_param(
         instance, 'instance', DagsterInstance, default=DagsterInstance.ephemeral()
     )
+
+    execution_plan = create_execution_plan(pipeline)
+
     pipeline_run = instance.create_run(
         pipeline_name='<empty>',
         run_id=run_id,
@@ -252,13 +257,13 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
         tags=None,
         root_run_id=None,
         parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
-        parent_pipeline_snapshot=None,
+        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+        execution_plan_snapshot=snapshot_from_execution_plan(
+            execution_plan, pipeline_def.get_pipeline_snapshot_id()
+        ),
+        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
     )
-    with scoped_pipeline_context(
-        create_execution_plan(pipeline), {}, pipeline_run, instance,
-    ) as context:
+    with scoped_pipeline_context(execution_plan, {}, pipeline_run, instance) as context:
         yield context
 
 
