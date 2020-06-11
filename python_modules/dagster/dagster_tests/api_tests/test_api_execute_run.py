@@ -26,6 +26,6 @@ def test_execute_run_api(repo_handle):
             )
         ]
 
-    assert len(events) == 11
-    assert events[0].event_type_value == DagsterEventType.PIPELINE_START.value
+    assert len(events) == 12
+    assert events[1].event_type_value == DagsterEventType.PIPELINE_START.value
     assert events[-1].event_type_value == DagsterEventType.PIPELINE_SUCCESS.value

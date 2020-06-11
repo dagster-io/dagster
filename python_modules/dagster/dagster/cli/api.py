@@ -7,8 +7,6 @@ from collections import namedtuple
 import click
 
 from dagster import check
-from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.cli.pipeline import legacy_repository_target_argument
 from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
@@ -40,7 +38,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     snapshot_from_execution_plan,
 )
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
     ipc_write_unary_response,
@@ -335,60 +333,36 @@ def schedule_execution_data_command(args):
 # Execution CLI
 
 
-def _get_instance(stream, instance_ref_json):
-    try:
-        return DagsterInstance.from_ref(deserialize_json_to_dagster_namedtuple(instance_ref_json))
-
-    except:  # pylint: disable=bare-except
-        stream.send_error(
-            sys.exc_info(),
-            message='Could not deserialize instance-ref arg: {json_string}'.format(
-                json_string=instance_ref_json
-            ),
-        )
-        return
+@whitelist_for_serdes
+class ExecuteRunArgs(namedtuple('_ExecuteRunArgs', 'pipeline_origin pipeline_run_id instance_ref')):
+    pass
 
 
-def _recon_pipeline(stream, recon_repo, pipeline_run):
-    try:
-        recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_run.pipeline_name)
-        return recon_pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
-        )
-
-    except:  # pylint: disable=bare-except
-        stream.send_error(
-            sys.exc_info(),
-            message='Could not load pipeline {name} from CLI args {repo_cli_args} for pipeline run {run_id}'.format(
-                repo_cli_args=recon_repo.get_cli_args(),
-                name=pipeline_run.pipeline_name,
-                run_id=pipeline_run.run_id,
-            ),
-        )
-        return
+@whitelist_for_serdes
+class ExecuteRunArgsLoadComplete(namedtuple('_ExecuteRunArgsLoadComplete', '')):
+    pass
 
 
-# Note: only allowing repository yaml for now until we stabilize
-# how we want to communicate pipeline targets
 @click.command(name='execute_run')
+@click.argument('input_file', type=click.Path())
 @click.argument('output_file', type=click.Path())
-@legacy_repository_target_argument
-@click.option('--pipeline-run-id')
-@click.option('--instance-ref')
-def execute_run_command(output_file, pipeline_run_id, instance_ref, **kwargs):
-    recon_repo = recon_repo_for_cli_args(kwargs)
+def execute_run_command(input_file, output_file):
+    args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
+    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    return _execute_run_command_body(output_file, recon_repo, pipeline_run_id, instance_ref)
+    return _execute_run_command_body(
+        output_file, recon_pipeline, args.pipeline_run_id, args.instance_ref,
+    )
 
 
-def _execute_run_command_body(
-    output_file, recon_repo, pipeline_run_id, instance_ref_json,
-):
+def _execute_run_command_body(output_file, recon_pipeline, pipeline_run_id, instance_ref):
     with ipc_write_stream(output_file) as stream:
-        instance = _get_instance(stream, instance_ref_json)
-        if not instance:
-            return
 
+        # we need to send but the fact that we have loaded the args so the calling
+        # process knows it is safe to clean up the temp input file
+        stream.send(ExecuteRunArgsLoadComplete())
+
+        instance = DagsterInstance.from_ref(instance_ref)
         pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
         pid = os.getpid()
@@ -397,8 +371,6 @@ def _execute_run_command_body(
             pipeline_run,
             EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
         )
-
-        recon_pipeline = _recon_pipeline(stream, recon_repo, pipeline_run)
 
         # Perform setup so that termination of the execution will unwind and report to the
         # instance correctly
