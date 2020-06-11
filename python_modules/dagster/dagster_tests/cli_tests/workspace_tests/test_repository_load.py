@@ -1,3 +1,6 @@
+import os
+from contextlib import contextmanager
+
 import click
 import pytest
 from click.testing import CliRunner
@@ -153,3 +156,39 @@ def test_missing_repo_name_in_multi_repo_location():
         '''Must provide --repository as there are more than one repositories in '''
         '''multi_repo. Options are: ['repo_one', 'repo_two'].'''
     ) in result.stdout
+
+
+@contextmanager
+def new_cwd(path):
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)
+
+
+def test_legacy_repository_yaml_autoload():
+    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
+        assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
+
+
+def test_legacy_repository_yaml_dash_y():
+    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
+        assert (
+            successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
+            == 'hello_world_repository'
+        )
+
+
+def test_legacy_repository_yaml_module_autoload():
+    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
+        assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
+
+
+def test_legacy_repository_module_yaml_dash_y():
+    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
+        assert (
+            successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
+            == 'hello_world_repository'
+        )
