@@ -50,9 +50,9 @@ class SystemStorageDefinition(
         name,
         is_persistent,
         required_resource_keys,
-        config=None,
-        system_storage_creation_fn=None,
         config_schema=None,
+        system_storage_creation_fn=None,
+        config=None,
     ):
         return super(SystemStorageDefinition, cls).__new__(
             cls,
@@ -95,7 +95,7 @@ class SystemStorageData(object):
 
 
 def system_storage(
-    required_resource_keys, name=None, is_persistent=True, config=None, config_schema=None
+    required_resource_keys, name=None, is_persistent=True, config_schema=None, config=None
 ):
     '''Creates a system storage definition.
 

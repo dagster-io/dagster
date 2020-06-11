@@ -217,12 +217,12 @@ class SolidDefinition(ISolidDefinition):
         input_defs,
         compute_fn,
         output_defs,
-        config=None,
+        config_schema=None,
         description=None,
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
-        config_schema=None,
+        config=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_schema = canonicalize_backcompat_args(

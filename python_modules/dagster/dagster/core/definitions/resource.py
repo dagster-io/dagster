@@ -31,7 +31,7 @@ class ResourceDefinition(object):
         description (Optional[str]): A human-readable description of the resource.
     '''
 
-    def __init__(self, resource_fn, config=None, description=None, config_schema=None):
+    def __init__(self, resource_fn, config_schema=None, description=None, config=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
         self._config_schema = canonicalize_backcompat_args(
             check_user_facing_opt_config_param(config_schema, 'config_schema'),
@@ -93,7 +93,7 @@ class _ResourceDecoratorCallable(object):
         return resource_def
 
 
-def resource(config=None, description=None, config_schema=None):
+def resource(config_schema=None, description=None, config=None):
     '''Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -113,8 +113,8 @@ def resource(config=None, description=None, config_schema=None):
 
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
-    if callable(config) and not is_callable_valid_config_arg(config):
-        return _ResourceDecoratorCallable()(config)
+    if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+        return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn):
         return _ResourceDecoratorCallable(

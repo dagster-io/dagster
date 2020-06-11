@@ -27,10 +27,10 @@ class ExecutorDefinition(object):
     def __init__(
         self,
         name,
-        config=None,
+        config_schema=None,
         executor_creation_fn=None,
         required_resource_keys=None,
-        config_schema=None,
+        config=None,
     ):
         self._name = check.str_param(name, 'name')
         self._config_schema = canonicalize_backcompat_args(
@@ -69,7 +69,7 @@ class ExecutorDefinition(object):
         return self._required_resource_keys
 
 
-def executor(name=None, config=None, required_resource_keys=None):
+def executor(name=None, config_schema=None, required_resource_keys=None, config=None):
     '''Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -77,25 +77,30 @@ def executor(name=None, config=None, required_resource_keys=None):
 
     Args:
         name (Optional[str]): The name of the executor.
-        config (Optional[ConfigSchema]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''
     if callable(name):
-        check.invariant(config is None)
+        check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
+        check.invariant(config is None)
         return _ExecutorDecoratorCallable()(name)
 
     return _ExecutorDecoratorCallable(
-        name=name, config=config, required_resource_keys=required_resource_keys,
+        name=name,
+        config_schema=canonicalize_backcompat_args(
+            config_schema, 'config_schema', config, 'config', '0.9.0'
+        ),
+        required_resource_keys=required_resource_keys,
     )
 
 
 class _ExecutorDecoratorCallable(object):
-    def __init__(self, name=None, config=None, required_resource_keys=None):
+    def __init__(self, name=None, config_schema=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, 'name')
-        self.config = config  # type check in definition
+        self.config_schema = config_schema  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
@@ -106,7 +111,7 @@ class _ExecutorDecoratorCallable(object):
 
         executor_def = ExecutorDefinition(
             name=self.name,
-            config=self.config,
+            config_schema=self.config_schema,
             executor_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )
@@ -118,7 +123,10 @@ class _ExecutorDecoratorCallable(object):
 
 @executor(
     name='in_process',
-    config={'retries': get_retries_config(), 'marker_to_close': Field(str, is_required=False),},
+    config_schema={
+        'retries': get_retries_config(),
+        'marker_to_close': Field(str, is_required=False),
+    },
 )
 def in_process_executor(init_context):
     '''The default in-process executor.
@@ -149,7 +157,7 @@ def in_process_executor(init_context):
 
 @executor(
     name='multiprocess',
-    config={
+    config_schema={
         'max_concurrent': Field(Int, is_required=False, default_value=0),
         'retries': get_retries_config(),
     },

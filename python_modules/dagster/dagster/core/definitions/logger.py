@@ -19,7 +19,7 @@ class LoggerDefinition(object):
         description (Optional[str]): A human-readable description of this logger.
     '''
 
-    def __init__(self, logger_fn, config=None, description=None, config_schema=None):
+    def __init__(self, logger_fn, config_schema=None, description=None, config=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
         self._config_schema = canonicalize_backcompat_args(
             check_user_facing_opt_config_param(config_schema, 'config_schema'),
@@ -48,7 +48,7 @@ class LoggerDefinition(object):
         return self._description
 
 
-def logger(config=None, description=None, config_schema=None):
+def logger(config_schema=None, description=None, config=None):
     '''Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -62,8 +62,8 @@ def logger(config=None, description=None, config_schema=None):
     '''
     # This case is for when decorator is used bare, without arguments.
     # E.g. @logger versus @logger()
-    if callable(config) and not is_callable_valid_config_arg(config):
-        return LoggerDefinition(logger_fn=config)
+    if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+        return LoggerDefinition(logger_fn=config_schema)
 
     def _wrap(logger_fn):
         return LoggerDefinition(

@@ -28,7 +28,7 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_schema')):
         config_schema (ConfigSchema): The schema of the composite config.
     '''
 
-    def __new__(cls, config_fn, config=None, config_schema=None):
+    def __new__(cls, config_fn, config_schema=None, config=None):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, 'config_fn'),

@@ -88,10 +88,10 @@ def solid(
     description=None,
     input_defs=None,
     output_defs=None,
-    config=None,
+    config_schema=None,
     required_resource_keys=None,
     tags=None,
-    config_schema=None,
+    config=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
 

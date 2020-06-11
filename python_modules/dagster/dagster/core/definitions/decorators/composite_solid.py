@@ -166,9 +166,9 @@ def composite_solid(
     input_defs=None,
     output_defs=None,
     description=None,
-    config=None,
-    config_fn=None,
     config_schema=None,
+    config_fn=None,
+    config=None,
 ):
     '''Create a composite solid with the specified parameters from the decorated composition
     function.
