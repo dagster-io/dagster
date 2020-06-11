@@ -16,6 +16,17 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+
+    To use Postgres for schedule storage, you can add a block such as the following to your
+    ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../../docs/next/src/pages/docs/deploying/dagster-pg.yaml
+       :caption: dagster.yaml
+       :lines: 23-32
+       :language: YAML
+
+    Note that the fields in this config are :py:class:`~dagster.StringSource` and
+    :py:class:`~dagster.IntSource` and can be configured from environment variables.
     '''
 
     def __init__(self, postgres_url, inst_data=None):
