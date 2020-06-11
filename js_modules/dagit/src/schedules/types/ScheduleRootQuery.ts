@@ -26,16 +26,11 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   value: string;
 }
 
-export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
   tags: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_tags[];
-  pipeline: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 
@@ -47,14 +42,9 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   ticksFailed: number;
 }
 
-export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
-  pipeline: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
 }

@@ -37,16 +37,16 @@ export const RunStats = ({ runId }: { runId: string }) => {
   return (
     <RunStatsDetailsContainer>
       <Link
-        to={`/runs/${result.pipeline.name}/${runId}?q=type:step_success`}
+        to={`/runs/${result.pipelineName}/${runId}?q=type:step_success`}
       >{`${result.stats.stepsSucceeded} steps succeeded`}</Link>
-      <Link to={`/runs/${result.pipeline.name}/${runId}?q=type:step_failure`}>
+      <Link to={`/runs/${result.pipelineName}/${runId}?q=type:step_failure`}>
         {`${result.stats.stepsFailed} steps failed`}
       </Link>
       <Link
-        to={`/runs/${result.pipeline.name}/${runId}?q=type:materialization`}
+        to={`/runs/${result.pipelineName}/${runId}?q=type:materialization`}
       >{`${result.stats.materializations} materializations`}</Link>
       <Link
-        to={`/runs/${result.pipeline.name}/${runId}?q=type:expectation`}
+        to={`/runs/${result.pipelineName}/${runId}?q=type:expectation`}
       >{`${result.stats.expectations} expectations passed`}</Link>
     </RunStatsDetailsContainer>
   );
@@ -64,11 +64,7 @@ export const RUN_STATS_QUERY = gql`
       }
       ... on PipelineRun {
         runId
-        pipeline {
-          ... on PipelineReference {
-            name
-          }
-        }
+        pipelineName
         stats {
           ... on PipelineRunStatsSnapshot {
             stepsSucceeded

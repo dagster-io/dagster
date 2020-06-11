@@ -18,11 +18,6 @@ export interface RunGroupPanelQuery_runGroupOrError_PythonError {
   message: string;
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -56,7 +51,7 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   parentRunId: string | null;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;
-  pipeline: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_pipeline;
+  pipelineName: string;
   tags: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags[];
   stats: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats;
 }

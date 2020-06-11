@@ -330,7 +330,7 @@ export const ScheduleRow: React.FunctionComponent<{
                 }}
                 key={run.runId}
               >
-                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
                   <Tooltip
                     position={"top"}
                     content={titleForRun(run)}
@@ -510,7 +510,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
                 }}
                 key={run.runId}
               >
-                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
                   <Tooltip
                     position={"top"}
                     content={titleForRun(run)}
@@ -560,9 +560,7 @@ export const ScheduleFragment = gql`
         key
         value
       }
-      pipeline {
-        name
-      }
+      pipelineName
       status
     }
     stats {

@@ -13,15 +13,10 @@ export interface LaunchPipelineExecution_launchPipelineExecution_InvalidStepErro
   __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline;
+  pipelineName: string;
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess {

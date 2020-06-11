@@ -291,7 +291,7 @@ interface ScheduleStateTableProps {
 }
 
 const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleStateTableProps> = props => {
-  if (props.scheduleStates.length == 0) {
+  if (props.scheduleStates.length === 0) {
     return null;
   }
 

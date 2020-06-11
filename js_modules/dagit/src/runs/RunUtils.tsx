@@ -84,7 +84,7 @@ export function handleExecutionResult(
   const obj = (result.data as LaunchPipelineExecution).launchPipelineExecution;
 
   if (obj.__typename === "LaunchPipelineRunSuccess") {
-    const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
+    const url = `/runs/${obj.run.pipelineName}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -329,9 +329,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on LaunchPipelineRunSuccess {
         run {
           runId
-          pipeline {
-            name
-          }
+          pipelineName
         }
       }
       ... on PipelineNotFoundError {

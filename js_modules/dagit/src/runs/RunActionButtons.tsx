@@ -286,6 +286,7 @@ export function ReexecuteButtonGroup(props: ReexecuteButtonGroupProps) {
 }
 
 export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = props => {
+  const [starting, setStarting] = React.useState(false);
   const { run, executionPlan, onLaunch } = props;
   const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
   const isReexecutionDisabled = !(
@@ -299,12 +300,17 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         title={LAUNCH_REEXECUTE_TITLE}
         icon="repeat"
         onClick={() => {}}
+        starting={starting}
         disabled={isReexecutionDisabled}
         small={true}
       >
         <ReexecuteButtonGroup
           // Launch re-execution button group
-          onClick={onLaunch}
+          onClick={async (...args) => {
+            setStarting(true);
+            await onLaunch(...args);
+            setStarting(false);
+          }}
           selectedSteps={props.selectedSteps}
           artifactsPersisted={props.artifactsPersisted}
           isPipelineUnknown={isPipelineUnknown}

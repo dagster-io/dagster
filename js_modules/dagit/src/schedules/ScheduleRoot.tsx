@@ -123,7 +123,7 @@ const RenderEventSpecificData: React.FunctionComponent<{
       return (
         <AnchorButton
           minimal={true}
-          href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}
+          href={`/runs/${data.run?.pipelineName}/${data.run?.runId}`}
         >
           <div style={{ display: "flex" }}>
             {data.run?.status && <RunStatus status={data.run?.status} />}
@@ -214,9 +214,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
               __typename
               ... on ScheduleTickSuccessData {
                 run {
-                  pipeline {
-                    name
-                  }
+                  pipelineName
                   status
                   runId
                 }

@@ -1,6 +1,5 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
 import { Spinner, Colors } from "@blueprintjs/core";
 import { GaantChartMode } from "./Constants";
@@ -9,7 +8,6 @@ import { formatElapsedTime } from "../Util";
 import { RunGroupPanel } from "./RunGroupPanel";
 
 interface GaantStatusPanelProps {
-  plan: GaantChartExecutionPlanFragment;
   metadata: IRunMetadataDict;
   selectedSteps: string[];
   runId: string;

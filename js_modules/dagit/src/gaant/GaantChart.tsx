@@ -145,7 +145,7 @@ export class GaantChart extends React.Component<
   GaantChartProps,
   GaantChartState
 > {
-  static LoadingState = (<></>);
+  static LoadingState: React.FunctionComponent<{ runId: string }>;
 
   static fragments = {
     GaantChartExecutionPlanFragment: gql`
@@ -295,12 +295,6 @@ type GaantChartInnerProps = GaantChartProps &
     onDoubleClickStep: (stepName: string) => void;
     onChange: () => void;
   };
-
-interface TooltipState {
-  text: string;
-  cx: number;
-  cy: number;
-}
 
 const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps, onMoveToViewport } = useViewport();
@@ -461,7 +455,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
       identifier="gaant-split"
       axis="horizontal"
       first={content}
-      firstInitialPercent={80}
+      firstInitialPercent={70}
       second={
         <GaantStatusPanel
           {...props}
@@ -828,15 +822,22 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
-GaantChart.LoadingState = (
+GaantChart.LoadingState = ({ runId }: { runId: string }) => (
   <GaantChartContainer>
-    <OptionsContainer></OptionsContainer>
+    <OptionsContainer />
     <SplitPanelContainer
       identifier="gaant-split"
       axis="horizontal"
       first={<NonIdealState icon={<Spinner size={24} />} />}
-      firstInitialPercent={80}
-      second={<div />}
+      firstInitialPercent={70}
+      second={
+        <GaantStatusPanel
+          metadata={EMPTY_RUN_METADATA}
+          selectedSteps={[]}
+          runId={runId}
+          nowMs={0}
+        />
+      }
     />
   </GaantChartContainer>
 );

@@ -21,16 +21,11 @@ export interface ScheduleStateFragment_runs_tags {
   value: string;
 }
 
-export interface ScheduleStateFragment_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface ScheduleStateFragment_runs {
   __typename: "PipelineRun";
   runId: string;
   tags: ScheduleStateFragment_runs_tags[];
-  pipeline: ScheduleStateFragment_runs_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 

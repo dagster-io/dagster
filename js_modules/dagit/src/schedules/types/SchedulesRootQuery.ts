@@ -47,16 +47,11 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   value: string;
 }
 
-export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
   tags: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs_tags[];
-  pipeline: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 
@@ -117,16 +112,11 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   value: string;
 }
 
-export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs {
   __typename: "PipelineRun";
   runId: string;
   tags: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags[];
-  pipeline: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 

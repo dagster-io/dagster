@@ -33,6 +33,7 @@ import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
 
 interface RunProps {
   client: ApolloClient<any>;
+  runId: string;
   run?: RunFragment;
 }
 
@@ -158,7 +159,7 @@ export class Run extends React.Component<RunProps, RunState> {
   };
 
   render() {
-    const { client, run } = this.props;
+    const { client, run, runId } = this.props;
     const { logsFilter, query, selectedSteps } = this.state;
 
     return (
@@ -166,15 +167,16 @@ export class Run extends React.Component<RunProps, RunState> {
         {run && <RunStatusToPageAttributes run={run} />}
 
         <LogsProvider
-          key={run ? run.runId : ""}
+          key={runId}
           client={client}
-          runId={run ? run.runId : ""}
+          runId={runId}
           filter={logsFilter}
           selectedSteps={selectedSteps}
         >
           {({ filteredNodes, allNodes, loaded }) => (
-            <ReexecuteWithData
+            <RunWithData
               run={run}
+              runId={runId}
               filteredNodes={filteredNodes}
               allNodes={allNodes}
               logsLoading={!loaded}
@@ -194,8 +196,9 @@ export class Run extends React.Component<RunProps, RunState> {
   }
 }
 
-interface ReexecuteWithDataProps {
+interface RunWithDataProps {
   run?: RunFragment;
+  runId: string;
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: LogFilter;
@@ -219,8 +222,9 @@ interface ReexecuteWithDataProps {
   }) => LaunchPipelineReexecutionVariables | undefined;
 }
 
-const ReexecuteWithData = ({
+const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   run,
+  runId,
   allNodes,
   filteredNodes,
   logsFilter,
@@ -231,7 +235,7 @@ const ReexecuteWithData = ({
   onSetQuery,
   onSetSelectedSteps,
   getReexecutionVariables
-}: ReexecuteWithDataProps) => {
+}) => {
   const [launchPipelineReexecution] = useMutation(
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
@@ -296,7 +300,7 @@ const ReexecuteWithData = ({
           firstMinSize={40}
           first={
             logsLoading ? (
-              GaantChart.LoadingState
+              <GaantChart.LoadingState runId={runId} />
             ) : run?.executionPlan ? (
               <GaantChart
                 options={{
@@ -322,7 +326,7 @@ const ReexecuteWithData = ({
                     )}
                   />
                 }
-                runId={run.runId}
+                runId={runId}
                 plan={run.executionPlan}
                 metadata={metadata}
                 selectedSteps={selectedSteps}

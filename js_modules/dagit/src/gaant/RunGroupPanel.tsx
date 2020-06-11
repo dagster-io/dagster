@@ -47,11 +47,11 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({
 
   return (
     <RunGroupContainer>
-      {runs[0] && <RunGroupHeader>{runs[0].pipeline.name}</RunGroupHeader>}
+      {runs[0] && <RunGroupHeader>{runs[0].pipelineName}</RunGroupHeader>}
       {runs.map((g: RunGroupPanelQuery_runGroupOrError_RunGroup_runs, idx) => (
         <RunGroupRun
           key={g.runId}
-          to={`/runs/${g.pipeline.name}/${g.runId}`}
+          to={`/runs/${g.pipelineName}/${g.runId}`}
           selected={g.runId === runId}
         >
           {idx < runs.length - 1 && <ThinLine style={{ height: 36 }} />}
@@ -106,9 +106,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
           parentRunId
           status
           stepKeysToExecute
-          pipeline {
-            name
-          }
+          pipelineName
           tags {
             key
             value

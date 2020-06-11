@@ -25,11 +25,6 @@ export interface RunStatsQuery_pipelineRunOrError_PipelineRunNotFoundError {
   message: string;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_PipelineRun_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
@@ -56,7 +51,7 @@ export type RunStatsQuery_pipelineRunOrError_PipelineRun_stats = RunStatsQuery_p
 export interface RunStatsQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: RunStatsQuery_pipelineRunOrError_PipelineRun_pipeline;
+  pipelineName: string;
   stats: RunStatsQuery_pipelineRunOrError_PipelineRun_stats;
 }
 

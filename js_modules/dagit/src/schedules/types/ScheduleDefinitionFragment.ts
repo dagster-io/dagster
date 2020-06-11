@@ -26,16 +26,11 @@ export interface ScheduleDefinitionFragment_scheduleState_runs_tags {
   value: string;
 }
 
-export interface ScheduleDefinitionFragment_scheduleState_runs_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface ScheduleDefinitionFragment_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
   tags: ScheduleDefinitionFragment_scheduleState_runs_tags[];
-  pipeline: ScheduleDefinitionFragment_scheduleState_runs_pipeline;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 
