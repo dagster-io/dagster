@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
-from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
     query PartitionSetsQuery($repositorySelector: RepositorySelector!, $pipelineName: String!) {
@@ -49,7 +49,7 @@ GET_PARTITION_SET_QUERY = '''
 '''
 
 
-class TestPartitionSets(LegacyReadonlyGraphQLContextTestMatrix):
+class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
     def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(

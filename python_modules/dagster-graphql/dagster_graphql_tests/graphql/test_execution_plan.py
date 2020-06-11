@@ -9,7 +9,7 @@ from dagster.core.storage.intermediates_manager import IntermediateStoreIntermed
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
-from .graphql_context_test_suite import LegacyReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 from .setup import (
     PoorMansDataFrame,
     csv_hello_world,
@@ -420,7 +420,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
     )
 
 
-class TestExecutionPlan(LegacyReadonlyGraphQLContextTestMatrix):
+class TestExecutionPlan(ReadonlyGraphQLContextTestMatrix):
     def test_invalid_config_fetch_execute_plan(self, graphql_context, snapshot):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
