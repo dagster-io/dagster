@@ -19,6 +19,7 @@ def test_get_validated_celery_k8s_executor_config():
         'image_pull_policy': 'IfNotPresent',
         'load_incluster_config': True,
         'job_namespace': 'default',
+        'repo_location_name': '<<in_process>>',
     }
 
     with pytest.raises(
@@ -46,6 +47,7 @@ def test_get_validated_celery_k8s_executor_config():
             'env_config_maps': ['config-pipeline-env'],
             'load_incluster_config': True,
             'job_namespace': 'default',
+            'repo_location_name': '<<in_process>>',
         }
 
     # Test setting all possible config fields
@@ -68,6 +70,7 @@ def test_get_validated_celery_k8s_executor_config():
             'execution': {
                 CELERY_K8S_CONFIG_KEY: {
                     'config': {
+                        'repo_location_name': '<<in_process>>',
                         'load_incluster_config': False,
                         'kubeconfig_file': '/some/kubeconfig/file',
                         'job_namespace': {'env': 'TEST_PIPELINE_RUN_NAMESPACE'},
@@ -94,6 +97,7 @@ def test_get_validated_celery_k8s_executor_config():
 
         res = _get_validated_celery_k8s_executor_config(cfg)
         assert res == {
+            'repo_location_name': '<<in_process>>',
             'load_incluster_config': False,
             'kubeconfig_file': '/some/kubeconfig/file',
             'job_namespace': 'default',

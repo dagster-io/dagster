@@ -1,6 +1,7 @@
 from dagster import Field, Noneable, StringSource, check
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.utils import merge_dicts
 
 from .config import CeleryK8sJobConfig
@@ -38,6 +39,12 @@ def celery_k8s_config():
             description='The namespace into which to launch new jobs. Note that any '
             'other Kubernetes resources the Job requires (such as the service account) must be '
             'present in this namespace. Default: ``"default"``',
+        ),
+        'repo_location_name': Field(
+            StringSource,
+            is_required=False,
+            default_value=IN_PROCESS_NAME,
+            description='The repository location name to use for execution.',
         ),
     }
 
@@ -144,4 +151,5 @@ def celery_k8s_job_executor(init_context):
         job_namespace=exc_cfg.get('job_namespace'),
         load_incluster_config=exc_cfg.get('load_incluster_config'),
         kubeconfig_file=exc_cfg.get('kubeconfig_file'),
+        repo_location_name=exc_cfg.get('repo_location_name'),
     )

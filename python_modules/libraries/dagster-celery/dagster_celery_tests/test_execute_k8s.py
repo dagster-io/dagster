@@ -64,4 +64,6 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
 
     assert not result.get('errors')
     assert result['data']
-    assert result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
+    assert (
+        result['data']['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
+    ), 'no match, result: {}'.format(result)

@@ -192,12 +192,15 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     resources = get_k8s_resource_requirements(step.tags)
     task = create_k8s_job_task(app)
 
+    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
+
     task_signature = task.si(
         instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
         step_keys=[step.key],
         environment_dict=pipeline_context.pipeline_run.environment_dict,
         mode=pipeline_context.pipeline_run.mode,
-        pipeline_name=pipeline_context.pipeline_run.pipeline_name,
+        repo_name=recon_repo.get_definition().name,
+        repo_location_name=pipeline_context.executor_config.repo_location_name,
         run_id=pipeline_context.pipeline_run.run_id,
         job_config_dict=pipeline_context.executor_config.job_config.to_dict(),
         job_namespace=pipeline_context.executor_config.job_namespace,

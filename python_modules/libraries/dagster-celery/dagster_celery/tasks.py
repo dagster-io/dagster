@@ -5,7 +5,7 @@ from celery import Celery
 from celery.utils.collections import force_mapping
 from dagster_celery.config import CeleryConfig, CeleryK8sJobConfig
 from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
-from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
+from dagster_graphql.client.util import parse_raw_log_lines
 from kombu import Queue
 
 from dagster import DagsterInstance, EventMetadataEntry, check, seven
@@ -80,7 +80,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         step_keys,
         environment_dict,
         mode,
-        pipeline_name,
+        repo_name,
+        repo_location_name,
         run_id,
         job_config_dict,
         job_namespace,
@@ -102,7 +103,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         )
         check.dict_param(environment_dict, 'environment_dict')
         check.str_param(mode, 'mode')
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(repo_name, 'repo_name')
+        check.str_param(repo_location_name, 'repo_location_name')
         check.str_param(run_id, 'run_id')
 
         # Celery will serialize this as a list
@@ -133,7 +135,20 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_name = 'dagster-stepjob-%s' % k8s_name_key
         pod_name = 'dagster-stepjob-%s' % k8s_name_key
 
-        variables = construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys)
+        variables = {
+            'executionParams': {
+                'runConfigData': environment_dict,
+                'mode': mode,
+                'selector': {
+                    'repositoryLocationName': repo_location_name,
+                    'repositoryName': repo_name,
+                    'pipelineName': pipeline_run.pipeline_name,
+                },
+                'executionMetadata': {'runId': run_id},
+                'stepKeys': step_keys,
+            }
+        }
+
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables)]
 
         job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)

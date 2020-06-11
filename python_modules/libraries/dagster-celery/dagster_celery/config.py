@@ -80,7 +80,7 @@ class CeleryK8sJobConfig(
     namedtuple(
         'CeleryK8sJobConfig',
         'retries broker backend include config_source job_config job_namespace '
-        'load_incluster_config kubeconfig_file',
+        'load_incluster_config kubeconfig_file repo_location_name',
     ),
     ExecutorConfig,
 ):
@@ -104,6 +104,7 @@ class CeleryK8sJobConfig(
             ``False``.
         kubeconfig_file (str): Path to a kubeconfig file to use. Unused when the coordinating
             process is within the cluster. Defaults to None (using the default kubeconfig).
+        repo_location_name (str): The repo location name
     '''
 
     def __new__(
@@ -117,6 +118,7 @@ class CeleryK8sJobConfig(
         job_namespace=None,
         load_incluster_config=False,
         kubeconfig_file=None,
+        repo_location_name=None,
     ):
         from dagster_k8s import DagsterK8sJobConfig
 
@@ -141,6 +143,7 @@ class CeleryK8sJobConfig(
             job_namespace=check.opt_str_param(job_namespace, 'job_namespace', default='default'),
             load_incluster_config=check.bool_param(load_incluster_config, 'load_incluster_config'),
             kubeconfig_file=check.opt_str_param(kubeconfig_file, 'kubeconfig_file'),
+            repo_location_name=check.str_param(repo_location_name, 'repo_location_name'),
         )
 
     @staticmethod
