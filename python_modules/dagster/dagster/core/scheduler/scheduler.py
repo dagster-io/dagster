@@ -141,7 +141,7 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
 
     @property
     def repository_origin_id(self):
-        return self.origin.repository_info.get_id()
+        return self.origin.repository_origin.get_id()
 
     def with_status(self, status):
         check.inst_param(status, 'status', ScheduleStatus)

@@ -29,46 +29,46 @@ class RepositoryPythonOrigin(
 
 
 @whitelist_for_serdes
-class PipelinePythonOrigin(namedtuple('_PipelinePythonOrigin', 'pipeline_name repository_info')):
-    def __new__(cls, pipeline_name, repository_info):
+class PipelinePythonOrigin(namedtuple('_PipelinePythonOrigin', 'pipeline_name repository_origin')):
+    def __new__(cls, pipeline_name, repository_origin):
         return super(PipelinePythonOrigin, cls).__new__(
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_info, 'repository_info', RepositoryPythonOrigin),
+            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
         )
 
     @property
     def executable_path(self):
-        return self.repository_info.executable_path
+        return self.repository_origin.executable_path
 
     def get_repo_cli_args(self):
-        return self.repository_info.get_cli_args()
+        return self.repository_origin.get_cli_args()
 
     def get_repo_pointer(self):
-        return self.repository_info.code_pointer
+        return self.repository_origin.code_pointer
 
     def get_id(self):
         return create_snapshot_id(self)
 
 
 @whitelist_for_serdes
-class SchedulePythonOrigin(namedtuple('_SchedulePythonOrigin', 'schedule_name repository_info')):
-    def __new__(cls, schedule_name, repository_info):
+class SchedulePythonOrigin(namedtuple('_SchedulePythonOrigin', 'schedule_name repository_origin')):
+    def __new__(cls, schedule_name, repository_origin):
         return super(SchedulePythonOrigin, cls).__new__(
             cls,
             check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_info, 'repository_info', RepositoryPythonOrigin),
+            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
         )
 
     @property
     def executable_path(self):
-        return self.repository_info.executable_path
+        return self.repository_origin.executable_path
 
     def get_repo_cli_args(self):
-        return self.repository_info.get_cli_args()
+        return self.repository_origin.get_cli_args()
 
     def get_repo_pointer(self):
-        return self.repository_info.code_pointer
+        return self.repository_origin.code_pointer
 
     def get_id(self):
         return create_snapshot_id(self)
