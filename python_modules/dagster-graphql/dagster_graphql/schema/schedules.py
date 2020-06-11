@@ -1,5 +1,9 @@
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import start_schedule, stop_schedule
+from dagster_graphql.implementation.fetch_schedules import (
+    get_schedule_yaml,
+    start_schedule,
+    stop_schedule,
+)
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinScheduleNotFoundError,
@@ -47,10 +51,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     run_config_yaml = dauphin.Field(dauphin.String)
     partition_set = dauphin.Field('PartitionSet')
 
-    def resolve_run_config_yaml(self, _graphene_info):
-        # TODO: reimplement run_config_yaml against user process
-        # https://github.com/dagster-io/dagster/issues/2563
-        return None
+    def resolve_run_config_yaml(self, graphene_info):
+        return get_schedule_yaml(graphene_info, self._external_schedule)
 
     def resolve_partition_set(self, graphene_info):
         if self._external_schedule.partition_set_name is None:

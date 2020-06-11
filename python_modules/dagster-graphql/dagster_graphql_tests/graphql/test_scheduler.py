@@ -189,18 +189,15 @@ def test_get_all_schedules(graphql_context):
         if schedule['scheduleDefinition']['name'] == 'no_config_pipeline_hourly_schedule':
             assert schedule['status'] == 'RUNNING'
 
-        # TODO: reimplement run_config_yaml against user process
-        # https://github.com/dagster-io/dagster/issues/2563
-
-        # if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':
-        #     assert schedule['scheduleDefinition']['runConfigYaml'] is None
-        # elif schedule['scheduleDefinition']['name'] == 'invalid_config_schedule':
-        #     assert (
-        #         schedule['scheduleDefinition']['runConfigYaml']
-        #         == 'solids:\n  takes_an_enum:\n    config: invalid\n'
-        #     )
-        # else:
-        #     assert schedule['scheduleDefinition']['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
+        if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':
+            assert schedule['scheduleDefinition']['runConfigYaml'] is None
+        elif schedule['scheduleDefinition']['name'] == 'invalid_config_schedule':
+            assert (
+                schedule['scheduleDefinition']['runConfigYaml']
+                == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+            )
+        else:
+            assert schedule['scheduleDefinition']['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
 
 
 def test_get_schedule(graphql_context):

@@ -13,8 +13,14 @@ from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
 )
+from dagster.core.definitions import ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterInvalidSubsetError, DagsterSubprocessError
+from dagster.core.errors import (
+    DagsterInvalidSubsetError,
+    DagsterSubprocessError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import (
@@ -26,6 +32,7 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionData,
     ExternalPipelineSubsetResult,
     ExternalRepositoryData,
+    ExternalScheduleExecutionData,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
@@ -279,6 +286,40 @@ def partition_data_command(args):
     return external_partition_data_from_def(partition_set_def, partition)
 
 
+@whitelist_for_serdes
+class ScheduleExecutionDataCommandArgs(
+    namedtuple('_ScheduleExecutionDataCommandArgs', 'repository_origin instance_ref schedule_name')
+):
+    pass
+
+
+@unary_api_cli_command(
+    name='schedule_config',
+    help_str='Return the config for a schedule',
+    input_cls=ScheduleExecutionDataCommandArgs,
+    output_cls=ExternalScheduleExecutionData,
+)
+def schedule_execution_data_command(args):
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    definition = recon_repo.get_definition()
+    schedule_def = definition.get_schedule_def(args.schedule_name)
+    instance = DagsterInstance.from_ref(args.instance_ref)
+    schedule_context = ScheduleExecutionContext(instance)
+    try:
+        with user_code_error_boundary(
+            ScheduleExecutionError,
+            lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
+            '{schedule_name}'.format(schedule_name=schedule_def.name),
+        ):
+            run_config = schedule_def.get_environment_dict(schedule_context)
+            schedule_execution_data = ExternalScheduleExecutionData(run_config=run_config)
+    except ScheduleExecutionError:
+        schedule_execution_data = ExternalScheduleExecutionData(
+            error=serializable_error_info_from_exc_info(sys.exc_info())
+        )
+    return schedule_execution_data
+
+
 # Execution CLI
 
 
@@ -390,6 +431,7 @@ def create_api_cli_group():
     group.add_command(execution_plan_snapshot_command)
     group.add_command(list_repositories_command)
     group.add_command(partition_data_command)
+    group.add_command(schedule_execution_data_command)
     return group
 
 

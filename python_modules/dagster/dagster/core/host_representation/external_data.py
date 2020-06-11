@@ -167,6 +167,18 @@ class ExternalScheduleData(
 
 
 @whitelist_for_serdes
+class ExternalScheduleExecutionData(
+    namedtuple('_ExternalScheduleExecutionData', 'run_config error')
+):
+    def __new__(cls, run_config=None, error=None):
+        return super(ExternalScheduleExecutionData, cls).__new__(
+            cls,
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     namedtuple(
         '_ExternalPartitionSetData', 'name partition_names pipeline_name solid_selection mode'
