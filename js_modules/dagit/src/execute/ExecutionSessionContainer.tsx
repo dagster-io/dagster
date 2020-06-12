@@ -170,7 +170,7 @@ export default class ExecutionSessionContainer extends React.Component<
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml) || {};
+      runConfigData = yaml.parse(currentSession.runConfigYaml || "") || {};
     } catch (err) {
       alert(YAML_SYNTAX_INVALID);
       return;
