@@ -196,7 +196,7 @@ class Enum(ConfigType):
         .. code-block:: python
 
             @solid(
-                config=Field(
+                config_schema=Field(
                     Enum(
                         'CowboyType',
                         [
@@ -261,7 +261,7 @@ class Enum(ConfigType):
                     BLUE = enum.auto()
 
                 @solid(
-                    config={"color": Field(Enum.from_python_enum(Color))}
+                    config_schema={"color": Field(Enum.from_python_enum(Color))}
                 )
                 def select_color(context):
                     # ...

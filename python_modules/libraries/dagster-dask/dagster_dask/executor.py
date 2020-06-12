@@ -6,7 +6,7 @@ from .config import DaskConfig
 
 @executor(
     name='dask',
-    config={
+    config_schema={
         'cluster': Field(
             Selector(
                 {

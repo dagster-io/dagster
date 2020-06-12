@@ -374,7 +374,7 @@ def test_config_defaults():
 
     @composite_solid(
         config_fn=addition_composite_solid_config_fn,
-        config={
+        config_schema={
             "a": Field(Int, is_required=False, default_value=1),
             "b": Field(Int, is_required=False, default_value=2),
             "c": Int,
@@ -401,7 +401,7 @@ def test_config_with_and_without_config():
 
     @composite_solid(
         config_fn=lambda cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
-        config={'prefix': Field(str, is_required=False, default_value='_id_')},
+        config_schema={'prefix': Field(str, is_required=False, default_value='_id_')},
     )
     def prefix_id(val):
         return prefix_value(val)
@@ -449,7 +449,7 @@ def test_build_optionality():
 
 
 def test_wrong_solid_name():
-    @solid(name='some_solid', input_defs=[], output_defs=[], config=Int)
+    @solid(name='some_solid', input_defs=[], output_defs=[], config_schema=Int)
     def some_solid(_):
         return None
 
@@ -472,7 +472,7 @@ def fail_me():
 
 
 def dummy_resource(config=None):
-    return ResourceDefinition(lambda: None, config=config)
+    return ResourceDefinition(lambda: None, config_schema=config)
 
 
 def test_wrong_resources():
@@ -496,7 +496,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=[int])
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config_schema=[int])
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
@@ -515,7 +515,7 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+        input_defs=[], config_schema={'list_one': [int], 'list_two': [int]},
     )
     def two_list_type(context):
         return context.solid_config
@@ -526,7 +526,7 @@ def test_two_list_types():
     ).output_value() == {'list_one': [1], 'list_two': [2]}
 
     @solid(
-        input_defs=[], config={'list_one': [Int], 'list_two': [Int]},
+        input_defs=[], config_schema={'list_one': [Int], 'list_two': [Int]},
     )
     def two_list_type_condensed_syntax(context):
         return context.solid_config
@@ -541,7 +541,7 @@ def test_two_list_types():
     ).output_value() == {'list_one': [1], 'list_two': [2]}
 
     @solid(
-        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+        input_defs=[], config_schema={'list_one': [int], 'list_two': [int]},
     )
     def two_list_type_condensed_syntax_primitives(context):
         return context.solid_config

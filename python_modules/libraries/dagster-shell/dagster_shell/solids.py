@@ -60,7 +60,7 @@ def shell_solid_config():
     ),
     input_defs=[InputDefinition('shell_command', str)],
     output_defs=[OutputDefinition(str, 'result')],
-    config=shell_solid_config(),
+    config_schema=shell_solid_config(),
 )
 def shell_solid(context, shell_command):
     '''This solid executes a shell command it receives as input.
@@ -122,7 +122,7 @@ def create_shell_command_solid(
         description=description,
         input_defs=[InputDefinition('start', Nothing)],
         output_defs=[OutputDefinition(str, 'result')],
-        config=shell_solid_config(),
+        config_schema=shell_solid_config(),
         required_resource_keys=required_resource_keys,
         tags=tags,
     )
@@ -190,7 +190,7 @@ def create_shell_script_solid(
         description=kwargs.pop('description', 'A solid to invoke a shell command.'),
         input_defs=input_defs or [InputDefinition('start', Nothing)],
         output_defs=[OutputDefinition(str, 'result')],
-        config=shell_solid_config(),
+        config_schema=shell_solid_config(),
         **kwargs
     )
     def _shell_script_solid(context):

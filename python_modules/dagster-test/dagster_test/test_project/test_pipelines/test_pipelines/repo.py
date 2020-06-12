@@ -40,7 +40,7 @@ def celery_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition('word', String)], config={'factor': Int})
+@solid(input_defs=[InputDefinition('word', String)], config_schema={'factor': Int})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 

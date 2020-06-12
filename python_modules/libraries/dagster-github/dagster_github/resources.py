@@ -137,7 +137,7 @@ class GithubResource:
 
 
 @resource(
-    config={
+    config_schema={
         "github_app_id": Field(
             IntSource,
             description="Github Application ID, for more info see https://developer.github.com/apps/",

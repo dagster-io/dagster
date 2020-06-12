@@ -192,7 +192,7 @@ class Field(object):
         .. code-block::python
 
             @solid(
-                config={
+                config_schema={
                     'word': Field(str, description='I am a word.'),
                     'repeats': Field(Int, default_value=1, is_required=False),
                 }

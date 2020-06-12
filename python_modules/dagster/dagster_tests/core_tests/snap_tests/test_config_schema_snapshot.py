@@ -229,7 +229,7 @@ def test_check_solid_list_list_config_correct():
 
 def test_kitchen_sink_break_out():
     @solid(
-        config=[
+        config_schema=[
             {
                 'opt_list_of_int': Field([int], is_required=False),
                 'nested_dict': {

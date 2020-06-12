@@ -9,7 +9,7 @@ from .intermediate_store import GCSIntermediateStore
 @system_storage(
     name='gcs',
     is_persistent=True,
-    config={
+    config_schema={
         'gcs_bucket': Field(StringSource),
         'gcs_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },

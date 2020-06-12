@@ -62,7 +62,7 @@ class DatabricksRunJobSolidDefinition(SolidDefinition):
             input_defs=[InputDefinition(_START, Nothing)],
             output_defs=[OutputDefinition(Int)],
             compute_fn=_compute_fn,
-            config={
+            config_schema={
                 'run_config': define_databricks_submit_custom_run_config(),
                 'databricks_host': Field(String, is_required=False),
                 'databricks_token': Field(String, is_required=True),

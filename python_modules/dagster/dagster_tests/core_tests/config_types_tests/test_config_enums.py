@@ -42,7 +42,7 @@ def test_enum_in_pipeline_execution():
     called = {}
 
     @solid(
-        config={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
+        config_schema={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
     )
     def config_me(context):
         assert context.solid_config['int_field'] == 2
@@ -198,7 +198,9 @@ def test_dict_enum_with_bad_default():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
         @solid(
-            config={'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)}
+            config_schema={
+                'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
+            }
         )
         def _enum_bad_dict(_):
             pass

@@ -10,7 +10,7 @@ def test_basic_solid_with_config():
         name='solid_with_context',
         input_defs=[],
         output_defs=[],
-        config={'some_config': Field(String)},
+        config_schema={'some_config': Field(String)},
     )
     def solid_with_context(context):
         did_get['yep'] = context.solid_config
@@ -35,7 +35,7 @@ def test_config_arg_mismatch():
         name='solid_with_context',
         input_defs=[],
         output_defs=[],
-        config={'some_config': Field(String)},
+        config_schema={'some_config': Field(String)},
     )
     def solid_with_context(context):
         raise Exception('should not reach')

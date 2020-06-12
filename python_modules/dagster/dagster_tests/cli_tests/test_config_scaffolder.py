@@ -31,7 +31,7 @@ def test_basic_solids_config(snapshot):
                 name='required_field_solid',
                 input_defs=[],
                 output_defs=[],
-                config={'required_int': Int},
+                config_schema={'required_int': Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],

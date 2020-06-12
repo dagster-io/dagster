@@ -272,7 +272,9 @@ def test_deserialize_solid_def_snaps_default_field():
 
 def test_deserialize_solid_def_snaps_enum():
     @solid(
-        config=Field(Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')]))
+        config_schema=Field(
+            Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')])
+        )
     )
     def noop_solid(_):
         pass
@@ -389,7 +391,7 @@ def test_deserialize_solid_def_snaps_noneable():
 
 def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
     @solid(
-        config=Field(
+        config_schema=Field(
             Permissive(
                 {
                     'foo': Field(Array(float)),

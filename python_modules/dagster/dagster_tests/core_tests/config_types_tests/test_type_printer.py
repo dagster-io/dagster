@@ -141,7 +141,7 @@ def test_test_type_pipeline_construction():
 
 
 def define_solid_for_test_type(name, config):
-    @solid(name=name, config=config, input_defs=[], output_defs=[])
+    @solid(name=name, config_schema=config, input_defs=[], output_defs=[])
     def a_solid(_):
         return None
 

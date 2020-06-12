@@ -21,7 +21,7 @@ def define_pass_value_solid(name, description=None):
         description=description,
         input_defs=[],
         output_defs=[OutputDefinition(String)],
-        config={'value': Field(String)},
+        config_schema={'value': Field(String)},
     )
     def pass_value_solid(context):
         yield Output(context.solid_config['value'])

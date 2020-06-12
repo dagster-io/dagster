@@ -53,7 +53,7 @@ def celery_k8s_config():
     return cfg
 
 
-@executor(name=CELERY_K8S_CONFIG_KEY, config=celery_k8s_config())
+@executor(name=CELERY_K8S_CONFIG_KEY, config_schema=celery_k8s_config())
 def celery_k8s_job_executor(init_context):
     '''Celery-based executor which launches tasks as Kubernetes Jobs.
 

@@ -64,7 +64,7 @@ def request_retry_local_external_step_launcher(context):
 
 
 def define_basic_pipeline():
-    @solid(required_resource_keys=set(['first_step_launcher']), config={'a': Field(str)})
+    @solid(required_resource_keys=set(['first_step_launcher']), config_schema={'a': Field(str)})
     def return_two(_):
         return 2
 

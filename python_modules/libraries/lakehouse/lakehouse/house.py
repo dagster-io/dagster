@@ -163,7 +163,7 @@ class Lakehouse:
                 computed_asset, input_defs, output_def
             ),
             output_defs=[output_def],
-            config=None,
+            config_schema=None,
             required_resource_keys=required_resource_keys,
             positional_inputs=None,
         )

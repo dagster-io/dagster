@@ -173,7 +173,7 @@ def solid(
                 return foo
 
             @solid(
-                config={'str_value' : Field(str)}
+                config_schema={'str_value' : Field(str)}
             )
             def hello_world(context, foo):
                 # context.solid_config is a dictionary with 'str_value' key

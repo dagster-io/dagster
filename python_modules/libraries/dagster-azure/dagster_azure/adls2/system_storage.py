@@ -9,7 +9,7 @@ from .intermediate_store import ADLS2IntermediateStore
 @system_storage(
     name='adls2',
     is_persistent=True,
-    config={
+    config_schema={
         'adls2_file_system': Field(StringSource, description='ADLS Gen2 file system name'),
         'adls2_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },

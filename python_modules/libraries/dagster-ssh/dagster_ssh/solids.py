@@ -5,7 +5,7 @@ from dagster.utils import mkdir_p
 
 
 @solid(
-    config={
+    config_schema={
         'local_filepath': Field(
             str, is_required=True, description='local file path to get or put.'
         ),

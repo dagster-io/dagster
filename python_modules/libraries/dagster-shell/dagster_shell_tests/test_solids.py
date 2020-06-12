@@ -72,7 +72,7 @@ def test_shell_script_solid_no_config_composite():
     solid = create_shell_script_solid(os.path.join(script_dir, 'test.sh'), name='foobar')
 
     @composite_solid(
-        config={}, config_fn=lambda cfg: {}, output_defs=[OutputDefinition(str, 'result')]
+        config_schema={}, config_fn=lambda cfg: {}, output_defs=[OutputDefinition(str, 'result')]
     )
     def composite():
         return solid()

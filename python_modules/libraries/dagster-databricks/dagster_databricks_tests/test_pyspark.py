@@ -72,7 +72,7 @@ def make_df_solid(context):
 @solid(
     name='blah',
     description='this is a test',
-    config={'foo': str, 'bar': int},
+    config_schema={'foo': str, 'bar': int},
     input_defs=[InputDefinition('people', DataFrame)],
     output_defs=[OutputDefinition(DataFrame)],
     required_resource_keys={'pyspark_step_launcher'},

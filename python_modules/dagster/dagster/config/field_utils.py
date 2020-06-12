@@ -179,7 +179,7 @@ class Selector(_ConfigHasFields):
     .. code-block:: python
 
         @solid(
-            config=Field(
+            config_schema=Field(
                 Selector(
                     {
                         'haw': {'whom': Field(String, default_value='honua', is_required=False)},

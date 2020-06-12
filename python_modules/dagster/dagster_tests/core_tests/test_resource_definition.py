@@ -23,7 +23,7 @@ from dagster.core.instance import DagsterInstance
 
 def define_string_resource():
     return ResourceDefinition(
-        config=String, resource_fn=lambda init_context: init_context.resource_config
+        config_schema=String, resource_fn=lambda init_context: init_context.resource_config
     )
 
 

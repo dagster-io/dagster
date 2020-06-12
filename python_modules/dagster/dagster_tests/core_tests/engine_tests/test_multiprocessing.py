@@ -183,7 +183,7 @@ def define_subdag_pipeline():
                 return
 
     @solid(
-        input_defs=[InputDefinition('after', Nothing)], config=Field(String),
+        input_defs=[InputDefinition('after', Nothing)], config_schema=Field(String),
     )
     def writer(context):
         with open(context.solid_config, 'w') as fd:

@@ -342,7 +342,7 @@ def hello_world(context) -> str:
 
 
 @solid(
-    config=Field(
+    config_schema=Field(
         Selector(
             {
                 'haw': {'whom': Field(String, default_value='honua', is_required=False)},

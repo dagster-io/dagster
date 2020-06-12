@@ -5,7 +5,7 @@ from dagster import DagsterInvalidConfigDefinitionError, Noneable, Selector, exe
 
 def test_kitchen_sink():
     @solid(
-        config={
+        config_schema={
             'str_field': str,
             'int_field': int,
             'list_int': [int],

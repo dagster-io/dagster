@@ -253,7 +253,7 @@ def pipeline_with_expectations():
 @pipeline
 def more_complicated_config():
     @solid(
-        config={
+        config_schema={
             'field_one': Field(String),
             'field_two': Field(String, is_required=False),
             'field_three': Field(String, is_required=False, default_value='some_value'),
@@ -272,7 +272,7 @@ def more_complicated_nested_config():
         name='a_solid_with_multilayered_config',
         input_defs=[],
         output_defs=[],
-        config={
+        config_schema={
             'field_any': Any,
             'field_one': String,
             'field_two': Field(String, is_required=False),
@@ -342,7 +342,7 @@ def hello_world_with_tags():
     return solid_that_gets_tags()
 
 
-@solid(name='solid_with_list', input_defs=[], output_defs=[], config=[int])
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config_schema=[int])
 def solid_def(_):
     return None
 
@@ -406,7 +406,7 @@ def scalar_output_pipeline():
 @pipeline
 def pipeline_with_enum_config():
     @solid(
-        config=Enum(
+        config_schema=Enum(
             'TestEnum',
             [
                 EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
@@ -677,7 +677,7 @@ def retry_resource_pipeline():
 
 
 @solid(
-    config={'fail': bool},
+    config_schema={'fail': bool},
     input_defs=[InputDefinition('inp', str)],
     output_defs=[
         OutputDefinition(str, 'start_fail', is_required=False),
@@ -736,7 +736,7 @@ def retry_multi_input_early_terminate_pipeline():
         return 1
 
     @solid(
-        config={'wait_to_terminate': bool},
+        config_schema={'wait_to_terminate': bool},
         input_defs=[InputDefinition('one', Int)],
         output_defs=[OutputDefinition(Int)],
     )
@@ -747,7 +747,7 @@ def retry_multi_input_early_terminate_pipeline():
         return one
 
     @solid(
-        config={'wait_to_terminate': bool},
+        config_schema={'wait_to_terminate': bool},
         input_defs=[InputDefinition('one', Int)],
         output_defs=[OutputDefinition(Int)],
     )
