@@ -27,7 +27,7 @@ from dagster_k8s_tests.cluster import (  # isort:skip, pylint:disable=unused-imp
 def test_execute_on_celery(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
-    environment_dict = merge_dicts(
+    run_config = merge_dicts(
         merge_yamls(
             [
                 os.path.join(test_project_environments_path(), 'env.yaml'),
@@ -50,7 +50,7 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
 
     pipeline_name = 'demo_pipeline_celery'
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict, mode='default',
+        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode='default',
     )
 
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))

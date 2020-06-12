@@ -77,13 +77,13 @@ schedules_dict = {
         name="no_config_pipeline_daily_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": None}},
+        run_config={"storage": {"filesystem": None}},
     ),
     'no_config_pipeline_every_min_schedule': ScheduleDefinition(
         name="no_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": None}},
+        run_config={"storage": {"filesystem": None}},
     ),
     'default_config_pipeline_every_min_schedule': ScheduleDefinition(
         name="default_config_pipeline_every_min_schedule",

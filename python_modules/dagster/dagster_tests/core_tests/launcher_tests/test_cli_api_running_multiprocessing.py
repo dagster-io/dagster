@@ -153,10 +153,10 @@ def temp_instance():
 
 def test_works_in_memory():
 
-    environment_dict = {
+    run_config = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
-    assert execute_pipeline(passing_pipeline, environment_dict).success
+    assert execute_pipeline(passing_pipeline, run_config).success
 
 
 def _external_pipeline_from_def(pipeline_def, solid_selection=None):
@@ -192,12 +192,12 @@ def _execute_in_launcher(instance, pipeline_def, run_config, solid_selection=Non
 
 
 def test_running():
-    environment_dict = {
+    run_config = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
 
     with temp_instance() as instance:
-        pipeline_run = _execute_in_launcher(instance, passing_pipeline, environment_dict)
+        pipeline_run = _execute_in_launcher(instance, passing_pipeline, run_config)
 
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
         events = instance.all_logs(pipeline_run.run_id)
@@ -216,26 +216,26 @@ def test_running():
 
 def test_failing():
     with temp_instance() as instance:
-        environment_dict = {
+        run_config = {
             'solids': {
                 'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}
             }
         }
 
-        pipeline_run = _execute_in_launcher(instance, failing_pipeline, environment_dict)
+        pipeline_run = _execute_in_launcher(instance, failing_pipeline, run_config)
 
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
         assert instance.all_logs(pipeline_run.run_id)
 
 
 def test_execution_crash():
-    environment_dict = {
+    run_config = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
 
     with temp_instance() as instance:
 
-        pipeline_run = _execute_in_launcher(instance, crashy_pipeline, environment_dict)
+        pipeline_run = _execute_in_launcher(instance, crashy_pipeline, run_config)
 
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
         crash_log = instance.all_logs(pipeline_run.run_id)[
@@ -250,7 +250,7 @@ def test_execution_crash():
 
 
 def test_multiprocessing_execution_for_composite_solid():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid': {
                 'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
@@ -259,12 +259,12 @@ def test_multiprocessing_execution_for_composite_solid():
     }
 
     with temp_instance() as instance:
-        pipeline_run = _execute_in_launcher(instance, composite_pipeline, environment_dict)
+        pipeline_run = _execute_in_launcher(instance, composite_pipeline, run_config)
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
 def test_multiprocessing_execution_for_composite_solid_multiprocess_executor():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid': {
                 'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
@@ -275,12 +275,12 @@ def test_multiprocessing_execution_for_composite_solid_multiprocess_executor():
     }
 
     with temp_instance() as instance:
-        second_run = _execute_in_launcher(instance, composite_pipeline, environment_dict)
+        second_run = _execute_in_launcher(instance, composite_pipeline, run_config)
         assert instance.get_run_by_id(second_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
 def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid_and_config_mapping': {
                 'config': {'foo': 'baz', 'bar': 3}
@@ -289,15 +289,13 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     }
     with temp_instance() as instance:
         pipeline_run = _execute_in_launcher(
-            instance,
-            pipeline_def=composite_pipeline_with_config_mapping,
-            run_config=environment_dict,
+            instance, pipeline_def=composite_pipeline_with_config_mapping, run_config=run_config,
         )
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
 def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_multiprocess():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid_and_config_mapping': {
                 'config': {'foo': 'baz', 'bar': 3}
@@ -308,9 +306,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_
     }
     with temp_instance() as instance:
         pipeline_run = _execute_in_launcher(
-            instance,
-            pipeline_def=composite_pipeline_with_config_mapping,
-            run_config=environment_dict,
+            instance, pipeline_def=composite_pipeline_with_config_mapping, run_config=run_config,
         )
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -332,10 +328,10 @@ def infinite_loop_pipeline():
 def test_has_run_query_and_terminate():
     with temp_instance() as instance:
         with safe_tempfile_path() as path:
-            environment_dict = {'solids': {'loop': {'config': {'file': path}}}}
+            run_config = {'solids': {'loop': {'config': {'file': path}}}}
 
             created_pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=infinite_loop_pipeline, run_config=environment_dict,
+                pipeline_def=infinite_loop_pipeline, run_config=run_config,
             )
 
             pipeline_run = instance.launch_run(

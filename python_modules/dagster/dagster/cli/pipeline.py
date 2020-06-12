@@ -485,7 +485,7 @@ def pipeline_launch_command(config, preset_name, mode, **kwargs):
     if solid_selection:
         pipeline = pipeline.subset_for_execution(solid_selection)
 
-    # FIXME need to check the env against environment_dict
+    # FIXME need to check the env against run_config
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
         solid_selection=solid_selection,

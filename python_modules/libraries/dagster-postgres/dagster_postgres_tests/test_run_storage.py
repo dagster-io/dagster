@@ -25,7 +25,7 @@ def build_run(
     return PipelineRun(
         pipeline_name=pipeline_name,
         run_id=run_id,
-        environment_dict=None,
+        run_config=None,
         mode=mode,
         step_keys_to_execute=None,
         tags=tags,

@@ -28,16 +28,16 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.merger import deep_merge_dicts
 
-ENVIRONMENT_DICT_BASE = {'solids': {'return_two': {'config': {'a': 'b'}}}}
+RUN_CONFIG_BASE = {'solids': {'return_two': {'config': {'a': 'b'}}}}
 
 
-def make_environment_dict(scratch_dir, mode):
+def make_run_config(scratch_dir, mode):
     if mode in ['external', 'request_retry']:
         step_launcher_resource_keys = ['first_step_launcher', 'second_step_launcher']
     else:
         step_launcher_resource_keys = ['second_step_launcher']
     return deep_merge_dicts(
-        ENVIRONMENT_DICT_BASE,
+        RUN_CONFIG_BASE,
         {
             'resources': {
                 step_launcher_resource_key: {'config': {'scratch_dir': scratch_dir}}
@@ -107,7 +107,7 @@ def initialize_step_context(scratch_dir):
     pipeline_run = PipelineRun(
         pipeline_name='foo_pipeline',
         run_id=str(uuid.uuid4()),
-        run_config=make_environment_dict(scratch_dir, 'external'),
+        run_config=make_run_config(scratch_dir, 'external'),
         mode='external',
     )
 
@@ -166,7 +166,7 @@ def test_pipeline(mode):
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            run_config=make_environment_dict(tmpdir, mode),
+            run_config=make_run_config(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3
@@ -178,7 +178,7 @@ def test_launcher_requests_retry():
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            run_config=make_environment_dict(tmpdir, mode),
+            run_config=make_run_config(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3

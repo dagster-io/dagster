@@ -78,7 +78,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         _self,
         instance_ref_dict,
         step_keys,
-        environment_dict,
+        run_config,
         mode,
         repo_name,
         repo_location_name,
@@ -101,7 +101,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.invariant(
             len(step_keys) == 1, 'Celery K8s task executor can only execute 1 step at a time'
         )
-        check.dict_param(environment_dict, 'environment_dict')
+        check.dict_param(run_config, 'run_config')
         check.str_param(mode, 'mode')
         check.str_param(repo_name, 'repo_name')
         check.str_param(repo_location_name, 'repo_location_name')
@@ -135,7 +135,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         variables = {
             'executionParams': {
-                'runConfigData': environment_dict,
+                'runConfigData': run_config,
                 'mode': mode,
                 'selector': {
                     'repositoryLocationName': repo_location_name,

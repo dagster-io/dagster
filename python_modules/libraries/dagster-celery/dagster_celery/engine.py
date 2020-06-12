@@ -197,7 +197,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     task_signature = task.si(
         instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
         step_keys=[step.key],
-        environment_dict=pipeline_context.pipeline_run.run_config,
+        run_config=pipeline_context.pipeline_run.run_config,
         mode=pipeline_context.pipeline_run.mode,
         repo_name=recon_repo.get_definition().name,
         repo_location_name=pipeline_context.executor_config.repo_location_name,

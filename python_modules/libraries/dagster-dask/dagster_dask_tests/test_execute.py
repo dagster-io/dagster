@@ -31,7 +31,7 @@ def test_execute_on_dask_local():
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
             reconstructable(dask_engine_pipeline),
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
             },
@@ -49,7 +49,7 @@ def dask_composite_pipeline():
 def test_composite_execute():
     result = execute_pipeline(
         reconstructable(dask_composite_pipeline),
-        environment_dict={
+        run_config={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
         },
@@ -69,7 +69,7 @@ def pandas_pipeline():
 
 
 def test_pandas_dask():
-    environment_dict = {
+    run_config = {
         'solids': {
             'pandas_solid': {
                 'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'ex.csv')}}}
@@ -79,10 +79,10 @@ def test_pandas_dask():
 
     result = execute_pipeline(
         ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
-        environment_dict={
+        run_config={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
-            **environment_dict,
+            **run_config,
         },
         instance=DagsterInstance.local_temp(),
     )

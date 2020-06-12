@@ -86,11 +86,9 @@ spec:
 def test_valid_job_format(run_launcher):
     docker_image = test_project_docker_image()
 
-    environment_dict = load_yaml_from_path(
-        os.path.join(test_project_environments_path(), 'env.yaml')
-    )
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, run_config=environment_dict)
+    run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
     job_name = 'dagster-run-%s' % run.run_id
     pod_name = 'dagster-run-%s' % run.run_id
@@ -117,11 +115,9 @@ def test_valid_job_format(run_launcher):
 def test_valid_job_format_with_resources(run_launcher):
     docker_image = test_project_docker_image()
 
-    environment_dict = load_yaml_from_path(
-        os.path.join(test_project_environments_path(), 'env.yaml')
-    )
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, run_config=environment_dict)
+    run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
     tags = validate_tags(
         {
@@ -165,12 +161,10 @@ def test_valid_job_format_with_resources(run_launcher):
 
 
 def test_k8s_run_launcher(dagster_instance, helm_namespace):
-    environment_dict = load_yaml_from_path(
-        os.path.join(test_project_environments_path(), 'env.yaml')
-    )
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict, mode='default',
+        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode='default',
     )
 
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
@@ -186,11 +180,9 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
 
 
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
-    environment_dict = {'blah blah this is wrong': {}}
+    run_config = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict
-    )
+    run = create_run_for_test(dagster_instance, pipeline_name=pipeline_name, run_config=run_config)
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(
         job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace

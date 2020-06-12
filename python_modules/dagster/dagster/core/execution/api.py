@@ -185,7 +185,7 @@ def execute_pipeline_iterator(
 
     Parameters:
         pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
-        environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -208,11 +208,11 @@ def execute_pipeline_iterator(
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
     # stack level is to punch through helper function
-    environment_dict = canonicalize_run_config(run_config, environment_dict, stacklevel=4)
+    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=4)
 
     (
         pipeline,
-        environment_dict,
+        run_config,
         instance,
         mode,
         tags,
@@ -220,7 +220,7 @@ def execute_pipeline_iterator(
         solid_selection,
     ) = _check_execute_pipeline_args(
         pipeline=pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
@@ -230,7 +230,7 @@ def execute_pipeline_iterator(
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
-        run_config=environment_dict,
+        run_config=run_config,
         mode=mode,
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
@@ -259,7 +259,7 @@ def execute_pipeline(
 
     Parameters:
         pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
-        environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -289,11 +289,11 @@ def execute_pipeline(
     ``dagster.core.execution.api.execute_plan()``.
     '''
     # stack level is to punch through helper function and telemetry wrapper
-    environment_dict = canonicalize_run_config(run_config, environment_dict, stacklevel=5)
+    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=5)
 
     (
         pipeline,
-        environment_dict,
+        run_config,
         instance,
         mode,
         tags,
@@ -301,7 +301,7 @@ def execute_pipeline(
         solid_selection,
     ) = _check_execute_pipeline_args(
         pipeline=pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
@@ -313,7 +313,7 @@ def execute_pipeline(
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
-        run_config=environment_dict,
+        run_config=run_config,
         mode=mode,
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
@@ -495,13 +495,13 @@ class _ExecuteRunWithPlanIterable(object):
 
 
 def _check_execute_pipeline_args(
-    pipeline, environment_dict, mode, preset, tags, solid_selection, instance
+    pipeline, run_config, mode, preset, tags, solid_selection, instance
 ):
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    run_config = check.opt_dict_param(run_config, 'run_config')
     check.opt_str_param(mode, 'mode')
     check.opt_str_param(preset, 'preset')
     check.invariant(
@@ -519,12 +519,12 @@ def _check_execute_pipeline_args(
 
         if pipeline_preset.run_config is not None:
             check.invariant(
-                (not environment_dict) or (pipeline_preset.run_config == environment_dict),
+                (not run_config) or (pipeline_preset.run_config == run_config),
                 'The environment set in preset \'{preset}\' does not agree with the environment '
-                'passed in the `environment_dict` argument.'.format(preset=preset),
+                'passed in the `run_config` argument.'.format(preset=preset),
             )
 
-            environment_dict = pipeline_preset.run_config
+            run_config = pipeline_preset.run_config
 
         # load solid_selection from preset
         if pipeline_preset.solid_selection is not None:
@@ -581,7 +581,7 @@ def _check_execute_pipeline_args(
 
     return (
         pipeline,
-        environment_dict,
+        run_config,
         instance,
         mode,
         tags,

@@ -301,7 +301,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, environment_dict=run_config,)
+    result = execute_pipeline(pipe, run_config=run_config,)
     assert result.success
 
     execution_plan = create_execution_plan(pipe, run_config)

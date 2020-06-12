@@ -186,7 +186,7 @@ def execute_pipeline_on_celery(pipeline_name,):
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pipeline_name),
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {}},
             },
@@ -201,7 +201,7 @@ def execute_eagerly_on_celery(pipeline_name, instance=None, subset=None):
         instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pipeline_name).subset_for_execution(subset),
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
             },
@@ -444,7 +444,7 @@ def test_bad_broker():
     #         ExecutionTargetHandle.for_pipeline_python_file(
     #             __file__, 'test_diamond_pipeline'
     #         ).build_pipeline_definition(),
-    #         environment_dict={
+    #         run_config={
     #             'storage': {'filesystem': {}},
     #             'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
     #         },
@@ -460,7 +460,7 @@ def test_engine_error():
             storage = os.path.join(tempdir, 'flakey_storage')
             execute_pipeline(
                 ReconstructablePipeline.for_file(__file__, 'engine_error'),
-                environment_dict={
+                run_config={
                     'storage': {'filesystem': {'config': {'base_dir': storage}}},
                     'execution': {
                         'celery': {'config': {'config_source': {'task_always_eager': True}}}

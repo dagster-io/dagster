@@ -32,7 +32,7 @@ def test_successful_file_handle_to_s3():
 
         result = execute_pipeline(
             create_file_handle_pipeline(temp_file_handle, s3),
-            environment_dict={
+            run_config={
                 'solids': {
                     'file_handle_to_s3': {'config': {'Bucket': 'some-bucket', 'Key': 'some-key'}}
                 }

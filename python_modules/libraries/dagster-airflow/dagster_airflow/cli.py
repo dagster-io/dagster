@@ -24,24 +24,24 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
             'module_name': module_name,
         }
         pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
-        environment_dict = pipeline.get_preset(preset_name).run_config
+        run_config = pipeline.get_preset(preset_name).run_config
 
     else:
         env = list(env)
-        environment_dict = load_yaml_from_glob_list(env) if env else {}
+        run_config = load_yaml_from_glob_list(env) if env else {}
 
     # If not provided by the user, ensure we have storage location defined
-    if 'storage' not in environment_dict:
+    if 'storage' not in run_config:
         system_tmp_path = seven.get_system_temp_directory()
         dagster_tmp_path = os.path.join(system_tmp_path, 'dagster-airflow', pipeline_name)
-        environment_dict['storage'] = {
+        run_config['storage'] = {
             'filesystem': {'config': {'base_dir': six.ensure_str(dagster_tmp_path)}}
         }
 
-    return environment_dict
+    return run_config
 
 
-def construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict):
+def construct_scaffolded_file_contents(module_name, pipeline_name, run_config):
     yesterday = datetime.now() - timedelta(1)
 
     printer = IndentingStringIoPrinter(indent_level=4)
@@ -67,7 +67,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
     printer.comment('#')
     printer.line('#' * 80)
     printer.line('ENVIRONMENT = \'\'\'')
-    printer.line(yaml.dump(environment_dict, default_flow_style=False))
+    printer.line(yaml.dump(run_config, default_flow_style=False))
     printer.line('\'\'\'')
     printer.blank_line()
     printer.blank_line()
@@ -99,7 +99,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
         printer.comment('installed or available on sys.path, otherwise, this import will fail.')
         printer.line('module_name=\'{module_name}\','.format(module_name=module_name))
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
-        printer.line("environment_dict=yaml.safe_load(ENVIRONMENT),")
+        printer.line("run_config=yaml.safe_load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 
@@ -169,8 +169,8 @@ def scaffold(module_name, pipeline_name, output_path, config, preset, env):
         'You must specify --output-path or set AIRFLOW_HOME to use this script.',
     )
 
-    environment_dict = construct_environment_yaml(preset, env, pipeline_name, module_name)
-    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict)
+    run_config = construct_environment_yaml(preset, env, pipeline_name, module_name)
+    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, run_config)
 
     # Ensure output_path/dags exists
     dags_path = os.path.join(os.path.expanduser(output_path), 'dags')

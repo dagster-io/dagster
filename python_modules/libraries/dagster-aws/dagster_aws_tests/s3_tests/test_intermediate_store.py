@@ -270,20 +270,16 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
     s3_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
-    environment_dict = {
-        'storage': {'s3': {'config': {'s3_bucket': s3_bucket, 's3_prefix': s3_prefix}}}
-    }
+    run_config = {'storage': {'s3': {'config': {'s3_bucket': s3_bucket, 's3_prefix': s3_prefix}}}}
 
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, environment_dict=environment_dict)
+    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, environment_dict=environment_dict,)
+    result = execute_pipeline(pipe, run_config=run_config,)
     assert result.success
 
-    execution_plan = create_execution_plan(pipe, environment_dict)
-    with scoped_pipeline_context(
-        execution_plan, environment_dict, pipeline_run, instance,
-    ) as context:
+    execution_plan = create_execution_plan(pipe, run_config)
+    with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
         store = S3IntermediateStore(
             run_id=result.run_id,
             s3_bucket=s3_bucket,

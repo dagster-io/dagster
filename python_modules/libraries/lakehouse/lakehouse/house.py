@@ -64,7 +64,7 @@ class Lakehouse:
             preset_def = PresetDefinition(
                 name='default',
                 mode='default',
-                environment_dict={'resources': {'filesystem': {'config': {'root': '.'}}}},
+                run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
                 solid_selection=None,
             )
 

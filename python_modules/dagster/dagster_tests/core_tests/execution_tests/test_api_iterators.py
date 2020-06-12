@@ -123,18 +123,16 @@ def test_execute_plan_iterator():
             )
         ],
     )
-    environment_dict = {'loggers': {'callback': {}}}
+    run_config = {'loggers': {'callback': {}}}
 
-    execution_plan = create_execution_plan(pipeline, run_config=environment_dict)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline,
         run_config={'loggers': {'callback': {}}},
         execution_plan=execution_plan,
     )
 
-    iterator = execute_plan_iterator(
-        execution_plan, pipeline_run, instance, run_config=environment_dict
-    )
+    iterator = execute_plan_iterator(execution_plan, pipeline_run, instance, run_config=run_config)
 
     event_type = None
     while event_type != 'STEP_START':

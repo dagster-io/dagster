@@ -107,7 +107,7 @@ def test_depends_on_s3_resource_intermediates():
 
     result = execute_pipeline(
         s3_internal_pipeline,
-        environment_dict={
+        run_config={
             'solids': {
                 'add_numbers': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 4}}}
             },
@@ -163,7 +163,7 @@ def test_depends_on_s3_resource_file_manager():
 
     result = execute_pipeline(
         s3_file_manager_test,
-        environment_dict={'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}}},
+        run_config={'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}}},
     )
 
     assert result.success

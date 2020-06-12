@@ -539,7 +539,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
 
     errors = []
 
-    environment_dict = {}
+    run_config = {}
     schedule_tags = {}
     try:
         with user_code_error_boundary(
@@ -547,7 +547,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
             lambda: 'Error occurred during the execution of run_config_fn for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
-            environment_dict = schedule_def.get_environment_dict(schedule_context)
+            run_config = schedule_def.get_run_config(schedule_context)
     except DagsterUserCodeExecutionError:
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
         errors.append(error_data)
@@ -570,9 +570,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
     mode = schedule_def.mode
 
     try:
-        execution_plan = create_execution_plan(
-            pipeline_def, run_config=environment_dict, mode=mode,
-        )
+        execution_plan = create_execution_plan(pipeline_def, run_config=run_config, mode=mode,)
         execution_plan_snapshot = snapshot_from_execution_plan(
             execution_plan, pipeline_def.get_pipeline_snapshot_id()
         )
@@ -584,7 +582,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
     possibly_invalid_pipeline_run = instance.create_run(
         pipeline_name=schedule_def.pipeline_name,
         run_id=None,
-        run_config=environment_dict,
+        run_config=run_config,
         mode=mode,
         solids_to_execute=pipeline.solids_to_execute,
         step_keys_to_execute=None,

@@ -60,7 +60,7 @@ def composite_descent(pipeline_def, solids_config):
 
     pipeline_def (PipelineDefintiion): PipelineDefinition
     solids_config (dict): Configuration for the solids in the pipeline. The "solids" entry
-    of the environment_dict. Assumed to have already been validated.
+    of the run_config. Assumed to have already been validated.
     '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(solids_config, 'solids_config')

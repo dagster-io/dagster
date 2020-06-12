@@ -106,7 +106,7 @@ def test_local():
     result = execute_pipeline(
         pipeline=pyspark_pipe,
         mode='local',
-        environment_dict={'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}}},
+        run_config={'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}}},
     )
     assert result.success
 
@@ -138,7 +138,7 @@ def test_pyspark_emr(mock_is_emr_step_complete):
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
         mode='prod',
-        environment_dict={
+        run_config={
             'resources': {
                 'pyspark_step_launcher': {
                     'config': deep_merge_dicts(
@@ -211,7 +211,7 @@ def test_do_it_live_emr():
     result = execute_pipeline(
         reconstructable(define_pyspark_pipe),
         mode='prod',
-        environment_dict={
+        run_config={
             'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
             'resources': {
                 'pyspark_step_launcher': {'config': BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},

@@ -40,20 +40,20 @@ def composite_pipeline_with_config_mapping():
 
 
 def test_execution_plan_for_composite_solid():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid': {
                 'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
             }
         }
     }
-    execution_plan = create_execution_plan(composite_pipeline, run_config=environment_dict)
+    execution_plan = create_execution_plan(composite_pipeline, run_config=run_config)
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline, execution_plan=execution_plan
     )
     events = execute_plan(
-        execution_plan, run_config=environment_dict, pipeline_run=pipeline_run, instance=instance,
+        execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [
@@ -68,7 +68,7 @@ def test_execution_plan_for_composite_solid():
 
 
 def test_execution_plan_for_composite_solid_with_config_mapping():
-    environment_dict = {
+    run_config = {
         'solids': {
             'composite_with_nested_config_solid_and_config_mapping': {
                 'config': {'foo': 'baz', 'bar': 3}
@@ -76,7 +76,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
         }
     }
     execution_plan = create_execution_plan(
-        composite_pipeline_with_config_mapping, run_config=environment_dict
+        composite_pipeline_with_config_mapping, run_config=run_config
     )
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
@@ -84,7 +84,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     events = execute_plan(
-        execution_plan, run_config=environment_dict, pipeline_run=pipeline_run, instance=instance,
+        execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [

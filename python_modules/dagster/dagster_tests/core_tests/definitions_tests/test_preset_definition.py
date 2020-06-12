@@ -95,7 +95,7 @@ def test_presets():
         check.CheckError,
         match=re.escape(
             'The environment set in preset \'passing\' does not agree with the environment passed '
-            'in the `environment_dict` argument.'
+            'in the `run_config` argument.'
         ),
     ):
         execute_pipeline(

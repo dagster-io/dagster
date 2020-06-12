@@ -24,8 +24,8 @@ from dagster.core.storage.intermediates_manager import IntermediateStoreIntermed
 from dagster.utils import merge_dicts
 
 
-def env_with_fs(environment_dict):
-    return merge_dicts(environment_dict, {'storage': {'filesystem': {}}})
+def env_with_fs(run_config):
+    return merge_dicts(run_config, {'storage': {'filesystem': {}}})
 
 
 def define_addy_pipeline():
@@ -55,8 +55,8 @@ def define_addy_pipeline():
 def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
-    result = execute_pipeline(pipeline_def, run_config=environment_dict, instance=instance,)
+    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance,)
 
     assert result.success
 
@@ -74,19 +74,19 @@ def test_execution_plan_reexecution():
 
     ## re-execute add_two
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=environment_dict)
+    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=result.run_id,
         root_run_id=result.run_id,
     )
 
     step_events = execute_plan(
         execution_plan.build_subset_plan(['add_two.compute']),
-        run_config=environment_dict,
+        run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,
     )
@@ -111,26 +111,23 @@ def test_execution_plan_wrong_run_id():
     pipeline_def = define_addy_pipeline()
 
     unrun_id = 'not_a_run'
-    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
 
     instance = DagsterInstance.ephemeral()
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=environment_dict)
+    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=unrun_id,
         root_run_id=unrun_id,
     )
 
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
         execute_plan(
-            execution_plan,
-            run_config=environment_dict,
-            pipeline_run=pipeline_run,
-            instance=instance,
+            execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
         )
 
     assert str(exc_info.value) == 'Run id {} set as parent run id was not found in instance'.format(
@@ -143,19 +140,19 @@ def test_execution_plan_wrong_run_id():
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
-    result = execute_pipeline(pipeline_def, run_config=environment_dict, instance=instance)
+    run_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance)
 
     assert result.success
 
     ## re-execute add_two
 
-    execution_plan = create_execution_plan(pipeline_def, run_config=environment_dict)
+    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         execution_plan=execution_plan,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=result.run_id,
         root_run_id=result.run_id,
     )
@@ -163,7 +160,7 @@ def test_execution_plan_reexecution_with_in_memory():
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
             execution_plan.build_subset_plan(['add_two.compute']),
-            run_config=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
@@ -172,8 +169,8 @@ def test_execution_plan_reexecution_with_in_memory():
 def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
-    result = execute_pipeline(pipeline_def, run_config=environment_dict, instance=instance)
+    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance)
 
     assert result.success
 
@@ -193,7 +190,7 @@ def test_pipeline_step_key_subset_execution():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         step_keys_to_execute=['add_two.compute'],
         parent_run_id=result.run_id,
         root_run_id=result.run_id,
@@ -228,7 +225,7 @@ def test_pipeline_step_key_subset_execution():
     ):
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def,
-            run_config=environment_dict,
+            run_config=run_config,
             step_keys_to_execute=['nope.compute'],
             parent_run_id=result.run_id,
             root_run_id=result.run_id,

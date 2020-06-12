@@ -28,7 +28,7 @@ def execute_pipeline_on_celery(pipeline_name):
         instance = DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
             pipeline_def,
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {}},
             },

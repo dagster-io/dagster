@@ -679,7 +679,7 @@ def test_reexecution_fs_storage():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
     pipeline_result = execute_pipeline(
         pipeline_def, run_config={'storage': {'filesystem': {}}}, instance=instance
@@ -689,7 +689,7 @@ def test_reexecution_fs_storage():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
     )
@@ -708,7 +708,7 @@ def test_reexecution_fs_storage():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=reexecution_result.run_id,
         root_run_id=pipeline_result.run_id,
     )
@@ -739,16 +739,16 @@ def test_reexecution_fs_storage_with_subset():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, environment_dict, instance=instance)
+    pipeline_result = execute_pipeline(pipeline_def, run_config, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
     reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         step_keys_to_execute=['return_one.compute'],
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
@@ -762,10 +762,7 @@ def test_reexecution_fs_storage_with_subset():
     assert reexecution_result_no_subset.result_for_solid('return_one').output_value() == 1
 
     pipeline_result_subset = execute_pipeline(
-        pipeline_def,
-        run_config=environment_dict,
-        instance=instance,
-        solid_selection=['return_one'],
+        pipeline_def, run_config=run_config, instance=instance, solid_selection=['return_one'],
     )
     assert pipeline_result_subset.success
     assert len(pipeline_result_subset.solid_result_list) == 1
@@ -775,7 +772,7 @@ def test_reexecution_fs_storage_with_subset():
 
     reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=pipeline_result_subset.run_id,
         root_run_id=pipeline_result_subset.run_id,
         solids_to_execute={'return_one'},
@@ -798,7 +795,7 @@ def test_reexecution_fs_storage_with_subset():
     ):
         instance.create_run_for_pipeline(
             pipeline_def,
-            run_config=environment_dict,
+            run_config=run_config,
             parent_run_id=pipeline_result_subset.run_id,
             root_run_id=pipeline_result_subset.run_id,
             solids_to_execute={'return_one'},
@@ -807,7 +804,7 @@ def test_reexecution_fs_storage_with_subset():
 
     re_reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         parent_run_id=reexecution_result.run_id,
         root_run_id=reexecution_result.run_id,
         solids_to_execute={'return_one'},
@@ -828,7 +825,7 @@ def test_reexecution_fs_storage_with_subset():
     ):
         instance.create_run_for_pipeline(
             pipeline_def,
-            run_config=environment_dict,
+            run_config=run_config,
             parent_run_id=reexecution_result.run_id,
             root_run_id=reexecution_result.run_id,
             solids_to_execute={'return_one'},
@@ -849,16 +846,16 @@ def test_single_step_reexecution():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, environment_dict, instance=instance)
+    pipeline_result = execute_pipeline(pipeline_def, run_config, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
     reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        run_config=environment_dict,
+        run_config=run_config,
         step_keys_to_execute=['add_one.compute'],
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
@@ -887,16 +884,14 @@ def test_two_step_reexecution():
         add_one(add_one(return_one()))
 
     instance = DagsterInstance.ephemeral()
-    environment_dict = {'storage': {'filesystem': {}}}
-    pipeline_result = execute_pipeline(
-        two_step_reexec, run_config=environment_dict, instance=instance
-    )
+    run_config = {'storage': {'filesystem': {}}}
+    pipeline_result = execute_pipeline(two_step_reexec, run_config=run_config, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one_2').output_value() == 3
 
     reexecution_pipeline_run = instance.create_run_for_pipeline(
         two_step_reexec,
-        run_config=environment_dict,
+        run_config=run_config,
         step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,

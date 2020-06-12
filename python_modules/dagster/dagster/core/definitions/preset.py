@@ -216,18 +216,18 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
         '''
         return yaml.dump(self.run_config or {}, default_flow_style=False)
 
-    def with_additional_config(self, environment_dict):
+    def with_additional_config(self, run_config):
         '''Return a new PresetDefinition with additional config merged in to the existing config.'''
 
-        check.opt_nullable_dict_param(environment_dict, 'environment_dict')
-        if environment_dict is None:
+        check.opt_nullable_dict_param(run_config, 'run_config')
+        if run_config is None:
             return self
         else:
             return PresetDefinition(
                 name=self.name,
                 solid_selection=self.solid_selection,
                 mode=self.mode,
-                run_config=merge_dicts(self.run_config, environment_dict),
+                run_config=merge_dicts(self.run_config, run_config),
             )
 
     @property

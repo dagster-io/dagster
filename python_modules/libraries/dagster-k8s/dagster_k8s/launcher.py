@@ -393,8 +393,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         check.not_implemented('Termination not yet implemented')
 
 
-def _get_validated_celery_k8s_executor_config(environment_dict):
-    check.dict_param(environment_dict, 'environment_dict')
+def _get_validated_celery_k8s_executor_config(run_config):
+    check.dict_param(run_config, 'run_config')
 
     try:
         from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY, celery_k8s_config
@@ -405,13 +405,13 @@ def _get_validated_celery_k8s_executor_config(environment_dict):
         )
 
     check.invariant(
-        CELERY_K8S_CONFIG_KEY in environment_dict.get('execution', {}),
+        CELERY_K8S_CONFIG_KEY in run_config.get('execution', {}),
         '{} execution must be configured in pipeline execution config to launch runs with '
         'CeleryK8sRunLauncher'.format(CELERY_K8S_CONFIG_KEY),
     )
 
     execution_config_schema = resolve_to_config_type(celery_k8s_config())
-    execution_run_config = environment_dict['execution'][CELERY_K8S_CONFIG_KEY].get('config', {})
+    execution_run_config = run_config['execution'][CELERY_K8S_CONFIG_KEY].get('config', {})
     res = process_config(execution_config_schema, execution_run_config)
 
     check.invariant(

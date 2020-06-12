@@ -24,9 +24,7 @@ def basic_lakehouse_and_storages():
     dev_mode = ModeDefinition(
         name='dev', resource_defs={'storage1': some_storage, 'storage2': some_other_storage,},
     )
-    dev_preset = PresetDefinition(
-        name='dev', mode='dev', environment_dict={}, solid_selection=None,
-    )
+    dev_preset = PresetDefinition(name='dev', mode='dev', run_config={}, solid_selection=None,)
 
     class IntSomeStoragePolicy(TypeStoragePolicy):
         @classmethod

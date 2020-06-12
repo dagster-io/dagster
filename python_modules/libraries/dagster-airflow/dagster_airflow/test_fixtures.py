@@ -59,17 +59,17 @@ def dagster_airflow_python_operator_pipeline():
     def _pipeline_fn(
         recon_repo,
         pipeline_name,
-        environment_dict=None,
+        run_config=None,
         environment_yaml=None,
         op_kwargs=None,
         mode=None,
         execution_date=timezone.utcnow(),
     ):
-        if environment_dict is None and environment_yaml is not None:
-            environment_dict = load_yaml_from_glob_list(environment_yaml)
+        if run_config is None and environment_yaml is not None:
+            run_config = load_yaml_from_glob_list(environment_yaml)
 
         dag, tasks = make_airflow_dag_for_recon_repo(
-            recon_repo, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
+            recon_repo, pipeline_name, run_config, mode=mode, op_kwargs=op_kwargs
         )
         assert isinstance(dag, DAG)
 
@@ -106,17 +106,17 @@ def dagster_airflow_custom_operator_pipeline():
         recon_repo,
         pipeline_name,
         operator,
-        environment_dict=None,
+        run_config=None,
         environment_yaml=None,
         op_kwargs=None,
         mode=None,
         execution_date=timezone.utcnow(),
     ):
-        if environment_dict is None and environment_yaml is not None:
-            environment_dict = load_yaml_from_glob_list(environment_yaml)
+        if run_config is None and environment_yaml is not None:
+            run_config = load_yaml_from_glob_list(environment_yaml)
 
         dag, tasks = make_airflow_dag_for_operator(
-            recon_repo, pipeline_name, operator, environment_dict, mode=mode, op_kwargs=op_kwargs
+            recon_repo, pipeline_name, operator, run_config, mode=mode, op_kwargs=op_kwargs
         )
         assert isinstance(dag, DAG)
 
@@ -153,21 +153,21 @@ def dagster_airflow_docker_operator_pipeline():
         recon_repo,
         pipeline_name,
         image,
-        environment_dict=None,
+        run_config=None,
         environment_yaml=None,
         op_kwargs=None,
         mode=None,
         execution_date=timezone.utcnow(),
     ):
-        if environment_dict is None and environment_yaml is not None:
-            environment_dict = load_yaml_from_glob_list(environment_yaml)
+        if run_config is None and environment_yaml is not None:
+            run_config = load_yaml_from_glob_list(environment_yaml)
 
         dag, tasks = make_airflow_dag_containerized_for_recon_repo(
             recon_repo=recon_repo,
             pipeline_name=pipeline_name,
             image=image,
             mode=mode,
-            run_config=environment_dict,
+            run_config=run_config,
             op_kwargs=op_kwargs,
         )
         assert isinstance(dag, DAG)
@@ -205,15 +205,15 @@ def dagster_airflow_k8s_operator_pipeline():
         recon_repo,
         pipeline_name,
         image,
-        environment_dict=None,
+        run_config=None,
         environment_yaml=None,
         op_kwargs=None,
         mode=None,
         namespace='default',
         execution_date=timezone.utcnow(),
     ):
-        if environment_dict is None and environment_yaml is not None:
-            environment_dict = load_yaml_from_glob_list(environment_yaml)
+        if run_config is None and environment_yaml is not None:
+            run_config = load_yaml_from_glob_list(environment_yaml)
 
         op_kwargs = op_kwargs or {}
 
@@ -227,7 +227,7 @@ def dagster_airflow_k8s_operator_pipeline():
             image=image,
             mode=mode,
             namespace=namespace,
-            run_config=environment_dict,
+            run_config=run_config,
             op_kwargs=op_kwargs,
         )
         assert isinstance(dag, DAG)
