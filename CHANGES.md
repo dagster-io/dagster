@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.1
+
+**Bugfix**
+
+- Fixed a file descriptor leak that caused `OSError: [Errno 24] Too many open files` when enough
+  temporary files were created.
+- Fixed an issue where an empty config in the Playground would unexpectedly be marked as invalid
+  YAML.
+- Removed "config" deprecation warnings for dask and celery executors.
+
+**New**
+
+- Improved performance of the Assets page.
+
 ## 0.8.0 "In The Zone"
 
 **Major Changes**
