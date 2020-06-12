@@ -51,7 +51,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
         )
 
         # Checks to ensure storage is compatible with Dask configuration
-        storage = pipeline_context.environment_dict.get('storage')
+        storage = pipeline_context.run_config.get('storage')
         check.invariant(storage.keys(), 'Must specify storage to use Dask execution')
 
         check.invariant(
@@ -110,9 +110,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    environment_dict = dict(
-                        pipeline_context.environment_dict, execution={'in_process': {}}
-                    )
+                    run_config = dict(pipeline_context.run_config, execution={'in_process': {}})
                     recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
                     variables = {
                         'executionParams': {
@@ -121,7 +119,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                                 'repositoryName': recon_repo.get_definition().name,
                                 'repositoryLocationName': '<<in_process>>',
                             },
-                            'runConfigData': environment_dict,
+                            'runConfigData': run_config,
                             'mode': pipeline_context.mode_def.name,
                             'executionMetadata': {'runId': pipeline_context.pipeline_run.run_id},
                             'stepKeys': [step.key],

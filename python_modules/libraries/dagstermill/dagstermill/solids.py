@@ -90,9 +90,9 @@ def replace_parameters(context, nb, parameters):
 def get_papermill_parameters(compute_context, inputs, output_log_path):
     check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     check.param_invariant(
-        isinstance(compute_context.environment_dict, dict),
+        isinstance(compute_context.run_config, dict),
         'compute_context',
-        'SystemComputeExecutionContext must have valid environment_dict',
+        'SystemComputeExecutionContext must have valid run_config',
     )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
@@ -112,7 +112,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     dm_context_dict = {
         'output_log_path': output_log_path,
         'marshal_dir': marshal_dir,
-        'environment_dict': compute_context.environment_dict,
+        'run_config': compute_context.run_config,
     }
 
     dm_solid_handle_kwargs = compute_context.solid_handle._asdict()
@@ -147,9 +147,9 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
     def _t_fn(compute_context, inputs):
         check.inst_param(compute_context, 'compute_context', SolidExecutionContext)
         check.param_invariant(
-            isinstance(compute_context.environment_dict, dict),
+            isinstance(compute_context.run_config, dict),
             'context',
-            'SystemComputeExecutionContext must have valid environment_dict',
+            'SystemComputeExecutionContext must have valid run_config',
         )
 
         system_compute_context = compute_context.get_system_context()

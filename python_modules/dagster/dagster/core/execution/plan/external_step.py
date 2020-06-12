@@ -115,7 +115,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
             )
 
     return StepRunRef(
-        environment_dict=step_context.environment_dict,
+        run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
@@ -131,12 +131,12 @@ def step_run_ref_to_step_context(step_run_ref):
     )
 
     execution_plan = create_execution_plan(
-        pipeline_def, step_run_ref.environment_dict, mode=step_run_ref.pipeline_run.mode
+        pipeline_def, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
     ).build_subset_plan([step_run_ref.step_key])
 
     initialization_manager = pipeline_initialization_manager(
         execution_plan,
-        step_run_ref.environment_dict,
+        step_run_ref.run_config,
         step_run_ref.pipeline_run,
         DagsterInstance.ephemeral(),
     )

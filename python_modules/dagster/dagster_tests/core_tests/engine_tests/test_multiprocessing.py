@@ -33,7 +33,7 @@ def test_diamond_multi_execution():
     pipe = reconstructable(define_diamond_pipeline)
     result = execute_pipeline(
         pipe,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert result.success
@@ -111,7 +111,7 @@ def test_error_pipeline():
 def test_error_pipeline_multiprocess():
     result = execute_pipeline(
         reconstructable(define_error_pipeline),
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert not result.success
@@ -120,7 +120,7 @@ def test_error_pipeline_multiprocess():
 def test_mem_storage_error_pipeline_multiprocess():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        environment_dict={'execution': {'multiprocess': {}}},
+        run_config={'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
     )
@@ -132,7 +132,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 def test_invalid_instance():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -149,7 +149,7 @@ def test_invalid_instance():
 def test_no_handle():
     result = execute_pipeline(
         define_diamond_pipeline(),
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -213,7 +213,7 @@ def test_separate_sub_dags():
     with safe_tempfile_path() as filename:
         result = execute_pipeline(
             pipe,
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {}},
                 'execution': {'multiprocess': {'config': {'max_concurrent': 2}}},
                 'solids': {'waiter': {'config': filename}, 'writer': {'config': filename},},
@@ -244,7 +244,7 @@ def test_ephemeral_event_log():
 
     result = execute_pipeline(
         pipe,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=instance,
     )
     assert result.success
@@ -282,7 +282,7 @@ def test_optional_outputs():
 
     multi_result = execute_pipeline(
         reconstructable(optional_stuff),
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert multi_result.success

@@ -15,7 +15,7 @@ from .setup import (
 class TestStartPipelineForCreatedRunInHostedUserProcess(ExecutingGraphQLContextTestMatrix):
     def test_synchronously_execute_run_within_hosted_user_process(self, graphql_context):
         pipeline_run = graphql_context.instance.create_run_for_pipeline(
-            pipeline_def=csv_hello_world, environment_dict=csv_hello_world_solids_config()
+            pipeline_def=csv_hello_world, run_config=csv_hello_world_solids_config()
         )
 
         result = execute_dagster_graphql(

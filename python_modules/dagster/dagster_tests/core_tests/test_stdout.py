@@ -91,7 +91,7 @@ def test_compute_log_to_disk_multiprocess():
     manager = instance.compute_log_manager
     result = execute_pipeline(
         spew_pipeline,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=instance,
     )
     assert result.success
@@ -186,7 +186,7 @@ def test_long_solid_names():
     result = execute_pipeline(
         long_pipeline,
         instance=instance,
-        environment_dict={'solids': {solid_name: {'inputs': {'num': 1}}}},
+        run_config={'solids': {solid_name: {'inputs': {'num': 1}}}},
     )
     assert result.success
 

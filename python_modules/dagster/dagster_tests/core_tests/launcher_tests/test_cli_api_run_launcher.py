@@ -99,9 +99,7 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
 def test_successful_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=noop_pipeline, environment_dict=None
-        )
+        pipeline_run = instance.create_run_for_pipeline(pipeline_def=noop_pipeline, run_config=None)
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
@@ -127,7 +125,7 @@ def test_crashy_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=crashy_pipeline, environment_dict=None
+            pipeline_def=crashy_pipeline, run_config=None
         )
         run_id = pipeline_run.run_id
 
@@ -161,7 +159,7 @@ def test_terminated_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=sleepy_pipeline, environment_dict=None
+            pipeline_def=sleepy_pipeline, run_config=None
         )
         run_id = pipeline_run.run_id
 
@@ -215,7 +213,7 @@ def test_single_solid_selection_execution():
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, environment_dict=None, solids_to_execute={'return_one'}
+            pipeline_def=math_diamond, run_config=None, solids_to_execute={'return_one'}
         )
         run_id = pipeline_run.run_id
 
@@ -243,7 +241,7 @@ def test_multi_solid_selection_execution():
 
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=math_diamond,
-            environment_dict=None,
+            run_config=None,
             solids_to_execute={'return_one', 'multiply_by_2'},
         )
         run_id = pipeline_run.run_id
@@ -275,9 +273,7 @@ def test_engine_events():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, environment_dict=None
-        )
+        pipeline_run = instance.create_run_for_pipeline(pipeline_def=math_diamond, run_config=None)
         run_id = pipeline_run.run_id
 
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED

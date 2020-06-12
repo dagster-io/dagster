@@ -306,7 +306,7 @@ def more_complicated_nested_config():
         ),
         PresetDefinition(
             name='test_inline',
-            environment_dict={
+            run_config={
                 'solids': {
                     'sum_solid': {
                         'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
@@ -790,7 +790,7 @@ def define_schedules():
         name='scheduled_integer_partitions',
         pipeline_name='no_config_pipeline',
         partition_fn=lambda: [Partition(x) for x in range(1, 10)],
-        environment_dict_fn_for_partition=lambda _partition: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _partition: {"storage": {"filesystem": {}}},
         tags_fn_for_partition=lambda _partition: {"test": "1234"},
     )
 
@@ -798,21 +798,21 @@ def define_schedules():
         name="no_config_pipeline_hourly_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
     )
 
     no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
         should_execute=lambda _context: False,
     )
 
@@ -820,7 +820,7 @@ def define_schedules():
         name="dynamic_config",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
@@ -907,21 +907,21 @@ def define_schedules():
         pipeline_name='no_config_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=1),
     )
-    def environment_dict_error_schedule(_date):
+    def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
 
     tagged_pipeline_schedule = ScheduleDefinition(
         name="tagged_pipeline_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
     )
 
     tagged_pipeline_override_schedule = ScheduleDefinition(
         name="tagged_pipeline_override_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
         tags={'foo': 'notbar'},
     )
 
@@ -929,11 +929,11 @@ def define_schedules():
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="pipeline_with_enum_config",
-        environment_dict={"solids": {"takes_an_enum": {'config': "invalid"}}},
+        run_config={"solids": {"takes_an_enum": {'config': "invalid"}}},
     )
 
     return [
-        environment_dict_error_schedule,
+        run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
@@ -961,14 +961,14 @@ def define_partitions():
         solid_selection=['return_hello'],
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
-        environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     enum_set = PartitionSetDefinition(
         name="enum_partition",
         pipeline_name="noop_pipeline",
         partition_fn=lambda: ["one", "two", "three"],
-        environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     return [integer_set, enum_set]

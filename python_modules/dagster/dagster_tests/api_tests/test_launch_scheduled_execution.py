@@ -106,7 +106,7 @@ def test_bad_env_fn():
 
             assert isinstance(result, ScheduledExecutionFailed)
             assert (
-                'Error occurred during the execution of environment_dict_fn for schedule bad_env_fn_schedule'
+                'Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule'
                 in result.errors[0].to_string()
             )
 

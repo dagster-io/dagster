@@ -43,7 +43,7 @@ def test_execute_solid_with_input_same_name():
         a_thing_solid(pass_value())
 
     result = execute_pipeline(
-        pipe, environment_dict={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
+        pipe, run_config={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
     )
 
     assert result.result_for_solid('a_thing').output_value() == 'foofoo'
@@ -73,7 +73,7 @@ def test_execute_two_solids_with_same_input_name():
 
     result = execute_pipeline(
         pipe,
-        environment_dict={
+        run_config={
             'solids': {
                 'pass_to_one': {'config': {'value': 'foo'}},
                 'pass_to_two': {'config': {'value': 'bar'}},
@@ -108,7 +108,7 @@ def test_execute_dep_solid_different_input_name():
         second_solid(first_solid(pass_to_first()))
 
     result = execute_pipeline(
-        pipe, environment_dict={'solids': {'pass_to_first': {'config': {'value': 'bar'}}}}
+        pipe, run_config={'solids': {'pass_to_first': {'config': {'value': 'bar'}}}}
     )
 
     assert result.success

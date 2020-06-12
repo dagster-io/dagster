@@ -44,16 +44,16 @@ def pipeline_selector_from_graphql(context, data):
 
 
 class ExecutionParams(
-    namedtuple('_ExecutionParams', 'selector environment_dict mode execution_metadata step_keys',)
+    namedtuple('_ExecutionParams', 'selector run_config mode execution_metadata step_keys',)
 ):
-    def __new__(cls, selector, environment_dict, mode, execution_metadata, step_keys):
-        check.dict_param(environment_dict, 'environment_dict', key_type=str)
+    def __new__(cls, selector, run_config, mode, execution_metadata, step_keys):
+        check.dict_param(run_config, 'run_config', key_type=str)
         check.opt_list_param(step_keys, 'step_keys', of_type=str)
 
         return super(ExecutionParams, cls).__new__(
             cls,
             selector=check.inst_param(selector, 'selector', PipelineSelector),
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=check.str_param(mode, 'mode'),
             execution_metadata=check.inst_param(
                 execution_metadata, 'execution_metadata', ExecutionMetadata
@@ -64,7 +64,7 @@ class ExecutionParams(
     def to_graphql_input(self):
         return {
             'selector': self.selector.to_graphql_input(),
-            'runConfigData': self.environment_dict,
+            'runConfigData': self.run_config,
             'mode': self.mode,
             'executionMetadata': self.execution_metadata.to_graphql_input(),
             'stepKeys': self.step_keys,

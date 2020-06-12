@@ -118,7 +118,7 @@ class PipelineDefinition(IContainSolids):
 
             add_three_preset = PresetDefinition(
                 name='add_three_preset',
-                environment_dict={'resources': {'op': {'config': 3}}},
+                run_config={'resources': {'op': {'config': 3}}},
                 mode='add_mode',
             )
 

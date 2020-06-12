@@ -171,7 +171,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
                     "name": self.client.container_name,
                     "environment": [
                         {"name": "PIPELINE", "value": run.pipeline_name},
-                        # possibly pull from run.environment_dict['solids'] other data that user might entered in the UI
+                        # possibly pull from run.run_config['solids'] other data that user might entered in the UI
                     ],
                 },
             ],

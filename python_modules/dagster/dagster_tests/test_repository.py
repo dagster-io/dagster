@@ -87,7 +87,7 @@ def define_multi_mode_with_resources_pipeline():
             PresetDefinition(
                 'multiproc',
                 mode='add_mode',
-                environment_dict={
+                run_config={
                     'resources': {'op': {'config': 2}},
                     'execution': {'multiprocess': {}},
                     'storage': {'filesystem': {}},

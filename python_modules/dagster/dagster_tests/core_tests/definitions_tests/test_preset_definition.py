@@ -44,7 +44,7 @@ def test_presets():
             ).with_additional_config({'solids': {'can_fail': {'config': {'error': True}}}}),
             PresetDefinition(
                 'passing_direct_dict',
-                environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+                run_config={'solids': {'can_fail': {'config': {'error': False}}}},
                 solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
@@ -88,7 +88,7 @@ def test_presets():
     assert execute_pipeline(
         pipeline,
         preset='passing',
-        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
     with pytest.raises(
@@ -101,13 +101,13 @@ def test_presets():
         execute_pipeline(
             pipeline,
             preset='passing',
-            environment_dict={'solids': {'can_fail': {'config': {'error': True}}}},
+            run_config={'solids': {'can_fail': {'config': {'error': True}}}},
         )
 
     assert execute_pipeline(
         pipeline,
         preset='subset',
-        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
 
@@ -159,7 +159,7 @@ other: 4
 final: "result"
 '''
     preset = PresetDefinition.from_yaml_strings('passing', [a, b, c])
-    assert preset.environment_dict == {
+    assert preset.run_config == {
         'foo': {'bar': 1, 'one': 'one'},
         'baz': 3,
         'other': 4,
@@ -172,14 +172,14 @@ final: "result"
 
     res = PresetDefinition.from_yaml_strings('empty')
     assert res == PresetDefinition(
-        name='empty', environment_dict={}, solid_selection=None, mode='default'
+        name='empty', run_config={}, solid_selection=None, mode='default'
     )
 
 
 def test_from_pkg_resources():
     good = ('dagster_tests.core_tests.definitions_tests', 'pass_env.yaml')
     res = PresetDefinition.from_pkg_resources('pass', [good])
-    assert res.environment_dict == {'solids': {'can_fail': {'config': {'error': False}}}}
+    assert res.run_config == {'solids': {'can_fail': {'config': {'error': False}}}}
 
     bad_defs = [
         ('dagster_tests.core_tests.definitions_tests', 'does_not_exist.yaml'),

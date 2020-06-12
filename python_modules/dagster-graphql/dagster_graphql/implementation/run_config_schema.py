@@ -30,11 +30,11 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
 
 
 @capture_dauphin_error
-def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, environment_dict):
+def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_config):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
     check.str_param(mode, 'mode')
-    check.dict_param(environment_dict, 'environment_dict', key_type=str)
+    check.dict_param(run_config, 'run_config', key_type=str)
 
     mode_def_snap = represented_pipeline.get_mode_def_snap(mode)
 
@@ -45,7 +45,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, envir
         )
 
     validated_config = validate_config_from_snap(
-        represented_pipeline.config_schema_snapshot, mode_def_snap.root_config_key, environment_dict
+        represented_pipeline.config_schema_snapshot, mode_def_snap.root_config_key, run_config
     )
 
     if not validated_config.success:

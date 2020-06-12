@@ -501,7 +501,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
         # https://github.com/dagster-io/dagster/issues/2507
         check.invariant(
             not graphql_execution_params.get('runConfigData'),
-            'Invalid ExecutionParams. Cannot define environment_dict when using preset',
+            'Invalid ExecutionParams. Cannot define run_config when using preset',
         )
         check.invariant(
             not graphql_execution_params.get('mode'),
@@ -526,7 +526,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 
         return ExecutionParams(
             selector=selector.with_solid_selection(preset.solid_selection),
-            environment_dict=preset.environment_dict,
+            run_config=preset.run_config,
             mode=preset.mode,
             execution_metadata=create_execution_metadata(
                 graphql_execution_params.get('executionMetadata')
@@ -540,7 +540,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(context, graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(context, graphql_execution_params.get('selector')),
-        environment_dict=graphql_execution_params.get('runConfigData') or {},
+        run_config=graphql_execution_params.get('runConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get('executionMetadata')

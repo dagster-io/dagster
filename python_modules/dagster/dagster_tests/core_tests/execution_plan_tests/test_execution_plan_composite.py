@@ -47,16 +47,13 @@ def test_execution_plan_for_composite_solid():
             }
         }
     }
-    execution_plan = create_execution_plan(composite_pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(composite_pipeline, run_config=environment_dict)
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline, execution_plan=execution_plan
     )
     events = execute_plan(
-        execution_plan,
-        environment_dict=environment_dict,
-        pipeline_run=pipeline_run,
-        instance=instance,
+        execution_plan, run_config=environment_dict, pipeline_run=pipeline_run, instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [
@@ -79,7 +76,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
         }
     }
     execution_plan = create_execution_plan(
-        composite_pipeline_with_config_mapping, environment_dict=environment_dict
+        composite_pipeline_with_config_mapping, run_config=environment_dict
     )
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
@@ -87,10 +84,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     events = execute_plan(
-        execution_plan,
-        environment_dict=environment_dict,
-        pipeline_run=pipeline_run,
-        instance=instance,
+        execution_plan, run_config=environment_dict, pipeline_run=pipeline_run, instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [

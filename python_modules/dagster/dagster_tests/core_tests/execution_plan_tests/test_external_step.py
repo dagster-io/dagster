@@ -107,16 +107,16 @@ def initialize_step_context(scratch_dir):
     pipeline_run = PipelineRun(
         pipeline_name='foo_pipeline',
         run_id=str(uuid.uuid4()),
-        environment_dict=make_environment_dict(scratch_dir, 'external'),
+        run_config=make_environment_dict(scratch_dir, 'external'),
         mode='external',
     )
 
     plan = create_execution_plan(
-        reconstructable(define_basic_pipeline), pipeline_run.environment_dict, mode='external'
+        reconstructable(define_basic_pipeline), pipeline_run.run_config, mode='external'
     )
 
     initialization_manager = pipeline_initialization_manager(
-        plan, pipeline_run.environment_dict, pipeline_run, DagsterInstance.ephemeral(),
+        plan, pipeline_run.run_config, pipeline_run, DagsterInstance.ephemeral(),
     )
     for _ in initialization_manager.generate_setup_events():
         pass
@@ -132,7 +132,7 @@ def test_step_context_to_step_run_ref():
     step_context = initialize_step_context('')
     step = step_context.step
     step_run_ref = step_context_to_step_run_ref(step_context, 0)
-    assert step_run_ref.environment_dict == step_context.pipeline_run.environment_dict
+    assert step_run_ref.run_config == step_context.pipeline_run.run_config
     assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
     rehydrated_step_context = step_run_ref_to_step_context(step_run_ref)
@@ -166,7 +166,7 @@ def test_pipeline(mode):
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            environment_dict=make_environment_dict(tmpdir, mode),
+            run_config=make_environment_dict(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3
@@ -178,7 +178,7 @@ def test_launcher_requests_retry():
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            environment_dict=make_environment_dict(tmpdir, mode),
+            run_config=make_environment_dict(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3

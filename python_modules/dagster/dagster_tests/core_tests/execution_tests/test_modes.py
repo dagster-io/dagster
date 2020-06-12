@@ -44,7 +44,7 @@ def pipeline_with_mode():
 def test_execute_pipeline_with_mode():
     pipeline_result = execute_pipeline(
         pipeline_with_mode,
-        environment_dict={
+        run_config={
             'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
         },
         mode='add_one',
@@ -54,7 +54,7 @@ def test_execute_pipeline_with_mode():
 
     pipeline_result = execute_pipeline(
         pipeline_with_mode,
-        environment_dict={
+        run_config={
             'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
         },
         mode='add_two',
@@ -68,7 +68,7 @@ def test_execute_pipeline_with_non_existant_mode():
         execute_pipeline(
             pipeline_with_mode,
             mode='BAD',
-            environment_dict={
+            run_config={
                 'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
             },
         )

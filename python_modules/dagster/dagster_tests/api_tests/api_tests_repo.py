@@ -61,10 +61,7 @@ def bar_pipeline():
 def define_bar_schedules():
     return {
         'foo_schedule': ScheduleDefinition(
-            "foo_schedule",
-            cron_schedule="* * * * *",
-            pipeline_name="test_pipeline",
-            environment_dict={},
+            "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
         )
     }
 
@@ -75,7 +72,7 @@ def define_baz_partitions():
             name='baz_partitions',
             pipeline_name='baz',
             partition_fn=lambda: string.ascii_lowercase,
-            environment_dict_fn_for_partition=lambda partition: {
+            run_config_fn_for_partition=lambda partition: {
                 'solids': {'do_input': {'inputs': {'x': {'value': partition.value}}}}
             },
         )

@@ -24,9 +24,9 @@ DELEGATE_MARKER = 'multiprocess_subprocess_init'
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
-        self, environment_dict, pipeline_run, executor_config, step_key, instance_ref, term_event
+        self, run_config, pipeline_run, executor_config, step_key, instance_ref, term_event
     ):
-        self.environment_dict = environment_dict
+        self.run_config = run_config
         self.executor_config = executor_config
         self.pipeline_run = pipeline_run
         self.step_key = step_key
@@ -42,7 +42,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
         execution_plan = create_execution_plan(
             pipeline=pipeline,
-            environment_dict=self.environment_dict,
+            run_config=self.run_config,
             mode=self.pipeline_run.mode,
             step_keys_to_execute=self.pipeline_run.step_keys_to_execute,
         ).build_subset_plan([self.step_key])
@@ -64,7 +64,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         for step_event in execute_plan_iterator(
             execution_plan,
             self.pipeline_run,
-            environment_dict=self.environment_dict,
+            run_config=self.run_config,
             retries=self.executor_config.retries.for_inner_plan(),
             instance=instance,
         ):
@@ -73,7 +73,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
 def execute_step_out_of_process(step_context, step, errors, term_events):
     command = InProcessExecutorChildProcessCommand(
-        step_context.environment_dict,
+        step_context.run_config,
         step_context.pipeline_run,
         step_context.executor_config,
         step.key,

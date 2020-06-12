@@ -71,13 +71,13 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+        self, external_pipeline, run_config, mode, step_keys_to_execute
     ):
         pass
 
     @abstractmethod
     def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
     ):
         pass
 
@@ -157,10 +157,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+        self, external_pipeline, run_config, mode, step_keys_to_execute
     ):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.dict_param(environment_dict, 'environment_dict')
+        check.dict_param(run_config, 'run_config')
         check.str_param(mode, 'mode')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
@@ -172,7 +172,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
                     ).subset_for_execution_from_existing_pipeline(
                         external_pipeline.solids_to_execute
                     ),
-                    environment_dict=environment_dict,
+                    run_config=run_config,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
                 ),
@@ -182,17 +182,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
     ):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.dict_param(environment_dict, 'environment_dict')
+        check.dict_param(run_config, 'run_config')
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_pipeline(external_pipeline.name),
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=step_keys_to_execute,
         )
@@ -201,7 +201,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             execution_plan=execution_plan,
             instance=instance,
             pipeline_run=pipeline_run,
-            environment_dict=environment_dict,
+            run_config=run_config,
         )
 
 
@@ -235,19 +235,19 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         return self._handle
 
     def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+        self, external_pipeline, run_config, mode, step_keys_to_execute
     ):
         from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan
 
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        check.dict_param(environment_dict, 'environment_dict')
+        check.dict_param(run_config, 'run_config')
         check.str_param(mode, 'mode')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan_snapshot = sync_get_external_execution_plan(
             pipeline_origin=external_pipeline.get_origin(),
             solid_selection=external_pipeline.solid_selection,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
             snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
@@ -258,7 +258,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         )
 
     def execute_plan(
-        self, instance, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute
+        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
     ):
         if (
             is_repository_location_in_same_python_env(self.location_handle)
@@ -266,7 +266,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         ):
             check.inst_param(instance, 'instance', DagsterInstance)
             check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-            check.dict_param(environment_dict, 'environment_dict')
+            check.dict_param(run_config, 'run_config')
             check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
             check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
@@ -275,7 +275,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
             execution_plan = create_execution_plan(
                 pipeline=recon_repo.get_reconstructable_pipeline(external_pipeline.name),
-                environment_dict=environment_dict,
+                run_config=run_config,
                 mode=pipeline_run.mode,
                 step_keys_to_execute=step_keys_to_execute,
             )
@@ -284,7 +284,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
                 execution_plan=execution_plan,
                 instance=instance,
                 pipeline_run=pipeline_run,
-                environment_dict=environment_dict,
+                run_config=run_config,
             )
         else:
             raise NotImplementedError(

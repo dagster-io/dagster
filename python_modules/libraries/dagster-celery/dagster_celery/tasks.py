@@ -41,7 +41,7 @@ def create_task(celery_app, **task_kwargs):
 
         execution_plan = create_execution_plan(
             pipeline,
-            pipeline_run.environment_dict,
+            pipeline_run.run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         ).build_subset_plan(step_keys)
@@ -60,7 +60,7 @@ def create_task(celery_app, **task_kwargs):
         for step_event in execute_plan_iterator(
             execution_plan,
             pipeline_run=pipeline_run,
-            environment_dict=pipeline_run.environment_dict,
+            run_config=pipeline_run.run_config,
             instance=instance,
             retries=retries,
         ):

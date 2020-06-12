@@ -67,7 +67,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     run_config = {'loggers': {key: {} for key in loggers}}
     pipeline_run = PipelineRun(pipeline_name='test_legacy_context', run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, environment_dict=run_config)
+    execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(execution_plan, run_config, pipeline_run, instance)
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
@@ -249,7 +249,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     pipeline_run = instance.create_run(
         pipeline_name='<empty>',
         run_id=run_id,
-        environment_dict=None,
+        run_config=None,
         mode=None,
         solids_to_execute=None,
         step_keys_to_execute=None,

@@ -46,7 +46,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             '_', '-'  # underscores are not permissible DNS names
         )
 
-        self.environment_dict = operator_parameters.environment_dict
+        self.run_config = operator_parameters.run_config
         self.mode = operator_parameters.mode
         self.step_keys = operator_parameters.step_keys
         self.recon_repo = operator_parameters.recon_repo
@@ -97,7 +97,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         variables = construct_variables(
             self.recon_repo,
             self.mode,
-            self.environment_dict,
+            self.run_config,
             self.pipeline_name,
             self.run_id,
             self.step_keys,
@@ -180,7 +180,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     run = self.instance.register_managed_run(
                         pipeline_name=self.pipeline_name,
                         run_id=self.run_id,
-                        environment_dict=self.environment_dict,
+                        run_config=self.run_config,
                         mode=self.mode,
                         solids_to_execute=None,
                         step_keys_to_execute=None,

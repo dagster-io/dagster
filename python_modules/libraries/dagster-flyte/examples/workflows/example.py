@@ -13,7 +13,7 @@ def pipe():
     mult_x()
 
 
-environment_dict: dict = {
+run_config: dict = {
     'storage': {'filesystem': {}},
     'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}},
 }
@@ -30,5 +30,5 @@ compute_dict = {
 }
 
 workflow_obj = compile_pipeline_to_flyte(
-    pipe, environment_dict=environment_dict, compute_dict=compute_dict, module=__name__
+    pipe, run_config=run_config, compute_dict=compute_dict, module=__name__
 )

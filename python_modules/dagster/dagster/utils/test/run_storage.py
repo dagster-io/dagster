@@ -47,7 +47,7 @@ class TestRunStorage:
         return PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=None,
+            run_config=None,
             mode=mode,
             tags=tags,
             status=status,

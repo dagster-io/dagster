@@ -96,24 +96,24 @@ def get_step_output(step_events, step_key, output_name='result'):
 def test_using_gcs_for_subplan(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
-    environment_dict = {'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket}}}}
+    run_config = {'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket}}}}
 
     run_id = make_new_run_id()
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
     step_keys = ['return_one.compute']
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
-        pipeline_name=pipeline_def.name, run_id=run_id, environment_dict=environment_dict
+        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
     )
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys),
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
@@ -122,7 +122,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
     assert get_step_output(return_one_step_events, 'return_one.compute')
     with scoped_pipeline_context(
         execution_plan.build_subset_plan(['return_one.compute']),
-        environment_dict,
+        run_config,
         pipeline_run,
         instance,
     ) as context:
@@ -147,7 +147,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(['add_one.compute']),
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
@@ -156,7 +156,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
     assert get_step_output(add_one_step_events, 'add_one.compute')
     with scoped_pipeline_context(
         execution_plan.build_subset_plan(['return_one.compute']),
-        environment_dict,
+        run_config,
         pipeline_run,
         instance,
     ) as context:
@@ -294,20 +294,18 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     gcs_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
-    environment_dict = {
+    run_config = {
         'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket, 'gcs_prefix': gcs_prefix}}}
     }
 
-    pipeline_run = PipelineRun(pipeline_name=pipe.name, environment_dict=environment_dict)
+    pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(pipe, environment_dict=environment_dict,)
+    result = execute_pipeline(pipe, environment_dict=run_config,)
     assert result.success
 
-    execution_plan = create_execution_plan(pipe, environment_dict)
-    with scoped_pipeline_context(
-        execution_plan, environment_dict, pipeline_run, instance,
-    ) as context:
+    execution_plan = create_execution_plan(pipe, run_config)
+    with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
         store = GCSIntermediateStore(
             run_id=result.run_id,
             gcs_bucket=gcs_bucket,

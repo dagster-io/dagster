@@ -386,7 +386,7 @@ class SolidExecutionResult(object):
             with self.reconstruct_context() as context:
                 execution_plan = create_execution_plan(
                     pipeline=context.pipeline,
-                    environment_dict=context.environment_dict,
+                    run_config=context.run_config,
                     mode=context.pipeline_run.mode,
                     step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
                 )
@@ -439,7 +439,7 @@ class SolidExecutionResult(object):
                     with self.reconstruct_context() as context:
                         execution_plan = create_execution_plan(
                             pipeline=context.pipeline,
-                            environment_dict=context.environment_dict,
+                            run_config=context.run_config,
                             mode=context.pipeline_run.mode,
                             step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
                         )

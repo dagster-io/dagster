@@ -33,7 +33,7 @@ def test_execute_pipeline_with_solid_selection_single_clause():
 
     pipeline_result_down = execute_pipeline(
         foo_pipeline,
-        environment_dict={
+        run_config={
             'solids': {'add_nums': {'inputs': {'num1': {'value': 1}, 'num2': {'value': 2}}}}
         },
         solid_selection=['add_nums++'],
@@ -93,7 +93,7 @@ def test_execute_pipeline_iterator_with_solid_selection_query():
     iterator_down = step_output_event_filter(
         execute_pipeline_iterator(
             foo_pipeline,
-            environment_dict={
+            run_config={
                 'solids': {'add_nums': {'inputs': {'num1': {'value': 1}, 'num2': {'value': 2}}}}
             },
             solid_selection=['add_nums++'],

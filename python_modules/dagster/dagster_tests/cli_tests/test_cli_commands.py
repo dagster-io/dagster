@@ -89,10 +89,7 @@ def baz_pipeline():
 def define_bar_schedules():
     return {
         'foo_schedule': ScheduleDefinition(
-            "foo_schedule",
-            cron_schedule="* * * * *",
-            pipeline_name="test_pipeline",
-            environment_dict={},
+            "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
         )
     }
 

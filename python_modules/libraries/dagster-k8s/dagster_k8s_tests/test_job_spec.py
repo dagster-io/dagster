@@ -90,7 +90,7 @@ def test_valid_job_format(run_launcher):
         os.path.join(test_project_environments_path(), 'env.yaml')
     )
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
+    run = PipelineRun(pipeline_name=pipeline_name, run_config=environment_dict)
 
     job_name = 'dagster-run-%s' % run.run_id
     pod_name = 'dagster-run-%s' % run.run_id
@@ -121,7 +121,7 @@ def test_valid_job_format_with_resources(run_launcher):
         os.path.join(test_project_environments_path(), 'env.yaml')
     )
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
+    run = PipelineRun(pipeline_name=pipeline_name, run_config=environment_dict)
 
     tags = validate_tags(
         {
@@ -170,10 +170,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
     )
     pipeline_name = 'demo_pipeline'
     run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
-        mode='default',
+        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict, mode='default',
     )
 
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
@@ -192,7 +189,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, environment_dict=environment_dict
+        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict
     )
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
     result = wait_for_job_and_get_logs(

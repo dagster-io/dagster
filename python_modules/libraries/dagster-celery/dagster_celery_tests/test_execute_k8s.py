@@ -50,10 +50,7 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
 
     pipeline_name = 'demo_pipeline_celery'
     run = create_run_for_test(
-        dagster_instance,
-        pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
-        mode='default',
+        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict, mode='default',
     )
 
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))

@@ -139,7 +139,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
     pipe = reconstructable(define_multi_out)
     result = execute_pipeline(
         pipe,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert result.success

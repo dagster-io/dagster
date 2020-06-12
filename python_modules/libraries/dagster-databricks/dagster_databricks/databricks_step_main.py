@@ -80,14 +80,12 @@ def setup_storage(step_run_ref):
     This requires modifying the 'sc' global which isn't great.
     https://github.com/dagster-io/dagster/issues/2492 tracks a better solution
     '''
-    root_storage = step_run_ref.environment_dict['storage']
+    root_storage = step_run_ref.run_config['storage']
     check.invariant(
         's3' in root_storage or 'adls2' in root_storage, 'No compatible storage found in config'
     )
 
-    storage = step_run_ref.environment_dict['resources']['pyspark_step_launcher']['config'][
-        'storage'
-    ]
+    storage = step_run_ref.run_config['resources']['pyspark_step_launcher']['config']['storage']
     check.invariant(
         len(storage) == 1, 'No valid storage credentials found in pyspark_step_launcher config'
     )

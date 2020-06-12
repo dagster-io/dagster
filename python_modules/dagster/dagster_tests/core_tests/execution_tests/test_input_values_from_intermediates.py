@@ -45,7 +45,7 @@ def test_from_intermediates_from_config():
     def pipe():
         x()
 
-    result = execute_pipeline(pipe, environment_dict=environment_dict)
+    result = execute_pipeline(pipe, run_config=environment_dict)
 
     assert result
     assert result.success

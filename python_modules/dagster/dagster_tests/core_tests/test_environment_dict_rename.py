@@ -68,7 +68,7 @@ def test_warnings_execute_pipeline_iterator():
 
 
 def test_pipeline_run():
-    pipeline_run_one = PipelineRun(pipeline_name='foo', run_id='1', environment_dict={})
+    pipeline_run_one = PipelineRun(pipeline_name='foo', run_id='1', run_config={})
     assert pipeline_run_one.environment_dict == pipeline_run_one.run_config
     assert pipeline_run_one.environment_dict == {}
 

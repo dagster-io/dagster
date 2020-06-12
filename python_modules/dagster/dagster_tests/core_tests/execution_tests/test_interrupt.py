@@ -69,9 +69,7 @@ def test_interrupt():
             # interrupt
             for result in execute_pipeline_iterator(
                 write_a_file_pipeline,
-                environment_dict={
-                    'solids': {'write_a_file': {'config': {'tempfile': success_tempfile}}}
-                },
+                run_config={'solids': {'write_a_file': {'config': {'tempfile': success_tempfile}}}},
             ):
                 results.append(result.event_type)
             assert False  # should never reach
@@ -101,7 +99,7 @@ def test_interrupt_multiproc():
             # interrupt
             for result in execute_pipeline_iterator(
                 reconstructable(write_files_pipeline),
-                environment_dict={
+                run_config={
                     'solids': {
                         'write_1': {'config': {'tempfile': file_1}},
                         'write_2': {'config': {'tempfile': file_2}},
@@ -158,7 +156,7 @@ def test_interrupt_resource_teardown():
             # interrupt
             for result in execute_pipeline_iterator(
                 write_a_file_pipeline,
-                environment_dict={
+                run_config={
                     'solids': {
                         'write_a_file_resource_solid': {'config': {'tempfile': success_tempfile}}
                     }

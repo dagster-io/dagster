@@ -156,7 +156,7 @@ def do_execute_plan(graphene_info, execution_params):
     ensure_valid_config(
         external_pipeline=external_pipeline,
         mode=execution_params.mode,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
     )
     return _do_execute_plan(graphene_info, execution_params, external_pipeline)
 
@@ -174,7 +174,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         mode=mode,
         step_keys_to_execute=None,
     )
@@ -185,7 +185,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         pipeline_run = graphene_info.context.instance.create_run(
             pipeline_name=external_pipeline.name,
             run_id=run_id,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             mode=mode,
             solids_to_execute=None,
             step_keys_to_execute=None,
@@ -203,7 +203,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
     if execution_params.step_keys:
         external_execution_plan = graphene_info.context.get_external_execution_plan(
             external_pipeline=external_pipeline,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             mode=mode,
             step_keys_to_execute=execution_params.step_keys,
         )
@@ -218,7 +218,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     graphene_info.context.execute_plan(
         external_pipeline=external_pipeline,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         pipeline_run=pipeline_run,
         step_keys_to_execute=execution_params.step_keys,
     )

@@ -278,7 +278,7 @@ def execution_plan_snapshot_command(args):
     return snapshot_from_execution_plan(
         create_execution_plan(
             pipeline=recon_pipeline,
-            environment_dict=args.run_config,
+            run_config=args.run_config,
             mode=args.mode,
             step_keys_to_execute=args.step_keys_to_execute,
         ),
@@ -314,7 +314,7 @@ def partition_data_command(args):
             lambda: 'Error occurred during the execution of user-provided partition functions for '
             'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
         ):
-            run_config = partition_set_def.environment_dict_for_partition(partition)
+            run_config = partition_set_def.run_config_for_partition(partition)
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
     except PartitionScheduleExecutionError:
@@ -544,7 +544,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
     try:
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
+            lambda: 'Error occurred during the execution of run_config_fn for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             environment_dict = schedule_def.get_environment_dict(schedule_context)
@@ -571,7 +571,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
 
     try:
         execution_plan = create_execution_plan(
-            pipeline_def, environment_dict=environment_dict, mode=mode,
+            pipeline_def, run_config=environment_dict, mode=mode,
         )
         execution_plan_snapshot = snapshot_from_execution_plan(
             execution_plan, pipeline_def.get_pipeline_snapshot_id()
@@ -584,7 +584,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
     possibly_invalid_pipeline_run = instance.create_run(
         pipeline_name=schedule_def.pipeline_name,
         run_id=None,
-        environment_dict=environment_dict,
+        run_config=environment_dict,
         mode=mode,
         solids_to_execute=pipeline.solids_to_execute,
         step_keys_to_execute=None,

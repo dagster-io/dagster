@@ -134,17 +134,13 @@ def test_execute_multi_mode_with_resources():
     pipeline_def = define_multi_mode_with_resources_pipeline()
 
     add_mode_result = execute_pipeline(
-        pipeline=pipeline_def,
-        mode='add_mode',
-        environment_dict={'resources': {'op': {'config': 2}}},
+        pipeline=pipeline_def, mode='add_mode', run_config={'resources': {'op': {'config': 2}}},
     )
 
     assert add_mode_result.result_for_solid('apply_to_three').output_value() == 5
 
     mult_mode_result = execute_pipeline(
-        pipeline=pipeline_def,
-        mode='mult_mode',
-        environment_dict={'resources': {'op': {'config': 3}}},
+        pipeline=pipeline_def, mode='mult_mode', run_config={'resources': {'op': {'config': 3}}},
     )
 
     assert mult_mode_result.result_for_solid('apply_to_three').output_value() == 9
@@ -304,7 +300,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
     execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_mode',
-        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     assert not bar_logger_captured_results
@@ -320,7 +316,7 @@ def test_execute_multi_mode_loggers_with_single_logger_extra_config():
         execute_pipeline(
             pipeline=pipeline_def,
             mode='foo_mode',
-            environment_dict={
+            run_config={
                 'loggers': {
                     'foo': {'config': {'log_level': 'DEBUG'}},
                     'bar': {'config': {'log_level': 'DEBUG'}},
@@ -339,7 +335,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers():
     execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_bar_mode',
-        environment_dict={
+        run_config={
             'loggers': {
                 'foo': {'config': {'log_level': 'DEBUG'}},
                 'bar': {'config': {'log_level': 'DEBUG'}},
@@ -366,7 +362,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
     execute_pipeline(
         pipeline_def,
         mode='foo_bar_mode',
-        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     foo_original_messages = parse_captured_results(foo_logger_captured_results)

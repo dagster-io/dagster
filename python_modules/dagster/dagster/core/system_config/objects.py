@@ -61,28 +61,28 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def build(pipeline_def, environment_dict=None, mode=None):
-        '''This method validates a given environment dict against the pipeline config schema. If
+    def build(pipeline_def, run_config=None, mode=None):
+        '''This method validates a given run config against the pipeline config schema. If
         successful, we instantiate an EnvironmentConfig object.
 
-        In case the environment_dict is invalid, this method raises a DagsterInvalidConfigError
+        In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         '''
         from dagster.config.validate import process_config
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+        run_config = check.opt_dict_param(run_config, 'run_config')
         check.opt_str_param(mode, 'mode')
 
         mode = mode or pipeline_def.get_default_mode_name()
         environment_type = create_environment_type(pipeline_def, mode)
 
-        config_evr = process_config(environment_type, environment_dict)
+        config_evr = process_config(environment_type, run_config)
         if not config_evr.success:
             raise DagsterInvalidConfigError(
                 'Error in config for pipeline {}'.format(pipeline_def.name),
                 config_evr.errors,
-                environment_dict,
+                run_config,
             )
 
         config_value = config_evr.value
@@ -94,7 +94,7 @@ class EnvironmentConfig(
             execution=ExecutionConfig.from_dict(config_value.get('execution')),
             storage=StorageConfig.from_dict(config_value.get('storage')),
             loggers=config_value.get('loggers'),
-            original_config_dict=environment_dict,
+            original_config_dict=run_config,
             resources=config_value.get('resources'),
         )
 

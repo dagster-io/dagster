@@ -176,9 +176,9 @@ def _external_pipeline_from_def(pipeline_def, solid_selection=None):
     )
 
 
-def _execute_in_launcher(instance, pipeline_def, environment_dict, solid_selection=None):
+def _execute_in_launcher(instance, pipeline_def, run_config, solid_selection=None):
     created_pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, environment_dict=environment_dict
+        pipeline_def=pipeline_def, run_config=run_config
     )
 
     run = instance.launch_run(
@@ -291,7 +291,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         pipeline_run = _execute_in_launcher(
             instance,
             pipeline_def=composite_pipeline_with_config_mapping,
-            environment_dict=environment_dict,
+            run_config=environment_dict,
         )
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -310,7 +310,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_
         pipeline_run = _execute_in_launcher(
             instance,
             pipeline_def=composite_pipeline_with_config_mapping,
-            environment_dict=environment_dict,
+            run_config=environment_dict,
         )
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -335,7 +335,7 @@ def test_has_run_query_and_terminate():
             environment_dict = {'solids': {'loop': {'config': {'file': path}}}}
 
             created_pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=infinite_loop_pipeline, environment_dict=environment_dict,
+                pipeline_def=infinite_loop_pipeline, run_config=environment_dict,
             )
 
             pipeline_run = instance.launch_run(
@@ -362,7 +362,7 @@ def test_two_runs_running():
     with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two, temp_instance() as instance:
         pipeline_run_one = instance.create_run_for_pipeline(
             pipeline_def=infinite_loop_pipeline,
-            environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
+            run_config={'solids': {'loop': {'config': {'file': file_one}}}},
         )
         instance.launch_run(
             pipeline_run_one.run_id, _external_pipeline_from_def(infinite_loop_pipeline)
@@ -370,7 +370,7 @@ def test_two_runs_running():
 
         pipeline_run_two = instance.create_run_for_pipeline(
             pipeline_def=infinite_loop_pipeline,
-            environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
+            run_config={'solids': {'loop': {'config': {'file': file_two}}}},
         )
 
         instance.launch_run(

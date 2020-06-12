@@ -208,17 +208,17 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     )
 
 
-def construct_variables(recon_repo, mode, environment_dict, pipeline_name, run_id, step_keys):
+def construct_variables(recon_repo, mode, run_config, pipeline_name, run_id, step_keys):
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(mode, 'mode')
-    check.dict_param(environment_dict, 'environment_dict')
+    check.dict_param(run_config, 'run_config')
     check.str_param(pipeline_name, 'pipeline_name')
     check.str_param(run_id, 'run_id')
     check.list_param(step_keys, 'step_keys', of_type=str)
 
     variables = {
         'executionParams': {
-            'runConfigData': environment_dict,
+            'runConfigData': run_config,
             'mode': mode,
             'selector': {
                 'repositoryLocationName': '<<in_process>>',

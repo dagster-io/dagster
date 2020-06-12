@@ -24,7 +24,7 @@ def test_k8s_run_launcher_default(dagster_instance, helm_namespace):
     run = create_run_for_test(
         dagster_instance,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=environment_dict,
         tags=tags,
         mode='default',
     )
@@ -62,7 +62,7 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
     run = create_run_for_test(
         dagster_instance,
         pipeline_name=pipeline_name,
-        environment_dict=environment_dict,
+        run_config=environment_dict,
         tags=tags,
         mode='default',
     )
@@ -84,7 +84,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, environment_dict=environment_dict
+        dagster_instance, pipeline_name=pipeline_name, run_config=environment_dict
     )
 
     dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))

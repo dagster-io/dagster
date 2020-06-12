@@ -24,7 +24,7 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
             'module_name': module_name,
         }
         pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
-        environment_dict = pipeline.get_preset(preset_name).environment_dict
+        environment_dict = pipeline.get_preset(preset_name).run_config
 
     else:
         env = list(env)

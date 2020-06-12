@@ -69,7 +69,7 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
             graphene_info=graphene_info,
             external_pipeline=external_pipeline,
             mode=execution_params.mode,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             step_keys_to_execute=None,
         )
         return get_retry_steps_from_execution_plan(

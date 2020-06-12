@@ -367,7 +367,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         with get_temp_file_name() as out_csv_path:
 
-            environment_dict = {
+            run_config = {
                 'solids': {
                     'sum_solid': {
                         'inputs': {'num': file_relative_path(__file__, '../data/num.csv')},
@@ -381,7 +381,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 variables={
                     'executionParams': {
                         'selector': selector,
-                        'runConfigData': environment_dict,
+                        'runConfigData': run_config,
                         'mode': 'default',
                     }
                 },

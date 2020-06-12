@@ -52,7 +52,7 @@ def synthesize_events(solids_fn, run_id=None):
     instance = DagsterInstance.local_temp()
 
     pipeline_run = instance.create_run_for_pipeline(
-        a_pipe, run_id=run_id, environment_dict={'loggers': {'callback': {}, 'console': {}}}
+        a_pipe, run_id=run_id, run_config={'loggers': {'callback': {}, 'console': {}}}
     )
 
     result = execute_run(InMemoryExecutablePipeline(a_pipe), pipeline_run, instance)

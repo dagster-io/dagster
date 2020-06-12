@@ -126,7 +126,7 @@ def invoke_steps_within_python_operator(
         instance.register_managed_run(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=run_config,
+            run_config=run_config,
             mode=mode,
             solids_to_execute=None,
             step_keys_to_execute=None,

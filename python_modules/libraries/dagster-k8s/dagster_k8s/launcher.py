@@ -331,7 +331,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
 
-        exc_config = _get_validated_celery_k8s_executor_config(run.environment_dict)
+        exc_config = _get_validated_celery_k8s_executor_config(run.run_config)
 
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,

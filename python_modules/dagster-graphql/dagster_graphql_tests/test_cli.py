@@ -47,7 +47,7 @@ def define_schedules():
         name="math_hourly_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="math",
-        environment_dict={'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
+        run_config={'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
     )
 
     return [math_hourly_schedule]

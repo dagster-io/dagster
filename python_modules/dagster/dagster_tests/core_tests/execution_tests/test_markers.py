@@ -18,7 +18,7 @@ def test_multiproc_markers():
     result = execute_pipeline(
         reconstructable(define_pipeline),
         instance=instance,
-        environment_dict={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
     )
     assert result.success
     events = instance.all_logs(result.run_id)

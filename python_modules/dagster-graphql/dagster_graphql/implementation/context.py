@@ -80,22 +80,22 @@ class DagsterGraphQLContext:
         )
 
     def get_external_execution_plan(
-        self, external_pipeline, environment_dict, mode, step_keys_to_execute
+        self, external_pipeline, run_config, mode, step_keys_to_execute
     ):
         return self._repository_locations[
             external_pipeline.handle.location_name
         ].get_external_execution_plan(
             external_pipeline=external_pipeline,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
         )
 
-    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+    def execute_plan(self, external_pipeline, run_config, pipeline_run, step_keys_to_execute):
         return self._repository_locations[external_pipeline.handle.location_name].execute_plan(
             instance=self.instance,
             external_pipeline=external_pipeline,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             step_keys_to_execute=step_keys_to_execute,
         )

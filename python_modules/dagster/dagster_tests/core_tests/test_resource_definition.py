@@ -714,7 +714,7 @@ def test_multiprocessing_resource_teardown_failure():
     pipeline = reconstructable(define_resource_teardown_failure_pipeline)
     result = execute_pipeline(
         pipeline,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
     )
@@ -763,7 +763,7 @@ def test_single_step_resource_event_logs():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline,
-        environment_dict={'loggers': {'callback': {}}},
+        run_config={'loggers': {'callback': {}}},
         step_keys_to_execute=['resource_solid.compute'],
     )
 

@@ -49,15 +49,15 @@ def get_external_pipeline_or_raise(graphene_info, selector):
     return graphene_info.context.get_subset_external_pipeline(selector)
 
 
-def ensure_valid_config(external_pipeline, mode, environment_dict):
+def ensure_valid_config(external_pipeline, mode, run_config):
     check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
     check.str_param(mode, 'mode')
-    # do not type check environment_dict so that validate_config_from_snap throws
+    # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
         config_schema_snapshot=external_pipeline.config_schema_snapshot,
         config_type_key=external_pipeline.root_config_key_for_mode(mode),
-        config_value=environment_dict,
+        config_value=run_config,
     )
 
     if not validated_config.success:
@@ -89,11 +89,11 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
+    graphene_info, external_pipeline, mode, run_config, step_keys_to_execute
 ):
     full_external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         step_keys_to_execute=None,
     )
@@ -105,7 +105,7 @@ def get_external_execution_plan_or_raise(
 
     return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
     )

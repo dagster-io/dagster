@@ -56,20 +56,20 @@ snapshots['test_external_repository_data 1'] = '''{
       "active_presets": [
         {
           "__class__": "ExternalPresetData",
-          "environment_dict": {
-            "foo": "bar"
-          },
           "mode": "mode_one",
           "name": "kitchen_sink_preset",
+          "run_config": {
+            "foo": "bar"
+          },
           "solid_selection": [
             "a_solid"
           ]
         },
         {
           "__class__": "ExternalPresetData",
-          "environment_dict": {},
           "mode": "default",
           "name": "plain_preset",
+          "run_config": {},
           "solid_selection": null
         }
       ],
@@ -1165,20 +1165,20 @@ snapshots['test_external_pipeline_data 1'] = '''{
   "active_presets": [
     {
       "__class__": "ExternalPresetData",
-      "environment_dict": {
-        "foo": "bar"
-      },
       "mode": "mode_one",
       "name": "kitchen_sink_preset",
+      "run_config": {
+        "foo": "bar"
+      },
       "solid_selection": [
         "a_solid"
       ]
     },
     {
       "__class__": "ExternalPresetData",
-      "environment_dict": {},
       "mode": "default",
       "name": "plain_preset",
+      "run_config": {},
       "solid_selection": null
     }
   ],

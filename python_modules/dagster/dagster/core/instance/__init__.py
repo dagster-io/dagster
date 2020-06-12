@@ -456,7 +456,7 @@ class DagsterInstance:
         pipeline_def,
         execution_plan=None,
         run_id=None,
-        environment_dict=None,
+        run_config=None,
         mode=None,
         solids_to_execute=None,
         step_keys_to_execute=None,
@@ -501,7 +501,7 @@ class DagsterInstance:
         if execution_plan is None:
             execution_plan = create_execution_plan(
                 pipeline_def,
-                environment_dict=environment_dict,
+                run_config=run_config,
                 mode=mode,
                 step_keys_to_execute=step_keys_to_execute,
             )
@@ -509,7 +509,7 @@ class DagsterInstance:
         return self.create_run(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name()),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
@@ -529,7 +529,7 @@ class DagsterInstance:
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
         solids_to_execute,
         step_keys_to_execute,
@@ -551,7 +551,7 @@ class DagsterInstance:
         pipeline_run = PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
@@ -625,7 +625,7 @@ class DagsterInstance:
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
         solids_to_execute,
         step_keys_to_execute,
@@ -642,7 +642,7 @@ class DagsterInstance:
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
@@ -661,7 +661,7 @@ class DagsterInstance:
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
         solids_to_execute,
         step_keys_to_execute,
@@ -687,7 +687,7 @@ class DagsterInstance:
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,

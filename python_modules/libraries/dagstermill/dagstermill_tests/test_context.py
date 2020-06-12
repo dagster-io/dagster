@@ -19,8 +19,8 @@ def test_run_id():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_run.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
 
 
-def test_environment_dict():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.environment_dict == {'loggers': {'dagstermill': {}}}
+def test_run_config():
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_config == {'loggers': {'dagstermill': {}}}
 
 
 def test_logging_tags():

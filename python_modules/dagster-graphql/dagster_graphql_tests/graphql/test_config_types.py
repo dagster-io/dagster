@@ -97,19 +97,19 @@ def find_errors(result, field_stack_to_find, reason):
             yield error_data
 
 
-def execute_config_graphql(context, pipeline_name, environment_dict, mode):
+def execute_config_graphql(context, pipeline_name, run_config, mode):
     selector = infer_pipeline_selector(context, pipeline_name)
     return execute_dagster_graphql(
         context,
         CONFIG_VALIDATION_QUERY,
-        {'runConfigData': environment_dict, 'pipeline': selector, 'mode': mode,},
+        {'runConfigData': run_config, 'pipeline': selector, 'mode': mode,},
     )
 
 
 class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
     def test_pipeline_not_found(self, graphql_context):
         result = execute_config_graphql(
-            graphql_context, pipeline_name='nope', environment_dict={}, mode='default'
+            graphql_context, pipeline_name='nope', run_config={}, mode='default'
         )
 
         assert not result.errors
@@ -121,7 +121,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict=csv_hello_world_solids_config(),
+            run_config=csv_hello_world_solids_config(),
             mode='default',
         )
 
@@ -134,7 +134,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict={
+            run_config={
                 'solids': {
                     'sum_solid': {
                         'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
@@ -162,9 +162,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict={
-                'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}
-            },
+            run_config={'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}},
             mode='default',
         )
 
@@ -184,7 +182,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict={
+            run_config={
                 'solids': {
                     'sum_solid': {
                         'inputs': {'num': 'foo.txt', 'extra_one': 'nope', 'extra_two': 'nope'}
@@ -208,7 +206,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
 
     def test_root_wrong_type(self, graphql_context):
         result = execute_config_graphql(
-            graphql_context, pipeline_name='csv_hello_world', environment_dict=123, mode='default'
+            graphql_context, pipeline_name='csv_hello_world', run_config=123, mode='default'
         )
 
         assert not result.errors
@@ -225,7 +223,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
+            run_config={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
             mode='default',
         )
 
@@ -249,7 +247,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='csv_hello_world',
-            environment_dict={'solids': {'sum_solid': {'inputs': {}}}},
+            run_config={'solids': {'sum_solid': {'inputs': {}}}},
             mode='default',
         )
 
@@ -270,7 +268,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='multi_mode_with_resources',
-            environment_dict={'resources': {'op': {'config': 2}}},
+            run_config={'resources': {'op': {'config': 2}}},
             mode='add_mode',
         )
 
@@ -282,7 +280,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='multi_mode_with_resources',
-            environment_dict={'resources': {'op': {'config': 2}}},
+            run_config={'resources': {'op': {'config': 2}}},
             mode='mult_mode',
         )
 
@@ -294,7 +292,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='multi_mode_with_resources',
-            environment_dict={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
+            run_config={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
             mode='double_adder',
         )
 
@@ -307,7 +305,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='multi_mode_with_resources',
-            environment_dict={'resources': {}},
+            run_config={'resources': {}},
             mode='add_mode',
         )
 
@@ -324,7 +322,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='multi_mode_with_resources',
-            environment_dict={'resources': {'nope': {}}},
+            run_config={'resources': {'nope': {}}},
             mode='add_mode',
         )
 
@@ -342,7 +340,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='more_complicated_nested_config',
-            environment_dict={
+            run_config={
                 'solids': {
                     'a_solid_with_multilayered_config': {
                         'config': {
@@ -368,7 +366,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='more_complicated_nested_config',
-            environment_dict={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
+            run_config={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
             mode='default',
         )
 
@@ -388,7 +386,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='more_complicated_nested_config',
-            environment_dict={
+            run_config={
                 'solids': {
                     'a_solid_with_multilayered_config': {
                         'config': {
@@ -479,7 +477,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='pipeline_with_list',
-            environment_dict={'solids': {'solid_with_list': {'config': [1, 2]}}},
+            run_config={'solids': {'solid_with_list': {'config': [1, 2]}}},
             mode='default',
         )
 
@@ -493,7 +491,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='pipeline_with_list',
-            environment_dict={'solids': {'solid_with_list': {'config': 'foo'}}},
+            run_config={'solids': {'solid_with_list': {'config': 'foo'}}},
             mode='default',
         )
 
@@ -509,7 +507,7 @@ class TestConfigTypes(ReadonlyGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name='pipeline_with_list',
-            environment_dict={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
+            run_config={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
             mode='default',
         )
 

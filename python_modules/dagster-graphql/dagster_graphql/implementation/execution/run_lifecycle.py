@@ -22,7 +22,7 @@ from ..utils import PipelineSelector
 
 
 def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params):
-    ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
+    ensure_valid_config(external_pipeline, execution_params.mode, execution_params.run_config)
 
     step_keys_to_execute = compute_step_keys_to_execute(
         graphene_info, external_pipeline, execution_params
@@ -32,7 +32,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         graphene_info=graphene_info,
         external_pipeline=external_pipeline,
         mode=execution_params.mode,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
     )
 
@@ -47,7 +47,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         solids_to_execute=frozenset(execution_params.selector.solid_selection)
         if execution_params.selector.solid_selection
         else None,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags),
@@ -94,7 +94,7 @@ def get_run_execution_info_for_created_run_or_error(
     validated_config = validate_config_from_snap(
         external_pipeline.config_schema_snapshot,
         external_pipeline.root_config_key_for_mode(pipeline_run.mode),
-        pipeline_run.environment_dict,
+        pipeline_run.run_config,
     )
 
     if not validated_config.success:
@@ -107,7 +107,7 @@ def get_run_execution_info_for_created_run_or_error(
         invalid_config_exception = DagsterInvalidConfigError(
             'Error in config for pipeline {}'.format(external_pipeline.name),
             validated_config.errors,
-            pipeline_run.environment_dict,
+            pipeline_run.run_config,
         )
 
         instance.report_engine_event(

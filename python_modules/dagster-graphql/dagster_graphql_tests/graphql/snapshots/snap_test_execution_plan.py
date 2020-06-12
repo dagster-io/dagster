@@ -567,3 +567,27 @@ snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sql
         'pipelineName': 'csv_hello_world'
     }
 }
+
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_memory_instance_multi_location] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
+    }
+}
+
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sqlite_instance_multi_location] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
+    }
+}

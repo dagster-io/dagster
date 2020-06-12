@@ -490,7 +490,7 @@ def pipeline_launch_command(config, preset_name, mode, **kwargs):
         pipeline_def=pipeline.get_definition(),
         solid_selection=solid_selection,
         solids_to_execute=pipeline.solids_to_execute,
-        environment_dict=preset.run_config if preset else load_yaml_from_glob_list(env),
+        run_config=preset.run_config if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,
     )
@@ -742,7 +742,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
                 solids_to_execute=frozenset(partition_set.solid_selection)
                 if partition_set and partition_set.solid_selection
                 else None,
-                environment_dict=partition_set.run_config_for_partition(partition),
+                run_config=partition_set.run_config_for_partition(partition),
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
 

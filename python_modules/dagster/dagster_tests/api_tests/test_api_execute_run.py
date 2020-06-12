@@ -12,13 +12,13 @@ from .utils import get_foo_pipeline_handle, legacy_get_foo_pipeline_handle
 
 # mostly for test
 def sync_cli_api_execute_run(
-    instance, pipeline_origin, pipeline_name, environment_dict, mode, solids_to_execute
+    instance, pipeline_origin, pipeline_name, run_config, mode, solids_to_execute
 ):
     with safe_tempfile_path() as output_file_path:
         pipeline_run = instance.create_run(
             pipeline_name=pipeline_name,
             run_id=None,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=None,
@@ -49,7 +49,7 @@ def test_execute_run_api(repo_handle):
                 instance=instance,
                 pipeline_origin=repo_handle.get_origin(),
                 pipeline_name='foo',
-                environment_dict={},
+                run_config={},
                 mode='default',
                 solids_to_execute=None,
             )
