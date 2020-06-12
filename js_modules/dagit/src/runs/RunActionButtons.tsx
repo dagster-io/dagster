@@ -1,29 +1,18 @@
 import * as React from "react";
-import styled from "styled-components/macro";
 import { IconNames } from "@blueprintjs/icons";
-import {
-  Menu,
-  MenuItem,
-  Popover,
-  PopoverInteractionKind,
-  Button,
-  Intent,
-  Tooltip,
-  Position
-} from "@blueprintjs/core";
+import { Button, Intent } from "@blueprintjs/core";
 import { useMutation } from "react-apollo";
-import ExecutionStartButton from "../execute/ExecutionStartButton";
+import {
+  LaunchButtonDropdown,
+  LaunchButtonConfiguration
+} from "../execute/LaunchButton";
 import { PipelineRunStatus } from "../types/globalTypes";
-import { ExecutionType } from "../LocalStorage";
 
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../DomUtils";
 import { IStepState } from "../RunMetadataProvider";
 
 const CANCEL_TITLE = "Terminate";
-
-// Title of re-execute button group
-const LAUNCH_REEXECUTE_TITLE = "Launch Re-execution";
 
 // Titles of re-execute options
 const REEXECUTE_FULL_PIPELINE_TITLE = "Full Pipeline";
@@ -103,63 +92,55 @@ const CancelRunButton: React.FunctionComponent<{
   );
 };
 
-interface ReexecuteButtonProps {
-  selectedSteps?: string[];
-  artifactsPersisted?: boolean;
-  onChangeExecutionType?: (type: ExecutionType) => void;
-  onClick: (stepKeys?: string[], resumeRetry?: boolean) => void;
-  disabled?: boolean;
-  stepsInFlight?: boolean;
-}
+export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = ({
+  selectedSteps,
+  artifactsPersisted,
+  onLaunch,
+  run,
+  selectedStepStates,
+  executionPlan
+}) => {
+  // Run's status
 
-export function ReexecuteFullPipelineButton(props: ReexecuteButtonProps) {
-  const { onClick } = props;
-
-  return (
-    <Tooltip
-      hoverOpenDelay={300}
-      position={Position.LEFT}
-      openOnTargetFocus={false}
-      targetTagName="div"
-      content={REEXECUTE_FULL_PIPELINE_DESCRIPTION}
-    >
-      <ReexecuteMenuItem
-        text={REEXECUTE_FULL_PIPELINE_TITLE}
-        icon="repeat"
-        onClick={() => onClick()}
-      />
-    </Tooltip>
+  const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
+  const isSelectionPresent = selectedSteps && selectedSteps.length > 0;
+  const isSelectionFinished = selectedStepStates.every(stepState =>
+    [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState)
   );
-}
+  const isFinalStatus =
+    run?.status === PipelineRunStatus.FAILURE ||
+    run?.status === PipelineRunStatus.SUCCESS;
+  const isFailedWithPlan =
+    executionPlan && run && run.status === PipelineRunStatus.FAILURE;
 
-export function ReexecuteSubsetButton(props: ReexecuteButtonProps) {
-  const { onClick, selectedSteps, stepsInFlight, artifactsPersisted } = props;
-
-  const disabled =
-    !selectedSteps ||
-    selectedSteps.length === 0 ||
-    stepsInFlight ||
-    !artifactsPersisted;
-
-  return (
-    <Tooltip
-      hoverOpenDelay={300}
-      position={Position.LEFT}
-      targetTagName="div"
-      openOnTargetFocus={false}
-      interactionKind={PopoverInteractionKind.HOVER}
-      content={
+  const options: LaunchButtonConfiguration[] = [
+    {
+      title: REEXECUTE_FULL_PIPELINE_TITLE,
+      tooltip: REEXECUTE_FULL_PIPELINE_DESCRIPTION,
+      icon: "repeat",
+      disabled: isPipelineUnknown || !isFinalStatus,
+      onClick: () => onLaunch()
+    },
+    {
+      title: isSelectionPresent
+        ? REEXECUTE_SUBSET_TITLE
+        : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
+      disabled:
+        isPipelineUnknown ||
+        !isSelectionPresent ||
+        !isSelectionFinished ||
+        !artifactsPersisted,
+      tooltip: (
         <div>
           {!artifactsPersisted
             ? REEXECUTE_SUBSET_NO_ARTIFACTS
-            : !selectedSteps || selectedSteps.length === 0
+            : !isSelectionPresent
             ? REEXECUTE_SUBSET_NO_SELECTION
-            : stepsInFlight
+            : !isSelectionFinished
             ? REEXECUTE_SUBSET_NOT_DONE
             : REEXECUTE_SUBSET}
           <div style={{ paddingLeft: "10px" }}>
-            {selectedSteps &&
-              selectedSteps.length > 0 &&
+            {isSelectionPresent &&
               selectedSteps.map(step => (
                 <span
                   key={step}
@@ -168,157 +149,30 @@ export function ReexecuteSubsetButton(props: ReexecuteButtonProps) {
               ))}
           </div>
         </div>
-      }
-    >
-      <ReexecuteMenuItem
-        text={
-          selectedSteps && selectedSteps.length > 0
-            ? REEXECUTE_SUBSET_TITLE
-            : REEXECUTE_SUBSET_NO_SELECTION_TITLE
-        }
-        icon="select"
-        disabled={disabled}
-        onClick={() => onClick(selectedSteps)}
-      />
-    </Tooltip>
-  );
-}
-
-export function ReexecuteFromFailureButton(props: ReexecuteButtonProps) {
-  const { onClick, disabled, artifactsPersisted } = props;
-  return (
-    <Tooltip
-      hoverOpenDelay={300}
-      content={
-        !artifactsPersisted
-          ? RETRY_NO_ARTIFACTS
-          : disabled
-          ? RETRY_DISABLED
-          : RETRY_DESCRIPTION
-      }
-      position={Position.LEFT}
-      targetTagName="div"
-      openOnTargetFocus={false}
-    >
-      <ReexecuteMenuItem
-        text={REEXECUTE_FROM_FAILURE_TITLE}
-        disabled={disabled || !artifactsPersisted}
-        onClick={() => onClick(undefined, true)}
-        icon="play"
-      />
-    </Tooltip>
-  );
-}
-
-interface ReexecuteButtonGroupProps {
-  selectedSteps: string[];
-  artifactsPersisted: boolean;
-  onClick: (stepKeys?: string[], resumeRetry?: boolean) => void;
-  isPipelineUnknown: boolean;
-  run?: RunActionButtonsRun;
-  selectedStepStates: IStepState[];
-  executionPlan?: {
-    artifactsPersisted: boolean;
-  } | null;
-}
-
-export function ReexecuteButtonGroup(props: ReexecuteButtonGroupProps) {
-  const {
-    selectedSteps,
-    artifactsPersisted,
-    onClick,
-    isPipelineUnknown,
-    run,
-    selectedStepStates,
-    executionPlan
-  } = props;
-  // Run's status
-  const isRetryDisabled = !(
-    executionPlan &&
-    run &&
-    run.status === PipelineRunStatus.FAILURE
-  );
-  const stepsInFlight = selectedStepStates
-    .map(
-      stepState =>
-        ![IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState)
-    )
-    .every(Boolean);
-
-  return (
-    <Popover
-      content={
-        <Menu>
-          <ReexecuteFullPipelineButton onClick={onClick} />
-          <ReexecuteSubsetButton
-            onClick={onClick}
-            selectedSteps={selectedSteps}
-            stepsInFlight={stepsInFlight}
-            artifactsPersisted={artifactsPersisted}
-          />
-          <ReexecuteFromFailureButton
-            onClick={onClick}
-            disabled={isRetryDisabled}
-            artifactsPersisted={artifactsPersisted}
-          />
-        </Menu>
-      }
-      position={"bottom"}
-      // Disable the whole button group if pipeline is unknown
-      disabled={isPipelineUnknown}
-    >
-      <Tooltip
-        content={REEXECUTE_PIPELINE_UNKNOWN}
-        position={Position.BOTTOM}
-        disabled={!isPipelineUnknown}
-      >
-        <Button
-          small={true}
-          text={LAUNCH_REEXECUTE_TITLE}
-          icon="repeat"
-          rightIcon="caret-down"
-          disabled={isPipelineUnknown}
-          intent={isPipelineUnknown ? "none" : "primary"}
-        />
-      </Tooltip>
-    </Popover>
-  );
-}
-
-export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = props => {
-  const [starting, setStarting] = React.useState(false);
-  const { run, executionPlan, onLaunch } = props;
-  const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
-  const isReexecutionDisabled = !(
-    run?.status === PipelineRunStatus.FAILURE ||
-    run?.status === PipelineRunStatus.SUCCESS
-  );
+      ),
+      icon: "select",
+      onClick: () => onLaunch(selectedSteps)
+    },
+    {
+      title: REEXECUTE_FROM_FAILURE_TITLE,
+      icon: "play",
+      disabled: isPipelineUnknown || !isFailedWithPlan || !artifactsPersisted,
+      tooltip: !artifactsPersisted
+        ? RETRY_NO_ARTIFACTS
+        : !isFailedWithPlan
+        ? RETRY_DISABLED
+        : RETRY_DESCRIPTION,
+      onClick: () => onLaunch(undefined, true)
+    }
+  ];
 
   return (
     <>
-      <ExecutionStartButton
-        title={LAUNCH_REEXECUTE_TITLE}
-        icon="repeat"
-        onClick={() => {}}
-        starting={starting}
-        disabled={isReexecutionDisabled}
+      <LaunchButtonDropdown
         small={true}
-      >
-        <ReexecuteButtonGroup
-          // Launch re-execution button group
-          onClick={async (...args) => {
-            setStarting(true);
-            await onLaunch(...args);
-            setStarting(false);
-          }}
-          selectedSteps={props.selectedSteps}
-          artifactsPersisted={props.artifactsPersisted}
-          isPipelineUnknown={isPipelineUnknown}
-          run={run}
-          selectedStepStates={props.selectedStepStates}
-          executionPlan={executionPlan}
-        />
-      </ExecutionStartButton>
+        options={options}
+        title="Launch Re-execution"
+      />
       {run?.canTerminate && (
         <>
           <div style={{ minWidth: 6 }} />
@@ -328,7 +182,3 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     </>
   );
 };
-
-const ReexecuteMenuItem = styled(MenuItem)`
-  max-width: 200px;
-`;

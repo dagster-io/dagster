@@ -28,7 +28,7 @@ import {
 } from "../configeditor/ConfigEditorUtils";
 
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
-import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
+import { LaunchRootExecutionButton } from "./LaunchRootExecutionButton";
 import { TagContainer, TagEditor } from "./TagEditor";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { PipelineSelector } from "../types/globalTypes";
@@ -422,7 +422,7 @@ export default class ExecutionSessionContainer extends React.Component<
                 this.editor.current?.moveCursorToPath(path)
               }
               actions={
-                <PipelineExecutionButtonGroup
+                <LaunchRootExecutionButton
                   pipelineName={pipeline.name}
                   getVariables={this.buildExecutionVariables}
                   disabled={
