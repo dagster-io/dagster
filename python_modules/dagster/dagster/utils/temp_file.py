@@ -39,7 +39,8 @@ def get_temp_file_handle():
 
 @contextmanager
 def get_temp_file_name():
-    temp_file_name = tempfile.mkstemp()[1]
+    handle, temp_file_name = tempfile.mkstemp()
+    os.close(handle)  # just need the name - avoid leaking the file descriptor
     try:
         yield temp_file_name
     finally:
@@ -52,7 +53,8 @@ def get_temp_file_names(number):
 
     temp_file_names = list()
     for _ in itertools.repeat(None, number):
-        temp_file_name = tempfile.mkstemp()[1]
+        handle, temp_file_name = tempfile.mkstemp()
+        os.close(handle)  # # just need the name - avoid leaking the file descriptor
         temp_file_names.append(temp_file_name)
 
     try:
