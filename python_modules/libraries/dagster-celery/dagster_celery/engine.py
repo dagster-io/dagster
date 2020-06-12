@@ -1,8 +1,6 @@
 import sys
 import time
 
-from dagster_k8s.job import get_k8s_resource_requirements
-
 from dagster import check
 from dagster.core.engine.engine_base import Engine
 from dagster.core.errors import DagsterSubprocessError
@@ -188,6 +186,8 @@ def _submit_task(app, pipeline_context, step, queue, priority):
 
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     from .tasks import create_k8s_job_task
+
+    from dagster_k8s.job import get_k8s_resource_requirements
 
     resources = get_k8s_resource_requirements(step.tags)
     task = create_k8s_job_task(app)
