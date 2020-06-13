@@ -294,6 +294,10 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/workspaces</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/learn/how-tos/conditional_execution</loc>
   </url>
 
@@ -314,11 +318,23 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/tutorial/advanced</loc>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_intermediates</loc>
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/tutorial/basics</loc>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_pipelines</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_repositories</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_scheduling</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_solids</loc>
   </url>
 
   <url>
@@ -347,6 +363,10 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/tutorial/testable</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/types</loc>
   </url>
 
   <url>
