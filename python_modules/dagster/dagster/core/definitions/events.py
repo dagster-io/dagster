@@ -65,10 +65,10 @@ class AssetKey(namedtuple('_AssetKey', 'path')):
         return super(AssetKey, cls).__new__(cls, path=path)
 
     def __str__(self):
-        return 'AssetKey({})'.format(self.to_db_string())
+        return 'AssetKey({})'.format(self.to_string())
 
     def __repr__(self):
-        return 'AssetKey({})'.format(self.to_db_string())
+        return 'AssetKey({})'.format(self.to_string())
 
     def __hash__(self):
         return hash(tuple(self.path))
@@ -76,9 +76,9 @@ class AssetKey(namedtuple('_AssetKey', 'path')):
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
             return False
-        return self.to_db_string() == other.to_db_string()
+        return self.to_string() == other.to_string()
 
-    def to_db_string(self):
+    def to_string(self):
         if not self.path:
             return None
         return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
@@ -357,11 +357,19 @@ class Materialization(
             asset_key=asset_key,
         )
 
-    def __new__(cls, label, description=None, metadata_entries=None, asset_key=None):
+    def __new__(cls, label=None, description=None, metadata_entries=None, asset_key=None):
         if asset_key and check.is_str(asset_key):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         else:
             check.opt_inst_param(asset_key, 'asset_key', AssetKey)
+
+        if not label:
+            check.param_invariant(
+                asset_key and asset_key.path,
+                'label',
+                'Either label or asset_key with a path must be provided',
+            )
+            label = asset_key.to_string()
 
         return super(Materialization, cls).__new__(
             cls,

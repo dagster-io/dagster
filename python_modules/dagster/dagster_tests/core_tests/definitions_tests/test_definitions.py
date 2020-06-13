@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     Any,
+    AssetKey,
     CompositeSolidDefinition,
     DependencyDefinition,
     InputDefinition,
@@ -162,6 +163,11 @@ def test_mapper_errors():
 
 def test_materialization():
     assert isinstance(Materialization('foo', 'foo.txt'), Materialization)
+
+
+def test_materialization_assign_label_from_asset_key():
+    mat = Materialization(asset_key=AssetKey(['foo', 'bar']))
+    assert mat.label == 'foo.bar'
 
 
 def test_rehydrate_solid_handle():

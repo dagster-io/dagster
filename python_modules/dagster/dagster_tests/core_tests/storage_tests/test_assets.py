@@ -100,7 +100,7 @@ def test_asset_keys(asset_aware_context):
         execute_pipeline(pipeline_two, instance=instance)
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 3
-        assert set([asset_key.to_db_string() for asset_key in asset_keys]) == set(
+        assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
             ['asset_1', 'asset_2', 'path.to.asset_3']
         )
 
@@ -141,5 +141,5 @@ def test_asset_normalization(asset_aware_context):
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 1
         asset_key = asset_keys[0]
-        assert asset_key.to_db_string() == 'path.to.asset_4'
+        assert asset_key.to_string() == 'path.to.asset_4'
         assert asset_key.path == ['path', 'to', 'asset_4']

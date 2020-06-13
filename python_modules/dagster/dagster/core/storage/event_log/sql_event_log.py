@@ -55,7 +55,7 @@ class SqlEventLogStorage(EventLogStorage):
             step_key = event.dagster_event.step_key
             if event.dagster_event.asset_key:
                 check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
-                asset_key_str = event.dagster_event.asset_key.to_db_string()
+                asset_key_str = event.dagster_event.asset_key.to_string()
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -308,7 +308,7 @@ class SqlEventLogStorage(EventLogStorage):
             dagster_event_type = event.dagster_event.event_type_value
             if event.dagster_event.asset_key:
                 check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
-                asset_key_str = event.dagster_event.asset_key.to_db_string()
+                asset_key_str = event.dagster_event.asset_key.to_string()
 
         with self.connect(run_id=event.run_id) as conn:
             conn.execute(
@@ -370,7 +370,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
         check.inst_param(asset_key, 'asset_key', AssetKey)
-        asset_key_str = asset_key.to_db_string()
+        asset_key_str = asset_key.to_string()
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
             SqlEventLogStorageTable.c.asset_key == asset_key_str
         )
@@ -396,7 +396,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, 'asset_key', AssetKey)
-        asset_key_str = asset_key.to_db_string()
+        asset_key_str = asset_key.to_string()
         query = (
             db.select(
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
