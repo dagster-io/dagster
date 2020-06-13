@@ -37,7 +37,7 @@ Built-in primitive types
         def identity_py2(_, x):
             return x
 
-        @solid(config=Field(Any))
+        @solid(config_schema=Field(Any))
         def any_config(context):
             return context.solid_config
 
@@ -75,7 +75,7 @@ Built-in primitive types
         def empty_string_py2(_, x):
             return len(x) == 0
 
-        @solid(config=Field(Bool))
+        @solid(config_schema=Field(Bool))
         def bool_config(context):
             return 'true' if context.solid_config else 'false'
 
@@ -125,7 +125,7 @@ Built-in primitive types
         def div_2_py_2(_, x):
             return x / 2
 
-        @solid(config=Field(Float))
+        @solid(config_schema=Field(Float))
         def div_y(context, x: Float) -> float:
             return x / context.solid_config
 
@@ -155,7 +155,7 @@ Built-in primitive types
         def concat_py_2(_, x, y):
             return x + y
 
-        @solid(config=Field(String))
+        @solid(config_schema=Field(String))
         def hello(context) -> str:
             return 'Hello, {friend}!'.format(friend=context.solid_config)
 
@@ -182,7 +182,7 @@ Built-in primitive types
         def exists_py2(_, path):
             return os.path.exists(path)
 
-        @solid(config=Field(str))
+        @solid(config_schema=Field(str))
         def unpickle(context) -> Any:
             with open(context.solid_config, 'rb') as fd:
                 return pickle.load(fd)

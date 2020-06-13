@@ -13,7 +13,7 @@ from dagster import (
 
 
 @solid(
-    config={
+    config_schema={
         'delimiter': Field(
             String,
             default_value=',',

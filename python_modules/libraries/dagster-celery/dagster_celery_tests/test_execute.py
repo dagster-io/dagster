@@ -150,7 +150,7 @@ def events_of_type(result, event_type):
     return [event for event in result.event_list if event.event_type_value == event_type]
 
 
-@solid(config=str)
+@solid(config_schema=str)
 def destroy(context, x):
     shutil.rmtree(context.solid_config)
     return x

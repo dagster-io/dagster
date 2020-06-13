@@ -18,7 +18,7 @@ from dagster.utils import file_relative_path
 
 
 def test_presets():
-    @solid(config={'error': Bool})
+    @solid(config_schema={'error': Bool})
     def can_fail(context):
         if context.solid_config['error']:
             raise Exception('I did an error')

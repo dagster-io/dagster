@@ -131,7 +131,7 @@ class Permissive(_ConfigHasFields):
 
     .. code-block:: python
 
-        @solid(config=Field(Permissive({'required': Field(String)})))
+        @solid(config_schema=Field(Permissive({'required': Field(String)})))
         def partially_specified_config(context) -> List:
             return sorted(list(context.solid_config.items()))
     '''

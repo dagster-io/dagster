@@ -126,7 +126,7 @@ def repository(name=None, description=None):
         # A simple repository using the first form of the decorated function
         ######################################################################
 
-        @solid(config={n: Field(Int)})
+        @solid(config_schema={n: Field(Int)})
         def return_n(context):
             return context.solid_config['n']
 

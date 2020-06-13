@@ -174,7 +174,7 @@ def test_solid_selection():
 
 
 def define_subdag_pipeline():
-    @solid(config=Field(String))
+    @solid(config_schema=Field(String))
     def waiter(context):
         done = False
         while not done:

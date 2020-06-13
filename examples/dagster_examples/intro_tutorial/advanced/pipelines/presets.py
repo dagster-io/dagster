@@ -46,7 +46,7 @@ class LocalSQLiteWarehouse(object):
             curs.close()
 
 
-@resource(config={'conn_str': Field(String)})
+@resource(config_schema={'conn_str': Field(String)})
 def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config['conn_str'])
 
@@ -87,7 +87,7 @@ class SqlAlchemyPostgresWarehouse(object):
         NormalizedCereal.__table__.insert().execute(records)
 
 
-@resource(config={'conn_str': Field(String)})
+@resource(config_schema={'conn_str': Field(String)})
 def sqlalchemy_postgres_warehouse_resource(context):
     return SqlAlchemyPostgresWarehouse(context.resource_config['conn_str'])
 

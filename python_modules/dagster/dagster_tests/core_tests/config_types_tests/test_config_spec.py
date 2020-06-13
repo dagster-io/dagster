@@ -63,7 +63,7 @@ def test_kitchen_sink():
 def test_bad_solid_config_argument():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config='dkjfkd')
+        @solid(config_schema='dkjfkd')
         def _bad_config(_):
             pass
 
@@ -75,7 +75,7 @@ def test_bad_solid_config_argument():
 def test_bad_solid_config_argument_nested():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config={'field': 'kdjkfjd'})
+        @solid(config_schema={'field': 'kdjkfjd'})
         def _bad_config(_):
             pass
 
@@ -88,7 +88,7 @@ def test_bad_solid_config_argument_nested():
 def test_bad_solid_config_argument_list_wrong_length():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config={'bad_list': []})
+        @solid(config_schema={'bad_list': []})
         def _bad_list_config(_):
             pass
 
@@ -103,7 +103,7 @@ def test_bad_solid_config_argument_list_bad_item():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config={'bad_list': ['kdjfkd']})
+        @solid(config_schema={'bad_list': ['kdjfkd']})
         def _bad_list_config(_):
             pass
 
@@ -119,7 +119,7 @@ def test_bad_solid_config_argument_list_bad_nested_item():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config={'bad_nested_list': [{'bad_field': 'kjdkfd'}]})
+        @solid(config_schema={'bad_nested_list': [{'bad_field': 'kjdkfd'}]})
         def _bad_list_config(_):
             pass
 

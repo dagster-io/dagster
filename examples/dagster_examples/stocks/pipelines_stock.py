@@ -5,7 +5,7 @@ from dagster import InputDefinition, pipeline, solid
 API_URL = "https://financialmodelingprep.com/api/v3/historical-price-full"
 
 
-@solid(config={'symbol': str})
+@solid(config_schema={'symbol': str})
 def query_historical_stock_data(context):
     symbol = context.solid_config['symbol']
     ds_start = "2019-01-01"

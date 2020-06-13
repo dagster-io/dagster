@@ -24,7 +24,7 @@ def pipe(input_str):
     return input_str
 
 
-@solid(config=Field(String, is_required=False))
+@solid(config_schema=Field(String, is_required=False))
 def scalar_config_solid(context):
     yield Output(context.solid_config)
 
@@ -166,7 +166,7 @@ def test_config_mapper_throws():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
+    @composite_solid(config_schema={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
     def bad_wrap():
         return scalar_config_solid()
 
@@ -193,7 +193,7 @@ def test_config_mapper_throws_nested():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
+    @composite_solid(config_schema={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
     def bad_wrap():
         return scalar_config_solid()
 
@@ -219,7 +219,7 @@ def test_config_mapper_throws_nested():
 
 
 def test_composite_config_field():
-    @solid(config={'inner': Field(String)})
+    @solid(config_schema={'inner': Field(String)})
     def inner_solid(context):
         return context.solid_config['inner']
 
@@ -240,7 +240,7 @@ def test_composite_config_field():
 
 
 def test_nested_composite_config_field():
-    @solid(config={'inner': Field(String)})
+    @solid(config_schema={'inner': Field(String)})
     def inner_solid(context):
         return context.solid_config['inner']
 
@@ -763,7 +763,7 @@ def test_nested_empty_config_input():
 def test_bad_solid_def():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @composite_solid(config={'test': Field(String)})
+        @composite_solid(config_schema={'test': Field(String)})
         def config_only():  # pylint: disable=unused-variable
             scalar_config_solid()
 

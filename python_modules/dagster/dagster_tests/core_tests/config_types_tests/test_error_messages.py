@@ -13,7 +13,7 @@ def test_invalid_optional_in_config():
         ),
     ):
 
-        @solid(config=Optional[int])
+        @solid(config_schema=Optional[int])
         def _solid(_):
             pass
 
@@ -22,7 +22,7 @@ def test_invalid_dict_call():
     # prior to 0.7.0 dicts in config contexts were callable
     with pytest.raises(TypeError, match=re.escape("'DagsterDictApi' object is not callable")):
 
-        @solid(config=Dict({'foo': int}))  # pylint: disable=not-callable
+        @solid(config_schema=Dict({'foo': int}))  # pylint: disable=not-callable
         def _solid(_):
             pass
 
@@ -36,7 +36,7 @@ def test_list_in_config():
         ),
     ):
 
-        @solid(config=List[int])
+        @solid(config_schema=List[int])
         def _solid(_):
             pass
 

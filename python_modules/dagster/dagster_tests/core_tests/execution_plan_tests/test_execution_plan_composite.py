@@ -3,12 +3,12 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 
 
-@solid(config={'foo': Field(String)})
+@solid(config_schema={'foo': Field(String)})
 def node_a(context):
     return context.solid_config['foo']
 
 
-@solid(config={'bar': Int})
+@solid(config_schema={'bar': Int})
 def node_b(context, input_):
     return input_ * context.solid_config['bar']
 

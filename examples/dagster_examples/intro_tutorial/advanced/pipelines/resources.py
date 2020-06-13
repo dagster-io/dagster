@@ -41,7 +41,7 @@ class LocalSQLiteWarehouse(object):
             curs.close()
 
 
-@resource(config={'conn_str': Field(String)})
+@resource(config_schema={'conn_str': Field(String)})
 def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config['conn_str'])
 

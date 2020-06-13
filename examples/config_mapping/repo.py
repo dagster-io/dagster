@@ -2,7 +2,7 @@ from dagster import Field, RepositoryDefinition, Shape, composite_solid, pipelin
 
 
 @solid(
-    config={
+    config_schema={
         'cluster_cfg': Shape(
             {
                 'num_mappers': Field(int),
@@ -37,7 +37,7 @@ def config_mapping_fn(cfg):
 
 @composite_solid(
     config_fn=config_mapping_fn,
-    config={'name': Field(str, is_required=False, default_value='Sam')},
+    config_schema={'name': Field(str, is_required=False, default_value='Sam')},
 )
 def hello_external():
     return hello()

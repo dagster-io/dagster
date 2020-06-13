@@ -25,7 +25,7 @@ def get_executor_defs():
 @solid(
     input_defs=[InputDefinition('chase_duration', int)],
     output_defs=[OutputDefinition(int, 'total')],
-    config={
+    config_schema={
         'chase_size': Field(
             int,
             default_value=100000,
@@ -52,7 +52,7 @@ def hammer(context, chase_duration):
 
 
 @solid(
-    config=Field(int, is_required=False, default_value=1),
+    config_schema=Field(int, is_required=False, default_value=1),
     output_defs=[
         OutputDefinition(int, 'out_1'),
         OutputDefinition(int, 'out_2'),

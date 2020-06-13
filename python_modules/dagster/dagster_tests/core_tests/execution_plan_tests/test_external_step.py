@@ -58,7 +58,7 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
             )
 
 
-@resource(config=local_external_step_launcher.config_field)
+@resource(config_schema=local_external_step_launcher.config_field)
 def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
 

@@ -36,7 +36,7 @@ class Lakehouse:
                 def get_fs_path(path: Tuple[str, ...]) -> str:
                     return '/'.join((self.root,) + path)
 
-            @resource(config={'root': str})
+            @resource(config_schema={'root': str})
             def local_file_system_storage(init_context):
                 return LocalFileSystemStorage(init_context.resource_config)
 

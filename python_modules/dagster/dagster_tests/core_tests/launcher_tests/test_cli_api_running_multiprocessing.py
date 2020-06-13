@@ -97,12 +97,12 @@ def crashy_pipeline():
     crashy_solid(sum_solid())
 
 
-@solid(config={'foo': Field(String)})
+@solid(config_schema={'foo': Field(String)})
 def node_a(context):
     return context.solid_config['foo']
 
 
-@solid(config={'bar': Int})
+@solid(config_schema={'bar': Int})
 def node_b(context, input_):
     return input_ * context.solid_config['bar']
 
@@ -315,7 +315,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-@solid(config={'file': Field(String)})
+@solid(config_schema={'file': Field(String)})
 def loop(context):
     with open(context.solid_config['file'], 'w') as ff:
         ff.write('yup')

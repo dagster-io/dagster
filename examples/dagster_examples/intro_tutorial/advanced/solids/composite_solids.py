@@ -24,7 +24,7 @@ else:
 
 
 @solid(
-    config={
+    config_schema={
         'delimiter': Field(
             String,
             default_value=',',

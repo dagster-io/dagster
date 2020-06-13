@@ -58,7 +58,7 @@ def test_yield_resource():
     def _do_resource(init_context):
         yield init_context.resource_config
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
@@ -88,7 +88,7 @@ def test_yield_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
@@ -130,7 +130,7 @@ def test_resource_decorator():
         assert context.resources.string_two == 'bar'
 
     # API red alert. One has to wrap a type in Field because it is callable
-    @resource(config=Field(String))
+    @resource(config_schema=Field(String))
     def yielding_string_resource(init_context):
         saw.append('before yield ' + init_context.resource_config)
         yield init_context.resource_config
@@ -180,13 +180,15 @@ def test_mixed_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_yield_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_yield_resource)
 
     def _do_return_resource(init_context):
         saw.append('before return ' + init_context.resource_config)
         return init_context.resource_config
 
-    return_string_resource = ResourceDefinition(config=String, resource_fn=_do_return_resource)
+    return_string_resource = ResourceDefinition(
+        config_schema=String, resource_fn=_do_return_resource
+    )
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',

@@ -84,7 +84,7 @@ def test_composite_basic_execution():
 def test_composite_config():
     called = {}
 
-    @solid(config=Field(String))
+    @solid(config_schema=Field(String))
     def configured(context):
         called['configured'] = True
         assert context.solid_config == 'yes'

@@ -281,58 +281,58 @@ def test_dict_return_solid():
 ######
 
 
-@solid(config=Field(Any))
+@solid(config_schema=Field(Any))
 def any_config(context):
     return context.solid_config
 
 
-@solid(config=Field(Bool))
+@solid(config_schema=Field(Bool))
 def bool_config(context):
     return 'true' if context.solid_config else 'false'
 
 
-@solid(config=Int)
+@solid(config_schema=Int)
 def add_n(context, x: Int) -> int:
     return x + context.solid_config
 
 
-@solid(config=Field(Float))
+@solid(config_schema=Field(Float))
 def div_y(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config=Field(float))
+@solid(config_schema=Field(float))
 def div_y_var(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config=Field(String))
+@solid(config_schema=Field(String))
 def hello(context) -> str:
     return 'Hello, {friend}!'.format(friend=context.solid_config)
 
 
-@solid(config=Field(String))
+@solid(config_schema=Field(String))
 def unpickle(context) -> Any:
     with open(context.solid_config, 'rb') as fd:
         return pickle.load(fd)
 
 
-@solid(config=Field(list))
+@solid(config_schema=Field(list))
 def concat_typeless_list_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config=Field([str]))
+@solid(config_schema=Field([str]))
 def concat_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config={'word': String, 'times': Int})
+@solid(config_schema={'word': String, 'times': Int})
 def repeat_config(context) -> str:
     return context.solid_config['word'] * context.solid_config['times']
 
 
-@solid(config=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
+@solid(config_schema=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
 def hello_world(context) -> str:
     if 'haw' in context.solid_config:
         return 'Aloha honua!'
@@ -363,7 +363,7 @@ def hello_world_default(context) -> str:
         return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
 
 
-@solid(config=Field(Permissive({'required': Field(String)})))
+@solid(config_schema=Field(Permissive({'required': Field(String)})))
 def partially_specified_config(context) -> List:
     return sorted(list(context.solid_config.items()))
 
@@ -447,7 +447,7 @@ def test_repeat_config():
 def test_tuple_none_config():
     with pytest.raises(check.CheckError, match='Param tuple_types cannot be none'):
 
-        @solid(config=Field(Tuple[None]))
+        @solid(config_schema=Field(Tuple[None]))
         def _tuple_none_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
 

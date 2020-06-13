@@ -169,7 +169,7 @@ def csv_hello_world_solids_config_fs_storage():
     }
 
 
-@solid(config={'file': Field(String)})
+@solid(config_schema={'file': Field(String)})
 def loop(context):
     with open(context.solid_config['file'], 'w') as ff:
         ff.write('yup')
@@ -450,17 +450,17 @@ def pipeline_with_invalid_definition_error():
     return fail_subset(one())
 
 
-@resource(config=Field(Int))
+@resource(config_schema=Field(Int))
 def adder_resource(init_context):
     return lambda x: x + init_context.resource_config
 
 
-@resource(config=Field(Int))
+@resource(config_schema=Field(Int))
 def multer_resource(init_context):
     return lambda x: x * init_context.resource_config
 
 
-@resource(config={'num_one': Field(Int), 'num_two': Field(Int)})
+@resource(config_schema={'num_one': Field(Int), 'num_two': Field(Int)})
 def double_adder_resource(init_context):
     return (
         lambda x: x
@@ -497,7 +497,7 @@ def multi_mode_with_resources():
     return apply_to_three()
 
 
-@resource(config=Field(Int, is_required=False))
+@resource(config_schema=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
@@ -511,7 +511,7 @@ def required_resource_pipeline():
     solid_with_required_resource()
 
 
-@logger(config=Field(str))
+@logger(config_schema=Field(str))
 def foo_logger(init_context):
     logger_ = logging.Logger('foo')
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
@@ -620,7 +620,7 @@ def retry_config(count):
     }
 
 
-@resource(config={'count': Field(Int, is_required=False, default_value=0)})
+@resource(config_schema={'count': Field(Int, is_required=False, default_value=0)})
 def retry_config_resource(context):
     return context.resource_config['count']
 

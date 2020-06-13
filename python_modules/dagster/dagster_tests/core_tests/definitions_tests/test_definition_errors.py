@@ -135,7 +135,7 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config='nope')
+        @solid(config_schema='nope')
         def _a_solid(_context):
             pass
 

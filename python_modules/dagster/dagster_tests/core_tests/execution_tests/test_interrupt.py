@@ -27,7 +27,7 @@ def _send_kbd_int(temp_files):
     seven.thread.interrupt_main()
 
 
-@solid(config={'tempfile': Field(String)})
+@solid(config_schema={'tempfile': Field(String)})
 def write_a_file(context):
     with open(context.solid_config['tempfile'], 'w') as ff:
         ff.write('yup')
@@ -134,7 +134,7 @@ def test_interrupt_resource_teardown():
         finally:
             cleaned.append('A')
 
-    @solid(config={'tempfile': Field(String)}, required_resource_keys={'a'})
+    @solid(config_schema={'tempfile': Field(String)}, required_resource_keys={'a'})
     def write_a_file_resource_solid(context):
         with open(context.solid_config['tempfile'], 'w') as ff:
             ff.write('yup')

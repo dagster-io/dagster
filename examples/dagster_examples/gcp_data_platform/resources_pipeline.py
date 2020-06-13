@@ -21,7 +21,7 @@ def create_dataproc_cluster(context):
 
 
 @solid(
-    config={'date': str},
+    config_schema={'date': str},
     input_defs=[InputDefinition('start', Nothing)],
     required_resource_keys={'dataproc'},
 )
@@ -61,7 +61,7 @@ def delete_dataproc_cluster(context):
 
 
 @solid(
-    config={'date': str},
+    config_schema={'date': str},
     input_defs=[InputDefinition('start', Nothing)],
     required_resource_keys={'bigquery'},
 )

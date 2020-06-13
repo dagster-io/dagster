@@ -29,7 +29,7 @@ def read_csv(context, csv_path):
 
 
 @solid(
-    config={
+    config_schema={
         'process_hot': Field(Bool, is_required=False, default_value=True),
         'process_cold': Field(Bool, is_required=False, default_value=True),
     },
@@ -51,7 +51,7 @@ def split_cereals(context, cereals):
         yield Output(cold_cereals, 'cold_cereals')
 
 
-@solid(config=String)
+@solid(config_schema=String)
 def sort_cereals_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal['calories'])

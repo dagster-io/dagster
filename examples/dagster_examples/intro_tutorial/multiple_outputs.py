@@ -31,7 +31,7 @@ def read_csv(context, csv_path):
 
 
 @solid(
-    config={
+    config_schema={
         'process_hot': Field(Bool, is_required=False, default_value=True),
         'process_cold': Field(Bool, is_required=False, default_value=True),
     },

@@ -18,7 +18,7 @@ from dagster.core.system_config.composite_descent import composite_descent
 
 
 def test_single_level_pipeline():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
@@ -33,7 +33,7 @@ def test_single_level_pipeline():
 
 
 def test_single_solid_pipeline_composite_descent():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
@@ -52,7 +52,7 @@ def test_single_solid_pipeline_composite_descent():
 
 
 def test_single_layer_pipeline_composite_descent():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
@@ -82,11 +82,11 @@ def test_single_layer_pipeline_composite_descent():
 
 
 def test_single_layer_pipeline_hardcoded_config_mapping():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
-    @composite_solid(config={}, config_fn=lambda _cfg: {'return_int': {'config': 35}})
+    @composite_solid(config_schema={}, config_fn=lambda _cfg: {'return_int': {'config': 35}})
     def return_int_hardcode_wrap():
         return_int()
 
@@ -100,14 +100,14 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
 
 
 def test_single_layer_pipeline_computed_config_mapping():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
     def _config_fn(cfg):
         return {'return_int': {'config': cfg['number'] + 1}}
 
-    @composite_solid(config={'number': int}, config_fn=_config_fn)
+    @composite_solid(config_schema={'number': int}, config_fn=_config_fn)
     def return_int_plus_one():
         return_int()
 
@@ -123,7 +123,7 @@ def test_single_layer_pipeline_computed_config_mapping():
 
 
 def test_mix_layer_computed_mapping():
-    @solid(config=int)
+    @solid(config_schema=int)
     def return_int(context):
         return context.solid_config
 
@@ -332,12 +332,12 @@ def test_provide_one_of_two_inputs_via_config():
     )
 
 
-@solid(config=Field(String, is_required=False))
+@solid(config_schema=Field(String, is_required=False))
 def scalar_config_solid(context):
     yield Output(context.solid_config)
 
 
-@solid(config=Field(String, is_required=True))
+@solid(config_schema=Field(String, is_required=True))
 def required_scalar_config_solid(context):
     yield Output(context.solid_config)
 
@@ -454,7 +454,7 @@ def test_config_mapped_enum():
         ],
     )
 
-    @solid(config={'enum': DagsterEnumType})
+    @solid(config_schema={'enum': DagsterEnumType})
     def return_enum(context):
         return context.solid_config['enum']
 
@@ -487,7 +487,7 @@ def test_config_mapped_enum():
         == TestPythonEnum.OTHER
     )
 
-    @solid(config={'num': int})
+    @solid(config_schema={'num': int})
     def return_int(context):
         return context.solid_config['num']
 

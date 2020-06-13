@@ -39,7 +39,7 @@ def create_dataproc_cluster(_):
     DataprocResource(DATAPROC_CLUSTER_CONFIG).create_cluster()
 
 
-@solid(config={'date': str}, input_defs=[InputDefinition('start', Nothing)])
+@solid(config_schema={'date': str}, input_defs=[InputDefinition('start', Nothing)])
 def data_proc_spark_operator(context):
     dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
 
@@ -77,7 +77,7 @@ def delete_dataproc_cluster(_):
 
 
 @solid(
-    config={'date': str},
+    config_schema={'date': str},
     input_defs=[InputDefinition('start', Nothing)],
     required_resource_keys={'bigquery'},
 )
