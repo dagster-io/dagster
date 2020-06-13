@@ -1,12 +1,9 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Icon, InputGroup, NonIdealState } from "@blueprintjs/core";
+import {} from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import {
-  AssetsRootQuery_assetsOrError_AssetConnection_nodes,
-  AssetsRootQuery_assetsOrError_AssetConnection_nodes_key
-} from "./types/AssetsRootQuery";
+import { AssetsRootQuery_assetsOrError_AssetConnection_nodes } from "./types/AssetsRootQuery";
 import Loading from "../Loading";
 import { Link, RouteComponentProps } from "react-router-dom";
 import { AssetRoot } from "./AssetRoot";
@@ -17,14 +14,22 @@ import {
   RowContainer,
   RowColumn
 } from "../ListComponents";
+import { useHistory } from "react-router";
+import {
+  Icon,
+  InputGroup,
+  NonIdealState,
+  Popover,
+  Menu,
+  MenuItem
+} from "@blueprintjs/core";
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
-type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
 
 export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
   match
 }) => {
-  const assetName = match.params["0"];
+  const urlPathString = match.params["0"];
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
   return (
@@ -54,10 +59,21 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
           );
         }
 
-        const assets = assetsOrError.nodes;
-        const assetKeys = assetsOrError.nodes.map((x: Asset) => x.key);
+        const currentPath = (urlPathString || "")
+          .split("/")
+          .filter((x: string) => x);
+        const [exactMatchingAsset] = assetsOrError.nodes.filter(
+          (asset: Asset) => asset.key.path.join("/") === urlPathString
+        );
+        const prefixMatchingAssets = assetsOrError.nodes.filter(
+          (asset: Asset) =>
+            currentPath.length < asset.key.path.length &&
+            currentPath.every(
+              (part: string, i: number) => part === asset.key.path[i]
+            )
+        );
 
-        if (!assetKeys.length) {
+        if (!prefixMatchingAssets.length && !exactMatchingAsset) {
           return (
             <Wrapper>
               <NonIdealState
@@ -65,8 +81,10 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
                 title="Assets"
                 description={
                   <p>
-                    There are no known materialized assets with a specified {""}
-                    asset key. Any asset keys that have been specified with a
+                    There are no {urlPathString ? "matching" : "known"}{" "}
+                    materialized assets with
+                    {urlPathString ? "the" : "a"} specified asset key. Any asset
+                    keys that have been specified with a{" "}
                     <code>Materialization</code> during a pipeline run will
                     appear here. See the{" "}
                     <a href="https://docs.dagster.io/docs/apidocs/solids#dagster.Materialization">
@@ -79,48 +97,175 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
             </Wrapper>
           );
         }
-        const [matchingAssetKey] = assetKeys.filter(
-          (x: AssetKey) => x.path.join(".") === assetName
-        );
-
-        const topNav = (
-          <div style={{ margin: 20 }}>
-            <Link to="/assets">
-              <Icon icon="chevron-left" /> Back to Assets
-            </Link>
-          </div>
-        );
-
-        if (!assetName) {
-          return (
-            <Wrapper>
-              <AssetsTable assets={assets} />
-            </Wrapper>
-          );
-        }
-
-        if (!matchingAssetKey) {
-          return (
-            <Wrapper>
-              {topNav}
-              <NonIdealState
-                icon="panel-table"
-                title="Assets"
-                description={<p>Could not find the asset key `{assetName}`</p>}
-              />
-            </Wrapper>
-          );
-        }
 
         return (
           <Wrapper>
-            {topNav}
-            <AssetRoot assetKey={matchingAssetKey} />
+            <AssetsTopNav path={currentPath} />
+            {prefixMatchingAssets.length ? (
+              <AssetsTable
+                assets={prefixMatchingAssets}
+                currentPath={currentPath}
+              />
+            ) : null}
+            {exactMatchingAsset ? (
+              <AssetRoot assetKey={exactMatchingAsset.key} />
+            ) : null}
           </Wrapper>
         );
       }}
     </Loading>
   );
+};
+
+const AssetsTopNav = ({ path }: { path: string[] }) => {
+  if (!path.length) {
+    return null;
+  }
+
+  if (path.length === 1) {
+    return (
+      <div style={{ margin: 20 }}>
+        <Link to="/assets">
+          <Icon icon="chevron-left" />
+          Assets
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ margin: 20 }}>
+      {path.map((part, idx) =>
+        idx ? (
+          <span key={idx}>
+            <Icon icon="chevron-right" />
+            <Link to={`/assets/${path.slice(0, idx).join("/")}`}>
+              {path[idx - 1]}
+            </Link>
+          </span>
+        ) : (
+          <Link to="/assets" key="navRoot">
+            Assets
+          </Link>
+        )
+      )}
+    </div>
+  );
+};
+
+interface ActiveSuggestionInfo {
+  text: string;
+  idx: number;
+}
+
+const AssetSearch = ({ assets }: { assets: Asset[] }) => {
+  const history = useHistory();
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState<string>("");
+  const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
+
+  const selectOption = (asset: Asset) => {
+    console.log("wtf", asset);
+    history.push(`/assets/${asset.key.path.join("/")}`);
+  };
+
+  const matching = assets.filter(
+    asset => !q || matches(asset.key.path.join("."), q)
+  );
+
+  const onKeyDown = (e: React.KeyboardEvent<any>) => {
+    // Enter and Return confirm the currently selected suggestion or
+    // confirm the freeform text you've typed if no suggestions are shown.
+    if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
+      if (active) {
+        const picked = assets.find(
+          asset => asset.key.path.join(".") === active.text
+        );
+        if (!picked) throw new Error("Selection out of sync with suggestions");
+        selectOption(picked);
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+
+    // Escape closes the options. The options re-open if you type another char or click.
+    if (e.key === "Escape") {
+      setActive(null);
+      setOpen(false);
+      return;
+    }
+
+    if (!open && e.key !== "Delete" && e.key !== "Backspace") {
+      setOpen(true);
+    }
+
+    // The up/down arrow keys shift selection in the dropdown.
+    // Note: The first down arrow press activates the first item.
+    const shift = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+    if (shift && assets.length > 0) {
+      e.preventDefault();
+      let idx = (active ? active.idx : -1) + shift;
+      idx = Math.max(0, Math.min(idx, assets.length - 1));
+      setActive({ text: assets[idx].key.path.join("."), idx });
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 20, maxWidth: 600 }}>
+      <Popover
+        minimal
+        fill={true}
+        isOpen={open && matching.length > 0}
+        position={"bottom-left"}
+        content={
+          <Menu style={{ maxWidth: 600, minWidth: 600 }}>
+            {matching.slice(0, 10).map((asset, idx) => (
+              <MenuItem
+                key={idx}
+                onMouseDown={(e: React.MouseEvent<any>) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  selectOption(asset);
+                  setActive(null);
+                }}
+                active={active ? active.idx === idx : false}
+                icon="panel-table"
+                text={
+                  <div>
+                    <div>{asset.key.path.join(".")}</div>
+                  </div>
+                }
+              />
+            ))}
+          </Menu>
+        }
+      >
+        <InputGroup
+          type="text"
+          value={q}
+          width={300}
+          fill={false}
+          placeholder={`Search all asset_keys...`}
+          onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={onKeyDown}
+        />
+      </Popover>
+    </div>
+  );
+};
+
+const timestampForAsset = (asset: Asset) => {
+  return asset.assetMaterializations.length
+    ? new Date(
+        parseInt(
+          asset.assetMaterializations[0].materializationEvent.timestamp,
+          10
+        )
+      ).toLocaleString()
+    : null;
 };
 
 const matches = (haystack: string, needle: string) =>
@@ -130,46 +275,59 @@ const matches = (haystack: string, needle: string) =>
     .filter(x => x)
     .every(word => haystack.toLowerCase().includes(word));
 
-const AssetsTable = ({ assets }: { assets: Asset[] }) => {
-  const [q, setQ] = React.useState<string>("");
+const AssetsTable = ({
+  assets,
+  currentPath
+}: {
+  assets: Asset[];
+  currentPath: string[];
+}) => {
+  const pathMap: { [key: string]: Asset } = {};
+  assets.forEach(asset => {
+    const [pathKey] = asset.key.path.slice(
+      currentPath.length,
+      currentPath.length + 1
+    );
+    if (pathKey in pathMap) {
+      const currentTimestamp = timestampForAsset(asset);
+      const existingTimestamp = timestampForAsset(pathMap[pathKey]);
+      pathMap[pathKey] =
+        !existingTimestamp ||
+        (currentTimestamp && currentTimestamp > existingTimestamp)
+          ? asset
+          : pathMap[pathKey];
+    } else {
+      pathMap[pathKey] = asset;
+    }
+  });
+
+  const pathKeys = Object.keys(pathMap).sort();
+  const title = currentPath.join(".") || "Assets";
+
   return (
     <div style={{ margin: 30 }}>
-      <Header>Assets</Header>
+      <Header>{title}</Header>
+      {currentPath.length ? null : <AssetSearch assets={assets} />}
       <div style={{ marginTop: 30 }}>
-        <InputGroup
-          type="text"
-          value={q}
-          small
-          placeholder={`Search asset_keys...`}
-          onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
-          style={{ marginBottom: 20 }}
-        />
         <Legend>
           <LegendColumn>Asset Key</LegendColumn>
           <LegendColumn>Last materialized</LegendColumn>
         </Legend>
-        {assets
-          .filter((asset: Asset) => !q || matches(asset.key.path.join("."), q))
-          .map((asset: Asset, idx: number) => {
-            const timestamp = asset.assetMaterializations.length
-              ? new Date(
-                  parseInt(
-                    asset.assetMaterializations[0].materializationEvent
-                      .timestamp,
-                    10
-                  )
-                ).toLocaleString()
-              : "-";
-            const linkUrl = `/assets/${asset.key.path.join(".")}`;
-            return (
-              <RowContainer key={idx}>
-                <RowColumn>
-                  <Link to={linkUrl}>{asset.key.path.join(".")}</Link>
-                </RowColumn>
-                <RowColumn>{timestamp}</RowColumn>
-              </RowContainer>
-            );
-          })}
+        {pathKeys.map((pathKey: string, idx: number) => {
+          const asset = pathMap[pathKey];
+          const timestamp = timestampForAsset(asset) || "-";
+          const linkUrl = `/assets/${
+            currentPath.length ? currentPath.join("/") + `/${pathKey}` : pathKey
+          }`;
+          return (
+            <RowContainer key={idx}>
+              <RowColumn>
+                <Link to={linkUrl}>{pathKey}</Link>
+              </RowColumn>
+              <RowColumn>{timestamp}</RowColumn>
+            </RowContainer>
+          );
+        })}
       </div>
     </div>
   );
