@@ -164,6 +164,23 @@ def engine_error():
     subtract(a, b)
 
 
+@solid(
+    tags={
+        'dagster-k8s/resource_requirements': {
+            'requests': {'cpu': '250m', 'memory': '64Mi'},
+            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+        }
+    }
+)
+def resource_req_solid(context):
+    context.log.info('running')
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def test_resources_limit():
+    resource_req_solid()
+
+
 @contextmanager
 def execute_pipeline_on_celery(pipeline_name,):
     with seven.TemporaryDirectory() as tempdir:
@@ -393,6 +410,12 @@ def test_execute_eagerly_optional_outputs_pipeline_on_celery():
         assert len(result.solid_result_list) == 4
         assert sum([int(x.skipped) for x in result.solid_result_list]) == 2
         assert sum([int(x.success) for x in result.solid_result_list]) == 2
+
+
+def test_execute_eagerly_resources_limit_pipeline_on_celery():
+    with execute_eagerly_on_celery('test_resources_limit') as result:
+        assert result.result_for_solid('resource_req_solid').success
+        assert result.success
 
 
 def test_execute_eagerly_fails_pipeline_on_celery():

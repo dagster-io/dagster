@@ -112,9 +112,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
         check.str_param(job_namespace, 'job_namespace')
         check.bool_param(load_incluster_config, 'load_incluster_config')
-        resources = check.opt_inst_param(
-            resources, 'resources', kubernetes.client.V1ResourceRequirements
-        )
+        check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
         # For when launched via DinD or running the cluster

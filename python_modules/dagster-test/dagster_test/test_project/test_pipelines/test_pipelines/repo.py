@@ -160,6 +160,26 @@ def define_large_pipeline_celery():
     )
 
 
+@solid(
+    tags={
+        'dagster-k8s/resource_requirements': {
+            'requests': {'cpu': '250m', 'memory': '64Mi'},
+            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+        }
+    }
+)
+def resource_req_solid(context):
+    context.log.info('running')
+
+
+def define_resources_limit_pipeline_celery():
+    @pipeline(mode_defs=celery_mode_defs())
+    def resources_limit_pipeline_celery():
+        resource_req_solid()
+
+    return resources_limit_pipeline_celery
+
+
 def define_schedules():
     @daily_schedule(
         name='daily_optional_outputs',
@@ -216,6 +236,7 @@ def define_demo_execution_repo():
                 'demo_pipeline': demo_pipeline,
                 'demo_pipeline_gcs': demo_pipeline_gcs,
                 'demo_error_pipeline': demo_error_pipeline,
+                'resources_limit_pipeline_celery': define_resources_limit_pipeline_celery,
             },
             'schedules': define_schedules(),
         }
