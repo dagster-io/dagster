@@ -8,6 +8,11 @@
 - Fixes bug in `launch_scheduled_execution` that would mask configuration errors.
 - Fixes bug in dagit where schedule related errors were not shown.
 
+**New**
+
+- _dagster-ssh_
+  - adds SFTP get and put functions to `SSHResource`, replacing sftp_solid.
+
 ## 0.8.1
 
 **Bugfix**
