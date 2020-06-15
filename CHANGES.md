@@ -1,17 +1,24 @@
 # Changelog
 
-## 0.8.2 (Upcoming)
+## 0.8.2
 
 **Bugfix**
 
-- Fixes issues with `dagster instance migrate`
+- Fixes issues with `dagster instance migrate`.
 - Fixes bug in `launch_scheduled_execution` that would mask configuration errors.
 - Fixes bug in dagit where schedule related errors were not shown.
+- Fixes JSON-serialization error in `dagster-k8s` when specifying per-step resources.
 
 **New**
 
+- Makes `label` optional parameter for materializations with `asset_key` specified.
+- Changes `Assets` page to have a typeahead selector and hierarchical views based on asset_key path.
 - _dagster-ssh_
   - adds SFTP get and put functions to `SSHResource`, replacing sftp_solid.
+
+**Docs**
+
+- Various docs corrections
 
 ## 0.8.1
 
