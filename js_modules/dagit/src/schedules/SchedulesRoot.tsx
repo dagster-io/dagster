@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import {
-  NonIdealState,
   Callout,
   Intent,
   Code,
@@ -25,6 +24,7 @@ import {
 } from "./types/SchedulesRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
+import PythonErrorInfo from "../PythonErrorInfo";
 
 import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
 
@@ -58,18 +58,7 @@ const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
       </Callout>
     );
   } else if (scheduler.__typename === "PythonError") {
-    return (
-      <>
-        <div>
-          <NonIdealState
-            icon="error"
-            title="PythonError"
-            description={scheduler.message}
-          />
-        </div>
-        <pre>{scheduler.stack}</pre>
-      </>
-    );
+    return <PythonErrorInfo error={scheduler} />;
   }
 
   return null;
@@ -177,12 +166,17 @@ const SchedulesRoot: React.FunctionComponent = () => {
           scheduleDefinitionsOrError,
           scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError
         } = result;
-
         const schedulerSection = getSchedulerSection(scheduler);
         let staleReconcileSection = null;
         let scheduleDefinitionsSection = null;
 
-        if (scheduleDefinitionsOrError.__typename === "ScheduleDefinitions") {
+        if (scheduleDefinitionsOrError.__typename === "PythonError") {
+          scheduleDefinitionsSection = (
+            <PythonErrorInfo error={scheduleDefinitionsOrError} />
+          );
+        } else if (
+          scheduleDefinitionsOrError.__typename === "ScheduleDefinitions"
+        ) {
           const scheduleDefinitions = scheduleDefinitionsOrError.results;
           const scheduleDefinitionsWithState = scheduleDefinitions.filter(
             s => s.scheduleState
@@ -348,10 +342,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
       ... on SchedulerNotDefinedError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
     scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
       ... on ScheduleDefinitions {
@@ -359,6 +350,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
           ...ScheduleDefinitionFragment
         }
       }
+      ...PythonErrorFragment
     }
     scheduleStatesOrError(
       repositorySelector: $repositorySelector
@@ -370,10 +362,12 @@ export const SCHEDULES_ROOT_QUERY = gql`
           ...ScheduleStateFragment
         }
       }
+      ...PythonErrorFragment
     }
   }
 
   ${ScheduleFragment}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 export default SchedulesRoot;

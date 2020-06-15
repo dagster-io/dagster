@@ -6,6 +6,7 @@
 
 - Fixes issues with `dagster instance migrate`
 - Fixes bug in `launch_scheduled_execution` that would mask configuration errors.
+- Fixes bug in dagit where schedule related errors were not shown.
 
 ## 0.8.1
 

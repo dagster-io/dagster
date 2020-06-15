@@ -18,16 +18,23 @@ export interface SchedulesRootQuery_scheduler_SchedulerNotDefinedError {
   message: string;
 }
 
-export interface SchedulesRootQuery_scheduler_PythonError {
+export interface SchedulesRootQuery_scheduler_PythonError_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
+export interface SchedulesRootQuery_scheduler_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_scheduler_PythonError_cause | null;
+}
+
 export type SchedulesRootQuery_scheduler = SchedulesRootQuery_scheduler_Scheduler | SchedulesRootQuery_scheduler_SchedulerNotDefinedError | SchedulesRootQuery_scheduler_PythonError;
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_RepositoryNotFoundError {
-  __typename: "RepositoryNotFoundError" | "PythonError";
+  __typename: "RepositoryNotFoundError";
 }
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_partitionSet {
@@ -94,10 +101,23 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   results: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
 }
 
-export type SchedulesRootQuery_scheduleDefinitionsOrError = SchedulesRootQuery_scheduleDefinitionsOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions;
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_scheduleDefinitionsOrError_PythonError_cause | null;
+}
+
+export type SchedulesRootQuery_scheduleDefinitionsOrError = SchedulesRootQuery_scheduleDefinitionsOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions | SchedulesRootQuery_scheduleDefinitionsOrError_PythonError;
 
 export interface SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError {
-  __typename: "RepositoryNotFoundError" | "PythonError";
+  __typename: "RepositoryNotFoundError";
 }
 
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks {
@@ -148,7 +168,20 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates {
   results: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
 }
 
-export type SchedulesRootQuery_scheduleStatesOrError = SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates;
+export interface SchedulesRootQuery_scheduleStatesOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_scheduleStatesOrError_PythonError_cause | null;
+}
+
+export type SchedulesRootQuery_scheduleStatesOrError = SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates | SchedulesRootQuery_scheduleStatesOrError_PythonError;
 
 export interface SchedulesRootQuery {
   scheduler: SchedulesRootQuery_scheduler;
