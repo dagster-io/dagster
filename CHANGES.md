@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2 (Upcoming)
+
+**Bugfix**
+
+- Fixes issues with `dagster instance migrate`
+
 ## 0.8.1
 
 **Bugfix**
