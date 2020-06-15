@@ -56,7 +56,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
-from dagster.utils import file_relative_path
+from dagster.utils import file_relative_path, segfault
 
 
 @input_hydration_config(String)
@@ -649,6 +649,24 @@ def eventually_successful():
     reset(fail(fail(fail(spawn()))))
 
 
+@pipeline
+def hard_failer():
+    @solid(
+        config_schema={'fail': Field(Bool, is_required=False, default_value=False)},
+        output_defs=[OutputDefinition(Int)],
+    )
+    def hard_fail_or_0(context):
+        if context.solid_config['fail']:
+            segfault()
+        return 0
+
+    @solid(input_defs=[InputDefinition('n', Int)],)
+    def increment(_, n):
+        return n + 1
+
+    increment(hard_fail_or_0())
+
+
 @resource
 def resource_a(_):
     return 'A'
@@ -984,35 +1002,36 @@ def test_repo():
     return (
         [
             composites_pipeline,
-            csv_hello_world,
             csv_hello_world_df_input,
             csv_hello_world_two,
             csv_hello_world_with_expectations,
-            hello_world_with_tags,
+            csv_hello_world,
             eventually_successful,
+            hard_failer,
+            hello_world_with_tags,
             infinite_loop_pipeline,
             materialization_pipeline,
             more_complicated_config,
             more_complicated_nested_config,
+            multi_asset_pipeline,
             multi_mode_with_loggers,
             multi_mode_with_resources,
             naughty_programmer_pipeline,
-            noop_pipeline,
-            pipeline_with_invalid_definition_error,
-            no_config_pipeline,
             no_config_chain_pipeline,
+            no_config_pipeline,
+            noop_pipeline,
             pipeline_with_enum_config,
             pipeline_with_expectations,
+            pipeline_with_invalid_definition_error,
             pipeline_with_list,
             required_resource_pipeline,
-            retry_resource_pipeline,
+            retry_multi_input_early_terminate_pipeline,
             retry_multi_output_pipeline,
+            retry_resource_pipeline,
             scalar_output_pipeline,
+            single_asset_pipeline,
             spew_pipeline,
             tagged_pipeline,
-            retry_multi_input_early_terminate_pipeline,
-            single_asset_pipeline,
-            multi_asset_pipeline,
         ]
         + define_schedules()
         + define_partitions()

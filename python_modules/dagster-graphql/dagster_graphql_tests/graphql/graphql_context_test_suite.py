@@ -455,6 +455,12 @@ class GraphQLContextVariant:
         ]
 
     @staticmethod
+    def all_out_of_process_executing_variants():
+        return [
+            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
+        ]
+
+    @staticmethod
     def all_readonly_variants():
         '''
         Return all readonly variants. If you try to start or launch these will error
@@ -581,4 +587,8 @@ ReadonlyGraphQLContextTestMatrix = make_graphql_context_test_suite(
 
 ExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
     context_variants=GraphQLContextVariant.all_executing_variants()
+)
+
+OutOfProcessExecutingGraphQLContextTestMatrix = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_out_of_process_executing_variants()
 )

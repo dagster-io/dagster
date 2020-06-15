@@ -276,6 +276,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.STEP_OUTPUT
 
     @property
+    def is_step_start(self):
+        return self.event_type == DagsterEventType.STEP_START
+
+    @property
     def is_step_failure(self):
         return self.event_type == DagsterEventType.STEP_FAILURE
 

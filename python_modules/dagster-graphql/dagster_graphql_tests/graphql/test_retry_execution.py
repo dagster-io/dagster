@@ -22,6 +22,7 @@ from .execution_queries import (
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     GraphQLContextVariant,
+    OutOfProcessExecutingGraphQLContextTestMatrix,
     make_graphql_context_test_suite,
 )
 from .setup import (
@@ -32,6 +33,14 @@ from .setup import (
     retry_config,
 )
 from .utils import get_all_logs_for_finished_run_via_subscription, sync_execute_get_events
+
+
+def step_started(logs, step_key):
+    return any(
+        log['step']['key'] == step_key
+        for log in logs
+        if log['__typename'] in ('ExecutionStepStartEvent',)
+    )
 
 
 def step_did_not_run(logs, step_key):
@@ -526,6 +535,55 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         query_result = result_two.data['launchPipelineReexecution']
         assert query_result['__typename'] == 'InvalidStepError'
         assert query_result['invalidStepKey'] == 'nope'
+
+
+class TestHardFailures(OutOfProcessExecutingGraphQLContextTestMatrix):
+    def test_retry_hard_failure(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, 'hard_failer')
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'mode': 'default',
+                    'selector': selector,
+                    'runConfigData': {'solids': {'hard_fail_or_0': {'config': {'fail': True}}}},
+                }
+            },
+        )
+
+        run_id = result.data['launchPipelineExecution']['run']['runId']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
+
+        assert step_started(logs, 'hard_fail_or_0.compute')
+        assert step_did_not_run(logs, 'hard_fail_or_0.compute')
+        assert step_did_not_run(logs, 'increment.compute')
+
+        retry = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'mode': 'default',
+                    'selector': selector,
+                    'runConfigData': {'solids': {'hard_fail_or_0': {'config': {'fail': False}}}},
+                    'executionMetadata': {
+                        'rootRunId': run_id,
+                        'parentRunId': run_id,
+                        'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                    },
+                }
+            },
+        )
+
+        run_id = retry.data['launchPipelineReexecution']['run']['runId']
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            'pipelineRunLogs'
+        ]['messages']
+        assert step_did_succeed(logs, 'hard_fail_or_0.compute')
+        assert step_did_succeed(logs, 'increment.compute')
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):

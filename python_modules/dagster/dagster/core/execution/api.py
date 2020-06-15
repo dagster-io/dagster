@@ -413,12 +413,20 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
     )
     yield DagsterEvent.pipeline_start(pipeline_context)
 
+    steps_started = set([])
     pipeline_success = True
     generator_closed = False
     try:
         for event in pipeline_context.executor_config.get_engine().execute(
             pipeline_context, execution_plan
         ):
+            if event.is_step_start:
+                steps_started.add(event.step_key)
+            if event.is_step_success:
+                if event.step_key not in steps_started:
+                    pipeline_success = False
+                else:
+                    steps_started.remove(event.step_key)
             if event.is_step_failure:
                 pipeline_success = False
             yield event
@@ -432,6 +440,8 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
         pipeline_success = False
         raise  # finally block will run before this is re-raised
     finally:
+        if steps_started:
+            pipeline_success = False
         if pipeline_success:
             event = DagsterEvent.pipeline_success(pipeline_context)
         else:

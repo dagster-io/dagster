@@ -340,6 +340,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'hard_fail_or_0'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hard_failer'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hard_fail_or_0'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'increment'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hard_failer'
+                        },
+                        'solidHandle': {
+                            'handleID': 'increment'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'loop'
                 },
                 'invocations': [

@@ -417,3 +417,13 @@ def is_enum_value(value):
 
 def git_repository_root():
     return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+
+
+def segfault():
+    '''Reliable cross-Python version segfault.
+    
+    https://bugs.python.org/issue1215#msg143236
+    '''
+    import ctypes
+
+    ctypes.string_at(0)
