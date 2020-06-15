@@ -28,10 +28,10 @@ class ExternalRepository:
         )
         self._pipeline_index_map = OrderedDict(
             (
-                external_pipeline_data.pipeline_snapshot.name,
+                external_pipeline_data.pipeline_snapshot_with_id.pipeline_snapshot.name,
                 PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
+                    external_pipeline_data.pipeline_snapshot_with_id,
+                    external_pipeline_data.parent_pipeline_snapshot_with_id,
                 ),
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
@@ -115,8 +115,8 @@ class ExternalPipeline(RepresentedPipeline):
 
         super(ExternalPipeline, self).__init__(
             pipeline_index=PipelineIndex(
-                external_pipeline_data.pipeline_snapshot,
-                external_pipeline_data.parent_pipeline_snapshot,
+                external_pipeline_data.pipeline_snapshot_with_id,
+                external_pipeline_data.parent_pipeline_snapshot_with_id,
             )
         )
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}

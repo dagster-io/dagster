@@ -17,7 +17,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.errors import PartitionScheduleExecutionError
-from dagster.core.snap import PipelineSnapshot
+from dagster.core.snap import PipelineSnapshotWithID
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -43,7 +43,7 @@ class ExternalRepositoryData(
             ),
             external_partition_set_datas=check.list_param(
                 external_partition_set_datas,
-                'external_parition_set_datas',
+                'external_partition_set_datas',
                 of_type=ExternalPartitionSetData,
             ),
         )
@@ -82,7 +82,7 @@ class ExternalRepositoryData(
             if external_partition_set_data.name == name:
                 return external_partition_set_data
 
-        check.failed('Could not find external parition set data named ' + name)
+        check.failed('Could not find external partition set data named ' + name)
 
 
 @whitelist_for_serdes
@@ -103,18 +103,23 @@ class ExternalPipelineSubsetResult(
 @whitelist_for_serdes
 class ExternalPipelineData(
     namedtuple(
-        '_ExternalPipelineData', 'name pipeline_snapshot active_presets parent_pipeline_snapshot'
+        '_ExternalPipelineData',
+        'name pipeline_snapshot_with_id active_presets parent_pipeline_snapshot_with_id',
     )
 ):
-    def __new__(cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot):
+    def __new__(
+        cls, name, pipeline_snapshot_with_id, active_presets, parent_pipeline_snapshot_with_id,
+    ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            pipeline_snapshot=check.inst_param(
-                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            pipeline_snapshot_with_id=check.inst_param(
+                pipeline_snapshot_with_id, 'pipeline_snapshot_with_id', PipelineSnapshotWithID
             ),
-            parent_pipeline_snapshot=check.opt_inst_param(
-                parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot
+            parent_pipeline_snapshot_with_id=check.opt_inst_param(
+                parent_pipeline_snapshot_with_id,
+                'parent_pipeline_snapshot_with_id',
+                PipelineSnapshotWithID,
             ),
             active_presets=check.list_param(
                 active_presets, 'active_presets', of_type=ExternalPresetData
@@ -187,7 +192,7 @@ class ExternalPartitionSetData(
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            partition_names=check.list_param(partition_names, 'parition_names', str),
+            partition_names=check.list_param(partition_names, 'partition_names', str),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
             solid_selection=check.opt_nullable_list_param(solid_selection, 'solid_selection', str),
             mode=check.opt_str_param(mode, 'mode'),
@@ -230,8 +235,15 @@ def external_pipeline_data_from_def(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
-        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+        pipeline_snapshot_with_id=PipelineSnapshotWithID(
+            pipeline_def.get_pipeline_snapshot(), pipeline_def.get_pipeline_snapshot_id()
+        ),
+        parent_pipeline_snapshot_with_id=PipelineSnapshotWithID(
+            pipeline_def.get_parent_pipeline_snapshot(),
+            pipeline_def.get_parent_pipeline_snapshot_id(),
+        )
+        if pipeline_def.parent_pipeline_def
+        else None,
         active_presets=sorted(
             list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
             key=lambda pd: pd.name,

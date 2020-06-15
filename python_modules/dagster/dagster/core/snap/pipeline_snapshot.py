@@ -41,6 +41,27 @@ def create_pipeline_snapshot_id(snapshot):
 
 
 @whitelist_for_serdes
+class PipelineSnapshotWithID(
+    namedtuple('_PipelineSnapshotWithID', 'pipeline_snapshot pipeline_snapshot_id')
+):
+    def __new__(cls, pipeline_snapshot, pipeline_snapshot_id):
+        return super(PipelineSnapshotWithID, cls).__new__(
+            cls,
+            pipeline_snapshot=check.inst_param(
+                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            ),
+            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+        )
+
+    @staticmethod
+    def from_snapshot(pipeline_snapshot):
+        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        return PipelineSnapshotWithID(
+            pipeline_snapshot, create_pipeline_snapshot_id(pipeline_snapshot)
+        )
+
+
+@whitelist_for_serdes
 class PipelineSnapshot(
     namedtuple(
         '_PipelineSnapshot',

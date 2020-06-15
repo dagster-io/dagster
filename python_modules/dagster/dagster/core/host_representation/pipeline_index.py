@@ -1,28 +1,34 @@
 from dagster import check
-from dagster.core.snap import (
-    DependencyStructureIndex,
-    PipelineSnapshot,
-    create_pipeline_snapshot_id,
-)
+from dagster.core.snap import DependencyStructureIndex, PipelineSnapshotWithID
 
 
 class PipelineIndex:
-    def __init__(self, pipeline_snapshot, parent_pipeline_snapshot):
-        self.pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+    def __init__(self, pipeline_snapshot_with_id, parent_pipeline_snapshot_with_id):
+        self.pipeline_snapshot_with_id = check.inst_param(
+            pipeline_snapshot_with_id, 'pipeline_snapshot_with_id', PipelineSnapshotWithID
         )
-        self.parent_pipeline_snapshot = check.opt_inst_param(
-            parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot
+        self.parent_pipeline_snapshot_with_id = check.opt_inst_param(
+            parent_pipeline_snapshot_with_id,
+            'parent_pipeline_snapshot_with_id',
+            PipelineSnapshotWithID,
         )
 
-        if self.pipeline_snapshot.lineage_snapshot:
+        pipeline_snapshot = pipeline_snapshot_with_id.pipeline_snapshot
+        parent_pipeline_snapshot = (
+            parent_pipeline_snapshot_with_id.pipeline_snapshot
+            if parent_pipeline_snapshot_with_id
+            else None
+        )
+
+        if pipeline_snapshot.lineage_snapshot:
             check.invariant(
-                self.parent_pipeline_snapshot is not None,
-                'Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot',
+                parent_pipeline_snapshot is not None,
+                'Can not create PipelineIndex for pipeline_snapshot with '
+                'lineage without parent_pipeline_snapshot',
             )
-            parent_id = create_pipeline_snapshot_id(self.parent_pipeline_snapshot)
             check.invariant(
-                pipeline_snapshot.lineage_snapshot.parent_snapshot_id == parent_id,
+                pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                == parent_pipeline_snapshot_with_id.pipeline_snapshot_id,
                 'Mismatch in IDs between pipeline_snapshot lineage and parent_pipeline_snapshot',
             )
 
@@ -32,9 +38,13 @@ class PipelineIndex:
             + pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
+        all_dagster_type_snaps = (
+            pipeline_snapshot.dagster_type_namespace_snapshot.all_dagster_type_snaps_by_key
+        ).values()
+
         self._dagster_type_snaps_by_name_index = {
             dagster_type_snap.name: dagster_type_snap
-            for dagster_type_snap in pipeline_snapshot.dagster_type_namespace_snapshot.all_dagster_type_snaps_by_key.values()
+            for dagster_type_snap in all_dagster_type_snaps
             if dagster_type_snap.name
         }
 
@@ -47,7 +57,21 @@ class PipelineIndex:
             for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
-        self.pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+    @property
+    def pipeline_snapshot(self):
+        return self.pipeline_snapshot_with_id.pipeline_snapshot
+
+    @property
+    def parent_pipeline_snapshot(self):
+        return (
+            self.parent_pipeline_snapshot_with_id.pipeline_snapshot
+            if self.parent_pipeline_snapshot_with_id
+            else None
+        )
+
+    @property
+    def pipeline_snapshot_id(self):
+        return self.pipeline_snapshot_with_id.pipeline_snapshot_id
 
     @property
     def name(self):

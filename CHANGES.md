@@ -3,7 +3,9 @@
 ## 0.8.3 (upcoming)
 
 **New**
+
 - Introduced a new Python API `reexecute_pipeline` to reexecute an existing pipeline run.
+- Performance improvements in Pipeline Overview and other pages.
 
 ## 0.8.2
 
