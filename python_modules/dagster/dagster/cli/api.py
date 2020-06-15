@@ -569,6 +569,7 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
 
     mode = schedule_def.mode
 
+    execution_plan_snapshot = None
     try:
         execution_plan = create_execution_plan(pipeline_def, run_config=run_config, mode=mode,)
         execution_plan_snapshot = snapshot_from_execution_plan(

@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from dagster import daily_schedule, lambda_solid, pipeline, repository, seven
+from dagster import daily_schedule, pipeline, repository, seven, solid
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterSubprocessError
@@ -24,9 +24,9 @@ def _never(_context):
     return False
 
 
-@lambda_solid
-def the_solid():
-    return '0.8.0 was a lot of work'
+@solid(config_schema={'work_amt': str})
+def the_solid(context):
+    return '0.8.0 was {} of work'.format(context.solid_config['work_amt'])
 
 
 @pipeline
@@ -38,7 +38,7 @@ def the_pipeline():
     pipeline_name='the_pipeline', start_date=datetime.datetime.now() - datetime.timedelta(days=1),
 )
 def simple_schedule(_context):
-    return {}
+    return {'solids': {'the_solid': {'config': {'work_amt': 'a lot'}}}}
 
 
 @daily_schedule(
@@ -66,6 +66,13 @@ def skip_schedule(_context):
     return {}
 
 
+@daily_schedule(
+    pipeline_name='the_pipeline', start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+)
+def wrong_config_schedule(_context):
+    return {}
+
+
 @repository
 def the_repo():
     return [
@@ -74,6 +81,7 @@ def the_repo():
         bad_env_fn_schedule,
         bad_should_execute_schedule,
         skip_schedule,
+        wrong_config_schedule,
     ]
 
 
@@ -151,3 +159,22 @@ def test_skip():
 
             ticks = instance.get_schedule_ticks(skip.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.SKIPPED
+
+
+def test_wrong_config():
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            instance = DagsterInstance.get()
+
+            recon_repo = ReconstructableRepository.for_file(__file__, 'the_repo')
+            wrong_config = recon_repo.get_reconstructable_schedule('wrong_config_schedule')
+            result = sync_launch_scheduled_execution(wrong_config.get_origin())
+
+            assert isinstance(result, ScheduledExecutionFailed)
+            assert 'DagsterInvalidConfigError' in result.errors[0].to_string()
+
+            run = instance.get_run_by_id(result.run_id)
+            assert run.is_failure
+
+            ticks = instance.get_schedule_ticks(wrong_config.get_origin_id())
+            assert ticks[0].status == ScheduleTickStatus.SUCCESS
