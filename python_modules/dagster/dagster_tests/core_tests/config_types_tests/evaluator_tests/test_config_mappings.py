@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -760,24 +762,26 @@ def test_nested_empty_config_input():
 
 
 def test_bad_solid_def():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            '@composite_solid \'config_only\' defines a configuration schema but does not define a '
+            'configuration function.'
+        ),
+    ):
 
         @composite_solid(config_schema={'test': Field(String)})
         def config_only():  # pylint: disable=unused-variable
             scalar_config_solid()
 
-    assert (
-        '@composite_solid \'config_only\' defines a configuration schema but does not define a '
-        'configuration function.'
-    ) in str(exc_info)
-
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            "@composite_solid 'config_fn_only' defines a configuration function <lambda> but does not "
+            "define a configuration schema."
+        ),
+    ):
 
         @composite_solid(config_fn=lambda _cfg: {})
         def config_fn_only():  # pylint: disable=unused-variable
             scalar_config_solid()
-
-    assert (
-        "@composite_solid 'config_fn_only' defines a configuration function <lambda> but does not "
-        "define a configuration schema."
-    ) in str(exc_info)
