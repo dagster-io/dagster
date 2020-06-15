@@ -110,12 +110,12 @@ lines:32-39
 When we run the pipeline with this solid, we'll see an error like:
 
 ```bash
-2019-10-12 13:19:19 - dagster - ERROR - custom_type_pipeline - 266c6a93-75e2-46dc-8bd7-d684ce91d0d1 - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
-            cls_name = "Failure"
+2020-06-15 14:08:00 - dagster - ERROR - custom_type_pipeline - 7fd9dce5-10e8-44ed-ba0c-0d48fdf9a5fc - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
+            cls_name = "AttributeError"
+       error_message = "AttributeError: 'str' object has no attribute 'keys'\n"
                solid = "bad_read_csv"
     solid_definition = "bad_read_csv"
             step_key = "bad_read_csv.compute"
-   user_failure_data = {"description": "LessSimpleDataFrame should be a list of OrderedDicts, got <class 'str'> for row 1", "label": "intentional-failure", "metadata_entries": []}
 ```
 
 <br />
