@@ -418,7 +418,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def has_pipeline_snapshot(self, pipeline_snapshot_id):
         check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
-        return bool(self.get_pipeline_snapshot(pipeline_snapshot_id))
+        return self._has_snapshot_id(pipeline_snapshot_id)
 
     def add_pipeline_snapshot(self, pipeline_snapshot):
         check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
@@ -462,6 +462,15 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
             conn.execute(snapshot_insert)
             return snapshot_id
+
+    def _has_snapshot_id(self, snapshot_id):
+        query = db.select([SnapshotsTable.c.snapshot_id]).where(
+            SnapshotsTable.c.snapshot_id == snapshot_id
+        )
+
+        row = self.fetchone(query)
+
+        return bool(row)
 
     def _get_snapshot(self, snapshot_id):
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
