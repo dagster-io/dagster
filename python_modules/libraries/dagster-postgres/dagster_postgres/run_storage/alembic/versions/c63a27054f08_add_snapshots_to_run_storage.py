@@ -21,6 +21,9 @@ depends_on = None
 
 
 def upgrade():
+    if not has_table('runs'):
+        return
+
     if not has_table('snapshots'):
         op.create_table(
             'snapshots',
@@ -38,8 +41,11 @@ def upgrade():
 
 
 def downgrade():
-    if has_column('runs', 'snapshot_id'):
-        op.drop_column('runs', 'snapshot_id')
-
     if has_table('snapshots'):
         op.drop_table('snapshots')
+
+    if not has_table('runs'):
+        return
+
+    if has_column('runs', 'snapshot_id'):
+        op.drop_column('runs', 'snapshot_id')
