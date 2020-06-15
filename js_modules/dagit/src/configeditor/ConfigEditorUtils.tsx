@@ -27,7 +27,7 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
         fields {
           name
           description
-          isOptional
+          isRequired
           configTypeKey
         }
       }

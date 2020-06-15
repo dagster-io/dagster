@@ -37,7 +37,7 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveC
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -101,7 +101,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveCo
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -166,7 +166,7 @@ export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiv
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -205,7 +205,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -239,7 +239,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recurs
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -304,7 +304,7 @@ export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recu
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -372,7 +372,7 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursive
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -436,7 +436,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveC
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -501,7 +501,7 @@ export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursi
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -540,7 +540,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_field
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -574,7 +574,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recur
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -639,7 +639,7 @@ export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_rec
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

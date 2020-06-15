@@ -55,7 +55,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

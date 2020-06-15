@@ -154,7 +154,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -218,7 +218,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -283,7 +283,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -322,7 +322,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -356,7 +356,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -421,7 +421,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

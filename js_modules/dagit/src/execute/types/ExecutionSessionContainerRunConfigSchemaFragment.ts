@@ -53,7 +53,7 @@ export interface ExecutionSessionContainerRunConfigSchemaFragment_RunConfigSchem
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

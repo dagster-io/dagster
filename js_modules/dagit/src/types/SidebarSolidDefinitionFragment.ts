@@ -76,7 +76,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -140,7 +140,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -205,7 +205,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -244,7 +244,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -278,7 +278,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -343,7 +343,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

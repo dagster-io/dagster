@@ -399,15 +399,6 @@ exports[`renders execution 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/playground"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/playground"
@@ -1143,15 +1134,6 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             generate_training_set_and_train_model
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -5843,15 +5825,6 @@ exports[`renders pipeline solid page 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -10540,15 +10513,6 @@ exports[`renders solids explorer 1`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -10649,22 +10613,1316 @@ exports[`renders solids explorer 1`] = `
     </div>
   </div>
   <div
-    className="Loading__LoadingContainer-sc-1rp16lz-0 fvFgvX"
+    className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+    id="split-panel-container"
   >
     <div
-      className="Loading__LoadingCentering-sc-1rp16lz-1 dpKHkV"
+      className="split-panel"
+      style={
+        Object {
+          "flexShrink": 0,
+          "minWidth": 420,
+          "width": "40vw",
+        }
+      }
     >
       <div
-        className="bp3-progress-bar"
+        className="SolidsRoot__SolidListColumnContainer-ie1ggt-2 feboQJ"
       >
         <div
-          className="bp3-progress-meter"
           style={
             Object {
-              "width": null,
+              "borderBottom": "1px solid #D8E1E8",
+              "padding": "15px 10px",
             }
           }
-        />
+        >
+          <span
+            className="bp3-popover-wrapper"
+          >
+            <span
+              className="bp3-popover-target"
+              onClick={[Function]}
+            >
+              <div
+                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eDKGJi"
+                onBlur={[Function]}
+                onClick={[Function]}
+              >
+                <div
+                  className="bp3-tag-input-values"
+                >
+                  <input
+                    className="bp3-input-ghost"
+                    onBlur={[Function]}
+                    onChange={[Function]}
+                    onFocus={[Function]}
+                    onKeyDown={[Function]}
+                    onKeyUp={[Function]}
+                    onPaste={[Function]}
+                    placeholder="Filter by name or input/output type..."
+                    value=""
+                  />
+                </div>
+              </div>
+            </span>
+          </span>
+        </div>
+        <div
+          style={
+            Object {
+              "flex": 1,
+            }
+          }
+        >
+          <div
+            style={
+              Object {
+                "height": 0,
+                "overflow": "visible",
+                "width": 0,
+              }
+            }
+          >
+            <div
+              aria-label="grid"
+              aria-readonly={true}
+              className="ReactVirtualized__Grid ReactVirtualized__List"
+              onScroll={[Function]}
+              role="grid"
+              style={
+                Object {
+                  "WebkitOverflowScrolling": "touch",
+                  "boxSizing": "border-box",
+                  "direction": "ltr",
+                  "height": 0,
+                  "overflowX": "hidden",
+                  "overflowY": "auto",
+                  "position": "relative",
+                  "width": 0,
+                  "willChange": "transform",
+                }
+              }
+              tabIndex={0}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      className="SplitPanelContainer__horizontal-wb7tmo-0 kgSZgp"
+    >
+      <div
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
+        onMouseDown={[Function]}
+      />
+    </div>
+    <div
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
+    >
+      <div
+        className="SolidDetailsRoot__SolidDetailScrollContainer-sc-1ley82l-0 cLqGgK"
+      >
+        <div
+          className="SolidCard__SolidCardContainer-sc-8ub8qu-1 izzXTc"
+        >
+          <svg
+            className="SolidCard__SVGContainer-sc-8ub8qu-0 cgTkAF"
+            height={183}
+            width={370}
+          >
+            <g
+              data-tooltip="s3_to_df"
+              data-tooltip-style="{\\"top\\":-20,\\"left\\":5}"
+              onClick={[Function]}
+              onDoubleClick={[Function]}
+            >
+              <rect
+                fill="#E6DBEE"
+                height={99}
+                stroke="#979797"
+                strokeWidth={1}
+                width={382}
+                x={-6}
+                y={60}
+              />
+              <rect
+                fill="#E6DBEE"
+                height={93}
+                stroke="#979797"
+                strokeWidth={1}
+                width={376}
+                x={-3}
+                y={63}
+              />
+              <rect
+                fill="#E6DBEE"
+                height={87}
+                stroke="#979797"
+                strokeWidth={1}
+                width={370}
+                x={0}
+                y={66}
+              />
+              <text
+                dominantBaseline="hanging"
+                fill="#222"
+                height={16}
+                style={
+                  Object {
+                    "font": "16px \\"Source Code Pro\\", monospace",
+                    "pointerEvents": "none",
+                  }
+                }
+                width={79.36}
+                x={12}
+                y={101.5}
+              >
+                s3_to_df
+              </text>
+              
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                onMouseEnter={[Function]}
+                onMouseLeave={[Function]}
+              >
+                <title>
+                  s3_coordinate: S3Coordinate
+                </title>
+                <rect
+                  fill="#00B3A4"
+                  height={36}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={277.67999999999995}
+                  x={0}
+                  y={0}
+                />
+                <ellipse
+                  cx={15}
+                  cy={18}
+                  fill="rgba(0, 0, 0, 0.3)"
+                  rx={7}
+                  ry={7}
+                  stroke="white"
+                  strokeWidth={1.5}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#FFF"
+                  height={14}
+                  style={
+                    Object {
+                      "font": "14px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={121.52}
+                  x={29}
+                  y={11}
+                >
+                  s3_coordinate:
+                </text>
+                
+                <rect
+                  fill="#d6ecff"
+                  height={27}
+                  rx={4}
+                  ry={4}
+                  stroke="#2491eb"
+                  strokeWidth={1}
+                  width={112.16}
+                  x={157.51999999999998}
+                  y={4.5}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  height={14}
+                  style={
+                    Object {
+                      "font": "14px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={104.16}
+                  x={161.51999999999998}
+                  y={11}
+                >
+                  S3Coordinate
+                </text>
+                
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                onMouseEnter={[Function]}
+                onMouseLeave={[Function]}
+              >
+                <title>
+                  archive_member: String
+                </title>
+                <rect
+                  fill="#00B3A4"
+                  height={36}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={234.27999999999997}
+                  x={0}
+                  y={36}
+                />
+                <ellipse
+                  cx={15}
+                  cy={54}
+                  fill="rgba(0, 0, 0, 0.3)"
+                  rx={7}
+                  ry={7}
+                  stroke="white"
+                  strokeWidth={1.5}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#FFF"
+                  height={14}
+                  style={
+                    Object {
+                      "font": "14px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={130.2}
+                  x={29}
+                  y={47}
+                >
+                  archive_member:
+                </text>
+                
+                <rect
+                  fill="#d6ecff"
+                  height={27}
+                  rx={4}
+                  ry={4}
+                  stroke="#2491eb"
+                  strokeWidth={1}
+                  width={60.08}
+                  x={166.2}
+                  y={40.5}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  height={14}
+                  style={
+                    Object {
+                      "font": "14px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={52.08}
+                  x={170.2}
+                  y={47}
+                >
+                  String
+                </text>
+                
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                onMouseEnter={[Function]}
+                onMouseLeave={[Function]}
+              >
+                <title>
+                  result: PySparkDataFrame
+                </title>
+                <rect
+                  fill="#137CBD"
+                  height={36}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={183.88}
+                  x={0}
+                  y={147}
+                />
+                <ellipse
+                  cx={15}
+                  cy={165}
+                  fill="rgba(0, 0, 0, 0.3)"
+                  rx={7}
+                  ry={7}
+                  stroke="white"
+                  strokeWidth={1.5}
+                />
+                <rect
+                  fill="#d6ecff"
+                  height={27}
+                  rx={4}
+                  ry={4}
+                  stroke="#2491eb"
+                  strokeWidth={1}
+                  width={146.88}
+                  x={29}
+                  y={151.5}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  height={14}
+                  style={
+                    Object {
+                      "font": "14px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={138.88}
+                  x={33}
+                  y={158}
+                >
+                  PySparkDataFrame
+                </text>
+                
+              </g>
+              <rect
+                fill="transparent"
+                height={20}
+                stroke="transparent"
+                width={375}
+                x={0}
+                y={143}
+              />
+              <g />
+              <rect
+                fill="hsl(248, 10%, 95%)"
+                height={20}
+                onClick={[Function]}
+                rx={0}
+                ry={0}
+                stroke="hsl(248, 75%, 50%)"
+                strokeWidth={1}
+                width={60.08}
+                x={314.9200000000001}
+                y={143}
+              />
+              <text
+                dominantBaseline="hanging"
+                fill="hsl(248, 75%, 50%)"
+                height={14}
+                style={
+                  Object {
+                    "font": "14px \\"Source Code Pro\\", monospace",
+                    "pointerEvents": "none",
+                  }
+                }
+                width={52.08}
+                x={318.9200000000001}
+                y={146}
+              >
+                Expand
+              </text>
+              
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              Definition
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="SidebarComponents__SidebarSubhead-sc-1tax5rq-5 kvMvBQ"
+                  >
+                    Composite Solid
+                  </div>
+                  <h3
+                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                  >
+                    s3_​to_​df
+                  </h3>
+                  <code
+                    className="bp3-code SolidTypeSignature__TypeSignature-nlrakt-0 fQVmJz"
+                  >
+                    (
+                    <span>
+                      s3_​coordinate
+                      : 
+                      <a
+                        href="/?typeExplorer=S3Coordinate"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          S3Coordinate
+                        </code>
+                      </a>
+                      , 
+                    </span>
+                    <span>
+                      archive_​member
+                      : 
+                      <a
+                        href="/?typeExplorer=String"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          String
+                        </code>
+                      </a>
+                      
+                    </span>
+                    ) ⇒ (
+                    <span>
+                      result
+                      :
+                       
+                      <a
+                        href="/?typeExplorer=PySparkDataFrame"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          PySparkDataFrame
+                        </code>
+                      </a>
+                      
+                    </span>
+                    )
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              Description
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="Description__Container-nz65o8-0 dHKRVj"
+                    onDoubleClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div
+                      style={
+                        Object {
+                          "overflowX": "auto",
+                        }
+                      }
+                    >
+                      <p>
+                        Ingest a zipped csv file from s3,
+stash in a keyed file store (does not download if already
+present by default), unzip that file, and load it into a
+Spark Dataframe. See documentation in constituent solids for
+more detail.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              Required Resources
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={14}
+                        viewBox="0 0 16 16"
+                        width={14}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <h4
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                    >
+                      file_cache
+                    </h4>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={14}
+                        viewBox="0 0 16 16"
+                        width={14}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <h4
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                    >
+                      pyspark
+                    </h4>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={14}
+                        viewBox="0 0 16 16"
+                        width={14}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <h4
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                    >
+                      pyspark_step_launcher
+                    </h4>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={14}
+                        viewBox="0 0 16 16"
+                        width={14}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <h4
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                    >
+                      s3
+                    </h4>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              Inputs
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
+                  >
+                    <h4
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                    >
+                      s3_​coordinate
+                    </h4>
+                    <div
+                      className="SidebarSolidHelpers__TypeWrapper-sc-198d6h6-1 hVefOD"
+                    >
+                      <a
+                        href="/?typeExplorer=S3Coordinate"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          S3Coordinate
+                        </code>
+                      </a>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
+                  >
+                    <h4
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                    >
+                      archive_​member
+                    </h4>
+                    <div
+                      className="SidebarSolidHelpers__TypeWrapper-sc-198d6h6-1 hVefOD"
+                    >
+                      <a
+                        href="/?typeExplorer=String"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          String
+                        </code>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              Outputs
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
+                  >
+                    <h4
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                    >
+                      result
+                    </h4>
+                    <div
+                      className="SidebarSolidHelpers__TypeWrapper-sc-198d6h6-1 hVefOD"
+                    >
+                      <a
+                        href="/?typeExplorer=PySparkDataFrame"
+                        onClick={[Function]}
+                      >
+                        <code
+                          className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
+                        >
+                          PySparkDataFrame
+                        </code>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              onClick={[Function]}
+            >
+              All Invocations
+              <span
+                className="bp3-icon bp3-icon-chevron-down SidebarComponents__DisclosureIcon-sc-1tax5rq-0 bcmzIh"
+                icon="chevron-down"
+              >
+                <svg
+                  data-icon="chevron-down"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    chevron-down
+                  </desc>
+                  <path
+                    d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 00-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0012 5z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div
+              className="bp3-collapse"
+              style={
+                Object {
+                  "height": "auto",
+                  "overflowY": "visible",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                aria-hidden={false}
+                className="bp3-collapse-body"
+                style={
+                  Object {
+                    "transform": "translateY(0)",
+                    "transition": "none",
+                  }
+                }
+              >
+                <div
+                  className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
+                >
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="april_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        april_on_time_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="june_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        june_on_time_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="master_cord_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        master_cord_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="may_on_time_s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        may_on_time_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="process_q2_coupon_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 300,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        process_q2_coupon_data
+                      </div>
+                      <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 6,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        ↳
+                        s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="process_q2_market_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 300,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        process_q2_market_data
+                      </div>
+                      <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 6,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        ↳
+                        s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        data-tooltip="process_q2_ticket_data"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 300,
+                            "marginLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        process_q2_ticket_data
+                      </div>
+                      <div
+                        data-tooltip="s3_to_df"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "marginLeft": 6,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        ↳
+                        s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -11068,15 +12326,6 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             generate_training_set_and_train_model
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
@@ -15768,15 +17017,6 @@ exports[`renders type page 2`] = `
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -20462,15 +21702,6 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             generate_training_set_and_train_model
-          </a>
-          <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"
-            data-tooltip="jaffle_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/jaffle_pipeline/"
-            onClick={[Function]}
-          >
-            jaffle_pipeline
           </a>
           <a
             className="EnvironmentContentList__Item-sc-1lnac0i-2 fDrWWM"

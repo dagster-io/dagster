@@ -99,7 +99,7 @@ fragment innerInfo on ConfigType {
       configType {
         key
       }
-      isOptional
+      isRequired
     }
   }
 }

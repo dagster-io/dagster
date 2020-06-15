@@ -77,7 +77,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -141,7 +141,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -206,7 +206,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -245,7 +245,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -279,7 +279,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -344,7 +344,7 @@ export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_de
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

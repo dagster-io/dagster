@@ -37,7 +37,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -101,7 +101,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -166,7 +166,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -205,7 +205,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -239,7 +239,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -304,7 +304,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -384,7 +384,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -448,7 +448,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -513,7 +513,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -552,7 +552,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -586,7 +586,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -651,7 +651,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

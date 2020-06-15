@@ -218,7 +218,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     description = dauphin.String()
     config_type = dauphin.NonNull('ConfigType')
     config_type_key = dauphin.NonNull(dauphin.String)
-    is_optional = dauphin.NonNull(dauphin.Boolean)
+    is_required = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_config_type_key(self, _):
         return self._field_snap.type_key
@@ -231,7 +231,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
         super(DauphinConfigTypeField, self).__init__(
             name=field_snap.name,
             description=field_snap.description,
-            is_optional=not field_snap.is_required,
+            is_required=field_snap.is_required,
         )
 
     def resolve_config_type(self, _graphene_info):

@@ -575,7 +575,7 @@ fragment configTypeFragment on ConfigType {
     ... on CompositeConfigType {
         fields {
             name
-            isOptional
+            isRequired
             description
         }
     }
@@ -596,7 +596,7 @@ fragment configTypeFragment on ConfigType {
   ... on CompositeConfigType {
     fields {
       name
-      isOptional
+      isRequired
       description
     }
   }

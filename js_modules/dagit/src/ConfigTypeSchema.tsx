@@ -15,7 +15,7 @@ interface ConfigTypeSchemaProps {
 interface FieldData {
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -96,7 +96,7 @@ function renderTypeRecursive(
             />
             {innerIndent}
             <DictKey theme={props.theme}>{fieldData.name}</DictKey>
-            {fieldData.isOptional && Optional}
+            {!fieldData.isRequired && Optional}
             {`: `}
             {renderTypeRecursive(
               typeLookup[fieldData.configTypeKey],
@@ -172,7 +172,7 @@ export class ConfigTypeSchema extends React.PureComponent<
           fields {
             name
             description
-            isOptional
+            isRequired
             configTypeKey
           }
         }

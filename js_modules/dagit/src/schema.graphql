@@ -92,7 +92,7 @@ type ConfigTypeField {
   description: String
   configType: ConfigType!
   configTypeKey: String!
-  isOptional: Boolean!
+  isRequired: Boolean!
 }
 
 type ConfigTypeNotFoundError implements Error {

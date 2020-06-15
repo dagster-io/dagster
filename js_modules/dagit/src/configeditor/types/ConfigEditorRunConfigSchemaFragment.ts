@@ -49,7 +49,7 @@ export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeCon
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

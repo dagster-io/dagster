@@ -148,7 +148,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
       fields {
         name
         description
-        isOptional
+        isRequired
         configType {
           key
           description
@@ -156,7 +156,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
             fields {
               name
               description
-              isOptional
+              isRequired
               configType {
                 key
                 description

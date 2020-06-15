@@ -37,7 +37,7 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 

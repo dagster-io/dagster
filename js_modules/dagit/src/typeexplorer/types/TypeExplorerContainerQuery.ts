@@ -47,7 +47,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -111,7 +111,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -176,7 +176,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -215,7 +215,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -249,7 +249,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -314,7 +314,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -382,7 +382,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -446,7 +446,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -511,7 +511,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -550,7 +550,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -584,7 +584,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
@@ -649,7 +649,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
-  isOptional: boolean;
+  isRequired: boolean;
   configTypeKey: string;
 }
 
