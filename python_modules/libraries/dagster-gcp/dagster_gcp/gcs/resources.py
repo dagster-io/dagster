@@ -1,13 +1,11 @@
 from google.cloud import storage
 
-from dagster import resource
+from dagster import Field, Noneable, StringSource, resource
 
 
-class GCSResource:
-    def __init__(self, client=None):
-        self.client = client or storage.client.Client()
-
-
-@resource
-def gcs_resource(_):
-    return GCSResource()
+@resource(
+    {'project': Field(Noneable(StringSource), is_required=False, description='Project name',)},
+    description='This resource provides a GCS client',
+)
+def gcs_resource(init_context):
+    return storage.client.Client(**init_context.resource_config)

@@ -16,7 +16,7 @@ from .intermediate_store import GCSIntermediateStore
     required_resource_keys={'gcs'},
 )
 def gcs_system_storage(init_context):
-    client = init_context.resources.gcs.client
+    client = init_context.resources.gcs
     gcs_key = '{prefix}/storage/{run_id}/files'.format(
         prefix=init_context.system_storage_config['gcs_prefix'],
         run_id=init_context.pipeline_run.run_id,

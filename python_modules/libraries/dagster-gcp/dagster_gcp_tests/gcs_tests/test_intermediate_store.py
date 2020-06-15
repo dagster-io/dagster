@@ -129,9 +129,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
         store = GCSIntermediateStore(
             gcs_bucket,
             run_id,
-            client=context.scoped_resources_builder.build(
-                required_resource_keys={'gcs'},
-            ).gcs.client,
+            client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
         )
         intermediates_manager = IntermediateStoreIntermediatesManager(store)
         assert intermediates_manager.has_intermediate(
@@ -310,9 +308,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
             run_id=result.run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build(
-                required_resource_keys={'gcs'},
-            ).gcs.client,
+            client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
         )
         assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         intermediates_manager = IntermediateStoreIntermediatesManager(store)
