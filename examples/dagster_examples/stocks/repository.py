@@ -1,6 +1,6 @@
 import requests
 
-from dagster import InputDefinition, RepositoryDefinition, pipeline, solid
+from dagster import InputDefinition, pipeline, repository, solid
 
 from .schedules import define_schedules
 from .simple_partitions import define_partitions
@@ -8,7 +8,7 @@ from .simple_partitions import define_partitions
 API_URL = "https://financialmodelingprep.com/api/v3/historical-price-full"
 
 
-@solid(config={'symbol': str, 'ds_start': str, 'ds_end': str})
+@solid(config_schema={'symbol': str, 'ds_start': str, 'ds_end': str})
 def query_historical_stock_data(context):
     symbol = context.solid_config['symbol']
     ds_start = context.solid_config['ds_start']
@@ -40,10 +40,6 @@ def compute_total_stock_volume():
     sum_volume(query_historical_stock_data())
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='partitioning-tutorial',
-        pipeline_defs=[compute_total_stock_volume],
-        schedule_defs=define_schedules(),
-        partition_set_defs=define_partitions(),
-    )
+@repository
+def partitioning_tutorial():
+    return [compute_total_stock_volume] + define_schedules() + define_partitions()

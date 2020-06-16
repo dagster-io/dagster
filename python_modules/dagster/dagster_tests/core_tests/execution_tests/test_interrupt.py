@@ -27,7 +27,7 @@ def _send_kbd_int(temp_files):
     seven.thread.interrupt_main()
 
 
-@solid(config={'tempfile': Field(String)})
+@solid(config_schema={'tempfile': Field(String)})
 def write_a_file(context):
     with open(context.solid_config['tempfile'], 'w') as ff:
         ff.write('yup')
@@ -69,9 +69,7 @@ def test_interrupt():
             # interrupt
             for result in execute_pipeline_iterator(
                 write_a_file_pipeline,
-                environment_dict={
-                    'solids': {'write_a_file': {'config': {'tempfile': success_tempfile}}}
-                },
+                run_config={'solids': {'write_a_file': {'config': {'tempfile': success_tempfile}}}},
             ):
                 results.append(result.event_type)
             assert False  # should never reach
@@ -82,7 +80,8 @@ def test_interrupt():
         assert DagsterEventType.PIPELINE_FAILURE in results
 
 
-@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/1970')
+# https://github.com/dagster-io/dagster/issues/1970
+@pytest.mark.skip
 def test_interrupt_multiproc():
     with seven.TemporaryDirectory() as tempdir:
         file_1 = os.path.join(tempdir, 'file_1')
@@ -100,7 +99,7 @@ def test_interrupt_multiproc():
             # interrupt
             for result in execute_pipeline_iterator(
                 reconstructable(write_files_pipeline),
-                environment_dict={
+                run_config={
                     'solids': {
                         'write_1': {'config': {'tempfile': file_1}},
                         'write_2': {'config': {'tempfile': file_2}},
@@ -133,7 +132,7 @@ def test_interrupt_resource_teardown():
         finally:
             cleaned.append('A')
 
-    @solid(config={'tempfile': Field(String)}, required_resource_keys={'a'})
+    @solid(config_schema={'tempfile': Field(String)}, required_resource_keys={'a'})
     def write_a_file_resource_solid(context):
         with open(context.solid_config['tempfile'], 'w') as ff:
             ff.write('yup')
@@ -157,7 +156,7 @@ def test_interrupt_resource_teardown():
             # interrupt
             for result in execute_pipeline_iterator(
                 write_a_file_pipeline,
-                environment_dict={
+                run_config={
                     'solids': {
                         'write_a_file_resource_solid': {'config': {'tempfile': success_tempfile}}
                     }

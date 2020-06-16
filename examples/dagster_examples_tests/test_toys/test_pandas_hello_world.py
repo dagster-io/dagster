@@ -28,7 +28,7 @@ def test_execute_pandas_hello_world_pipeline():
         }
     }
 
-    result = execute_pipeline(pandas_hello_world_pipeline, environment_dict=environment)
+    result = execute_pipeline(pandas_hello_world_pipeline, run_config=environment)
 
     assert result.success
 
@@ -52,9 +52,7 @@ def test_execute_pandas_hello_world_pipeline_with_read_csv():
         'solids': {'read_csv': {'inputs': {'path': file_relative_path(__file__, 'num.csv')}}}
     }
 
-    result = execute_pipeline(
-        pandas_hello_world_pipeline_with_read_csv, environment_dict=environment
-    )
+    result = execute_pipeline(pandas_hello_world_pipeline_with_read_csv, run_config=environment)
 
     assert result.success
 

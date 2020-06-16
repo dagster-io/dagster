@@ -1,7 +1,7 @@
-from dagstermill.examples.repository import define_example_repository
+from dagstermill.examples.repository import notebook_repo
 
 from dagster import RepositoryDefinition
 
 
 def test_dagstermill_repo():
-    assert isinstance(define_example_repository(), RepositoryDefinition)
+    assert isinstance(notebook_repo, RepositoryDefinition)

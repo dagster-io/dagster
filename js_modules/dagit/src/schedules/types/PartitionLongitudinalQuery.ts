@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionLongitudinalQuery
@@ -84,6 +84,7 @@ export interface PartitionLongitudinalQuery {
 
 export interface PartitionLongitudinalQueryVariables {
   partitionSetName: string;
+  repositorySelector: RepositorySelector;
   partitionsLimit?: number | null;
   partitionsCursor?: string | null;
   reverse?: boolean | null;

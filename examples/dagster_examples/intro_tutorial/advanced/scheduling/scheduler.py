@@ -1,6 +1,6 @@
 import csv
 
-from dagster import RepositoryDefinition, ScheduleDefinition, pipeline, solid
+from dagster import ScheduleDefinition, pipeline, repository, solid
 from dagster.utils import file_relative_path
 
 
@@ -21,18 +21,17 @@ def hello_cereal_pipeline():
     hello_cereal()
 
 
-def cereal_repository():
-    return RepositoryDefinition(
-        name='hello_cereal_repository', pipeline_defs=[hello_cereal_pipeline]
-    )
-
-
 def cereal_schedules():
     return [
         ScheduleDefinition(
             name='good_morning',
             cron_schedule='45 6 * * *',
             pipeline_name='hello_cereal_pipeline',
-            environment_dict={'storage': {'filesystem': {}}},
+            run_config={'storage': {'filesystem': {}}},
         )
     ]
+
+
+@repository
+def hello_cereal_repository():
+    return [hello_cereal_pipeline] + cereal_schedules()

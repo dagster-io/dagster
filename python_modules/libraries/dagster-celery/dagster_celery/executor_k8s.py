@@ -1,17 +1,20 @@
-from dagster import Field, Noneable, StringSource
+from dagster import Field, Noneable, StringSource, check
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.utils import merge_dicts
 
 from .config import CeleryK8sJobConfig
 from .executor import CELERY_CONFIG
 
+CELERY_K8S_CONFIG_KEY = 'celery-k8s'
+
 
 def celery_k8s_config():
-    from dagster_k8s.job import DagsterK8sJobConfig
+    from dagster_k8s import DagsterK8sJobConfig
 
     # DagsterK8sJobConfig provides config schema for specifying Dagster K8s Jobs
-    job_config = DagsterK8sJobConfig.config_type()
+    job_config = DagsterK8sJobConfig.config_type_pipeline_run()
 
     additional_config = {
         'load_incluster_config': Field(
@@ -37,6 +40,12 @@ def celery_k8s_config():
             'other Kubernetes resources the Job requires (such as the service account) must be '
             'present in this namespace. Default: ``"default"``',
         ),
+        'repo_location_name': Field(
+            StringSource,
+            is_required=False,
+            default_value=IN_PROCESS_NAME,
+            description='The repository location name to use for execution.',
+        ),
     }
 
     cfg = merge_dicts(CELERY_CONFIG, job_config)
@@ -44,7 +53,7 @@ def celery_k8s_config():
     return cfg
 
 
-@executor(name='celery-k8s', config=celery_k8s_config())
+@executor(name=CELERY_K8S_CONFIG_KEY, config_schema=celery_k8s_config())
 def celery_k8s_job_executor(init_context):
     '''Celery-based executor which launches tasks as Kubernetes Jobs.
 
@@ -99,30 +108,48 @@ def celery_k8s_job_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
     '''
-    from dagster_k8s.job import DagsterK8sJobConfig
+    from dagster_k8s import DagsterK8sJobConfig, CeleryK8sRunLauncher
 
     check_cross_process_constraints(init_context)
 
-    job_config = DagsterK8sJobConfig(
-        job_image=init_context.executor_config.get('job_image'),
-        dagster_home=init_context.executor_config.get('dagster_home'),
-        image_pull_policy=init_context.executor_config.get('image_pull_policy'),
-        image_pull_secrets=init_context.executor_config.get('image_pull_secrets'),
-        service_account_name=init_context.executor_config.get('service_account_name'),
-        instance_config_map=init_context.executor_config.get('instance_config_map'),
-        postgres_password_secret=init_context.executor_config.get('postgres_password_secret'),
-        env_config_maps=init_context.executor_config.get('env_config_maps'),
-        env_secrets=init_context.executor_config.get('env_secrets'),
+    run_launcher = init_context.instance.run_launcher
+    exc_cfg = init_context.executor_config
+
+    check.inst(
+        run_launcher,
+        CeleryK8sRunLauncher,
+        'This engine is only compatible with a CeleryK8sRunLauncher; configure the '
+        'CeleryK8sRunLauncher on your instance to use it.',
     )
 
+    job_config = DagsterK8sJobConfig(
+        dagster_home=run_launcher.dagster_home,
+        instance_config_map=run_launcher.instance_config_map,
+        postgres_password_secret=run_launcher.postgres_password_secret,
+        job_image=exc_cfg.get('job_image'),
+        image_pull_policy=exc_cfg.get('image_pull_policy'),
+        image_pull_secrets=exc_cfg.get('image_pull_secrets'),
+        service_account_name=exc_cfg.get('service_account_name'),
+        env_config_maps=exc_cfg.get('env_config_maps'),
+        env_secrets=exc_cfg.get('env_secrets'),
+    )
+
+    # Set on the instance but overrideable here
+    broker = run_launcher.broker or exc_cfg.get('broker')
+    backend = run_launcher.backend or exc_cfg.get('backend')
+    config_source = run_launcher.config_source or exc_cfg.get('config_source')
+    include = run_launcher.include or exc_cfg.get('include')
+    retries = run_launcher.retries or Retries.from_config(exc_cfg.get('retries'))
+
     return CeleryK8sJobConfig(
-        broker=init_context.executor_config.get('broker'),
-        backend=init_context.executor_config.get('backend'),
-        config_source=init_context.executor_config.get('config_source'),
-        include=init_context.executor_config.get('include'),
-        retries=Retries.from_config(init_context.executor_config['retries']),
+        broker=broker,
+        backend=backend,
+        config_source=config_source,
+        include=include,
+        retries=retries,
         job_config=job_config,
-        job_namespace=init_context.executor_config.get('job_namespace'),
-        load_incluster_config=init_context.executor_config.get('load_incluster_config'),
-        kubeconfig_file=init_context.executor_config.get('kubeconfig_file'),
+        job_namespace=exc_cfg.get('job_namespace'),
+        load_incluster_config=exc_cfg.get('load_incluster_config'),
+        kubeconfig_file=exc_cfg.get('kubeconfig_file'),
+        repo_location_name=exc_cfg.get('repo_location_name'),
     )

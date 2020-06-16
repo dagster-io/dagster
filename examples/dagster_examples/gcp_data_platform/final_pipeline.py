@@ -33,7 +33,7 @@ LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
 
 
 @solid(
-    config={'paths': [str]},
+    config_schema={'paths': [str]},
     description='pass configured output paths to BigQuery load command inputs',
 )
 def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argument
@@ -86,7 +86,7 @@ def events_dataproc_fn(cfg):
 
 @composite_solid(
     config_fn=events_dataproc_fn,
-    config={'cluster_name': str, 'input_bucket': str, 'output_bucket': str, 'date': str},
+    config_schema={'cluster_name': str, 'input_bucket': str, 'output_bucket': str, 'date': str},
 )
 def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())
@@ -115,7 +115,7 @@ def bq_load_events_fn(cfg):
 
 @composite_solid(
     config_fn=bq_load_events_fn,
-    config={'table': str, 'date': str},
+    config_schema={'table': str, 'date': str},
     output_defs=[OutputDefinition(Nothing)],
 )
 def bq_load_events(source_uris: List[String]):
@@ -140,7 +140,7 @@ def explore_visits_by_hour_fn(cfg):
 
 @composite_solid(
     config_fn=explore_visits_by_hour_fn,
-    config={'table': str},
+    config_schema={'table': str},
     input_defs=[InputDefinition("start", Nothing)],
     output_defs=[OutputDefinition(List[DataFrame])],
 )

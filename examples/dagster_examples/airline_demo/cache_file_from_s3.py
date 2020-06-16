@@ -5,7 +5,7 @@ from dagster.utils.temp_file import get_temp_file_name
 
 
 @solid(
-    config={
+    config_schema={
         'file_key': Field(
             str,
             is_required=False,

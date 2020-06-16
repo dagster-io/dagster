@@ -1,10 +1,10 @@
+import boto3
 from botocore.exceptions import ClientError
 
 from dagster import Field, check, resource
 from dagster.core.storage.file_cache import FileCache
 
 from .file_manager import S3FileHandle
-from .utils import create_s3_session
 
 
 class S3FileCache(FileCache):
@@ -52,5 +52,5 @@ def s3_file_cache(init_context):
         s3_key=init_context.resource_config['key'],
         overwrite=init_context.resource_config['overwrite'],
         # TODO: resource dependencies
-        s3_session=create_s3_session(),
+        s3_session=boto3.resource('s3', use_ssl=True).meta.client,
     )

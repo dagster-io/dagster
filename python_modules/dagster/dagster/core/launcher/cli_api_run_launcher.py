@@ -1,15 +1,14 @@
 import os
-import signal
 import threading
 import time
 
 from dagster import check
 from dagster.api.execute_run import cli_api_execute_run
-from dagster.config import Field
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass
+from dagster.serdes.ipc import interrupt_ipc_subprocess
 from dagster.seven.temp_dir import get_system_temp_directory
 
 from .base import RunLauncher
@@ -27,38 +26,32 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     the command `dagster api execute_run`.
     '''
 
-    def __init__(self, hijack_start=False, inst_data=None):
+    def __init__(self, inst_data=None):
         self._instance = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
-        self._processes_lock = None
+        self._processes_lock = threading.Lock()
         self._stopping = False
         self._thread = None
         self._inst_data = inst_data
-        self._hijack_start = check.bool_param(hijack_start, 'hijack_start')
 
     @property
     def inst_data(self):
         return self._inst_data
 
-    @property
-    def hijack_start(self):
-        return self._hijack_start
-
     @classmethod
     def config_type(cls):
-        return {'hijack_start': Field(bool, is_required=False, default_value=False)}
+        return {}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return CliApiRunLauncher(hijack_start=config_value['hijack_start'], inst_data=inst_data)
+        return CliApiRunLauncher(inst_data=inst_data)
 
     def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.invariant(self._instance is None, 'Must only call initialize once')
         self._instance = instance
 
-        self._processes_lock = threading.Lock()
         self._thread = threading.Thread(target=self._clock, args=())
         self._thread.daemon = True
         self._thread.start()
@@ -125,18 +118,12 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         finally:
             del self._output_files_by_run_id[run_id]
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         '''Subclasses must implement this method.'''
 
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-        env_handle = external_pipeline.handle.repository_handle.environment_handle
-        check.param_invariant(
-            env_handle.in_process_origin.repo_yaml,
-            'external_pipeline',
-            'Must come from repo_yaml for now',
-        )
 
         # initialize when the first run happens
         if not self._instance:
@@ -149,7 +136,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         process = cli_api_execute_run(
             output_file=output_file,
             instance=self._instance,
-            repo_yaml=env_handle.in_process_origin.repo_yaml,
+            pipeline_origin=external_pipeline.get_origin(),
             pipeline_run=run,
         )
 
@@ -184,6 +171,9 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
                     os.unlink(output_file)
 
     def _get_process(self, run_id):
+        if not self._instance:
+            return None
+
         with self._processes_lock:
             return self._living_process_by_run_id.get(run_id)
 
@@ -191,10 +181,6 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         check.str_param(run_id, 'run_id')
         process = self._get_process(run_id)
         return _is_alive(process) if process else False
-
-    @property
-    def supports_termination(self):
-        return True
 
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -220,17 +206,22 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         if not _is_alive(process):
             return False
 
-        # Send sigint to allow the pipeline run to terminate gracefully and
-        # report termination to the instance.
-        process.send_signal(signal.SIGINT)
-
+        # Pipeline execution machinery is set up to gracefully
+        # terminate and report to instance on KeyboardInterrupt
+        interrupt_ipc_subprocess(process)
         process.wait()
         return True
 
     def get_active_run_count(self):
+        if not self._instance:
+            return 0
+
         with self._processes_lock:
             return len(self._living_process_by_run_id)
 
     def is_active(self, run_id):
+        if not self._instance:
+            return False
+
         with self._processes_lock:
             return run_id in self._living_process_by_run_id

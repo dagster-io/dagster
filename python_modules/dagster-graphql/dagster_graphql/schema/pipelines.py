@@ -2,13 +2,16 @@ from __future__ import absolute_import
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.fetch_runs import get_runs
-from dagster_graphql.implementation.fetch_schedules import get_dagster_schedule_def
+from dagster_graphql.implementation.fetch_schedules import get_schedule_definitions_for_pipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
-from dagster.core.host_representation import ExternalPresetData, RepresentedPipeline
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    ExternalPresetData,
+    RepresentedPipeline,
+)
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
@@ -28,7 +31,7 @@ class DauphinPipelineReference(dauphin.Interface):
         name = 'PipelineReference'
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
@@ -37,7 +40,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
         interfaces = (DauphinPipelineReference,)
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinIPipelineSnapshotMixin(object):
@@ -72,7 +75,7 @@ class DauphinIPipelineSnapshotMixin(object):
     runs = dauphin.Field(
         dauphin.non_null_list('PipelineRun'), cursor=dauphin.String(), limit=dauphin.Int(),
     )
-    schedules = dauphin.non_null_list('RunningSchedule')
+    schedules = dauphin.non_null_list('ScheduleDefinition')
 
     def resolve_pipeline_snapshot_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
@@ -153,22 +156,23 @@ class DauphinIPipelineSnapshotMixin(object):
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
-    def resolve_solidSubset(self, _graphene_info):
-        return self.get_represented_pipeline().solid_subset
+    def resolve_solidSelection(self, _graphene_info):
+        return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
         runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
         return get_runs(graphene_info, runs_filter, kwargs.get('cursor'), kwargs.get('limit'))
 
     def resolve_schedules(self, graphene_info):
-        external_repository = graphene_info.context.legacy_external_repository
-        schedules = graphene_info.context.instance.all_schedules(external_repository.name)
-        return [
-            graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
-            for schedule in schedules
-            if get_dagster_schedule_def(graphene_info, schedule.name).name
-            == self.get_represented_pipeline().name
-        ]
+        represented_pipeline = self.get_represented_pipeline()
+        if not isinstance(represented_pipeline, ExternalPipeline):
+            # this is an historical pipeline snapshot, so there are not any associated running
+            # schedules
+            return []
+
+        pipeline_selector = represented_pipeline.handle.to_selector()
+        schedules = get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector)
+        return schedules
 
 
 class DauphinIPipelineSnapshot(dauphin.Interface):
@@ -197,8 +201,9 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
 class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     class Meta(object):
         name = 'Pipeline'
-        interfaces = (DauphinSolidContainer, DauphinPipelineReference, DauphinIPipelineSnapshot)
+        interfaces = (DauphinSolidContainer, DauphinIPipelineSnapshot)
 
+    id = dauphin.NonNull(dauphin.ID)
     presets = dauphin.non_null_list('PipelinePreset')
     runs = dauphin.non_null_list('PipelineRun')
 
@@ -206,6 +211,9 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         self._external_pipeline = check.inst_param(
             external_pipeline, 'external_pipeline', ExternalPipeline
         )
+
+    def resolve_id(self, _graphene_info):
+        return self._external_pipeline.get_origin_id()
 
     def get_represented_pipeline(self):
         return self._external_pipeline
@@ -226,13 +234,6 @@ def _get_solid_handles(represented_pipeline):
             represented_pipeline, represented_pipeline.dep_structure_index
         )
     }
-
-
-class DauphinPipelineConnection(dauphin.ObjectType):
-    class Meta(object):
-        name = 'PipelineConnection'
-
-    nodes = dauphin.non_null_list('Pipeline')
 
 
 class DauphinResource(dauphin.ObjectType):
@@ -338,8 +339,8 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         name = 'PipelinePreset'
 
     name = dauphin.NonNull(dauphin.String)
-    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
-    environmentConfigYaml = dauphin.NonNull(dauphin.String)
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
+    runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
     def __init__(self, active_preset_data, pipeline_name):
@@ -351,11 +352,11 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     def resolve_name(self, _graphene_info):
         return self._active_preset_data.name
 
-    def resolve_solidSubset(self, _graphene_info):
-        return self._active_preset_data.solid_subset
+    def resolve_solidSelection(self, _graphene_info):
+        return self._active_preset_data.solid_selection
 
-    def resolve_environmentConfigYaml(self, _graphene_info):
-        yaml_str = yaml.dump(self._active_preset_data.environment_dict, default_flow_style=False)
+    def resolve_runConfigYaml(self, _graphene_info):
+        yaml_str = yaml.safe_dump(self._active_preset_data.run_config, default_flow_style=False)
         return yaml_str if yaml_str else ''
 
     def resolve_mode(self, _graphene_info):
@@ -370,7 +371,7 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
     class Meta(object):
         name = 'PipelineSnapshot'
-        interfaces = (DauphinIPipelineSnapshot,)
+        interfaces = (DauphinIPipelineSnapshot, DauphinPipelineReference)
 
     def get_represented_pipeline(self):
         return self._represented_pipeline

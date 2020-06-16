@@ -1,0 +1,4 @@
+load_from:
+  - python_module:
+      module_name: dagster_examples.dagster_pandas_guide.repository
+      attribute: dagster_pandas_guide_examples

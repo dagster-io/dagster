@@ -10,10 +10,10 @@ from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
-    RepositoryDefinition,
     ScheduleDefinition,
     lambda_solid,
     pipeline,
+    repository,
     seven,
 )
 from dagster.core.instance import DagsterInstance
@@ -42,56 +42,61 @@ def math():
     mult_two(add_one())
 
 
-def define_repository():
-    return RepositoryDefinition(name='test', pipeline_defs=[math], schedule_defs=define_schedules())
-
-
 def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="math",
-        environment_dict={'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
+        run_config={'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
     )
 
     return [math_hourly_schedule]
 
 
+@repository
+def test():
+    return [math] + define_schedules()
+
+
 def test_basic_introspection():
     query = '{ __schema { types { name } } }'
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
-
+        result = runner.invoke(ui, ['-w', workspace_path, '-t', query])
         assert result.exit_code == 0
 
         result_data = json.loads(result.output)
         assert result_data['data']
 
 
-def test_basic_pipelines():
-    query = '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
+def test_basic_repositories():
+    query = '{ repositoriesOrError { ... on RepositoryConnection { nodes { name } } } }'
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
+        result = runner.invoke(ui, ['-w', workspace_path, '-t', query])
 
         assert result.exit_code == 0
 
         result_data = json.loads(result.output)
-        assert result_data['data']
+        assert result_data['data']['repositoriesOrError']['nodes']
 
 
 def test_basic_variables():
-    query = 'query FooBar($pipelineName: String!){ pipelineOrError(params:{name: $pipelineName}){ ... on Pipeline { name } } }'
-    variables = '{"pipelineName": "math"}'
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    query = '''
+    query FooBar($pipelineName: String! $repositoryName: String! $repositoryLocationName: String!){
+        pipelineOrError(params:{pipelineName: $pipelineName repositoryName: $repositoryName repositoryLocationName: $repositoryLocationName})
+        { ... on Pipeline { name } }
+    }
+    '''
+    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "<<in_process>>"}'
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
+        result = runner.invoke(ui, ['-w', workspace_path, '-v', variables, '-t', query])
 
         assert result.exit_code == 0
 
@@ -99,11 +104,11 @@ def test_basic_variables():
         assert result_data['data']['pipelineOrError']['name'] == 'math'
 
 
-START_PIPELINE_EXECUTION_QUERY = '''
+LAUNCH_PIPELINE_EXECUTION_QUERY = '''
 mutation ($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
+    launchPipelineExecution(executionParams: $executionParams) {
         __typename
-        ... on StartPipelineRunSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -129,20 +134,22 @@ def test_start_execution_text():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
                 },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
+            ui, ['-w', workspace_path, '-v', variables, '-t', LAUNCH_PIPELINE_EXECUTION_QUERY]
         )
 
         assert result.exit_code == 0
@@ -150,8 +157,8 @@ def test_start_execution_text():
         try:
             result_data = json.loads(result.output.strip('\n').split('\n')[-1])
             assert (
-                result_data['data']['startPipelineExecution']['__typename']
-                == 'StartPipelineRunSuccess'
+                result_data['data']['launchPipelineExecution']['__typename']
+                == 'LaunchPipelineRunSuccess'
             )
         except Exception as e:
             raise Exception('Failed with {} Exception: {}'.format(result.output, e))
@@ -161,22 +168,24 @@ def test_start_execution_file():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                'selector': {
+                    'pipelineName': 'math',
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
                 },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
     with dagster_cli_runner() as runner:
         result = runner.invoke(
             ui,
             [
-                '-y',
-                repo_path,
+                '-w',
+                workspace_path,
                 '-v',
                 variables,
                 '--file',
@@ -187,7 +196,8 @@ def test_start_execution_file():
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
 
 
@@ -199,16 +209,18 @@ def test_start_execution_save_output():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
                 },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         with seven.TemporaryDirectory() as temp_dir:
@@ -217,8 +229,8 @@ def test_start_execution_save_output():
             result = runner.invoke(
                 ui,
                 [
-                    '-y',
-                    repo_path,
+                    '-w',
+                    workspace_path,
                     '-v',
                     variables,
                     '--file',
@@ -235,8 +247,8 @@ def test_start_execution_save_output():
                 lines = f.readlines()
                 result_data = json.loads(lines[-1])
                 assert (
-                    result_data['data']['startPipelineExecution']['__typename']
-                    == 'StartPipelineRunSuccess'
+                    result_data['data']['launchPipelineExecution']['__typename']
+                    == 'LaunchPipelineRunSuccess'
                 )
 
 
@@ -244,47 +256,30 @@ def test_start_execution_predefined():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
                 },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
 
     with dagster_cli_runner() as runner:
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
+            ui, ['-w', workspace_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         if not result_data.get('data'):
             raise Exception(result_data)
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
-        )
-
-
-def test_start_scheduled_execution_predefined():
-    with dagster_cli_runner() as runner:
-
-        repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
-
-        # Run command
-        variables = seven.json.dumps({'scheduleName': 'math_hourly_schedule'})
-        result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'startScheduledExecution']
-        )
-
-        assert result.exit_code == 0
-        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-
-        assert (
-            result_data['data']['startScheduledExecution']['__typename']
-            == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
 
 
@@ -292,33 +287,36 @@ def test_logs_in_start_execution_predefined():
     variables = seven.json.dumps(
         {
             'executionParams': {
-                'selector': {'name': 'math'},
-                'environmentConfigData': {
-                    'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}
+                'selector': {
+                    'repositoryLocationName': '<<in_process>>',
+                    'repositoryName': 'test',
+                    'pipelineName': 'math',
                 },
+                'runConfigData': {'solids': {'add_one': {'inputs': {'num': {'value': 123}}}}},
                 'mode': 'default',
             }
         }
     )
 
-    repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
+    workspace_path = file_relative_path(__file__, './cli_test_workspace.yaml')
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
         result = runner.invoke(
-            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
+            ui, ['-w', workspace_path, '-v', variables, '-p', 'launchPipelineExecution']
         )
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+            result_data['data']['launchPipelineExecution']['__typename']
+            == 'LaunchPipelineRunSuccess'
         )
-        run_id = result_data['data']['startPipelineExecution']['run']['runId']
+        run_id = result_data['data']['launchPipelineExecution']['run']['runId']
 
         # allow FS events to flush
         retries = 5
-        while retries != 0 and not instance.has_run(run_id):
+        while retries != 0 and not _is_done(instance, run_id):
             time.sleep(0.333)
             retries -= 1
 
@@ -326,3 +324,7 @@ def test_logs_in_start_execution_predefined():
         run = instance.get_run_by_id(run_id)
 
         assert run.status == PipelineRunStatus.SUCCESS
+
+
+def _is_done(instance, run_id):
+    return instance.has_run(run_id) and instance.get_run_by_id(run_id).is_finished

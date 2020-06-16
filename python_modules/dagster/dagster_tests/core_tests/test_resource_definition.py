@@ -15,6 +15,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
@@ -22,7 +23,7 @@ from dagster.core.instance import DagsterInstance
 
 def define_string_resource():
     return ResourceDefinition(
-        config=String, resource_fn=lambda init_context: init_context.resource_config
+        config_schema=String, resource_fn=lambda init_context: init_context.resource_config
     )
 
 
@@ -57,7 +58,7 @@ def test_yield_resource():
     def _do_resource(init_context):
         yield init_context.resource_config
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
@@ -87,7 +88,7 @@ def test_yield_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
@@ -129,7 +130,7 @@ def test_resource_decorator():
         assert context.resources.string_two == 'bar'
 
     # API red alert. One has to wrap a type in Field because it is callable
-    @resource(config=Field(String))
+    @resource(config_schema=Field(String))
     def yielding_string_resource(init_context):
         saw.append('before yield ' + init_context.resource_config)
         yield init_context.resource_config
@@ -179,13 +180,15 @@ def test_mixed_multiple_resources():
         yield init_context.resource_config
         saw.append('after yield ' + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(config=String, resource_fn=_do_yield_resource)
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_yield_resource)
 
     def _do_return_resource(init_context):
         saw.append('before return ' + init_context.resource_config)
         return init_context.resource_config
 
-    return_string_resource = ResourceDefinition(config=String, resource_fn=_do_return_resource)
+    return_string_resource = ResourceDefinition(
+        config_schema=String, resource_fn=_do_return_resource
+    )
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
@@ -711,7 +714,7 @@ def test_multiprocessing_resource_teardown_failure():
     pipeline = reconstructable(define_resource_teardown_failure_pipeline)
     result = execute_pipeline(
         pipeline,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
     )
@@ -760,11 +763,11 @@ def test_single_step_resource_event_logs():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline,
-        environment_dict={'loggers': {'callback': {}}},
+        run_config={'loggers': {'callback': {}}},
         step_keys_to_execute=['resource_solid.compute'],
     )
 
-    result = execute_run(pipeline, pipeline_run, instance)
+    result = execute_run(InMemoryExecutablePipeline(pipeline), pipeline_run, instance)
 
     assert result.success
     log_messages = [event for event in events if isinstance(event, LogMessageRecord)]

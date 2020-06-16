@@ -2,12 +2,11 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { isEqual } from "lodash";
-import { Colors, Checkbox } from "@blueprintjs/core";
+import { Colors, Checkbox, NonIdealState, Spinner } from "@blueprintjs/core";
 
 import { weakmapMemoize } from "../Util";
 import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { GaantChartTimescale } from "./GaantChartTimescale";
-import { RunFragment } from "../runs/types/RunFragment";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
 import {
@@ -126,12 +125,12 @@ export const toGraphQueryItems = weakmapMemoize(
 interface GaantChartProps {
   selectedSteps: string[];
   query: string;
+  runId: string;
   plan: GaantChartExecutionPlanFragment;
   options?: Partial<GaantChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
   toolbarLeftActions?: React.ReactChild;
-  run?: RunFragment;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
   onSetSelectedSteps: (steps: string[]) => void;
@@ -146,6 +145,8 @@ export class GaantChart extends React.Component<
   GaantChartProps,
   GaantChartState
 > {
+  static LoadingState: React.FunctionComponent<{ runId: string }>;
+
   static fragments = {
     GaantChartExecutionPlanFragment: gql`
       fragment GaantChartExecutionPlanFragment on ExecutionPlan {
@@ -295,17 +296,10 @@ type GaantChartInnerProps = GaantChartProps &
     onChange: () => void;
   };
 
-interface TooltipState {
-  text: string;
-  cx: number;
-  cy: number;
-}
-
 const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps, onMoveToViewport } = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
-  const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
   const { options, metadata, selectedSteps } = props;
 
@@ -385,26 +379,6 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     onMoveToViewport({ left: x, top: y }, true);
   }, [selectedSteps]); // eslint-disable-line
 
-  const onUpdateTooltip = (e: React.MouseEvent<any>) => {
-    if (!(e.target instanceof HTMLElement)) return;
-    const tooltippedEl = e.target.closest("[data-tooltip-text]");
-    const text =
-      tooltippedEl &&
-      tooltippedEl instanceof HTMLElement &&
-      tooltippedEl.dataset.tooltipText;
-
-    if (text && (!tooltip || tooltip.text !== text)) {
-      const bounds = tooltippedEl!.getBoundingClientRect();
-      setTooltip({
-        text,
-        cx: bounds.left,
-        cy: bounds.bottom
-      });
-    } else if (!text && tooltip) {
-      setTooltip(null);
-    }
-  };
-
   const highlightedMs: number[] = [];
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
@@ -421,41 +395,37 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     if (lastMeta?.end) highlightedMs.push(lastMeta.end);
   }
 
+  const measurementComplete = viewport.width > 0;
+
   const content = (
     <>
-      {options.mode === GaantChartMode.WATERFALL_TIMED && (
-        <GaantChartTimescale
-          scale={scale}
-          viewport={viewport}
-          layoutSize={layoutSize}
-          startMs={metadata?.firstLogAt || 0}
-          highlightedMs={highlightedMs}
-          nowMs={nowMs}
-        />
-      )}
-      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
-        <div
-          style={{ position: "relative", ...layoutSize }}
-          onMouseOver={onUpdateTooltip}
-          onMouseOut={onUpdateTooltip}
-        >
-          <GaantChartViewportContents
-            options={options}
-            metadata={metadata || EMPTY_RUN_METADATA}
-            layout={layout}
-            hoveredStep={hoveredStep}
-            focusedSteps={selectedSteps}
+      {options.mode === GaantChartMode.WATERFALL_TIMED &&
+        measurementComplete && (
+          <GaantChartTimescale
+            scale={scale}
             viewport={viewport}
-            setHoveredNodeName={setHoveredNodeName}
-            onClickStep={props.onClickStep}
-            onDoubleClickStep={props.onDoubleClickStep}
+            layoutSize={layoutSize}
+            startMs={metadata?.firstLogAt || 0}
+            highlightedMs={highlightedMs}
+            nowMs={nowMs}
           />
-        </div>
-        {tooltip && (
-          <GaantTooltip style={{ left: tooltip.cx, top: tooltip.cy }}>
-            {tooltip.text}
-          </GaantTooltip>
         )}
+      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
+        <div style={{ position: "relative", ...layoutSize }}>
+          {measurementComplete && (
+            <GaantChartViewportContents
+              options={options}
+              metadata={metadata || EMPTY_RUN_METADATA}
+              layout={layout}
+              hoveredStep={hoveredStep}
+              focusedSteps={selectedSteps}
+              viewport={viewport}
+              setHoveredNodeName={setHoveredNodeName}
+              onClickStep={props.onClickStep}
+              onDoubleClickStep={props.onDoubleClickStep}
+            />
+          )}
+        </div>
       </div>
 
       <GraphQueryInputContainer>
@@ -485,7 +455,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
       identifier="gaant-split"
       axis="horizontal"
       first={content}
-      firstInitialPercent={80}
+      firstInitialPercent={70}
       second={
         <GaantStatusPanel
           {...props}
@@ -572,7 +542,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     items.push(
       <div
         key={box.key}
-        data-tooltip-text={
+        data-tooltip={
           box.width < box.node.name.length * 5 ? box.node.name : undefined
         }
         onClick={(evt: React.MouseEvent<any>) =>
@@ -613,7 +583,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         items.push(
           <div
             key={idx}
-            data-tooltip-text={marker.key}
+            data-tooltip={marker.key}
             className={`
             chart-element
             ${useDot ? "marker-dot" : "marker-whiskers"}`}
@@ -822,16 +792,6 @@ const GaantChartContainer = styled.div`
   }
 `;
 
-const GaantTooltip = styled.div`
-  position: fixed;
-  font-size: 11px;
-  padding: 3px;
-  color: #a88860;
-  background: #fffaf5;
-  border: 1px solid #dbc5ad;
-  transform: translate(5px, 5px);
-  z-index: 100;
-`;
 const OptionsContainer = styled.div`
   min-height: 40px;
   display: flex;
@@ -861,3 +821,23 @@ const GraphQueryInputContainer = styled.div`
   transform: translateX(-50%);
   white-space: nowrap;
 `;
+
+GaantChart.LoadingState = ({ runId }: { runId: string }) => (
+  <GaantChartContainer>
+    <OptionsContainer />
+    <SplitPanelContainer
+      identifier="gaant-split"
+      axis="horizontal"
+      first={<NonIdealState icon={<Spinner size={24} />} />}
+      firstInitialPercent={70}
+      second={
+        <GaantStatusPanel
+          metadata={EMPTY_RUN_METADATA}
+          selectedSteps={[]}
+          runId={runId}
+          nowMs={0}
+        />
+      }
+    />
+  </GaantChartContainer>
+);

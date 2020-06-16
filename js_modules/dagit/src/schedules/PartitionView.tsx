@@ -19,6 +19,7 @@ import { colorHash } from "../Util";
 import { Colors } from "@blueprintjs/core";
 import { RunsFilter } from "../runs/RunsFilter";
 import { TokenizingFieldValue } from "../TokenizingField";
+import { useRepositorySelector } from "../DagsterRepositoryContext";
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
@@ -36,6 +37,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState<number | undefined>(7);
+  const repositorySelector = useRepositorySelector();
   const popCursor = () => {
     const nextStack = [...cursorStack];
     setCursor(nextStack.pop());
@@ -51,6 +53,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
       query={PARTITION_SET_QUERY}
       variables={{
         partitionSetName,
+        repositorySelector,
         partitionsCursor: cursor,
         partitionsLimit: pageSize,
         reverse: true
@@ -543,11 +546,15 @@ const PartitionPagerContainer = styled.div`
 const PARTITION_SET_QUERY = gql`
   query PartitionLongitudinalQuery(
     $partitionSetName: String!
+    $repositorySelector: RepositorySelector!
     $partitionsLimit: Int
     $partitionsCursor: String
     $reverse: Boolean
   ) {
-    partitionSetOrError(partitionSetName: $partitionSetName) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
       ... on PartitionSet {
         name
         partitions(

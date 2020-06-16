@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, ScheduleTickStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineOverviewQuery
@@ -230,25 +230,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
   solid: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid;
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
-  name: string;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline_solids {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
-  pipelineSnapshotId: string;
-  solids: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline_solids[];
-}
-
-export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_UnknownPipeline | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline_Pipeline;
-
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags {
   __typename: "PipelineTag";
   key: string;
@@ -257,10 +238,6 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
-  stepsSucceeded: number;
-  stepsFailed: number;
-  expectations: number;
-  materializations: number;
   startTime: number | null;
   endTime: number | null;
 }
@@ -280,82 +257,66 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PipelineRunStatsSnapshot | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats_PythonError;
 
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets {
   __typename: "Asset";
-  key: string;
+  key: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets_key;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs {
   __typename: "PipelineRun";
   runId: string;
   rootRunId: string | null;
-  pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_pipeline;
+  pipelineName: string;
+  solidSelection: string[] | null;
+  pipelineSnapshotId: string | null;
   mode: string;
   canTerminate: boolean;
   tags: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_tags[];
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   status: PipelineRunStatus;
+  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_stats;
   assets: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs_assets[];
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleDefinition {
-  __typename: "ScheduleDefinition";
-  name: string;
-  cronSchedule: string;
-  pipelineName: string;
-  solidSubset: (string | null)[] | null;
-  mode: string;
-  environmentConfigYaml: string | null;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_ticks {
-  __typename: "ScheduleTick";
-  tickId: string;
-  status: ScheduleTickStatus;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
-  name: string;
-}
-
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats_PythonError {
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PythonError {
   __typename: "PythonError";
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats_PipelineRunStatsSnapshot {
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   endTime: number | null;
 }
 
-export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats_PythonError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats_PipelineRunStatsSnapshot;
+export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PythonError | PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats_PipelineRunStatsSnapshot;
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs {
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns {
+  __typename: "PipelineRun";
+  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats;
+}
+
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_pipeline;
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs_stats;
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 
-export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_stats {
-  __typename: "ScheduleTickStatsSnapshot";
-  ticksStarted: number;
-  ticksSucceeded: number;
-  ticksSkipped: number;
-  ticksFailed: number;
+export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState {
+  __typename: "ScheduleState";
+  runsCount: number;
+  lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns[];
+  runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs[];
+  status: ScheduleStatus;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
-  __typename: "RunningSchedule";
-  scheduleDefinition: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleDefinition;
-  logsPath: string;
-  ticks: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_ticks[];
-  runsCount: number;
-  runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_runs[];
-  stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_stats;
-  ticksCount: number;
-  status: ScheduleStatus;
+  __typename: "ScheduleDefinition";
+  name: string;
+  scheduleState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot {
@@ -389,6 +350,6 @@ export interface PipelineOverviewQuery {
 }
 
 export interface PipelineOverviewQueryVariables {
-  pipelineName?: string | null;
+  pipelineSelector: PipelineSelector;
   limit: number;
 }

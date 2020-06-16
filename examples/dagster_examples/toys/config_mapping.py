@@ -1,7 +1,7 @@
 from dagster import Field, Int, String, composite_solid, pipeline, solid
 
 
-@solid(config={'foo': Field(String)})
+@solid(config_schema={'foo': Field(String)})
 def basic(context):
     return context.solid_config
 
@@ -15,7 +15,8 @@ def inner_wrap_fn(cfg):
 
 
 @composite_solid(
-    config_fn=inner_wrap_fn, config={'inner_first': Field(String), 'inner_second': Field(String)}
+    config_fn=inner_wrap_fn,
+    config_schema={'inner_first': Field(String), 'inner_second': Field(String)},
 )
 def inner_wrap():
     return basic()
@@ -31,7 +32,7 @@ def outer_wrap_fn(cfg):
 
 @composite_solid(
     config_fn=outer_wrap_fn,
-    config={'outer_first': Field(String), 'outer_second': Field(String), 'outer_third': Int},
+    config_schema={'outer_first': Field(String), 'outer_second': Field(String), 'outer_third': Int},
 )
 def outer_wrap():
     return inner_wrap()

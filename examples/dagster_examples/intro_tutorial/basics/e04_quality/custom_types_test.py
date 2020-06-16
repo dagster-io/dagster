@@ -92,7 +92,7 @@ if __name__ == '__main__':
         {
             'solids': {
                 'sort_by_calories': {
-                    'inputs': {'cereals': {'csv': '../../cereal.csv'}}
+                    'inputs': {'cereals': {'csv': 'cereal.csv'}}
                 }
             }
         },

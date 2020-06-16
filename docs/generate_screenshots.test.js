@@ -5,23 +5,17 @@ const sleep = require("system-sleep");
 
 expect.extend({ toMatchImageSnapshot });
 
-const pathToTutorialFile = (pathFragment) =>
-  "../examples/dagster_examples/intro_tutorial/" + pathFragment;
-
 const screenshotPath = (pathFragment) =>
-  __dirname + "/sections/tutorial/" + pathFragment;
+  __dirname + "/next/public/assets/images/tutorial/" + pathFragment;
 
 const runDagit = async (args, port) => {
-  dagit = spawn(
-    "dagit-cli",
-    args.concat([
-      "--workdir",
-      "../examples/dagster_examples/intro_tutorial/",
-      "-p",
-      port || 3000,
-    ])
-  );
-  console.log(`started dagit with args ${args} on pid ${dagit.pid}`);
+  const dagitArgs = args.concat(["-p", port || 3000]);
+
+  dagit = spawn("dagit", dagitArgs, {
+    cwd: "../examples/dagster_examples/intro_tutorial/",
+  });
+
+  console.log(`Running: "dagit ${dagitArgs.join(" ")}" on pid ${dagit.pid}`);
   dagit.stdout.on("data", (data) => {
     console.log(`dagit stdout: ${data}`);
   });
@@ -64,12 +58,7 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
   beforeAll(async (done) => {
     // dagit -f hello_cereal.py -n hello_cereal_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("hello_cereal.py"),
-        "-n",
-        "hello_cereal_pipeline",
-      ],
+      ["-f", "hello_cereal.py", "-a", "hello_cereal_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -167,7 +156,7 @@ describe("for the serial pipeline in hello_dag", () => {
   beforeAll(async (done) => {
     // dagit -f serial_pipeline.py -n serial_pipeline
     dagit = await runDagit(
-      ["-f", pathToTutorialFile("serial_pipeline.py"), "-n", "serial_pipeline"],
+      ["-f", "serial_pipeline.py", "-a", "serial_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -214,12 +203,7 @@ describe("for the complex pipeline in hello_dag", () => {
   beforeAll(async (done) => {
     // dagit -f complex_pipeline.py -n complex_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("complex_pipeline.py"),
-        "-n",
-        "complex_pipeline",
-      ],
+      ["-f", "complex_pipeline.py", "-a", "complex_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -268,10 +252,7 @@ describe("for the config editor in inputs", () => {
 
   beforeAll(async (done) => {
     // dagit -f inputs.py -n inputs_pipeline
-    dagit = await runDagit(
-      ["-f", pathToTutorialFile("inputs.py"), "-n", "inputs_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "inputs.py", "-a", "inputs_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -362,10 +343,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
 
   beforeAll(async (done) => {
     // dagit -f inputs.py -n inputs_pipeline
-    dagit = await runDagit(
-      ["-f", pathToTutorialFile("inputs.py"), "-n", "inputs_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "inputs.py", "-a", "inputs_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -507,7 +485,7 @@ describe("for the typed pipeline in typed_inputs", () => {
   beforeAll(async (done) => {
     // dagit -f inputs_typed.py -n inputs_pipeline
     dagit = await runDagit(
-      ["-f", pathToTutorialFile("inputs_typed.py"), "-n", "inputs_pipeline"],
+      ["-f", "inputs_typed.py", "-a", "inputs_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -567,10 +545,7 @@ describe("for the config pipeline in config", () => {
 
   beforeAll(async (done) => {
     // dagit -f config.py -n config_pipeline
-    dagit = await runDagit(
-      ["-f", pathToTutorialFile("config.py"), "-n", "config_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "config.py", "-a", "config_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -647,12 +622,7 @@ describe("for the custom types pipeline in types", () => {
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("custom_types.py"),
-        "-n",
-        "custom_type_pipeline",
-      ],
+      ["-f", "custom_types.py", "-a", "custom_type_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -703,12 +673,7 @@ describe("for the custom types pipeline in metadata", () => {
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("custom_types_4.py"),
-        "-n",
-        "custom_type_pipeline",
-      ],
+      ["-f", "custom_types_4.py", "-a", "custom_type_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -789,12 +754,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("multiple_outputs.py"),
-        "-n",
-        "multiple_outputs_pipeline",
-      ],
+      ["-f", "multiple_outputs.py", "-a", "multiple_outputs_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -936,12 +896,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
   beforeAll(async (done) => {
     // dagit -f reusable_solids.py -n reusable_solids_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("reusable_solids.py"),
-        "-n",
-        "reusable_solids_pipeline",
-      ],
+      ["-f", "reusable_solids.py", "-a", "reusable_solids_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1008,12 +963,7 @@ describe("for the composition pipeline in composite_solids", () => {
   beforeAll(async (done) => {
     // dagit -f composite_solids.py -n composite_solids_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("composite_solids.py"),
-        "-n",
-        "composite_solids_pipeline",
-      ],
+      ["-f", "composite_solids.py", "-a", "composite_solids_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1180,12 +1130,7 @@ describe("for the materialization pipeline in materializations and intermediates
   beforeAll(async (done) => {
     // dagit -f materializations.py -n materialization_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        pathToTutorialFile("materializations.py"),
-        "-n",
-        "materialization_pipeline",
-      ],
+      ["-f", "materializations.py", "-a", "materialization_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1604,8 +1549,8 @@ describe("for the output materialization pipeline in materializations", () => {
     dagit = await runDagit(
       [
         "-f",
-        pathToTutorialFile("output_materialization.py"),
-        "-n",
+        "output_materialization.py",
+        "-a",
         "output_materialization_pipeline",
       ],
       3000
@@ -1711,8 +1656,8 @@ describe("for the serialization strategy pipeline in intermediates", () => {
     dagit = await runDagit(
       [
         "-f",
-        pathToTutorialFile("serialization_strategy.py"),
-        "-n",
+        "serialization_strategy.py",
+        "-a",
         "serialization_strategy_pipeline",
       ],
       3000
@@ -1808,10 +1753,7 @@ describe("for the modes pipeline in modes", () => {
 
   beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
-    dagit = await runDagit(
-      ["-f", pathToTutorialFile("modes.py"), "-n", "modes_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "modes.py", "-a", "modes_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -1867,7 +1809,7 @@ describe("for the presets pipeline in presets", () => {
   beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
     dagit = await runDagit(
-      ["-f", pathToTutorialFile("presets.py"), "-n", "presets_pipeline"],
+      ["-f", "presets.py", "-a", "presets_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1940,10 +1882,7 @@ describe("for the repo", () => {
 
   beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
-    dagit = await runDagit(
-      ["-f", pathToTutorialFile("repos.py"), "-n", "define_repo"],
-      3000
-    );
+    dagit = await runDagit(["-f", "repos.py", "-a", "define_repo"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });

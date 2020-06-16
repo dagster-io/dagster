@@ -1,0 +1,5 @@
+recursive-include dagster_azure *.sh
+recursive-include dagster_azure *.yaml
+recursive-include dagster_azure *.txt
+recursive-include dagster_azure *.template
+include LICENSE

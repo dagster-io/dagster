@@ -5,7 +5,7 @@ import os
 import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
-from dagster_airflow.factory import make_airflow_dag_kubernetized_for_handle
+from dagster_airflow.factory import make_airflow_dag_kubernetized_for_recon_repo
 from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     execute_tasks_in_dag,
@@ -30,7 +30,9 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_s3.yaml'),
@@ -59,7 +61,9 @@ def test_gcs_storage(
     pipeline_name = 'demo_pipeline_gcs'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_gcs.yaml'),
@@ -76,22 +80,24 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     _check_aws_creds_available()
 
     pipeline_name = 'demo_error_pipeline'
-    handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)
+    recon_repo = ReconstructableRepository.for_module(
+        'test_pipelines.repo', 'define_demo_execution_repo'
+    )
     environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]
-    environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_config = load_yaml_from_glob_list(environment_yaml)
 
     run_id = make_new_run_id()
     execution_date = timezone.utcnow()
 
-    dag, tasks = make_airflow_dag_kubernetized_for_handle(
-        handle=handle,
+    dag, tasks = make_airflow_dag_kubernetized_for_recon_repo(
+        recon_repo=recon_repo,
         pipeline_name=pipeline_name,
         image=dagster_docker_image,
         namespace='default',
-        environment_dict=environment_dict,
+        run_config=run_config,
         op_kwargs={
             'config_file': os.environ['KUBECONFIG'],
             'env_vars': {

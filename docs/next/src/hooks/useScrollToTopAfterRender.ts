@@ -4,7 +4,9 @@ import { useRouter } from 'next/router';
 const useScrollToTopAfterRender = () => {
   const router = useRouter();
 
-  const scrollToTop = useCallback(() => window.scrollTo(0, 0), [router]);
+  const scrollToTop = useCallback(() => {
+    document.getElementById('main')?.scrollTo(0, 0);
+  }, [router]);
 
   useEffect(() => {
     router.events.on('routeChangeComplete', scrollToTop);

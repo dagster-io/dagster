@@ -4,23 +4,16 @@ import { BrowserRouter } from "react-router-dom";
 
 import { ConfigEditorModePicker } from "../execute/ConfigEditorModePicker";
 import { ModeNotFoundError } from "../execute/ExecutionSessionContainer";
-import { ExecutionSessionContainerFragment_Pipeline_modes } from "../execute/types/ExecutionSessionContainerFragment";
 
-const defaultMode: ExecutionSessionContainerFragment_Pipeline_modes = {
-  __typename: "Mode",
-  description: null,
+const defaultMode = {
   name: "default"
 };
 
-const mode1: ExecutionSessionContainerFragment_Pipeline_modes = {
-  __typename: "Mode",
-  description: "Mode 1",
+const mode1 = {
   name: "mode_1"
 };
 
-const mode2: ExecutionSessionContainerFragment_Pipeline_modes = {
-  __typename: "Mode",
-  description: "Mode 2",
+const mode2 = {
   name: "mode_2"
 };
 

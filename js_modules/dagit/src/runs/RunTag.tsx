@@ -30,8 +30,9 @@ export const RunTag = ({ tag, onClick }: IRunTagProps) => {
         <TagElement onClick={onTagClick}>
           <span
             style={{
-              padding: "2px 5px",
-              backgroundColor: "#7690BC"
+              padding: "3px 5px",
+              backgroundColor: "rgb(199, 212, 234)",
+              color: "rgba(0,0,0,0.8)"
             }}
           >
             {tagKey}
@@ -39,7 +40,10 @@ export const RunTag = ({ tag, onClick }: IRunTagProps) => {
           <span
             style={{
               padding: "2px 5px",
-              backgroundColor: "#A5B9DA"
+              backgroundColor: "rgb(255,255,255, 0.75)",
+              borderRadius: 3,
+              color: "rgba(0,0,0,0.7)",
+              border: "1px solid rgb(199, 212, 234)"
             }}
           >
             {tag.value}
@@ -70,9 +74,10 @@ export const RunTag = ({ tag, onClick }: IRunTagProps) => {
 const TagElement = styled(Tag)`
   padding: 0 !important;
   margin: 1px !important;
+  overflow: hidden;
   .bp3-fill {
     display: inline-flex;
+    background-color: rgb(199, 212, 234);
   }
-  overflow: hidden;
   ${({ onClick }) => (onClick ? `cursor: pointer;` : "")}
 `;

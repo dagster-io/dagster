@@ -196,7 +196,7 @@ class Enum(ConfigType):
         .. code-block:: python
 
             @solid(
-                config=Field(
+                config_schema=Field(
                     Enum(
                         'CowboyType',
                         [
@@ -261,7 +261,7 @@ class Enum(ConfigType):
                     BLUE = enum.auto()
 
                 @solid(
-                    config={"color": Field(Enum.from_python_enum(Color))}
+                    config_schema={"color": Field(Enum.from_python_enum(Color))}
                 )
                 def select_color(context):
                     # ...
@@ -273,25 +273,29 @@ class Enum(ConfigType):
 
 class ScalarUnion(ConfigType):
     def __init__(
-        self, scalar_type, non_scalar_type, _key=None,
+        self, scalar_type, non_scalar_schema, _key=None,
     ):
-        self.scalar_type = check.inst_param(scalar_type, 'scalar_type', ConfigType)
-        self.non_scalar_type = check.inst_param(non_scalar_type, 'non_scalar_type', ConfigType)
+        from .field import resolve_to_config_type
 
-        check.param_invariant(scalar_type.kind == ConfigTypeKind.SCALAR, 'scalar_type')
+        self.scalar_type = resolve_to_config_type(scalar_type)
+        self.non_scalar_type = resolve_to_config_type(non_scalar_schema)
+
+        check.param_invariant(self.scalar_type.kind == ConfigTypeKind.SCALAR, 'scalar_type')
         check.param_invariant(
-            non_scalar_type.kind
+            self.non_scalar_type.kind
             in {ConfigTypeKind.STRICT_SHAPE, ConfigTypeKind.SELECTOR, ConfigTypeKind.ARRAY},
             'non_scalar_type',
         )
 
         # https://github.com/dagster-io/dagster/issues/2133
         key = check.opt_str_param(
-            _key, '_key', 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
+            _key, '_key', 'ScalarUnion.{}-{}'.format(self.scalar_type.key, self.non_scalar_type.key)
         )
 
         super(ScalarUnion, self).__init__(
-            key=key, kind=ConfigTypeKind.SCALAR_UNION, type_params=[scalar_type, non_scalar_type],
+            key=key,
+            kind=ConfigTypeKind.SCALAR_UNION,
+            type_params=[self.scalar_type, self.non_scalar_type],
         )
 
 

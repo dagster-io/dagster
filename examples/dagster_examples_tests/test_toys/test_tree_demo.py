@@ -1,14 +1,14 @@
-from dagster_examples.toys.repo import define_repo
+from dagster_examples.toys.repo import toys_repository
 from dagster_examples.toys.tree_demo import generate_solid
 
 from dagster import execute_pipeline
 
 
 def test_guide_pipelines_success():
-    tree_repo = define_repo()
+    tree_repo = toys_repository
     pipeline_result = execute_pipeline(
         tree_repo.get_pipeline('demo_tree_pipeline'),
-        environment_dict={'solids': {'0_solid': {'inputs': {'parent': {'value': 1}}}}},
+        run_config={'solids': {'0_solid': {'inputs': {'parent': {'value': 1}}}}},
     )
     assert pipeline_result.success
 

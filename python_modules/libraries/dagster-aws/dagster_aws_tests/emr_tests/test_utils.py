@@ -1,8 +1,8 @@
-from dagster_aws.emr.utils import subset_environment_dict
+from dagster_aws.emr.utils import subset_run_config
 
 
-def test_subset_environment_dict():
-    environment_dict = {
+def test_subset_run_config():
+    run_config = {
         'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
         'resources': {
             'pyspark': {
@@ -16,8 +16,8 @@ def test_subset_environment_dict():
             }
         },
     }
-    res = subset_environment_dict(environment_dict, 'blah')
-    assert res == environment_dict
+    res = subset_run_config(run_config, 'blah')
+    assert res == run_config
 
-    res = subset_environment_dict(environment_dict, 'not_here')
+    res = subset_run_config(run_config, 'not_here')
     assert res['solids'] == {}

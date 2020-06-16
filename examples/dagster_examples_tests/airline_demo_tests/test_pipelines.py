@@ -34,7 +34,7 @@ def test_ingest_pipeline_fast(postgres, pg_hostname):
     result_ingest = execute_pipeline(
         pipeline=ingest_pipeline,
         mode='local',
-        environment_dict=ingest_config_dict,
+        run_config=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
     )
 
@@ -54,7 +54,7 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
     result_ingest = execute_pipeline(
         pipeline=ingest_pipeline,
         mode='local',
-        environment_dict=ingest_config_dict,
+        run_config=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
     )
 
@@ -65,6 +65,7 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
+@pytest.mark.skipif('"win" in sys.platform', reason="avoiding the geopandas tests")
 def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_warehouse.yaml')
@@ -72,7 +73,7 @@ def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     result_warehouse = execute_pipeline(
         pipeline=warehouse_pipeline,
         mode='local',
-        environment_dict=warehouse_config_object,
+        run_config=warehouse_config_object,
         instance=DagsterInstance.local_temp(),
     )
     assert result_warehouse.success

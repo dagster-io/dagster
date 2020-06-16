@@ -2,23 +2,13 @@ from __future__ import absolute_import
 
 import io
 import os
-import sys
 import uuid
-import warnings
 
 import nbformat
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
-)
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    QueueingSubprocessExecutionManager,
-    SubprocessExecutionManager,
-)
-from dagster_graphql.implementation.reloader import Reloader
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, redirect, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -27,10 +17,18 @@ from nbconvert import HTMLExporter
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
+from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.host_representation import (
+    InProcessRepositoryLocation,
+    PythonEnvRepositoryLocation,
+)
+from dagster.core.host_representation.handle import (
+    InProcessRepositoryLocationHandle,
+    PythonEnvRepositoryLocationHandle,
+)
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
@@ -161,6 +159,7 @@ def instantiate_app_with_views(context):
             context=context,
         ),
     )
+    app.add_url_rule('/graphiql', 'graphiql', lambda: redirect('/graphql', 301))
     sockets.add_url_rule(
         '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
@@ -183,46 +182,27 @@ def instantiate_app_with_views(context):
     return app
 
 
-def get_execution_manager(instance):
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('max_concurrent_runs'):
-        return QueueingSubprocessExecutionManager(
-            instance, execution_manager_settings.get('max_concurrent_runs')
-        )
-    return SubprocessExecutionManager(instance)
-
-
-def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
-    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+def create_app_from_workspace(workspace, instance):
+    check.inst_param(workspace, 'workspace', Workspace)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.opt_inst_param(reloader, 'reloader', Reloader)
 
-    execution_manager = get_execution_manager(instance)
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
-    context = DagsterGraphQLContext(
-        instance=instance,
-        environments=[
-            InProcessDagsterEnvironment(
-                recon_repo, execution_manager=execution_manager, reloader=reloader,
-            )
-        ],
-        version=__version__,
-    )
 
-    # Automatically initialize scheduler everytime Dagit loads
-    scheduler = instance.scheduler
-    repository = context.legacy_get_repository_definition()
-
-    if repository.schedule_defs:
-        if scheduler:
-            python_path = sys.executable
-            repository_path = context.legacy_environment.get_reconstructable_repository().yaml_path
-            reconcile_scheduler_state(
-                python_path, repository_path, repository=repository, instance=instance
-            )
+    locations = []
+    for repository_location_handle in workspace.repository_location_handles:
+        if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
+            # will need to change for multi repo
+            check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
+            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
+            recon_repo = ReconstructableRepository(pointer)
+            locations.append(InProcessRepositoryLocation(recon_repo))
+        elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
+            locations.append(PythonEnvRepositoryLocation(repository_location_handle))
         else:
-            warnings.warn(MISSING_SCHEDULER_WARNING)
+            check.failed('{} unsupported'.format(repository_location_handle))
+
+    context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
 
     return instantiate_app_with_views(context)

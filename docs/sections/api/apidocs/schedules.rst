@@ -3,7 +3,6 @@
 Schedules
 =========
 
-.. autodecorator:: schedules
 .. autodecorator:: schedule
 .. autodecorator:: monthly_schedule
 .. autodecorator:: weekly_schedule

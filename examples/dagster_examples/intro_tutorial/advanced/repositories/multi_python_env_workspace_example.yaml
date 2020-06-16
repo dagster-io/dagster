@@ -1,0 +1,6 @@
+# This is just here as an example of how to point a user process to specific virtual environment 
+load_from:
+   - python_environment:
+      executable_path: "/path/to/other_team/virtualenv/bin/python"
+      target:
+        python_module: other_team_module 

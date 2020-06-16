@@ -6,7 +6,7 @@ from .configs import define_dataproc_submit_job_config
 
 @solid(
     required_resource_keys={'dataproc'},
-    config={
+    config_schema={
         'job_config': define_dataproc_submit_job_config(),
         'job_scoped_cluster': Field(
             Bool,

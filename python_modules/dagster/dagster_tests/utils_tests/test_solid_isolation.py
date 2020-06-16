@@ -54,7 +54,7 @@ def test_single_solid_with_multiple_inputs():
     result = execute_solid(
         add_solid,
         input_values={'num_one': 2, 'num_two': 3},
-        environment_dict={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     assert result.success
@@ -64,13 +64,13 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def check_config_for_two(context):
         assert context.solid_config == 2
         ran['check_config_for_two'] = True
 
     result = execute_solid(
-        check_config_for_two, environment_dict={'solids': {'check_config_for_two': {'config': 2}}}
+        check_config_for_two, run_config={'solids': {'check_config_for_two': {'config': 2}}}
     )
 
     assert result.success
@@ -78,7 +78,7 @@ def test_single_solid_with_config():
 
 
 def test_single_solid_with_context_config():
-    @resource(config=Field(Int, is_required=False, default_value=2))
+    @resource(config_schema=Field(Int, is_required=False, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
 
@@ -91,7 +91,7 @@ def test_single_solid_with_context_config():
 
     result = execute_solid(
         check_context_config_for_two,
-        environment_dict={'resources': {'num': {'config': 2}}},
+        run_config={'resources': {'num': {'config': 2}}},
         mode_def=ModeDefinition(resource_defs={'num': num_resource}),
     )
 
@@ -243,7 +243,7 @@ def test_single_solid_with_bad_inputs():
     result = execute_solid(
         add_solid,
         input_values={'num_one': 2, 'num_two': 'three'},
-        environment_dict={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}},
         raise_on_error=False,
     )
 

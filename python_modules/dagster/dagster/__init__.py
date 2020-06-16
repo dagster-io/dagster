@@ -1,7 +1,9 @@
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
+    AssetKey,
     CompositeSolidDefinition,
     ConfigMapping,
     DependencyDefinition,
@@ -49,6 +51,7 @@ from dagster.core.definitions import (
     multiprocess_executor,
     pipeline,
     reconstructable,
+    repository,
     resource,
     schedule,
     solid,
@@ -78,11 +81,7 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import (
-    execute_partition_set,
-    execute_pipeline,
-    execute_pipeline_iterator,
-)
+from dagster.core.execution.api import execute_pipeline, execute_pipeline_iterator
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
@@ -128,6 +127,7 @@ from dagster.config.source import StringSource, IntSource  # isort:skip
 
 __all__ = [
     # Definition
+    'AssetKey',
     'CompositeSolidDefinition',
     'ConfigMapping',
     'DependencyDefinition',
@@ -163,6 +163,7 @@ __all__ = [
     'lambda_solid',
     'logger',
     'pipeline',
+    'repository',
     'resource',
     'schedule',
     'solid',
@@ -246,6 +247,7 @@ __all__ = [
     'usable_as_dagster_type',
     # config
     'Array',
+    'ConfigSchema',
     'Noneable',
     'Permissive',
     'ScalarUnion',
@@ -264,7 +266,6 @@ __all__ = [
     'ScheduleDefinition',
     'ScheduleExecutionContext',
     'daily_schedule',
-    'execute_partition_set',
     'hourly_schedule',
     'monthly_schedule',
     'weekly_schedule',

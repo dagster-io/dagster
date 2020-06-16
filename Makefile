@@ -32,6 +32,7 @@ install_dev_python_modules:
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dasgtermill because of dependency
 # See https://github.com/dagster-io/dagster/issues/1485
+# NOTE: These installations will fail for Python 2.7 (Flyte and Dask don't work w/ py27)
 
 	pip install apache-airflow \
 				-e python_modules/dagster \
@@ -40,12 +41,10 @@ install_dev_python_modules:
 				-e python_modules/dagit \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
-				-e python_modules/libraries/dagster-bash \
 				-e python_modules/libraries/dagster-celery \
 				-e python_modules/libraries/dagster-cron \
+				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-datadog \
-				-e python_modules/libraries/dagster-dbt \
-				-e python_modules/libraries/dagster-flyte \
 				-e python_modules/libraries/dagster-gcp \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \
@@ -55,6 +54,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-prometheus \
 				-e python_modules/libraries/dagster-spark \
 				-e python_modules/libraries/dagster-pyspark \
+				-e python_modules/libraries/dagster-shell \
 				-e python_modules/libraries/dagster-slack \
 				-e python_modules/libraries/dagster-snowflake \
 				-e python_modules/libraries/dagster-ssh \
@@ -64,18 +64,23 @@ install_dev_python_modules:
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
+				-e examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
-	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/libraries/dagster-airflow $(QUIET)
+	# Don't install dagster-azure as part of this target _yet_ - it has a dependency
+	# conflict with dagster-snowflake which causes any import of dagster-snowflake to
+	# fail with an ImportError (e.g. in examples).
+	# Uncomment only when snowflake-connector-python can be installed with optional (or compatible)
+	# Azure dependencies.
+	# See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
+	# pip install -e python_modules/libraries/dagster-azure $(QUIET)
 
-	# This fails on Python 3.8 because TensorFlow is missing
-	-pip install -e examples[full] $(QUIET)
+	set SLUGIFY_USES_TEXT_UNIDECODE=yes
+	pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
-	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
+	-pip install -e python_modules/libraries/dagster-flyte $(QUIET)
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
-
-	# This fails on py2
-	-pip install -r .read-the-docs-requirements.txt
+	-pip install -r docs-requirements.txt
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules

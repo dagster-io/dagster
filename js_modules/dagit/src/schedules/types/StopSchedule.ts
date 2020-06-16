@@ -3,26 +3,22 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StopSchedule
 // ====================================================
 
-export interface StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule_scheduleDefinition {
-  __typename: "ScheduleDefinition";
-  name: string;
-}
-
-export interface StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule {
-  __typename: "RunningSchedule";
-  scheduleDefinition: StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule_scheduleDefinition;
+export interface StopSchedule_stopRunningSchedule_ScheduleStateResult_scheduleState {
+  __typename: "ScheduleState";
+  id: string;
+  runningScheduleCount: number;
   status: ScheduleStatus;
 }
 
-export interface StopSchedule_stopRunningSchedule_RunningScheduleResult {
-  __typename: "RunningScheduleResult";
-  schedule: StopSchedule_stopRunningSchedule_RunningScheduleResult_schedule;
+export interface StopSchedule_stopRunningSchedule_ScheduleStateResult {
+  __typename: "ScheduleStateResult";
+  scheduleState: StopSchedule_stopRunningSchedule_ScheduleStateResult_scheduleState;
 }
 
 export interface StopSchedule_stopRunningSchedule_PythonError {
@@ -31,12 +27,12 @@ export interface StopSchedule_stopRunningSchedule_PythonError {
   stack: string[];
 }
 
-export type StopSchedule_stopRunningSchedule = StopSchedule_stopRunningSchedule_RunningScheduleResult | StopSchedule_stopRunningSchedule_PythonError;
+export type StopSchedule_stopRunningSchedule = StopSchedule_stopRunningSchedule_ScheduleStateResult | StopSchedule_stopRunningSchedule_PythonError;
 
 export interface StopSchedule {
   stopRunningSchedule: StopSchedule_stopRunningSchedule;
 }
 
 export interface StopScheduleVariables {
-  scheduleName: string;
+  scheduleSelector: ScheduleSelector;
 }

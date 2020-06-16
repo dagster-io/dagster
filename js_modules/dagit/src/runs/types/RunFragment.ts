@@ -9,23 +9,11 @@ import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
 // GraphQL fragment: RunFragment
 // ====================================================
 
-export interface RunFragment_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
+export interface RunFragment_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
+  solidSelection: string[] | null;
 }
-
-export interface RunFragment_pipeline_Pipeline_solids {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface RunFragment_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
-  solids: RunFragment_pipeline_Pipeline_solids[];
-}
-
-export type RunFragment_pipeline = RunFragment_pipeline_UnknownPipeline | RunFragment_pipeline_Pipeline;
 
 export interface RunFragment_tags {
   __typename: "PipelineTag";
@@ -73,7 +61,7 @@ export interface RunFragment {
   runId: string;
   status: PipelineRunStatus;
   pipeline: RunFragment_pipeline;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   canTerminate: boolean;
   mode: string;
   tags: RunFragment_tags[];

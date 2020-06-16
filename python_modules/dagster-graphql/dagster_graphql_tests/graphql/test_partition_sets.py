@@ -1,34 +1,16 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
-GET_PARTITION_SETS_QUERY = '''
-{
-    partitionSetsOrError {
-        __typename
-        ...on PartitionSets {
-            results {
-                name
-                pipelineName
-                solidSubset
-                mode
-            }
-        }
-        ... on PythonError {
-            message
-            stack
-        }
-    }
-}
-'''
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
-    query PartitionSetsQuery($pipelineName: String!) {
-        partitionSetsOrError(pipelineName: $pipelineName) {
+    query PartitionSetsQuery($repositorySelector: RepositorySelector!, $pipelineName: String!) {
+        partitionSetsOrError(repositorySelector: $repositorySelector, pipelineName: $pipelineName) {
             __typename
             ...on PartitionSets {
                 results {
                     name
                     pipelineName
-                    solidSubset
+                    solidSelection
                     mode
                 }
             }
@@ -44,8 +26,8 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
 '''
 
 GET_PARTITION_SET_QUERY = '''
-    query PartitionSetQuery($partitionSetName: String!) {
-        partitionSetOrError(partitionSetName: $partitionSetName) {
+    query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
+        partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             __typename
             ... on PythonError {
                 message
@@ -54,7 +36,7 @@ GET_PARTITION_SET_QUERY = '''
             ...on PartitionSet {
                 name
                 pipelineName
-                solidSubset
+                solidSelection
                 mode
                 partitions {
                     results {
@@ -67,54 +49,49 @@ GET_PARTITION_SET_QUERY = '''
 '''
 
 
-def test_get_all_partition_sets(graphql_context, snapshot):
-    result = execute_dagster_graphql(graphql_context, GET_PARTITION_SETS_QUERY)
+class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
+    def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
+        selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
+            variables={'repositorySelector': selector, 'pipelineName': 'no_config_pipeline'},
+        )
 
-    assert result.data
-    snapshot.assert_match(result.data)
+        assert result.data
+        snapshot.assert_match(result.data)
 
+        invalid_pipeline_result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
+            variables={'repositorySelector': selector, 'pipelineName': 'invalid_pipeline'},
+        )
 
-def test_get_partition_sets_for_pipeline(graphql_context, snapshot):
-    result = execute_dagster_graphql(
-        graphql_context,
-        GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-        variables={'pipelineName': 'no_config_pipeline'},
-    )
+        assert invalid_pipeline_result.data
+        snapshot.assert_match(invalid_pipeline_result.data)
 
-    assert result.data
-    snapshot.assert_match(result.data)
+    def test_get_partition_set(self, graphql_context, snapshot):
+        selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SET_QUERY,
+            variables={'partitionSetName': 'integer_partition', 'repositorySelector': selector},
+        )
 
-    invalid_pipeline_result = execute_dagster_graphql(
-        graphql_context,
-        GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-        variables={'pipelineName': 'invalid_pipeline'},
-    )
+        assert result.data
+        snapshot.assert_match(result.data)
 
-    assert invalid_pipeline_result.data
-    snapshot.assert_match(invalid_pipeline_result.data)
+        invalid_partition_set_result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SET_QUERY,
+            variables={'partitionSetName': 'invalid_partition', 'repositorySelector': selector},
+        )
 
+        print(invalid_partition_set_result.data)
+        assert (
+            invalid_partition_set_result.data['partitionSetOrError']['__typename']
+            == 'PartitionSetNotFoundError'
+        )
+        assert invalid_partition_set_result.data
 
-def test_get_partition_set(graphql_context, snapshot):
-    result = execute_dagster_graphql(
-        graphql_context,
-        GET_PARTITION_SET_QUERY,
-        variables={'partitionSetName': 'integer_partition'},
-    )
-
-    assert result.data
-    snapshot.assert_match(result.data)
-
-    invalid_partition_set_result = execute_dagster_graphql(
-        graphql_context,
-        GET_PARTITION_SET_QUERY,
-        variables={'partitionSetName': 'invalid_partition'},
-    )
-
-    print(invalid_partition_set_result.data)
-    assert (
-        invalid_partition_set_result.data['partitionSetOrError']['__typename']
-        == 'PartitionSetNotFoundError'
-    )
-    assert invalid_partition_set_result.data
-
-    snapshot.assert_match(invalid_partition_set_result.data)
+        snapshot.assert_match(invalid_partition_set_result.data)

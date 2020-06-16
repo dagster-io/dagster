@@ -36,17 +36,10 @@ from ..external import (
     ensure_valid_step_keys,
     get_external_pipeline_or_raise,
 )
-from ..fetch_pipelines import (
-    get_dauphin_pipeline_reference_from_selector,
-    get_reconstructable_pipeline_from_selector,
-)
-from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
-from .scheduled_execution import start_scheduled_execution
-from .start_execution import start_pipeline_execution, start_pipeline_reexecution
 
 
 @capture_dauphin_error
@@ -75,15 +68,6 @@ def terminate_pipeline_execution(graphene_info, run_id):
     )
 
     if (
-        graphene_info.context.legacy_environment.execution_manager
-        and graphene_info.context.legacy_environment.execution_manager.can_terminate(run_id)
-    ):
-        if not graphene_info.context.legacy_environment.execution_manager.terminate(run_id):
-            return can_not_term
-
-        return graphene_info.schema.type_named('TerminatePipelineExecutionSuccess')(dauphin_run)
-
-    elif (
         graphene_info.context.instance.run_launcher
         and graphene_info.context.instance.run_launcher.can_terminate(run_id)
     ):
@@ -168,15 +152,11 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    external_pipeline = get_external_pipeline_or_raise(
-        graphene_info,
-        execution_params.selector.pipeline_name,
-        execution_params.selector.solid_subset,
-    )
+    external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
     ensure_valid_config(
         external_pipeline=external_pipeline,
         mode=execution_params.mode,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
     )
     return _do_execute_plan(graphene_info, execution_params, external_pipeline)
 
@@ -192,9 +172,9 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
 
-    external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
+    external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         mode=mode,
         step_keys_to_execute=None,
     )
@@ -205,9 +185,9 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         pipeline_run = graphene_info.context.instance.create_run(
             pipeline_name=external_pipeline.name,
             run_id=run_id,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             mode=mode,
-            solid_subset=None,
+            solids_to_execute=None,
             step_keys_to_execute=None,
             status=None,
             tags=execution_params.execution_metadata.tags or {},
@@ -215,14 +195,15 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
             parent_run_id=None,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         )
 
     ensure_valid_step_keys(external_execution_plan, execution_params.step_keys)
 
     if execution_params.step_keys:
-        external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
+        external_execution_plan = graphene_info.context.get_external_execution_plan(
             external_pipeline=external_pipeline,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             mode=mode,
             step_keys_to_execute=execution_params.step_keys,
         )
@@ -235,9 +216,9 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     graphene_info.context.instance.add_event_listener(run_id, _on_event_record)
 
-    graphene_info.context.legacy_execute_plan(
+    graphene_info.context.execute_plan(
         external_pipeline=external_pipeline,
-        environment_dict=execution_params.environment_dict,
+        run_config=execution_params.run_config,
         pipeline_run=pipeline_run,
         step_keys_to_execute=execution_params.step_keys,
     )

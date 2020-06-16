@@ -134,17 +134,13 @@ def test_execute_multi_mode_with_resources():
     pipeline_def = define_multi_mode_with_resources_pipeline()
 
     add_mode_result = execute_pipeline(
-        pipeline=pipeline_def,
-        mode='add_mode',
-        environment_dict={'resources': {'op': {'config': 2}}},
+        pipeline=pipeline_def, mode='add_mode', run_config={'resources': {'op': {'config': 2}}},
     )
 
     assert add_mode_result.result_for_solid('apply_to_three').output_value() == 5
 
     mult_mode_result = execute_pipeline(
-        pipeline=pipeline_def,
-        mode='mult_mode',
-        environment_dict={'resources': {'op': {'config': 3}}},
+        pipeline=pipeline_def, mode='mult_mode', run_config={'resources': {'op': {'config': 3}}},
     )
 
     assert mult_mode_result.result_for_solid('apply_to_three').output_value() == 9
@@ -234,7 +230,7 @@ def test_subset_with_mode_definitions():
     assert called == {'a': 1, 'b': 1}
 
     assert (
-        execute_solids_within_pipeline(pipeline_def, solid_names=['requires_a'])[
+        execute_solids_within_pipeline(pipeline_def, solid_names={'requires_a'})[
             'requires_a'
         ].success
         is True
@@ -247,14 +243,14 @@ def define_multi_mode_with_loggers_pipeline():
     foo_logger_captured_results = []
     bar_logger_captured_results = []
 
-    @logger(config={'log_level': Field(String, is_required=False, default_value='INFO')})
+    @logger(config_schema={'log_level': Field(String, is_required=False, default_value='INFO')})
     def foo_logger(init_context):
         logger_ = logging.Logger('foo')
         logger_.log = lambda level, msg, **kwargs: foo_logger_captured_results.append((level, msg))
         logger_.setLevel(coerce_valid_log_level(init_context.logger_config['log_level']))
         return logger_
 
-    @logger(config={'log_level': Field(String, is_required=False, default_value='INFO')})
+    @logger(config_schema={'log_level': Field(String, is_required=False, default_value='INFO')})
     def bar_logger(init_context):
         logger_ = logging.Logger('bar')
         logger_.log = lambda level, msg, **kwargs: bar_logger_captured_results.append((level, msg))
@@ -304,7 +300,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
     execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_mode',
-        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     assert not bar_logger_captured_results
@@ -320,7 +316,7 @@ def test_execute_multi_mode_loggers_with_single_logger_extra_config():
         execute_pipeline(
             pipeline=pipeline_def,
             mode='foo_mode',
-            environment_dict={
+            run_config={
                 'loggers': {
                     'foo': {'config': {'log_level': 'DEBUG'}},
                     'bar': {'config': {'log_level': 'DEBUG'}},
@@ -339,7 +335,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers():
     execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_bar_mode',
-        environment_dict={
+        run_config={
             'loggers': {
                 'foo': {'config': {'log_level': 'DEBUG'}},
                 'bar': {'config': {'log_level': 'DEBUG'}},
@@ -366,7 +362,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
     execute_pipeline(
         pipeline_def,
         mode='foo_bar_mode',
-        environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
+        run_config={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
     )
 
     foo_original_messages = parse_captured_results(foo_logger_captured_results)

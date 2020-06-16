@@ -14,11 +14,15 @@ import { useQuery } from "react-apollo";
 import styled from "styled-components/macro";
 import {
   SolidsRootQuery,
-  SolidsRootQuery_usedSolids
+  SolidsRootQuery_repositoryOrError_Repository_usedSolids
 } from "./types/SolidsRootQuery";
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { Colors, NonIdealState } from "@blueprintjs/core";
 import SolidTypeSignature from "../SolidTypeSignature";
+import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
 import {
   UsedSolidDetails,
   SolidDetailScrollContainer
@@ -41,7 +45,7 @@ function flatUniq(arrs: string[][]) {
   return Object.keys(results).sort((a, b) => a.localeCompare(b));
 }
 
-type Solid = SolidsRootQuery_usedSolids;
+type Solid = SolidsRootQuery_repositoryOrError_Repository_usedSolids;
 
 function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
   return [
@@ -117,12 +121,30 @@ function filterSolidsWithSearch(
 type SolidsRootProps = RouteComponentProps<{ name: string }>;
 
 export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
-  const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY);
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
+  const repositorySelector = useRepositorySelector();
+  const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
+    skip: !repository || !repositoryLocation,
+    variables: { repositorySelector }
+  });
   return (
     <Loading queryResult={queryResult}>
-      {({ usedSolids }) => (
-        <SolidsRootWithData usedSolids={usedSolids} {...props} />
-      )}
+      {({ repositoryOrError }) => {
+        if (
+          repositoryOrError?.__typename === "Repository" &&
+          repositoryOrError.usedSolids
+        ) {
+          return (
+            <SolidsRootWithData
+              usedSolids={repositoryOrError.usedSolids}
+              {...props}
+            />
+          );
+        }
+        return null;
+      }}
     </Loading>
   );
 };
@@ -272,22 +294,26 @@ const SolidList: React.FunctionComponent<{
 };
 
 export const SOLIDS_ROOT_QUERY = gql`
-  query SolidsRootQuery {
-    usedSolids {
-      __typename
-      definition {
-        name
-        ...SolidTypeSignatureFragment
-      }
-      invocations {
-        __typename
-        pipeline {
-          name
+  query SolidsRootQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      ... on Repository {
+        id
+        usedSolids {
+          __typename
+          definition {
+            name
+            ...SolidTypeSignatureFragment
+          }
+          invocations {
+            __typename
+            pipeline {
+              name
+            }
+          }
         }
       }
     }
   }
-
   ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
 `;
 

@@ -1,8 +1,10 @@
 import sys
 import zipfile
 
-from dagster_aws.s3 import S3FileHandle, create_s3_fake_resource, s3_system_storage
+import boto3
+from dagster_aws.s3 import S3FileHandle, s3_system_storage
 from dagster_examples.airline_demo.unzip_file_handle import unzip_file_handle
+from moto import mock_s3
 
 from dagster import (
     LocalFileHandle,
@@ -44,7 +46,7 @@ def test_unzip_file_handle():
 
         result = execute_pipeline(
             do_test_unzip_file_handle,
-            environment_dict={
+            run_config={
                 'solids': {
                     'unzip_file_handle': {
                         'inputs': {'archive_member': {'value': 'some_archive_member'}}
@@ -55,6 +57,7 @@ def test_unzip_file_handle():
         assert result.success
 
 
+@mock_s3
 def test_unzip_file_handle_on_fake_s3():
     foo_bytes = 'foo'.encode()
 
@@ -66,12 +69,14 @@ def test_unzip_file_handle_on_fake_s3():
                 s3_file_handle = context.file_manager.write_data(ff.read())
                 return s3_file_handle
 
-    s3_fake_resource = create_s3_fake_resource()
+    # Uses mock S3
+    s3 = boto3.client('s3')
+    s3.create_bucket(Bucket='some-bucket')
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3)},
                 system_storage_defs=[s3_system_storage],
             )
         ]
@@ -81,7 +86,7 @@ def test_unzip_file_handle_on_fake_s3():
 
     result = execute_pipeline(
         do_test_unzip_file_handle_s3,
-        environment_dict={
+        run_config={
             'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}},
             'solids': {
                 'unzip_file_handle': {'inputs': {'archive_member': {'value': 'an_archive_member'}}}
@@ -93,6 +98,7 @@ def test_unzip_file_handle_on_fake_s3():
 
     zipped_s3_file = result.result_for_solid('write_zipped_file_to_s3_store').output_value()
     unzipped_s3_file = result.result_for_solid('unzip_file_handle').output_value()
+    bucket_keys = [obj['Key'] for obj in s3.list_objects(Bucket='some-bucket')['Contents']]
 
-    assert zipped_s3_file.s3_key in s3_fake_resource.buckets['some-bucket']
-    assert unzipped_s3_file.s3_key in s3_fake_resource.buckets['some-bucket']
+    assert zipped_s3_file.s3_key in bucket_keys
+    assert unzipped_s3_file.s3_key in bucket_keys

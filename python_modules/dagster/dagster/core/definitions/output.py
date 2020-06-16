@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -25,37 +24,17 @@ class OutputDefinition(object):
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        is_optional (Optional[bool]) (deprecated): Whether the presence of this field is optional.
-            Use ``is_required`` instead.
     '''
 
-    def __init__(
-        self, dagster_type=None, name=None, description=None, is_optional=None, is_required=None
-    ):
+    def __init__(self, dagster_type=None, name=None, description=None, is_required=None):
         self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, 'description')
-        check.opt_bool_param(is_optional, 'is_optional')
-        check.opt_bool_param(is_required, 'is_required')
-
-        canonical_is_required = canonicalize_backcompat_args(
-            new_val=is_required,
-            new_arg='is_required',
-            old_val=is_optional,
-            old_arg='is_optional',
-            coerce_old_to_new=lambda val: not val,
-            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0. Users should use "is_required" instead.',
-        )
-        self._optional = False if (canonical_is_required is None) else not canonical_is_required
+        self._is_required = check.opt_bool_param(is_required, 'is_required', default=True)
 
     @property
     def name(self):
         return self._name
-
-    @property
-    def runtime_type(self):
-        rename_warning(new_name='dagster_type', old_name='runtime_type', breaking_version='0.8.0')
-        return self._dagster_type
 
     @property
     def dagster_type(self):
@@ -67,11 +46,11 @@ class OutputDefinition(object):
 
     @property
     def optional(self):
-        return self._optional
+        return not self._is_required
 
     @property
     def is_required(self):
-        return not self._optional
+        return self._is_required
 
     def mapping_from(self, solid_name, output_name=None):
         '''Create an output mapping from an output of a child solid.

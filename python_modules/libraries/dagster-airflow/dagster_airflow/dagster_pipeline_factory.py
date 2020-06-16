@@ -21,9 +21,9 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     SolidDefinition,
     check,
+    repository,
     solid,
 )
 from dagster.core.definitions.utils import VALID_NAME_REGEX, validate_tags
@@ -111,7 +111,11 @@ def make_dagster_repo_from_airflow_dag_bag(
             )
             count += 1
 
-    return RepositoryDefinition(name=repo_name, pipeline_defs=pipeline_defs)
+    @repository(name=repo_name)
+    def _repo():
+        return pipeline_defs
+
+    return _repo
 
 
 def make_dagster_repo_from_airflow_example_dags(repo_name='airflow_example_dags_repo'):
@@ -165,19 +169,22 @@ def make_dagster_repo_from_airflow_dags_path(
 ):
     ''' Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
-    DagBag.get_dag() dependency requires Airflow DB to be initialized.
+    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
 
     Usage:
+        Create ``make_dagster_repo.py``:
 
-        Create `make_dagster_repo.py`:
+        .. code-block:: python
+
             from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dags_path
 
             def make_repo_from_dir():
                 return make_dagster_repo_from_airflow_dags_path(
                     '/path/to/dags/', 'my_repo_name'
                 )
+
         Use RepositoryDefinition as usual, for example:
-            `dagit -f path/to/make_dagster_repo.py -n make_repo_from_dir`
+        ``dagit -f path/to/make_dagster_repo.py -n make_repo_from_dir``
 
     Args:
         dag_path (str): Path to directory or file that contains Airflow Dags
@@ -218,35 +225,38 @@ def make_dagster_pipeline_from_airflow_dag(
 ):
     '''Construct a Dagster pipeline corresponding to a given Airflow DAG.
 
-    Tasks in the resulting pipeline will execute the execute() method on the corresponding Airflow
-    Operator. Dagster, any dependencies required by Airflow Operators, and the module
-    containing your DAG definition must be available in the Python environment within which
-    your Dagster solids execute.
+    Tasks in the resulting pipeline will execute the ``execute()`` method on the corresponding
+    Airflow Operator. Dagster, any dependencies required by Airflow Operators, and the module
+    containing your DAG definition must be available in the Python environment within which your
+    Dagster solids execute.
 
-    To set Airflow's `execution_date` for use with Airflow Operator's execute() methods, either
-        (1) (Best for ad hoc runs) Run Pipeline with 'default' preset, which sets execution_date to
-        the time (in UTC) of pipeline invocation
+    To set Airflow's ``execution_date`` for use with Airflow Operator's ``execute()`` methods,
+    either:
 
-        ```
-        execute_pipeline(
-            pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag),
-            preset='default')
-        ```
+    1. (Best for ad hoc runs) Run Pipeline with 'default' preset, which sets execution_date to the
+        time (in UTC) of pipeline invocation:
 
-        (2) Add {'airflow_execution_date': utc_date_string} to the PipelineDefinition tags. This
-        will override behavior from (1).
+        .. code-block:: python
 
-        ```
-        execute_pipeline(
-            make_dagster_pipeline_from_airflow_dag(
-                dag=dag,
-                tags={'airflow_execution_date': utc_execution_date_str}
+            execute_pipeline(
+                pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag),
+                preset='default')
+
+    2. Add ``{'airflow_execution_date': utc_date_string}`` to the PipelineDefinition tags. This will
+       override behavior from (1).
+
+        .. code-block:: python
+
+            execute_pipeline(
+                make_dagster_pipeline_from_airflow_dag(
+                    dag=dag,
+                    tags={'airflow_execution_date': utc_execution_date_str}
+                )
             )
-        )
-        ```
 
-        (3) (Recommended) Add {'airflow_execution_date': utc_date_string} to the PipelineRun tags,
+    3. (Recommended) Add ``{'airflow_execution_date': utc_date_string}`` to the PipelineRun tags,
         such as in the Dagit UI. This will override behavior from (1) and (2)
+
 
     We apply normalized_name() to the dag id and task ids when generating pipeline name and solid
     names to ensure that names conform to Dagster's naming conventions.

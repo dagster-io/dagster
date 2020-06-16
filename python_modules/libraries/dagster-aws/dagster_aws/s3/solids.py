@@ -6,7 +6,7 @@ from dagster import (
     Materialization,
     Output,
     OutputDefinition,
-    String,
+    StringSource,
     check,
     input_hydration_config,
     solid,
@@ -39,8 +39,8 @@ def dict_with_fields(name, fields):
 S3Coordinate = dict_with_fields(
     'S3Coordinate',
     fields={
-        'bucket': Field(String, description='S3 bucket name'),
-        'key': Field(String, description='S3 key name'),
+        'bucket': Field(StringSource, description='S3 bucket name'),
+        'key': Field(StringSource, description='S3 key name'),
     },
 )
 
@@ -53,11 +53,13 @@ def last_key(key):
 
 
 @solid(
-    config={
+    config_schema={
         'Bucket': Field(
-            String, description='The name of the bucket to upload to.', is_required=True
+            StringSource, description='The name of the bucket to upload to.', is_required=True
         ),
-        'Key': Field(String, description='The name of the key to upload to.', is_required=True),
+        'Key': Field(
+            StringSource, description='The name of the key to upload to.', is_required=True
+        ),
     },
     input_defs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
     output_defs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],

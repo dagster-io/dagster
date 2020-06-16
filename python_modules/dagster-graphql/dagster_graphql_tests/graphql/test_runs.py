@@ -1,17 +1,22 @@
 import copy
 
-from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_context_for_file,
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+)
 
-from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
+from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 
 RUNS_QUERY = '''
-query PipelineRunsRootQuery($name: String!) {
-  pipelineOrError(params: { name: $name }) {
-    ... on PipelineReference { name }
+query PipelineRunsRootQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     ... on Pipeline {
+      name
       pipelineSnapshotId
       runs {
         ...RunHistoryRunFragment
@@ -31,7 +36,7 @@ fragment RunHistoryRunFragment on PipelineRun {
       key
     }
   }
-  environmentConfigYaml
+  runConfigYaml
   mode
   canTerminate
 }
@@ -63,7 +68,7 @@ ALL_RUNS_QUERY = '''
           __typename
           ... on PipelineReference {
             name
-            solidSubset
+            solidSelection
           }
         }
       }
@@ -124,7 +129,7 @@ ALL_RUN_GROUPS_QUERY = '''
           __typename
           ... on PipelineReference {
             name
-            solidSubset
+            solidSelection
           }
         }
       }
@@ -148,13 +153,15 @@ def test_get_runs_over_graphql(graphql_context):
     # other code in this file which reads itself to load a repo
     from .utils import sync_execute_get_run_log_data
 
+    selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
+
     payload_one = sync_execute_get_run_log_data(
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'add_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 2}}},
+                'runConfigData': {'resources': {'op': {'config': 2}}},
             }
         },
     )
@@ -164,9 +171,9 @@ def test_get_runs_over_graphql(graphql_context):
         context=graphql_context,
         variables={
             'executionParams': {
-                'selector': {'name': 'multi_mode_with_resources'},
+                'selector': selector,
                 'mode': 'add_mode',
-                'environmentConfigData': {'resources': {'op': {'config': 3}}},
+                'runConfigData': {'resources': {'op': {'config': 3}}},
             }
         },
     )
@@ -175,9 +182,7 @@ def test_get_runs_over_graphql(graphql_context):
 
     read_context = graphql_context
 
-    result = execute_dagster_graphql(
-        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
-    )
+    result = execute_dagster_graphql(read_context, RUNS_QUERY, variables={'selector': selector})
 
     # delete the second run
     result = execute_dagster_graphql(
@@ -187,9 +192,7 @@ def test_get_runs_over_graphql(graphql_context):
     assert result.data['deletePipelineRun']['runId'] == run_id_two
 
     # query it back out
-    result = execute_dagster_graphql(
-        read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
-    )
+    result = execute_dagster_graphql(read_context, RUNS_QUERY, variables={'selector': selector})
 
     # first is the same
     run_one_data = _get_runs_data(result, run_id_one)
@@ -226,9 +229,11 @@ def get_repo_at_time_1():
     def foo_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, foo_pipeline]
+
+    return evolving_repo
 
 
 def get_repo_at_time_2():
@@ -249,9 +254,11 @@ def get_repo_at_time_2():
     def bar_pipeline():
         solid_A()
 
-    return RepositoryDefinition(
-        name='evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline]
-    )
+    @repository
+    def evolving_repo():
+        return [evolving_pipeline, bar_pipeline]
+
+    return evolving_repo
 
 
 def test_runs_over_time():
@@ -265,11 +272,11 @@ def test_runs_over_time():
         ).run_id
         foo_run_id = execute_pipeline(repo_1.get_pipeline('foo_pipeline'), instance=instance).run_id
         evolve_a_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_A']),
+            repo_1.get_pipeline('evolving_pipeline').get_pipeline_subset_def({'solid_A'}),
             instance=instance,
         ).run_id
         evolve_b_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_B']),
+            repo_1.get_pipeline('evolving_pipeline').get_pipeline_subset_def({'solid_B'}),
             instance=instance,
         ).run_id
 
@@ -281,27 +288,27 @@ def test_runs_over_time():
         t1_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
 
         assert t1_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         assert t1_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         assert t1_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_A'],
+            'solidSelection': ['solid_A'],
         }
 
         assert t1_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_B'],
+            'solidSelection': ['solid_B'],
         }
 
         context_at_time_2 = define_context_for_file(__file__, 'get_repo_at_time_2', instance)
@@ -312,27 +319,27 @@ def test_runs_over_time():
         t2_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
 
         assert t2_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         assert t2_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_A'],
+            'solidSelection': ['solid_A'],
         }
         # pipeline name changed
         assert t2_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
         # subset no longer valid - b renamed
         assert t2_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_B'],
+            'solidSelection': ['solid_B'],
         }
 
 
@@ -347,11 +354,11 @@ def test_run_groups_over_time():
         ).run_id
         foo_run_id = execute_pipeline(repo_1.get_pipeline('foo_pipeline'), instance=instance).run_id
         evolve_a_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_A']),
+            repo_1.get_pipeline('evolving_pipeline').get_pipeline_subset_def({'solid_A'}),
             instance=instance,
         ).run_id
         evolve_b_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_B']),
+            repo_1.get_pipeline('evolving_pipeline').get_pipeline_subset_def({'solid_B'}),
             instance=instance,
         ).run_id
 
@@ -371,31 +378,31 @@ def test_run_groups_over_time():
 
         # test full_evolve_run_id
         assert t1_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         # test foo_run_id
         assert t1_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         # test evolve_a_run_id
         assert t1_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_A'],
+            'solidSelection': ['solid_A'],
         }
         assert t1_runs[evolve_a_run_id]['pipelineSnapshotId']
 
         # test evolve_b_run_id
         assert t1_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_B'],
+            'solidSelection': ['solid_B'],
         }
 
         context_at_time_2 = define_context_for_file(__file__, 'get_repo_at_time_2', instance)
@@ -413,16 +420,16 @@ def test_run_groups_over_time():
 
         # test full_evolve_run_id
         assert t2_runs[full_evolve_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
 
         # test evolve_a_run_id
         assert t2_runs[evolve_a_run_id]['pipeline'] == {
-            '__typename': 'Pipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_A'],
+            'solidSelection': ['solid_A'],
         }
         assert t2_runs[evolve_a_run_id]['pipelineSnapshotId']
 
@@ -440,15 +447,15 @@ def test_run_groups_over_time():
 
         # pipeline name changed
         assert t2_runs[foo_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'foo_pipeline',
-            'solidSubset': None,
+            'solidSelection': None,
         }
         # subset no longer valid - b renamed
         assert t2_runs[evolve_b_run_id]['pipeline'] == {
-            '__typename': 'UnknownPipeline',
+            '__typename': 'PipelineSnapshot',
             'name': 'evolving_pipeline',
-            'solidSubset': ['solid_B'],
+            'solidSelection': ['solid_B'],
         }
 
 
@@ -497,7 +504,7 @@ def test_run_group():
                 root_run_id=root_run_id,
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
-            execute_run(foo_pipeline, run, instance)
+            execute_run(InMemoryExecutablePipeline(foo_pipeline), run, instance)
             runs.append(run)
 
         context_at_time_1 = define_context_for_file(__file__, 'get_repo_at_time_1', instance)

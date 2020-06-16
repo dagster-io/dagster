@@ -84,7 +84,7 @@ def test_composite_basic_execution():
 def test_composite_config():
     called = {}
 
-    @solid(config=Field(String))
+    @solid(config_schema=Field(String))
     def configured(context):
         called['configured'] = True
         assert context.solid_config == 'yes'
@@ -352,7 +352,7 @@ def test_composite_config_driven_materialization():
         write_location = os.path.join(write_directory, 'wrap_one.json')
         execute_pipeline(
             composite_config_driven_materialization_pipeline,
-            environment_dict={
+            run_config={
                 'solids': {
                     'wrap_one': {'outputs': [{'result': {'json': {'path': write_location}}}]}
                 }

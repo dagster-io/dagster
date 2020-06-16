@@ -8,11 +8,11 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     composite_solid,
     execute_pipeline,
     lambda_solid,
     pipeline,
+    repository,
     solid,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -318,7 +318,7 @@ def test_output_map_fail():
 
 
 def test_deep_graph():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def download_num(context):
         return context.solid_config
 
@@ -416,7 +416,7 @@ def test_pipeline_has_solid_def():
     assert a_pipeline.has_solid_def('inner')
 
 
-def test_repositry_has_solid_def():
+def test_repository_has_solid_def():
     @composite_solid(output_defs=[OutputDefinition()])
     def inner():
         return add_one(return_one())
@@ -429,9 +429,11 @@ def test_repositry_has_solid_def():
     def a_pipeline():
         outer()
 
-    repo_def = RepositoryDefinition(name='has_solid_def_test', pipeline_defs=[a_pipeline])
+    @repository
+    def has_solid_def_test():
+        return [a_pipeline]
 
-    assert repo_def.solid_def_named('inner')
+    assert has_solid_def_test.solid_def_named('inner')
 
 
 def test_mapping_args_ordering():

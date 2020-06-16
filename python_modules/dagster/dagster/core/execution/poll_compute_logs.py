@@ -10,7 +10,7 @@ POLLING_INTERVAL = 0.1
 def current_process_is_orphaned(parent_pid):
     parent_pid = int(parent_pid)
     if sys.platform == 'win32':
-        import psutil
+        import psutil  # pylint: disable=import-error
 
         try:
             parent = psutil.Process(parent_pid)

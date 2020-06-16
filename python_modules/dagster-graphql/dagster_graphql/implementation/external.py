@@ -1,74 +1,63 @@
-import sys
-
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+    PipelineSelector,
+    RepositorySelector,
+)
 
-from .utils import UserFacingGraphQLError
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
-def get_full_external_pipeline_or_raise(graphene_info, pipeline_name):
+def get_full_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
-    if not graphene_info.context.legacy_has_external_pipeline(pipeline_name):
+    if not graphene_info.context.has_external_pipeline(selector):
         raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+            graphene_info.schema.type_named('PipelineNotFoundError')(selector=selector)
         )
 
-    return graphene_info.context.legacy_get_full_external_pipeline(pipeline_name)
+    return graphene_info.context.get_full_external_pipeline(selector)
 
 
-def get_external_pipeline_or_raise(graphene_info, pipeline_name, solid_subset):
+def get_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.inst_param(selector, 'selector', PipelineSelector)
 
     from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 
-    full_pipeline = get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
+    full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
-    if solid_subset is None:
+    if selector.solid_selection is None:
         return full_pipeline
 
-    for solid_name in solid_subset:
+    for solid_name in selector.solid_selection:
         if not full_pipeline.has_solid_invocation(solid_name):
             raise UserFacingGraphQLError(
                 DauphinInvalidSubsetError(
                     message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
-                        solid_name=solid_name, pipeline_name=pipeline_name
+                        solid_name=solid_name, pipeline_name=selector.pipeline_name
                     ),
                     pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
                 )
             )
-    try:
-        return graphene_info.context.legacy_get_external_pipeline(pipeline_name, solid_subset)
-    except DagsterInvalidDefinitionError:
-        # this handles the case when you construct a subset such that an unsatisfied
-        # input cannot be hydrate from config. Current this is only relevant for
-        # the in-process case. Once we add the out-of-process we will communicate
-        # this error through the communication channel and change what exception
-        # is thrown
-        raise UserFacingGraphQLError(
-            DauphinInvalidSubsetError(
-                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
-                pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
-            )
-        )
+
+    return graphene_info.context.get_subset_external_pipeline(selector)
 
 
-def ensure_valid_config(external_pipeline, mode, environment_dict):
+def ensure_valid_config(external_pipeline, mode, run_config):
     check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
     check.str_param(mode, 'mode')
-    # do not type check environment_dict so that validate_config_from_snap throws
+    # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
         config_schema_snapshot=external_pipeline.config_schema_snapshot,
         config_type_key=external_pipeline.root_config_key_for_mode(mode),
-        config_value=environment_dict,
+        config_value=run_config,
     )
 
     if not validated_config.success:
@@ -100,11 +89,11 @@ def ensure_valid_step_keys(full_external_execution_plan, step_keys):
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
+    graphene_info, external_pipeline, mode, run_config, step_keys_to_execute
 ):
-    full_external_execution_plan = graphene_info.context.legacy_get_external_execution_plan(
+    full_external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         step_keys_to_execute=None,
     )
@@ -114,9 +103,41 @@ def get_external_execution_plan_or_raise(
 
     ensure_valid_step_keys(full_external_execution_plan, step_keys_to_execute)
 
-    return graphene_info.context.legacy_get_external_execution_plan(
+    return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
+    )
+
+
+@capture_dauphin_error
+def fetch_repositories(graphene_info):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    return graphene_info.schema.type_named('RepositoryConnection')(
+        nodes=[
+            graphene_info.schema.type_named('Repository')(
+                repository=repository, repository_location=location
+            )
+            for location in graphene_info.context.repository_locations
+            for repository in location.get_repositories().values()
+        ]
+    )
+
+
+@capture_dauphin_error
+def fetch_repository(graphene_info, repository_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+
+    if graphene_info.context.has_repository_location(repository_selector.location_name):
+        repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
+        if repo_loc.has_repository(repository_selector.repository_name):
+            return graphene_info.schema.type_named('Repository')(
+                repository=repo_loc.get_repository(repository_selector.repository_name),
+                repository_location=repo_loc,
+            )
+
+    return graphene_info.schema.type_named('RepositoryNotFoundError')(
+        repository_selector.location_name, repository_selector.repository_name
     )

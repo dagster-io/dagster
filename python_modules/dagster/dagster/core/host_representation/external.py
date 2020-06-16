@@ -4,8 +4,13 @@ from dagster import check
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
-from .external_data import ExternalPipelineData, ExternalRepositoryData
-from .handle import PipelineHandle, RepositoryHandle
+from .external_data import (
+    ExternalPartitionSetData,
+    ExternalPipelineData,
+    ExternalRepositoryData,
+    ExternalScheduleData,
+)
+from .handle import PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -24,7 +29,10 @@ class ExternalRepository:
         self._pipeline_index_map = OrderedDict(
             (
                 external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(external_pipeline_data.pipeline_snapshot),
+                PipelineIndex(
+                    external_pipeline_data.pipeline_snapshot,
+                    external_pipeline_data.parent_pipeline_snapshot,
+                ),
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
@@ -46,12 +54,33 @@ class ExternalRepository:
     def has_external_pipeline(self, pipeline_name):
         return pipeline_name in self._pipeline_index_map
 
+    def get_external_schedule(self, schedule_name):
+        return ExternalSchedule(
+            self.external_repository_data.get_external_schedule_data(schedule_name), self._handle
+        )
+
+    def get_external_schedules(self):
+        return [
+            ExternalSchedule(external_schedule_data, self._handle)
+            for external_schedule_data in self.external_repository_data.external_schedule_datas
+        ]
+
+    def get_external_partition_set(self, partition_set_name):
+        return ExternalPartitionSet(
+            self.external_repository_data.get_external_partition_set_data(partition_set_name),
+            self._handle,
+        )
+
+    def get_external_partition_sets(self):
+        return [
+            ExternalPartitionSet(external_partition_set_data, self._handle)
+            for external_partition_set_data in self.external_repository_data.external_partition_set_datas
+        ]
+
     def get_full_external_pipeline(self, pipeline_name):
         check.str_param(pipeline_name, 'pipeline_name')
         return ExternalPipeline(
-            self.get_pipeline_index(pipeline_name),
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
-            solid_subset=None,
             repository_handle=self.handle,
         )
 
@@ -62,6 +91,16 @@ class ExternalRepository:
     def handle(self):
         return self._handle
 
+    def get_origin(self):
+        return self._handle.get_origin()
+
+    def get_origin_id(self):
+        '''
+        A means of identifying the repository this ExternalRepository represents based on
+        where it came from.
+        '''
+        return self.get_origin().get_id()
+
 
 class ExternalPipeline(RepresentedPipeline):
     '''
@@ -70,36 +109,46 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     '''
 
-    def __init__(self, pipeline_index, external_pipeline_data, solid_subset, repository_handle):
+    def __init__(self, external_pipeline_data, repository_handle):
         check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.inst_param(external_pipeline_data, 'external_pipeline_data', ExternalPipelineData)
 
-        super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
-
-        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        self._external_pipeline_data = check.inst_param(
-            external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
+        super(ExternalPipeline, self).__init__(
+            pipeline_index=PipelineIndex(
+                external_pipeline_data.pipeline_snapshot,
+                external_pipeline_data.parent_pipeline_snapshot,
+            )
         )
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-        self._solid_subset = (
-            None if solid_subset is None else check.list_param(solid_subset, 'solid_subset', str)
-        )
-        self._handle = PipelineHandle(self.pipeline_index.name, repository_handle)
+        self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
 
     @property
-    def solid_subset(self):
-        return self._solid_subset
+    def solid_selection(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
+    def solids_to_execute(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
 
     @property
     def active_presets(self):
-        return self._external_pipeline_data.active_presets
+        return list(self._active_preset_dict.values())
 
     @property
     def solid_names(self):
-        return self.pipeline_index.pipeline_snapshot.solid_names
+        return self._pipeline_index.pipeline_snapshot.solid_names
 
     def has_solid_invocation(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        return self.pipeline_index.has_solid_invocation(solid_name)
+        return self._pipeline_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name):
         check.str_param(preset_name, 'preset_name')
@@ -111,7 +160,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     def has_mode(self, mode_name):
         check.str_param(mode_name, 'mode_name')
-        return self.pipeline_index.has_mode_def(mode_name)
+        return self._pipeline_index.has_mode_def(mode_name)
 
     def root_config_key_for_mode(self, mode_name):
         check.opt_str_param(mode_name, 'mode_name')
@@ -120,11 +169,11 @@ class ExternalPipeline(RepresentedPipeline):
         ).root_config_key
 
     def get_default_mode_name(self):
-        return self.pipeline_index.get_default_mode_name()
+        return self._pipeline_index.get_default_mode_name()
 
     @property
     def tags(self):
-        return self.pipeline_index.pipeline_snapshot.tags
+        return self._pipeline_index.pipeline_snapshot.tags
 
     @property
     def computed_pipeline_snapshot_id(self):
@@ -137,6 +186,16 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def handle(self):
         return self._handle
+
+    def get_origin(self):
+        return self._handle.get_origin()
+
+    def get_origin_id(self):
+        return self.get_origin().get_id()
+
+    @property
+    def pipeline_snapshot(self):
+        return self._pipeline_index.pipeline_snapshot
 
 
 class ExternalExecutionPlan:
@@ -228,3 +287,81 @@ class ExternalExecutionPlan:
             ]
 
         return self._topological_step_levels
+
+
+class ExternalSchedule:
+    def __init__(self, external_schedule_data, handle):
+        self._external_schedule_data = check.inst_param(
+            external_schedule_data, 'external_schedule_data', ExternalScheduleData
+        )
+        self._handle = ScheduleHandle(
+            self._external_schedule_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+        )
+
+    @property
+    def name(self):
+        return self._external_schedule_data.name
+
+    @property
+    def cron_schedule(self):
+        return self._external_schedule_data.cron_schedule
+
+    @property
+    def solid_selection(self):
+        return self._external_schedule_data.solid_selection
+
+    @property
+    def pipeline_name(self):
+        return self._external_schedule_data.pipeline_name
+
+    @property
+    def mode(self):
+        return self._external_schedule_data.mode
+
+    @property
+    def partition_set_name(self):
+        return self._external_schedule_data.partition_set_name
+
+    @property
+    def environment_vars(self):
+        return self._external_schedule_data.environment_vars
+
+    @property
+    def handle(self):
+        return self._handle
+
+    def get_origin(self):
+        return self._handle.get_origin()
+
+    def get_origin_id(self):
+        return self.get_origin().get_id()
+
+
+class ExternalPartitionSet:
+    def __init__(self, external_partition_set_data, handle):
+        self._external_partition_set_data = check.inst_param(
+            external_partition_set_data, 'external_partition_set_data', ExternalPartitionSetData
+        )
+        self._handle = PartitionSetHandle(
+            external_partition_set_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+        )
+
+    @property
+    def name(self):
+        return self._external_partition_set_data.name
+
+    @property
+    def solid_selection(self):
+        return self._external_partition_set_data.solid_selection
+
+    @property
+    def partition_names(self):
+        return self._external_partition_set_data.partition_names
+
+    @property
+    def mode(self):
+        return self._external_partition_set_data.mode
+
+    @property
+    def pipeline_name(self):
+        return self._external_partition_set_data.pipeline_name

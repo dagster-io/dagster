@@ -1,18 +1,16 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
-import { RunFragment } from "../runs/types/RunFragment";
 import { Spinner, Colors } from "@blueprintjs/core";
 import { GaantChartMode } from "./Constants";
 import { boxStyleFor } from "./GaantChartLayout";
 import { formatElapsedTime } from "../Util";
+import { RunGroupPanel } from "./RunGroupPanel";
 
 interface GaantStatusPanelProps {
-  plan: GaantChartExecutionPlanFragment;
   metadata: IRunMetadataDict;
   selectedSteps: string[];
-  run?: RunFragment;
+  runId: string;
   nowMs: number;
 
   onClickStep?: (step: string, evt: React.MouseEvent<any>) => void;
@@ -21,6 +19,7 @@ interface GaantStatusPanelProps {
 }
 
 export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = ({
+  runId,
   nowMs,
   metadata,
   selectedSteps,
@@ -52,6 +51,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <RunGroupPanel runId={runId} />
       <SectionHeader>Preparing</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
       {preparing.length === 0 && (

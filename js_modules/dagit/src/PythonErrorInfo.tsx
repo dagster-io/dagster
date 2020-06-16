@@ -90,16 +90,15 @@ const Trace = styled.div`
   font-family: Consolas, Menlo, monospace;
   font-size: 0.85em;
   white-space: pre;
-  overflow-x: auto;
   padding-bottom: 1em;
 `;
 
 const ErrorWrapper = styled.div`
-  background-color: rgba(206, 17, 38, 0.05);
+  background-color: #fdf2f4;
   border: 1px solid #d17257;
   border-radius: 3px;
   max-width: 90vw;
-  max-height: 80vh;
+  max-height: calc(100vh - 250px);
   padding: 1em 2em;
   overflow: auto;
 `;

@@ -1,17 +1,4 @@
-import boto3
-from botocore.handlers import disable_signing
-
-
-def create_s3_session(signed=True, region_name=None, use_ssl=True, verify=None, endpoint_url=None):
-    s3 = boto3.resource(  # pylint:disable=C0103
-        's3', region_name=region_name, use_ssl=use_ssl, verify=verify, endpoint_url=endpoint_url
-    ).meta.client
-    if not signed:
-        s3.meta.events.register('choose-signer.s3.*', disable_signing)
-    return s3
-
-
-class S3Logger(object):
+class S3Callback(object):
     def __init__(self, logger, bucket, key, filename, size):
         self._logger = logger
         self._bucket = bucket

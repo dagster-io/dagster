@@ -16,7 +16,7 @@
     </g>
   </g>
   <g opacity="0.55"></g>
-  <g>
+  <g data-tooltip="cache_file_from_s3" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="100" y="130" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="165.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="178.56" height="16" dominant-baseline="hanging">cache_file_from_s3</text>
     <g>
       <title>s3_coordinate: S3Coordinate</title>
@@ -36,7 +36,7 @@
     <ellipse cx="450" cy="130" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
     <ellipse cx="450" cy="130" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="445" y="124.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
   </g>
-  <g>
+  <g data-tooltip="ingest_csv_file_handle_to_spark" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="100" y="560" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="595.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="307.52" height="16" dominant-baseline="hanging">ingest_csv_file_handle_to_spark</text>
     <g>
       <title>csv_file_handle: FileHandle
@@ -54,7 +54,7 @@
       <rect x="129" y="645.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="133" y="652" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" height="14" dominant-baseline="hanging">PySparkDataFrame</text>
     </g>
   </g>
-  <g>
+  <g data-tooltip="unzip_file_handle" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="100" y="363" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="398.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="168.64" height="16" dominant-baseline="hanging">unzip_file_handle</text>
     <g>
       <title>archive_file_handle: FileHandle

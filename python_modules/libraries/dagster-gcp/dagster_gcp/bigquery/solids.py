@@ -50,7 +50,7 @@ def bq_solid_for_queries(sql_queries):
         name=name,
         input_defs=[InputDefinition(_START, Nothing)],
         output_defs=[OutputDefinition(List[DataFrame])],
-        config=define_bigquery_query_config(),
+        config_schema=define_bigquery_query_config(),
         required_resource_keys={'bigquery'},
         tags={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
     )
@@ -82,7 +82,7 @@ BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 @solid(
     input_defs=[InputDefinition('paths', List[str])],
     output_defs=[OutputDefinition(Nothing)],
-    config=BIGQUERY_LOAD_CONFIG,
+    config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_gcs_paths_to_bq(context, paths):
@@ -92,7 +92,7 @@ def import_gcs_paths_to_bq(context, paths):
 @solid(
     input_defs=[InputDefinition('df', DataFrame)],
     output_defs=[OutputDefinition(Nothing)],
-    config=BIGQUERY_LOAD_CONFIG,
+    config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_df_to_bq(context, df):
@@ -102,7 +102,7 @@ def import_df_to_bq(context, df):
 @solid(
     input_defs=[InputDefinition('path', str)],
     output_defs=[OutputDefinition(Nothing)],
-    config=BIGQUERY_LOAD_CONFIG,
+    config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_file_to_bq(context, path):
@@ -119,14 +119,26 @@ def _execute_load_in_source(context, source, source_name):
         % (cfg.to_api_repr() if cfg else '(no config provided)', source)
     )
 
-    context.resources.bigquery.load_table_from_source(
-        source_name, source, destination, job_config=cfg
-    ).result()
+    if source_name == BigQueryLoadSource.DataFrame:
+        context.resources.bigquery.load_table_from_dataframe(
+            source, destination, job_config=cfg
+        ).result()
+
+    # Load from file. See: https://cloud.google.com/bigquery/docs/loading-data-local
+    elif source_name == BigQueryLoadSource.File:
+        with open(source, 'rb') as file_obj:
+            context.resources.bigquery.load_table_from_file(
+                file_obj, destination, job_config=cfg
+            ).result()
+
+    # Load from GCS. See: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage
+    elif source_name == BigQueryLoadSource.GCS:
+        context.resources.biquery.load_table_from_uri(source, destination, job_config=cfg).result()
 
 
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
-    config=define_bigquery_create_dataset_config(),
+    config_schema=define_bigquery_create_dataset_config(),
     required_resource_keys={'bigquery'},
 )
 def bq_create_dataset(context):
@@ -143,7 +155,7 @@ def bq_create_dataset(context):
 
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
-    config=define_bigquery_delete_dataset_config(),
+    config_schema=define_bigquery_delete_dataset_config(),
     required_resource_keys={'bigquery'},
 )
 def bq_delete_dataset(context):

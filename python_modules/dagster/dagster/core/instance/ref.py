@@ -145,7 +145,13 @@ class InstanceRef(
         )
 
         scheduler_data = configurable_class_data_or_default(config_value, 'scheduler', None)
-        run_launcher_data = configurable_class_data_or_default(config_value, 'run_launcher', None)
+        run_launcher_data = configurable_class_data_or_default(
+            config_value,
+            'run_launcher',
+            ConfigurableClassData(
+                'dagster.core.launcher.cli_api_run_launcher', 'CliApiRunLauncher', yaml.dump({}),
+            ),
+        )
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,

@@ -7,7 +7,7 @@ import six
 
 from dagster import check
 
-DEFAULT_WAIT_TIMEOUT = 600.0  # 10 minutes
+DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 1.0  # 1 second
 DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
 

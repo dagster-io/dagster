@@ -1,6 +1,6 @@
 COMPOSITES_QUERY = '''
-query CompositesQuery {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
+query CompositesQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       name
@@ -10,6 +10,10 @@ query CompositesQuery {
           ...SolidInfo
         }
       }
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -61,8 +65,8 @@ fragment SolidInfo on Solid {
 '''
 
 PARENT_ID_QUERY = '''
-query withParent($parentHandleID: String) {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
+query withParent($selector: PipelineSelector!, $parentHandleID: String) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       name
@@ -75,8 +79,8 @@ query withParent($parentHandleID: String) {
 '''
 
 SOLID_ID_QUERY = '''
-query solidFetch($id: String!) {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
+query solidFetch($selector: PipelineSelector!, $id: String!) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       name
@@ -89,8 +93,8 @@ query solidFetch($id: String!) {
 '''
 
 COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = '''
-query CompositesQuery {
-  pipelineOrError(params: { name: "composites_pipeline" }) {
+query CompositesQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       name

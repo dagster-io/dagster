@@ -1,3 +1,4 @@
+import logging
 from abc import abstractmethod
 from collections import defaultdict
 
@@ -5,6 +6,7 @@ import six
 import sqlalchemy as db
 
 from dagster import check, seven
+from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -13,7 +15,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import EventLogStorage
+from .base import AssetAwareEventLogStorage, EventLogStorage
 from .schema import SqlEventLogStorageTable
 
 
@@ -45,13 +47,15 @@ class SqlEventLogStorage(EventLogStorage):
         '''
 
         dagster_event_type = None
-        asset_key = None
+        asset_key_str = None
         step_key = event.step_key
 
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
             step_key = event.dagster_event.step_key
-            asset_key = event.dagster_event.asset_key
+            if event.dagster_event.asset_key:
+                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                asset_key_str = event.dagster_event.asset_key.to_string()
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -60,7 +64,7 @@ class SqlEventLogStorage(EventLogStorage):
             dagster_event_type=dagster_event_type,
             timestamp=utc_datetime_from_timestamp(event.timestamp),
             step_key=step_key,
-            asset_key=asset_key,
+            asset_key=asset_key_str,
         )
 
     def store_event(self, event):
@@ -299,8 +303,13 @@ class SqlEventLogStorage(EventLogStorage):
         check.int_param(record_id, 'record_id')
         check.inst_param(event, 'event', EventRecord)
         dagster_event_type = None
+        asset_key_str = None
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
+            if event.dagster_event.asset_key:
+                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                asset_key_str = event.dagster_event.asset_key.to_string()
+
         with self.connect(run_id=event.run_id) as conn:
             conn.execute(
                 SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
@@ -310,6 +319,7 @@ class SqlEventLogStorage(EventLogStorage):
                     dagster_event_type=dagster_event_type,
                     timestamp=utc_datetime_from_timestamp(event.timestamp),
                     step_key=event.step_key,
+                    asset_key=asset_key_str,
                 )
             )
 
@@ -325,3 +335,78 @@ class SqlEventLogStorage(EventLogStorage):
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
             return conn.execute(query).fetchone()
+
+
+class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage):
+    @abstractmethod
+    def connect(self, run_id=None):
+        pass
+
+    @abstractmethod
+    def upgrade(self):
+        pass
+
+    def _add_cursor_limit_to_query(self, query, cursor, limit):
+        ''' Helper function to deal with cursor/limit pagination args '''
+
+        if cursor:
+            cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == cursor
+            )
+            query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
+
+        if limit:
+            query = query.limit(limit)
+
+        query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+        return query
+
+    def get_all_asset_keys(self):
+        query = db.select([SqlEventLogStorageTable.c.asset_key]).distinct()
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key]
+
+    def get_asset_events(self, asset_key, cursor=None, limit=None):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        asset_key_str = asset_key.to_string()
+        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
+            SqlEventLogStorageTable.c.asset_key == asset_key_str
+        )
+        query = self._add_cursor_limit_to_query(query, cursor, limit)
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        events = []
+        for row_id, json_str in results:
+            try:
+                event_record = deserialize_json_to_dagster_namedtuple(json_str)
+                if not isinstance(event_record, EventRecord):
+                    logging.warning(
+                        'Could not resolve asset event record as EventRecord for id `{}`.'.format(
+                            row_id
+                        )
+                    )
+                    continue
+                events.append(event_record)
+            except seven.JSONDecodeError:
+                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
+        return events
+
+    def get_asset_run_ids(self, asset_key):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        asset_key_str = asset_key.to_string()
+        query = (
+            db.select(
+                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
+            )
+            .where(SqlEventLogStorageTable.c.asset_key == asset_key_str)
+            .group_by(SqlEventLogStorageTable.c.run_id,)
+            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
+        )
+
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [run_id for (run_id, _timestamp) in results]

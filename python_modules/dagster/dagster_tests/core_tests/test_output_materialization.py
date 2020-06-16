@@ -345,7 +345,7 @@ def test_basic_yield_multiple_materializations():
 
     pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
     result = execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
+        pipeline_def, run_config={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
     )
     assert result.success
 
@@ -377,5 +377,5 @@ def test_basic_bad_output_materialization():
 
     with pytest.raises(DagsterInvariantViolationError, match='You must return a Materialization'):
         execute_pipeline(
-            pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
+            pipeline_def, run_config={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
         )

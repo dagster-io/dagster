@@ -4,7 +4,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 
 
 def test_mode_snap(snapshot):
-    @resource(config={'foo': str})
+    @resource(config_schema={'foo': str})
     def a_resource(_):
         pass
 
@@ -12,7 +12,7 @@ def test_mode_snap(snapshot):
     def no_config_resource(_):
         pass
 
-    @logger(config={'bar': str})
+    @logger(config_schema={'bar': str})
     def a_logger(_):
         pass
 

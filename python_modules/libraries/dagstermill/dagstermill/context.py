@@ -49,9 +49,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.run_id
 
     @property
-    def environment_dict(self):
-        '''dict: The environment_dict for the context.'''
-        return self._pipeline_context.environment_dict
+    def run_config(self):
+        '''dict: The run_config for the context.'''
+        return self._pipeline_context.run_config
 
     @property
     def environment_config(self):

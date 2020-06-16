@@ -293,6 +293,10 @@ class SolidExecutionResult(object):
         return self.step_events_by_kind.get(StepKind.COMPUTE, [])
 
     @property
+    def step_events(self):
+        return self.compute_step_events
+
+    @property
     def materializations_during_compute(self):
         '''List[Materialization]: All materializations yielded by the solid.'''
         return [
@@ -382,7 +386,7 @@ class SolidExecutionResult(object):
             with self.reconstruct_context() as context:
                 execution_plan = create_execution_plan(
                     pipeline=context.pipeline,
-                    environment_dict=context.environment_dict,
+                    run_config=context.run_config,
                     mode=context.pipeline_run.mode,
                     step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
                 )
@@ -435,7 +439,7 @@ class SolidExecutionResult(object):
                     with self.reconstruct_context() as context:
                         execution_plan = create_execution_plan(
                             pipeline=context.pipeline,
-                            environment_dict=context.environment_dict,
+                            run_config=context.run_config,
                             mode=context.pipeline_run.mode,
                             step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
                         )

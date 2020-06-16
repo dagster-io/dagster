@@ -501,7 +501,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
     }
 }
 
-snapshots['test_invalid_config_fetch_execute_plan 1'] = {
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_memory_instance_in_process_env] 1'] = {
     'executionPlanOrError': {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
@@ -513,8 +513,8 @@ snapshots['test_invalid_config_fetch_execute_plan 1'] = {
     }
 }
 
-snapshots['test_invalid_config_execute_plan 1'] = {
-    'executePlan': {
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_memory_instance_out_of_process_env] 1'] = {
+    'executionPlanOrError': {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {
@@ -525,9 +525,14 @@ snapshots['test_invalid_config_execute_plan 1'] = {
     }
 }
 
-snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
-    'executePlan': {
-        '__typename': 'PipelineNotFoundError',
-        'pipelineName': 'nope'
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_memory_instance_multi_location] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
     }
 }

@@ -6,6 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -19,7 +20,7 @@ class Partition(namedtuple('_Partition', ('value name'))):
     Partition is the representation of a logical slice across an axis of a pipeline's work
 
     Args:
-        partition (Any): The object for this partition
+        value (Any): The object for this partition
         name (str): Name for this partition
     '''
 
@@ -76,7 +77,8 @@ class PartitionSetDefinition(
     namedtuple(
         '_PartitionSetDefinition',
         (
-            'name pipeline_name partition_fn solid_subset mode user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+            'name pipeline_name partition_fn solid_selection mode '
+            'user_defined_run_config_fn_for_partition user_defined_tags_fn_for_partition'
         ),
     )
 ):
@@ -88,15 +90,15 @@ class PartitionSetDefinition(
         pipeline_name (str): The name of the pipeline definition
         partition_fn (Callable[void, List[Partition]]): User-provided function to define the set of
             valid partition objects.
-        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-            unaliased solids or of their aliases if aliased) to execute with this partition.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
-        environment_dict_fn_for_partition (Callable[[Partition], [Dict]]): A
-            function that takes a Partition and returns the environment
+        run_config_fn_for_partition (Callable[[Partition], [Dict]]): A
+            function that takes a :py:class:`~dagster.Partition` and returns the environment
             configuration that parameterizes the execution for this partition, as a dict
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
-            takes a Partition and returns a list of key value pairs that will be
-            added to the generated run for this partition.
+            takes a :py:class:`~dagster.Partition` and returns a list of key value pairs that will
+            be added to the generated run for this partition.
     '''
 
     def __new__(
@@ -104,10 +106,11 @@ class PartitionSetDefinition(
         name,
         pipeline_name,
         partition_fn,
-        solid_subset=None,
+        solid_selection=None,
         mode=None,
-        environment_dict_fn_for_partition=lambda _partition: {},
+        run_config_fn_for_partition=None,
         tags_fn_for_partition=lambda _partition: {},
+        environment_dict_fn_for_partition=None,
     ):
         def _wrap(x):
             if isinstance(x, Partition):
@@ -118,6 +121,14 @@ class PartitionSetDefinition(
                 'Expected <Partition> | <str>, received {type}'.format(type=type(x))
             )
 
+        run_config_fn_for_partition = canonicalize_backcompat_args(
+            run_config_fn_for_partition,
+            'run_config_fn_for_partition',
+            environment_dict_fn_for_partition,
+            'environment_dict_fn_for_partition',
+            '0.9.0',
+        ) or (lambda _partition: {})
+
         return super(PartitionSetDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
@@ -125,18 +136,24 @@ class PartitionSetDefinition(
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, 'partition_fn')()
             ],
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, 'solid_selection', of_type=str
+            ),
             mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
-            user_defined_environment_dict_fn_for_partition=check.callable_param(
-                environment_dict_fn_for_partition, 'environment_dict_fn_for_partition'
+            user_defined_run_config_fn_for_partition=check.callable_param(
+                run_config_fn_for_partition, 'run_config_fn_for_partition'
             ),
             user_defined_tags_fn_for_partition=check.callable_param(
                 tags_fn_for_partition, 'tags_fn_for_partition'
             ),
         )
 
+    def run_config_for_partition(self, partition):
+        return self.user_defined_run_config_fn_for_partition(partition)
+
     def environment_dict_for_partition(self, partition):
-        return self.user_defined_environment_dict_fn_for_partition(partition)
+        rename_warning('run_config_for_partition', 'environment_dict_for_partition', '0.9.0')
+        return self.run_config_for_partition(partition)
 
     def tags_for_partition(self, partition):
         user_tags = self.user_defined_tags_fn_for_partition(partition)
@@ -148,6 +165,16 @@ class PartitionSetDefinition(
 
     def get_partitions(self):
         return self.partition_fn()
+
+    def get_partition(self, name):
+        for partition in self.get_partitions():
+            if partition.name == name:
+                return partition
+
+        check.failed('Partition name {} not found!'.format(name))
+
+    def get_partition_names(self):
+        return [part.name for part in self.get_partitions()]
 
     def create_schedule_definition(
         self,
@@ -166,11 +193,11 @@ class PartitionSetDefinition(
             determines whether a schedule should execute. Defaults to a function that always returns
             ``True``.
             partition_selector (Callable[PartitionSet], Partition): A partition selector for the
-                schedule
-            environment_vars (Optional[dict]): The environment variables to set for the schedule
+                schedule.
+            environment_vars (Optional[dict]): The environment variables to set for the schedule.
 
         Returns:
-            ScheduleDefinition -- The generated ScheduleDefinition for the partition selector
+            ScheduleDefinition: The generated ScheduleDefinition for the partition selector
         '''
 
         check.str_param(schedule_name, 'schedule_name')
@@ -189,7 +216,7 @@ class PartitionSetDefinition(
             else:
                 return should_execute(context)
 
-        def _environment_dict_fn_wrapper(context):
+        def _run_config_fn_wrapper(context):
             check.inst_param(context, 'context', ScheduleExecutionContext)
             selected_partition = partition_selector(context, self)
             if not selected_partition:
@@ -201,7 +228,7 @@ class PartitionSetDefinition(
                     )
                 )
 
-            return self.environment_dict_for_partition(selected_partition)
+            return self.run_config_for_partition(selected_partition)
 
         def _tags_fn_wrapper(context):
             check.inst_param(context, 'context', ScheduleExecutionContext)
@@ -221,9 +248,9 @@ class PartitionSetDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=self.pipeline_name,
-            environment_dict_fn=_environment_dict_fn_wrapper,
+            run_config_fn=_run_config_fn_wrapper,
             tags_fn=_tags_fn_wrapper,
-            solid_subset=self.solid_subset,
+            solid_selection=self.solid_selection,
             mode=self.mode,
             should_execute=_should_execute_wrapper,
             environment_vars=environment_vars,
@@ -239,21 +266,25 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         name,
         cron_schedule,
         pipeline_name,
-        environment_dict_fn,
         tags_fn,
-        solid_subset,
+        solid_selection,
         mode,
         should_execute,
         environment_vars,
         partition_set,
+        environment_dict_fn=None,
+        run_config_fn=None,
     ):
+        run_config_fn = canonicalize_backcompat_args(
+            run_config_fn, 'run_config_fn', environment_dict_fn, 'environment_dict_fn', '0.9.0'
+        )
         super(PartitionScheduleDefinition, self).__init__(
             name=name,
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
-            environment_dict_fn=environment_dict_fn,
+            run_config_fn=run_config_fn,
             tags_fn=tags_fn,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
             mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,

@@ -2,7 +2,7 @@ import os
 import sys
 from enum import Enum
 
-from defines import SupportedPython, SupportedPythons
+from defines import SupportedPythons
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +15,7 @@ DOCKER_PLUGIN = "docker#v3.2.0"
 ECR_PLUGIN = "ecr#v2.0.0"
 
 # Update this when releasing a new version of our integration image
-INTEGRATION_IMAGE_VERSION = "2020-02-14T163217"
+INTEGRATION_IMAGE_VERSION = "2020-06-02T014210"
 
 AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
 AWS_ECR_REGION = 'us-west-1'
@@ -64,15 +64,14 @@ class StepBuilder(object):
             else:
                 commands.append(entry)
 
-        self._step["commands"] = map(lambda cmd: "time " + cmd, commands)
+        self._step["commands"] = ["time " + cmd for cmd in commands]
         return self
 
     def _base_docker_settings(self):
         return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True, "mount-ssh-agent": True}
 
     def on_integration_image(self, ver, env=None):
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        if ver not in SupportedPythons + [SupportedPython.V3_8]:
+        if ver not in SupportedPythons:
             raise Exception(
                 'Unsupported python version for integration image {ver}'.format(ver=ver)
             )

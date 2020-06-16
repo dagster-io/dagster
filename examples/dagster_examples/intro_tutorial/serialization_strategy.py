@@ -81,13 +81,13 @@ def serialization_strategy_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         },
         'storage': {'filesystem': {}},
     }
     result = execute_pipeline(
-        serialization_strategy_pipeline, environment_dict=environment_dict
+        serialization_strategy_pipeline, run_config=run_config
     )
     assert result.success

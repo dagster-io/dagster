@@ -6,7 +6,7 @@ import uuid
 import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
-from dagster_airflow.factory import make_airflow_dag_containerized_for_handle
+from dagster_airflow.factory import make_airflow_dag_containerized_for_recon_repo
 from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     execute_tasks_in_dag,
@@ -30,7 +30,9 @@ def test_fs_storage_no_explicit_base_dir(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
@@ -48,7 +50,9 @@ def test_fs_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem.yaml'),
@@ -67,7 +71,9 @@ def test_s3_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_s3.yaml'),
@@ -86,7 +92,9 @@ def test_gcs_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_gcs.yaml'),
@@ -104,7 +112,9 @@ def test_skip_operator(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'test_pipelines.repo', 'define_demo_execution_repo'
+        ),
         environment_yaml=[os.path.join(environments_path, 'env_filesystem.yaml')],
         op_kwargs={'host_tmp_dir': '/tmp'},
         image=dagster_docker_image,
@@ -115,18 +125,20 @@ def test_skip_operator(
 @requires_airflow_db
 def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
-    handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)
+    recon_repo = ReconstructableRepository.for_module(
+        'test_pipelines.repo', 'define_demo_execution_repo'
+    )
     environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]
-    environment_dict = load_yaml_from_glob_list(environment_yaml)
+    run_config = load_yaml_from_glob_list(environment_yaml)
 
     run_id = make_new_run_id()
     execution_date = timezone.utcnow()
 
-    dag, tasks = make_airflow_dag_containerized_for_handle(
-        handle, pipeline_name, dagster_docker_image, environment_dict
+    dag, tasks = make_airflow_dag_containerized_for_recon_repo(
+        recon_repo, pipeline_name, dagster_docker_image, run_config
     )
 
     with pytest.raises(AirflowException) as exc_info:

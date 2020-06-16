@@ -4,10 +4,10 @@ import datetime
 
 from dagster import (
     PresetDefinition,
-    RepositoryDefinition,
     daily_schedule,
     hourly_schedule,
     pipeline,
+    repository,
     schedule,
     solid,
 )
@@ -71,7 +71,7 @@ def save_metrics(context, data_path):
     preset_defs=[
         PresetDefinition(
             name="test",
-            environment_dict={
+            run_config={
                 "solids": {
                     "save_metrics": {
                         "inputs": {"data_path": {"value": "s3://bucket-name/test_data"}}
@@ -94,7 +94,7 @@ def rollup_data(context, data_path):
     preset_defs=[
         PresetDefinition(
             name="test",
-            environment_dict={
+            run_config={
                 "solids": {
                     "rollup_data": {
                         "inputs": {"data_path": {"value": "s3://bucket-name/test_data"}}
@@ -118,9 +118,6 @@ def test_pipeline():
     test_solid()
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='experimental_repository',
-        pipeline_defs=[test_pipeline, metrics_pipeline, rollup_pipeline],
-        schedule_defs=define_schedules(),
-    )
+@repository
+def experimental_repository():
+    return [test_pipeline, metrics_pipeline, rollup_pipeline] + define_schedules()

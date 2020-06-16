@@ -5,7 +5,7 @@ import os
 import shutil
 
 import six
-from dagster_aws.s3 import S3Logger, s3_resource
+from dagster_aws.s3 import S3Callback, s3_resource
 from dagster_snowflake import snowflake_resource
 from dagster_spark import create_spark_solid, spark_resource
 
@@ -77,10 +77,10 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
         )
 
         headers = session.head_object(Bucket=bucket, Key=key)
-        logger = S3Logger(
+        callback = S3Callback(
             context.log.debug, bucket, key, target_file, int(headers['ContentLength'])
         )
-        session.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=logger)
+        session.download_file(Bucket=bucket, Key=key, Filename=target_file, Callback=callback)
     return target_file
 
 
@@ -88,7 +88,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
 # See https://github.com/dagster-io/dagster/issues/1476
 @solid(
     name='download_from_s3_to_file',
-    config={
+    config_schema={
         'bucket': Field(String, description='S3 bucket name'),
         'key': Field(String, description='S3 key name'),
         'target_folder': Field(

@@ -133,12 +133,6 @@ doctest:
 livehtml:
 	sphinx-autobuild -a -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-gatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn build && cd ..
-
-livegatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn develop
-
 buildnext:
 	make clean && make json
 	rm -rf next/src/data
@@ -151,8 +145,8 @@ buildnext:
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
 root_build:
-	NODE_ENV=production make build_next_default version=0.7.14
-	NODE_ENV=production make build_next_version version=0.7.14
+	NODE_ENV=production make build_next_default version=0.8.1
+	NODE_ENV=production make build_next_version version=0.8.1
 
 build_next_master:
 	yarn --cwd next --production=false

@@ -30,7 +30,7 @@ class LogTestFileHandler(logging.Handler):
             fd.write(seven.json.dumps(record.__dict__) + '\n')
 
 
-@logger(config={'name': String, 'log_level': String, 'file_path': String})
+@logger(config_schema={'name': String, 'log_level': String, 'file_path': String})
 def test_file_logger(init_context):
     klass = logging.getLoggerClass()
     logger_ = klass(

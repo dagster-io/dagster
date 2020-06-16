@@ -91,8 +91,8 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         ]
         asset_keys = OrderedDict()
         for event in asset_events:
-            asset_keys[event.asset_key] = True
-        return list(asset_keys.keys())
+            asset_keys['/'.join(event.asset_key.path)] = event.asset_key
+        return list(asset_keys.values())
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
         asset_events = []

@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: SidebarTabbedContainerSolidQuery
 // ====================================================
@@ -595,6 +597,7 @@ export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solid
 
 export interface SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
   solidHandle: SidebarTabbedContainerSolidQuery_pipelineOrError_Pipeline_solidHandle | null;
 }
@@ -606,6 +609,6 @@ export interface SidebarTabbedContainerSolidQuery {
 }
 
 export interface SidebarTabbedContainerSolidQueryVariables {
-  pipeline: string;
+  selector: PipelineSelector;
   handleID: string;
 }

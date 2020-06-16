@@ -32,7 +32,7 @@ CELERY_CONFIG = {
 }
 
 
-@executor(name='celery', config=CELERY_CONFIG)
+@executor(name='celery', config_schema=CELERY_CONFIG)
 def celery_executor(init_context):
     '''Celery-based executor.
 

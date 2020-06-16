@@ -9,6 +9,10 @@ import { SolidCard } from "./SolidCard";
 import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
 import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
 import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
+import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;
@@ -29,20 +33,33 @@ export const UsedSolidDetails: React.FunctionComponent<{
   name: string;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }> = ({ name, onClickInvocation }) => {
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
+  const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<UsedSolidDetailsQuery>(
     USED_SOLID_DETAILS_QUERY,
     {
-      variables: { name }
+      skip: !repository || !repositoryLocation,
+      variables: {
+        name,
+        repositorySelector
+      }
     }
   );
 
   return (
     <Loading queryResult={queryResult}>
-      {({ usedSolid }) => {
-        if (!usedSolid) {
+      {({ repositoryOrError }) => {
+        if (
+          !(
+            repositoryOrError?.__typename === "Repository" &&
+            repositoryOrError.usedSolid
+          )
+        ) {
           return null;
         }
-
+        const usedSolid = repositoryOrError.usedSolid;
         return (
           <>
             <SolidCard definition={usedSolid.definition} />
@@ -65,20 +82,28 @@ export const UsedSolidDetails: React.FunctionComponent<{
 };
 
 export const USED_SOLID_DETAILS_QUERY = gql`
-  query UsedSolidDetailsQuery($name: String!) {
-    usedSolid(name: $name) {
-      __typename
-      definition {
-        ...SolidCardSolidDefinitionFragment
-        ...SidebarSolidDefinitionFragment
-      }
-      invocations {
-        __typename
-        pipeline {
-          name
-        }
-        solidHandle {
-          handleID
+  query UsedSolidDetailsQuery(
+    $name: String!
+    $repositorySelector: RepositorySelector!
+  ) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      ... on Repository {
+        id
+        usedSolid(name: $name) {
+          __typename
+          definition {
+            ...SolidCardSolidDefinitionFragment
+            ...SidebarSolidDefinitionFragment
+          }
+          invocations {
+            __typename
+            pipeline {
+              name
+            }
+            solidHandle {
+              handleID
+            }
+          }
         }
       }
     }

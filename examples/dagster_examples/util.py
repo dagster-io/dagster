@@ -7,7 +7,7 @@ from dagster import Field, OutputDefinition, String, solid
 
 @solid(
     name='download_file',
-    config={
+    config_schema={
         'url': Field(String, description='The URL from which to download the file'),
         'path': Field(String, description='The path to which to download the file'),
     },

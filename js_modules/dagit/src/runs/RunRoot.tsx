@@ -25,7 +25,7 @@ export const RunById: React.FunctionComponent<{
   });
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run client={client} run={undefined} />;
+    return <Run client={client} run={undefined} runId={runId} />;
   }
 
   if (data.pipelineRunOrError.__typename !== "PipelineRun") {
@@ -40,7 +40,7 @@ export const RunById: React.FunctionComponent<{
     );
   }
 
-  return <Run client={client} run={data.pipelineRunOrError} />;
+  return <Run client={client} run={data.pipelineRunOrError} runId={runId} />;
 };
 
 export const RUN_ROOT_QUERY = gql`
@@ -52,6 +52,7 @@ export const RUN_ROOT_QUERY = gql`
           __typename
           ... on PipelineReference {
             name
+            solidSelection
           }
         }
         ...RunFragment

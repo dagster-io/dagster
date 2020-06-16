@@ -7,7 +7,7 @@ def test_split():
     res = execute_solid(
         split_cereals,
         input_values={'cereals': []},
-        environment_dict={
+        run_config={
             'solids': {'split_cereals': {'config': {'process_hot': False, 'process_cold': False}}}
         },
     )

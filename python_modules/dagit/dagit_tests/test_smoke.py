@@ -4,30 +4,48 @@ import json
 
 from dagit import app
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
+
+SMOKE_TEST_QUERY = '''
+{
+    repositoriesOrError {
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on RepositoryConnection {
+            nodes {
+                pipelines {
+                    name
+                }
+            }
+        }
+    }
+}
+'''
 
 
 def test_smoke_app():
-    flask_app = app.create_app_with_reconstructable_repo(
-        ReconstructableRepository.for_module(
-            module='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
+    flask_app = app.create_app_from_workspace(
+        get_workspace_from_kwargs(
+            dict(
+                module_name='dagster_examples.intro_tutorial.repos',
+                definition='hello_cereal_repository',
+            )
         ),
         DagsterInstance.ephemeral(),
     )
     client = flask_app.test_client()
 
-    result = client.post(
-        '/graphql',
-        data={
-            'query': 'query { pipelinesOrError { ... on PipelineConnection { nodes { name } } } }'
-        },
-    )
+    result = client.post('/graphql', data={'query': SMOKE_TEST_QUERY},)
     data = json.loads(result.data.decode('utf-8'))
-    assert len(data['data']['pipelinesOrError']['nodes']) == 2
-    assert {node_data['name'] for node_data in data['data']['pipelinesOrError']['nodes']} == set(
-        ['hello_cereal_pipeline', 'complex_pipeline']
-    )
+    assert len(data['data']['repositoriesOrError']['nodes']) == 1
+    assert len(data['data']['repositoriesOrError']['nodes'][0]['pipelines']) == 2
+    assert {
+        node_data['name']
+        for node_data in data['data']['repositoriesOrError']['nodes'][0]['pipelines']
+    } == set(['hello_cereal_pipeline', 'complex_pipeline'])
 
     result = client.get('/graphql')
     assert result.status_code == 400

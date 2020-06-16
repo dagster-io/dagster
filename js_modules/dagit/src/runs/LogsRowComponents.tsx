@@ -27,7 +27,7 @@ export const Row = styled.div<{ level: LogLevel }>`
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
+  border-top: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props => bgcolorForLevel(props.level)};
   &:hover {
     background: white;
@@ -76,10 +76,12 @@ export const SolidColumn = (props: { stepKey: string | false | null }) => {
         ? parts.map((p, idx) => (
             <div
               key={idx}
+              data-tooltip={p}
+              data-tooltip-style={SolidColumnTooltipStyle}
               style={{
-                paddingLeft: Math.max(0, idx * 15 - 9),
-                paddingRight: 15,
-                fontWeight: idx === parts.length - 1 ? 600 : 300
+                marginLeft: Math.max(0, idx * 15 - 9),
+                fontWeight: idx === parts.length - 1 ? 600 : 300,
+                paddingRight: 15
               }}
             >
               {idx > 0 ? "↳" : ""}
@@ -97,6 +99,16 @@ const SolidColumnContainer = styled.div`
   width: 250px;
   flex-shrink: 0;
 `;
+
+const SolidColumnTooltipStyle = JSON.stringify({
+  fontSize: "0.75em",
+  fontFamily: "monospace",
+  color: Colors.BLACK,
+  background: Colors.WHITE,
+  border: `1px solid ${Colors.LIGHT_GRAY3}`,
+  top: -8,
+  left: 1
+});
 
 // Timestamp Column
 

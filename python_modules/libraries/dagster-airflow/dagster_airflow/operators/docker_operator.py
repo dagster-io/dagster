@@ -134,16 +134,13 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        environment_dict = dagster_operator_parameters.environment_dict
-        if 'filesystem' in environment_dict['storage']:
+        run_config = dagster_operator_parameters.run_config
+        if 'filesystem' in run_config['storage']:
             if (
-                'config' in (environment_dict['storage'].get('filesystem', {}) or {})
+                'config' in (run_config['storage'].get('filesystem', {}) or {})
                 and 'base_dir'
-                in (
-                    (environment_dict['storage'].get('filesystem', {}) or {}).get('config', {})
-                    or {}
-                )
-                and environment_dict['storage']['filesystem']['config']['base_dir'] != tmp_dir
+                in ((run_config['storage'].get('filesystem', {}) or {}).get('config', {}) or {})
+                and run_config['storage']['filesystem']['config']['base_dir'] != tmp_dir
             ):
                 warnings.warn(
                     'Found base_dir \'{base_dir}\' set in filesystem storage config, which was not '
@@ -151,18 +148,18 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                     '\'{host_tmp_dir}\' from the host). We assume you know what you are doing, but '
                     'if you are having trouble executing containerized workloads, this may be the '
                     'issue'.format(
-                        base_dir=environment_dict['storage']['filesystem']['config']['base_dir'],
+                        base_dir=run_config['storage']['filesystem']['config']['base_dir'],
                         tmp_dir=tmp_dir,
                         host_tmp_dir=host_tmp_dir,
                     )
                 )
             else:
-                environment_dict['storage']['filesystem'] = dict(
-                    environment_dict['storage']['filesystem'] or {},
+                run_config['storage']['filesystem'] = dict(
+                    run_config['storage']['filesystem'] or {},
                     **{
                         'config': dict(
                             (
-                                (environment_dict['storage'].get('filesystem', {}) or {}).get(
+                                (run_config['storage'].get('filesystem', {}) or {}).get(
                                     'config', {}
                                 )
                                 or {}
@@ -173,12 +170,14 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                 )
 
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
-        self.environment_dict = environment_dict
+        self.run_config = run_config
         self.pipeline_name = dagster_operator_parameters.pipeline_name
         self.pipeline_snapshot = dagster_operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = dagster_operator_parameters.execution_plan_snapshot
+        self.parent_pipeline_snapshot = dagster_operator_parameters.parent_pipeline_snapshot
         self.mode = dagster_operator_parameters.mode
         self.step_keys = dagster_operator_parameters.step_keys
+        self.recon_repo = dagster_operator_parameters.recon_repo
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
@@ -228,7 +227,12 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     @property
     def query(self):
         variables = construct_variables(
-            self.mode, self.environment_dict, self.pipeline_name, self.run_id, self.step_keys,
+            self.recon_repo,
+            self.mode,
+            self.run_config,
+            self.pipeline_name,
+            self.run_id,
+            self.step_keys,
         )
         variables = add_airflow_tags(variables, self.airflow_ts)
 
@@ -285,15 +289,16 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                 run = self.instance.register_managed_run(
                     pipeline_name=self.pipeline_name,
                     run_id=self.run_id,
-                    environment_dict=self.environment_dict,
+                    run_config=self.run_config,
                     mode=self.mode,
-                    solid_subset=None,
+                    solids_to_execute=None,
                     step_keys_to_execute=None,
                     tags=None,
                     root_run_id=None,
                     parent_run_id=None,
                     pipeline_snapshot=self.pipeline_snapshot,
                     execution_plan_snapshot=self.execution_plan_snapshot,
+                    parent_pipeline_snapshot=self.parent_pipeline_snapshot,
                 )
 
             raw_res = super(DagsterDockerOperator, self).execute(context)

@@ -160,4 +160,34 @@ class PagerDutyService(object):
     description='''This resource is for posting events to PagerDuty.''',
 )
 def pagerduty_resource(context):
+    '''A resource for posting events (alerts) to PagerDuty.
+
+    Example:
+
+    .. code-block:: python
+
+        @solid(required_resource_keys={'pagerduty'})
+        def pagerduty_solid(context):
+            context.resources.pagerduty.EventV2_create(
+                summary='alert from dagster'
+                source='localhost',
+                severity='error',
+                event_action='trigger',
+            )
+
+        @pipeline(
+            mode_defs=[ModeDefinition(resource_defs={'pagerduty': pagerduty_resource})],
+        )
+        def pd_pipeline():
+            pagerduty_solid()
+
+        execute_pipeline(
+            pd_pipeline,
+            {
+                'resources': {
+                    'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+                }
+            },
+        )
+    '''
     return PagerDutyService(context.resource_config.get('routing_key'))

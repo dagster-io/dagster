@@ -80,7 +80,7 @@ class SystemPipelineExecutionContextData(
         return self.pipeline_run.run_id
 
     @property
-    def environment_dict(self):
+    def run_config(self):
         return self.environment_config.original_config_dict
 
     @property
@@ -126,8 +126,8 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.run_id
 
     @property
-    def environment_dict(self):
-        return self._pipeline_context_data.environment_dict
+    def run_config(self):
+        return self._pipeline_context_data.run_config
 
     @property
     def environment_config(self):

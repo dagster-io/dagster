@@ -5,12 +5,12 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.test.utils import (
+    define_context_for_file,
+    define_subprocess_context_for_file,
+    infer_pipeline_selector,
 )
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
-from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
 from dagster import (
     Any,
@@ -33,7 +33,6 @@ from dagster import (
     PartitionSetDefinition,
     PresetDefinition,
     PythonObjectDagsterType,
-    RepositoryDefinition,
     ScheduleDefinition,
     String,
     check,
@@ -46,6 +45,7 @@ from dagster import (
     monthly_schedule,
     output_materialization_config,
     pipeline,
+    repository,
     resource,
     solid,
     usable_as_dagster_type,
@@ -53,10 +53,10 @@ from dagster import (
 )
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
-from dagster.utils import file_relative_path
-from dagster.utils.hosted_user_process import repository_handle_from_yaml
+from dagster.utils import file_relative_path, segfault
 
 
 @input_hydration_config(String)
@@ -85,27 +85,39 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 def define_test_subprocess_context(instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    return define_subprocess_context_for_file(__file__, "define_repository", instance)
+    return define_subprocess_context_for_file(__file__, "test_repo", instance)
 
 
 def define_test_context(instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    return define_context_for_file(__file__, "define_repository", instance)
+    return define_context_for_file(__file__, "test_repo", instance)
 
 
 def create_main_recon_repo():
-    return ReconstructableRepository.for_file(__file__, 'define_repository')
+    return ReconstructableRepository.for_file(__file__, 'test_repo')
+
+
+def get_main_external_repo():
+    return InProcessRepositoryLocation(
+        ReconstructableRepository.from_legacy_repository_yaml(
+            file_relative_path(__file__, 'repo.yaml')
+        ),
+    ).get_repository('test_repo')
 
 
 def define_test_snapshot_context():
     return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
-        environments=[
-            InProcessDagsterEnvironment(
-                create_main_recon_repo(), execution_manager=SynchronousExecutionManager(),
-            )
-        ],
+        locations=[InProcessRepositoryLocation(create_main_recon_repo())],
     )
+
+
+def main_repo_location_name():
+    return '<<in_process>>'
+
+
+def main_repo_name():
+    return 'test_repo'
 
 
 @lambda_solid(
@@ -157,7 +169,7 @@ def csv_hello_world_solids_config_fs_storage():
     }
 
 
-@solid(config={'file': Field(String)})
+@solid(config_schema={'file': Field(String)})
 def loop(context):
     with open(context.solid_config['file'], 'w') as ff:
         ff.write('yup')
@@ -181,46 +193,28 @@ def noop_pipeline():
     noop_solid()
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name='test',
-        pipeline_defs=[
-            composites_pipeline,
-            csv_hello_world,
-            csv_hello_world_df_input,
-            csv_hello_world_two,
-            csv_hello_world_with_expectations,
-            hello_world_with_tags,
-            eventually_successful,
-            infinite_loop_pipeline,
-            materialization_pipeline,
-            more_complicated_config,
-            more_complicated_nested_config,
-            multi_mode_with_loggers,
-            multi_mode_with_resources,
-            naughty_programmer_pipeline,
-            noop_pipeline,
-            pipeline_with_invalid_definition_error,
-            no_config_pipeline,
-            no_config_chain_pipeline,
-            pipeline_with_enum_config,
-            pipeline_with_expectations,
-            pipeline_with_list,
-            required_resource_pipeline,
-            retry_resource_pipeline,
-            retry_multi_output_pipeline,
-            scalar_output_pipeline,
-            spew_pipeline,
-            tagged_pipeline,
-            retry_multi_input_early_terminate_pipeline,
-        ],
-        schedule_defs=define_schedules(),
-        partition_set_defs=define_partitions(),
-    )
+@solid
+def solid_asset_a(_):
+    yield Materialization(asset_key='a', label='a')
+    yield Output(1)
 
 
-def get_repository_handle():
-    return repository_handle_from_yaml(file_relative_path(__file__, 'repo.yaml'))
+@solid
+def solid_asset_b(_, num):
+    yield Materialization(asset_key='b', label='b')
+    time.sleep(0.1)
+    yield Materialization(asset_key='c', label='c')
+    yield Output(num)
+
+
+@pipeline
+def single_asset_pipeline():
+    solid_asset_a()
+
+
+@pipeline
+def multi_asset_pipeline():
+    solid_asset_b(solid_asset_a())
 
 
 @pipeline
@@ -259,7 +253,7 @@ def pipeline_with_expectations():
 @pipeline
 def more_complicated_config():
     @solid(
-        config={
+        config_schema={
             'field_one': Field(String),
             'field_two': Field(String, is_required=False),
             'field_three': Field(String, is_required=False, default_value='some_value'),
@@ -278,7 +272,7 @@ def more_complicated_nested_config():
         name='a_solid_with_multilayered_config',
         input_defs=[],
         output_defs=[],
-        config={
+        config_schema={
             'field_any': Any,
             'field_one': String,
             'field_two': Field(String, is_required=False),
@@ -312,7 +306,7 @@ def more_complicated_nested_config():
         ),
         PresetDefinition(
             name='test_inline',
-            environment_dict={
+            run_config={
                 'solids': {
                     'sum_solid': {
                         'inputs': {'num': file_relative_path(__file__, '../data/num.csv')}
@@ -348,7 +342,7 @@ def hello_world_with_tags():
     return solid_that_gets_tags()
 
 
-@solid(name='solid_with_list', input_defs=[], output_defs=[], config=[int])
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config_schema=[int])
 def solid_def(_):
     return None
 
@@ -412,7 +406,7 @@ def scalar_output_pipeline():
 @pipeline
 def pipeline_with_enum_config():
     @solid(
-        config=Enum(
+        config_schema=Enum(
             'TestEnum',
             [
                 EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
@@ -456,17 +450,17 @@ def pipeline_with_invalid_definition_error():
     return fail_subset(one())
 
 
-@resource(config=Field(Int))
+@resource(config_schema=Field(Int))
 def adder_resource(init_context):
     return lambda x: x + init_context.resource_config
 
 
-@resource(config=Field(Int))
+@resource(config_schema=Field(Int))
 def multer_resource(init_context):
     return lambda x: x * init_context.resource_config
 
 
-@resource(config={'num_one': Field(Int), 'num_two': Field(Int)})
+@resource(config_schema={'num_one': Field(Int), 'num_two': Field(Int)})
 def double_adder_resource(init_context):
     return (
         lambda x: x
@@ -503,7 +497,7 @@ def multi_mode_with_resources():
     return apply_to_three()
 
 
-@resource(config=Field(Int, is_required=False))
+@resource(config_schema=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
@@ -517,7 +511,7 @@ def required_resource_pipeline():
     solid_with_required_resource()
 
 
-@logger(config=Field(str))
+@logger(config_schema=Field(str))
 def foo_logger(init_context):
     logger_ = logging.Logger('foo')
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
@@ -626,7 +620,7 @@ def retry_config(count):
     }
 
 
-@resource(config={'count': Field(Int, is_required=False, default_value=0)})
+@resource(config_schema={'count': Field(Int, is_required=False, default_value=0)})
 def retry_config_resource(context):
     return context.resource_config['count']
 
@@ -653,6 +647,24 @@ def eventually_successful():
         return depth
 
     reset(fail(fail(fail(spawn()))))
+
+
+@pipeline
+def hard_failer():
+    @solid(
+        config_schema={'fail': Field(Bool, is_required=False, default_value=False)},
+        output_defs=[OutputDefinition(Int)],
+    )
+    def hard_fail_or_0(context):
+        if context.solid_config['fail']:
+            segfault()
+        return 0
+
+    @solid(input_defs=[InputDefinition('n', Int)],)
+    def increment(_, n):
+        return n + 1
+
+    increment(hard_fail_or_0())
 
 
 @resource
@@ -683,7 +695,7 @@ def retry_resource_pipeline():
 
 
 @solid(
-    config={'fail': bool},
+    config_schema={'fail': bool},
     input_defs=[InputDefinition('inp', str)],
     output_defs=[
         OutputDefinition(str, 'start_fail', is_required=False),
@@ -742,7 +754,7 @@ def retry_multi_input_early_terminate_pipeline():
         return 1
 
     @solid(
-        config={'wait_to_terminate': bool},
+        config_schema={'wait_to_terminate': bool},
         input_defs=[InputDefinition('one', Int)],
         output_defs=[OutputDefinition(Int)],
     )
@@ -753,7 +765,7 @@ def retry_multi_input_early_terminate_pipeline():
         return one
 
     @solid(
-        config={'wait_to_terminate': bool},
+        config_schema={'wait_to_terminate': bool},
         input_defs=[InputDefinition('one', Int)],
         output_defs=[OutputDefinition(Int)],
     )
@@ -774,11 +786,12 @@ def retry_multi_input_early_terminate_pipeline():
     return sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
-def get_retry_multi_execution_params(should_fail, retry_id=None):
+def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
+    selector = infer_pipeline_selector(graphql_context, 'retry_multi_output_pipeline')
     return {
         'mode': 'default',
-        'selector': {'name': 'retry_multi_output_pipeline'},
-        'environmentConfigData': {
+        'selector': selector,
+        'runConfigData': {
             'storage': {'filesystem': {}},
             'solids': {'can_fail': {'config': {'fail': should_fail}}},
         },
@@ -795,7 +808,7 @@ def define_schedules():
         name='scheduled_integer_partitions',
         pipeline_name='no_config_pipeline',
         partition_fn=lambda: [Partition(x) for x in range(1, 10)],
-        environment_dict_fn_for_partition=lambda _partition: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _partition: {"storage": {"filesystem": {}}},
         tags_fn_for_partition=lambda _partition: {"test": "1234"},
     )
 
@@ -803,21 +816,21 @@ def define_schedules():
         name="no_config_pipeline_hourly_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
     )
 
     no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
         should_execute=lambda _context: False,
     )
 
@@ -825,7 +838,7 @@ def define_schedules():
         name="dynamic_config",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
@@ -859,36 +872,36 @@ def define_schedules():
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_hourly_decorator(_date):
+    def solid_selection_hourly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=2),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_daily_decorator(_date):
+    def solid_selection_daily_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @monthly_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=100),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_monthly_decorator(_date):
+    def solid_selection_monthly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     @weekly_schedule(
         pipeline_name='no_config_chain_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=50),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
-        solid_subset=['return_foo'],
+        solid_selection=['return_foo'],
     )
-    def solid_subset_weekly_decorator(_date):
+    def solid_selection_weekly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
     # Schedules for testing the user error boundary
@@ -912,21 +925,21 @@ def define_schedules():
         pipeline_name='no_config_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=1),
     )
-    def environment_dict_error_schedule(_date):
+    def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
 
     tagged_pipeline_schedule = ScheduleDefinition(
         name="tagged_pipeline_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
     )
 
     tagged_pipeline_override_schedule = ScheduleDefinition(
         name="tagged_pipeline_override_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
+        run_config={"storage": {"filesystem": {}}},
         tags={'foo': 'notbar'},
     )
 
@@ -934,11 +947,11 @@ def define_schedules():
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="pipeline_with_enum_config",
-        environment_dict={"solids": {"takes_an_enum": {'config': "invalid"}}},
+        run_config={"solids": {"takes_an_enum": {'config': "invalid"}}},
     )
 
     return [
-        environment_dict_error_schedule,
+        run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
@@ -947,10 +960,10 @@ def define_schedules():
         partition_based_custom_selector,
         partition_based_decorator,
         partition_based_multi_mode_decorator,
-        solid_subset_hourly_decorator,
-        solid_subset_daily_decorator,
-        solid_subset_monthly_decorator,
-        solid_subset_weekly_decorator,
+        solid_selection_hourly_decorator,
+        solid_selection_daily_decorator,
+        solid_selection_monthly_decorator,
+        solid_selection_weekly_decorator,
         should_execute_error_schedule,
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
@@ -963,17 +976,63 @@ def define_partitions():
     integer_set = PartitionSetDefinition(
         name="integer_partition",
         pipeline_name="no_config_pipeline",
-        solid_subset=['return_hello'],
+        solid_selection=['return_hello'],
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
-        environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     enum_set = PartitionSetDefinition(
         name="enum_partition",
         pipeline_name="noop_pipeline",
         partition_fn=lambda: ["one", "two", "three"],
-        environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     return [integer_set, enum_set]
+
+
+@repository
+def empty_repo():
+    return []
+
+
+@repository
+def test_repo():
+    return (
+        [
+            composites_pipeline,
+            csv_hello_world_df_input,
+            csv_hello_world_two,
+            csv_hello_world_with_expectations,
+            csv_hello_world,
+            eventually_successful,
+            hard_failer,
+            hello_world_with_tags,
+            infinite_loop_pipeline,
+            materialization_pipeline,
+            more_complicated_config,
+            more_complicated_nested_config,
+            multi_asset_pipeline,
+            multi_mode_with_loggers,
+            multi_mode_with_resources,
+            naughty_programmer_pipeline,
+            no_config_chain_pipeline,
+            no_config_pipeline,
+            noop_pipeline,
+            pipeline_with_enum_config,
+            pipeline_with_expectations,
+            pipeline_with_invalid_definition_error,
+            pipeline_with_list,
+            required_resource_pipeline,
+            retry_multi_input_early_terminate_pipeline,
+            retry_multi_output_pipeline,
+            retry_resource_pipeline,
+            scalar_output_pipeline,
+            single_asset_pipeline,
+            spew_pipeline,
+            tagged_pipeline,
+        ]
+        + define_schedules()
+        + define_partitions()
+    )

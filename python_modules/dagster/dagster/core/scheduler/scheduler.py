@@ -5,9 +5,42 @@ from enum import Enum
 import six
 
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleDefinitionData
+from dagster.core.errors import DagsterError
+from dagster.core.host_representation import ExternalSchedule
+from dagster.core.instance import DagsterInstance
+from dagster.core.origin import SchedulePythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
+
+
+class DagsterSchedulerError(DagsterError):
+    '''Base class for all Dagster Scheduler errors'''
+
+
+class DagsterScheduleReconciliationError(DagsterError):
+    '''Error raised during schedule state reconcilation. During reconcilation, exceptions that are
+    raised when trying to start or stop a schedule are collected and passed to this wrapper exception.
+    The individual exceptions can be accessed by the `errors` property. '''
+
+    def __init__(self, preamble, errors, *args, **kwargs):
+        self.errors = errors
+
+        error_msg = preamble
+        error_messages = []
+        for i_error, error in enumerate(self.errors):
+            error_messages.append(str(error))
+            error_msg += '\n    Error {i_error}: {error_message}'.format(
+                i_error=i_error + 1, error_message=str(error)
+            )
+
+        self.message = error_msg
+        self.error_messages = error_messages
+
+        super(DagsterScheduleReconciliationError, self).__init__(error_msg, *args, **kwargs)
+
+
+class DagsterScheduleDoesNotExist(DagsterSchedulerError):
+    '''Errors raised when ending a job for a schedule.'''
 
 
 @whitelist_for_serdes
@@ -17,41 +50,52 @@ class ScheduleStatus(Enum):
     ENDED = 'ENDED'
 
 
-def get_schedule_change_set(old_schedules, new_schedule_defs):
-    check.list_param(old_schedules, 'old_schedules', Schedule)
-    check.list_param(new_schedule_defs, 'new_schedule_defs', ScheduleDefinition)
+def get_schedule_change_set(schedule_states, external_schedules):
+    check.list_param(schedule_states, 'schedule_states', ScheduleState)
+    check.list_param(external_schedules, 'external_schedules', ExternalSchedule)
 
-    new_schedules_defs_dict = {s.name: s for s in new_schedule_defs}
-    old_schedules_dict = {s.name: s for s in old_schedules}
+    external_schedules_dict = {s.get_origin_id(): s for s in external_schedules}
+    schedule_states_dict = {s.schedule_origin_id: s for s in schedule_states}
 
-    new_schedule_defs_names = set(new_schedules_defs_dict.keys())
-    old_schedules_names = set(old_schedules_dict.keys())
+    external_schedule_origin_ids = set(external_schedules_dict.keys())
+    schedule_state_ids = set(schedule_states_dict.keys())
 
-    added_schedules = new_schedule_defs_names - old_schedules_names
-    changed_schedules = new_schedule_defs_names & old_schedules_names
-    removed_schedules = old_schedules_names - new_schedule_defs_names
+    added_schedules = external_schedule_origin_ids - schedule_state_ids
+    changed_schedules = external_schedule_origin_ids & schedule_state_ids
+    removed_schedules = schedule_state_ids - external_schedule_origin_ids
 
     changeset = []
 
-    for schedule_name in added_schedules:
-        changeset.append(("add", schedule_name, []))
+    for schedule_origin_id in added_schedules:
+        changeset.append(
+            ("add", external_schedules_dict[schedule_origin_id].name, schedule_origin_id, [])
+        )
 
-    for schedule_name in changed_schedules:
+    for schedule_origin_id in changed_schedules:
         changes = []
 
-        old_schedule_def = old_schedules_dict[schedule_name].schedule_definition_data
-        new_schedule_def = new_schedules_defs_dict[schedule_name]
+        schedule_state = schedule_states_dict[schedule_origin_id]
+        external_schedule = external_schedules_dict[schedule_origin_id]
 
-        if old_schedule_def.cron_schedule != new_schedule_def.cron_schedule:
+        if schedule_state.cron_schedule != external_schedule.cron_schedule:
             changes.append(
-                ("cron_schedule", (old_schedule_def.cron_schedule, new_schedule_def.cron_schedule))
+                ("cron_schedule", (schedule_state.cron_schedule, external_schedule.cron_schedule))
             )
 
         if len(changes) > 0:
-            changeset.append(("change", schedule_name, changes))
+            changeset.append(
+                (
+                    "change",
+                    external_schedules_dict[schedule_origin_id].name,
+                    schedule_origin_id,
+                    changes,
+                )
+            )
 
-    for schedule_name in removed_schedules:
-        changeset.append(("remove", schedule_name, []))
+    for schedule_origin_id in removed_schedules:
+        changeset.append(
+            ("remove", schedule_states_dict[schedule_origin_id].name, schedule_origin_id, [])
+        )
 
     return changeset
 
@@ -69,65 +113,40 @@ class SchedulerDebugInfo(
         )
 
 
-def reconcile_scheduler_state(python_path, repository_path, repository, instance):
-    '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
-    on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
-    Schedules, where the ScheduleDefinitions list is the source of truth.
+@whitelist_for_serdes
+class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_schedule')):
+    def __new__(cls, origin, status, cron_schedule):
 
-    If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
-    ScheduleStatus.STOPPED.
+        return super(ScheduleState, cls).__new__(
+            cls,
+            # Using the term "origin" to leave flexibility in handling future types
+            check.inst_param(origin, 'origin', SchedulePythonOrigin),
+            check.inst_param(status, 'status', ScheduleStatus),
+            check.str_param(cron_schedule, 'cron_schedule'),
+        )
 
-    For every previously existing ScheduleDefinition (where schedule_name is the primary key),
-    any changes to the definition are persisted in the corresponding Schedule and the status is
-    left unchanged. The schedule is also restarted to make sure the external artifacts (such
-    as a cron job) are up to date.
+    @property
+    def name(self):
+        return self.origin.schedule_name
 
-    For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
-    the storage and the corresponding Schedule is ended.
-    '''
+    @property
+    def pipeline_origin(self):
+        # Set up for future proofing
+        check.invariant(isinstance(self.origin, SchedulePythonOrigin))
+        return self.origin
 
-    schedules_to_restart = []
-    for schedule_def in repository.schedule_defs:
-        # If a schedule already exists for schedule_def, overwrite bash script and
-        # metadata file
-        existing_schedule = instance.get_schedule_by_name(repository.name, schedule_def.name)
-        if existing_schedule:
-            # Keep the status, but replace schedule_def, python_path, and repository_path
-            schedule = Schedule(
-                schedule_def.schedule_definition_data,
-                existing_schedule.status,
-                python_path,
-                repository_path,
-            )
+    @property
+    def schedule_origin_id(self):
+        return self.origin.get_id()
 
-            instance.update_schedule(repository.name, schedule)
-            schedules_to_restart.append(schedule)
-        else:
-            schedule = Schedule(
-                schedule_def.schedule_definition_data,
-                ScheduleStatus.STOPPED,
-                python_path,
-                repository_path,
-            )
+    @property
+    def repository_origin_id(self):
+        return self.origin.repository_origin.get_id()
 
-            instance.add_schedule(repository.name, schedule)
+    def with_status(self, status):
+        check.inst_param(status, 'status', ScheduleStatus)
 
-    # Delete all existing schedules that are not in schedule_defs
-    schedule_def_names = {s.name for s in repository.schedule_defs}
-    existing_schedule_names = set([s.name for s in instance.all_schedules(repository.name)])
-    schedule_names_to_delete = existing_schedule_names - schedule_def_names
-
-    for schedule in schedules_to_restart:
-        # Restart is only needed if the schedule was previously running
-        if schedule.status == ScheduleStatus.RUNNING:
-            instance.stop_schedule(repository.name, schedule.name)
-            instance.start_schedule(repository.name, schedule.name)
-
-        if schedule.status == ScheduleStatus.STOPPED:
-            instance.stop_schedule(repository.name, schedule.name)
-
-    for schedule_name in schedule_names_to_delete:
-        instance.end_schedule(repository.name, schedule_name)
+        return ScheduleState(self.origin, status=status, cron_schedule=self.cron_schedule)
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
@@ -135,98 +154,231 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
     an external system such as cron to ensure scheduled repeated execution according.
     '''
 
+    def _get_schedule_state(self, instance, schedule_origin_id):
+        schedule_state = instance.get_schedule_state(schedule_origin_id)
+        if not schedule_state:
+            raise DagsterScheduleDoesNotExist(
+                'You have attempted to start the job for schedule id {id}, but its state is not in storage.'.format(
+                    id=schedule_origin_id
+                )
+            )
+
+        return schedule_state
+
+    def reconcile_scheduler_state(self, instance, external_repository):
+        '''Reconcile the ExternalSchedule list from the repository and ScheduleStorage
+        on the instance to ensure there is a 1-1 correlation between ExternalSchedule and
+        ScheduleStates, where the ExternalSchedule list is the source of truth.
+
+        If a new ExternalSchedule is introduced, a new ScheduleState is added to storage with status
+        ScheduleStatus.STOPPED.
+
+        For every previously existing ExternalSchedule (where target id is the primary key),
+        any changes to the definition are persisted in the corresponding ScheduleState and the status is
+        left unchanged. The schedule is also restarted to make sure the external artifacts (such
+        as a cron job) are up to date.
+
+        For every ScheduleDefinitions that is removed, the corresponding ScheduleState is removed from
+        the storage and the corresponding ScheduleState is ended.
+        '''
+
+        schedules_to_restart = []
+        for external_schedule in external_repository.get_external_schedules():
+            # If a schedule already exists for schedule_def, overwrite bash script and
+            # metadata file
+            existing_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+            if existing_schedule_state:
+                # Keep the status, update target and cron schedule
+                schedule_state = ScheduleState(
+                    external_schedule.get_origin(),
+                    existing_schedule_state.status,
+                    external_schedule.cron_schedule,
+                )
+
+                instance.update_schedule_state(schedule_state)
+                schedules_to_restart.append((existing_schedule_state, external_schedule))
+            else:
+                schedule_state = ScheduleState(
+                    external_schedule.get_origin(),
+                    ScheduleStatus.STOPPED,
+                    external_schedule.cron_schedule,
+                )
+
+                instance.add_schedule_state(schedule_state)
+
+        # Delete all existing schedules that are not in external schedules
+        external_schedule_origin_ids = {
+            s.get_origin_id() for s in external_repository.get_external_schedules()
+        }
+        existing_schedule_origin_ids = set(
+            [
+                s.schedule_origin_id
+                for s in instance.all_stored_schedule_state(external_repository.get_origin_id())
+            ]
+        )
+        schedule_origin_ids_to_delete = existing_schedule_origin_ids - external_schedule_origin_ids
+
+        schedule_reconciliation_errors = []
+        for schedule_state, external_schedule in schedules_to_restart:
+            # Restart is only needed if the schedule was previously running
+            if schedule_state.status == ScheduleStatus.RUNNING:
+                try:
+                    self.stop_schedule(instance, external_schedule.get_origin_id())
+                    self.start_schedule(instance, external_schedule)
+                except DagsterSchedulerError as e:
+                    schedule_reconciliation_errors.append(e)
+
+            if schedule_state.status == ScheduleStatus.STOPPED:
+                try:
+                    self.stop_schedule(instance, external_schedule.get_origin_id())
+                except DagsterSchedulerError as e:
+                    schedule_reconciliation_errors.append(e)
+
+        for schedule_origin_id in schedule_origin_ids_to_delete:
+            try:
+                instance.stop_schedule_and_delete_from_storage(schedule_origin_id)
+            except DagsterSchedulerError as e:
+                schedule_reconciliation_errors.append(e)
+
+        if len(schedule_reconciliation_errors):
+            raise DagsterScheduleReconciliationError(
+                "One or more errors were encountered by the Scheduler while starting or stopping schedules. "
+                "Individual error messages follow:",
+                errors=schedule_reconciliation_errors,
+            )
+
+    def start_schedule_and_update_storage_state(self, instance, external_schedule):
+        '''
+        Updates the status of the given schedule to `ScheduleStatus.RUNNING` in schedule storage,
+        then calls `start_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_schedule (ExternalSchedule): The schedule to start
+
+        '''
+
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+
+        schedule_state = self._get_schedule_state(instance, external_schedule.get_origin_id())
+
+        if schedule_state.status == ScheduleStatus.RUNNING:
+            raise DagsterSchedulerError(
+                'You have attempted to start schedule {name}, but it is already running'.format(
+                    name=external_schedule.name
+                )
+            )
+
+        self.start_schedule(instance, external_schedule)
+        started_schedule = schedule_state.with_status(ScheduleStatus.RUNNING)
+        instance.update_schedule_state(started_schedule)
+        return started_schedule
+
+    def stop_schedule_and_update_storage_state(self, instance, schedule_origin_id):
+        '''
+        Updates the status of the given schedule to `ScheduleStatus.STOPPED` in schedule storage,
+        then calls `stop_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            schedule_origin_id (string): The id of the schedule target to stop running.
+        '''
+
+        check.str_param(schedule_origin_id, 'schedule_origin_id')
+
+        schedule_state = self._get_schedule_state(instance, schedule_origin_id)
+
+        self.stop_schedule(instance, schedule_origin_id)
+        stopped_schedule = schedule_state.with_status(ScheduleStatus.STOPPED)
+        instance.update_schedule_state(stopped_schedule)
+        return stopped_schedule
+
+    def stop_schedule_and_delete_from_storage(self, instance, schedule_origin_id):
+        '''
+        Deletes a schedule from schedule storage, then calls `stop_schedule`.
+
+        This should not be overridden by subclasses.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            schedule_origin_id (string): The id of the schedule target to start running.
+        '''
+
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.str_param(schedule_origin_id, 'schedule_origin_id')
+
+        schedule = self._get_schedule_state(instance, schedule_origin_id)
+        self.stop_schedule(instance, schedule_origin_id)
+        instance.delete_schedule_state(schedule_origin_id)
+        return schedule
+
     @abc.abstractmethod
     def debug_info(self):
         '''Returns debug information about the scheduler
         '''
 
     @abc.abstractmethod
-    def start_schedule(self, instance, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
+    def start_schedule(self, instance, external_schedule):
+        '''Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
+        which first updates the status of the schedule in schedule storage to `ScheduleStatus.RUNNING`,
+        then calls this method.
+
+        For example, in the cron scheduler, this method writes a cron job to the cron tab
+        for the given schedule.
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to start the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to resume
+            instance (DagsterInstance): The current instance.S
+            external_schedule (ExternalSchedule): The schedule to start running.
         '''
 
     @abc.abstractmethod
-    def stop_schedule(self, instance, repository_name, schedule_name):
-        '''Stops an existing pipeline schedule
+    def stop_schedule(self, instance, schedule_origin_id):
+        '''Stop running a schedule.
+
+        This method is called by
+        1) `stop_schedule_and_update_storage_state`,
+        which first updates the status of the schedule in schedule storage to `ScheduleStatus.STOPPED`,
+        then calls this method.
+        2) `stop_schedule_and_delete_from_storage`, which deletes the schedule from schedule storage
+        then calls this method.
+
+        For example, in the cron scheduler, this method deletes the cron job for a given scheduler
+        from the cron tab.
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to stop the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to stop
+            instance (DagsterInstance): The current instance.
+            schedule_origin_id (string): The id of the schedule target to stop running.
         '''
 
     @abc.abstractmethod
-    def end_schedule(self, instance, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
+    def running_schedule_count(self, schedule_origin_id):
+        '''Returns the number of jobs currently running for the given schedule. This method is used
+        for detecting when the scheduler is out of sync with schedule storage.
+
+        For example, when:
+        - There are duplicate jobs runnning for a single schedule
+        - There are no jobs runnning for a schedule that is set to be running
+        - There are still jobs running for a schedule that is set to be stopped
+
+        When the scheduler and schedule storage are in sync, this method should return:
+        - 1 when a schedule is set to be running
+        - 0 wen a schedule is set to be stopped
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use to end the schedule.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to end and delete
+            schedule_origin_id (string): The id of the schedule target to return the number of jobs for
         '''
 
     @abc.abstractmethod
-    def is_scheduler_job_running(self, repository_name, schedule_name):
-        '''Resume a pipeline schedule.
-
-        Args:
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The name of the schedule to check
-        '''
-
-    @abc.abstractmethod
-    def get_log_path(self, instance, repository_name, schedule_name):
+    def get_logs_path(self, instance, schedule_origin_id):
         '''Get path to store logs for schedule
 
         Args:
-            instance (Optional[DagsterInstance]): The Dagster instance to use.
-            repository_name (string): The repository the schedule belongs to
-            schedule_name (string): The schedule to retrieve the log path for
+            schedule_origin_id (string): The id of the schedule target to retrieve the log path for
         '''
-
-
-@whitelist_for_serdes
-class Schedule(
-    namedtuple('Schedule', 'schedule_definition_data status python_path repository_path')
-):
-    def __new__(cls, schedule_definition_data, status, python_path=None, repository_path=None):
-
-        return super(Schedule, cls).__new__(
-            cls,
-            check.inst_param(
-                schedule_definition_data, 'schedule_definition_data', ScheduleDefinitionData
-            ),
-            check.inst_param(status, 'status', ScheduleStatus),
-            check.opt_str_param(python_path, 'python_path'),
-            check.opt_str_param(repository_path, 'repository_path'),
-        )
-
-    @property
-    def name(self):
-        return self.schedule_definition_data.name
-
-    @property
-    def cron_schedule(self):
-        return self.schedule_definition_data.cron_schedule
-
-    @property
-    def environment_vars(self):
-        return self.schedule_definition_data.environment_vars
-
-    def with_status(self, status):
-        check.inst_param(status, 'status', ScheduleStatus)
-
-        return Schedule(
-            self.schedule_definition_data,
-            status=status,
-            python_path=self.python_path,
-            repository_path=self.repository_path,
-        )
 
 
 class ScheduleTickStatsSnapshot(
@@ -276,9 +428,20 @@ def _validate_schedule_tick_args(status, run_id=None, error=None):
 
 @whitelist_for_serdes
 class ScheduleTickData(
-    namedtuple('Schedule', 'schedule_name cron_schedule timestamp status run_id error')
+    namedtuple(
+        'Schedule', 'schedule_origin_id schedule_name cron_schedule timestamp status run_id error'
+    )
 ):
-    def __new__(cls, schedule_name, cron_schedule, timestamp, status, run_id=None, error=None):
+    def __new__(
+        cls,
+        schedule_origin_id,
+        schedule_name,
+        cron_schedule,
+        timestamp,
+        status,
+        run_id=None,
+        error=None,
+    ):
         '''
         This class defines the data that is serialized and stored in ``ScheduleStorage``. We depend
         on the schedule storage implementation to provide schedule tick ids, and therefore
@@ -286,6 +449,7 @@ class ScheduleTickData(
         id
 
         Arguments:
+            schedule_origin_id (str): The id of the schedule target for this tick
             schedule_name (str): The name of the schedule for this tick
             cron_schedule (str): The cron schedule of the ``ScheduleDefinition`` for tracking
                 purposes. This is helpful when debugging changes in the cron schedule.
@@ -302,6 +466,7 @@ class ScheduleTickData(
         _validate_schedule_tick_args(status, run_id, error)
         return super(ScheduleTickData, cls).__new__(
             cls,
+            check.str_param(schedule_origin_id, 'schedule_origin_id'),
             check.str_param(schedule_name, 'schedule_name'),
             check.str_param(cron_schedule, 'cron_schedule'),
             check.float_param(timestamp, 'timestamp'),
@@ -352,6 +517,10 @@ class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
         return self._replace(
             schedule_tick_data=self.schedule_tick_data.with_status(status, run_id, error)
         )
+
+    @property
+    def schedule_origin_id(self):
+        return self.schedule_tick_data.schedule_origin_id
 
     @property
     def schedule_name(self):

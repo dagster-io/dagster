@@ -170,7 +170,7 @@ def test_simple_pipeline_smoke_test():
 
 
 def test_check_solid_config_correct():
-    @solid(config={'foo': str})
+    @solid(config_schema={'foo': str})
     def solid_with_config(_):
         pass
 
@@ -196,7 +196,7 @@ def test_check_solid_config_correct():
 
 
 def test_check_solid_list_list_config_correct():
-    @solid(config={'list_list_int': [[{'bar': int}]]})
+    @solid(config_schema={'list_list_int': [[{'bar': int}]]})
     def solid_with_config(_):
         pass
 
@@ -229,7 +229,7 @@ def test_check_solid_list_list_config_correct():
 
 def test_kitchen_sink_break_out():
     @solid(
-        config=[
+        config_schema=[
             {
                 'opt_list_of_int': Field([int], is_required=False),
                 'nested_dict': {
@@ -279,11 +279,11 @@ def test_multiple_modes():
     def noop_solid(_):
         pass
 
-    @resource(config={'a': int})
+    @resource(config_schema={'a': int})
     def a_resource(_):
         pass
 
-    @resource(config={'b': int})
+    @resource(config_schema={'b': int})
     def b_resource(_):
         pass
 
@@ -311,7 +311,9 @@ def get_config_snap(pipeline_def, key):
 
 def test_scalar_union():
     # Requiring resolve calls is bad: https://github.com/dagster-io/dagster/issues/2266
-    @solid(config=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({'bar': str})))
+    @solid(
+        config_schema=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({'bar': str}))
+    )
     def solid_with_config(_):
         pass
 

@@ -1,3 +1,5 @@
+# for NormalizedCereal.__table__.insert().execute(records)
+# pylint: disable=no-member
 import csv
 import sqlite3
 from copy import deepcopy
@@ -42,7 +44,7 @@ class LocalSQLiteWarehouse(object):
             curs.close()
 
 
-@resource(config={'conn_str': Field(String)})
+@resource(config_schema={'conn_str': Field(String)})
 def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config['conn_str'])
 
@@ -80,13 +82,11 @@ class SqlAlchemyPostgresWarehouse(object):
         Base.metadata.bind = self._engine
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
-        # fmt: off
-        NormalizedCereal.__table__.insert().execute(records)  # pylint: disable=no-member
-        # fmt: on
+        NormalizedCereal.__table__.insert().execute(records)
 
 
-@resource(config={'conn_str': Field(String)})
-def sqlachemy_postgres_warehouse_resource(context):
+@resource(config_schema={'conn_str': Field(String)})
+def sqlalchemy_postgres_warehouse_resource(context):
     return SqlAlchemyPostgresWarehouse(context.resource_config['conn_str'])
 
 
@@ -134,7 +134,7 @@ def normalize_calories(context, cereals):
         ModeDefinition(
             name='dev',
             resource_defs={
-                'warehouse': sqlachemy_postgres_warehouse_resource
+                'warehouse': sqlalchemy_postgres_warehouse_resource
             },
         ),
     ]
@@ -144,15 +144,13 @@ def modes_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
     result = execute_pipeline(
-        pipeline=modes_pipeline,
-        mode='unittest',
-        environment_dict=environment_dict,
+        pipeline=modes_pipeline, mode='unittest', run_config=run_config,
     )
     assert result.success

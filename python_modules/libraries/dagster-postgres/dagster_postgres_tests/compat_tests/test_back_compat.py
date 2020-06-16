@@ -173,7 +173,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired, match=_migration_regex(current_revision=None)
+            DagsterInstanceMigrationRequired, match=_migration_regex('run', current_revision=None)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -204,9 +204,11 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         assert new_run.pipeline_snapshot_id
 
 
-def _migration_regex(current_revision, expected_revision=None):
+def _migration_regex(storage_name, current_revision, expected_revision=None):
     warning = re.escape(
-        'Instance is out of date and must be migrated (Postgres run storage requires migration).'
+        'Instance is out of date and must be migrated (Postgres {} storage requires migration).'.format(
+            storage_name
+        )
     )
     if expected_revision:
         revision = re.escape(
@@ -217,3 +219,45 @@ def _migration_regex(current_revision, expected_revision=None):
     instruction = re.escape('Please run `dagster instance migrate`.')
 
     return '{} {} {}'.format(warning, revision, instruction)
+
+
+def test_0_8_0_scheduler_update(hostname, conn_string):
+    engine = create_engine(conn_string)
+    engine.execute('drop schema public cascade;')
+    engine.execute('create schema public;')
+
+    env = os.environ.copy()
+    env['PGPASSWORD'] = 'test'
+    subprocess.check_call(
+        [
+            'psql',
+            '-h',
+            hostname,
+            '-p',
+            '5432',
+            '-U',
+            'test',
+            '-f',
+            file_relative_path(__file__, 'snapshot_0_8_0_scheduler_update/postgres/pg_dump.txt'),
+        ],
+        env=env,
+    )
+
+    with seven.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, 'dagster.yaml'), 'r') as template_fd:
+            with open(os.path.join(tempdir, 'dagster.yaml'), 'w') as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        with pytest.raises(
+            DagsterInstanceMigrationRequired,
+            match=_migration_regex('schedule', current_revision=None),
+        ):
+            instance.all_stored_schedule_state()
+
+        instance.upgrade()
+
+        instance = DagsterInstance.from_config(tempdir)
+        instance.all_stored_schedule_state()

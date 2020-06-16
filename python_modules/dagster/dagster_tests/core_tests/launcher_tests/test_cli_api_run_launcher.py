@@ -2,11 +2,12 @@ import os
 import time
 from contextlib import contextmanager
 
-from dagster import RepositoryDefinition, file_relative_path, pipeline, seven, solid
+from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.utils.hosted_user_process import external_repo_from_yaml
 
 
 @solid
@@ -40,30 +41,41 @@ def sleepy_pipeline():
     sleepy_solid()
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name='nope', pipeline_defs=[noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
-    )
+@solid
+def return_one(_):
+    return 1
 
 
-def _get_config(hijack_start):
-    return (
-        {'run_launcher': {'module': 'dagster.core.launcher', 'class': 'CliApiRunLauncher'}}
-        if hijack_start is None
-        else {
-            'run_launcher': {
-                'module': 'dagster.core.launcher',
-                'class': 'CliApiRunLauncher',
-                'config': {'hijack_start': hijack_start},
-            }
-        }
-    )
+@solid
+def multiply_by_2(_, num):
+    return num * 2
+
+
+@solid
+def multiply_by_3(_, num):
+    return num * 3
+
+
+@solid
+def add(_, num1, num2):
+    return num1 + num2
+
+
+@pipeline
+def math_diamond():
+    one = return_one()
+    add(multiply_by_2(one), multiply_by_3(one))
+
+
+@repository
+def nope():
+    return [noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
 
 
 @contextmanager
-def temp_instance(hijack_start=None):
+def temp_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir, overrides=_get_config(hijack_start),)
+        instance = DagsterInstance.local_temp(temp_dir)
         try:
             yield instance
         finally:
@@ -72,19 +84,22 @@ def temp_instance(hijack_start=None):
 
 def test_repo_construction():
     repo_yaml = file_relative_path(__file__, 'repo.yaml')
-    assert ReconstructableRepository.from_yaml(repo_yaml).get_definition()
+    assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
 
 
 def get_full_external_pipeline(repo_yaml, pipeline_name):
-    return external_repo_from_yaml(repo_yaml).get_full_external_pipeline(pipeline_name)
+    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
+    return (
+        InProcessRepositoryLocation(recon_repo)
+        .get_repository('nope')
+        .get_full_external_pipeline(pipeline_name)
+    )
 
 
 def test_successful_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=noop_pipeline, environment_dict=None
-        )
+        pipeline_run = instance.create_run_for_pipeline(pipeline_def=noop_pipeline, run_config=None)
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
@@ -110,7 +125,7 @@ def test_crashy_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=crashy_pipeline, environment_dict=None
+            pipeline_def=crashy_pipeline, run_config=None
         )
         run_id = pipeline_run.run_id
 
@@ -144,7 +159,7 @@ def test_terminated_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=sleepy_pipeline, environment_dict=None
+            pipeline_def=sleepy_pipeline, run_config=None
         )
         run_id = pipeline_run.run_id
 
@@ -156,7 +171,6 @@ def test_terminated_run():
 
         time.sleep(0.5)
 
-        assert launcher.supports_termination
         assert launcher.can_terminate(run_id)
         assert launcher.terminate(run_id)
 
@@ -194,38 +208,12 @@ def _message_exists(event_records, message_text):
     return False
 
 
-@solid
-def return_one(_):
-    return 1
-
-
-@solid
-def multiply_by_2(_, num):
-    return num * 2
-
-
-@solid
-def multiply_by_3(_, num):
-    return num * 3
-
-
-@solid
-def add(_, num1, num2):
-    return num1 + num2
-
-
-@pipeline
-def math_diamond():
-    one = return_one()
-    add(multiply_by_2(one), multiply_by_3(one))
-
-
-def test_single_solid_subset_execution():
+def test_single_solid_selection_execution():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, environment_dict=None, solid_subset=['return_one']
+            pipeline_def=math_diamond, run_config=None, solids_to_execute={'return_one'}
         )
         run_id = pipeline_run.run_id
 
@@ -236,7 +224,6 @@ def test_single_solid_subset_execution():
         launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
         launcher.join()
-
         finished_pipeline_run = instance.get_run_by_id(run_id)
 
         event_records = instance.all_logs(run_id)
@@ -248,14 +235,14 @@ def test_single_solid_subset_execution():
         assert _get_successful_step_keys(event_records) == {'return_one.compute'}
 
 
-def test_multi_solid_subset_execution():
+def test_multi_solid_selection_execution():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=math_diamond,
-            environment_dict=None,
-            solid_subset=['return_one', 'multiply_by_2'],
+            run_config=None,
+            solids_to_execute={'return_one', 'multiply_by_2'},
         )
         run_id = pipeline_run.run_id
 
@@ -286,9 +273,7 @@ def test_engine_events():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, environment_dict=None
-        )
+        pipeline_run = instance.create_run_for_pipeline(pipeline_def=math_diamond, run_config=None)
         run_id = pipeline_run.run_id
 
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
@@ -316,12 +301,13 @@ def test_engine_events():
         assert 'Process for pipeline exited' in process_exited.message
 
 
-def test_hijack_start():
-    with temp_instance() as instance:
-        assert not instance.run_launcher.hijack_start
+def test_not_initialized():
+    run_launcher = CliApiRunLauncher()
+    run_id = 'dummy'
 
-    with temp_instance(hijack_start=False) as instance_explicit_false:
-        assert not instance_explicit_false.run_launcher.hijack_start
-
-    with temp_instance(hijack_start=True) as instance_with_hijack_start:
-        assert instance_with_hijack_start.run_launcher.hijack_start
+    assert run_launcher.join() is None
+    assert run_launcher.is_process_running(run_id) is False
+    assert run_launcher.can_terminate(run_id) is False
+    assert run_launcher.terminate(run_id) is False
+    assert run_launcher.get_active_run_count() == 0
+    assert run_launcher.is_active(run_id) is False

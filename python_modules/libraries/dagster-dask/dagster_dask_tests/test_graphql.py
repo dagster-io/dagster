@@ -1,15 +1,12 @@
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    InProcessDagsterEnvironment,
-)
-from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
@@ -21,30 +18,27 @@ def test_execute_hammer_through_dagit():
     )
     instance = DagsterInstance.local_temp()
 
-    execution_manager = SubprocessExecutionManager(instance)
-
     context = DagsterGraphQLContext(
-        environments=[
-            InProcessDagsterEnvironment(recon_repo, execution_manager=execution_manager,)
-        ],
-        instance=instance,
+        locations=[InProcessRepositoryLocation(recon_repo)], instance=instance,
     )
+
+    selector = infer_pipeline_selector(context, 'hammer_pipeline')
 
     executor = SyncExecutor()
 
     variables = {
         'executionParams': {
-            'environmentConfigData': {
+            'runConfigData': {
                 'storage': {'filesystem': {}},
                 'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
             },
-            'selector': {'name': 'hammer_pipeline'},
+            'selector': selector,
             'mode': 'default',
         }
     }
 
     start_pipeline_result = graphql(
-        request_string=START_PIPELINE_EXECUTION_MUTATION,
+        request_string=LAUNCH_PIPELINE_EXECUTION_MUTATION,
         schema=create_schema(),
         context=context,
         variables=variables,
@@ -54,9 +48,9 @@ def test_execute_hammer_through_dagit():
     if start_pipeline_result.errors:
         raise Exception('{}'.format(start_pipeline_result.errors))
 
-    run_id = start_pipeline_result.data['startPipelineExecution']['run']['runId']
+    run_id = start_pipeline_result.data['launchPipelineExecution']['run']['runId']
 
-    context.legacy_environment.execution_manager.join()
+    context.drain_outstanding_executions()
 
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
 

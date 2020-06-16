@@ -61,6 +61,10 @@ export enum StepKind {
   COMPUTE = "COMPUTE",
 }
 
+export interface AssetKeyInput {
+  path: string[];
+}
+
 export interface ExecutionMetadata {
   runId?: string | null;
   tags?: ExecutionTag[] | null;
@@ -70,7 +74,7 @@ export interface ExecutionMetadata {
 
 export interface ExecutionParams {
   selector: PipelineSelector;
-  environmentConfigData?: any | null;
+  runConfigData?: any | null;
   mode?: string | null;
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;
@@ -90,11 +94,21 @@ export interface PipelineRunsFilter {
 }
 
 export interface PipelineSelector {
-  name?: string | null;
-  pipelineName?: string | null;
-  repositoryName?: string | null;
-  environmentName?: string | null;
-  solidSubset?: string[] | null;
+  pipelineName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+  solidSelection?: string[] | null;
+}
+
+export interface RepositorySelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
+export interface ScheduleSelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+  scheduleName: string;
 }
 
 //==============================================================

@@ -25,10 +25,13 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     To use Postgres for run storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../docs/sections/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../docs/next/src/pages/docs/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :lines: 1-10
        :language: YAML
+
+    Note that the fields in this config are :py:class:`~dagster.StringSource` and
+    :py:class:`~dagster.IntSource` and can be configured from environment variables.
     '''
 
     def __init__(self, postgres_url, inst_data=None):

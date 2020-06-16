@@ -13,10 +13,9 @@ import LogsToolbar from "./LogsToolbar";
 import {
   handleReexecutionResult,
   getReexecutionVariables,
-  START_PIPELINE_REEXECUTION_MUTATION,
   LAUNCH_PIPELINE_REEXECUTION_MUTATION
 } from "./RunUtils";
-import { StartPipelineReexecutionVariables } from "./types/StartPipelineReexecution";
+import { LaunchPipelineReexecutionVariables } from "./types/LaunchPipelineReexecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import { RunContext } from "./RunContext";
 
@@ -30,9 +29,11 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
 
 interface RunProps {
   client: ApolloClient<any>;
+  runId: string;
   run?: RunFragment;
 }
 
@@ -48,7 +49,7 @@ export class Run extends React.Component<RunProps, RunState> {
       fragment RunFragment on PipelineRun {
         ...RunStatusPipelineRunFragment
 
-        environmentConfigYaml
+        runConfigYaml
         runId
         canTerminate
         status
@@ -63,11 +64,7 @@ export class Run extends React.Component<RunProps, RunState> {
           __typename
           ... on PipelineReference {
             name
-          }
-          ... on Pipeline {
-            solids {
-              name
-            }
+            solidSelection
           }
         }
         executionPlan {
@@ -162,7 +159,7 @@ export class Run extends React.Component<RunProps, RunState> {
   };
 
   render() {
-    const { client, run } = this.props;
+    const { client, run, runId } = this.props;
     const { logsFilter, query, selectedSteps } = this.state;
 
     return (
@@ -170,14 +167,16 @@ export class Run extends React.Component<RunProps, RunState> {
         {run && <RunStatusToPageAttributes run={run} />}
 
         <LogsProvider
+          key={runId}
           client={client}
-          runId={run ? run.runId : ""}
+          runId={runId}
           filter={logsFilter}
           selectedSteps={selectedSteps}
         >
           {({ filteredNodes, allNodes, loaded }) => (
-            <ReexecuteWithData
+            <RunWithData
               run={run}
+              runId={runId}
               filteredNodes={filteredNodes}
               allNodes={allNodes}
               logsLoading={!loaded}
@@ -197,8 +196,9 @@ export class Run extends React.Component<RunProps, RunState> {
   }
 }
 
-interface ReexecuteWithDataProps {
+interface RunWithDataProps {
   run?: RunFragment;
+  runId: string;
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: LogFilter;
@@ -217,11 +217,14 @@ interface ReexecuteWithDataProps {
     stepKeys?: string[];
     stepQuery?: string;
     resumeRetry?: boolean;
-  }) => StartPipelineReexecutionVariables | undefined;
+    repositoryLocationName: string;
+    repositoryName: string;
+  }) => LaunchPipelineReexecutionVariables | undefined;
 }
 
-const ReexecuteWithData = ({
+const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   run,
+  runId,
   allNodes,
   filteredNodes,
   logsFilter,
@@ -232,35 +235,24 @@ const ReexecuteWithData = ({
   onSetQuery,
   onSetSelectedSteps,
   getReexecutionVariables
-}: ReexecuteWithDataProps) => {
-  const [startPipelineReexecution] = useMutation(
-    START_PIPELINE_REEXECUTION_MUTATION
-  );
+}) => {
   const [launchPipelineReexecution] = useMutation(
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== "*" ? query : "";
-  const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
-    if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getReexecutionVariables({
-      run,
-      stepKeys,
-      stepQuery,
-      resumeRetry
-    });
-    const result = await startPipelineReexecution({ variables });
-    handleReexecutionResult(run.pipeline.name, result, {
-      openInNewWindow: false
-    });
-  };
   const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
       stepKeys,
       stepQuery,
-      resumeRetry
+      resumeRetry,
+      repositoryLocationName: repositoryLocation?.name,
+      repositoryName: repository?.name
     });
     const result = await launchPipelineReexecution({ variables });
     handleReexecutionResult(run.pipeline.name, result, {
@@ -307,7 +299,9 @@ const ReexecuteWithData = ({
           firstInitialPercent={35}
           firstMinSize={40}
           first={
-            run?.executionPlan ? (
+            logsLoading ? (
+              <GaantChart.LoadingState runId={runId} />
+            ) : run?.executionPlan ? (
               <GaantChart
                 options={{
                   mode: GaantChartMode.WATERFALL_TIMED
@@ -323,7 +317,6 @@ const ReexecuteWithData = ({
                     run={run}
                     executionPlan={run.executionPlan}
                     artifactsPersisted={run.executionPlan.artifactsPersisted}
-                    onExecute={onExecute}
                     onLaunch={onLaunch}
                     selectedSteps={selectedSteps}
                     selectedStepStates={selectedSteps.map(
@@ -333,6 +326,7 @@ const ReexecuteWithData = ({
                     )}
                   />
                 }
+                runId={runId}
                 plan={run.executionPlan}
                 metadata={metadata}
                 selectedSteps={selectedSteps}

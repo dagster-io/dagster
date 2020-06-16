@@ -3,7 +3,9 @@ import subprocess
 import sys
 
 from dagster import check
-from dagster.utils import git_repository_root
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -27,6 +29,19 @@ def build_and_tag_test_image(tag):
 
     # Build and tag local dagster test image
     return subprocess.check_output(['./build.sh', base_python, tag], cwd=test_repo_path())
+
+
+def get_test_project_external_pipeline(pipeline_name):
+    return (
+        InProcessRepositoryLocation(
+            ReconstructableRepository.for_file(
+                file_relative_path(__file__, 'test_project/test_pipelines/test_pipelines/repo.py'),
+                'define_demo_execution_repo',
+            )
+        )
+        .get_repository('demo_execution_repo')
+        .get_full_external_pipeline(pipeline_name)
+    )
 
 
 def test_project_docker_image():

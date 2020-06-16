@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 
 const MODIFIER_KEYCODES = [17, 18, 91, 224];
 const SHORTCUT_VISIBILITY_EVENT_TYPE = "shortcut-visibility";
+const SHORTCUT_VISIBLITY_DELAY = 800;
 
 // Global page state / handling of "shortcut mode". Press any modifier key
 // for 400ms to show shortcuts. This code emits a custom event that React
@@ -41,7 +42,10 @@ window.addEventListener("keydown", event => {
     !shortcutsVisible &&
     MODIFIER_KEYCODES.includes(event.keyCode)
   ) {
-    shortcutsTimer = setTimeout(() => setShortcutsVisible(true), 400);
+    shortcutsTimer = setTimeout(
+      () => setShortcutsVisible(true),
+      SHORTCUT_VISIBLITY_DELAY
+    );
   }
 });
 window.addEventListener("keyup", event => {

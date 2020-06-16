@@ -3,6 +3,7 @@ from dagster_graphql.client.mutations import (
     execute_execute_plan_mutation_raw,
 )
 
+from dagster.cli.workspace.cli_target import ModuleTarget, workspace_from_load_target
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 
@@ -36,21 +37,24 @@ EXPECTED_EVENTS = {
 def test_execute_execute_plan_mutation():
     pipeline_name = 'sleepy_pipeline'
     pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
-
+    workspace = workspace_from_load_target(
+        ModuleTarget('dagster_examples.toys.sleepy', pipeline_name)
+    )
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
-
     variables = {
         'executionParams': {
-            'environmentConfigData': {},
+            'runConfigData': {},
             'mode': 'default',
-            'selector': {'name': pipeline_name},
+            'selector': {
+                'repositoryLocationName': pipeline_name,
+                'repositoryName': '<<unnamed>>',
+                'pipelineName': pipeline_name,
+            },
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
-    result = execute_execute_plan_mutation(
-        pipeline.get_reconstructable_repository(), variables, instance_ref=instance.get_ref()
-    )
+    result = execute_execute_plan_mutation(workspace, variables, instance_ref=instance.get_ref())
     seen_events = set()
     for event in result:
         seen_events.add((event.event_type_value, event.step_key))
@@ -60,20 +64,27 @@ def test_execute_execute_plan_mutation():
 
 def test_execute_execute_plan_mutation_raw():
     pipeline_name = 'sleepy_pipeline'
+    workspace = workspace_from_load_target(
+        ModuleTarget('dagster_examples.toys.sleepy', pipeline_name)
+    )
     pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
         'executionParams': {
-            'environmentConfigData': {},
+            'runConfigData': {},
             'mode': 'default',
-            'selector': {'name': pipeline_name},
+            'selector': {
+                'repositoryLocationName': pipeline_name,
+                'repositoryName': '<<unnamed>>',
+                'pipelineName': pipeline_name,
+            },
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
     result = execute_execute_plan_mutation_raw(
-        pipeline.get_reconstructable_repository(), variables, instance_ref=instance.get_ref()
+        workspace, variables, instance_ref=instance.get_ref()
     )
     seen_events = set()
     for event in result:

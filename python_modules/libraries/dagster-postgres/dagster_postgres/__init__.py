@@ -6,3 +6,4 @@ from .schedule_storage import PostgresScheduleStorage
 from .version import __version__
 
 check_dagster_package_version('dagster-postgres', __version__)
+__all__ = ['PostgresEventLogStorage', 'PostgresRunStorage', 'PostgresScheduleStorage']

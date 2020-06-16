@@ -1,11 +1,11 @@
 import datetime
 import os
 
-from dagster_gcp.bigquery.resources import BigQueryClient
+from dagster_gcp.bigquery.resources import bigquery_resource
 from dagster_gcp.dataproc.resources import DataprocResource
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 
-from dagster import InputDefinition, Nothing, pipeline, solid
+from dagster import InputDefinition, ModeDefinition, Nothing, pipeline, solid
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 DEPLOY_BUCKET_PREFIX = os.getenv('GCP_DEPLOY_BUCKET_PREFIX')
@@ -39,7 +39,7 @@ def create_dataproc_cluster(_):
     DataprocResource(DATAPROC_CLUSTER_CONFIG).create_cluster()
 
 
-@solid(config={'date': str}, input_defs=[InputDefinition('start', Nothing)])
+@solid(config_schema={'date': str}, input_defs=[InputDefinition('start', Nothing)])
 def data_proc_spark_operator(context):
     dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
 
@@ -76,10 +76,14 @@ def delete_dataproc_cluster(_):
     DataprocResource(DATAPROC_CLUSTER_CONFIG).delete_cluster()
 
 
-@solid(config={'date': str}, input_defs=[InputDefinition('start', Nothing)])
+@solid(
+    config_schema={'date': str},
+    input_defs=[InputDefinition('start', Nothing)],
+    required_resource_keys={'bigquery'},
+)
 def gcs_to_bigquery(context):
     dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
-    bq = BigQueryClient(PROJECT_ID)
+    bq = context.resources.bigquery
 
     destination = '{project_id}.events.events${date}'.format(
         project_id=PROJECT_ID, date=dt.strftime('%Y%m%d')
@@ -98,9 +102,9 @@ def gcs_to_bigquery(context):
     bq.load_table_from_uri(source_uris, destination, job_config=load_job_config).result()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
-def explore_visits_by_hour(_):
-    bq = BigQueryClient(PROJECT_ID)
+@solid(input_defs=[InputDefinition('start', Nothing)],)
+def explore_visits_by_hour(context):
+    bq = context.resources.bigquery
 
     query_job_config = QueryJobConfig(
         destination='%s.aggregations.explore_visits_per_hour' % PROJECT_ID,
@@ -119,7 +123,7 @@ def explore_visits_by_hour(_):
     bq.query(sql, job_config=query_job_config)
 
 
-@pipeline
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'bigquery': bigquery_resource})])
 def gcp_data_platform():
     dataproc_job = delete_dataproc_cluster(data_proc_spark_operator(create_dataproc_cluster()))
 

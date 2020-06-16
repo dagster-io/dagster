@@ -313,7 +313,7 @@ def define_redshift_config():
 
 
 @resource(
-    config=define_redshift_config(),
+    config_schema=define_redshift_config(),
     description='Resource for connecting to the Redshift data warehouse',
 )
 def redshift_resource(context):
@@ -333,7 +333,7 @@ def redshift_resource(context):
 
             result = execute_solid(
                 example_redshift_solid,
-                environment_dict={
+                run_config={
                     'resources': {
                         'redshift': {
                             'config': {
@@ -355,7 +355,7 @@ def redshift_resource(context):
 
 
 @resource(
-    config=define_redshift_config(),
+    config_schema=define_redshift_config(),
     description='Fake resource for connecting to the Redshift data warehouse. Usage is identical '
     'to the real redshift_resource. Will always return [(1,)] for the single query case and '
     '[[(1,)], [(1,)], [(1,)]] for the multi query case.',

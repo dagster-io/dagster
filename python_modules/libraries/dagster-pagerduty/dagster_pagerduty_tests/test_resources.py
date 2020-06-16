@@ -32,7 +32,7 @@ def test_pagerduty_resource():
 
     result = execute_solid(
         pagerduty_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
             }

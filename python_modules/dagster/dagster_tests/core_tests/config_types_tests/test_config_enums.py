@@ -42,7 +42,7 @@ def test_enum_in_pipeline_execution():
     called = {}
 
     @solid(
-        config={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
+        config_schema={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
     )
     def config_me(context):
         assert context.solid_config['int_field'] == 2
@@ -87,7 +87,7 @@ def test_native_enum_dagster_enum():
 
     called = {}
 
-    @solid(config=dagster_enum)
+    @solid(config_schema=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
         called['yup'] = True
@@ -105,7 +105,7 @@ def test_native_enum_dagster_enum_from_classmethod():
     dagster_enum = Enum.from_python_enum(NativeEnum)
     called = {}
 
-    @solid(config=dagster_enum)
+    @solid(config_schema=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
         called['yup'] = True
@@ -124,7 +124,7 @@ def test_native_enum_not_allowed_as_default_value():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @solid(config=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
+        @solid(config_schema=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
         def _enum_direct(_):
             pass
 
@@ -140,7 +140,7 @@ def test_list_enum_with_default_value():
 
     called = {}
 
-    @solid(config=Field([dagster_enum], is_required=False, default_value=['BAR']))
+    @solid(config_schema=Field([dagster_enum], is_required=False, default_value=['BAR']))
     def enum_list(context):
         assert context.solid_config == [NativeEnum.BAR]
         called['yup'] = True
@@ -160,7 +160,7 @@ def test_dict_enum_with_default():
 
     called = {}
 
-    @solid(config={'enum': Field(dagster_enum, is_required=False, default_value='BAR')})
+    @solid(config_schema={'enum': Field(dagster_enum, is_required=False, default_value='BAR')})
     def enum_dict(context):
         assert context.solid_config['enum'] == NativeEnum.BAR
         called['yup'] = True
@@ -180,7 +180,9 @@ def test_list_enum_with_bad_default_value():
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
 
-        @solid(config=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR]))
+        @solid(
+            config_schema=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR])
+        )
         def _bad_enum_list(_):
             pass
 
@@ -198,7 +200,9 @@ def test_dict_enum_with_bad_default():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
         @solid(
-            config={'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)}
+            config_schema={
+                'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
+            }
         )
         def _enum_bad_dict(_):
             pass

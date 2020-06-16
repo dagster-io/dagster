@@ -28,6 +28,7 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillError, DagstermillExecutionError
@@ -89,9 +90,9 @@ def replace_parameters(context, nb, parameters):
 def get_papermill_parameters(compute_context, inputs, output_log_path):
     check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     check.param_invariant(
-        isinstance(compute_context.environment_dict, dict),
+        isinstance(compute_context.run_config, dict),
         'compute_context',
-        'SystemComputeExecutionContext must have valid environment_dict',
+        'SystemComputeExecutionContext must have valid run_config',
     )
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
@@ -111,7 +112,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     dm_context_dict = {
         'output_log_path': output_log_path,
         'marshal_dir': marshal_dir,
-        'environment_dict': compute_context.environment_dict,
+        'run_config': compute_context.run_config,
     }
 
     dm_solid_handle_kwargs = compute_context.solid_handle._asdict()
@@ -146,9 +147,9 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
     def _t_fn(compute_context, inputs):
         check.inst_param(compute_context, 'compute_context', SolidExecutionContext)
         check.param_invariant(
-            isinstance(compute_context.environment_dict, dict),
+            isinstance(compute_context.run_config, dict),
             'context',
-            'SystemComputeExecutionContext must have valid environment_dict',
+            'SystemComputeExecutionContext must have valid run_config',
         )
 
         system_compute_context = compute_context.get_system_context()
@@ -276,6 +277,7 @@ def define_dagstermill_solid(
     config=None,
     required_resource_keys=None,
     output_notebook=None,
+    config_schema=None,
 ):
     '''Wrap a Jupyter notebook in a solid.
 
@@ -284,7 +286,7 @@ def define_dagstermill_solid(
         notebook_path (str): Path to the backing notebook.
         input_defs (Optional[List[InputDefinition]]): The solid's inputs.
         output_defs (Optional[List[OutputDefinition]]): The solid's outputs. Your notebook should
-            call :py:function:`~dagstermill.yield_result` to yield each of these outputs.
+            call :py:func:`~dagstermill.yield_result` to yield each of these outputs.
         required_resource_keys (Optional[Set[str]]): The string names of any required resources.
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
@@ -314,7 +316,13 @@ def define_dagstermill_solid(
             if output_notebook
             else []
         ),
-        config=check_user_facing_opt_config_param(config, 'config'),
+        config_schema=canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        ),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         tags={'notebook_path': notebook_path, 'kind': 'ipynb'},

@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
 class LoggerDefinition(object):
@@ -13,37 +14,20 @@ class LoggerDefinition(object):
         logger_fn (Callable[[InitLoggerContext], logging.Logger]): User-provided function to
             instantiate the logger. This logger will be automatically invoked whenever the methods
             on ``context.log`` are called from within solid compute logic.
-        config (Optional[Any]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type 
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
         description (Optional[str]): A human-readable description of this logger.
     '''
 
-    def __init__(self, logger_fn, config=None, description=None):
+    def __init__(self, logger_fn, config_schema=None, description=None, config=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -52,14 +36,19 @@ class LoggerDefinition(object):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def description(self):
         return self._description
 
 
-def logger(config=None, description=None):
+def logger(config_schema=None, description=None, config=None):
     '''Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -67,39 +56,22 @@ def logger(config=None, description=None):
     :py:class:`LoggerDefinition`.
 
     Args:
-        config (Optional[Any]): The schema for the config. Configuration data available in
+        config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type 
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
         description (Optional[str]): A human-readable description of the logger.
     '''
     # This case is for when decorator is used bare, without arguments.
     # E.g. @logger versus @logger()
-    if callable(config) and not is_callable_valid_config_arg(config):
-        return LoggerDefinition(logger_fn=config)
+    if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+        return LoggerDefinition(logger_fn=config_schema)
 
     def _wrap(logger_fn):
-        return LoggerDefinition(logger_fn, config, description)
+        return LoggerDefinition(
+            logger_fn=logger_fn,
+            config_schema=canonicalize_backcompat_args(
+                config_schema, 'config_schema', config, 'config', '0.9.0'
+            ),
+            description=description,
+        )
 
     return _wrap

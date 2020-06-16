@@ -1,12 +1,9 @@
 import os
 import uuid
 
-from dagster_aws.s3 import (
-    S3FileHandle,
-    S3FileManager,
-    create_s3_fake_resource,
-    s3_plus_default_storage_defs,
-)
+import boto3
+from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_plus_default_storage_defs
+from moto import mock_s3
 
 from dagster import (
     InputDefinition,
@@ -84,6 +81,7 @@ def test_s3_file_manager_read():
     assert not os.path.exists(state['file_name'])
 
 
+@mock_s3
 def test_depends_on_s3_resource_intermediates():
     @solid(
         input_defs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
@@ -92,13 +90,15 @@ def test_depends_on_s3_resource_intermediates():
     def add_numbers(_, num_one, num_two):
         return num_one + num_two
 
-    s3_fake_resource = create_s3_fake_resource()
+    # Uses mock S3
+    s3 = boto3.client('s3')
+    s3.create_bucket(Bucket='some-bucket')
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3)},
             )
         ]
     )
@@ -107,7 +107,7 @@ def test_depends_on_s3_resource_intermediates():
 
     result = execute_pipeline(
         s3_internal_pipeline,
-        environment_dict={
+        run_config={
             'solids': {
                 'add_numbers': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 4}}}
             },
@@ -115,16 +115,15 @@ def test_depends_on_s3_resource_intermediates():
         },
     )
 
+    keys_in_bucket = [obj['Key'] for obj in s3.list_objects(Bucket='some-bucket')['Contents']]
     assert result.success
     assert result.result_for_solid('add_numbers').output_value() == 6
-
-    assert 'some-bucket' in s3_fake_resource.buckets
 
     keys = set()
     for step_key, output_name in [('add_numbers.compute', 'result')]:
         keys.add(create_s3_key(result.run_id, step_key, output_name))
 
-    assert set(s3_fake_resource.buckets['some-bucket'].keys()) == keys
+    assert set(keys_in_bucket) == keys
 
 
 def create_s3_key(run_id, step_key, output_name):
@@ -133,6 +132,7 @@ def create_s3_key(run_id, step_key, output_name):
     )
 
 
+@mock_s3
 def test_depends_on_s3_resource_file_manager():
     bar_bytes = 'bar'.encode()
 
@@ -146,13 +146,15 @@ def test_depends_on_s3_resource_file_manager():
         assert isinstance(local_path, str)
         assert open(local_path, 'rb').read() == bar_bytes
 
-    s3_fake_resource = create_s3_fake_resource()
+    # Uses mock S3
+    s3 = boto3.client('s3')
+    s3.create_bucket(Bucket='some-bucket')
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
-                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_fake_resource)},
+                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3)},
             )
         ]
     )
@@ -161,12 +163,12 @@ def test_depends_on_s3_resource_file_manager():
 
     result = execute_pipeline(
         s3_file_manager_test,
-        environment_dict={'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}}},
+        run_config={'storage': {'s3': {'config': {'s3_bucket': 'some-bucket'}}}},
     )
 
     assert result.success
 
-    keys_in_bucket = set(s3_fake_resource.buckets['some-bucket'].keys())
+    keys_in_bucket = set([obj['Key'] for obj in s3.list_objects(Bucket='some-bucket')['Contents']])
 
     for step_key, output_name in [
         ('emit_file.compute', 'result'),

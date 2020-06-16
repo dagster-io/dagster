@@ -132,10 +132,7 @@ def test_nested_dict():
 
 def test_scalar_union():
     non_scalar_type = {'str_field': String}
-    scalar_union_type = ScalarUnion(
-        scalar_type=resolve_to_config_type(int),
-        non_scalar_type=resolve_to_config_type(non_scalar_type),
-    )
+    scalar_union_type = ScalarUnion(scalar_type=int, non_scalar_schema=non_scalar_type,)
     assert_inner_types(scalar_union_type, String, Int, non_scalar_type)
 
 
@@ -144,7 +141,7 @@ def test_test_type_pipeline_construction():
 
 
 def define_solid_for_test_type(name, config):
-    @solid(name=name, config=config, input_defs=[], output_defs=[])
+    @solid(name=name, config_schema=config, input_defs=[], output_defs=[])
     def a_solid(_):
         return None
 

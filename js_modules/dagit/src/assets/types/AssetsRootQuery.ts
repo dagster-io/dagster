@@ -12,6 +12,11 @@ export interface AssetsRootQuery_assetsOrError_AssetsNotSupportedError {
   message: string;
 }
 
+export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations_materializationEvent {
   __typename: "StepMaterializationEvent";
   timestamp: string;
@@ -24,7 +29,7 @@ export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMateri
 
 export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
-  key: string;
+  key: AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
   assetMaterializations: AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations[];
 }
 

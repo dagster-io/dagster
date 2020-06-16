@@ -342,6 +342,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
 const StyledTagInput = styled(TagInput)`
   min-width: 400px;
+  max-width: 400px;
   input {
     font-size: 12px;
   }

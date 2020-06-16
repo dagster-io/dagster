@@ -14,8 +14,7 @@ from dagster_test.test_project import build_and_tag_test_image, test_project_doc
 
 from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.instance.ref import compute_logs_directory
-from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 
 from .utils import IS_BUILDKITE, check_output, find_free_port, image_pull_policy
@@ -185,7 +184,7 @@ def dagster_instance(helm_namespace, run_launcher):  # pylint: disable=redefined
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=PostgresRunStorage(postgres_url),
             event_storage=PostgresEventLogStorage(postgres_url),
-            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(),
             run_launcher=run_launcher,
         )
         yield instance

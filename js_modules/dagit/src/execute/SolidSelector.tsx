@@ -9,16 +9,16 @@ import {
   SolidSelectorQuery_pipelineOrError_Pipeline_solids
 } from "./types/SolidSelectorQuery";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import { SubsetError } from "./ExecutionSessionContainer";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery } from "../GraphQueryImpl";
 import SVGViewport from "../graph/SVGViewport";
 import styled from "styled-components/macro";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 interface ISolidSelectorProps {
   pipelineName: string;
-  serverProvidedSubsetError: SubsetError;
+  serverProvidedSubsetError?: { message: string };
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
@@ -65,11 +65,12 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   }
 }
 
-export const SOLID_SELECTOR_QUERY = gql`
-  query SolidSelectorQuery($name: String!) {
-    pipelineOrError(params: { name: $name }) {
+const SOLID_SELECTOR_QUERY = gql`
+  query SolidSelectorQuery($selector: PipelineSelector!) {
+    pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
+        id
         name
         solids {
           name
@@ -92,14 +93,16 @@ export const SOLID_SELECTOR_QUERY = gql`
 
 export default (props: ISolidSelectorProps) => {
   const { serverProvidedSubsetError, query, onChange } = props;
-  const [pending, setPending] = React.useState<string>(query || "");
+  const [pending, setPending] = React.useState<string>(query || "*");
   const [focused, setFocused] = React.useState(false);
-  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { name: props.pipelineName },
+  const selector = usePipelineSelector(props.pipelineName);
+  const { data, loading } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: { selector },
     fetchPolicy: "cache-and-network"
   });
+
   React.useEffect(() => {
-    setPending(query || "");
+    setPending(query || "*");
   }, [query, focused]);
 
   const queryResultSolids =
@@ -117,7 +120,7 @@ export default (props: ISolidSelectorProps) => {
   }
 
   const errorMessage =
-    queryResultSolids.length === 0 || pending.length === 0
+    !loading && (queryResultSolids.length === 0 || pending.length === 0)
       ? `You must provide a valid solid query or * to execute the entire pipeline.`
       : serverProvidedSubsetError
       ? serverProvidedSubsetError.message

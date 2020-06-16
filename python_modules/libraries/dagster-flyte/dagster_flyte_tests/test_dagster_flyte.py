@@ -17,14 +17,12 @@ def test_flyte_sdk_workflow():
     def pipe():
         mult_x()
 
-    environment_dict = {
+    run_config = {
         'storage': {'filesystem': {}},
         'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}},
     }
 
-    workflow_obj = compile_pipeline_to_flyte(
-        pipe, environment_dict=environment_dict, module=__name__
-    )
+    workflow_obj = compile_pipeline_to_flyte(pipe, run_config=run_config, module=__name__)
 
     assert isinstance(workflow_obj, SdkWorkflow)
     assert len(workflow_obj.nodes) == 1
@@ -41,13 +39,13 @@ def test_workflow_with_any_type():
     def pipe():
         mult_x()
 
-    environment_dict = {
+    run_config = {
         'storage': {'filesystem': {}},
         'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}},
     }
 
     with pytest.raises(TypeError):
-        compile_pipeline_to_flyte(pipe, environment_dict=environment_dict, module=__name__)
+        compile_pipeline_to_flyte(pipe, run_config=run_config, module=__name__)
 
 
 def test_multi_step_pipeline():
@@ -63,7 +61,7 @@ def test_multi_step_pipeline():
     def pipe():
         add(mult_x())
 
-    environment_dict = {
+    run_config = {
         'storage': {'filesystem': {}},
         'solids': {
             'mult_x': {'inputs': {'x': {'value': 2}}},
@@ -71,9 +69,7 @@ def test_multi_step_pipeline():
         },
     }
 
-    workflow_obj = compile_pipeline_to_flyte(
-        pipe, environment_dict=environment_dict, module=__name__
-    )
+    workflow_obj = compile_pipeline_to_flyte(pipe, run_config=run_config, module=__name__)
 
     assert isinstance(workflow_obj, SdkWorkflow)
     assert len(workflow_obj.nodes) == 2
@@ -103,7 +99,7 @@ def test_multi_step_from_multi_outputs():
         result = add(to_sum=[summed, added])
         return result
 
-    environment_dict = {
+    run_config = {
         'storage': {'filesystem': {}},
         'solids': {
             'mult_x': {'inputs': {'x': {'value': 2}}},
@@ -111,9 +107,7 @@ def test_multi_step_from_multi_outputs():
         },
     }
 
-    workflow_obj = compile_pipeline_to_flyte(
-        pipe, environment_dict=environment_dict, module=__name__
-    )
+    workflow_obj = compile_pipeline_to_flyte(pipe, run_config=run_config, module=__name__)
 
     assert isinstance(workflow_obj, SdkWorkflow)
     assert len(workflow_obj.nodes) == 3

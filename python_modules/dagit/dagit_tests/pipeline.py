@@ -1,10 +1,13 @@
+import datetime
+
 from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
-    RepositoryDefinition,
+    daily_schedule,
     lambda_solid,
     pipeline,
+    repository,
 )
 
 
@@ -23,5 +26,11 @@ def math():
     return mult_two(num=add_one())
 
 
-def define_repository():
-    return RepositoryDefinition(name='test', pipeline_defs=[math])
+@daily_schedule(pipeline_name="math", start_date=datetime.datetime.now())
+def my_schedule(_):
+    return {'solids': {'mult_two': {'inputs': {'num': {'value': 2}}}}}
+
+
+@repository
+def test_repository():
+    return [math]

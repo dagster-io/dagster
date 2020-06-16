@@ -7,20 +7,25 @@ from dagster_graphql.schema.solids import (
     build_dauphin_solid_handles,
 )
 
-
-def get_solid(graphene_info, name):
-    return get_used_solid_map(graphene_info)[name]
-
-
-def get_solids(graphene_info):
-    return get_used_solid_map(graphene_info).values()
+from dagster import check
+from dagster.core.host_representation import ExternalRepository
 
 
-def get_used_solid_map(graphene_info):
+def get_solid(repo, name):
+    return get_used_solid_map(repo)[name]
+
+
+def get_solids(repo):
+    return get_used_solid_map(repo).values()
+
+
+def get_used_solid_map(repo):
+    check.inst_param(repo, 'repo', ExternalRepository)
+
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for external_pipeline in graphene_info.context.legacy_get_all_external_pipelines():
+    for external_pipeline in repo.get_all_external_pipelines():
         for handle in build_dauphin_solid_handles(
             external_pipeline, external_pipeline.dep_structure_index
         ):
@@ -32,13 +37,15 @@ def get_used_solid_map(graphene_info):
                     pipeline=DauphinPipeline(external_pipeline), solidHandle=handle,
                 )
             )
+
     return OrderedDict(
         (
             definition.name,
             DauphinUsedSolid(
                 definition=definition,
                 invocations=sorted(
-                    inv_by_def_name[definition.name], key=lambda i: i.solidHandle.handleID
+                    inv_by_def_name[definition.name],
+                    key=lambda i: i.solidHandle.handleID.to_string(),
                 ),
             ),
         )

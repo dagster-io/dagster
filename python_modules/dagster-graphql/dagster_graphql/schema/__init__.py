@@ -12,6 +12,7 @@ def create_schema():
         dagster_types,
         errors,
         execution,
+        external,
         paging,
         partition_sets,
         pipelines,

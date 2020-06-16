@@ -2,7 +2,6 @@ import os
 
 from dagster import Bool, Int, check
 from dagster.config import Field, Permissive
-from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import merge_dicts
@@ -16,8 +15,7 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
     dagster_config_dict = merge_dicts(
         load_yaml_from_globs(os.path.join(base_dir, config_filename)), overrides
     )
-    dagster_config_type = resolve_to_config_type(define_dagster_config_cls())
-    dagster_config = validate_config(dagster_config_type, dagster_config_dict)
+    dagster_config = validate_config(dagster_instance_config_schema(), dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
             'Errors whilst loading dagster instance config at {}.'.format(config_filename),
@@ -31,7 +29,7 @@ def config_field_for_configurable_class():
     return Field({'module': str, 'class': str, 'config': Field(Permissive())}, is_required=False)
 
 
-def define_dagster_config_cls():
+def dagster_instance_config_schema():
     return {
         'local_artifact_storage': config_field_for_configurable_class(),
         'compute_logs': config_field_for_configurable_class(),

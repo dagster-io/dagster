@@ -5,8 +5,8 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
-from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -15,7 +15,7 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance'
     '''Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
-    functions. It is passed as the first argument to ``environment_dict_fn``, ``tags_fn``,
+    functions. It is passed as the first argument to ``run_config_fn``, ``tags_fn``,
     and ``should_execute``.
 
     Attributes:
@@ -31,19 +31,6 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance'
         )
 
 
-@whitelist_for_serdes
-class ScheduleDefinitionData(
-    namedtuple('ScheduleDefinitionData', 'name cron_schedule environment_vars')
-):
-    def __new__(cls, name, cron_schedule, environment_vars=None):
-        return super(ScheduleDefinitionData, cls).__new__(
-            cls,
-            check.str_param(name, 'name'),
-            check.str_param(cron_schedule, 'cron_schedule'),
-            check.opt_dict_param(environment_vars, 'environment_vars'),
-        )
-
-
 class ScheduleDefinition(object):
     '''Define a schedule that targets a pipeline
 
@@ -52,41 +39,42 @@ class ScheduleDefinition(object):
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
-        environment_dict (Optional[Dict]): The environment config that parameterizes this execution,
+        run_config (Optional[Dict]): The environment config that parameterizes this execution,
             as a dict.
-        environment_dict_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
+        run_config_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
             ScheduleExecutionContext object and returns the environment configuration that
-            parameterizes this execution, as a dict. You may set only one of ``environment_dict``
-            and ``environment_dict_fn``.
+            parameterizes this execution, as a dict. You may set only one of ``run_config``
+            and ``run_config_fn``.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
-            that generates tags to attach to the schedules runs. Takes a
+        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A
+            function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
-            runs.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
-        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a
-            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs
+            at schedule execution time to determine whether a schedule should execute or skip. Takes
+            a :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
     '''
 
     __slots__ = [
-        '_schedule_definition_data',
+        '_name',
+        '_cron_schedule',
         '_execution_params',
-        '_environment_dict_fn',
-        '_environment_dict',
+        '_run_config_fn',
+        '_run_config',
         '_tags',
         '_mode',
         '_pipeline_name',
-        '_solid_subset',
+        '_solid_selection',
         '_tags_fn',
         '_should_execute',
+        '_environment_vars',
     ]
 
     def __init__(
@@ -94,32 +82,50 @@ class ScheduleDefinition(object):
         name,
         cron_schedule,
         pipeline_name,
-        environment_dict=None,
-        environment_dict_fn=None,
+        run_config=None,
+        run_config_fn=None,
         tags=None,
         tags_fn=None,
-        solid_subset=None,
+        solid_selection=None,
         mode="default",
         should_execute=None,
         environment_vars=None,
+        environment_dict=None,
+        environment_dict_fn=None,
     ):
-        check.str_param(name, 'name')
-        check.str_param(cron_schedule, 'cron_schedule')
-        check.str_param(pipeline_name, 'pipeline_name')
-        check.opt_dict_param(environment_dict, 'environment_dict')
-        check.opt_callable_param(environment_dict_fn, 'environment_dict_fn')
-        check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
-        check.opt_callable_param(tags_fn, 'tags_fn')
-        check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
-        mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-        check.opt_callable_param(should_execute, 'should_execute')
-        check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
 
-        if environment_dict_fn and environment_dict:
+        self._name = check.str_param(name, 'name')
+        self._cron_schedule = check.str_param(cron_schedule, 'cron_schedule')
+        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        check.opt_callable_param(environment_dict_fn, 'environment_dict_fn')
+        run_config = canonicalize_backcompat_args(
+            run_config, 'run_config', environment_dict, 'environment_dict', '0.9.0'
+        )
+        run_config_fn = canonicalize_backcompat_args(
+            run_config_fn, 'run_config_fn', environment_dict_fn, 'environment_dict_fn', '0.9.0'
+        )
+        self._run_config = check.opt_dict_param(run_config, 'run_config')
+        self._tags = check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
+
+        check.opt_callable_param(tags_fn, 'tags_fn')
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, 'solid_selection', of_type=str
+        )
+        self._mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+        check.opt_callable_param(should_execute, 'should_execute')
+        self._environment_vars = check.opt_dict_param(
+            environment_vars, 'environment_vars', key_type=str, value_type=str
+        )
+
+        if run_config_fn and run_config:
             raise DagsterInvalidDefinitionError(
-                'Attempted to provide both environment_dict_fn and environment_dict as arguments'
+                'Attempted to provide both run_config_fn and run_config as arguments'
                 ' to ScheduleDefinition. Must provide only one of the two.'
             )
+
+        if not run_config and not run_config_fn:
+            run_config_fn = lambda _context: {}
+        self._run_config_fn = run_config_fn
 
         if tags_fn and tags:
             raise DagsterInvalidDefinitionError(
@@ -127,55 +133,39 @@ class ScheduleDefinition(object):
                 ' to ScheduleDefinition. Must provide only one of the two.'
             )
 
-        if not environment_dict and not environment_dict_fn:
-            environment_dict_fn = lambda _context: {}
-
         if not tags and not tags_fn:
             tags_fn = lambda _context: {}
+        self._tags_fn = tags_fn
 
         if not should_execute:
             should_execute = lambda _context: True
-
-        self._schedule_definition_data = ScheduleDefinitionData(
-            name=check.str_param(name, 'name'),
-            cron_schedule=check.str_param(cron_schedule, 'cron_schedule'),
-            environment_vars=check.opt_dict_param(environment_vars, 'environment_vars'),
-        )
-
-        self._environment_dict = environment_dict
-        self._environment_dict_fn = environment_dict_fn
-        self._tags = tags
-        self._tags_fn = tags_fn
         self._should_execute = should_execute
-        self._mode = mode
-        self._pipeline_name = pipeline_name
-        self._solid_subset = solid_subset
-
-    @property
-    def schedule_definition_data(self):
-        return self._schedule_definition_data
 
     @property
     def name(self):
-        return self._schedule_definition_data.name
+        return self._name
 
     @property
     def cron_schedule(self):
-        return self._schedule_definition_data.cron_schedule
+        return self._cron_schedule
 
     @property
     def environment_vars(self):
-        return self._schedule_definition_data.environment_vars
+        return self._environment_vars
 
     @property
     def mode(self):
         return self._mode
 
-    def get_environment_dict(self, context):
+    def get_run_config(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)
-        if self._environment_dict:
-            return self._environment_dict
-        return self._environment_dict_fn(context)
+        if self._run_config:
+            return self._run_config
+        return self._run_config_fn(context)
+
+    def get_environment_dict(self, context):
+        rename_warning('get_run_config', 'get_environment_dict', '0.9.0')
+        return self.get_run_config(context)
 
     def get_tags(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)
@@ -199,5 +189,5 @@ class ScheduleDefinition(object):
         return self._pipeline_name
 
     @property
-    def solid_subset(self):
-        return self._solid_subset
+    def solid_selection(self):
+        return self._solid_selection

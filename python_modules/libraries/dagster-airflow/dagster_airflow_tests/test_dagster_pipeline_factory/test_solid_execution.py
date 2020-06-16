@@ -51,7 +51,6 @@ def test_long_name():
     result = execute_pipeline(pipeline_def)
 
     assert result.success
-    print(result.pipeline_def.name)
     assert (
         result.pipeline_def.name
         == 'airflow_dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong'

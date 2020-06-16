@@ -6,8 +6,8 @@ from paramiko.config import SSH_PORT
 from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import Field, check, resource
-from dagster.utils import merge_dicts
+from dagster import Field, StringSource, check, resource
+from dagster.utils import merge_dicts, mkdir_p
 
 
 def key_from_str(key_str):
@@ -171,10 +171,45 @@ class SSHResource(object):
 
         return client
 
+    def sftp_get(self, remote_filepath, local_filepath):
+        check.str_param(remote_filepath, 'remote_filepath')
+        check.str_param(local_filepath, 'local_filepath')
+        conn = self.get_connection()
+        with conn.open_sftp() as sftp_client:
+            local_folder = os.path.dirname(local_filepath)
+
+            # Create intermediate directories if they don't exist
+            mkdir_p(local_folder)
+
+            self.log.info(
+                'Starting to transfer from {0} to {1}'.format(remote_filepath, local_filepath)
+            )
+
+            sftp_client.get(remote_filepath, local_filepath)
+
+        conn.close()
+        return local_filepath
+
+    def sftp_put(self, remote_filepath, local_filepath, confirm=True):
+        check.str_param(remote_filepath, 'remote_filepath')
+        check.str_param(local_filepath, 'local_filepath')
+        conn = self.get_connection()
+        with conn.open_sftp() as sftp_client:
+            self.log.info(
+                'Starting to transfer file from {0} to {1}'.format(local_filepath, remote_filepath)
+            )
+
+            sftp_client.put(local_filepath, remote_filepath, confirm=confirm)
+
+        conn.close()
+        return local_filepath
+
 
 @resource(
     {
-        'remote_host': Field(str, description='remote host to connect', is_required=True),
+        'remote_host': Field(
+            StringSource, description='remote host to connect to', is_required=True
+        ),
         'remote_port': Field(
             int,
             description='port of remote host to connect (Default is paramiko SSH_PORT)',
@@ -182,18 +217,22 @@ class SSHResource(object):
             default_value=SSH_PORT,
         ),
         'username': Field(
-            str, description='username to connect to the remote_host', is_required=False
+            StringSource, description='username to connect to the remote_host', is_required=False
         ),
         'password': Field(
-            str,
+            StringSource,
             description='password of the username to connect to the remote_host',
             is_required=False,
         ),
         'key_file': Field(
-            str, description='key file to use to connect to the remote_host.', is_required=False
+            StringSource,
+            description='key file to use to connect to the remote_host.',
+            is_required=False,
         ),
         'key_string': Field(
-            str, description='key string to use to connect to remote_host', is_required=False
+            StringSource,
+            description='key string to use to connect to remote_host',
+            is_required=False,
         ),
         'timeout': Field(
             int,

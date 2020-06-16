@@ -1,11 +1,5 @@
-import inspect
-
 from dagster import check
-
-if hasattr(inspect, 'signature'):
-    funcsigs = inspect
-else:
-    import funcsigs
+from dagster.seven import funcsigs
 
 
 class InvalidDecoratedFunctionInfo(object):

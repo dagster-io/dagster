@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import pytest
@@ -73,7 +74,11 @@ def test_args_fails():
 
 def test_bad_target():
     with pytest.raises(
-        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+        DagsterInvariantViolationError,
+        match=re.escape(
+            'Loadable attributes must be either a PipelineDefinition or a '
+            'RepositoryDefinition. Got None.'
+        ),
     ):
         reconstructable(not_the_pipeline)
 
@@ -128,8 +133,17 @@ def test_inner_decorator_3():
 
 def test_reconstructable_cli_args():
     recon_file = ReconstructableRepository.for_file('foo_file', 'bar_function')
-    assert recon_file.get_cli_args() == '-f {foo_file} -n bar_function'.format(
+    assert recon_file.get_cli_args() == '-f {foo_file} -a bar_function'.format(
         foo_file=os.path.abspath(os.path.expanduser('foo_file'))
     )
     recon_module = ReconstructableRepository.for_module('foo_module', 'bar_function')
-    assert recon_module.get_cli_args() == '-m foo_module -n bar_function'
+    assert recon_module.get_cli_args() == '-m foo_module -a bar_function'
+
+
+def test_solid_selection():
+    recon_pipe = reconstructable(get_the_pipeline)
+    sub_pipe_full = recon_pipe.subset_for_execution(['the_solid'])
+    assert sub_pipe_full.solids_to_execute == {'the_solid'}
+
+    sub_pipe_unresolved = recon_pipe.subset_for_execution(['the_solid+'])
+    assert sub_pipe_unresolved.solids_to_execute == {'the_solid'}

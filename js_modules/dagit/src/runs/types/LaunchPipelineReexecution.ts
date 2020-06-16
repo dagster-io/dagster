@@ -9,12 +9,12 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // GraphQL mutation operation: LaunchPipelineReexecution
 // ====================================================
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_RunLauncherNotDefinedError {
-  __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
+export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError {
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
 }
 
@@ -52,7 +52,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   stack: string[];
 }
 
-export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_RunLauncherNotDefinedError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
+export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_InvalidStepError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
 
 export interface LaunchPipelineReexecution {
   launchPipelineReexecution: LaunchPipelineReexecution_launchPipelineReexecution;

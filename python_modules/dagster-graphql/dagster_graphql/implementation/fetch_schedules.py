@@ -1,136 +1,183 @@
+import yaml
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleExecutionContext
-from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
-from dagster.core.storage.tags import check_tags
-from dagster.utils import merge_dicts
-
-from .utils import (
-    ExecutionMetadata,
-    ExecutionParams,
+from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data
+from dagster.core.host_representation import (
+    ExternalSchedule,
     PipelineSelector,
-    UserFacingGraphQLError,
-    capture_dauphin_error,
+    RepositorySelector,
+    ScheduleSelector,
 )
+
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
-def start_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
+def reconcile_scheduler_state(graphene_info, repository_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
     instance = graphene_info.context.instance
 
-    schedule = instance.start_schedule(external_repository.name, schedule_name)
-    return graphene_info.schema.type_named('RunningScheduleResult')(
-        schedule=graphene_info.schema.type_named('RunningSchedule')(
-            graphene_info, schedule=schedule
+    instance.reconcile_scheduler_state(repository)
+    return graphene_info.schema.type_named('ReconcileSchedulerStateSuccess')(message="Success")
+
+
+@capture_dauphin_error
+def start_schedule(graphene_info, schedule_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
+    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
+    instance = graphene_info.context.instance
+    schedule_state = instance.start_schedule_and_update_storage_state(
+        repository.get_external_schedule(schedule_selector.schedule_name)
+    )
+    return graphene_info.schema.type_named('ScheduleStateResult')(
+        schedule_state=graphene_info.schema.type_named('ScheduleState')(
+            graphene_info, schedule_state=schedule_state
         )
     )
 
 
 @capture_dauphin_error
-def stop_schedule(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
+def stop_schedule(graphene_info, schedule_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
+    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
-
-    schedule = instance.stop_schedule(external_repository.name, schedule_name)
-    return graphene_info.schema.type_named('RunningScheduleResult')(
-        schedule=graphene_info.schema.type_named('RunningSchedule')(
-            graphene_info, schedule=schedule
+    schedule_state = instance.stop_schedule_and_update_storage_state(
+        repository.get_external_schedule(schedule_selector.schedule_name).get_origin_id()
+    )
+    return graphene_info.schema.type_named('ScheduleStateResult')(
+        schedule_state=graphene_info.schema.type_named('ScheduleState')(
+            graphene_info, schedule_state=schedule_state
         )
     )
 
 
 @capture_dauphin_error
 def get_scheduler_or_error(graphene_info):
-    external_repository = graphene_info.context.legacy_external_repository
     instance = graphene_info.context.instance
 
     if not instance.scheduler:
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
-    runningSchedules = [
-        graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
-        for s in instance.all_schedules(external_repository.name)
-    ]
-
-    return graphene_info.schema.type_named('Scheduler')(runningSchedules=runningSchedules)
-
-
-@capture_dauphin_error
-def get_schedule_or_error(graphene_info, schedule_name):
-    external_repository = graphene_info.context.legacy_external_repository
-    instance = graphene_info.context.instance
-
-    schedule = instance.get_schedule_by_name(external_repository.name, schedule_name)
-    if not schedule:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('ScheduleNotFoundError')(schedule_name=schedule_name)
-        )
-
-    return graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=schedule)
-
-
-def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
-    schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
-
-    # Get environment_dict
-    with user_code_error_boundary(
-        ScheduleExecutionError,
-        lambda: 'Error occurred during the execution of environment_dict_fn for schedule '
-        '{schedule_name}'.format(schedule_name=schedule_def.name),
-    ):
-        environment_dict = schedule_def.get_environment_dict(schedule_context)
-
-    # Get tags
-    with user_code_error_boundary(
-        ScheduleExecutionError,
-        lambda: 'Error occurred during the execution of tags_fn for schedule '
-        '{schedule_name}'.format(schedule_name=schedule_def.name),
-    ):
-        schedule_tags = schedule_def.get_tags(schedule_context)
-
-    pipeline_tags = pipeline_def.tags or {}
-    check_tags(pipeline_tags, 'pipeline_tags')
-    tags = merge_dicts(pipeline_tags, schedule_tags)
-
-    mode = schedule_def.mode
-
-    return ExecutionParams(
-        selector=PipelineSelector.legacy(
-            graphene_info.context, schedule_def.pipeline_name, schedule_def.solid_subset
-        ),
-        environment_dict=environment_dict,
-        mode=mode,
-        execution_metadata=ExecutionMetadata(tags=tags, run_id=None),
-        step_keys=None,
+    return graphene_info.schema.type_named('Scheduler')(
+        scheduler_class=instance.scheduler.__class__.__name__
     )
 
 
-def get_dagster_schedule_def(graphene_info, schedule_name):
+@capture_dauphin_error
+def get_schedule_states_or_error(
+    graphene_info, repository_selector, with_no_schedule_definition_filter=None
+):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(schedule_name, 'schedule_name')
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+    check.opt_bool_param(
+        with_no_schedule_definition_filter, 'with_no_schedule_definition_filter', default=False
+    )
 
-    # TODO: Serialize schedule as ExternalScheduleData and add to ExternalRepositoryData
-    repository = graphene_info.context.legacy_get_repository_definition()
-    schedule_definition = repository.get_schedule_def(schedule_name)
-    return schedule_definition
-
-
-def get_dagster_schedule(graphene_info, schedule_name):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(schedule_name, 'schedule_name')
-
-    external_repository = graphene_info.context.legacy_external_repository
-
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
+    repository_origin_id = repository.get_origin().get_id()
     instance = graphene_info.context.instance
-    if not instance.scheduler:
-        raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
-    schedule = instance.get_schedule_by_name(external_repository.name, schedule_name)
-    if not schedule:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('ScheduleNotFoundError')(schedule_name=schedule_name)
+    results = [
+        graphene_info.schema.type_named('ScheduleState')(
+            graphene_info, schedule_state=schedule_state
+        )
+        for schedule_state in instance.all_stored_schedule_state(
+            repository_origin_id=repository_origin_id
+        )
+    ]
+
+    if with_no_schedule_definition_filter:
+        external_schedules = repository.get_external_schedules()
+        external_schedule_origin_ids = set(
+            external_schedule.get_origin_id() for external_schedule in external_schedules
         )
 
-    return schedule
+        # Filter for all schedule states for which there are no matching external schedules with the
+        # same origin id
+        results = list(
+            filter(
+                lambda schedule_state: schedule_state.schedule_origin_id
+                not in external_schedule_origin_ids,
+                results,
+            )
+        )
+
+    return graphene_info.schema.type_named('ScheduleStates')(results=results)
+
+
+@capture_dauphin_error
+def get_schedule_definitions_or_error(graphene_info, repository_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+
+    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    repository = location.get_repository(repository_selector.repository_name)
+    external_schedules = repository.get_external_schedules()
+
+    results = [
+        graphene_info.schema.type_named('ScheduleDefinition')(
+            graphene_info, external_schedule=external_schedule
+        )
+        for external_schedule in external_schedules
+    ]
+
+    return graphene_info.schema.type_named('ScheduleDefinitions')(results=results)
+
+
+def get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(pipeline_selector, 'pipeline_selector', PipelineSelector)
+
+    location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
+    repository = location.get_repository(pipeline_selector.repository_name)
+    external_schedules = repository.get_external_schedules()
+
+    return [
+        graphene_info.schema.type_named('ScheduleDefinition')(
+            graphene_info, external_schedule=external_schedule
+        )
+        for external_schedule in external_schedules
+        if external_schedule.pipeline_name == pipeline_selector.pipeline_name
+    ]
+
+
+@capture_dauphin_error
+def get_schedule_definition_or_error(graphene_info, schedule_selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
+    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    repository = location.get_repository(schedule_selector.repository_name)
+
+    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
+    if not external_schedule:
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('ScheduleDefinitionNotFoundError')(
+                schedule_name=schedule_selector.schedule_name
+            )
+        )
+
+    return graphene_info.schema.type_named('ScheduleDefinition')(
+        graphene_info, external_schedule=external_schedule
+    )
+
+
+def get_schedule_yaml(graphene_info, external_schedule):
+    check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+    handle = external_schedule.handle.repository_handle
+    schedule_execution_data = sync_get_external_schedule_execution_data(
+        graphene_info.context.instance, handle, external_schedule.name
+    )
+    if schedule_execution_data.error:
+        return None
+    run_config_yaml = yaml.safe_dump(schedule_execution_data.run_config, default_flow_style=False)
+    return run_config_yaml if run_config_yaml else ''

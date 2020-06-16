@@ -76,7 +76,7 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
 @solid(
     input_defs=[InputDefinition('file_name', str), InputDefinition('base_url', str)],
     output_defs=[OutputDefinition(str)],
-    config={'chunk_size': Field(int, is_required=False, default_value=8192)},
+    config_schema={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
 def download_zipfile_from_url(context, file_name: str, base_url: str):
@@ -104,7 +104,7 @@ def download_zipfile_from_url(context, file_name: str, base_url: str):
         InputDefinition('target_csv_file_in_archive', str),
     ],
     output_defs=[OutputDefinition(DagsterPandasDataFrame)],
-    config={
+    config_schema={
         'delimiter': Field(
             str,
             default_value=',',
@@ -201,7 +201,7 @@ def create_download_table_as_dataframe_solid(name, expected_dagster_pandas_dataf
     @solid(
         input_defs=[InputDefinition('table_name', str)],
         output_defs=[OutputDefinition(expected_dagster_pandas_dataframe_type)],
-        config={'subsets': Field([str], is_required=False)},
+        config_schema={'subsets': Field([str], is_required=False)},
         required_resource_keys={'postgres_db'},
         name=name,
     )
@@ -220,7 +220,7 @@ def create_download_table_as_dataframe_solid(name, expected_dagster_pandas_dataf
 @solid(
     input_defs=[InputDefinition('epoch_date', int)],
     output_defs=[OutputDefinition(DagsterPandasDataFrame)],
-    config={
+    config_schema={
         'latitude': Field(
             float,
             default_value=37.8267,
@@ -429,7 +429,7 @@ class MultivariateTimeseries:
 
 
 @solid(
-    config={'memory_length': Field(int, description='The window memory length')},
+    config_schema={'memory_length': Field(int, description='The window memory length')},
     input_defs=[
         InputDefinition('traffic_dataset', dagster_type=TrafficDataFrame),
         InputDefinition('weather_dataset', dagster_type=WeatherDataFrame),
@@ -453,7 +453,7 @@ def produce_training_set(
 
 
 @solid(
-    config={
+    config_schema={
         'timeseries_train_test_breakpoint': Field(
             int, description='The breakpoint between training and test set'
         ),

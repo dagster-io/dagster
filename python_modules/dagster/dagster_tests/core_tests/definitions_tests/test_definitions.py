@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     Any,
+    AssetKey,
     CompositeSolidDefinition,
     DependencyDefinition,
     InputDefinition,
@@ -15,7 +16,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import Materialization, Solid, create_environment_schema
+from dagster.core.definitions import Materialization, Solid, create_run_config_schema
 from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -36,7 +37,7 @@ def test_solid_def():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Int},
+        config_schema={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -113,7 +114,7 @@ def test_pipeline_types():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Int},
+        config_schema={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -123,11 +124,11 @@ def test_pipeline_types():
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
     )
 
-    environment_schema = create_environment_schema(pipeline_def)
+    run_config_schema = create_run_config_schema(pipeline_def)
 
-    assert environment_schema.has_config_type('String')
-    assert environment_schema.has_config_type('Int')
-    assert not environment_schema.has_config_type('SomeName')
+    assert run_config_schema.has_config_type('String')
+    assert run_config_schema.has_config_type('Int')
+    assert not run_config_schema.has_config_type('SomeName')
 
 
 def test_mapper_errors():
@@ -162,6 +163,11 @@ def test_mapper_errors():
 
 def test_materialization():
     assert isinstance(Materialization('foo', 'foo.txt'), Materialization)
+
+
+def test_materialization_assign_label_from_asset_key():
+    mat = Materialization(asset_key=AssetKey(['foo', 'bar']))
+    assert mat.label == 'foo.bar'
 
 
 def test_rehydrate_solid_handle():

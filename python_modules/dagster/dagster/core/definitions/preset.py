@@ -10,14 +10,14 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_run_config, rename_warning
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
 
 
-class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict solid_subset mode')):
+class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_selection mode')):
     '''Defines a preset configuration in which a pipeline can execute.
-
 
     Presets can be used in Dagit to load predefined configurations into the tool.
 
@@ -32,20 +32,19 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
     .. code-block:: shell
 
         $ dagster pipeline execute example_pipeline --preset example_preset
-        $ dagster pipeline execute example_pipeline -p example_preset
 
     Args:
         name (str): The name of this preset. Must be unique in the presets defined on a given
             pipeline.
-        environment_dict (Optional[dict]): A dict representing the config to set with the preset.
-            This is equivalent to the ``environment_dict`` argument to :py:func:`execute_pipeline`.
-        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-            unaliased solids or of their aliases if aliased) to execute with this preset.
+        run_config (Optional[dict]): A dict representing the config to set with the preset.
+            This is equivalent to the ``run_config`` argument to :py:func:`execute_pipeline`.
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this preset. (default: 'default')
     '''
 
     @staticmethod
-    def from_files(name, environment_files=None, solid_subset=None, mode=None):
+    def from_files(name, environment_files=None, solid_selection=None, mode=None):
         '''Static constructor for presets from YAML files.
 
         Args:
@@ -53,8 +52,8 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 pipeline.
             environment_files (Optional[List[str]]): List of paths or glob patterns for yaml files
                 to load and parse as the environment config for this preset.
-            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-                unaliased solids or of their aliases if aliased) to execute with this preset.
+            solid_selection (Optional[List[str]]): A list of solid subselection (including single
+                solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -67,7 +66,9 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         '''
         check.str_param(name, 'name')
         environment_files = check.opt_list_param(environment_files, 'environment_files')
-        solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        solid_selection = check.opt_nullable_list_param(
+            solid_selection, 'solid_selection', of_type=str
+        )
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
         filenames = []
@@ -94,10 +95,10 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 err,
             )
 
-        return PresetDefinition(name, merged, solid_subset, mode)
+        return PresetDefinition(name, merged, solid_selection, mode)
 
     @staticmethod
-    def from_yaml_strings(name, yaml_strings=None, solid_subset=None, mode=None):
+    def from_yaml_strings(name, yaml_strings=None, solid_selection=None, mode=None):
         '''Static constructor for presets from YAML strings.
 
         Args:
@@ -105,8 +106,8 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 pipeline.
             yaml_strings (Optional[List[str]]): List of yaml strings to parse as the environment
                 config for this preset.
-            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-                unaliased solids or of their aliases if aliased) to execute with this preset.
+            solid_selection (Optional[List[str]]): A list of solid subselection (including single
+                solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -119,7 +120,9 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         '''
         check.str_param(name, 'name')
         yaml_strings = check.opt_list_param(yaml_strings, 'yaml_strings', of_type=str)
-        solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        solid_selection = check.opt_nullable_list_param(
+            solid_selection, 'solid_selection', of_type=str
+        )
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
         try:
@@ -133,10 +136,10 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 err,
             )
 
-        return PresetDefinition(name, merged, solid_subset, mode)
+        return PresetDefinition(name, merged, solid_selection, mode)
 
     @staticmethod
-    def from_pkg_resources(name, pkg_resource_defs=None, solid_subset=None, mode=None):
+    def from_pkg_resources(name, pkg_resource_defs=None, solid_selection=None, mode=None):
         '''Load a preset from a package resource, using :py:func:`pkg_resources.resource_string`.
 
         Example:
@@ -158,8 +161,9 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 pipeline.
             pkg_resource_defs (Optional[List[(str, str)]]): List of pkg_resource modules/files to
                 load as environment config for this preset.
-            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-                unaliased solids or of their aliases if aliased) to execute with this preset.
+            solid_selection (Optional[List[str]]): A list of solid subselection (including single
+                solid names) to execute with this partition. e.g.
+                ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
 
@@ -189,16 +193,18 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 err,
             )
 
-        return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_subset, mode)
+        return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_selection, mode)
 
-    def __new__(cls, name, environment_dict=None, solid_subset=None, mode=None):
-        check.opt_dict_param(environment_dict, 'environment_dict')
+    def __new__(cls, name, run_config=None, solid_selection=None, mode=None, environment_dict=None):
+        run_config = canonicalize_run_config(run_config, environment_dict)
 
         return super(PresetDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            environment_dict=environment_dict,
-            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            run_config=run_config,
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, 'solid_selection', of_type=str
+            ),
             mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
         )
 
@@ -208,18 +214,24 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         Returns:
             str: The environment dict as YAML.
         '''
-        return yaml.dump(self.environment_dict or {}, default_flow_style=False)
+        return yaml.dump(self.run_config or {}, default_flow_style=False)
 
-    def with_additional_config(self, environment_dict):
-        '''return a new PresetDefinition with additional config merged in to the existing config'''
+    def with_additional_config(self, run_config):
+        '''Return a new PresetDefinition with additional config merged in to the existing config.'''
 
-        check.opt_nullable_dict_param(environment_dict, 'environment_dict')
-        if environment_dict is None:
+        check.opt_nullable_dict_param(run_config, 'run_config')
+        if run_config is None:
             return self
         else:
             return PresetDefinition(
                 name=self.name,
-                solid_subset=self.solid_subset,
+                solid_selection=self.solid_selection,
                 mode=self.mode,
-                environment_dict=merge_dicts(self.environment_dict, environment_dict),
+                run_config=merge_dicts(self.run_config, run_config),
             )
+
+    @property
+    def environment_dict(self):
+        # Backcompat
+        rename_warning('run_config', 'environment_dict', '0.9.0')
+        return self.run_config

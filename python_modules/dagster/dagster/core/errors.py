@@ -39,13 +39,20 @@ class DagsterInvalidDefinitionError(DagsterError):
     '''Indicates that the rules for a definition have been violated by the user.'''
 
 
+class DagsterInvalidSubsetError(DagsterError):
+    '''Indicates that a subset of a pipeline is invalid because either:
+        - One or more solids in the specified subset do not exist on the pipeline.'
+        - The subset produces an invalid pipeline.
+    '''
+
+
 CONFIG_ERROR_VERBIAGE = '''
 This value can be a:
     - Field
     - Python primitive types that resolve to dagster config types
         - int, float, bool, str, list.
-    - A dagster config type: Int, Float, Bool, List, Optional, Selector, Dict
-    - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+    - A dagster config type: Int, Float, Bool, List, Optional, Selector, Shape, Permissive
+    - A bare python dictionary, which is wrapped in Field(Shape(...)). Any values
       in the dictionary get resolved by the same rules, recursively.
     - A python list with a single entry that can resolve to a type, e.g. [int]
 '''
@@ -396,3 +403,11 @@ class DagsterEventLogInvalidForRun(DagsterError):
 
 class ScheduleExecutionError(DagsterUserCodeExecutionError):
     '''Errors raised during the execution of schedule.'''
+
+
+class PartitionScheduleExecutionError(ScheduleExecutionError):
+    '''Errors raised during the execution of user-provided functions of a partition set schedule.'''
+
+
+class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
+    ''' Error raised by invalid asset key '''

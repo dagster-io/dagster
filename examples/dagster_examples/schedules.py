@@ -55,10 +55,9 @@ def backfill_should_execute(context, partition_set_def, schedule_name):
     is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
     if not is_remaining_partitions:
         try:
-            # Instance methods for the scheduler require both the repository name and
-            # the schedule name. Here, we hardcode the repository name that this
-            # schedule belongs to.
-            context.instance.stop_schedule('internal-dagit-repository', schedule_name)
+            context.instance.stop_schedule_and_update_storage_state(
+                'internal-dagit-repository', schedule_name
+            )
         except OSError:
             pass
 
@@ -76,7 +75,7 @@ def backfill_test_schedule():
             start=datetime.datetime(2020, 1, 5),
             delta=datetime.timedelta(weeks=1),
         ),
-        environment_dict_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
+        run_config_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
     )
 
     def _should_execute(context):
@@ -97,7 +96,7 @@ def materialization_schedule():
         name='many_events_minutely',
         pipeline_name='many_events',
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        environment_dict_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
+        run_config_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
     )
 
     def _should_execute(context):
@@ -119,7 +118,7 @@ def longitudinal_schedule():
         name='ingest_and_train',
         pipeline_name='longitudinal_pipeline',
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        environment_dict_fn_for_partition=longitudinal_config,
+        run_config_fn_for_partition=longitudinal_config,
     )
 
     def _should_execute(context):
@@ -154,13 +153,13 @@ def get_toys_schedules():
             name="many_events_every_min",
             cron_schedule="* * * * *",
             pipeline_name='many_events',
-            environment_dict_fn=lambda _: {"storage": {"filesystem": {}}},
+            run_config_fn=lambda _: {"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="pandas_hello_world_hourly",
             cron_schedule="0 * * * *",
             pipeline_name="pandas_hello_world_pipeline",
-            environment_dict_fn=lambda _: {
+            run_config_fn=lambda _: {
                 'solids': {
                     'mult_solid': {
                         'inputs': {

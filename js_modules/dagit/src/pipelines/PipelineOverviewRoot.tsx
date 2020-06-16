@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
 import styled from "styled-components/macro";
-import { Colors, NonIdealState, Icon, Tooltip } from "@blueprintjs/core";
+import { Colors, NonIdealState, Tooltip } from "@blueprintjs/core";
 import PipelineGraph from "../graph/PipelineGraph";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "../Loading";
@@ -14,34 +14,35 @@ import {
   PipelineOverviewQueryVariables
 } from "./types/PipelineOverviewQuery";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { RunStatus, titleForRun } from "../runs/RunUtils";
+import { RunStatus, titleForRun, RunTime } from "../runs/RunUtils";
 import { Link } from "react-router-dom";
 import { unixTimestampToString } from "../Util";
 import {
+  RunElapsed,
   RunActionsMenu,
-  TimeElapsed,
-  RunStatsDetails,
+  RunStatusWithStats,
   RunComponentFragments
 } from "../runs/RunUtils";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "../runs/RunsRoot";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
 
 export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineSelector: string;
+  pipelinePath: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineSelector.split(":")[0];
-
+  const pipelineName = match.params.pipelinePath.split(":")[0];
+  const pipelineSelector = usePipelineSelector(pipelineName);
   const queryResult = useQuery<
     PipelineOverviewQuery,
     PipelineOverviewQueryVariables
   >(PIPELINE_OVERVIEW_QUERY, {
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
-    variables: { pipelineName, limit: 5 }
+    variables: { pipelineSelector, limit: 5 }
   });
   return (
     <Loading queryResult={queryResult}>
@@ -126,7 +127,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                   ? schedules.map(schedule => (
                       <OverviewSchedule
                         schedule={schedule}
-                        key={schedule.scheduleDefinition.name}
+                        key={schedule.name}
                       />
                     ))
                   : "No pipeline schedules"}
@@ -153,7 +154,8 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
   const assetMap = {};
   runs.forEach(run => {
     run.assets.forEach(asset => {
-      assetMap[asset.key] = true;
+      const assetKeyStr = asset.key.path.join("/");
+      assetMap[assetKeyStr] = true;
     });
   });
   const assetKeys = Object.keys(assetMap);
@@ -174,42 +176,44 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
 };
 
 const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
-  const lastRun = schedule.runs.length && schedule.runs[0];
+  const lastRun =
+    schedule.scheduleState &&
+    schedule.scheduleState.lastRuns.length &&
+    schedule.scheduleState.lastRuns[0];
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn>
-        <Link to={`/schedules/${schedule.scheduleDefinition.name}`}>
-          {schedule.scheduleDefinition.name}
-        </Link>
+        <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
         {lastRun && lastRun.stats.__typename === "PipelineRunStatsSnapshot" ? (
           <div style={{ color: Colors.GRAY3, fontSize: 12, marginTop: 2 }}>
             Last Run: {unixTimestampToString(lastRun.stats.endTime)}
           </div>
         ) : null}
         <div style={{ marginTop: 5 }}>
-          {schedule.runs.map(run => {
-            return (
-              <div
-                style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
-                }}
-                key={run.runId}
-              >
-                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
-                  <Tooltip
-                    position={"top"}
-                    content={titleForRun(run)}
-                    wrapperTagName="div"
-                    targetTagName="div"
-                  >
-                    <RunStatus status={run.status} />
-                  </Tooltip>
-                </Link>
-              </div>
-            );
-          })}
+          {schedule.scheduleState &&
+            schedule.scheduleState.runs.map(run => {
+              return (
+                <div
+                  style={{
+                    display: "inline-block",
+                    cursor: "pointer",
+                    marginRight: 5
+                  }}
+                  key={run.runId}
+                >
+                  <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+                    <Tooltip
+                      position={"top"}
+                      content={titleForRun(run)}
+                      wrapperTagName="div"
+                      targetTagName="div"
+                    >
+                      <RunStatus status={run.status} />
+                    </Tooltip>
+                  </Link>
+                </div>
+              );
+            })}
         </div>
       </RowColumn>
     </RowContainer>
@@ -220,29 +224,11 @@ const OverviewRun = ({ run }: { run: Run }) => {
   const variables = React.useContext(RunsQueryVariablesContext);
   const time =
     run.stats.__typename === "PipelineRunStatsSnapshot" ? (
-      <>
-        {run.stats.startTime ? (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" />{" "}
-            {unixTimestampToString(run.stats.startTime)}
-            <Icon
-              icon="arrow-right"
-              style={{ marginLeft: 10, marginRight: 10 }}
-            />
-            {unixTimestampToString(run.stats.endTime)}
-          </div>
-        ) : run.status === "FAILURE" ? (
-          <div style={{ marginBottom: 4 }}> Failed to start</div>
-        ) : (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" /> Starting...
-          </div>
-        )}
-        <TimeElapsed
-          startUnix={run.stats.startTime}
-          endUnix={run.stats.endTime}
-        />
-      </>
+      <RunTime run={run} />
+    ) : null;
+  const elapsed =
+    run.stats.__typename === "PipelineRunStatsSnapshot" ? (
+      <RunElapsed run={run} />
     ) : null;
 
   const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
@@ -250,15 +236,15 @@ const OverviewRun = ({ run }: { run: Run }) => {
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
-        <RunStatus status={run.status} />
+        <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+        <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
-        <RunStatsDetails run={run} />
-        <div style={{ margin: "5px 0" }}>{`Mode: ${run.mode}`}</div>
+        <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>
         {time}
+        {elapsed}
       </RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
         <RunActionsMenu run={run} refetchQueries={refetchQueries} />
@@ -306,48 +292,34 @@ const SecondaryContainer = ({ children }: { children: React.ReactNode }) => (
 );
 
 const ScheduleFragment = gql`
-  fragment OverviewScheduleFragment on RunningSchedule {
+  fragment OverviewScheduleFragment on ScheduleDefinition {
     __typename
-    scheduleDefinition {
-      name
-      cronSchedule
-      pipelineName
-      solidSubset
-      mode
-      environmentConfigYaml
-    }
-    logsPath
-    ticks(limit: 1) {
-      tickId
-      status
-    }
-    runsCount
-    runs(limit: 10) {
-      runId
-      pipeline {
-        name
-      }
-      stats {
-        ... on PipelineRunStatsSnapshot {
-          endTime
+    name
+    scheduleState {
+      runsCount
+      lastRuns: runs(limit: 1) {
+        stats {
+          ... on PipelineRunStatsSnapshot {
+            endTime
+          }
         }
       }
+      runs(limit: 10) {
+        runId
+        pipelineName
+        status
+      }
       status
     }
-    stats {
-      ticksStarted
-      ticksSucceeded
-      ticksSkipped
-      ticksFailed
-    }
-    ticksCount
-    status
   }
 `;
 
 export const PIPELINE_OVERVIEW_QUERY = gql`
-  query PipelineOverviewQuery($pipelineName: String, $limit: Int!) {
-    pipelineSnapshotOrError(activePipelineName: $pipelineName) {
+  query PipelineOverviewQuery(
+    $pipelineSelector: PipelineSelector!
+    $limit: Int!
+  ) {
+    pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
         name
         description
@@ -359,10 +331,11 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
         }
         runs(limit: $limit) {
           ...RunActionMenuFragment
-          ...RunStatsDetailFragment
           ...RunTimeFragment
           assets {
-            key
+            key {
+              path
+            }
           }
         }
         schedules {
@@ -382,7 +355,6 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
   }
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
   ${ScheduleFragment}
-  ${RunComponentFragments.STATS_DETAIL_FRAGMENT}
   ${RunComponentFragments.RUN_TIME_FRAGMENT}
   ${RunComponentFragments.RUN_ACTION_MENU_FRAGMENT}
 `;

@@ -29,7 +29,7 @@ def test_solid_definition_kitchen_sink():
                 name='output_two', dagster_type=int, description='desc2', is_required=False
             ),
         ],
-        config={'foo': int},
+        config_schema={'foo': int},
         description='a description',
         tags={'a_tag': 'yup'},
         required_resource_keys={'b_resource', 'a_resource'},

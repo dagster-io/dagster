@@ -36,16 +36,6 @@ file:/dagster_examples/stocks/simple_partitions.py
 lines:13-16
 ```
 
-Finally, using these two functions, we create a <PyObject module="dagster" object="PartitionSetDefinition" /> named
-`stock_data_partitions_set`. We can register these
-partitions decorating a function that returns a list of partition set
-definitions with the <PyObject module="dagster" object="repository_partitions" displayText="@repository_partitions" />
-
-```python literalinclude caption=repository.py
-file:/dagster_examples/stocks/simple_partitions.py
-lines:19-29
-```
-
 Finally, we add the partitions to our repository definition:
 
 ```python literalinclude emphasize-lines=6

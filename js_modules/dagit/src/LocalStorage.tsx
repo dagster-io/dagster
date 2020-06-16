@@ -31,14 +31,14 @@ export interface PipelineRunTag {
 export interface IExecutionSession {
   key: string;
   name: string;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   base:
     | { presetName: string }
     | { partitionsSetName: string; partitionName: string | null }
     | null;
   mode: string | null;
-  solidSubset: string[] | null;
-  solidSubsetQuery: string | null;
+  solidSelection: string[] | null;
+  solidSelectionQuery: string | null;
   tags: PipelineRunTag[] | null;
 
   // this is set when you execute the session and freeze it
@@ -70,8 +70,8 @@ export function applyChangesToSession(
 ) {
   const saved = data.sessions[key];
   if (
-    changes.environmentConfigYaml &&
-    changes.environmentConfigYaml !== saved.environmentConfigYaml &&
+    changes.runConfigYaml &&
+    changes.runConfigYaml !== saved.runConfigYaml &&
     saved.runId
   ) {
     changes.configChangedSinceRun = true;
@@ -96,11 +96,11 @@ export function applyCreateSession(
       ...data.sessions,
       [key]: {
         name: "New Run",
-        environmentConfigYaml: "",
+        runConfigYaml: "",
         mode: null,
         base: null,
-        solidSubset: null,
-        solidSubsetQuery: "*",
+        solidSelection: null,
+        solidSelectionQuery: "*",
         tags: null,
         runId: undefined,
         ...initial,

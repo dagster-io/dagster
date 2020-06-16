@@ -13,23 +13,11 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError {
   __typename: "PipelineRunNotFoundError" | "PythonError";
 }
 
-export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline {
+  __typename: "PipelineSnapshot" | "UnknownPipeline";
   name: string;
+  solidSelection: string[] | null;
 }
-
-export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline_solids {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
-  solids: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline_solids[];
-}
-
-export type RunRootQuery_pipelineRunOrError_PipelineRun_pipeline = RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline | RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline;
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_tags {
   __typename: "PipelineTag";
@@ -77,7 +65,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   pipeline: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   runId: string;
   status: PipelineRunStatus;
-  environmentConfigYaml: string;
+  runConfigYaml: string;
   canTerminate: boolean;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_PipelineRun_tags[];

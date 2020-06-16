@@ -1,1 +1,1 @@
-from .repository import define_example_repository
+from .repository import notebook_repo

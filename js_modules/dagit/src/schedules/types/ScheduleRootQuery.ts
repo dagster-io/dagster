@@ -3,47 +3,38 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
 // ====================================================
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_partitionSet {
   __typename: "PartitionSet";
   name: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition {
-  __typename: "ScheduleDefinition";
-  name: string;
-  cronSchedule: string;
-  pipelineName: string;
-  solidSubset: (string | null)[] | null;
-  mode: string;
-  environmentConfigYaml: string | null;
-  partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet | null;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
-  name: string;
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline;
+  tags: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_tags[];
+  pipelineName: string;
   status: PipelineRunStatus;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_stats {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_stats {
   __typename: "ScheduleTickStatsSnapshot";
   ticksStarted: number;
   ticksSucceeded: number;
@@ -51,82 +42,92 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_stats {
   ticksFailed: number;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
-  name: string;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
-  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline;
+  pipelineName: string;
+  status: PipelineRunStatus;
   runId: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData {
   __typename: "ScheduleTickSuccessData";
-  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run | null;
+  run: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData_run | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+  cause: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData {
   __typename: "ScheduleTickFailureData";
-  error: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error;
+  error: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData_error;
 }
 
-export type ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData = ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData | ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData;
+export type ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData = ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickSuccessData | ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData_ScheduleTickFailureData;
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
   timestamp: number;
-  tickSpecificData: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
+  tickSpecificData: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
-  __typename: "RunningSchedule";
-  scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
-  logsPath: string;
-  ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks[];
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState {
+  __typename: "ScheduleState";
+  id: string;
+  scheduleOriginId: string;
+  scheduleName: string;
+  cronSchedule: string;
+  runningScheduleCount: number;
+  ticks: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks[];
   runsCount: number;
-  runs: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs[];
-  stats: ScheduleRootQuery_scheduleOrError_RunningSchedule_stats;
+  runs: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs[];
+  stats: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_stats;
   ticksCount: number;
   status: ScheduleStatus;
-  ticksList: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
+  ticksList: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList[];
 }
 
-export interface ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError {
-  __typename: "ScheduleNotFoundError";
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition {
+  __typename: "ScheduleDefinition";
+  name: string;
+  cronSchedule: string;
+  pipelineName: string;
+  solidSelection: (string | null)[] | null;
+  mode: string;
+  partitionSet: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_partitionSet | null;
+  scheduleState: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState | null;
+}
+
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinitionNotFoundError {
+  __typename: "ScheduleDefinitionNotFoundError";
   message: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_PythonError {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export type ScheduleRootQuery_scheduleOrError = ScheduleRootQuery_scheduleOrError_RunningSchedule | ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError | ScheduleRootQuery_scheduleOrError_PythonError;
+export type ScheduleRootQuery_scheduleDefinitionOrError = ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition | ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinitionNotFoundError | ScheduleRootQuery_scheduleDefinitionOrError_PythonError;
 
 export interface ScheduleRootQuery {
-  scheduleOrError: ScheduleRootQuery_scheduleOrError;
+  scheduleDefinitionOrError: ScheduleRootQuery_scheduleDefinitionOrError;
 }
 
 export interface ScheduleRootQueryVariables {
-  scheduleName: string;
+  scheduleSelector: ScheduleSelector;
   limit: number;
   ticksLimit: number;
 }

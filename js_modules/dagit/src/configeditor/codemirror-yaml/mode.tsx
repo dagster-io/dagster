@@ -5,7 +5,7 @@ import "codemirror/addon/search/searchcursor";
 import "codemirror/addon/dialog/dialog";
 import "codemirror/addon/dialog/dialog.css";
 import * as yaml from "yaml";
-import { ConfigEditorEnvironmentSchemaFragment } from "../types/ConfigEditorEnvironmentSchemaFragment";
+import { ConfigEditorRunConfigSchemaFragment } from "../types/ConfigEditorRunConfigSchemaFragment";
 
 interface IParseStateParent {
   key: string;
@@ -75,7 +75,11 @@ export const RegExps = {
   DICT_COLON: /^:\s*/,
   // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
+  // same as above, but to avoid clasifiyng "a" as a sub-dict in "value: a:b", we require whitespace after the colon
+  // eslint-disable-next-line no-useless-escape
+  DICT_KEY_IN_VALUE: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:\s+)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
+  UNQUOTED_STRING: /^.*$/,
   // eslint-disable-next-line no-useless-escape
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
   // eslint-disable-next-line no-useless-escape
@@ -249,7 +253,7 @@ CodeMirror.defineMode("yaml", () => {
         }
 
         // Child dicts can start within a value if the user is creating a list
-        const match = stream.match(RegExps.DICT_KEY);
+        const match = stream.match(RegExps.DICT_KEY_IN_VALUE);
         if (match) {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
@@ -262,6 +266,12 @@ CodeMirror.defineMode("yaml", () => {
           result = "atom";
         }
 
+        // "In YAML, you can write a string without quotes, if it doesn't have a special meaning.",
+        // so if we can't match the content to any other type and we are inValue, we make it a string.
+        // http://blogs.perl.org/users/tinita/2018/03/strings-in-yaml---to-quote-or-not-to-quote.html
+        if (!result && stream.match(RegExps.UNQUOTED_STRING)) {
+          result = "string";
+        }
         stream.eatSpace();
 
         // If after consuming the value and trailing spaces we're at the end of the
@@ -318,7 +328,7 @@ CodeMirror.registerHelper(
   (
     editor: any,
     options: {
-      schema?: ConfigEditorEnvironmentSchemaFragment;
+      schema?: ConfigEditorRunConfigSchemaFragment;
     }
   ): { list: Array<CodemirrorHint> } => {
     if (!options.schema) return { list: [] };
@@ -533,7 +543,7 @@ CodeMirror.registerHelper(
  * if it is a composite type.
  */
 function findAutocompletionContext(
-  schema: ConfigEditorEnvironmentSchemaFragment | null,
+  schema: ConfigEditorRunConfigSchemaFragment | null,
   parents: IParseStateParent[],
   currentIndent: number
 ) {
@@ -546,7 +556,7 @@ function findAutocompletionContext(
   }
 
   let type = schema.allConfigTypes.find(
-    t => t.key === schema.rootEnvironmentType.key
+    t => t.key === schema.rootConfigType.key
   );
   if (!type || type.__typename !== "CompositeConfigType") {
     return null;
@@ -613,7 +623,7 @@ function findAutocompletionContext(
 
 // Find context for a fully- or partially- typed key or value in the YAML document
 export function expandAutocompletionContextAtCursor(editor: any) {
-  const schema: ConfigEditorEnvironmentSchemaFragment =
+  const schema: ConfigEditorRunConfigSchemaFragment =
     editor.options.hintOptions.schema;
 
   const cursor = editor.getCursor();
@@ -679,7 +689,7 @@ CodeMirror.registerHelper(
   (editor: any, pos: CodeMirror.Position) => {
     const token = editor.getTokenAt(pos);
 
-    const schema: ConfigEditorEnvironmentSchemaFragment =
+    const schema: ConfigEditorRunConfigSchemaFragment =
       editor.options.hintOptions.schema;
 
     if (token.type !== "atom") {

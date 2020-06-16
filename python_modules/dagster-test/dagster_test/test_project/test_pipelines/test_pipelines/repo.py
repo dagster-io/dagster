@@ -1,5 +1,7 @@
 # pylint:disable=no-member
+import datetime
 import math
+import os
 import random
 import time
 from collections import defaultdict
@@ -14,13 +16,14 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
-    RepositoryDefinition,
     String,
     default_executors,
     lambda_solid,
     pipeline,
+    repository,
     solid,
 )
+from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
 
 
@@ -37,7 +40,7 @@ def celery_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition('word', String)], config={'factor': Int})
+@solid(input_defs=[InputDefinition('word', String)], config_schema={'factor': Int})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 
@@ -157,16 +160,85 @@ def define_large_pipeline_celery():
     )
 
 
-def define_demo_execution_repo():
-    from .schedules import define_schedules
+@solid(
+    tags={
+        'dagster-k8s/resource_requirements': {
+            'requests': {'cpu': '250m', 'memory': '64Mi'},
+            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+        }
+    }
+)
+def resource_req_solid(context):
+    context.log.info('running')
 
-    return RepositoryDefinition(
-        name='demo_execution_repo',
-        pipeline_dict={
-            'demo_pipeline_celery': define_demo_pipeline_celery,
-            'large_pipeline_celery': define_large_pipeline_celery,
-            'long_running_pipeline_celery': define_long_running_pipeline_celery,
-        },
-        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],
-        schedule_defs=define_schedules(),
+
+def define_resources_limit_pipeline_celery():
+    @pipeline(mode_defs=celery_mode_defs())
+    def resources_limit_pipeline_celery():
+        resource_req_solid()
+
+    return resources_limit_pipeline_celery
+
+
+def define_schedules():
+    @daily_schedule(
+        name='daily_optional_outputs',
+        pipeline_name=optional_outputs.name,
+        start_date=datetime.datetime(2020, 1, 1),
     )
+    def daily_optional_outputs(_date):
+        return {}
+
+    @schedule(
+        name='frequent_large_pipe',
+        pipeline_name='large_pipeline_celery',
+        cron_schedule='*/5 * * * *',
+        environment_vars={
+            key: os.environ.get(key)
+            for key in [
+                'DAGSTER_PG_PASSWORD',
+                'DAGSTER_K8S_CELERY_BROKER',
+                'DAGSTER_K8S_CELERY_BACKEND',
+                'DAGSTER_K8S_PIPELINE_RUN_IMAGE',
+                'DAGSTER_K8S_PIPELINE_RUN_NAMESPACE',
+                'DAGSTER_K8S_INSTANCE_CONFIG_MAP',
+                'DAGSTER_K8S_PG_PASSWORD_SECRET',
+                'DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP',
+                'DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY',
+                'KUBERNETES_SERVICE_HOST',
+                'KUBERNETES_SERVICE_PORT',
+            ]
+            if key in os.environ
+        },
+    )
+    def frequent_large_pipe(_):
+        from dagster_k8s import get_celery_engine_config
+
+        cfg = get_celery_engine_config()
+        cfg['storage'] = {'s3': {'config': {'s3_bucket': 'dagster-scratch-80542c2'}}}
+        return cfg
+
+    return {
+        'daily_optional_outputs': daily_optional_outputs,
+        'frequent_large_pipe': frequent_large_pipe,
+    }
+
+
+def define_demo_execution_repo():
+    @repository
+    def demo_execution_repo():
+        return {
+            'pipelines': {
+                'demo_pipeline_celery': define_demo_pipeline_celery,
+                'large_pipeline_celery': define_large_pipeline_celery,
+                'long_running_pipeline_celery': define_long_running_pipeline_celery,
+                'optional_outputs': optional_outputs,
+                'demo_pipeline': demo_pipeline,
+                'demo_pipeline_gcs': demo_pipeline_gcs,
+                'demo_error_pipeline': demo_error_pipeline,
+                'resources_limit_pipeline_celery': define_resources_limit_pipeline_celery,
+            },
+            'schedules': define_schedules(),
+        }
+
+    return demo_execution_repo

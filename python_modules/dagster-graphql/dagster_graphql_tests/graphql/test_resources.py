@@ -1,8 +1,8 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 RESOURCE_QUERY = '''
-{
-  pipelineOrError(params: { name: "multi_mode_with_resources" }) {
+query ResourceQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     __typename
     ... on Pipeline {
       modes {
@@ -30,8 +30,9 @@ RESOURCE_QUERY = '''
 }
 '''
 
-REQUIRED_RESOURCE_QUERY = '''{
-  pipelineOrError(params: { name:"required_resource_pipeline" }){
+REQUIRED_RESOURCE_QUERY = '''
+query RequiredResourceQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     ... on Pipeline {
       name
       solids {
@@ -48,7 +49,8 @@ REQUIRED_RESOURCE_QUERY = '''{
 
 
 def test_mode_fetch_resources(graphql_context, snapshot):
-    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY)
+    selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
+    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY, {'selector': selector},)
 
     assert not result.errors
     assert result.data
@@ -63,7 +65,10 @@ def test_mode_fetch_resources(graphql_context, snapshot):
 # Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
 # as the existing snapshot and then run update snapshot
 def test_required_resources(graphql_context, snapshot):
-    result = execute_dagster_graphql(graphql_context, REQUIRED_RESOURCE_QUERY)
+    selector = infer_pipeline_selector(graphql_context, "required_resource_pipeline")
+    result = execute_dagster_graphql(
+        graphql_context, REQUIRED_RESOURCE_QUERY, {'selector': selector},
+    )
 
     assert not result.errors
     assert result.data

@@ -1,9 +1,8 @@
-from dagster import RepositoryDefinition
+from dagster import repository
 
 from .pipelines import event_ingest_pipeline
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='event_pipeline_demo_repo', pipeline_defs=[event_ingest_pipeline]
-    )
+@repository
+def event_pipeline_demo_repo():
+    return [event_ingest_pipeline]

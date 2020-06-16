@@ -33,9 +33,7 @@ def test_from_intermediates_from_multiple_outputs():
 
 
 def test_from_intermediates_from_config():
-    environment_dict = {
-        'solids': {'x': {'inputs': {'string_input': {'value': 'Dagster is great!'}}}}
-    }
+    run_config = {'solids': {'x': {'inputs': {'string_input': {'value': 'Dagster is great!'}}}}}
 
     @lambda_solid
     def x(string_input):
@@ -45,7 +43,7 @@ def test_from_intermediates_from_config():
     def pipe():
         x()
 
-    result = execute_pipeline(pipe, environment_dict=environment_dict)
+    result = execute_pipeline(pipe, run_config=run_config)
 
     assert result
     assert result.success

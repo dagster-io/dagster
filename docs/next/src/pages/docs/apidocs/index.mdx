@@ -7,18 +7,17 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 # API Docs
 
-These docs aim to cover the entire public surface of the `dagster` APIs,
-as well as, eventually, public APIs from all the associated libraries.
+These docs aim to cover the entire public surface of the core `dagster` APIs, as well as public APIs
+from all provided libraries.
 
-Dagster follows [SemVer](https://semver.org/), and is currently pre-1.0.
-We are attempting to isolate breaking changes to the public APIs to
-minor versions (on a roughly 8-week cadence) and will announce
-deprecations in Slack and in the release notes to patch versions (on a
-roughly weekly cadence).
+Dagster follows [SemVer](https://semver.org/), and is currently pre-1.0. We attempt to isolate
+breaking changes to the public APIs to minor versions (on a roughly 12-week cadence) and will
+announce deprecations in Slack and in the release notes to patch versions (on a roughly weekly
+cadence).
 
 **Core**
 
-APIs from the core `dagster` package are divided roughly by topic:
+APIs from the core `dagster` package, divided roughly by topic:
 
 - [Solids](/docs/apidocs/solids)
   APIs to define or decorate functions as solids, declare their inputs
@@ -30,18 +29,15 @@ APIs from the core `dagster` package are divided roughly by topic:
   between solids, and aliased instances of solids; pipeline modes,
   resources, loggers, presets, and repositories.
 
-- [Execution](/docs/apidocs/execution)
-  APIs to execute and test pipelines and individual solids, the
-  execution context available to solids, pipeline configuration, the
-  default system storages used for intermediates, and the default
-  executors available for executing pipelines.
+- [Config](/docs/apidocs/config)
+  The types available to describe config schemas.
 
 - [Types](/docs/apidocs/types)
   Primitive types available for the input and output values of solids,
   and the APIs used to define and test new Dagster types.
 
-- [Config](/docs/apidocs/config)
-  The types available to describe config schemas.
+- [Dagster CLI](/docs/apidocs/cli)
+  Browse repositories and execute pipelines from the command line
 
 - [Schedules](/docs/apidocs/schedules)
   APIs to define schedules on which pipelines are run, as well as a
@@ -54,8 +50,11 @@ APIs from the core `dagster` package are divided roughly by topic:
 - [Errors](/docs/apidocs/errors)
   Errors thrown by the Dagster framework.
 
-- [Dagster CLI](/docs/apidocs/cli)
-  Browse repositories and execute pipelines from the command line
+- [Execution](/docs/apidocs/execution)
+  APIs to execute and test pipelines and individual solids, the
+  execution context available to solids, pipeline configuration, the
+  default system storages used for intermediates, and the default
+  executors available for executing pipelines.
 
 - [Utilities](/docs/apidocs/utilities)
   Miscellaneous helpers used by Dagster that may be useful to users.
@@ -68,45 +67,75 @@ APIs from the core `dagster` package are divided roughly by topic:
 
 **Libraries**
 
-Dagster includes a number of non-core libraries that provide
-integrations and additional functionality:
+Dagster includes a number of non-core libraries that provide integrations and additional
+functionality:
 
-- [Airflow](/docs/apidocs/libraries/dagster_airflow)
-  (`dagster_airflow`)
-  Tools for compiling Dagster pipelines to Airflow DAGs.
+- [Airflow](/docs/apidocs/libraries/dagster_airflow) (`dagster_airflow`) Tools for compiling Dagster
+  pipelines to Airflow DAGs, and for ingesting Airflow DAGs to represent them in Dagster.
 
-- [AWS](/docs/apidocs/libraries/dagster_aws) (`dagster_aws`)
-  Tools for working with AWS, including using S3 for intermediates
-  storage.
+- [AWS](/docs/apidocs/libraries/dagster_aws) (`dagster_aws`) Dagster integrations for working with
+  AWS resources.
 
-- [Celery](/docs/apidocs/libraries/dagster_celery)
-  (`dagster_celery`)
-  Provides an executor built on top of the popular [Celery task
-  queue](http:/www.celeryproject.org/).
+- [Azure](/docs/apidocs/libraries/dagster_azure) (`dagster_azure`) Dagster integrations for working
+  with Microsoft Azure resources.
 
-- [Cron](/docs/apidocs/libraries/dagster_cron)
-  (`dagster_cron`)
-  Provides a simple scheduler implementation built on system cron.
+- [Celery](/docs/apidocs/libraries/dagster_celery) (`dagster_celery`) Provides an executor built on
+  top of the popular [Celery task queue](http:/www.celeryproject.org/), and an executor with support
+  for using Celery on Kubernetes.
 
-- [Dask](/docs/apidocs/libraries/dagster_dask)
-  (`dagster_dask`)
-  Provides an executor built on top of
+- [Cron](/docs/apidocs/libraries/dagster_cron) (`dagster_cron`) Provides a simple scheduler
+  implementation built on system cron.
+
+- [Dask](/docs/apidocs/libraries/dagster_dask) (`dagster_dask`) Provides an executor built on top of
   [dask.distributed](https:/distributed.dask.org/en/latest/).
 
-- [GCP](/docs/apidocs/libraries/dagster_gcp) (`dagster_gcp`)
-  Tools for working with GCP, including using GCS for intermediates
-  storage.
+- [Flyte](/docs/apidocs/libraries/dagster_flyte) (`dagster_flyte`) (experimental) Provides an
+  integration for runninig Dagster pipelines on [Flyte](https://flyte.org/).
 
-- [Jupyter](/docs/apidocs/libraries/dagstermill)
-  (`dagstermill`)
-  Wraps Jupyter notebooks as solids for integrated execution within
-  pipeline runs.
+- [GCP](/docs/apidocs/libraries/dagster_gcp) (`dagster_gcp`) Dagster integrations for working with
+  Google Cloud Platform resources.
 
-- [Kubernetes](/docs/apidocs/libraries/dagster_k8s)
-  (`dagster_k8s`)
-  Tools for deploying Dagster to Kubernetes.
+- [GitHub](/docs/apidocs/libraries/dagster_github) (`dagster_github`) Provides a resource for
+  issuing GitHub GraphQL queries and filing GitHub issues from Dagster pipelines.
 
-- [Postgres](/docs/apidocs/libraries/dagster_postgres)
-  (`dagster_postgres`)
-  Includes implementations of run and event log storage built on
-  Postgres.
+- [Jupyter](/docs/apidocs/libraries/dagstermill) (`dagstermill`) Wraps Jupyter notebooks as solids
+  for integrated execution within pipeline runs.
+
+- [Kubernetes](/docs/apidocs/libraries/dagster_k8s) (`dagster_k8s`) Provides components for
+  deploying Dagster to Kubernetes, along with an experimental Helm chart.
+
+- [PagerDuty](/docs/apidocs/libraries/dagster_pagerduty) (`dagster_pagerduty`) Provides an
+  integration for generating PagerDuty events from Dagster solids.
+
+- [Pandas](/docs/apidocs/libraries/dagster_pandas) (`dagster_pandas`) Provides support for using
+  pandas DataFrames in Dagster and utilities for performing data validation.
+
+- [Papertrail](/docs/apidocs/libraries/dagster_papertrail) (`dagster_papertrail`) Provides support
+  for sending Dagster logs to Papertrail.
+
+- [Postgres](/docs/apidocs/libraries/dagster_postgres) (`dagster_postgres`) Includes implementations
+  of run and event log storage built on Postgres.
+
+- [Prometheus](/docs/apidocs/libraries/dagster_prometheus) (`dagster_prometheus`) Provides support
+  for sending metrics to Prometheus.
+
+- [Pyspark](/docs/apidocs/libraries/dagster_pyspark) (`dagster_pyspark`) Provides an integration
+  with pyspark.
+
+- [Shell](/docs/apidocs/libraries/dagster_shell) (`dagster_shell`) Provides utilities for issuing shell
+  commands from Dagster pipelines.
+
+- [Slack](/docs/apidocs/libraries/dagster_slack) (`dagster_slack`) Provides a simple integration
+  with Slack.
+
+- [Snowflake](/docs/apidocs/libraries/dagster_snowflake) (`dagster_snowflake`) Provides a resource
+  for querying Snowflake from Dagster.
+
+- [Spark](/docs/apidocs/libraries/dagster_spark) (`dagster_spark`) Provides an integration
+  for working with Spark in Dagster.
+
+- [SSH / SFTP](/docs/apidocs/libraries/dagster_ssh) (`dagster_ssh`) Provides an integration
+  for running commands over SSH and retrieving / posting files via SFTP.
+
+- [Twilio](/docs/apidocs/libraries/dagster_twilio) (`dagster_twilio`) Provides a resource for posting SMS
+  messages from solids via Twilio.

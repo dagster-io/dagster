@@ -48,9 +48,7 @@ def test_execute_pipeline_iterator():
         ],
     )
     iterator = execute_pipeline_iterator(
-        pipeline,
-        environment_dict={'loggers': {'callback': {}}},
-        instance=DagsterInstance.local_temp(),
+        pipeline, run_config={'loggers': {'callback': {}}}, instance=DagsterInstance.local_temp(),
     )
 
     event_type = None
@@ -86,7 +84,7 @@ def test_execute_run_iterator():
         ],
     )
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, environment_dict={'loggers': {'callback': {}}}, mode='default',
+        pipeline_def=pipeline_def, run_config={'loggers': {'callback': {}}}, mode='default',
     )
 
     iterator = execute_run_iterator(
@@ -125,18 +123,16 @@ def test_execute_plan_iterator():
             )
         ],
     )
-    environment_dict = {'loggers': {'callback': {}}}
+    run_config = {'loggers': {'callback': {}}}
 
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline,
-        environment_dict={'loggers': {'callback': {}}},
+        run_config={'loggers': {'callback': {}}},
         execution_plan=execution_plan,
     )
 
-    iterator = execute_plan_iterator(
-        execution_plan, pipeline_run, instance, environment_dict=environment_dict
-    )
+    iterator = execute_plan_iterator(execution_plan, pipeline_run, instance, run_config=run_config)
 
     event_type = None
     while event_type != 'STEP_START':

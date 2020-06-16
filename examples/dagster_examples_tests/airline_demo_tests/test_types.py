@@ -37,7 +37,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     result = execute_pipeline(
         spark_df_test_pipeline,
         mode='spark',
-        environment_dict={
+        run_config={
             'storage': {'filesystem': {}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
@@ -77,7 +77,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        environment_dict={
+        run_config={
             'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
@@ -131,7 +131,7 @@ def test_spark_dataframe_output_csv():
         file_name = os.path.join(tempdir, 'output.csv')
         result = execute_pipeline(
             passthrough,
-            environment_dict={
+            run_config={
                 'solids': {
                     'passthrough_df': {
                         'outputs': [{'result': {'csv': {'path': file_name, 'header': True}}}]

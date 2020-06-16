@@ -31,7 +31,7 @@ def read_csv(context, csv_path):
 
 
 @solid(
-    config={
+    config_schema={
         'process_hot': Field(Bool, is_required=False, default_value=True),
         'process_cold': Field(Bool, is_required=False, default_value=True),
     },
@@ -53,7 +53,7 @@ def split_cereals(context, cereals):
         yield Output(cold_cereals, 'cold_cereals')
 
 
-@solid(config=String)
+@solid(config_schema=String)
 def sort_cereals_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals, key=lambda cereal: int(cereal['calories'])
@@ -76,16 +76,12 @@ def reusable_solids_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
-            'read_csv': {
-                'inputs': {'csv_path': {'value': '../../cereal.csv'}}
-            },
+            'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}},
             'sort_cold_cereals': {'config': 'cold'},
             'sort_hot_cereals': {'config': 'hot'},
         }
     }
-    result = execute_pipeline(
-        reusable_solids_pipeline, environment_dict=environment_dict
-    )
+    result = execute_pipeline(reusable_solids_pipeline, run_config=run_config)
     assert result.success

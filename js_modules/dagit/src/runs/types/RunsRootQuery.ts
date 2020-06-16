@@ -9,25 +9,6 @@ import { PipelineRunsFilter, PipelineRunStatus } from "./../../types/globalTypes
 // GraphQL query operation: RunsRootQuery
 // ====================================================
 
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline {
-  __typename: "UnknownPipeline";
-  name: string;
-}
-
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids {
-  __typename: "Solid";
-  name: string;
-}
-
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline {
-  __typename: "Pipeline";
-  name: string;
-  pipelineSnapshotId: string;
-  solids: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids[];
-}
-
-export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline;
-
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -36,10 +17,6 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
-  stepsSucceeded: number;
-  stepsFailed: number;
-  expectations: number;
-  materializations: number;
   startTime: number | null;
   endTime: number | null;
 }
@@ -69,7 +46,8 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineSnapshotId: string | null;
-  pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
+  pipelineName: string;
+  solidSelection: string[] | null;
   tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
 }

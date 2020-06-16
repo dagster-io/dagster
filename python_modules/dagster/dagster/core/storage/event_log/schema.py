@@ -14,5 +14,6 @@ SqlEventLogStorageTable = db.Table(
     db.Column('asset_key', db.String),
 )
 
+db.Index('idx_run_id', SqlEventLogStorageTable.c.run_id)
 db.Index('idx_step_key', SqlEventLogStorageTable.c.step_key)
 db.Index('idx_asset_key', SqlEventLogStorageTable.c.asset_key)

@@ -21,7 +21,7 @@ PICKLED_STEP_RUN_REF_FILE_NAME = 'step_run_ref.pkl'
 
 
 @resource(
-    config={
+    config_schema={
         'scratch_dir': Field(
             StringSource,
             description='Directory used to pass files between the plan process and step process.',
@@ -111,11 +111,11 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
                     ),
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
-                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
+                solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
     return StepRunRef(
-        environment_dict=step_context.environment_dict,
+        run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
@@ -126,17 +126,17 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
 
 def step_run_ref_to_step_context(step_run_ref):
-    pipeline_def = step_run_ref.recon_pipeline.get_definition().subset_for_execution(
-        step_run_ref.pipeline_run.solid_subset
+    pipeline_def = step_run_ref.recon_pipeline.get_definition().get_pipeline_subset_def(
+        step_run_ref.pipeline_run.solids_to_execute
     )
 
     execution_plan = create_execution_plan(
-        pipeline_def, step_run_ref.environment_dict, mode=step_run_ref.pipeline_run.mode
+        pipeline_def, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
     ).build_subset_plan([step_run_ref.step_key])
 
     initialization_manager = pipeline_initialization_manager(
         execution_plan,
-        step_run_ref.environment_dict,
+        step_run_ref.run_config,
         step_run_ref.pipeline_run,
         DagsterInstance.ephemeral(),
     )

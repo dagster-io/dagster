@@ -39,7 +39,7 @@ class LocalSQLiteWarehouse(object):
             curs.close()
 
 
-@resource(config={'conn_str': Field(String)})
+@resource(config_schema={'conn_str': Field(String)})
 def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config['conn_str'])
 
@@ -92,7 +92,7 @@ def resources_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {
                 'inputs': {'csv_path': {'value': '../../cereal.csv'}}
@@ -100,7 +100,5 @@ if __name__ == '__main__':
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
-    result = execute_pipeline(
-        resources_pipeline, environment_dict=environment_dict
-    )
+    result = execute_pipeline(resources_pipeline, run_config=run_config)
     assert result.success

@@ -150,7 +150,7 @@ def events_of_type(result, event_type):
     return [event for event in result.event_list if event.event_type_value == event_type]
 
 
-@solid(config=str)
+@solid(config_schema=str)
 def destroy(context, x):
     shutil.rmtree(context.solid_config)
     return x
@@ -164,12 +164,29 @@ def engine_error():
     subtract(a, b)
 
 
+@solid(
+    tags={
+        'dagster-k8s/resource_requirements': {
+            'requests': {'cpu': '250m', 'memory': '64Mi'},
+            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+        }
+    }
+)
+def resource_req_solid(context):
+    context.log.info('running')
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def test_resources_limit():
+    resource_req_solid()
+
+
 @contextmanager
 def execute_pipeline_on_celery(pipeline_name,):
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pipeline_name),
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {}},
             },
@@ -184,7 +201,7 @@ def execute_eagerly_on_celery(pipeline_name, instance=None, subset=None):
         instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pipeline_name).subset_for_execution(subset),
-            environment_dict={
+            run_config={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
             },
@@ -395,6 +412,12 @@ def test_execute_eagerly_optional_outputs_pipeline_on_celery():
         assert sum([int(x.success) for x in result.solid_result_list]) == 2
 
 
+def test_execute_eagerly_resources_limit_pipeline_on_celery():
+    with execute_eagerly_on_celery('test_resources_limit') as result:
+        assert result.result_for_solid('resource_req_solid').success
+        assert result.success
+
+
 def test_execute_eagerly_fails_pipeline_on_celery():
     with execute_eagerly_on_celery('test_fails') as result:
         assert len(result.solid_result_list) == 2
@@ -421,7 +444,7 @@ def test_bad_broker():
     #         ExecutionTargetHandle.for_pipeline_python_file(
     #             __file__, 'test_diamond_pipeline'
     #         ).build_pipeline_definition(),
-    #         environment_dict={
+    #         run_config={
     #             'storage': {'filesystem': {}},
     #             'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
     #         },
@@ -437,7 +460,7 @@ def test_engine_error():
             storage = os.path.join(tempdir, 'flakey_storage')
             execute_pipeline(
                 ReconstructablePipeline.for_file(__file__, 'engine_error'),
-                environment_dict={
+                run_config={
                     'storage': {'filesystem': {'config': {'base_dir': storage}}},
                     'execution': {
                         'celery': {'config': {'config_source': {'task_always_eager': True}}}

@@ -1,0 +1,3 @@
+repository:
+  module: dagster.utils.test.hello_world_repository
+  fn: hello_world_repository

@@ -28,16 +28,16 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.merger import deep_merge_dicts
 
-ENVIRONMENT_DICT_BASE = {'solids': {'return_two': {'config': {'a': 'b'}}}}
+RUN_CONFIG_BASE = {'solids': {'return_two': {'config': {'a': 'b'}}}}
 
 
-def make_environment_dict(scratch_dir, mode):
+def make_run_config(scratch_dir, mode):
     if mode in ['external', 'request_retry']:
         step_launcher_resource_keys = ['first_step_launcher', 'second_step_launcher']
     else:
         step_launcher_resource_keys = ['second_step_launcher']
     return deep_merge_dicts(
-        ENVIRONMENT_DICT_BASE,
+        RUN_CONFIG_BASE,
         {
             'resources': {
                 step_launcher_resource_key: {'config': {'scratch_dir': scratch_dir}}
@@ -58,13 +58,13 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
             )
 
 
-@resource(config=local_external_step_launcher.config_field)
+@resource(config_schema=local_external_step_launcher.config_field)
 def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
 
 
 def define_basic_pipeline():
-    @solid(required_resource_keys=set(['first_step_launcher']), config={'a': Field(str)})
+    @solid(required_resource_keys=set(['first_step_launcher']), config_schema={'a': Field(str)})
     def return_two(_):
         return 2
 
@@ -107,16 +107,16 @@ def initialize_step_context(scratch_dir):
     pipeline_run = PipelineRun(
         pipeline_name='foo_pipeline',
         run_id=str(uuid.uuid4()),
-        environment_dict=make_environment_dict(scratch_dir, 'external'),
+        run_config=make_run_config(scratch_dir, 'external'),
         mode='external',
     )
 
     plan = create_execution_plan(
-        reconstructable(define_basic_pipeline), pipeline_run.environment_dict, mode='external'
+        reconstructable(define_basic_pipeline), pipeline_run.run_config, mode='external'
     )
 
     initialization_manager = pipeline_initialization_manager(
-        plan, pipeline_run.environment_dict, pipeline_run, DagsterInstance.ephemeral(),
+        plan, pipeline_run.run_config, pipeline_run, DagsterInstance.ephemeral(),
     )
     for _ in initialization_manager.generate_setup_events():
         pass
@@ -132,7 +132,7 @@ def test_step_context_to_step_run_ref():
     step_context = initialize_step_context('')
     step = step_context.step
     step_run_ref = step_context_to_step_run_ref(step_context, 0)
-    assert step_run_ref.environment_dict == step_context.pipeline_run.environment_dict
+    assert step_run_ref.run_config == step_context.pipeline_run.run_config
     assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
     rehydrated_step_context = step_run_ref_to_step_context(step_run_ref)
@@ -166,7 +166,7 @@ def test_pipeline(mode):
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            environment_dict=make_environment_dict(tmpdir, mode),
+            run_config=make_run_config(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3
@@ -178,7 +178,7 @@ def test_launcher_requests_retry():
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
             mode=mode,
-            environment_dict=make_environment_dict(tmpdir, mode),
+            run_config=make_run_config(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3

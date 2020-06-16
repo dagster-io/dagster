@@ -357,12 +357,12 @@ def test_nested_optional_with_no_default():
 
 
 def test_config_defaults():
-    @solid(config={"sum": Int})
+    @solid(config_schema={"sum": Int})
     def two(_context):
         assert _context.solid_config['sum'] == 6
         return _context.solid_config['sum']
 
-    @solid(config={"sum": Int})
+    @solid(config_schema={"sum": Int})
     def one(_context, prev_sum):
         assert prev_sum == 6
         return prev_sum + _context.solid_config['sum']
@@ -374,7 +374,7 @@ def test_config_defaults():
 
     @composite_solid(
         config_fn=addition_composite_solid_config_fn,
-        config={
+        config_schema={
             "a": Field(Int, is_required=False, default_value=1),
             "b": Field(Int, is_required=False, default_value=2),
             "c": Int,
@@ -395,13 +395,13 @@ def test_config_defaults():
 
 
 def test_config_with_and_without_config():
-    @solid(config={'prefix': Field(str, is_required=False, default_value='_')})
+    @solid(config_schema={'prefix': Field(str, is_required=False, default_value='_')})
     def prefix_value(context, v):
         return '{prefix}{v}'.format(prefix=context.solid_config["prefix"], v=v)
 
     @composite_solid(
         config_fn=lambda cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
-        config={'prefix': Field(str, is_required=False, default_value='_id_')},
+        config_schema={'prefix': Field(str, is_required=False, default_value='_id_')},
     )
     def prefix_id(val):
         return prefix_value(val)
@@ -449,7 +449,7 @@ def test_build_optionality():
 
 
 def test_wrong_solid_name():
-    @solid(name='some_solid', input_defs=[], output_defs=[], config=Int)
+    @solid(name='some_solid', input_defs=[], output_defs=[], config_schema=Int)
     def some_solid(_):
         return None
 
@@ -471,8 +471,8 @@ def fail_me():
     assert False
 
 
-def dummy_resource(config=None):
-    return ResourceDefinition(lambda: None, config=config)
+def dummy_resource(config_schema=None):
+    return ResourceDefinition(lambda: None, config_schema=config_schema)
 
 
 def test_wrong_resources():
@@ -496,7 +496,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=[int])
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config_schema=[int])
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
@@ -506,7 +506,7 @@ def test_solid_list_config():
         solid_list_config()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'solid_list_config': {'config': value}}}
+        pipeline_def, run_config={'solids': {'solid_list_config': {'config': value}}}
     )
 
     assert result.success
@@ -515,27 +515,25 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+        input_defs=[], config_schema={'list_one': [int], 'list_two': [int]},
     )
     def two_list_type(context):
         return context.solid_config
 
     assert execute_solid(
         two_list_type,
-        environment_dict={
-            'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}
-        },
+        run_config={'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}},
     ).output_value() == {'list_one': [1], 'list_two': [2]}
 
     @solid(
-        input_defs=[], config={'list_one': [Int], 'list_two': [Int]},
+        input_defs=[], config_schema={'list_one': [Int], 'list_two': [Int]},
     )
     def two_list_type_condensed_syntax(context):
         return context.solid_config
 
     assert execute_solid(
         two_list_type_condensed_syntax,
-        environment_dict={
+        run_config={
             'solids': {
                 'two_list_type_condensed_syntax': {'config': {'list_one': [1], 'list_two': [2]}}
             }
@@ -543,14 +541,14 @@ def test_two_list_types():
     ).output_value() == {'list_one': [1], 'list_two': [2]}
 
     @solid(
-        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+        input_defs=[], config_schema={'list_one': [int], 'list_two': [int]},
     )
     def two_list_type_condensed_syntax_primitives(context):
         return context.solid_config
 
     assert execute_solid(
         two_list_type_condensed_syntax_primitives,
-        environment_dict={
+        run_config={
             'solids': {
                 'two_list_type_condensed_syntax_primitives': {
                     'config': {'list_one': [1], 'list_two': [2]}
@@ -561,7 +559,7 @@ def test_two_list_types():
 
 
 def test_multilevel_default_handling():
-    @solid(config=Field(Int, is_required=False, default_value=234))
+    @solid(config_schema=Field(Int, is_required=False, default_value=234))
     def has_default_value(context):
         assert context.solid_config == 234
 
@@ -570,20 +568,18 @@ def test_multilevel_default_handling():
     )
 
     assert execute_pipeline(pipeline_def).success
-    assert execute_pipeline(pipeline_def, environment_dict=None).success
-    assert execute_pipeline(pipeline_def, environment_dict={}).success
-    assert execute_pipeline(pipeline_def, environment_dict={'solids': {}}).success
-    assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': {}}}
-    ).success
+    assert execute_pipeline(pipeline_def, run_config=None).success
+    assert execute_pipeline(pipeline_def, run_config={}).success
+    assert execute_pipeline(pipeline_def, run_config={'solids': {}}).success
+    assert execute_pipeline(pipeline_def, run_config={'solids': {'has_default_value': {}}}).success
 
     assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': {'config': 234}}}
+        pipeline_def, run_config={'solids': {'has_default_value': {'config': 234}}}
     ).success
 
 
 def test_no_env_missing_required_error_handling():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def required_int_solid(_context):
         pass
 
@@ -609,7 +605,7 @@ def test_no_env_missing_required_error_handling():
 
 
 def test_root_extra_field():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def required_int_solid(_context):
         pass
 
@@ -620,7 +616,7 @@ def test_root_extra_field():
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment_dict={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
+            run_config={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
         )
 
     pe = pe_info.value
@@ -631,7 +627,7 @@ def test_root_extra_field():
 
 
 def test_deeper_path():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def required_int_solid(_context):
         pass
 
@@ -641,7 +637,7 @@ def test_deeper_path():
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
-            pipeline_def, environment_dict={'solids': {'required_int_solid': {'config': 'asdf'}}}
+            pipeline_def, run_config={'solids': {'required_int_solid': {'config': 'asdf'}}}
         )
 
     pe = pe_info.value
@@ -653,7 +649,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config=[int])
+    @solid(config_schema=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -663,7 +659,7 @@ def test_working_list_path():
         required_list_int_solid()
 
     result = execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
+        pipeline_def, run_config={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
     )
 
     assert result.success
@@ -673,7 +669,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config=[int])
+    @solid(config_schema=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -685,7 +681,7 @@ def test_item_error_list_path():
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment_dict={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
+            run_config={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
         )
 
     pe = pe_info.value
@@ -704,7 +700,7 @@ def test_list_in_config_error():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
 
-        @solid(config=List[int])
+        @solid(config_schema=List[int])
         def _no_runtime_list_in_config(_):
             pass
 
@@ -718,7 +714,7 @@ def test_required_resource_not_given():
         pass
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'resources': None})
+        execute_pipeline(pipeline_def, run_config={'resources': None})
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
@@ -727,7 +723,7 @@ def test_required_resource_not_given():
     )
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'resources': {}})
+        execute_pipeline(pipeline_def, run_config={'resources': {}})
 
     pe = pe_info.value
     error = pe.errors[0]
@@ -739,7 +735,7 @@ def test_required_resource_not_given():
 
 
 def test_multilevel_good_error_handling_solids():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def good_error_handling(_context):
         pass
 
@@ -748,7 +744,7 @@ def test_multilevel_good_error_handling_solids():
         good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': None})
+        execute_pipeline(pipeline_def, run_config={'solids': None})
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
@@ -756,7 +752,7 @@ def test_multilevel_good_error_handling_solids():
     )
 
     with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': {}})
+        execute_pipeline(pipeline_def, run_config={'solids': {}})
 
     assert len(missing_field_pe_info.value.errors) == 1
     assert missing_field_pe_info.value.errors[0].message == (
@@ -766,7 +762,7 @@ def test_multilevel_good_error_handling_solids():
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
-    @solid(config=Int)
+    @solid(config_schema=Int)
     def good_error_handling(_context):
         pass
 
@@ -775,7 +771,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
         good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
-        execute_pipeline(pipeline_def, environment_dict={'solids': {'good_error_handling': {}}})
+        execute_pipeline(pipeline_def, run_config={'solids': {'good_error_handling': {}}})
 
     assert len(pe_info.value.errors) == 1
     assert pe_info.value.errors[0].message == (
@@ -785,7 +781,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config=Noneable(int))
+    @solid(config_schema=Noneable(int))
     def good_error_handling(_context):
         pass
 
@@ -793,9 +789,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     def pipeline_def():
         good_error_handling()
 
-    execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'good_error_handling': {'config': None}}}
-    )
+    execute_pipeline(pipeline_def, run_config={'solids': {'good_error_handling': {'config': None}}})
 
 
 def test_invalid_default_values():
@@ -804,7 +798,7 @@ def test_invalid_default_values():
         match='Value "3" of type .* is not valid for expected type "Int"',
     ):
 
-        @solid(config=Field(Int, default_value='3'))
+        @solid(config_schema=Field(Int, default_value='3'))
         def _solid(_):
             pass
 
@@ -818,13 +812,13 @@ def test_typing_types_into_config():
     )
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @solid(config=Field(typing.List))
+        @solid(config_schema=Field(typing.List))
         def _solid(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @solid(config=typing.List)
+        @solid(config_schema=typing.List)
         def _solid(_):
             pass
 
@@ -837,13 +831,13 @@ def test_typing_types_into_config():
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @solid(config=Field(typing.List[int]))
+        @solid(config_schema=Field(typing.List[int]))
         def _solid(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
-        @solid(config=typing.List[int])
+        @solid(config_schema=typing.List[int])
         def _solid(_):
             pass
 
@@ -858,7 +852,7 @@ def test_typing_types_into_config():
     ]:
         with pytest.raises(DagsterInvalidDefinitionError):
 
-            @solid(config=Field(ttype))
+            @solid(config_schema=Field(ttype))
             def _solid(_):
                 pass
 
@@ -867,25 +861,25 @@ def test_no_set_in_config_system():
     set_error_msg = re.escape('Cannot use Set in the context of a config field.')
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config=Field(Set))
+        @solid(config_schema=Field(Set))
         def _bare_open_set(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config=Set)
+        @solid(config_schema=Set)
         def _bare_open_set(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config=Field(Set[int]))
+        @solid(config_schema=Field(Set[int]))
         def _bare_closed_set(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
-        @solid(config=Set[int])
+        @solid(config_schema=Set[int])
         def _bare_closed_set(_):
             pass
 
@@ -894,13 +888,13 @@ def test_no_tuple_in_config_system():
     tuple_error_msg = re.escape('Cannot use Tuple in the context of a config field.')
     with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @solid(config=Field(Tuple))
+        @solid(config_schema=Field(Tuple))
         def _bare_open_tuple(_):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
-        @solid(config=Field(Tuple[int]))
+        @solid(config_schema=Field(Tuple[int]))
         def _bare_closed_set(_):
             pass
 
@@ -908,7 +902,7 @@ def test_no_tuple_in_config_system():
 def test_field_is_none():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config={'none_field': None})
+        @solid(config_schema={'none_field': None})
         def _none_is_bad(_):
             pass
 

@@ -1,17 +1,16 @@
-from dagster import file_relative_path
-from dagster.api.snapshot_repository import sync_get_external_repository
-from dagster.core.host_representation import EnvironmentHandle, ExternalRepository, RepositoryHandle
+from dagster.api.snapshot_repository import sync_get_external_repositories
+from dagster.core.host_representation import ExternalRepository
+
+from .utils import get_bar_repo_repository_location_handle
 
 
-def test_repository_snapshot_api():
-    repo_handle = RepositoryHandle(
-        repository_name='bar',
-        environment_handle=EnvironmentHandle.legacy_from_yaml(
-            'test', file_relative_path(__file__, 'repository_file.yaml')
-        ),
-    )
+def test_external_repositories_api():
+    repository_location_handle = get_bar_repo_repository_location_handle()
+    external_repos = sync_get_external_repositories(repository_location_handle)
 
-    external_repository = sync_get_external_repository(repo_handle)
+    assert len(external_repos) == 1
+
+    external_repository = external_repos[0]
 
     assert isinstance(external_repository, ExternalRepository)
-    assert external_repository.name == 'bar'
+    assert external_repository.name == 'bar_repo'

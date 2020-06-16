@@ -15,7 +15,7 @@ class TestAirflowizedEventPipeline(object):
     ]
 
     pipeline_name = 'event_ingest_pipeline'
-    handle = ReconstructableRepository.for_module(
+    recon_repo = ReconstructableRepository.for_module(
         'dagster_examples.event_pipeline_demo', pipeline_name
     )
 

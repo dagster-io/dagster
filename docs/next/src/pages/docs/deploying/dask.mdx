@@ -28,7 +28,7 @@ shared by all of the Dask nodes, S3, or GCS) must be used.
 Note that, when using this executor, the compute function of a single
 solid is still executed in a single process on a single machine. If your
 goal is to distribute execution of workloads _within_ the
-logic of a single solid, you may find that invoking Dask or Pyspark
+logic of a single solid, you may find that invoking Dask or PySpark
 directly from within the body of a solid's compute function is a better
 fit than the engine layer covered in this documentation.
 
@@ -97,7 +97,7 @@ In Dask, you'd set this up by launching your workers with resource
 specifications:
 
 ```shell
-$ dask-worker scheduler:8786 --resources "GPU=2"
+dask-worker scheduler:8786 --resources "GPU=2"
 ```
 
 and then when submitting tasks to the Dask cluster, specifying resource

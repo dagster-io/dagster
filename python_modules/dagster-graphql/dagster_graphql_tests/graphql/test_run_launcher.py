@@ -1,5 +1,5 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -20,33 +20,17 @@ query RunQuery($runId: ID!) {
 '''
 
 
-class TestMissingRunLauncher(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_legacy_variants())
-):
-    def test_missing(self, graphql_context):
-        result = execute_dagster_graphql(
-            context=graphql_context,
-            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
-            },
-        )
-
-        assert result.data['launchPipelineExecution']['__typename'] == 'RunLauncherNotDefinedError'
-
-
 class TestBasicLaunch(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_hijack()]
+        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env()]
     )
 ):
     def test_run_launcher(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, 'no_config_pipeline')
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}
-            },
+            variables={'executionParams': {'selector': selector, 'mode': 'default'}},
         )
 
         assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
@@ -63,15 +47,13 @@ class TestBasicLaunch(
         assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
 
     def test_run_launcher_subset(self, graphql_context):
+        selector = infer_pipeline_selector(
+            graphql_context, 'more_complicated_config', ['noop_solid']
+        )
         result = execute_dagster_graphql(
             context=graphql_context,
             query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                'executionParams': {
-                    'selector': {'name': 'more_complicated_config', 'solidSubset': ['noop_solid']},
-                    'mode': 'default',
-                }
-            },
+            variables={'executionParams': {'selector': selector, 'mode': 'default',}},
         )
 
         assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'

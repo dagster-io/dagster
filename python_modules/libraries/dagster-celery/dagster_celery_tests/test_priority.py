@@ -44,7 +44,7 @@ def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
     instance = DagsterInstance.local_temp(tempdir=tempdir)
     return execute_pipeline(
         pipe,
-        environment_dict={
+        run_config={
             'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
             'execution': {'celery': {}},
         },
@@ -56,7 +56,7 @@ def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
 def execute_eagerly_on_celery(tempdir, pipeline_name, tags=None):
     return execute_pipeline(
         ReconstructablePipeline.for_file(__file__, pipeline_name),
-        environment_dict={
+        run_config={
             'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
             'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
         },

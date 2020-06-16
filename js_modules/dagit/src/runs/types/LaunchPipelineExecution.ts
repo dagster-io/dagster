@@ -9,19 +9,14 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // GraphQL mutation operation: LaunchPipelineExecution
 // ====================================================
 
-export interface LaunchPipelineExecution_launchPipelineExecution_RunLauncherNotDefinedError {
-  __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
-}
-
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline {
-  __typename: "Pipeline" | "UnknownPipeline";
-  name: string;
+export interface LaunchPipelineExecution_launchPipelineExecution_InvalidStepError {
+  __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline;
+  pipelineName: string;
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess {
@@ -50,7 +45,7 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_RunLauncherNotDefinedError | LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
+export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
 
 export interface LaunchPipelineExecution {
   launchPipelineExecution: LaunchPipelineExecution_launchPipelineExecution;

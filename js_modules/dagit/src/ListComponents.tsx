@@ -54,7 +54,3 @@ export const ScrollContainer = styled.div`
   min-height: 100%;
   width: 100%;
 `;
-export const Details = styled.div`
-  font-size: 0.8rem;
-  margin-top: 4px;
-`;

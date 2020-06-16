@@ -8,37 +8,29 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 # The Dagster instance
 
-The <PyObject module="dagster.core.instance" object="DagsterInstance" displayText="DagsterInstance" /> defines
-everything Dagster needs for a single deployment:
-where to store the history of past runs and their associated logs, where
-to stream the raw stdout and stderr from solid compute functions, how to
-store local artifacts on disk, and how to launch new runs.
+The <PyObject module="dagster.core.instance" object="DagsterInstance" displayText="DagsterInstance"
+/> defines everything Dagster needs for a single deployment: where to store the history of past runs
+and their associated logs, where to stream the raw logs from solid compute functions, how to store
+local artifacts on disk, and how to launch new runs.
 
-Locally, an instance usually corresponds to a single Dagit process. In
-production, you'll want all of your processes to share a single
-instance config so they can effectively share information.
+Locally, an instance usually corresponds to a single Dagit process. In production, you'll want all
+of your processes to share a single instance config so they can effectively share information.
 
-The instance is pluggable and configurable, and users can write their
-own classes to extend its functionality.
+**NOTE:** many important configurations like execution parallelism are set on a per-pipeline-run
+basis, please check the section below on pipeline configuration.
 
-## Local default behavior
+## Default local behavior
 
-First, let's look at how the instance works when you run Dagster in a
-development environment.
+When you use Dagster, like running `dagit` from the command line, Dagster checks whether the
+environment variable `DAGSTER_HOME` is set. If it is, Dagster will look for an instance config file
+at `$DAGSTER_HOME/dagster.yaml`.
 
-When you use Dagster, like running `dagit` from the command line,
-Dagster checks whether the environment variable `DAGSTER_HOME` is set.
-If it is, Dagster will look for an instance config file at
-`$DAGSTER_HOME/dagster.yaml`.
+This file contains configuration settings that tell Dagster where and how to store local artifacts
+like intermediates, schedules, stdout and stderr logs from solid compute functions, and information
+about past runs and the structured events.
 
-This file contains configuration settings that tell Dagster where and
-how to store local artifacts like intermediates, schedules, stdout and
-stderr logs from solid compute functions, and information about past
-runs and the structured events.
-
-By default (if `dagster.yaml` is not present or nothing is specified in
-that file), Dagster will store this information on the local filesystem,
-laid out like this:
+By default (if `dagster.yaml` is not present or nothing is specified in that file), Dagster will
+store this information on the local filesystem, laid out like this:
 
 ```tree
 $DAGSTER_HOME
@@ -68,164 +60,84 @@ $DAGSTER_HOME
     └── ...
 ```
 
-The `runs.db` and `{run_id}.db` files are SQLite database files
-recording information about pipeline runs and per-run event logs
-respectively. The `{pipeline_name}_{run_id}.json` files store
-information about schedules associated with pipelines. The
-`compute_logs` directories (one per pipeline run) contain the stdout and
-stderr logs from the execution of the compute functions of each solid in
-a pipeline. And the `intermediates` directories contain serialized
-representations of the outputs of each solid, enabling incremental
-recomputation of pipeline subsets.
+The `runs.db` and `{run_id}.db` files are SQLite database files recording information about pipeline
+runs and per-run event logs respectively. The `{pipeline_name}_{run_id}.json` files store
+information about schedules associated with pipelines. The `compute_logs` directories (one per
+pipeline run) contain the stdout and stderr logs from the execution of the compute functions of each
+solid in a pipeline. And the `intermediates` directories contain serialized representations of the
+outputs of each solid, enabling incremental recomputation of pipeline subsets.
 
-If `DAGSTER_HOME` is not set, the Dagster tools will use an ephemeral
-instance for execution. In this case, the run and event log storages
-will be in-memory rather than persisted to disk, and filesystem storage
-will use a temporary directory that is cleaned up when the process
-exits. This is useful for tests and is the default when invoking Python
-APIs such as <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline" /> directly.
+If `DAGSTER_HOME` is not set, the Dagster tools will use an ephemeral instance for execution. In
+this case, the run and event log storages will be in-memory rather than persisted to disk, and
+filesystem storage will use a temporary directory that is cleaned up when the process exits. This is
+useful for tests and is the default when invoking Python APIs such as <PyObject module="dagster"
+object="execute_pipeline" displayText="execute_pipeline" /> directly.
 
-## Configuring the instance
+## Instance Configuration YAML
 
-In less ephemeral deployments, you will typically want to configure some
-or all of this behavior. When you configure an instance, you can select
-the the implementation of its constituent components.
+In persistent Dagster deployments, you will typically want to configure some or all of this
+behavior. When you configure an instance, you can select the the implementation of its constituent
+components.
 
-Each of these components makes use of common plugin machinery, the <PyObject module="dagster.serdes" object="ConfigurableClass" displayText="ConfigurableClass" />.
-This lets you specify what class to instantiate for each
-of the instance's components (the `module` and `class` fields), as well
-as what values to instantiate them with (the `config` field). Users can
-write their own classes to implement any of this functionality and use
-the `dagster.yaml` file to tell Dagit to use the custom classes.
+For example, you may want to use a Postgres instance to store runs and the corresponding event logs,
+to store intermediates and other local artifacts on an NFS mount, and to stream compute logs to an
+S3 bucket.
 
-### Local artifact storage
+To do this, provide a `$DAGSTER_HOME/dagster.yaml` file. Dagit and all Dagster tools will look for
+this file on startup. Note that Dagster supports retrieving instance YAML values from environment
+variables, using `env:` instead of a string literal. An example `dagster.yaml` is below:
 
-- key: `local_artifact_storage`
-- default: <PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" />
-
-Controls where to put things on the local disk when it's needed.
-
-### Run storage
-
-- key: `run_storage`
-- base class: <PyObject module="dagster.core.storage.runs" object="RunStorage" />
-- default: <PyObject module="dagster.core.storage.runs" object="SqliteRunStorage" />
-- example alternative: **`PostgresRunStorage`**
-
-Controls how the history of runs is persisted. Manages a collection of **`PipelineRun`**
-
-### Event log storage
-
-- key `event_log_storage`
-- base class: <PyObject module="dagster.core.storage.event_log" object="EventLogStorage" />
-- default: <PyObject module="dagster.core.storage.event_log" object="SqliteEventLogStorage" />
-- example alternative: **`PostgresEventLogStorage`**
-
-Controls how the structured event logs produced by each run are
-persisted. Collections of **`EventRecord`** which contain **`DagsterEvent`**
-
-### Compute log manager
-
-- key: `compute_logs`
-- base class: <PyObject module="dagster.core.storage.compute_log_manager" object="ComputeLogManager" />
-- default: <PyObject module="dagster.core.storage.local_compute_log_manager" object="LocalComputeLogManager" />
-- example alternative: **`S3ComputeLogManager`**
-
-Controls the capture and persistance of raw stdout & stderr text
-content.
-
-### Scheduler
-
-- key: `scheduler`
-- base class: <PyObject module="dagster.core.scheduler" object="Scheduler" />
-- default: `None`
-- example alternative: <PyObject module="dagster_cron.cron_scheduler" object="SystemCronScheduler" />
-
-Provides an optional scheduler which will control timed repeated
-execution of pipeline runs.
-
-### Scheduler storage
-
-- key: `schedule_storage`
-- base class: <PyObject module="dagster.core.storage.schedules" object="ScheduleStorage"/>
-- default: <PyObject module="dagster.core.storage.schedules" object="SqliteScheduleStorage"/>
-- example alternative: **`PostgresScheduleStorage`**
-
-Controls the backing storage used by the scheduler to manage the state
-of schedules and persist records of attempts.
-
-### Run Launcher
-
-- key: `run_launcher`
-- base class: <PyObject module="dagster.core.launcher" object="RunLauncher" />
-- default: `None`
-- example alternative: <PyObject module="dagster_graphql.launcher" object="RemoteDagitRunLauncher" />
-
-Provides an optional means to delegate the execution of pipeline runs.
-
-### Dagit
-
-- key: `dagit`
-- example:
-
-```{.yaml}
-dagit:
-  execution_manager:
-    disabled: False # whether dagit can run pipelines in a sub process
-    max_concurrent_runs: 10 # how many at a time
-```
-
-The ability to configure how dagit behaves when launched.
-
-## Example instance config
-
-For example, you may want to use a Postgres instance to store runs and
-the corresponding event logs, to store intermediates and other local
-artifacts on an NFS mount, and to stream compute logs to an S3 bucket.
-
-To do this, you will simply alter the contents of the `dagster.yaml`
-file:
-
-```python literalinclude caption=dagster.yaml
+```yaml literalinclude caption=dagster.yaml
 file:src/pages/docs/deploying/dagster.yaml
 relativeToProject
 ```
 
-## Per-pipeline run configuration
+The API docs for available options are linked below:
 
-When you run your pipelines on your deployed instance, you'll need to
-make sure that they are configured appropriately.
+**Run Storage**
 
-For example, if you'd like your production pipelines to run using the
-built-in multiprocess executor (taking advantage of the big box to which
-you've deployed Dagit), rather than the single-process executor (which
-can be easier to reason about for test), you'll need to make sure your
-pipeline configuration YAML contains a block like the following:
+- _(default)_ <PyObject module="dagster.core.storage.runs" object="SqliteRunStorage" />
+- <PyObject module="dagster_postgres" object="PostgresRunStorage" />
 
-_execution_config.yaml_
+**Event Log Storage**
 
-```YAML
- execution:
-   multiprocess:
-     config:
-       max_concurrent: 4
- storage:
-   filesystem:
+- _(default)_ <PyObject module="dagster.core.storage.event_log" object="SqliteEventLogStorage" />
+- <PyObject module="dagster_postgres" object="PostgresEventLogStorage" />
+
+**Compute Log Manager**
+
+- _(default)_ <PyObject module="dagster.core.storage.local_compute_log_manager" object="LocalComputeLogManager" />
+- <PyObject module="dagster_aws.s3" object="S3ComputeLogManager" />
+
+**Local Artifact Storage**
+
+- _(default)_ <PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" />
+
+**Scheduler** _(disabled by default)_
+
+- <PyObject module="dagster_cron.cron_scheduler" object="SystemCronScheduler" />
+
+**Scheduler Storage**
+
+- _(default)_ <PyObject module="dagster.core.storage.schedules" object="SqliteScheduleStorage"/>
+- <PyObject module="dagster_postgres" object="PostgresScheduleStorage" />
+
+**Run Launcher**
+
+- _(default)_ <PyObject module="dagster.core.launcher" object="CliApiRunLauncher" />
+
+Each of these components makes use of common plugin machinery, the <PyObject module="dagster.serdes"
+object="ConfigurableClass" displayText="ConfigurableClass" />. This lets you specify what class to
+instantiate for each of the instance's components (the `module` and `class` fields), as well as what
+values to instantiate them with (the `config` field). Users can write their own classes to implement
+any of this functionality and use the `dagster.yaml` file to tell Dagit to use the custom classes.
+
+## Pipeline Run Configuration YAML
+
+Along with instance-level configuration, Dagster supports configuring several things on a
+per-pipeline-run basis. An example is shown below:
+
+```yaml literalinclude caption=pipeline_run.yaml
+file:src/pages/docs/deploying/pipeline_run.yaml
+relativeToProject
 ```
-
-Any pipelines configured with this YAML will use the multiprocess
-executor. Note that setting `max_concurrent` to 0 is equivalent to
-[**`multiprocessing.cpu_count()`**](https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count).
-
-In general, you will need to configure persistent intermediates storage
-(whether filesystem-based, S3-based, GCS-based, or fully custom) for all
-of your pipeline runs that you would like to run on multiprocess or
-distributed executors (like the dagster-celery executor). This is
-because those executors use the intermediates storage to exchange input
-and output values.
-
-Note that filesystem storage may or may not be appropriate for executors
-that run on multiple nodes: an NFS mount will absolutely work for these
-cases, but local file systems that are not shared between the nodes will
-not be adequate, and you will see execution steps fail as they fail to
-find the inputs they expect.

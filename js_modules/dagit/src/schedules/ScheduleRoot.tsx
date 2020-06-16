@@ -9,13 +9,13 @@ import {
 import { Query, QueryResult } from "react-apollo";
 import {
   ScheduleRootQuery,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
+  ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList,
+  ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData
 } from "./types/ScheduleRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
-import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleFragment } from "./ScheduleRow";
 
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString, assertUnreachable } from "../Util";
@@ -25,6 +25,8 @@ import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
 import * as querystring from "query-string";
 import { PartitionView } from "./PartitionView";
+import { RunStatus } from "../runs/RunUtils";
+import { useScheduleSelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_TICKS_TO_TO_DISPLAY = 5;
@@ -33,7 +35,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
 }>> = ({ match, location }) => {
   const { scheduleName } = match.params;
-
+  const scheduleSelector = useScheduleSelector(scheduleName);
   const { history } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
   const cursor = (qs.cursor as string) || undefined;
@@ -45,7 +47,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
     <Query
       query={SCHEDULE_ROOT_QUERY}
       variables={{
-        scheduleName,
+        scheduleSelector,
         limit: NUM_RUNS_TO_DISPLAY,
         ticksLimit: NUM_TICKS_TO_TO_DISPLAY
       }}
@@ -56,16 +58,20 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
       {(queryResult: QueryResult<ScheduleRootQuery, any>) => (
         <Loading queryResult={queryResult} allowStaleData={true}>
           {result => {
-            const { scheduleOrError } = result;
+            const { scheduleDefinitionOrError } = result;
 
-            if (scheduleOrError.__typename === "RunningSchedule") {
+            if (scheduleDefinitionOrError.__typename === "ScheduleDefinition") {
               const partitionSetName =
-                scheduleOrError.scheduleDefinition.partitionSet?.name;
+                scheduleDefinitionOrError.partitionSet?.name;
               return (
                 <ScrollContainer>
                   <Header>Schedules</Header>
-                  <ScheduleRow schedule={scheduleOrError} />
-                  <TicksTable ticks={scheduleOrError.ticksList} />
+                  <ScheduleRow schedule={scheduleDefinitionOrError} />
+                  {scheduleDefinitionOrError.scheduleState && (
+                    <TicksTable
+                      ticks={scheduleDefinitionOrError.scheduleState.ticksList}
+                    />
+                  )}
                   {partitionSetName ? (
                     <PartitionView
                       partitionSetName={partitionSetName}
@@ -86,7 +92,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
 };
 
 const RenderEventSpecificData: React.FunctionComponent<{
-  data: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
+  data: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList_tickSpecificData | null;
 }> = ({ data }) => {
   if (!data) {
     return null;
@@ -117,11 +123,14 @@ const RenderEventSpecificData: React.FunctionComponent<{
       return (
         <AnchorButton
           minimal={true}
-          href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}
+          href={`/runs/${data.run?.pipelineName}/${data.run?.runId}`}
         >
-          <Tag fill={true} minimal={true} intent={Intent.SUCCESS}>
-            Run {data.run?.runId}
-          </Tag>
+          <div style={{ display: "flex" }}>
+            {data.run?.status && <RunStatus status={data.run?.status} />}
+            <Tag fill={true} minimal={true} style={{ marginLeft: 10 }}>
+              Run {data.run?.runId}
+            </Tag>
+          </div>
         </AnchorButton>
       );
   }
@@ -134,7 +143,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
     case ScheduleTickStatus.STARTED:
       return (
         <Tag minimal={true} intent={Intent.PRIMARY}>
-          Success
+          Started
         </Tag>
       );
     case ScheduleTickStatus.SUCCESS:
@@ -161,7 +170,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
 };
 
 const TicksTable: React.FunctionComponent<{
-  ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
+  ticks: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticksList[];
 }> = ({ ticks }) => {
   return ticks && ticks.length ? (
     <div style={{ marginTop: 25 }}>
@@ -189,43 +198,37 @@ const TicksTable: React.FunctionComponent<{
 
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery(
-    $scheduleName: String!
+    $scheduleSelector: ScheduleSelector!
     $limit: Int!
     $ticksLimit: Int!
   ) {
-    scheduleOrError(scheduleName: $scheduleName) {
-      ... on RunningSchedule {
-        ...ScheduleFragment
-        scheduleDefinition {
-          name
-          cronSchedule
-          partitionSet {
-            name
-          }
-        }
-        ticksList: ticks(limit: $ticksLimit) {
-          tickId
-          status
-          timestamp
-          tickSpecificData {
-            __typename
-            ... on ScheduleTickSuccessData {
-              run {
-                pipeline {
-                  name
+    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+      ... on ScheduleDefinition {
+        ...ScheduleDefinitionFragment
+        scheduleState {
+          ticksList: ticks(limit: $ticksLimit) {
+            tickId
+            status
+            timestamp
+            tickSpecificData {
+              __typename
+              ... on ScheduleTickSuccessData {
+                run {
+                  pipelineName
+                  status
+                  runId
                 }
-                runId
               }
-            }
-            ... on ScheduleTickFailureData {
-              error {
-                ...PythonErrorFragment
+              ... on ScheduleTickFailureData {
+                error {
+                  ...PythonErrorFragment
+                }
               }
             }
           }
         }
       }
-      ... on ScheduleNotFoundError {
+      ... on ScheduleDefinitionNotFoundError {
         message
       }
       ... on PythonError {
@@ -235,6 +238,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${ScheduleRowFragment}
+  ${ScheduleFragment}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

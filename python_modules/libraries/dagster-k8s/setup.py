@@ -37,7 +37,13 @@ def _do_setup(name='dagster-k8s'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'dagster_graphql', 'kubernetes'],
+        install_requires=[
+            'dagster',
+            'dagster_graphql',
+            'kubernetes',
+            # RSA 4.1+ is incompatible with py2.7
+            'rsa<=4.0; python_version<"3"',
+        ],
         tests_require=[],
         zip_safe=False,
     )

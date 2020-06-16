@@ -2,6 +2,10 @@ import * as React from "react";
 import { useQuery, QueryResult } from "react-apollo";
 import { RunsSearchSpaceQuery } from "./types/RunsSearchSpaceQuery";
 import {
+  DagsterRepositoryContext,
+  useRepositorySelector
+} from "../DagsterRepositoryContext";
+import {
   TokenizingField,
   TokenizingFieldValue,
   SuggestionProvider,
@@ -35,9 +39,9 @@ function searchSuggestionsForRuns(
 ): SuggestionProvider[] {
   const tags = (result && result.data && result.data.pipelineRunTags) || [];
   const pipelineNames =
-    (result?.data?.pipelinesOrError?.__typename === "PipelineConnection" &&
-      result.data.pipelinesOrError.nodes.map(n => n.name)) ||
-    [];
+    result?.data?.repositoryOrError?.__typename === "Repository"
+      ? result.data.repositoryOrError.pipelines.map(n => n.name)
+      : [];
 
   const suggestions = [
     {
@@ -84,9 +88,15 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters
 }) => {
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
+  const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
-      fetchPolicy: "cache-and-network"
+      fetchPolicy: "cache-and-network",
+      skip: !repository || !repositoryLocation,
+      variables: { repositorySelector }
     }),
     enabledFilters
   );
@@ -135,11 +145,11 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
 };
 
 export const RUNS_SEARCH_SPACE_QUERY = gql`
-  query RunsSearchSpaceQuery {
-    pipelinesOrError {
-      __typename
-      ... on PipelineConnection {
-        nodes {
+  query RunsSearchSpaceQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      ... on Repository {
+        id
+        pipelines {
           name
         }
       }

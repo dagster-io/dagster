@@ -4,11 +4,10 @@ import runpy
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app_with_reconstructable_repo
+from dagit.app import create_app_from_workspace
 
-from dagster import DagsterTypeCheckDidNotPass
-from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_execute_command
+from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
@@ -17,51 +16,50 @@ from dagster.utils import (
     script_relative_path,
 )
 
-PIPELINES_OR_ERROR_QUERY = '''{
-    pipelinesOrError {
-        __typename
+PIPELINES_OR_ERROR_QUERY = '''
+{
+    repositoriesOrError {
         ... on PythonError {
             message
             stack
         }
-        ... on PipelineConnection {
+        ... on RepositoryConnection {
             nodes {
-                name
+                pipelines {
+                    name
+                }
             }
         }
     }
-}'''
+}
+'''
 
 
 def path_to_tutorial_file(path):
     return script_relative_path(os.path.join('../../dagster_examples/intro_tutorial/', path))
 
 
-def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
-    handle = recon_repo_for_cli_args(kwargs)
+def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
+    workspace = get_workspace_from_kwargs(kwargs)
 
-    app = create_app_with_reconstructable_repo(handle, DagsterInstance.ephemeral())
+    app = create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
     client = app.test_client()
 
     res = client.get('/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY))
     json_res = json.loads(res.data.decode('utf-8'))
     assert 'data' in json_res
-    assert 'pipelinesOrError' in json_res['data']
-    assert 'nodes' in json_res['data']['pipelinesOrError']
-    assert len(json_res['data']['pipelinesOrError']['nodes']) == n_pipelines
+    assert 'repositoriesOrError' in json_res['data']
+    assert 'nodes' in json_res['data']['repositoriesOrError']
+    assert len(json_res['data']['repositoriesOrError']['nodes'][0]['pipelines']) == n_pipelines
 
     return res
 
 
-def dagster_pipeline_execute(args, exc=None):
+def dagster_pipeline_execute(args, return_code):
     runner = CliRunner()
     res = runner.invoke(pipeline_execute_command, args)
-    if exc:
-        assert res.exception
-        assert isinstance(res.exception, exc)
-    else:
-        assert res.exit_code == 0, res.exception
+    assert res.exit_code == return_code, res.exception
 
     return res
 
@@ -73,15 +71,7 @@ cli_args = [
     ('complex_pipeline.py', 'complex_pipeline', None, None, None, 0, None),
     ('inputs.py', 'inputs_pipeline', 'inputs_env.yaml', None, None, 0, None),
     ('config_bad_1.py', 'config_pipeline', 'inputs_env.yaml', None, None, 0, None),
-    (
-        'config_bad_2.py',
-        'config_pipeline',
-        'config_bad_2.yaml',
-        None,
-        None,
-        1,
-        DagsterTypeCheckDidNotPass,
-    ),
+    ('config_bad_2.py', 'config_pipeline', 'config_bad_2.yaml', None, None, 0, None,),
     ('config.py', 'config_pipeline', 'inputs_env.yaml', None, None, 0, None),
     ('config.py', 'config_pipeline', 'config_env_bad.yaml', None, None, 0, None),
     ('inputs_typed.py', 'inputs_pipeline', 'inputs_env.yaml', None, None, 0, None),
@@ -89,7 +79,7 @@ cli_args = [
     ('custom_types_2.py', 'custom_type_pipeline', 'custom_types_2.yaml', None, None, 1, Exception,),
     ('custom_types_3.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
     ('custom_types_4.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
-    ('custom_types_5.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 1, None),
+    ('custom_types_5.py', 'custom_type_pipeline', 'custom_type_input.yaml', None, None, 0, None),
     (
         'custom_types_mypy_verbose.py',
         'custom_type_pipeline',
@@ -153,20 +143,23 @@ cli_args = [
 # dagit -f filename -n fn_name
 def test_load_pipeline(filename, fn_name, _env_yaml, _mode, _preset, _return_code, _exception):
     with pushd(path_to_tutorial_file('')):
-        load_dagit_for_repo_cli_args(python_file=path_to_tutorial_file(filename), fn_name=fn_name)
+        load_dagit_for_workspace_cli_args(
+            python_file=path_to_tutorial_file(filename), fn_name=fn_name
+        )
 
 
-@pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,_return_code,_exception', cli_args)
-# dagster pipeline execute -f filename -n fn_name -e env_yaml -p preset
+@pytest.mark.parametrize('filename,fn_name,env_yaml,mode,preset,return_code,_exception', cli_args)
+# dagster pipeline execute -f filename -n fn_name -e env_yaml --preset preset
 def test_dagster_pipeline_execute(
-    filename, fn_name, env_yaml, mode, preset, _return_code, _exception
+    filename, fn_name, env_yaml, mode, preset, return_code, _exception
 ):
     with pushd(path_to_tutorial_file('')):
         dagster_pipeline_execute(
-            ['-f', path_to_tutorial_file(filename), '-n', fn_name]
-            + (['-e', env_yaml] if env_yaml else [])
+            ['-f', path_to_tutorial_file(filename), '-a', fn_name]
+            + (['-c', env_yaml] if env_yaml else [])
             + (['-d', mode] if mode else [])
-            + (['-p', preset] if preset else [])
+            + (['--preset', preset] if preset else []),
+            return_code,
         )
 
 
@@ -183,18 +176,17 @@ def test_script(filename, _fn_name, _env_yaml, _mode, _preset, return_code, _exc
 )
 def test_runpy(filename, _fn_name, _env_yaml, _mode, _preset, _return_code, exception):
     with pushd(path_to_tutorial_file('')):
-        try:
+        if exception:
+            with pytest.raises(exception):
+                runpy.run_path(filename, run_name='__main__')
+        else:
             runpy.run_path(filename, run_name='__main__')
-        except Exception as exc:
-            if exception and isinstance(exc, exception):
-                return
-            raise
 
 
 # TODO python command line
 
 # dagit
 def test_load_repo():
-    load_dagit_for_repo_cli_args(
+    load_dagit_for_workspace_cli_args(
         n_pipelines=2, repository_yaml=path_to_tutorial_file(DEFAULT_REPOSITORY_YAML_FILENAME)
     )

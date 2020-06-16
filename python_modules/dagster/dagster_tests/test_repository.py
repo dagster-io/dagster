@@ -7,7 +7,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
-    RepositoryDefinition,
+    repository,
     resource,
     solid,
 )
@@ -42,15 +42,15 @@ def define_multi_mode_pipeline():
 
 def define_multi_mode_with_resources_pipeline():
     # API red alert. One has to wrap a type in Field because it is callable
-    @resource(config=Int)
+    @resource(config_schema=Int)
     def adder_resource(init_context):
         return lambda x: x + init_context.resource_config
 
-    @resource(config=Int)
+    @resource(config_schema=Int)
     def multer_resource(init_context):
         return lambda x: x * init_context.resource_config
 
-    @resource(config={'num_one': Int, 'num_two': Int})
+    @resource(config_schema={'num_one': Int, 'num_two': Int})
     def double_adder_resource(init_context):
         return (
             lambda x: x
@@ -87,7 +87,7 @@ def define_multi_mode_with_resources_pipeline():
             PresetDefinition(
                 'multiproc',
                 mode='add_mode',
-                environment_dict={
+                run_config={
                     'resources': {'op': {'config': 2}},
                     'execution': {'multiprocess': {}},
                     'storage': {'filesystem': {}},
@@ -97,21 +97,20 @@ def define_multi_mode_with_resources_pipeline():
     )
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name='dagster_test_repository',
-        pipeline_defs=[
-            define_empty_pipeline(),
-            define_single_mode_pipeline(),
-            define_multi_mode_pipeline(),
-            define_multi_mode_with_resources_pipeline(),
-        ],
-    )
+@repository
+def dagster_test_repository():
+    return [
+        define_empty_pipeline(),
+        define_single_mode_pipeline(),
+        define_multi_mode_pipeline(),
+        define_multi_mode_with_resources_pipeline(),
+    ]
 
 
 def test_repository_construction():
-    assert define_repository()
+    assert dagster_test_repository
 
 
-def test_empty_repo():
-    return RepositoryDefinition(name='empty_repository', pipeline_defs=[])
+@repository
+def empty_repository():
+    return []

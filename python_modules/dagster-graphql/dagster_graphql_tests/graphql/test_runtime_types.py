@@ -1,9 +1,9 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 RUNTIME_TYPE_QUERY = '''
-query DagsterTypeQuery($pipelineName: String! $dagsterTypeName: String!)
+query DagsterTypeQuery($selector: PipelineSelector! $dagsterTypeName: String!)
 {
-    pipelineOrError(params:{ name: $pipelineName}) {
+    pipelineOrError(params: $selector) {
         __typename
         ... on Pipeline {
             dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
@@ -65,25 +65,28 @@ fragment dagsterTypeFragment on DagsterType {
 }
 
 {
-    pipelinesOrError {
-        ... on PipelineConnection {
-            nodes {
-                name
-                dagsterTypes {
-                    ...dagsterTypeFragment
-                }
-            }
+  repositoriesOrError {
+    ... on RepositoryConnection {
+      nodes {
+        pipelines {
+          name
+          dagsterTypes {
+            ...dagsterTypeFragment
+          }
         }
+      }
     }
+  }
 }
 '''
 
 
 def test_dagster_type_query_works(graphql_context):
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
         graphql_context,
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'PoorMansDataFrame'},
+        {'selector': selector, 'dagsterTypeName': 'PoorMansDataFrame',},
     )
 
     assert not result.errors
@@ -95,10 +98,9 @@ def test_dagster_type_query_works(graphql_context):
 
 
 def test_dagster_type_builtin_query(graphql_context):
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
-        graphql_context,
-        RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'Int'},
+        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'Int',},
     )
 
     assert not result.errors
@@ -111,8 +113,9 @@ def test_dagster_type_builtin_query(graphql_context):
 
 
 def test_dagster_type_or_error_pipeline_not_found(graphql_context):
+    selector = infer_pipeline_selector(graphql_context, 'nope')
     result = execute_dagster_graphql(
-        graphql_context, RUNTIME_TYPE_QUERY, {'pipelineName': 'nope', 'dagsterTypeName': 'nope'},
+        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
     )
 
     assert not result.errors
@@ -122,10 +125,9 @@ def test_dagster_type_or_error_pipeline_not_found(graphql_context):
 
 
 def test_dagster_type_or_error_type_not_found(graphql_context):
+    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
     result = execute_dagster_graphql(
-        graphql_context,
-        RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'nope'},
+        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
     )
 
     assert not result.errors

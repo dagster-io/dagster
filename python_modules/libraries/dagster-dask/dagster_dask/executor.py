@@ -6,7 +6,7 @@ from .config import DaskConfig
 
 @executor(
     name='dask',
-    config={
+    config_schema={
         'cluster': Field(
             Selector(
                 {
@@ -41,7 +41,8 @@ def dask_executor(init_context):
 
     The Dask executor optionally takes the following config:
 
-    .. code-block::
+    .. code-block:: none
+
         cluster:
             {
                 local?:  # The cluster type, one of the following ('local', 'yarn', 'ssh', 'pbs', 'kube').

@@ -37,7 +37,7 @@ yarn update-version <new_version> # e.g. `yarn update-version 0.7.12`
 
 4. Then switch to the internal repo `dagster-docs`:
 
-   1. Keep the directories of the older versions
+   1. Keep the `netlify.toml` file at root and the directories of the older versions
    2. Move all other files to a new folder and name it the current version, e.g. `0.7.12`. So you will see that we keep the older versions in separate folders.
    3. Copy over everything in `docs/out` to the root directory.
    4. (Optional) You can run a local http server from the root to locally verify the doc site before push.

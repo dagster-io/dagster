@@ -10,11 +10,18 @@ from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from .errors import DauphinError
 
 
+class DauphinAssetKey(dauphin.ObjectType):
+    class Meta(object):
+        name = 'AssetKey'
+
+    path = dauphin.non_null_list(dauphin.String)
+
+
 class DauphinAsset(dauphin.ObjectType):
     class Meta(object):
         name = 'Asset'
 
-    key = dauphin.NonNull(dauphin.String)
+    key = dauphin.NonNull('AssetKey')
     assetMaterializations = dauphin.Field(
         dauphin.non_null_list('AssetMaterialization'), cursor=dauphin.String(), limit=dauphin.Int(),
     )
@@ -35,6 +42,9 @@ class DauphinAsset(dauphin.ObjectType):
         limit = kwargs.get('limit')
 
         run_ids = get_asset_run_ids(graphene_info, self.key)
+
+        if not run_ids:
+            return []
 
         # for now, handle cursor/limit here instead of in the DB layer
         if cursor:

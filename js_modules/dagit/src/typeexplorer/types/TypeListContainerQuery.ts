@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./../../types/globalTypes";
+
 // ====================================================
 // GraphQL query operation: TypeListContainerQuery
 // ====================================================
@@ -21,6 +23,7 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline_dagsterTypes {
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
   dagsterTypes: TypeListContainerQuery_pipelineOrError_Pipeline_dagsterTypes[];
 }
@@ -32,5 +35,5 @@ export interface TypeListContainerQuery {
 }
 
 export interface TypeListContainerQueryVariables {
-  pipelineName: string;
+  pipelineSelector: PipelineSelector;
 }

@@ -44,6 +44,7 @@ const Layout: React.FunctionComponent = (props) => {
           <div className="flex flex-col w-0 flex-1">
             <main
               className="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
+              id={'main'}
               tabIndex={0}
             >
               <div className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8')}>

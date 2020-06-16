@@ -14,7 +14,6 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     ResourceDefinition,
     SolidDefinition,
     SolidInvocation,
@@ -22,6 +21,7 @@ from dagster import (
     check,
     lambda_solid,
     pipeline,
+    repository,
     resource,
     solid,
 )
@@ -67,7 +67,7 @@ def define_hello_world_config_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_config',
         nb_test_path('hello_world_config'),
-        config={'greeting': Field(String, is_required=False, default_value='hello')},
+        config_schema={'greeting': Field(String, is_required=False, default_value='hello')},
     )
 
 
@@ -185,7 +185,7 @@ def define_add_pipeline():
     )
 
 
-@solid(input_defs=[], config=Int)
+@solid(input_defs=[], config_schema=Int)
 def load_constant(context):
     return context.solid_config
 
@@ -317,7 +317,7 @@ class FilePickleList(object):
         self.closed = True
 
 
-@resource(config=Field(String))
+@resource(config_schema=Field(String))
 def filepicklelist_resource(init_context):
     filepicklelist = FilePickleList(init_context.resource_config)
     try:
@@ -376,7 +376,8 @@ def reimport_pipeline():
     reimport_solid(lister())
 
 
-def define_example_repository():
+@repository
+def notebook_repo():
     pipeline_dict = {
         'bad_kernel_pipeline': define_bad_kernel_pipeline,
         'error_pipeline': define_error_pipeline,
@@ -394,4 +395,4 @@ def define_example_repository():
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline
 
-    return RepositoryDefinition(name='notebook_repo', pipeline_dict=pipeline_dict)
+    return {'pipelines': pipeline_dict}

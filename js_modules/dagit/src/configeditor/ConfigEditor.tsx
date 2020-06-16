@@ -20,9 +20,9 @@ import "codemirror/keymap/sublime";
 import { Controlled as CodeMirrorReact } from "react-codemirror2";
 import { Editor } from "codemirror";
 import {
-  ConfigEditorEnvironmentSchemaFragment,
-  ConfigEditorEnvironmentSchemaFragment_allConfigTypes
-} from "./types/ConfigEditorEnvironmentSchemaFragment";
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes
+} from "./types/ConfigEditorRunConfigSchemaFragment";
 import "./codemirror-yaml/mode";
 import {
   YamlModeValidateFunction,
@@ -42,7 +42,7 @@ interface ConfigEditorProps {
   configCode: string;
   readOnly: boolean;
   showWhitespace: boolean;
-  environmentSchema?: ConfigEditorEnvironmentSchemaFragment;
+  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
 
   checkConfig: YamlModeValidateFunction;
   onConfigChange: (newValue: string) => void;
@@ -85,7 +85,7 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
 `;
 
 export interface ConfigEditorHelpContext {
-  type: ConfigEditorEnvironmentSchemaFragment_allConfigTypes;
+  type: ConfigEditorRunConfigSchemaFragment_allConfigTypes;
 }
 
 export class ConfigEditor extends React.Component<ConfigEditorProps> {
@@ -93,7 +93,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
 
   componentDidUpdate(prevProps: ConfigEditorProps) {
     if (!this._editor) return;
-    if (prevProps.environmentSchema === this.props.environmentSchema) return;
+    if (prevProps.runConfigSchema === this.props.runConfigSchema) return;
     this.performInitialPass();
   }
 
@@ -104,6 +104,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     return (
       prevProps.configCode !== this.props.configCode ||
       prevProps.readOnly !== this.props.readOnly ||
+      prevProps.runConfigSchema !== this.props.runConfigSchema ||
       prevProps.showWhitespace !== this.props.showWhitespace
     );
   }
@@ -144,7 +145,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     // update the gutter and redlining
     performLint(this._editor);
 
-    // update the contextual help based on the environmentSchema and content
+    // update the contextual help based on the runConfigSchema and content
     const { context } = expandAutocompletionContextAtCursor(this._editor);
     this.props.onHelpContextChange(
       context ? { type: context.closestCompositeType } : null
@@ -183,7 +184,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               hintOptions: {
                 completeSingle: false,
                 closeOnUnfocus: false,
-                schema: this.props.environmentSchema
+                schema: this.props.runConfigSchema
               },
               keyMap: "sublime",
               extraKeys: {
@@ -196,10 +197,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
                     completeSingle: true
                   }),
                 "Alt-Space": (editor: any) =>
-                  editor.showHint({
-                    completeSingle: true
-                  }),
-                "Shift-Space": (editor: any) =>
                   editor.showHint({
                     completeSingle: true
                   }),

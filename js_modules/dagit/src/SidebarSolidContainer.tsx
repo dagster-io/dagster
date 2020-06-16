@@ -6,11 +6,12 @@ import { SolidNameOrPath } from "./PipelineExplorer";
 import { useQuery } from "react-apollo";
 import Loading from "./Loading";
 import gql from "graphql-tag";
-import { PipelineSelector } from "./PipelineSelectorUtils";
+import { PipelineExplorerPath } from "./PipelinePathUtils";
+import { usePipelineSelector } from "./DagsterRepositoryContext";
 
 interface SidebarSolidContainerProps {
   handleID: string;
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   showingSubsolids: boolean;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => { handleID: string }[];
@@ -20,16 +21,17 @@ interface SidebarSolidContainerProps {
 
 export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContainerProps> = ({
   handleID,
-  selector,
+  explorerPath,
   getInvocations,
   showingSubsolids,
   onEnterCompositeSolid,
   onClickSolid
 }) => {
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {
-      variables: { pipeline: selector.pipelineName, handleID: handleID },
+      variables: { selector: pipelineSelector, handleID: handleID },
       fetchPolicy: "cache-and-network"
     }
   );
@@ -73,12 +75,13 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
 
 export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
   query SidebarTabbedContainerSolidQuery(
-    $pipeline: String!
+    $selector: PipelineSelector!
     $handleID: String!
   ) {
-    pipelineOrError(params: { name: $pipeline }) {
+    pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
+        id
         name
         solidHandle(handleID: $handleID) {
           solid {

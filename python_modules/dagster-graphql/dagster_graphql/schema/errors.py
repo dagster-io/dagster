@@ -17,6 +17,7 @@ from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
 
+from ..implementation.utils import PipelineSelector
 from .config_types import DauphinConfigTypeField
 from .runs import DauphinStepEvent
 
@@ -92,13 +93,18 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         interfaces = (DauphinError,)
 
     pipeline_name = dauphin.NonNull(dauphin.String)
+    repository_name = dauphin.NonNull(dauphin.String)
+    repository_location_name = dauphin.NonNull(dauphin.String)
 
-    def __init__(self, pipeline_name):
+    def __init__(self, selector):
         super(DauphinPipelineNotFoundError, self).__init__()
-        self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self.message = (
-            'Pipeline {pipeline_name} is not present in the currently loaded repository.'
-        ).format(pipeline_name=pipeline_name)
+        check.inst_param(selector, 'selector', PipelineSelector)
+        self.pipeline_name = selector.pipeline_name
+        self.repository_name = selector.repository_name
+        self.repository_location_name = selector.location_name
+        self.message = 'Could not find Pipeline {selector.location_name}.{selector.repository_name}.{selector.pipeline_name}'.format(
+            selector=selector
+        )
 
 
 class DauphinPipelineRunNotFoundError(dauphin.ObjectType):
@@ -175,29 +181,6 @@ class DauphinModeNotFoundError(dauphin.ObjectType):
         self.mode = check.str_param(mode, 'mode')
         self.message = 'Mode {mode} not found in pipeline {pipeline}.'.format(
             mode=mode, pipeline=selector.pipeline_name
-        )
-
-
-class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
-    class Meta(object):
-        name = 'RunLauncherNotDefinedError'
-        interfaces = (DauphinError,)
-
-    def __init__(self):
-        super(DauphinRunLauncherNotDefinedError, self).__init__()
-        self.message = 'RunLauncher is not defined for the current instance.'
-
-
-class DauphinStartPipelineRunDisabledError(dauphin.ObjectType):
-    class Meta(object):
-        name = 'StartPipelineRunDisabledError'
-        interfaces = (DauphinError,)
-
-    def __init__(self):
-        super(DauphinStartPipelineRunDisabledError, self).__init__()
-        self.message = (
-            'Starting pipeline execution is disabled on this instance.  Runs can only be initiated '
-            'using the configured run launcher.'
         )
 
 
@@ -439,12 +422,6 @@ class DauphinEvaluationStack(dauphin.ObjectType):
         return map(DauphinEvaluationStackEntry.from_native_entry, self._stack.entries)
 
 
-class DauphinPipelinesOrError(dauphin.Union):
-    class Meta(object):
-        name = 'PipelinesOrError'
-        types = ('PipelineConnection', DauphinPythonError)
-
-
 class DauphinExecutionPlanOrError(dauphin.Union):
     class Meta(object):
         name = 'ExecutionPlanOrError'
@@ -457,9 +434,9 @@ class DauphinExecutionPlanOrError(dauphin.Union):
         )
 
 
-class DauphinStartPipelineRunSuccess(dauphin.ObjectType):
+class DauphinExecuteRunInProcessSuccess(dauphin.ObjectType):
     class Meta(object):
-        name = 'StartPipelineRunSuccess'
+        name = 'ExecuteRunInProcessSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
@@ -501,35 +478,15 @@ pipeline_execution_error_types = (
     DauphinPythonError,
 )
 
-start_pipeline_run_result_types = (
-    DauphinStartPipelineRunSuccess,
-    DauphinStartPipelineRunDisabledError,
-)
 
-launch_pipeline_run_result_types = (
-    DauphinLaunchPipelineRunSuccess,
-    DauphinRunLauncherNotDefinedError,
-)
+launch_pipeline_run_result_types = (DauphinLaunchPipelineRunSuccess,)
 
 
-class DauphinStartPipelineExecution(dauphin.Interface):
+class DauphinExecuteRunInProcessResult(dauphin.Union):
     class Meta(object):
-        name = 'DauphinStartPipelineExecution'
-
-    message = dauphin.String(required=True)
-
-
-class DauphinStartPipelineExecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartPipelineExecutionResult'
-        types = start_pipeline_run_result_types + pipeline_execution_error_types
-
-
-class DauphinStartPipelineExecutionForCreatedRunResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartPipelineExecutionForCreatedRunResult'
+        name = 'ExecuteRunInProcessResult'
         types = (
-            start_pipeline_run_result_types
+            (DauphinExecuteRunInProcessSuccess,)
             + pipeline_execution_error_types
             + (DauphinPipelineRunNotFoundError,)
         )
@@ -539,28 +496,6 @@ class DauphinLaunchPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'LaunchPipelineExecutionResult'
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
-
-
-class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
-    class Meta(object):
-        name = 'ScheduledExecutionBlocked'
-
-    message = dauphin.NonNull(dauphin.String)
-
-
-class DauphinStartScheduledExecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartScheduledExecutionResult'
-        types = (
-            (
-                DauphinScheduleNotFoundError,
-                DauphinSchedulerNotDefinedError,
-                DauphinScheduledExecutionBlocked,
-            )
-            + start_pipeline_run_result_types
-            + launch_pipeline_run_result_types
-            + pipeline_execution_error_types
-        )
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):
@@ -583,12 +518,6 @@ class DauphinExecutePlanResult(dauphin.Union):
             DauphinInvalidStepError,
             DauphinPythonError,
         )
-
-
-class DauphinStartPipelineReexecutionResult(dauphin.Union):
-    class Meta(object):
-        name = 'StartPipelineReexecutionResult'
-        types = start_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinLaunchPipelineReexecutionResult(dauphin.Union):
@@ -671,6 +600,36 @@ class DauphinRunGroupsOrError(dauphin.ObjectType):
     results = dauphin.non_null_list('RunGroup')
 
 
+class DauphinScheduleDefinitionNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleDefinitionNotFoundError'
+        interfaces = (DauphinError,)
+
+    schedule_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, schedule_name):
+        super(DauphinScheduleDefinitionNotFoundError, self).__init__()
+        self.schedule_name = check.str_param(schedule_name, 'schedule_name')
+        self.message = 'Schedule {schedule_name} could not be found.'.format(
+            schedule_name=self.schedule_name
+        )
+
+
+class DauphinScheduleStateNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleStateNotFoundError'
+        interfaces = (DauphinError,)
+
+    schedule_origin_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, schedule_origin_id):
+        super(DauphinScheduleStateNotFoundError, self).__init__()
+        self.schedule_origin_id = check.str_param(schedule_origin_id, 'schedule_origin_id')
+        self.message = 'State for schedule {schedule_origin_id} could not be found.'.format(
+            schedule_origin_id=self.schedule_origin_id
+        )
+
+
 class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'PartitionSetNotFoundError'
@@ -684,3 +643,34 @@ class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
         self.message = 'Partition set {partition_set_name} could not be found.'.format(
             partition_set_name=self.partition_set_name
         )
+
+
+class DauphinRepositoriesOrError(dauphin.Union):
+    class Meta(object):
+        name = 'RepositoriesOrError'
+        types = ('RepositoryConnection', DauphinPythonError)
+
+
+class DauphinRepositoryNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RepositoryNotFoundError'
+        interfaces = (DauphinError,)
+
+    repository_name = dauphin.NonNull(dauphin.String)
+    repository_location_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, repository_location_name, repository_name):
+        super(DauphinRepositoryNotFoundError, self).__init__()
+        self.repository_name = check.str_param(repository_name, 'repository_name')
+        self.repository_location_name = check.str_param(
+            repository_location_name, 'repository_location_name'
+        )
+        self.message = 'Could not find Repository {repository_location_name}.{repository_name}'.format(
+            repository_name=repository_name, repository_location_name=repository_location_name
+        )
+
+
+class DauphinRepositoryOrError(dauphin.Union):
+    class Meta(object):
+        name = 'RepositoryOrError'
+        types = (DauphinPythonError, 'Repository', DauphinRepositoryNotFoundError)

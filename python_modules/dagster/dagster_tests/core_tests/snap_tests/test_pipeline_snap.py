@@ -249,7 +249,12 @@ def _array_has_stable_hashes(hydrated_array, snapshot_config_snap_map):
 
 
 def test_deserialize_solid_def_snaps_default_field():
-    @solid(config={'foo': Field(str, is_required=False, default_value='hello'), 'bar': Field(str)})
+    @solid(
+        config_schema={
+            'foo': Field(str, is_required=False, default_value='hello'),
+            'bar': Field(str),
+        }
+    )
     def noop_solid(_):
         pass
 
@@ -272,7 +277,9 @@ def test_deserialize_solid_def_snaps_default_field():
 
 def test_deserialize_solid_def_snaps_enum():
     @solid(
-        config=Field(Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')]))
+        config_schema=Field(
+            Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')])
+        )
     )
     def noop_solid(_):
         pass
@@ -293,7 +300,7 @@ def test_deserialize_solid_def_snaps_enum():
 
 
 def test_deserialize_solid_def_snaps_strict_shape():
-    @solid(config={'foo': Field(str, is_required=False), 'bar': Field(str)})
+    @solid(config_schema={'foo': Field(str, is_required=False), 'bar': Field(str)})
     def noop_solid(_):
         pass
 
@@ -314,7 +321,7 @@ def test_deserialize_solid_def_snaps_strict_shape():
 
 
 def test_deserialize_solid_def_snaps_selector():
-    @solid(config=Selector({'foo': Field(str), 'bar': Field(int)}))
+    @solid(config_schema=Selector({'foo': Field(str), 'bar': Field(int)}))
     def noop_solid(_):
         pass
 
@@ -334,7 +341,7 @@ def test_deserialize_solid_def_snaps_selector():
 
 
 def test_deserialize_solid_def_snaps_permissive():
-    @solid(config=Field(Permissive({'foo': Field(str)})))
+    @solid(config_schema=Field(Permissive({'foo': Field(str)})))
     def noop_solid(_):
         pass
 
@@ -353,7 +360,7 @@ def test_deserialize_solid_def_snaps_permissive():
 
 
 def test_deserialize_solid_def_snaps_array():
-    @solid(config=Field([str]))
+    @solid(config_schema=Field([str]))
     def noop_solid(_):
         pass
 
@@ -372,7 +379,7 @@ def test_deserialize_solid_def_snaps_array():
 
 
 def test_deserialize_solid_def_snaps_noneable():
-    @solid(config=Field(Noneable(str)))
+    @solid(config_schema=Field(Noneable(str)))
     def noop_solid(_):
         pass
 
@@ -389,7 +396,7 @@ def test_deserialize_solid_def_snaps_noneable():
 
 def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
     @solid(
-        config=Field(
+        config_schema=Field(
             Permissive(
                 {
                     'foo': Field(Array(float)),
@@ -429,7 +436,7 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
 
 @pytest.mark.parametrize('dict_config_type', [Selector, Permissive, Shape])
 def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
-    @solid(config=Array(dict_config_type({'foo': Field(int), 'bar': Field(str)})))
+    @solid(config_schema=Array(dict_config_type({'foo': Field(int), 'bar': Field(str)})))
     def fancy_solid(_):
         pass
 
@@ -453,7 +460,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
 def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     D1, D2, D3 = nested_dict_types
 
-    @solid(config=D1({'foo': D2({'bar': D3({'baz': Field(int)})})}))
+    @solid(config_schema=D1({'foo': D2({'bar': D3({'baz': Field(int)})})}))
     def fancy_solid(_):
         pass
 

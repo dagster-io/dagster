@@ -24,7 +24,7 @@ def test_naked_system_storage():
         pass
 
     assert execute_pipeline(
-        pass_pipeline, environment_dict={'storage': {'no_config_storage': {}}}
+        pass_pipeline, run_config={'storage': {'no_config_storage': {}}}
     ).success
 
     assert called['called']
@@ -32,7 +32,7 @@ def test_naked_system_storage():
     # This also works with None because storage is a selector and you can indicate your
     # "selection" by the presence of the key
     assert execute_pipeline(
-        pass_pipeline, environment_dict={'storage': {'no_config_storage': None}}
+        pass_pipeline, run_config={'storage': {'no_config_storage': None}}
     ).success
 
 
@@ -62,7 +62,7 @@ def test_resource_requirements_pass():
         pass
 
     assert execute_pipeline(
-        resource_req_pass_pipeline, environment_dict={'storage': {'storage_with_req': {}}}
+        resource_req_pass_pipeline, run_config={'storage': {'storage_with_req': {}}}
     ).success
 
     assert called['called']
@@ -70,7 +70,7 @@ def test_resource_requirements_pass():
     # This also works with None because storage is a selector and you can indicate your
     # "selection" by the presence of the key
     assert execute_pipeline(
-        resource_req_pass_pipeline, environment_dict={'storage': {'storage_with_req': None}}
+        resource_req_pass_pipeline, run_config={'storage': {'storage_with_req': None}}
     ).success
 
 

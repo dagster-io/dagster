@@ -1,14 +1,26 @@
 import sys
+import warnings
 from contextlib import closing, contextmanager
-
-import snowflake.connector
 
 from dagster import check, resource
 
 from .configs import define_snowflake_config
 
+try:
+    import snowflake.connector
+except ImportError:
+    msg = (
+        "Could not import snowflake.connector. This could mean you have an incompatible version "
+        "of azure-storage-blob installed. dagster-snowflake requires azure-storage-blob<12.0.0; "
+        "this conflicts with dagster-azure which requires azure-storage-blob~=12.0.0 and is "
+        "incompatible with dagster-snowflake. Please uninstall dagster-azure and reinstall "
+        "dagster-snowflake to fix this error."
+    )
+    warnings.warn(msg)
+    raise
 
-class SnowflakeConnection(object):
+
+class SnowflakeConnection:
     def __init__(self, context):  # pylint: disable=too-many-locals
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
@@ -57,7 +69,7 @@ class SnowflakeConnection(object):
                 if sys.version_info[0] < 3:
                     sql = sql.encode('utf-8')
 
-                self.log.info('[snowflake] Executing query: ' + sql)
+                self.log.info('Executing query: ' + sql)
                 cursor.execute(sql, parameters)  # pylint: disable=E1101
                 if fetch_results:
                     return cursor.fetchall()  # pylint: disable=E1101
@@ -73,7 +85,7 @@ class SnowflakeConnection(object):
                 for sql in sql_queries:
                     if sys.version_info[0] < 3:
                         sql = sql.encode('utf-8')
-                    self.log.info('[snowflake] Executing query: ' + sql)
+                    self.log.info('Executing query: ' + sql)
                     cursor.execute(sql, parameters)  # pylint: disable=E1101
                     if fetch_results:
                         results.append(cursor.fetchall())  # pylint: disable=E1101
@@ -97,10 +109,50 @@ class SnowflakeConnection(object):
 
 
 @resource(
-    config=define_snowflake_config(),
+    config_schema=define_snowflake_config(),
     description='This resource is for connecting to the Snowflake data warehouse',
 )
 def snowflake_resource(context):
+    '''A resource for connecting to the Snowflake data warehouse.
+
+    A simple example of loading data into Snowflake and subsequently querying that data is shown below:
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster import execute_pipeline, pipeline, DependencyDefinition, ModeDefinition
+        from dagster_snowflake import snowflake_resource
+
+        @solid(required_resource_keys={'snowflake'})
+        def get_one(context):
+            context.resources.snowflake.execute_query('SELECT 1')
+
+        @pipeline(
+            mode_defs=[ModeDefinition(resource_defs={'snowflake': snowflake_resource})],
+        )
+        def snowflake_pipeline():
+            get_one()
+
+        result = execute_pipeline(
+            snowflake_pipeline,
+            {
+                'resources': {
+                    'snowflake': {
+                        'config': {
+                            'account': {'env': 'SNOWFLAKE_ACCOUNT'},
+                            'user': {'env': 'SNOWFLAKE_USER'},
+                            'password': {'env': 'SNOWFLAKE_PASSWORD'},
+                            'database': {'env': 'SNOWFLAKE_DATABASE'},
+                            'schema': {'env': 'SNOWFLAKE_SCHEMA'},
+                            'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},
+                        }
+                    }
+                }
+            },
+        )
+
+    '''
     return SnowflakeConnection(context)
 
 

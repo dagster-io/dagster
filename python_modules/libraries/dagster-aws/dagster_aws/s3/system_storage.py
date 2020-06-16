@@ -1,4 +1,4 @@
-from dagster import Field, String, SystemStorageData, system_storage
+from dagster import Field, StringSource, SystemStorageData, system_storage
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.system_storage import fs_system_storage, mem_system_storage
 
@@ -9,9 +9,9 @@ from .intermediate_store import S3IntermediateStore
 @system_storage(
     name='s3',
     is_persistent=True,
-    config={
-        's3_bucket': Field(String),
-        's3_prefix': Field(String, is_required=False, default_value='dagster'),
+    config_schema={
+        's3_bucket': Field(StringSource),
+        's3_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },
     required_resource_keys={'s3'},
 )

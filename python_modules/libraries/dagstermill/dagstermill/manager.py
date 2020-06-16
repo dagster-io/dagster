@@ -78,7 +78,7 @@ class Manager(object):
         self,
         output_log_path=None,
         marshal_dir=None,
-        environment_dict=None,
+        run_config=None,
         executable_dict=None,
         pipeline_run_dict=None,
         solid_handle_kwargs=None,
@@ -97,7 +97,7 @@ class Manager(object):
         '''
         check.opt_str_param(output_log_path, 'output_log_path')
         check.opt_str_param(marshal_dir, 'marshal_dir')
-        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+        run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
         check.dict_param(pipeline_run_dict, 'pipeline_run_dict')
         check.dict_param(executable_dict, 'executable_dict')
         check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
@@ -129,14 +129,14 @@ class Manager(object):
 
         execution_plan = create_execution_plan(
             self.pipeline,
-            environment_dict,
+            run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
 
         with scoped_pipeline_context(
             execution_plan,
-            environment_dict,
+            run_config,
             pipeline_run,
             instance,
             scoped_resources_builder_cm=self._setup_resources,
@@ -153,7 +153,7 @@ class Manager(object):
 
         return self.context
 
-    def get_context(self, solid_config=None, mode_def=None, environment_dict=None):
+    def get_context(self, solid_config=None, mode_def=None, run_config=None):
         '''Get a dagstermill execution context for interactive exploration and development.
 
         Args:
@@ -163,14 +163,14 @@ class Manager(object):
                 use to construct the context. Specify this if you would like a context constructed
                 with specific ``resource_defs`` or ``logger_defs``. By default, an ephemeral mode
                 with a console logger will be constructed.
-            environment_dict(Optional[dict]): The environment config dict with which to construct
+            run_config(Optional[dict]): The environment config dict with which to construct
                 the context.
 
         Returns:
             :py:class:`~dagstermill.DagstermillExecutionContext`
         '''
         check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
-        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+        run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
 
         # If we are running non-interactively, and there is already a context reconstituted, return
         # that context rather than overwriting it.
@@ -181,7 +181,7 @@ class Manager(object):
 
         if not mode_def:
             mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
-            environment_dict['loggers'] = {'dagstermill': {}}
+            run_config['loggers'] = {'dagstermill': {}}
 
         solid_def = SolidDefinition(
             name='this_solid',
@@ -204,7 +204,7 @@ class Manager(object):
         pipeline_run = PipelineRun(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode_def.name,
             step_keys_to_execute=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -215,10 +215,10 @@ class Manager(object):
         self.solid_def = solid_def
         self.pipeline = pipeline_def
 
-        execution_plan = create_execution_plan(self.pipeline, environment_dict, mode=mode_def.name)
+        execution_plan = create_execution_plan(self.pipeline, run_config, mode=mode_def.name)
         with scoped_pipeline_context(
             execution_plan,
-            environment_dict,
+            run_config,
             pipeline_run,
             DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,

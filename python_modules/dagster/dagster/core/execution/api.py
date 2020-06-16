@@ -1,14 +1,7 @@
-import time
-
 from dagster import check
-from dagster.core.definitions import (
-    ExecutablePipeline,
-    PartitionSetDefinition,
-    PipelineDefinition,
-    SystemStorageData,
-)
+from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
-from dagster.core.definitions.pipeline import PipelineSubsetForExecution
+from dagster.core.definitions.pipeline import PipelineSubsetDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -19,8 +12,9 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
+from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import canonicalize_run_config
 
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
 from .results import PipelineExecutionResult
@@ -38,7 +32,7 @@ from .results import PipelineExecutionResult
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
-#     parent_run_id and root_run_id must be set and consistent, and if a solid_subset or
+#     parent_run_id and root_run_id must be set and consistent, and if a solids_to_execute or
 #     step_keys_to_execute are set they must be consistent with the parent and root runs.
 # (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
 
@@ -49,24 +43,27 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-    if pipeline_run.solid_subset:
+    if pipeline_run.solids_to_execute:
         pipeline_def = pipeline.get_definition()
-        if isinstance(pipeline_def, PipelineSubsetForExecution):
+        if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
-                len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
-                and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
-                'Cannot execute PipelineRun with solid_subset {solid_subset} that conflicts with '
-                'pipeline subset {pipeline_solid_subset}.'.format(
-                    pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
-                    solid_subset=str_format_list(pipeline_run.solid_subset),
+                pipeline_run.solids_to_execute == pipeline.solids_to_execute,
+                'Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that conflicts '
+                'with pipeline subset {pipeline_solids_to_execute}.'.format(
+                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
+                    solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
             )
         else:
-            pipeline = pipeline.subset_for_execution(pipeline_run.solid_subset)
-
+            # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
+            # note that when we receive the solids to execute via PipelineRun, it won't support
+            # solid selection query syntax
+            pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            )
     execution_plan = create_execution_plan(
         pipeline,
-        environment_dict=pipeline_run.environment_dict,
+        run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
     )
@@ -77,7 +74,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
             pipeline_run=pipeline_run,
             instance=instance,
             iterator=_pipeline_execution_iterator,
-            environment_dict=pipeline_run.environment_dict,
+            run_config=pipeline_run.run_config,
             retries=None,
             raise_on_error=False,
         )
@@ -90,7 +87,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (ExecutablePipeline): The pipeline to execute.
         pipeline_run (PipelineRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -99,31 +96,41 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
-    pipeline, pipeline_def = _check_pipeline(pipeline)
+    if isinstance(pipeline, PipelineDefinition):
+        raise DagsterInvariantViolationError(
+            'execute_run requires an ExecutablePipeline but received a PipelineDefinition '
+            'directly instead. To support hand-off to other processes provide a '
+            'ReconstructablePipeline which can be done using reconstructable(). For in '
+            'process only execution you can use InMemoryExecutablePipeline.'
+        )
 
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
-    if pipeline_run.solid_subset:
-        pipeline_def = pipeline.get_definition()
-        if isinstance(pipeline_def, PipelineSubsetForExecution):
+    pipeline_def = pipeline.get_definition()
+    if pipeline_run.solids_to_execute:
+        if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
-                len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
-                and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
-                'Cannot execute PipelineRun with solid_subset {solid_subset} that conflicts with '
-                'pipeline subset {pipeline_solid_subset}.'.format(
-                    pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
-                    solid_subset=str_format_list(pipeline_run.solid_subset),
+                pipeline_run.solids_to_execute == pipeline.solids_to_execute,
+                'Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that '
+                'conflicts with pipeline subset {pipeline_solids_to_execute}.'.format(
+                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
+                    solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
             )
         else:
-            pipeline = pipeline.subset_for_execution(pipeline_run.solid_subset)
-            pipeline_def = pipeline.get_definition()
+            # when `execute_run` is directly called, the sub pipeline hasn't been created
+            # note that when we receive the solids to execute via PipelineRun, it won't support
+            # solid selection query syntax
+            pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            )
 
     execution_plan = create_execution_plan(
         pipeline,
-        environment_dict=pipeline_run.environment_dict,
+        run_config=pipeline_run.run_config,
         mode=pipeline_run.mode,
         step_keys_to_execute=pipeline_run.step_keys_to_execute,
     )
@@ -133,7 +140,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
         pipeline_run=pipeline_run,
         instance=instance,
         iterator=_pipeline_execution_iterator,
-        environment_dict=pipeline_run.environment_dict,
+        run_config=pipeline_run.run_config,
         retries=None,
         raise_on_error=raise_on_error,
     )
@@ -141,12 +148,12 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     pipeline_context = _execute_run_iterable.pipeline_context
 
     return PipelineExecutionResult(
-        pipeline_def,
+        pipeline.get_definition(),
         pipeline_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(
             execution_plan,
-            pipeline_run.environment_dict,
+            pipeline_run.run_config,
             pipeline_run,
             instance,
             system_storage_data=SystemStorageData(
@@ -159,12 +166,13 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 def execute_pipeline_iterator(
     pipeline,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
-    solid_subset=None,
+    solid_selection=None,
     instance=None,
+    environment_dict=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -177,7 +185,7 @@ def execute_pipeline_iterator(
 
     Parameters:
         pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
-        environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -185,37 +193,47 @@ def execute_pipeline_iterator(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute.
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
+            - ['some_solid']: select "some_solid" itself.
+            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
+            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
+    # stack level is to punch through helper function
+    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=4)
+
     (
         pipeline,
-        pipeline_def,
-        environment_dict,
+        run_config,
         instance,
         mode,
         tags,
-        solid_subset,
+        solids_to_execute,
+        solid_selection,
     ) = _check_execute_pipeline_args(
         pipeline=pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
         instance=instance,
     )
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
-        environment_dict=environment_dict,
+        pipeline_def=pipeline.get_definition(),
+        run_config=run_config,
         mode=mode,
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
+        solids_to_execute=solids_to_execute,
         tags=tags,
     )
 
@@ -225,13 +243,14 @@ def execute_pipeline_iterator(
 @telemetry_wrapper
 def execute_pipeline(
     pipeline,
-    environment_dict=None,
+    run_config=None,
     mode=None,
     preset=None,
     tags=None,
-    solid_subset=None,
+    solid_selection=None,
     instance=None,
     raise_on_error=True,
+    environment_dict=None,
 ):
     '''Execute a pipeline synchronously.
 
@@ -240,7 +259,7 @@ def execute_pipeline(
 
     Parameters:
         pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
-        environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
@@ -248,12 +267,18 @@ def execute_pipeline(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
-            (names of unaliased solids or aliases of aliased solids) to execute.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
+        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
+            solid names) to execute. For example:
+            - ['some_solid']: select "some_solid" itself.
+            - ['*some_solid']: select "some_solid" and all its ancestors (upstream dependencies).
+            - ['*some_solid+++']: select "some_solid", all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+            - ['*some_solid', 'other_solid_a', 'other_solid_b+']: select "some_solid" and all its
+                ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids.
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
@@ -263,31 +288,35 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
+    # stack level is to punch through helper function and telemetry wrapper
+    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=5)
+
     (
         pipeline,
-        pipeline_def,
-        environment_dict,
+        run_config,
         instance,
         mode,
         tags,
-        solid_subset,
+        solids_to_execute,
+        solid_selection,
     ) = _check_execute_pipeline_args(
         pipeline=pipeline,
-        environment_dict=environment_dict,
+        run_config=run_config,
         mode=mode,
         preset=preset,
         tags=tags,
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
         instance=instance,
     )
 
-    log_repo_stats(instance=instance, pipeline=pipeline)
+    log_repo_stats(instance=instance, pipeline=pipeline, source='execute_pipeline')
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def,
-        environment_dict=environment_dict,
+        pipeline_def=pipeline.get_definition(),
+        run_config=run_config,
         mode=mode,
-        solid_subset=solid_subset,
+        solid_selection=solid_selection,
+        solids_to_execute=solids_to_execute,
         tags=tags,
     )
 
@@ -295,18 +324,18 @@ def execute_pipeline(
 
 
 def execute_plan_iterator(
-    execution_plan, pipeline_run, instance, retries=None, environment_dict=None,
+    execution_plan, pipeline_run, instance, retries=None, run_config=None,
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
     retries = check.opt_inst_param(retries, 'retries', Retries, Retries.disabled_mode())
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    run_config = check.opt_dict_param(run_config, 'run_config')
 
     return iter(
         _ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
             retries=retries,
@@ -317,7 +346,7 @@ def execute_plan_iterator(
 
 
 def execute_plan(
-    execution_plan, instance, pipeline_run, environment_dict=None, retries=None,
+    execution_plan, instance, pipeline_run, run_config=None, retries=None,
 ):
     '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
@@ -325,56 +354,18 @@ def execute_plan(
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    run_config = check.opt_dict_param(run_config, 'run_config')
     check.opt_inst_param(retries, 'retries', Retries)
 
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
             retries=retries,
         )
     )
-
-
-def execute_partition_set(partition_set, partition_filter, instance=None):
-    '''Programatically perform a backfill over a partition set
-
-    Arguments:
-        partition_set (PartitionSet): The base partition set to run the backfill over
-        partition_filter (Callable[[List[Partition]]], List[Partition]): A function that takes
-            a list of partitions and returns a filtered list of partitions to run the backfill
-            over.
-        instance (DagsterInstance): The instance to use to perform the backfill
-    '''
-    check.inst_param(partition_set, 'partition_set', PartitionSetDefinition)
-    check.callable_param(partition_filter, 'partition_filter')
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    candidate_partitions = partition_set.get_partitions()
-    partitions = partition_filter(candidate_partitions)
-
-    instance = instance or DagsterInstance.ephemeral()
-
-    for partition in partitions:
-        run = PipelineRun(
-            pipeline_name=partition_set.pipeline_name,
-            run_id=make_new_run_id(),
-            environment_dict=partition_set.environment_dict_for_partition(partition),
-            mode='default',
-            tags=merge_dicts(
-                PipelineRun.tags_for_backfill_id(make_new_backfill_id()),
-                partition_set.tags_for_partition(partition),
-            ),
-            status=PipelineRunStatus.NOT_STARTED,
-        )
-
-        # Remove once we can handle synchronous execution... currently limited by sqlite
-        time.sleep(0.1)
-
-        instance.launch_run(run.run_id)
 
 
 def _check_pipeline(pipeline):
@@ -383,17 +374,19 @@ def _check_pipeline(pipeline):
         pipeline = InMemoryExecutablePipeline(pipeline)
 
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    return pipeline
+
+
+def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_execute=None):
+    pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
-    return pipeline, pipeline_def
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-
-def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
-    pipeline, pipeline_def = _check_pipeline(pipeline)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+    run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
     mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-    environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, mode=mode)
+    environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode)
 
     return ExecutionPlan.build(
         pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute
@@ -420,12 +413,20 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
     )
     yield DagsterEvent.pipeline_start(pipeline_context)
 
+    steps_started = set([])
     pipeline_success = True
     generator_closed = False
     try:
         for event in pipeline_context.executor_config.get_engine().execute(
             pipeline_context, execution_plan
         ):
+            if event.is_step_start:
+                steps_started.add(event.step_key)
+            if event.is_step_success:
+                if event.step_key not in steps_started:
+                    pipeline_success = False
+                else:
+                    steps_started.remove(event.step_key)
             if event.is_step_failure:
                 pipeline_success = False
             yield event
@@ -439,6 +440,8 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
         pipeline_success = False
         raise  # finally block will run before this is re-raised
     finally:
+        if steps_started:
+            pipeline_success = False
         if pipeline_success:
             event = DagsterEvent.pipeline_success(pipeline_context)
         else:
@@ -457,22 +460,14 @@ class _ExecuteRunWithPlanIterable(object):
     '''
 
     def __init__(
-        self,
-        execution_plan,
-        pipeline_run,
-        instance,
-        iterator,
-        environment_dict,
-        retries,
-        raise_on_error,
+        self, execution_plan, pipeline_run, instance, iterator, run_config, retries, raise_on_error,
     ):
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self.pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         self.instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.iterator = check.callable_param(iterator, 'iterator')
-        self.environment_dict = (
-            check.opt_dict_param(environment_dict, 'environment_dict')
-            or self.pipeline_run.environment_dict
+        self.run_config = (
+            check.opt_dict_param(run_config, 'run_config') or self.pipeline_run.run_config
         )
         self.retries = check.opt_inst_param(retries, 'retries', Retries)
         self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
@@ -481,7 +476,7 @@ class _ExecuteRunWithPlanIterable(object):
     def __iter__(self):
         initialization_manager = pipeline_initialization_manager(
             self.execution_plan,
-            self.environment_dict,
+            self.run_config,
             self.pipeline_run,
             self.instance,
             raise_on_error=self.raise_on_error,
@@ -510,10 +505,13 @@ class _ExecuteRunWithPlanIterable(object):
 
 
 def _check_execute_pipeline_args(
-    pipeline, environment_dict, mode, preset, tags, solid_subset, instance
+    pipeline, run_config, mode, preset, tags, solid_selection, instance
 ):
-    pipeline, pipeline_def = _check_pipeline(pipeline)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+    pipeline = _check_pipeline(pipeline)
+    pipeline_def = pipeline.get_definition()
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
+    run_config = check.opt_dict_param(run_config, 'run_config')
     check.opt_str_param(mode, 'mode')
     check.opt_str_param(preset, 'preset')
     check.invariant(
@@ -524,31 +522,32 @@ def _check_execute_pipeline_args(
     )
 
     tags = check.opt_dict_param(tags, 'tags', key_type=str)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
 
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
 
-        if pipeline_preset.environment_dict is not None:
+        if pipeline_preset.run_config is not None:
             check.invariant(
-                (not environment_dict) or (pipeline_preset.environment_dict == environment_dict),
+                (not run_config) or (pipeline_preset.run_config == run_config),
                 'The environment set in preset \'{preset}\' does not agree with the environment '
-                'passed in the `environment_dict` argument.'.format(preset=preset),
+                'passed in the `run_config` argument.'.format(preset=preset),
             )
 
-            environment_dict = pipeline_preset.environment_dict
+            run_config = pipeline_preset.run_config
 
-        if pipeline_preset.solid_subset is not None:
+        # load solid_selection from preset
+        if pipeline_preset.solid_selection is not None:
             check.invariant(
-                solid_subset is None or solid_subset == pipeline_preset.solid_subset,
-                'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
-                'the `solid_subset` argument: {solid_subset}'.format(
+                solid_selection is None or solid_selection == pipeline_preset.solid_selection,
+                'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
+                'the `solid_selection` argument: {solid_selection}'.format(
                     preset=preset,
-                    preset_subset=pipeline_preset.solid_subset,
-                    solid_subset=solid_subset,
+                    preset_subset=pipeline_preset.solid_selection,
+                    solid_selection=solid_selection,
                 ),
             )
-            solid_subset = pipeline_preset.solid_subset
+            solid_selection = pipeline_preset.solid_selection
 
         check.invariant(
             mode is None or mode == pipeline_preset.mode,
@@ -586,30 +585,16 @@ def _check_execute_pipeline_args(
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
-    if solid_subset:
-        pipeline = pipeline.subset_for_execution(solid_subset)
-        pipeline_def = pipeline.get_definition()
-    else:
-        solid_subset = pipeline_def.solid_subset
+    # generate pipeline subset from the given solid_selection
+    if solid_selection:
+        pipeline = pipeline.subset_for_execution(solid_selection)
 
-    return (pipeline, pipeline_def, environment_dict, instance, mode, tags, solid_subset)
-
-
-def _check_parent_run(instance, run_id):
-    parent_pipeline_run = instance.get_run_by_id(run_id)
-    check.invariant(
-        parent_pipeline_run,
-        'No parent run with id {run_id} found in instance.'.format(run_id=run_id),
+    return (
+        pipeline,
+        run_config,
+        instance,
+        mode,
+        tags,
+        pipeline.solids_to_execute,
+        solid_selection,
     )
-
-    if parent_pipeline_run.root_run_id is not None:  # re-execution
-        root_run = instance.get_run_by_id(parent_pipeline_run.root_run_id)
-        check.invariant(
-            isinstance(root_run, PipelineRun),
-            'No root run found for id: {root_run_id} (from parent run {parent_run_id})'.format(
-                root_run_id=parent_pipeline_run.root_run_id,
-                parent_run_id=parent_pipeline_run.previous_run_id,
-            ),
-        )
-
-    return parent_pipeline_run

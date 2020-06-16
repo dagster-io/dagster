@@ -17,7 +17,7 @@ from dagster import (
 )
 
 
-@solid(input_defs=[InputDefinition('word', str)], config={'factor': Int})
+@solid(input_defs=[InputDefinition('word', str)], config_schema={'factor': Int})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 

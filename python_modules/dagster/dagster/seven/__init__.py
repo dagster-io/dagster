@@ -3,6 +3,7 @@
 import datetime
 import inspect
 import os
+import shlex
 import signal
 import sys
 import tempfile
@@ -11,6 +12,11 @@ from types import MethodType
 
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
+
+if hasattr(inspect, 'signature'):
+    funcsigs = inspect
+else:
+    import funcsigs
 
 # pylint: disable=no-name-in-module,import-error,no-member
 if sys.version_info < (3, 0):
@@ -208,3 +214,10 @@ def is_function_or_decorator_instance_of(target, kls):
 
 def qualname_differs(target):
     return hasattr(target, '__qualname__') and (target.__qualname__ != target.__name__)
+
+
+def xplat_shlex_split(s):
+    if IS_WINDOWS:
+        return shlex.split(s, posix=False)
+
+    return shlex.split(s)

@@ -1,4 +1,6 @@
 import os
+import signal
+import subprocess
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
@@ -14,10 +16,29 @@ from dagster.serdes import (
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
+def write_unary_input(input_file, obj):
+    check.str_param(input_file, 'input_file')
+    check.not_none_param(obj, 'obj')
+    with open(os.path.abspath(input_file), 'w') as fp:
+        fp.write(serialize_dagster_namedtuple(obj))
+
+
+def read_unary_input(input_file):
+    check.str_param(input_file, 'input_file')
+    with open(os.path.abspath(input_file), 'r') as fp:
+        return deserialize_json_to_dagster_namedtuple(fp.read())
+
+
 def ipc_write_unary_response(output_file, obj):
     check.not_none_param(obj, 'obj')
     with ipc_write_stream(output_file) as stream:
         stream.send(obj)
+
+
+def read_unary_response(output_file):
+    messages = list(ipc_read_event_stream(output_file))
+    check.invariant(len(messages) == 1)
+    return messages[0]
 
 
 @whitelist_for_serdes
@@ -138,3 +159,32 @@ def ipc_read_event_stream(file_path, timeout=30):
         while not isinstance(message, IPCEndMessage):
             yield message
             message = _process_line(file_pointer)
+
+
+# Windows subprocess termination utilities
+# https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
+
+
+def setup_interrupt_support():
+    ''' Set SIGBREAK handler to SIGINT on Windows '''
+    if sys.platform == 'win32':
+        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
+
+
+def open_ipc_subprocess(parts):
+    ''' Sets new process group flags on Windows to support graceful termination. '''
+    check.list_param(parts, 'parts', str)
+
+    creationflags = 0
+    if sys.platform == 'win32':
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+    return subprocess.Popen(parts, creationflags=creationflags)
+
+
+def interrupt_ipc_subprocess(proc):
+    ''' Send CTRL_BREAK on Windows, SIGINT on other platforms '''
+
+    if sys.platform == 'win32':
+        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+    else:
+        proc.send_signal(signal.SIGINT)

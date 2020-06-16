@@ -6,783 +6,199 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_query_multiple_schedule_ticks 1'] = [
+snapshots[
+    'TestExecuteSchedule.test_tick_skip[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 0, 'ticksSkipped': 1, 'ticksStarted': 0, 'ticksSucceeded': 0},
+    'ticks': [{'status': 'SKIPPED', 'tickId': '1'}],
+    'ticksCount': 1,
+}
+
+snapshots[
+    'TestExecuteSchedule.test_tick_success[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+    'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
+    'ticksCount': 1,
+}
+
+snapshots[
+    'TestExecuteSchedule.test_should_execute_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 1, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+    'ticks': [{'status': 'FAILURE', 'tickId': '1'}],
+    'ticksCount': 1,
+}
+
+snapshots[
+    'TestExecuteSchedule.test_tags_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+    'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
+    'ticksCount': 1,
+}
+
+snapshots[
+    'TestExecuteSchedule.test_run_config_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+    'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
+    'ticksCount': 1,
+}
+
+snapshots[
+    'TestExecuteSchedule.test_query_multiple_schedule_ticks[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = [
     {
-        'scheduleDefinition': {
-            'name': 'dynamic_config'
+        'name': 'dynamic_config',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'environment_dict_error_schedule'
+        'name': 'run_config_error_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+            'ticks': [{'status': 'SUCCESS', 'tickId': '3'}],
+            'ticksCount': 1,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 1
-        },
-        'ticks': [
-            {
-                'status': 'SUCCESS',
-                'tickId': '3'
-            }
-        ],
-        'ticksCount': 1
     },
     {
-        'scheduleDefinition': {
-            'name': 'invalid_config_schedule'
+        'name': 'invalid_config_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'no_config_pipeline_hourly_schedule'
+        'name': 'no_config_pipeline_hourly_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+            'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
+            'ticksCount': 1,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 1
-        },
-        'ticks': [
-            {
-                'status': 'SUCCESS',
-                'tickId': '1'
-            }
-        ],
-        'ticksCount': 1
     },
     {
-        'scheduleDefinition': {
-            'name': 'no_config_pipeline_hourly_schedule_with_config_fn'
+        'name': 'no_config_pipeline_hourly_schedule_with_config_fn',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'no_config_should_execute'
+        'name': 'no_config_should_execute',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 1, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [{'status': 'SKIPPED', 'tickId': '2'}],
+            'ticksCount': 1,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 1,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-            {
-                'status': 'SKIPPED',
-                'tickId': '2'
-            }
-        ],
-        'ticksCount': 1
     },
     {
-        'scheduleDefinition': {
-            'name': 'partition_based'
+        'name': 'partition_based',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'partition_based_custom_selector'
+        'name': 'partition_based_custom_selector',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'partition_based_decorator'
+        'name': 'partition_based_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'partition_based_multi_mode_decorator'
+        'name': 'partition_based_multi_mode_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'should_execute_error_schedule'
+        'name': 'should_execute_error_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'solid_subset_daily_decorator'
+        'name': 'solid_selection_daily_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'solid_subset_hourly_decorator'
+        'name': 'solid_selection_hourly_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'solid_subset_monthly_decorator'
+        'name': 'solid_selection_monthly_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'solid_subset_weekly_decorator'
+        'name': 'solid_selection_weekly_decorator',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'tagged_pipeline_override_schedule'
+        'name': 'tagged_pipeline_override_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'tagged_pipeline_schedule'
+        'name': 'tagged_pipeline_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
     },
     {
-        'scheduleDefinition': {
-            'name': 'tags_error_schedule'
+        'name': 'tags_error_schedule',
+        'scheduleState': {
+            'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
+            'ticks': [],
+            'ticksCount': 0,
         },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    }
+    },
 ]
 
-snapshots['test_tick_skip 1'] = {
-    'scheduleDefinition': {
-        'name': 'no_config_should_execute'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 1,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'SKIPPED',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_tags_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'tags_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_enviornment_dict_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'environment_dict_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_tick_success 1'] = {
-    'scheduleDefinition': {
-        'name': 'no_config_pipeline_hourly_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_should_execute_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'should_execute_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 1,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'FAILURE',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_invalid_config_schedule_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'invalid_config_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_environment_dict_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'environment_dict_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_tick_success[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'no_config_pipeline_hourly_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_tick_skip[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'no_config_should_execute'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 1,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'SKIPPED',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_should_execute_scheduler_error[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'should_execute_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 1,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'FAILURE',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_tags_scheduler_error[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'tags_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_environment_dict_scheduler_error[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'environment_dict_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['TestExecuteSchedule.test_query_multiple_schedule_ticks[sqlite_in_process_start] 1'] = [
-    {
-        'scheduleDefinition': {
-            'name': 'dynamic_config'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'environment_dict_error_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 1
-        },
-        'ticks': [
-            {
-                'status': 'SUCCESS',
-                'tickId': '3'
-            }
-        ],
-        'ticksCount': 1
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'invalid_config_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'no_config_pipeline_hourly_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 1
-        },
-        'ticks': [
-            {
-                'status': 'SUCCESS',
-                'tickId': '1'
-            }
-        ],
-        'ticksCount': 1
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'no_config_pipeline_hourly_schedule_with_config_fn'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'no_config_should_execute'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 1,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-            {
-                'status': 'SKIPPED',
-                'tickId': '2'
-            }
-        ],
-        'ticksCount': 1
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'partition_based'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'partition_based_custom_selector'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'partition_based_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'partition_based_multi_mode_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'should_execute_error_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'solid_subset_daily_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'solid_subset_hourly_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'solid_subset_monthly_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'solid_subset_weekly_decorator'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'tagged_pipeline_override_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'tagged_pipeline_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    },
-    {
-        'scheduleDefinition': {
-            'name': 'tags_error_schedule'
-        },
-        'stats': {
-            'ticksFailed': 0,
-            'ticksSkipped': 0,
-            'ticksStarted': 0,
-            'ticksSucceeded': 0
-        },
-        'ticks': [
-        ],
-        'ticksCount': 0
-    }
-]
-
-snapshots['TestExecuteSchedule.test_invalid_config_schedule_error[sqlite_in_process_start] 1'] = {
-    'scheduleDefinition': {
-        'name': 'invalid_config_schedule'
-    },
-    'stats': {
-        'ticksFailed': 0,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 1
-    },
-    'ticks': [
-        {
-            'status': 'SUCCESS',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
+snapshots[
+    'TestExecuteSchedule.test_invalid_config_schedule_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+] = {
+    'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
+    'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
+    'ticksCount': 1,
 }

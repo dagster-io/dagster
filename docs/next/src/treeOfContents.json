@@ -9,7 +9,7 @@
         "path": "/docs/install"
       },
       {
-        "name": "Dagster Package",
+        "name": "Packages",
         "path": "/docs/install/packages"
       },
       {
@@ -40,12 +40,44 @@
         "path": "/docs/tutorial/overview"
       },
       {
-        "name": "ETL with Dagster",
-        "path": "/docs/tutorial/basics"
+        "name": "Building Pipelines with Dagster",
+        "path": "/docs/tutorial/execute"
       },
       {
-        "name": "Advanced Tutorials",
-        "path": "/docs/tutorial/advanced"
+        "name": "Basics of Solids",
+        "path": "/docs/tutorial/basics_solids"
+      },
+      {
+        "name": "Basics of Pipelines",
+        "path": "/docs/tutorial/basics_pipelines"
+      },
+      {
+        "name": "Making Your Pipelines Testable and Maintainable",
+        "path": "/docs/tutorial/testable"
+      },
+      {
+        "name": "Dagster Types & Expectations",
+        "path": "/docs/tutorial/types"
+      },
+      {
+        "name": "Advanced: Solids",
+        "path": "/docs/tutorial/advanced_solids"
+      },
+      {
+        "name": "Advanced: Pipelines",
+        "path": "/docs/tutorial/advanced_pipelines"
+      },
+      {
+        "name": "Advanced: Intermediates",
+        "path": "/docs/tutorial/advanced_intermediates"
+      },
+      {
+        "name": "Advanced: Organizing Pipelines in Repositories & Workspaces",
+        "path": "/docs/tutorial/advanced_repositories"
+      },
+      {
+        "name": "Advanced: Scheduling Pipeline Runs",
+        "path": "/docs/tutorial/advanced_scheduling"
       }
     ]
   },
@@ -111,7 +143,6 @@
         "name": "Partitions",
         "path": "/docs/apidocs/partitions"
       },
-
       {
         "name": "Errors",
         "path": "/docs/apidocs/errors"
@@ -141,8 +172,8 @@
         "path": "/docs/apidocs/libraries/dagster_aws"
       },
       {
-        "name": "Bash (dagster_bash)",
-        "path": "/docs/apidocs/libraries/dagster_bash"
+        "name": "Azure (dagster_azure)",
+        "path": "/docs/apidocs/libraries/dagster_azure"
       },
       {
         "name": "Celery (dagster_celery)",
@@ -157,16 +188,72 @@
         "path": "/docs/apidocs/libraries/dagster_dask"
       },
       {
+        "name": "Datadog (dagster_datadog)",
+        "path": "/docs/apidocs/libraries/dagster_datadog"
+      },
+      {
+        "name": "Databricks (dagster_databricks)",
+        "path": "/docs/apidocs/libraries/dagster_databricks"
+      },
+      {
         "name": "GCP (dagster_gcp)",
         "path": "/docs/apidocs/libraries/dagster_gcp"
+      },
+      {
+        "name": "Github (dagster_github)",
+        "path": "/docs/apidocs/libraries/dagster_github"
       },
       {
         "name": "Kubernetes (dagster_k8s)",
         "path": "/docs/apidocs/libraries/dagster_k8s"
       },
       {
+        "name": "PagerDuty (dagster_pagerduty)",
+        "path": "/docs/apidocs/libraries/dagster_pagerduty"
+      },
+      {
+        "name": "Pandas (dagster_pandas)",
+        "path": "/docs/apidocs/libraries/dagster_pandas"
+      },
+      {
         "name": "PostgreSQL (dagster_postgres)",
         "path": "/docs/apidocs/libraries/dagster_postgres"
+      },
+      {
+        "name": "Prometheus (dagster_prometheus)",
+        "path": "/docs/apidocs/libraries/dagster_prometheus"
+      },
+      {
+        "name": "Pyspark (dagster_pyspark)",
+        "path": "/docs/apidocs/libraries/dagster_pyspark"
+      },
+      {
+        "name": "Shell (dagster_shell)",
+        "path": "/docs/apidocs/libraries/dagster_shell"
+      },
+      {
+        "name": "Slack (dagster_slack)",
+        "path": "/docs/apidocs/libraries/dagster_slack"
+      },
+      {
+        "name": "Snowflake (dagster_snowflake)",
+        "path": "/docs/apidocs/libraries/dagster_snowflake"
+      },
+      {
+        "name": "Spark (dagster_spark)",
+        "path": "/docs/apidocs/libraries/dagster_spark"
+      },
+      {
+        "name": "SSH / SFTP (dagster_ssh)",
+        "path": "/docs/apidocs/libraries/dagster_ssh"
+      },
+      {
+        "name": "Twilio (dagster_twilio)",
+        "path": "/docs/apidocs/libraries/dagster_twilio"
+      },
+      {
+        "name": "Lakehouse (experimental)",
+        "path": "/docs/apidocs/libraries/lakehouse"
       }
     ]
   },

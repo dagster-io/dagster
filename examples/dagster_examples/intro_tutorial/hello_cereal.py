@@ -1,12 +1,13 @@
 import csv
 
 from dagster import execute_pipeline, execute_solid, pipeline, solid
+from dagster.utils import file_relative_path
 
 
 @solid
 def hello_cereal(context):
     # Assuming the dataset is in the same directory as this file
-    dataset_path = 'cereal.csv'
+    dataset_path = file_relative_path(__file__, 'cereal.csv')
     with open(dataset_path, 'r') as fd:
         # Read the rows in using the standard csv library
         cereals = [row for row in csv.DictReader(fd)]

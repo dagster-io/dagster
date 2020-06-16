@@ -9,28 +9,28 @@ import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router-dom";
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineSelector: string;
+  pipelinePath: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const pipelineName = match.params.pipelinePath.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
-    if (qs.config || qs.mode || qs.solidSubset) {
+    if (qs.config || qs.mode || qs.solidSelection) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof qs.config === "string") {
-        newSession.environmentConfigYaml = qs.config;
+        newSession.runConfigYaml = qs.config;
       }
       if (typeof qs.mode === "string") {
         newSession.mode = qs.mode;
       }
-      if (qs.solidSubset instanceof Array) {
-        newSession.solidSubset = qs.solidSubset;
-      } else if (typeof qs.solidSubset === "string") {
-        newSession.solidSubset = [qs.solidSubset];
+      if (qs.solidSelection instanceof Array) {
+        newSession.solidSelection = qs.solidSelection;
+      } else if (typeof qs.solidSelection === "string") {
+        newSession.solidSelection = [qs.solidSelection];
       }
-      if (typeof qs.solidSubsetQuery === "string") {
-        newSession.solidSubsetQuery = qs.solidSubsetQuery;
+      if (typeof qs.solidSelectionQuery === "string") {
+        newSession.solidSelectionQuery = qs.solidSelectionQuery;
       }
 
       onSave(applyCreateSession(data, newSession));

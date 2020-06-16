@@ -1,7 +1,13 @@
+import six
+
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
-from dagster.utils.backcompat import rename_warning
+from dagster.core.utils import str_format_set
 
 from .dependency import (
     DependencyDefinition,
@@ -98,7 +104,7 @@ class PipelineDefinition(IContainSolids):
             def apply_op(context, num):
                 return context.resources.op(num)
 
-            @resource(config=Int)
+            @resource(config_schema=Int)
             def adder_resource(init_context):
                 return lambda x: x + init_context.resource_config
 
@@ -112,7 +118,7 @@ class PipelineDefinition(IContainSolids):
 
             add_three_preset = PresetDefinition(
                 name='add_three_preset',
-                environment_dict={'resources': {'op': {'config': 3}}},
+                run_config={'resources': {'op': {'config': 3}}},
                 mode='add_mode',
             )
 
@@ -206,19 +212,19 @@ class PipelineDefinition(IContainSolids):
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
         )
-        self._cached_environment_schemas = {}
+        self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-    def get_environment_schema(self, mode=None):
+    def get_run_config_schema(self, mode=None):
         check.str_param(mode, 'mode')
 
         mode_def = self.get_mode_definition(mode)
 
-        if mode_def.name in self._cached_environment_schemas:
-            return self._cached_environment_schemas[mode_def.name]
+        if mode_def.name in self._cached_run_config_schemas:
+            return self._cached_run_config_schemas[mode_def.name]
 
-        self._cached_environment_schemas[mode_def.name] = _create_environment_schema(self, mode_def)
-        return self._cached_environment_schemas[mode_def.name]
+        self._cached_run_config_schemas[mode_def.name] = _create_run_config_schema(self, mode_def)
+        return self._cached_run_config_schemas[mode_def.name]
 
     @property
     def name(self):
@@ -364,26 +370,6 @@ class PipelineDefinition(IContainSolids):
     def dependency_structure(self):
         return self._dependency_structure
 
-    def has_runtime_type(self, name):
-        rename_warning(
-            new_name='has_dagster_type', old_name='has_runtime_type', breaking_version='0.8.0'
-        )
-        check.str_param(name, 'name')
-        return name in self._dagster_type_dict
-
-    def runtime_type_named(self, name):
-        rename_warning(
-            new_name='dagster_type_named', old_name='runtime_type_named', breaking_version='0.8.0'
-        )
-        check.str_param(name, 'name')
-        return self._dagster_type_dict[name]
-
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        return self._dagster_type_dict.values()
-
     def has_dagster_type(self, name):
         check.str_param(name, 'name')
         return name in self._dagster_type_dict
@@ -413,8 +399,10 @@ class PipelineDefinition(IContainSolids):
         check.str_param(name, 'name')
         return name in self._all_solid_defs
 
-    def subset_for_execution(self, solid_subset):
-        return self if solid_subset is None else _subset_for_execution(self, solid_subset)
+    def get_pipeline_subset_def(self, solids_to_execute):
+        return (
+            self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
+        )
 
     def get_presets(self):
         return list(self._preset_dict.values())
@@ -447,7 +435,9 @@ class PipelineDefinition(IContainSolids):
         from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
 
-        return PipelineIndex(PipelineSnapshot.from_pipeline_def(self))
+        return PipelineIndex(
+            PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
+        )
 
     def get_config_schema_snapshot(self):
         return self.get_pipeline_snapshot().config_schema_snapshot
@@ -460,25 +450,38 @@ class PipelineDefinition(IContainSolids):
     def parent_pipeline_def(self):
         return None
 
+    def get_parent_pipeline_snapshot(self):
+        return None
+
     @property
-    def solid_subset(self):
+    def solids_to_execute(self):
         return None
 
 
-class PipelineSubsetForExecution(PipelineDefinition):
+class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solid_subset(self):
+    def solids_to_execute(self):
+        return frozenset(self._solid_dict.keys())
+
+    @property
+    def solid_selection(self):
+        # we currently don't pass the real solid_selection (the solid query list) down here.
+        # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
+        # to a list
         return list(self._solid_dict.keys())
 
     @property
     def parent_pipeline_def(self):
         return self._parent_pipeline_def
 
+    def get_parent_pipeline_snapshot(self):
+        return self._parent_pipeline_def.get_pipeline_snapshot()
+
     @property
     def is_subset_pipeline(self):
         return True
 
-    def subset_for_execution(self, solid_subset):
+    def get_pipeline_subset_def(self, solids_to_execute):
         raise DagsterInvariantViolationError('Pipeline subsets may not be subset again.')
 
 
@@ -486,24 +489,31 @@ def _dep_key_of(solid):
     return SolidInvocation(solid.definition.name, solid.name)
 
 
-def _subset_for_execution(pipeline_def, solid_names):
+def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
     '''
     Build a pipeline which is a subset of another pipeline.
-    Only includes the solids which are in solid_names.
+    Only includes the solids which are in solids_to_execute.
     '''
 
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.list_param(solid_names, 'solid_names', of_type=str)
+    check.set_param(solids_to_execute, 'solids_to_execute', of_type=str)
 
-    solid_name_set = set(solid_names)
-    solids = list(map(pipeline_def.solid_named, solid_names))
+    for solid_name in solids_to_execute:
+        if not pipeline_def.has_solid_named(solid_name):
+            raise DagsterInvalidSubsetError(
+                'Pipeline {pipeline_name} has no solid named {name}.'.format(
+                    pipeline_name=pipeline_def.name, name=solid_name
+                ),
+            )
+
+    solids = list(map(pipeline_def.solid_named, solids_to_execute))
     deps = {_dep_key_of(solid): {} for solid in solids}
 
     for solid in solids:
         for input_handle in solid.input_handles():
             if pipeline_def.dependency_structure.has_singular_dep(input_handle):
                 output_handle = pipeline_def.dependency_structure.get_singular_dep(input_handle)
-                if output_handle.solid.name in solid_name_set:
+                if output_handle.solid.name in solids_to_execute:
                     deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
                         solid=output_handle.solid.name, output=output_handle.output_def.name
                     )
@@ -515,19 +525,33 @@ def _subset_for_execution(pipeline_def, solid_names):
                             solid=output_handle.solid.name, output=output_handle.output_def.name
                         )
                         for output_handle in output_handles
-                        if output_handle.solid.name in solid_name_set
+                        if output_handle.solid.name in solids_to_execute
                     ]
                 )
 
-    sub_pipeline_def = PipelineSubsetForExecution(
-        name=pipeline_def.name,  # should we change the name for subsetted pipeline?
-        solid_defs=list({solid.definition for solid in solids}),
-        mode_defs=pipeline_def.mode_definitions,
-        dependencies=deps,
-        _parent_pipeline_def=pipeline_def,
-    )
+    try:
+        sub_pipeline_def = PipelineSubsetDefinition(
+            name=pipeline_def.name,  # should we change the name for subsetted pipeline?
+            solid_defs=list({solid.definition for solid in solids}),
+            mode_defs=pipeline_def.mode_definitions,
+            dependencies=deps,
+            _parent_pipeline_def=pipeline_def,
+        )
 
-    return sub_pipeline_def
+        return sub_pipeline_def
+    except DagsterInvalidDefinitionError as exc:
+        # This handles the case when you construct a subset such that an unsatisfied
+        # input cannot be hydrate from config. Instead of throwing a DagsterInvalidDefinitionError,
+        # we re-raise a DagsterInvalidSubsetError.
+        six.raise_from(
+            DagsterInvalidSubsetError(
+                "The attempted subset {solids_to_execute} for pipeline {pipeline_name} results in an invalid pipeline".format(
+                    solids_to_execute=str_format_set(solids_to_execute),
+                    pipeline_name=pipeline_def.name,
+                )
+            ),
+            exc,
+        )
 
 
 def _validate_resource_dependencies(mode_definitions, solid_defs):
@@ -606,13 +630,13 @@ def _build_all_solid_defs(solid_defs):
     return all_defs
 
 
-def _create_environment_schema(pipeline_def, mode_definition):
+def _create_run_config_schema(pipeline_def, mode_definition):
     from .environment_configs import (
         EnvironmentClassCreationData,
         construct_config_type_dictionary,
         define_environment_cls,
     )
-    from .environment_schema import EnvironmentSchema
+    from .run_config_schema import RunConfigSchema
 
     environment_type = define_environment_cls(
         EnvironmentClassCreationData(
@@ -628,7 +652,7 @@ def _create_environment_schema(pipeline_def, mode_definition):
         pipeline_def.all_solid_defs, environment_type
     )
 
-    return EnvironmentSchema(
+    return RunConfigSchema(
         environment_type=environment_type,
         config_type_dict_by_name=config_type_dict_by_name,
         config_type_dict_by_key=config_type_dict_by_key,

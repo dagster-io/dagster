@@ -7,7 +7,6 @@ from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
-from dagster_graphql.implementation.utils import PipelineSelector
 
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
@@ -105,6 +104,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipelineSnapshotId = dauphin.String()
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
+    pipelineName = dauphin.NonNull(dauphin.String)
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
     stats = dauphin.NonNull('PipelineRunStatsOrError')
     stepStats = dauphin.non_null_list('PipelineRunStepStats')
     computeLogs = dauphin.Field(
@@ -116,7 +117,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     )
     executionPlan = dauphin.Field('ExecutionPlan')
     stepKeysToExecute = dauphin.List(dauphin.NonNull(dauphin.String))
-    environmentConfigYaml = dauphin.NonNull(dauphin.String)
+    runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
     rootRunId = dauphin.Field(dauphin.String)
@@ -131,14 +132,13 @@ class DauphinPipelineRun(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_reference_or_raise(
-            graphene_info,
-            PipelineSelector.legacy(
-                graphene_info.context,
-                self._pipeline_run.pipeline_name,
-                self._pipeline_run.solid_subset,
-            ),
-        )
+        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run,)
+
+    def resolve_pipelineName(self, _graphene_info):
+        return self._pipeline_run.pipeline_name
+
+    def resolve_solidSelection(self, _graphene_info):
+        return self._pipeline_run.solid_selection
 
     def resolve_pipelineSnapshotId(self, _):
         return self._pipeline_run.pipeline_snapshot_id
@@ -182,8 +182,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_stepKeysToExecute(self, _):
         return self._pipeline_run.step_keys_to_execute
 
-    def resolve_environmentConfigYaml(self, _graphene_info):
-        return yaml.dump(self._pipeline_run.environment_dict, default_flow_style=False)
+    def resolve_runConfigYaml(self, _graphene_info):
+        return yaml.dump(self._pipeline_run.run_config, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):
         return [
@@ -202,15 +202,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self.runId
 
     def resolve_canTerminate(self, graphene_info):
-        legacy_cancel = graphene_info.context.legacy_environment.execution_manager.can_terminate(
-            self.run_id
-        )
-        launcher_cancel = (
-            graphene_info.context.instance.run_launcher.can_terminate(self.run_id)
-            if graphene_info.context.instance.run_launcher
-            else False
-        )
-        return legacy_cancel or launcher_cancel
+        return graphene_info.context.instance.run_launcher.can_terminate(self.run_id)
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)

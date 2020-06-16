@@ -54,10 +54,10 @@ def get_step_output(step_events, step_key, output_name='result'):
 def test_using_file_system_for_subplan():
     pipeline = define_inty_pipeline()
 
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict,)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -67,7 +67,7 @@ def test_using_file_system_for_subplan():
         execute_plan(
             execution_plan.build_subset_plan(['return_one.compute']),
             instance,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
@@ -87,7 +87,7 @@ def test_using_file_system_for_subplan():
         execute_plan(
             execution_plan.build_subset_plan(['add_one.compute']),
             instance,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
@@ -102,12 +102,12 @@ def test_using_file_system_for_subplan():
 
 def test_using_file_system_for_subplan_multiprocessing():
 
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.local_temp()
 
     pipeline = reconstructable(define_inty_pipeline)
 
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
     )
@@ -118,7 +118,7 @@ def test_using_file_system_for_subplan_multiprocessing():
         execute_plan(
             execution_plan.build_subset_plan(['return_one.compute']),
             instance,
-            environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={'multiprocess': {}}),
             pipeline_run=pipeline_run,
         )
     )
@@ -139,7 +139,7 @@ def test_using_file_system_for_subplan_multiprocessing():
         execute_plan(
             execution_plan.build_subset_plan(['add_one.compute']),
             instance,
-            environment_dict=dict(environment_dict, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={'multiprocess': {}}),
             pipeline_run=pipeline_run,
         )
     )
@@ -184,10 +184,10 @@ def test_execute_step_wrong_step_key():
 
 def test_using_file_system_for_subplan_missing_input():
     pipeline = define_inty_pipeline()
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -196,7 +196,7 @@ def test_using_file_system_for_subplan_missing_input():
         execute_plan(
             execution_plan.build_subset_plan(['add_one.compute']),
             instance,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
         )
 
@@ -204,10 +204,10 @@ def test_using_file_system_for_subplan_missing_input():
 def test_using_file_system_for_subplan_invalid_step():
     pipeline = define_inty_pipeline()
 
-    environment_dict = {'storage': {'filesystem': {}}}
+    run_config = {'storage': {'filesystem': {}}}
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline, run_config=run_config)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -216,6 +216,6 @@ def test_using_file_system_for_subplan_invalid_step():
         execute_plan(
             execution_plan.build_subset_plan(['nope']),
             instance,
-            environment_dict=environment_dict,
+            run_config=run_config,
             pipeline_run=pipeline_run,
         )

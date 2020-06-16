@@ -3,9 +3,7 @@ import * as yaml from "yaml";
 
 import { Colors, Spinner } from "@blueprintjs/core";
 
-import { StartPipelineExecution } from "./types/StartPipelineExecution";
 import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
-import { StartPipelineReexecution } from "./types/StartPipelineReexecution";
 import { LaunchPipelineReexecution } from "./types/LaunchPipelineReexecution";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -32,12 +30,11 @@ import {
 import { SharedToaster } from "../DomUtils";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import * as qs from "query-string";
-import { Details } from "../ListComponents";
-import { Link } from "react-router-dom";
-import { RunStatsDetailFragment } from "./types/RunStatsDetailFragment";
 import { formatElapsedTime } from "../Util";
 import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
 import { DocumentNode } from "graphql";
+import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+import { RunStats } from "./RunStats";
 
 export type IRunStatus =
   | "SUCCESS"
@@ -45,6 +42,13 @@ export type IRunStatus =
   | "FAILURE"
   | "STARTED"
   | "MANAGED";
+
+export function subsetTitleForRun(run: {
+  tags: { key: string; value: string }[];
+}) {
+  const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
+  return stepsTag ? stepsTag.value : "Full Pipeline";
+}
 
 export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
@@ -68,7 +72,7 @@ export const RUN_STATUS_HOVER_COLORS = {
 export function handleExecutionResult(
   pipelineName: string,
   result: void | {
-    data?: StartPipelineExecution | LaunchPipelineExecution;
+    data?: LaunchPipelineExecution;
   },
   opts: { openInNewWindow: boolean }
 ) {
@@ -77,15 +81,10 @@ export function handleExecutionResult(
     return;
   }
 
-  const obj = (result.data as StartPipelineExecution).startPipelineExecution
-    ? (result.data as StartPipelineExecution).startPipelineExecution
-    : (result.data as LaunchPipelineExecution).launchPipelineExecution;
+  const obj = (result.data as LaunchPipelineExecution).launchPipelineExecution;
 
-  if (
-    obj.__typename === "LaunchPipelineRunSuccess" ||
-    obj.__typename === "StartPipelineRunSuccess"
-  ) {
-    const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
+  if (obj.__typename === "LaunchPipelineRunSuccess") {
+    const url = `/runs/${obj.run.pipelineName}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -94,10 +93,6 @@ export function handleExecutionResult(
   } else if (obj.__typename === "PythonError") {
     console.log(obj);
     const message = `${obj.message}`;
-    showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineRunDisabledError") {
-    const message = `Your instance has been configured to disable local execution.  Please check
-    the run launcher configuration on your dagster instance for more options.`;
     showCustomAlert({ body: message });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
@@ -115,7 +110,7 @@ export function handleExecutionResult(
 export function handleReexecutionResult(
   pipelineName: string,
   result: void | {
-    data?: StartPipelineReexecution | LaunchPipelineReexecution;
+    data?: LaunchPipelineReexecution;
   },
   opts: { openInNewWindow: boolean }
 ) {
@@ -124,14 +119,10 @@ export function handleReexecutionResult(
     return;
   }
 
-  const obj = (result.data as StartPipelineReexecution).startPipelineReexecution
-    ? (result.data as StartPipelineReexecution).startPipelineReexecution
-    : (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
+  const obj = (result.data as LaunchPipelineReexecution)
+    .launchPipelineReexecution;
 
-  if (
-    obj.__typename === "LaunchPipelineRunSuccess" ||
-    obj.__typename === "StartPipelineRunSuccess"
-  ) {
+  if (obj.__typename === "LaunchPipelineRunSuccess") {
     const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
@@ -141,10 +132,6 @@ export function handleReexecutionResult(
   } else if (obj.__typename === "PythonError") {
     console.log(obj);
     const message = `${obj.message}`;
-    showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineRunDisabledError") {
-    const message = `Your instance has been configured to disable local execution.  Please check
-    the run launcher configuration on your dagster instance for more options.`;
     showCustomAlert({ body: message });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
@@ -212,7 +199,7 @@ function getExecutionMetadata(
 function isRunFragment(
   run: RunFragment | RunTableRunFragment | RunActionMenuFragment
 ): run is RunFragment {
-  return (run as RunFragment).environmentConfigYaml !== undefined;
+  return (run as RunFragment).runConfigYaml !== undefined;
 }
 
 export function getReexecutionVariables(input: {
@@ -221,8 +208,18 @@ export function getReexecutionVariables(input: {
   stepKeys?: string[];
   stepQuery?: string;
   resumeRetry?: boolean;
+  repositoryLocationName: string;
+  repositoryName: string;
 }) {
-  const { run, envYaml, stepKeys, resumeRetry, stepQuery } = input;
+  const {
+    run,
+    envYaml,
+    stepKeys,
+    resumeRetry,
+    stepQuery,
+    repositoryLocationName,
+    repositoryName
+  } = input;
 
   if (isRunFragment(run)) {
     if (!run || run.pipeline.__typename === "UnknownPipeline") {
@@ -231,10 +228,12 @@ export function getReexecutionVariables(input: {
 
     const executionParams = {
       mode: run.mode,
-      environmentConfigData: yaml.parse(run.environmentConfigYaml),
+      runConfigData: yaml.parse(run.runConfigYaml),
       selector: {
-        name: run.pipeline.name,
-        solidSubset: run.pipeline.solids.map(s => s.name)
+        repositoryLocationName,
+        repositoryName,
+        pipelineName: run.pipeline.name,
+        solidSelection: run.pipeline.solidSelection
       }
     };
 
@@ -258,16 +257,16 @@ export function getReexecutionVariables(input: {
     if (!envYaml) {
       return undefined;
     }
+
     return {
       executionParams: {
         mode: run.mode,
-        environmentConfigData: yaml.parse(envYaml),
+        runConfigData: yaml.parse(envYaml),
         selector: {
-          name: run.pipeline.name,
-          solidSubset:
-            run.pipeline.__typename === "Pipeline"
-              ? run.pipeline.solids.map(s => s.name)
-              : []
+          repositoryLocationName,
+          repositoryName,
+          pipelineName: run.pipelineName,
+          solidSelection: run.solidSelection
         },
         executionMetadata: getExecutionMetadata(run)
       }
@@ -275,63 +274,51 @@ export function getReexecutionVariables(input: {
   }
 }
 
-export const RunStatus: React.SFC<{ status: IRunStatus; square?: boolean }> = ({
-  status,
-  square
-}) => {
+export const RunStatusWithStats: React.SFC<RunStatusProps & {
+  runId: string;
+}> = ({ runId, ...rest }) => (
+  <Popover
+    position={"bottom"}
+    interactionKind={"hover"}
+    content={<RunStats runId={runId} />}
+    hoverOpenDelay={100}
+  >
+    <div style={{ padding: 1 }}>
+      <RunStatus {...rest} />
+    </div>
+  </Popover>
+);
+
+interface RunStatusProps {
+  status: IRunStatus;
+  size?: number;
+}
+
+export const RunStatus: React.SFC<RunStatusProps> = ({ status, size }) => {
   if (status === "STARTED") {
     return (
       <div style={{ display: "inline-block" }}>
-        <Spinner size={11} />
+        <Spinner size={size || 11} />
       </div>
     );
   }
-  return <RunStatusDot status={status} square={square} />;
+  return <RunStatusDot status={status} size={size || 11} />;
 };
 
 // eslint-disable-next-line no-unexpected-multiline
-const RunStatusDot = styled.div<{ status: IRunStatus; square?: boolean }>`
+const RunStatusDot = styled.div<{
+  status: IRunStatus;
+  size: number;
+}>`
   display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: ${({ square }) => (square ? 0 : 5.5)}px;
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+  border-radius: ${({ size }) => size / 2}px;
   align-self: center;
   transition: background 200ms linear;
   background: ${({ status }) => RUN_STATUS_COLORS[status]};
   &:hover {
     background: ${({ status }) => RUN_STATUS_HOVER_COLORS[status]};
-  }
-`;
-
-export const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
-      __typename
-      ... on StartPipelineRunSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-          tags {
-            key
-            value
-          }
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
   }
 `;
 
@@ -342,9 +329,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on LaunchPipelineRunSuccess {
         run {
           runId
-          pipeline {
-            name
-          }
+          pipelineName
         }
       }
       ... on PipelineNotFoundError {
@@ -397,40 +382,6 @@ export const CANCEL_MUTATION = gql`
   }
 `;
 
-export const START_PIPELINE_REEXECUTION_MUTATION = gql`
-  mutation StartPipelineReexecution($executionParams: ExecutionParams!) {
-    startPipelineReexecution(executionParams: $executionParams) {
-      __typename
-      ... on StartPipelineRunSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-          tags {
-            key
-            value
-          }
-          rootRunId
-          parentRunId
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
-  }
-`;
-
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
     launchPipelineReexecution(executionParams: $executionParams) {
@@ -468,9 +419,12 @@ export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;
   refetchQueries: { query: DocumentNode; variables: any }[];
 }> = ({ run, refetchQueries }) => {
-  const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
+  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, { refetchQueries });
   const [destroy] = useMutation(DELETE_MUTATION, { refetchQueries });
+  const { repositoryLocation, repository } = React.useContext(
+    DagsterRepositoryContext
+  );
   const [loadEnv, { called, loading, data }] = useLazyQuery(
     PipelineEnvironmentYamlQuery,
     {
@@ -478,8 +432,8 @@ export const RunActionsMenu: React.FunctionComponent<{
     }
   );
 
-  const envYaml = data?.pipelineRunOrError?.environmentConfigYaml;
-  const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
+  const envYaml = data?.pipelineRunOrError?.runConfigYaml;
+  const infoReady = called ? !loading : false;
   return (
     <Popover
       content={
@@ -505,6 +459,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             content={OPEN_PLAYGROUND_UNKNOWN}
             position={Position.BOTTOM}
             disabled={infoReady}
+            wrapperTagName="div"
           >
             <MenuItem
               text="Open in Playground..."
@@ -512,14 +467,11 @@ export const RunActionsMenu: React.FunctionComponent<{
               icon="edit"
               target="_blank"
               href={`/pipeline/${
-                run.pipeline.name
+                run.pipelineName
               }/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
-                solidSubset:
-                  run.pipeline.__typename === "Pipeline"
-                    ? run.pipeline.solids.map(s => s.name)
-                    : []
+                solidSelection: run.solidSelection
               })}`}
             />
           </Tooltip>
@@ -527,6 +479,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             content={REEXECUTE_PIPELINE_UNKNOWN}
             position={Position.BOTTOM}
             disabled={infoReady}
+            wrapperTagName="div"
           >
             <MenuItem
               text="Re-execute"
@@ -536,10 +489,12 @@ export const RunActionsMenu: React.FunctionComponent<{
                 const result = await reexecute({
                   variables: getReexecutionVariables({
                     run,
-                    envYaml
+                    envYaml,
+                    repositoryLocationName: repositoryLocation?.name,
+                    repositoryName: repository?.name
                   })
                 });
-                handleReexecutionResult(run.pipeline.name, result, {
+                handleReexecutionResult(run.pipelineName, result, {
                   openInNewWindow: false
                 });
               }}
@@ -605,45 +560,53 @@ const PipelineEnvironmentYamlQuery = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on PipelineRun {
-        environmentConfigYaml
+        runConfigYaml
       }
     }
   }
 `;
 
-export const RunStatsDetails = ({ run }: { run: RunStatsDetailFragment }) => {
+interface RunTimeProps {
+  run: RunTimeFragment;
+  size?: "standard" | "minimal";
+}
+export const RunTime: React.FunctionComponent<RunTimeProps> = ({
+  run,
+  size
+}) => {
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
-      <Popover
-        content={<PythonErrorInfo error={run.stats} />}
-        targetTagName="div"
-      >
-        <Details>
-          <Icon icon="error" /> Failed to load stats
-        </Details>
+      <Popover content={<PythonErrorInfo error={run.stats} />}>
+        <div>
+          <Icon icon="error" /> Failed to load times
+        </div>
       </Popover>
     );
   }
+
+  let format = "MMM DD, H:mm A";
+  if (
+    size === "minimal" &&
+    unixTimestampToString(run.stats.startTime, "MMM DD") ===
+      unixTimestampToString(Date.now() / 1000, "MMM DD")
+  ) {
+    format = "H:mm A";
+  }
+
   return (
-    <Details>
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
-      >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
-      <Link to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}>
-        {`${run.stats.stepsFailed} steps failed, `}{" "}
-      </Link>
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
-      >{`${run.stats.materializations} materializations`}</Link>
-      ,{" "}
-      <Link
-        to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
-      >{`${run.stats.expectations} expectations passed`}</Link>
-    </Details>
+    <div>
+      {run.stats.startTime ? (
+        unixTimestampToString(run.stats.startTime, format)
+      ) : run.status === "FAILURE" ? (
+        <>Failed to start</>
+      ) : (
+        <>Starting...</>
+      )}
+    </div>
   );
 };
 
-export const RunTime = ({ run }: { run: RunTimeFragment }) => {
+export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({ run }) => {
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -655,28 +618,7 @@ export const RunTime = ({ run }: { run: RunTimeFragment }) => {
   }
 
   return (
-    <>
-      {run.stats.startTime ? (
-        <div style={{ marginBottom: 4 }}>
-          <Icon icon="calendar" /> {unixTimestampToString(run.stats.startTime)}
-          <Icon
-            icon="arrow-right"
-            style={{ marginLeft: 10, marginRight: 10 }}
-          />
-          {unixTimestampToString(run.stats.endTime)}
-        </div>
-      ) : run.status === "FAILURE" ? (
-        <div style={{ marginBottom: 4 }}> Failed to start</div>
-      ) : (
-        <div style={{ marginBottom: 4 }}>
-          <Icon icon="calendar" /> Starting...
-        </div>
-      )}
-      <TimeElapsed
-        startUnix={run.stats.startTime}
-        endUnix={run.stats.endTime}
-      />
-    </>
+    <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
   );
 };
 
@@ -711,35 +653,14 @@ export class TimeElapsed extends React.Component<{
 
     return (
       <div>
-        <Icon icon="time" /> {start ? formatElapsedTime(end - start) : ""}
+        <Icon icon="time" iconSize={13} style={{ paddingBottom: 1 }} />{" "}
+        {start ? formatElapsedTime(end - start) : ""}
       </div>
     );
   }
 }
 
 export const RunComponentFragments = {
-  STATS_DETAIL_FRAGMENT: gql`
-    fragment RunStatsDetailFragment on PipelineRun {
-      runId
-      pipeline {
-        ... on PipelineReference {
-          name
-        }
-      }
-      stats {
-        ... on PipelineRunStatsSnapshot {
-          stepsSucceeded
-          stepsFailed
-          expectations
-          materializations
-        }
-        ... on PythonError {
-          ...PythonErrorFragment
-        }
-      }
-    }
-    ${PythonErrorInfo.fragments.PythonErrorFragment}
-  `,
   RUN_TIME_FRAGMENT: gql`
     fragment RunTimeFragment on PipelineRun {
       status
@@ -759,18 +680,9 @@ export const RunComponentFragments = {
     fragment RunActionMenuFragment on PipelineRun {
       runId
       rootRunId
-      pipeline {
-        __typename
-        ... on PipelineReference {
-          name
-        }
-        ... on Pipeline {
-          pipelineSnapshotId
-          solids {
-            name
-          }
-        }
-      }
+      pipelineName
+      solidSelection
+      pipelineSnapshotId
       mode
       canTerminate
       tags {

@@ -1,7 +1,14 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors, Icon, Checkbox } from "@blueprintjs/core";
+import {
+  Colors,
+  Icon,
+  Checkbox,
+  Tooltip,
+  Intent,
+  Position
+} from "@blueprintjs/core";
 
 import PythonErrorInfo from "../PythonErrorInfo";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -10,10 +17,9 @@ import { errorStackToYamlPath } from "../configeditor/ConfigEditorUtils";
 import { ButtonLink } from "../ButtonLink";
 
 import {
-  ConfigEditorEnvironmentSchemaFragment,
-  ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType
-} from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
-import { RunPreviewExecutionPlanOrErrorFragment } from "./types/RunPreviewExecutionPlanOrErrorFragment";
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType
+} from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors
@@ -26,13 +32,28 @@ function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
   return e && typeof e === "object" && "__typename" in e ? true : false;
 }
 
+const stateToHint = {
+  invalid: {
+    title: `You need to fix this configuration section.`,
+    intent: Intent.DANGER
+  },
+  missing: {
+    title: `You need to add this configuration section.`,
+    intent: Intent.DANGER
+  },
+  present: {
+    title: `This section is present and valid.`,
+    intent: Intent.SUCCESS
+  },
+  none: { title: `This section is empty and valid.`, intent: Intent.PRIMARY }
+};
+
 interface RunPreviewProps {
-  plan: RunPreviewExecutionPlanOrErrorFragment | null;
   validation: RunPreviewValidationFragment | null;
   document: object | null;
 
   actions?: React.ReactChild;
-  environmentSchema: ConfigEditorEnvironmentSchemaFragment;
+  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
 }
 
@@ -45,22 +66,6 @@ export class RunPreview extends React.Component<
   RunPreviewState
 > {
   static fragments = {
-    RunPreviewExecutionPlanOrErrorFragment: gql`
-      fragment RunPreviewExecutionPlanOrErrorFragment on ExecutionPlanOrError {
-        __typename
-        ... on ExecutionPlan {
-          __typename
-        }
-        ... on PipelineNotFoundError {
-          message
-        }
-        ... on InvalidSubsetError {
-          message
-        }
-        ...PythonErrorFragment
-      }
-      ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `,
     RunPreviewValidationFragment: gql`
       fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
         __typename
@@ -92,7 +97,16 @@ export class RunPreview extends React.Component<
             }
           }
         }
+        ... on PipelineNotFoundError {
+          message
+        }
+        ... on InvalidSubsetError {
+          message
+        }
+        ...PythonErrorFragment
       }
+
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 
@@ -106,21 +120,22 @@ export class RunPreview extends React.Component<
   ) {
     return (
       nextProps.validation !== this.props.validation ||
-      nextProps.plan !== this.props.plan ||
+      nextProps.runConfigSchema !== this.props.runConfigSchema ||
       nextState.errorsOnly !== this.state.errorsOnly
     );
   }
 
   getRootCompositeChildren = () => {
-    const {
-      allConfigTypes,
-      rootEnvironmentType
-    } = this.props.environmentSchema;
+    if (!this.props.runConfigSchema) {
+      return {};
+    }
+
+    const { allConfigTypes, rootConfigType } = this.props.runConfigSchema;
     const children: {
-      [fieldName: string]: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType;
+      [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
     } = {};
 
-    const root = allConfigTypes.find(t => t.key === rootEnvironmentType.key);
+    const root = allConfigTypes.find(t => t.key === rootConfigType.key);
     if (root?.__typename !== "CompositeConfigType") return children;
 
     root.fields.forEach(field => {
@@ -135,7 +150,7 @@ export class RunPreview extends React.Component<
   };
 
   render() {
-    const { plan, actions, document, validation, onHighlightPath } = this.props;
+    const { actions, document, validation, onHighlightPath } = this.props;
     const { errorsOnly } = this.state;
 
     const missingNodes: string[] = [];
@@ -163,12 +178,12 @@ export class RunPreview extends React.Component<
       });
     }
 
-    if (plan?.__typename === "InvalidSubsetError") {
-      errorsAndPaths.push({ pathKey: "", error: plan.message });
+    if (validation?.__typename === "InvalidSubsetError") {
+      errorsAndPaths.push({ pathKey: "", error: validation.message });
     }
 
-    if (plan?.__typename === "PythonError") {
-      const info = <PythonErrorInfo error={plan} />;
+    if (validation?.__typename === "PythonError") {
+      const info = <PythonErrorInfo error={validation} />;
       errorsAndPaths.push({
         pathKey: "",
         error: (
@@ -216,26 +231,25 @@ export class RunPreview extends React.Component<
             : "none";
 
           return (
-            <Item
+            <Tooltip
+              position={Position.BOTTOM}
+              content={stateToHint[state].title}
+              intent={stateToHint[state].intent}
               key={name}
-              state={state}
-              title={
-                {
-                  invalid: `You need to fix this configuration section.`,
-                  missing: `You need to add this configuration section.`,
-                  present: `This section is present and valid.`,
-                  none: `This section is empty and valid.`
-                }[state]
-              }
-              onClick={() => {
-                const first = pathErrors.find(isValidationError);
-                onHighlightPath(
-                  first ? errorStackToYamlPath(first.stack.entries) : path
-                );
-              }}
             >
-              {name}
-            </Item>
+              <Item
+                key={name}
+                state={state}
+                onClick={() => {
+                  const first = pathErrors.find(isValidationError);
+                  onHighlightPath(
+                    first ? errorStackToYamlPath(first.stack.entries) : path
+                  );
+                }}
+              >
+                {name}
+              </Item>
+            </Tooltip>
           );
         })
         .filter(Boolean);
@@ -347,21 +361,21 @@ const ItemsEmptyNotice = styled.div`
 
 const ItemBorder = {
   invalid: `1px solid #CE1126`,
-  missing: `1px solid #D9822B`,
+  missing: `1px solid #CE1126`,
   present: `1px solid #AFCCE1`,
   none: `1px solid ${Colors.LIGHT_GRAY2}`
 };
 
 const ItemBackground = {
   invalid: Colors.RED5,
-  missing: "#F2A85C",
+  missing: Colors.RED5,
   present: "#C8E1F4",
   none: Colors.LIGHT_GRAY4
 };
 
 const ItemBackgroundHover = {
   invalid: "#E15858",
-  missing: "#F2A85C",
+  missing: "#E15858",
   present: "#AFCCE1",
   none: Colors.LIGHT_GRAY4
 };
@@ -386,6 +400,8 @@ const Item = styled.div<{
   margin: 3px;
   transition: background 150ms linear, color 150ms linear;
   cursor: ${({ state }) => (state === "present" ? "default" : "not-allowed")};
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
     transition: none;

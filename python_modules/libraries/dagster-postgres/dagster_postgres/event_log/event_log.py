@@ -1,4 +1,3 @@
-import logging
 import threading
 from collections import namedtuple
 from contextlib import contextmanager
@@ -6,14 +5,13 @@ from contextlib import contextmanager
 import psycopg2
 import sqlalchemy as db
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.event_log import (
-    SqlEventLogStorage,
+    AssetAwareSqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import (
     ConfigurableClass,
@@ -30,7 +28,7 @@ CHANNEL_NAME = 'run_events'
 WATCHER_POLL_INTERVAL = 0.2
 
 
-class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
+class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
     '''Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
@@ -40,10 +38,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, Con
     To use Postgres for event log storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../docs/sections/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../docs/next/src/pages/docs/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :lines: 12-21
        :language: YAML
+
+    Note that the fields in this config are :py:class:`~dagster.StringSource` and
+    :py:class:`~dagster.IntSource` and can be configured from environment variables.
 
     '''
 
@@ -96,69 +97,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, Con
             '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
             (res[0] + '_' + str(res[1]),),
         )
-
-    def _add_cursor_limit_to_query(self, query, cursor, limit):
-        ''' Helper function to deal with cursor/limit pagination args '''
-
-        if cursor:
-            cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
-                SqlEventLogStorageTable.c.id == cursor
-            )
-            query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
-
-        if limit:
-            query = query.limit(limit)
-
-        query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
-        return query
-
-    def get_all_asset_keys(self):
-        query = db.select([SqlEventLogStorageTable.c.asset_key]).distinct()
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
-
-        return [asset_key for (asset_key,) in results if asset_key]
-
-    def get_asset_events(self, asset_key, cursor=None, limit=None):
-        check.str_param(asset_key, 'asset_key')
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            SqlEventLogStorageTable.c.asset_key == asset_key
-        )
-        query = self._add_cursor_limit_to_query(query, cursor, limit)
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
-
-        events = []
-        for row_id, json_str in results:
-            try:
-                event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                if not isinstance(event_record, EventRecord):
-                    logging.warning(
-                        'Could not resolve asset event record as EventRecord for id `{}`.'.format(
-                            row_id
-                        )
-                    )
-                    continue
-                events.append(event_record)
-            except seven.JSONDecodeError:
-                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
-        return events
-
-    def get_asset_run_ids(self, asset_key):
-        check.str_param(asset_key, 'asset_key')
-        query = (
-            db.select(
-                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
-            )
-            .where(SqlEventLogStorageTable.c.asset_key == asset_key)
-            .group_by(SqlEventLogStorageTable.c.run_id,)
-            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
-        )
-
-        with self.connect() as conn:
-            results = conn.execute(query).fetchall()
-
-        return [run_id for (run_id, _timestamp) in results]
 
     @contextmanager
     def connect(self, run_id=None):

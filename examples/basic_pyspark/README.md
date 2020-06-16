@@ -1,0 +1,39 @@
+---
+title: basic_pyspark
+description: Example of running PySpark code in solids
+---
+
+# Running PySpark code in solids
+
+The `pyspark` resource enables passing Spark configuration.  Solid bodies can use it to access
+a `SparkSession` through its `spark_session` property.
+
+Because PySpark has a lazy execution model, when the PySpark jobs execute depends on what
+intermediate store is configured.  With the default in-memory intermediate store, the solids that
+yield a DataFrame don't trigger execution, and the job won't run until an action, e.g. `count` in
+the example is called on one of the DataFrames.
+
+Alternatively, with a local filesystem intermediate store or S3 intermediate store, any solid outputs
+that are DataFrames will be persisted to Parquet files.  This means that, with these intermediate
+stores, the PySpark jobs execute immediately upon solid completion.
+
+`dagster_pyspark.DataFrame`, which is a `DagsterType` knows how to save and load PySpark DataFrames.
+`make_python_type_usable_as_dagster_type` tells Dagster that when a solid has a return type
+annotation for a, `pyspark.sql.DataFrame`, then Dagster should use the `dagster_pyspark.DataFrame`
+to save and load it.
+
+
+# Open in Playground
+
+Open up this example in a playground using [Gitpod](https://gitpod.io)
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#EXAMPLE=basic_pyspark/https://github.com/dagster-io/dagster)
+
+# Download Manually
+
+Download the example:
+
+```
+curl https://codeload.github.com/dagster-io/dagster/tar.gz/master | tar -xz --strip=2 dagster-master/examples/basic_pyspark
+cd basic_pyspark
+```

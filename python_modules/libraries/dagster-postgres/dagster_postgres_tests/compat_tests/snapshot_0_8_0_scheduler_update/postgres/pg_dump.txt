@@ -1,0 +1,528 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.8 (Debian 11.8-1.pgdg90+1)
+-- Dumped by pg_dump version 12.1
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: test; Type: DATABASE; Schema: -; Owner: test
+--
+
+CREATE DATABASE test WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'en_US.utf8' LC_CTYPE = 'en_US.utf8';
+
+
+ALTER DATABASE test OWNER TO test;
+
+\connect test
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key character varying,
+    asset_key character varying
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key character varying,
+    value character varying
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name character varying,
+    status character varying(63),
+    run_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: schedule_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedule_ticks (
+    id integer NOT NULL,
+    repository_name character varying(255),
+    schedule_name character varying,
+    status character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedule_ticks OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedule_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedule_ticks_id_seq OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedule_ticks_id_seq OWNED BY public.schedule_ticks.id;
+
+
+--
+-- Name: schedules; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedules (
+    id integer NOT NULL,
+    repository_name character varying(255),
+    schedule_name character varying,
+    status character varying(63),
+    schedule_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedules OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedules_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedules_id_seq OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedules_id_seq OWNED BY public.schedules.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: schedule_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks ALTER COLUMN id SET DEFAULT nextval('public.schedule_ticks_id_seq'::regclass);
+
+
+--
+-- Name: schedules id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules ALTER COLUMN id SET DEFAULT nextval('public.schedules_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key) FROM stdin;
+1	d734898c-c60a-40ef-9f38-a7181284a694	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [credentials_vault, postgres_db].", "pipeline_name": "daily_weather_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "daily_weather_pipeline - d734898c-c60a-40ef-9f38-a7181284a694 - ENGINE_EVENT - Starting initialization of resources [credentials_vault, postgres_db].\\n   dagster/partition = \\"2020-06-09\\"\\ndagster/partition_set = \\"daily_weather_pipeline_daily\\"\\ndagster/schedule_name = \\"daily_weather_schedule\\"\\n event_specific_data = {\\"error\\": null, \\"marker_end\\": null, \\"marker_start\\": \\"resources\\", \\"metadata_entries\\": []}", "pipeline_name": "daily_weather_pipeline", "run_id": "d734898c-c60a-40ef-9f38-a7181284a694", "step_key": null, "timestamp": 1591805407.554605, "user_message": "Starting initialization of resources [credentials_vault, postgres_db]."}	ENGINE_EVENT	2020-06-10 16:10:07.554605	\N	\N
+2	d734898c-c60a-40ef-9f38-a7181284a694	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "ValueError", "message": "ValueError: Global Variable DARK_SKY_API_KEY Not Set in Environment\\n", "stack": ["  File \\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/errors.py\\", line 174, in user_code_error_boundary\\n    yield\\n", "  File \\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/execution/resources_init.py\\", line 147, in single_resource_event_generator\\n    resource_or_gen = resource_def.resource_fn(context)\\n", "  File \\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\", line 32, in credentials_vault\\n    context.resource_config['environment_variable_names']\\n", "  File \\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\", line 23, in instantiate_vault_from_environment_variables\\n    \\"Global Variable {} Not Set in Environment\\".format(environment_variable_name)\\n"]}, "marker_end": "resources", "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Initialization of resources [credentials_vault, postgres_db] failed.", "pipeline_name": "daily_weather_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 40, "message": "daily_weather_pipeline - d734898c-c60a-40ef-9f38-a7181284a694 - ENGINE_EVENT - Initialization of resources [credentials_vault, postgres_db] failed.\\n   dagster/partition = \\"2020-06-09\\"\\ndagster/partition_set = \\"daily_weather_pipeline_daily\\"\\ndagster/schedule_name = \\"daily_weather_schedule\\"\\n event_specific_data = {\\"error\\": [\\"ValueError: Global Variable DARK_SKY_API_KEY Not Set in Environment\\\\n\\", [\\"  File \\\\\\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/errors.py\\\\\\", line 174, in user_code_error_boundary\\\\n    yield\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/execution/resources_init.py\\\\\\", line 147, in single_resource_event_generator\\\\n    resource_or_gen = resource_def.resource_fn(context)\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\\\\\", line 32, in credentials_vault\\\\n    context.resource_config['environment_variable_names']\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\\\\\", line 23, in instantiate_vault_from_environment_variables\\\\n    \\\\\\"Global Variable {} Not Set in Environment\\\\\\".format(environment_variable_name)\\\\n\\"], \\"ValueError\\", null], \\"marker_end\\": \\"resources\\", \\"marker_start\\": null, \\"metadata_entries\\": []}", "pipeline_name": "daily_weather_pipeline", "run_id": "d734898c-c60a-40ef-9f38-a7181284a694", "step_key": null, "timestamp": 1591805408.1253371, "user_message": "Initialization of resources [credentials_vault, postgres_db] failed."}	ENGINE_EVENT	2020-06-10 16:10:08.125337	\N	\N
+3	d734898c-c60a-40ef-9f38-a7181284a694	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "PipelineInitFailureData", "error": {"__class__": "SerializableErrorInfo", "cause": null, "cls_name": "ValueError", "message": "ValueError: Global Variable DARK_SKY_API_KEY Not Set in Environment\\n", "stack": ["  File \\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/errors.py\\", line 174, in user_code_error_boundary\\n    yield\\n", "  File \\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/execution/resources_init.py\\", line 147, in single_resource_event_generator\\n    resource_or_gen = resource_def.resource_fn(context)\\n", "  File \\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\", line 32, in credentials_vault\\n    context.resource_config['environment_variable_names']\\n", "  File \\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\", line 23, in instantiate_vault_from_environment_variables\\n    \\"Global Variable {} Not Set in Environment\\".format(environment_variable_name)\\n"]}}, "event_type_value": "PIPELINE_INIT_FAILURE", "logging_tags": {}, "message": "Pipeline failure during initialization of pipeline \\"daily_weather_pipeline\\". This may be due to a failure in initializing a resource or logger.", "pipeline_name": "daily_weather_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 40, "message": "daily_weather_pipeline - d734898c-c60a-40ef-9f38-a7181284a694 - PIPELINE_INIT_FAILURE - Pipeline failure during initialization of pipeline \\"daily_weather_pipeline\\". This may be due to a failure in initializing a resource or logger.\\n   dagster/partition = \\"2020-06-09\\"\\ndagster/partition_set = \\"daily_weather_pipeline_daily\\"\\ndagster/schedule_name = \\"daily_weather_schedule\\"\\n event_specific_data = {\\"error\\": [\\"ValueError: Global Variable DARK_SKY_API_KEY Not Set in Environment\\\\n\\", [\\"  File \\\\\\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/errors.py\\\\\\", line 174, in user_code_error_boundary\\\\n    yield\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/python_modules/dagster/dagster/core/execution/resources_init.py\\\\\\", line 147, in single_resource_event_generator\\\\n    resource_or_gen = resource_def.resource_fn(context)\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\\\\\", line 32, in credentials_vault\\\\n    context.resource_config['environment_variable_names']\\\\n\\", \\"  File \\\\\\"/Users/alangenfeld/dagster/examples/dagster_examples/bay_bikes/resources.py\\\\\\", line 23, in instantiate_vault_from_environment_variables\\\\n    \\\\\\"Global Variable {} Not Set in Environment\\\\\\".format(environment_variable_name)\\\\n\\"], \\"ValueError\\", null]}", "pipeline_name": "daily_weather_pipeline", "run_id": "d734898c-c60a-40ef-9f38-a7181284a694", "step_key": null, "timestamp": 1591805408.1514618, "user_message": "Pipeline failure during initialization of pipeline \\"daily_weather_pipeline\\". This may be due to a failure in initializing a resource or logger."}	PIPELINE_INIT_FAILURE	2020-06-10 16:10:08.151462	\N	\N
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+1	d734898c-c60a-40ef-9f38-a7181284a694	dagster/partition	2020-06-09
+2	d734898c-c60a-40ef-9f38-a7181284a694	dagster/partition_set	daily_weather_pipeline_daily
+3	d734898c-c60a-40ef-9f38-a7181284a694	dagster/schedule_name	daily_weather_schedule
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, status, run_body, create_timestamp, update_timestamp) FROM stdin;
+1	d734898c-c60a-40ef-9f38-a7181284a694	e8e73edd33f6df4ba0874f72b6f53df69346fb5b	daily_weather_pipeline	NOT_STARTED	{"__class__": "PipelineRun", "environment_dict": {"resources": {"credentials_vault": {"config": {"environment_variable_names": ["DARK_SKY_API_KEY", "POSTGRES_USERNAME", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_DB"]}}, "postgres_db": {"config": {"db_name": {"env": "POSTGRES_DB"}, "hostname": {"env": "POSTGRES_HOST"}, "password": {"env": "POSTGRES_PASSWORD"}, "username": {"env": "POSTGRES_USERNAME"}}}, "volume": {"config": {"mount_location": "/tmp"}}}, "solids": {"weather_etl": {"solids": {"download_weather_report_from_weather_api": {"inputs": {"epoch_date": {"value": 1591660800}}}, "insert_weather_report_into_table": {"inputs": {"table_name": {"value": "weather_staging"}}}}}}}, "execution_plan_snapshot_id": "4ea31f9d1ef81dd5a788105c7f0fb46819a8b91f", "mode": "production", "parent_run_id": null, "pipeline_name": "daily_weather_pipeline", "pipeline_snapshot_id": "e8e73edd33f6df4ba0874f72b6f53df69346fb5b", "root_run_id": null, "run_id": "d734898c-c60a-40ef-9f38-a7181284a694", "solid_subset": null, "status": {"__enum__": "PipelineRunStatus.NOT_STARTED"}, "step_keys_to_execute": null, "tags": {"dagster/partition": "2020-06-09", "dagster/partition_set": "daily_weather_pipeline_daily", "dagster/schedule_name": "daily_weather_schedule"}}	2020-06-10 16:10:07.497261	2020-06-10 16:10:07.497261
+\.
+
+
+--
+-- Data for Name: schedule_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedule_ticks (id, repository_name, schedule_name, status, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+1	internal-dagit-repository	daily_weather_schedule	SUCCESS	2020-06-10 16:10:07.271709	{"__class__": "ScheduleTickData", "cron_schedule": "11 11 * * *", "error": null, "run_id": "d734898c-c60a-40ef-9f38-a7181284a694", "schedule_name": "daily_weather_schedule", "status": {"__enum__": "ScheduleTickStatus.SUCCESS"}, "timestamp": 1591805407.271709}	2020-06-10 16:10:07.311486	2020-06-10 16:10:07.311486
+\.
+
+
+--
+-- Data for Name: schedules; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedules (id, repository_name, schedule_name, status, schedule_body, create_timestamp, update_timestamp) FROM stdin;
+1	internal-dagit-repository	daily_weather_ingest_schedule	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "10 11 * * *", "environment_vars": {"POSTGRES_DB": "", "POSTGRES_HOST": "", "POSTGRES_PASSWORD": "", "POSTGRES_USERNAME": ""}, "name": "daily_weather_ingest_schedule"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.44059	2020-06-10 16:09:48.44059
+3	internal-dagit-repository	monthly_trip_ingest_schedule	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "10 11 10 * *", "environment_vars": {"POSTGRES_DB": "", "POSTGRES_HOST": "", "POSTGRES_PASSWORD": "", "POSTGRES_USERNAME": ""}, "name": "monthly_trip_ingest_schedule"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.527382	2020-06-10 16:09:48.527382
+4	internal-dagit-repository	backfill_unreliable_weekly	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "* * * * *", "environment_vars": {}, "name": "backfill_unreliable_weekly"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.575061	2020-06-10 16:09:48.575061
+5	internal-dagit-repository	longitudinal_demo	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "* * * * *", "environment_vars": {}, "name": "longitudinal_demo"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.633342	2020-06-10 16:09:48.633342
+6	internal-dagit-repository	many_events_partitioned	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "* * * * *", "environment_vars": {}, "name": "many_events_partitioned"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.677996	2020-06-10 16:09:48.677996
+7	internal-dagit-repository	many_events_every_min	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "* * * * *", "environment_vars": {}, "name": "many_events_every_min"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.727685	2020-06-10 16:09:48.727685
+8	internal-dagit-repository	pandas_hello_world_hourly	STOPPED	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "0 * * * *", "environment_vars": {}, "name": "pandas_hello_world_hourly"}, "status": {"__enum__": "ScheduleStatus.STOPPED"}}	2020-06-10 16:09:48.773319	2020-06-10 16:09:48.773319
+2	internal-dagit-repository	daily_weather_schedule	RUNNING	{"__class__": "Schedule", "python_path": "/Users/alangenfeld/venvs/dagenv36/bin/python", "repository_path": "/Users/alangenfeld/dagster/examples/repository.yaml", "schedule_definition_data": {"__class__": "ScheduleDefinitionData", "cron_schedule": "10 11 * * *", "environment_vars": {"DARK_SKY_API_KEY": "", "POSTGRES_DB": "", "POSTGRES_HOST": "", "POSTGRES_PASSWORD": "", "POSTGRES_USERNAME": ""}, "name": "daily_weather_schedule"}, "status": {"__enum__": "ScheduleStatus.RUNNING"}}	2020-06-10 16:09:48.482092	2020-06-10 16:09:48.482092
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	e8e73edd33f6df4ba0874f72b6f53df69346fb5b	\\x789ced5d5b73dc36b2fe2b537a3a5b152b04481044debc4ebc711daf9cb29c87add8c5c2a52171c32167498e6d6dcaff7d9b9cfb55203543d3965249ec99010174f7d78dee06d0fceb228e752acb328e2f7e1a5dfc964c204d32b8cee4a4bccdab8b1f46173acf6c721397fa16c6322e17bffc34fa6bf3d9174dbbeba6d9faf3324de3451ff5d7b1ba8bff84bba683e7d9dda18ededd4d9a69d45d182875914caa24cfb041364d53fc12b2e938fe28d32994ab2f6d02a959fb7c937c842ccee418ea9eebe1f0cbd9e8cb4f4966e69368badc9ac3ffe3cf97cfaffe75f105db965aa6b288e78fccc7a8b0553c91851cd7742d06af9b3f2f0a7977797d2b277019706698472427c2d3d6fad49848aa806b1158151826894fb521b63d3f2e5e276535caeda8d3709d3839ff6ec1c88ee33a71feeddbe7ad78ffc745cb897cd8961457dc631680812799d11137a1880403468d0049a3d00bf00b8f9f4852cec39d58526dc63daba49c27b22329887ca9a80e45e86b6e3dd0007e2804e7cc8f022eb9b05e803d06279294f3702796549b71cf2a29e789ac4baa2a92ece6e1129875733ace2efb3b17c76603349cf87b9ea71d38d08ddad9682b7a971f1de8bc7ef1fcf5f3b77b08ddf7d475d3a279eeef6fdebc6e9e3abc16be4c7379d06b383d1366c3adb8b0fa7c4636bc7cfde6f9bb7bf8f02aeb910bf5602b1e2c3e9d9103afae1ce8bfcea785867aac1e9dbf4d23b0398b564c897fbf7af5e6aa9d319873fe1a52d0555e5c52c68947842592518f44cc3784783e250193da07e6075ec82d7e9c998f197f7fcf900397b5363f5bf6a3009d1c12295f4014cac0d7cc52002d2d1a644d6ca839274431f1d5f87c82a99f5d380b03d97e6a3bd269accc8a46e379d2e7e0a3f3627cf43c6d28b40e29ae983a90cc0692f01098f607219eae733fbb7c96a6bbfddc7604848ab822510a2e84129c1842a506ee496aa2c8f37514e17fa11f106e3c4ed920c4d36de6bd5b36e799ed8866e630ad68042fe0d4d7c20851cb1a1d4f42bd30f099a294621c67514d231a0ec3b6759efcd905b47274db4f6e26a3c563445945422e410a8f479e9421174ce0df3ccd8932910e19184fd13309e48fbd9dbeac7f5ef56ae534ade249917f4c0cd49ca98a29acfdd2f41ecb32fe779967715915754f7f7d3938a5a48c0bf8cf34299aceac4ccbbab7857b659252aa147f5af07e818c265a32d217d2afe3da5005ca333e654c59b08285b8e60b4f5a8306cc13b53c87471b642721edc33d3ad41a5cae0af3cbeb5f5ebc7bb3cf85bd376dd7de4d1b12e217823c068bf9480eb098636c858a8f3b8898191867493b33b54f490726f48d64be0c3ca5026a4528a5a1dc50063a922264a1093cc1cfe50a9cd1b6bd9f27f0dfd7537f7f51008a0bcaf9a7b992379fbee03f1d6d4592d5d3d25096fbcd85964c78a111d2f339a7e8590700dc88c0938631c1b8b492230cd4792de11627c6f273bd2fa1a7450159557fe9fd303a1383c638abe4288bacb5beb4dae2da8cf0473a0274a2ac8a2ca7821009ca83c84200ee7ae60ce93ef54cf80695dc287402a9f228e552091170497504121823c06418461d7641be558baacb5d8bda2082306374185a4b28c74834d4b8b42ac6039f18f02150c69351c88175569ab3928530f8cf14aafda4058af90a35defa01f523623ce3310cb2fd9044880f21b4122146707498a455b549782861ae5aecac307d6af1570e9c07a8c5751fdf23d62789fef3e1601f22654d67db84d5d90c67d53c7912e614aaf99533c24faaf9a49ae751cd264befac9b27df5d38856e7ee5ed8027dd7cd2cdf3e8e66c87c659394fbeb5740ae5fccadb0d4fcaf9a49ce751ceb6f9d9936f5d9d443b19b5d297f5d83e318251fc08f5bcac2f41181a449c331e0c6befe9493bbf9a763a83dd1557bd82dd6a2e89943c8aacb410114abc00834d4f8b30d20a3d59a55113d5a0c0de3e05df399b6e9314cabbb282f17e984491409404e85e10857cf33ca3421e19a944a4942709b38671d066981baf49168f619c17777d6dbd3ac3ad4f1db0d44268acd1210aac4e78463602aed15fe4d2235405dc0b99ea72b4fbc9e00f8bae47e68ed5b78e9c55d3590bfa50cd46225e10525c1ea54f43ce22fc430581a73d1a458a700dbe0ea310b41a560ec3c55efbfc12bd5abeef2282ac926a6a60a4f3bc3049262b1855f9e806aad12790d52d1423232b39922a9f5697a39f67a38c927274fdf2f2e25e7b9fcebb3f10549f71897a4628bd44c5f2f7119d673767a57ad17fff64ff815ec86cd33fbd7b7f51eff98f936c5ac1e2d36d3e2d167f9729145539fbbb4de50dfef5c31e6e359cb82924c2551649954059f30a3eebb4e6e0a75bc84663898a7633aa6e914372928c50f9d2fbd954256328e32a8fe77ded5893f5cb2cf79a95761aec6a53debd7df5e25d7cfdebf3df7ee96e579c77bb876457cebc835edd1e8ae5cfa81d88f5f7171d5dd712265db30fed40d02f348132b044e3022cc1680f7d12e9fb2cf43d6d0213a9fa68a2566c58e1d8b94f0126459e8dd18462c745521f8868e4ba73b8a9837d726677af20a001913a8884b592594e220c2983205012781408aba250861482800c0a046efafeeaeae59bce2a9fe637710a1f21fd2aa6cae08a5c41d179f6cd9f0fb158ceb0e817ac4c87926a2e04864726a04ad477e03d437d4564085206c40f997844a7ece62e6b0cd52e501b962915dad08b80859253a119069cd2a31eae4832c4b8c05a8f712242e38a0b5709f48a0b5f49a94848c250496da5c5f091458440181834b084506bb8efeb61ad648e89c5a521aa738b0ba356bbedb59466df2dad45d7d4dc2c79b91f40ce96c00d40cea2ea1540015209cce22a2c888c708526a002839a6322194829424f8035ec111996639070f664dc20e1ccfc7e2171b6ba36df0c24b6cd44012576ba8389d6477a1d6171e28a3b2782856be6f6fb85458b78de4dd0ae2ced57d060b9aa0bc118e94742295cf4a2d0933e090841ef475b9ffb019aa6c7236898e4fa3636b2da0d2d1e7c9fdb1129ae32e915298cdb88a33ba4404bc343f48ffd30d4c4e840706dc1b732f485f087e57d9e152946c58723d0b5fa2483dcddbacdcbeadb9dfd0427f3292f76ef379f6af62e610b0b7cda311499e4c58e87b159d466906c9f9650b881c6c9d0399b947e0d9df1a2fad625868311186e940db5d42664ccf702e03620a1b1018b1e91a1cb3f65692e4dbcc8c314500338b6453e5e7e2727c981232f3ec63b4c1a60446ba288a282700bda5281eeb2c4b5b13efae20d14f2498698afb6294fb22a8f8fdc24b4a14084d4fe9c17521231222584182b7074f7b90fbe40ba3150085c15c51592bd2acaf92a6d7e338ab2b38556c91bb48407a0d1fad8a21b3a4e5d0af434e88878a03d12a2b6878a68cff711f64c690c8d43423915be083dd48fef191d5ba6649c4fb32a4e732d9b871e124c3a33b75f91bb9edc1c92c8cf7a1af4587e1128ae0e9a5106d450149d62122d40a0ad311ef30d842608c007d73d0b67e6f70a098c8c956f282ef710581f94a0203c4b410bab021d31b080368ae94141e2bc6bc458167fa227810e844ef3f2e006e6796ba96c5646e988ee79b19583eb9c73552837843b63a95784cb80875644966bd4561a984085219396536a88a5da702b84f2e8b777a4d2eb888acdca3c7ba2dc276cef62db1945bd625b0901189c5352df23a332924210e3078127a9450f0489f4a5667c58c766ce6bbde133e8e95effad75e5a641de5f49f39b1b280e94b94230488c3399a7a9e759c582dafc12eb5b4a8867a0867d4018d7c30ce50b289b0cd5a11a5e9404d2b391223690c262702db58c988d28c3f545598dfe757d5b6798c495799a980394391f67190665bb41755ec89b23e1b4eb0d283753ec6cf4fa35c5ae279c1e8f29cea7d5645a1d3ab4daee9517c3407e0b9d764e093a82de155ebd82deb9f2e49040efe8a51ead547986748373f4e4061867d1f40b18ad88c785b1113746b050510f6723024380e0ff3ce38356c20c2b18fb6a27dc9cf7df1c21e1cafc5e21e1bcfd342448b89e9a9d5f3eaccdc6fc06647d6676793baffe7e794db0fe65fb425adde0a117eace61ac9c6fb90d72dd4eb27d7e49cbc33dc3a0ac83cfe57ca2d1cdaa38eb6fbf56858bfa6ab702bf76207d8c1841fa1efa5e4c2a40bbe7851cff7d4cc5e08ea9b3f3769523245c99df2f245c4b7b9c09126eac739d64afac73de0afb7eb569dbd02a59426c92e241dbc4ce7ced57da677befe7372bedc5f1a26a7917b7afc323a77e3be98920e29a687e3c10c1f5b5cc0f9d3773be6fe6080a57f6f70a8a7a74ab717967180f288a8bbd245669742f8db2848602bd434ba5fc8e41b1ef5d06fbcdc529de6ee6061667b1f40d16b7dd9c4703168ddf62909fe018d8f1be2b6eedee290e2340ddbe189097d54d01656cd47ef29c93548324ef639e4ef7287bbba8c859addd14a85fb5763d58fd68d4fa58b2c9d9340f03ec1d924dce679f1d41ef0aaf7e41effa76b12181de3185dde53d6e6748383b9fbf72c491abc4fac2d12c6bd0db9beb57afaddd4c5bb892dbf1fdf5359baefe71cf2bec772eab7db537106f4fa415774ef436e116efb2ff528f35afc21237dd3745c32652435c22a3cadbbcda65e6cfb307ead95f2d9a5f2f5a6387324de38d4e9bae62753757d0bf9a9aabc7ba3d2a2493949354de2d915977f6c37cd58c6fef4cd15cc6884b7d0b63b9936c6953c1158d8f9a266995642bebb75635f69070d70869a4fbfcea5f8d50b7263c5b0be3b1c4b6e8c227ff3d3aef3685d1f700a5797374f3ca9e93f1bde9ed7ec6af85adf513cf3abd12e8882416d37012c59a19da26a37f71cc2aab9e4c1eb3ee5a09a479e459a7f7c01c91c872225d45b2eca07f99d487d94f269157594b7974ab41715c1af3497495c5fcf1fe25719557b77b3d9caed25874789f44569ee72196aef5e4c4d6ab37ef7e5d78317b66e3c2dbc32e40c3acdf646664f9b3ace4cb6236405ba65dbcfb943f33c918b212bf90e9a84cfe0bcfc6d32621f9c3689257b34c537a37ba05ec29bf810cf269f93e1be13fd8aaaeb43cab408da1c05457d302469f92ea76944a85b83023f919cad1ff15f9a77284b31de93af191957fbb9cf5700d30baadaac94f3ffe386988b99cdcd5bd5de6c5cd8f177bc4b94db2bb0bd0e615ae1b2858841ff30ef7ccc0090e6f7ff9c7efdb6ab6a7af762ad786a843283a145374d5b89573ea6e023ba7b68fabec3dd18a83215cf5d0b32d9c39e93089977a75cc3787096406327d77bd68bdee9a37e78fe324fb38bfb23cebe9623723705d377cb56cb710fb4c8ecd64160f7e58766bc02e45bf55df73d6e050f14f64fe2c0ff0e1cb21688d7303cd008726fc4f6cf033d803c6adfeb5ae00af60342dd11699692dcc517d733b1d1918e74d85fcd94d99a3c3bc6e9aac0d344b41c44d90d83c7528f87c746535f72c31b7309ad3579bff1c471fcd37414733de3762d8de1f6d1234cbca2535edf9643cbf88b8b8017454686fe78dce21b66fa098e5a1a10f6f23ed268f1d59788cd2c57037bac49e13d87b6df4bb1495fba9ecfb78b7be19f64898e77ed2f03ee6cdb7da1a7352e47915cf99d3edaed82efbdb2d41793692a302979e0a46c867838b35b61c95507c84e26935fa3656a395e09e16a3a7c5e89b10d5d362f43d2e461b2eb24cd2bb657dbb49328134c960158621d7922ca9a7551e89249b08f0e755d3f53052e763147e526124ba8cfc0ed9bb178bb68b0e9d5476a8d1eed683afea166bb3d878707ffde1e90429038cf0e769845520fd657f28dda656e3669cddaacae33208dfd1e4f372a7009d17b33bd10759b3d5ef9be6e75f6566d265426afec86ec9f78e2c6972115de8d93cc1d95adaf3ea944d39ca9dda839bb43815b274c8ad2c046937933ab3afc77232a9e7b0f1d38144ce9cc663d66026ba752f797da3782759d7fdc5326b626838bd4cda6d91b3777eff9cb55acc113e577595dc34de02d9fe33fef51060b6dbeec872deaca54867ebc59cfa78e9702ecf03ec3d12babe507fd804c506068f9ac7af19653c5d8a6da1bbfb8dd651859b6ff21d7558d656b14d6fa3c522732a03b167b7a453f1a026bc68ad519b2ab47fb97c4068721a91bab2687b193eb8ea3dc462ef591b37307474d11bc2aab239a9fb2073c4de7ed9f8f83f26cf9c67	PIPELINE
+2	4ea31f9d1ef81dd5a788105c7f0fb46819a8b91f	\\x789ccd53df6b1b310cfe578a9f4718bb34e9f6ba75ac8cd140b6a71184ee2c27a63edbd83aba52f2bf4fbebb662165bdd2c2d8abfc49df0fc9f70aa071983380fa70a62e7f51d3b10d7ee5d0af3dc6bc0bacde9c294c6c0d369c2152ca363369c11b7499e435da48ce7a823cb6802dcf8a2e685991d6556516dacc6b7c7bb19c9be5bb7a61ce2b6d16efabf9c2d4e775619091116ee82e0307a05e07c98c9fea9690779480d8cd74b8f52ea0868762a218128349a13dd430da5913da5806c8e0e37eeb3309fca4db7aa164ac1d1dfa36a3a25c24dcff25a4b5004a4885c57ae99b445f15d4438bc6ad5024e0bb48c579415ff93e6e8f2df501c6d0ec40e3e0a48b9913610ba16399033bf4da514fbad917c5e390d72676637d595f3142be6b071f45fe5779987dbcfeb6faf1fd52ed05d912a3a843b04ced2044aa83bcc930ae7bd85369acc420e64f42f03995448e9249943bc7aab79d83b37a4c63bcbc9744501cfdc3553f69ae0949e7899d9fb0ff89f44b8f51874dc0496847bfedd5e7b2df4ca43699c39a93f5db63fbfd571c44bff0ea9ffdcfffa76b7f1c4466dc4a69d0fcac5b9f325ef6f51b7d051dfc	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 3, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 3, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedule_ticks_id_seq', 1, true);
+
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedules_id_seq', 8, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: schedule_ticks schedule_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks
+    ADD CONSTRAINT schedule_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_repository_name_schedule_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_repository_name_schedule_name_key UNIQUE (repository_name, schedule_name);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

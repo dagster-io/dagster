@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Int, String, StringSource
+from dagster import Bool, Field, IntSource, StringSource
 
 
 def define_snowflake_config():
@@ -54,14 +54,14 @@ def define_snowflake_config():
     )
 
     client_prefetch_threads = Field(
-        Int,
+        IntSource,
         description='''Number of threads used to download the results sets (4 by default).
          Increasing the value improves fetch performance but requires more memory.''',
         is_required=False,
     )
 
     client_session_keep_alive = Field(
-        String,
+        StringSource,
         description='''False by default. Set this to True to keep the session active indefinitely,
          even if there is no activity from the user. Make certain to call the close method to
          terminate the thread properly or the process may hang.''',
@@ -69,21 +69,21 @@ def define_snowflake_config():
     )
 
     login_timeout = Field(
-        Int,
+        IntSource,
         description='''Timeout in seconds for login. By default, 60 seconds. The login request gives
          up after the timeout length if the HTTP response is "success".''',
         is_required=False,
     )
 
     network_timeout = Field(
-        Int,
+        IntSource,
         description='''Timeout in seconds for all other operations. By default, none/infinite. A
          general request gives up after the timeout length if the HTTP response is not "success"''',
         is_required=False,
     )
 
     ocsp_response_cache_filename = Field(
-        String,
+        StringSource,
         description='''URI for the OCSP response cache file.
          By default, the OCSP response cache file is created in the cache directory.''',
         is_required=False,
@@ -98,14 +98,14 @@ def define_snowflake_config():
 
     paramstyle = Field(
         # TODO should validate only against permissible values for this
-        String,
+        StringSource,
         description='''pyformat by default for client side binding. Specify qmark or numeric to
         change bind variable formats for server side binding.''',
         is_required=False,
     )
 
     timezone = Field(
-        String,
+        StringSource,
         description='''None by default, which honors the Snowflake parameter TIMEZONE. Set to a
          valid time zone (e.g. America/Los_Angeles) to set the session time zone.''',
         is_required=False,

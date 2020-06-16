@@ -184,31 +184,8 @@ class SolidDefinition(ISolidDefinition):
             of the solid's ``output_defs``, and additionally may yield other types of Dagster
             events, including :py:class:`Materialization` and :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
-        config (Optional[Any]): The schema for the config. Configuration data available in
-            `init_context.solid_config`.
-
-            This value can be any of:
-
-            1. A Python primitive type that resolves to a Dagster config type
-               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-               :py:class:`~python:str`, or :py:class:`~python:list`).
-
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
-
-            3. A bare python dictionary, which will be automatically wrapped in
-               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
-               according to the same rules.
-
-            4. A bare python list of length one which itself is config type.
-               Becomes :py:class:`Array` with list element as an argument.
-
-            5. An instance of :py:class:`~dagster.Field`.
-
+        config_schema (Optional[ConfigSchema): The schema for the config. Configuration data
+            available in `init_context.solid_config`.
         description (Optional[str]): Human-readable description of the solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -240,15 +217,21 @@ class SolidDefinition(ISolidDefinition):
         input_defs,
         compute_fn,
         output_defs,
-        config=None,
+        config_schema=None,
         description=None,
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
-        metadata=None,
+        config=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config')
+        self._config_schema = canonicalize_backcompat_args(
+            check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            'config_schema',
+            check_user_facing_opt_config_param(config, 'config'),
+            'config',
+            '0.9.0',
+        )
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
@@ -258,7 +241,7 @@ class SolidDefinition(ISolidDefinition):
             input_defs=check.list_param(input_defs, 'input_defs', InputDefinition),
             output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
-            tags=canonicalize_backcompat_args(tags, 'tags', metadata, 'metadata'),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
             positional_inputs=positional_inputs,
         )
 
@@ -268,7 +251,12 @@ class SolidDefinition(ISolidDefinition):
 
     @property
     def config_field(self):
-        return self._config_field
+        rename_warning('config_schema', 'config_field', '0.9.0')
+        return self._config_schema
+
+    @property
+    def config_schema(self):
+        return self._config_schema
 
     @property
     def required_resource_keys(self):
@@ -276,14 +264,7 @@ class SolidDefinition(ISolidDefinition):
 
     @property
     def has_config_entry(self):
-        return self._config_field or self.has_configurable_inputs or self.has_configurable_outputs
-
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        for tt in self.all_input_output_types():
-            yield tt
+        return self._config_schema or self.has_configurable_inputs or self.has_configurable_outputs
 
     def all_dagster_types(self):
         for tt in self.all_input_output_types():
@@ -550,17 +531,6 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         mapped_solid = self.solid_named(mapping.solid_name)
 
         return mapped_solid.definition.default_value_for_input(mapping.input_name)
-
-    def all_runtime_types(self):
-        rename_warning(
-            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
-        )
-        for tt in self.all_input_output_types():
-            yield tt
-
-        for solid_def in self._solid_defs:
-            for ttype in solid_def.all_dagster_types():
-                yield ttype
 
     def all_dagster_types(self):
         for tt in self.all_input_output_types():

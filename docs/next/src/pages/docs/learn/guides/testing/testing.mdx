@@ -184,7 +184,7 @@ def test_cache_file_from_s3():
         execute_solid(
             cache_file_from_s3,
             ModeDefinition(resource_defs={'file_cache': fs_file_cache}),
-            environment_dict={
+            run_config={
                 'resources': {
                     'file_cache': {'config': {'target_folder': temp_dir}}
                 },
@@ -296,46 +296,35 @@ When the s3 file cache is used, `write_file_object` returns an `S3FileHandle`, a
 With this we can use an `S3FileCache` instead:
 
 ```python
-def unittest_for_aws_mode_def(s3_file_cache_session, s3_session):
+def unittest_for_aws_mode_def(s3_session):
     return ModeDefinition.from_resources(
         {
-            'file_cache': S3FileCache(
-                'file-cache-bucket',
-                'file-cache',
-                s3_file_cache_session
-             ),
-            's3': S3Resource(s3_session),
+            'file_cache': S3FileCache('file-cache-bucket', 'file-cache', s3_session),
+            's3': s3_session,
         }
     )
 
 
+@mock_s3
 def test_cache_file_from_s3_step_four(snapshot):
-    s3_session = S3FakeSession(
-        {'source-bucket': {'source-file': b'foo'}}
-    )
-    s3_file_cache_session = S3FakeSession()
+    s3 = boto3.client('s3')
+    s3.create_bucket('source-bucket')
+    s3.put_object(Bucket='source-bucket', Key='some-file', Body=b'foo')
 
     solid_result = execute_solid(
         cache_file_from_s3,
-        unittest_for_aws_mode_def(s3_file_cache_session, s3_session),
-        input_values={
-            's3_coord': {
-                'bucket': 'source-bucket', 'key': 'source-file'
-            }
-        },
+        unittest_for_aws_mode_def(s3),
+        input_values={'s3_coord': {'bucket': 'source-bucket', 'key': 'source-file'}},
     )
 
-    path_desc = solid_result.output_value().path_desc
+    assert solid_result.output_value().path_desc == 's3://file-cache-bucket/file-cache/source-file'
 
-    # returned correct s3 path
-    assert path_desc == 's3://file-cache-bucket/file-cache/source-file'
-
-    # confirm that the correct data is in the right spot
-    file_cache_obj = s3_file_cache_session.get_object(
-        Bucket='file-cache-bucket', Key='file-cache/source-file'
-    )
+    file_cache_obj = s3.get_object(Bucket='file-cache-bucket', Key='file-cache/source-file')
 
     assert file_cache_obj['Body'].read() == b'foo'
+
+    # just perform a snapshot of the bucket structure as well
+    snapshot.assert_match([bucket['Name'] for bucket in s3.list_buckets()['Buckets']])
 ```
 
 Note how the developer can keep the two fakes separate in these cases, so one only has to deal with one thing at a time.

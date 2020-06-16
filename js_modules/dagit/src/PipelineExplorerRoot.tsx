@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps, Redirect } from "react-router-dom";
 import { NonIdealState, IconName, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "./Loading";
@@ -12,8 +12,13 @@ import {
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
 } from "./types/PipelineExplorerRootQuery";
-import { selectorFromString, PipelineSelector } from "./PipelineSelectorUtils";
+import {
+  explorerPathFromString,
+  PipelineExplorerPath,
+  explorerPathToString
+} from "./PipelinePathUtils";
 import styled from "styled-components/macro";
+import { usePipelineSelector } from "./DagsterRepositoryContext";
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -120,28 +125,49 @@ function explodeCompositesInHandleGraph(
   return results;
 }
 export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
-  const selector = selectorFromString(props.match.params["0"]);
+  const explorerPath = explorerPathFromString(props.match.params["0"]);
 
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false
   });
 
-  const selectedName = selector.path[selector.path.length - 1];
+  const selectedName =
+    explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
   return (
-    <ExplorerSnapshotResolver selector={selector} options={options}>
+    <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
       {result => {
         if (result.__typename === "NonIdealState") {
           return <NonIdealState {...result} />;
         }
-        const parentSolidHandle = result.solidHandle;
+        const parentHandle = result.solidHandle;
         const displayedHandles = options.explodeComposites
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
+        const selectedHandle = displayedHandles.find(
+          h => h.solid.name === selectedName
+        );
+
+        // Run a few assertions on the state of the world and redirect the user
+        // back to safety if they've landed in an invalid place. Note that we can
+        // pop one layer at a time and this renders recursively until we reach a
+        // valid parent.
+        const invalidSelection = selectedName && !selectedHandle;
+        const invalidParent =
+          parentHandle &&
+          parentHandle.solid.definition.__typename !==
+            "CompositeSolidDefinition";
+
+        if (invalidSelection || invalidParent) {
+          const n = { ...explorerPath };
+          n.pathSolids = n.pathSolids.slice(0, n.pathSolids.length - 1);
+          return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
+        }
+
         return (
           <>
-            {selector.snapshotId && (
+            {explorerPath.snapshotId && (
               <SnapshotNotice>
                 You are viewing a historical pipeline snapshot.
               </SnapshotNotice>
@@ -149,14 +175,12 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
             <PipelineExplorer
               options={options}
               setOptions={setOptions}
-              selector={selector}
+              explorerPath={explorerPath}
               history={props.history}
               pipeline={result}
               handles={displayedHandles}
-              parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
-              selectedHandle={displayedHandles.find(
-                h => h.solid.name === selectedName
-              )}
+              parentHandle={parentHandle ? parentHandle : undefined}
+              selectedHandle={selectedHandle}
               getInvocations={definitionName =>
                 displayedHandles
                   .filter(s => s.solid.definition.name === definitionName)
@@ -172,14 +196,14 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $pipelineName: String
+    $pipelineSelector: PipelineSelector
     $snapshotId: String
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
     pipelineSnapshotOrError(
       snapshotId: $snapshotId
-      activePipelineName: $pipelineName
+      activePipelineSelector: $pipelineSelector
     ) {
       ... on PipelineSnapshot {
         name
@@ -209,7 +233,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
 `;
 
 interface ResolverProps {
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   options: PipelineExplorerOptions;
   children: (
     result:
@@ -225,11 +249,15 @@ interface ResolverProps {
 
 const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
   children,
-  selector,
+  explorerPath,
   options
 }) => {
-  const parentNames = selector.path.slice(0, selector.path.length - 1);
+  const parentNames = explorerPath.pathSolids.slice(
+    0,
+    explorerPath.pathSolids.length - 1
+  );
 
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
     PipelineExplorerRootQueryVariables
@@ -237,8 +265,8 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
     variables: {
-      pipelineName: selector.snapshotId ? undefined : selector.pipelineName,
-      snapshotId: selector.snapshotId ? selector.snapshotId : undefined,
+      pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
+      snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
       rootHandleID: parentNames.join("."),
       requestScopeHandleID: options.explodeComposites
         ? undefined

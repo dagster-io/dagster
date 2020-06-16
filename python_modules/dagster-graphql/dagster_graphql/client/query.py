@@ -165,8 +165,8 @@ fragment messageEventFragment on MessageEvent {
 )
 
 
-START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
-fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
+EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT = '''
+fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 	__typename
 	... on InvalidStepError {
 		invalidStepKey
@@ -192,165 +192,38 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
     message
     stack
   }
-	... on StartPipelineRunSuccess {
+	... on ExecuteRunInProcessSuccess {
 		run {
 			runId
 			status
 			pipeline {
 				name
 			}
-			environmentConfigYaml
-			mode
-		}
-	}
-  ... on PipelineRunConflict {
-    message
-  }
-}
-'''
-
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
-fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
-	__typename
-	... on InvalidStepError {
-		invalidStepKey
-	}
-	... on InvalidOutputError {
-		stepKey
-		invalidOutputName
-	}
-	... on PipelineConfigValidationInvalid {
-    pipelineName
-		errors {
-			__typename
-			message
-			path
-			reason
-		}
-	}
-	... on PipelineNotFoundError {
-		message
-		pipelineName
-	}
-  ... on PythonError {
-    message
-    stack
-  }
-	... on StartPipelineRunSuccess {
-		run {
-			runId
-			status
-			pipeline {
-				name
-			}
-			environmentConfigYaml
+			runConfigYaml
 			mode
 		}
 	}
 }
 '''
 
-START_PIPELINE_EXECUTION_MUTATION = (
+EXECUTE_RUN_IN_PROCESS_MUTATION = (
     '''
 mutation(
-  $executionParams: ExecutionParams!
-) {
-  startPipelineExecution(
-    executionParams: $executionParams,
-  ) {
-    ...startPipelineExecutionResultFragment
-  }
-}
-'''
-    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
-)
-
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION = (
-    '''
-mutation(
+  $repositoryLocationName: String!
+  $repositoryName: String!
   $runId: String!
 ) {
-  startPipelineExecutionForCreatedRun(
-    runId: $runId,
+  executeRunInProcess(
+    repositoryLocationName: $repositoryLocationName
+    repositoryName: $repositoryName
+    runId: $runId
   ) {
-    ...startPipelineExecutionForCreatedRunResultFragment
+    ...executeRunInProcessResultFragment
   }
 }
 '''
-    + START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
+    + EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT
 )
-
-START_SCHEDULED_EXECUTION_MUTATION = '''
-mutation(
-  $scheduleName: String!
-) {
-  startScheduledExecution(
-    scheduleName: $scheduleName,
-  ) {
-    __typename
-    ...on ScheduleNotFoundError {
-      message
-      scheduleName
-    }
-    ...on SchedulerNotDefinedError {
-      message
-    }
-    ...on ScheduledExecutionBlocked {
-      message
-    }
-    ... on InvalidStepError {
-      invalidStepKey
-    }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
-    }
-    ... on PipelineConfigValidationInvalid {
-      pipelineName
-      errors {
-        __typename
-        message
-        path
-        reason
-      }
-    }
-    ... on PipelineNotFoundError {
-      message
-      pipelineName
-    }
-    ... on PythonError {
-      message
-      stack
-      cause {
-        message
-        stack
-      }
-    }
-    ... on StartPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-      }
-    }
-    ... on RunLauncherNotDefinedError {
-      message
-    }
-    ... on LaunchPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-      }
-    }
-
-  }
-}
-'''
 
 EXECUTE_PLAN_MUTATION = (
     '''
@@ -471,9 +344,6 @@ mutation(
     executionParams: $executionParams,
   ) {
     __typename
-    ... on RunLauncherNotDefinedError {
-      message
-    }
     ... on InvalidStepError {
       invalidStepKey
     }
@@ -505,13 +375,14 @@ mutation(
         pipeline {
           name
         }
-        environmentConfigYaml
+        runConfigYaml
         mode
       }
     }
   }
 }
 '''
+
 
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = '''
 mutation(
@@ -521,9 +392,6 @@ mutation(
     executionParams: $executionParams,
   ) {
     __typename
-    ... on RunLauncherNotDefinedError {
-      message
-    }
     ... on InvalidStepError {
       invalidStepKey
     }
@@ -555,7 +423,7 @@ mutation(
         pipeline {
           name
         }
-        environmentConfigYaml
+        runConfigYaml
         mode
       }
     }

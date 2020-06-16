@@ -22,14 +22,14 @@ def test_invoke_ui_with_port_taken(monkeypatch):
     runner = CliRunner()
     result = runner.invoke(
         ui,
-        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-a', 'test_repository'],
         input="n\n",
     )
     assert result.exception
 
     result = runner.invoke(
         ui,
-        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-a', 'test_repository'],
         input="y\n",
     )
     assert ':3001' in result.output
@@ -38,5 +38,5 @@ def test_invoke_ui_with_port_taken(monkeypatch):
 def test_invoke_cli_wrapper_with_bad_option():
     process = subprocess.Popen(['dagit', '--fubar'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, stderr = process.communicate()
-    assert process.returncode == 0
+    assert process.returncode != 0
     assert b'Error: no such option: --fubar\n' in stderr

@@ -1,4 +1,4 @@
-from dagster import Field, String, SystemStorageData, system_storage
+from dagster import Field, StringSource, SystemStorageData, system_storage
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.system_storage import fs_system_storage, mem_system_storage
 
@@ -9,9 +9,9 @@ from .intermediate_store import GCSIntermediateStore
 @system_storage(
     name='gcs',
     is_persistent=True,
-    config={
-        'gcs_bucket': Field(String),
-        'gcs_prefix': Field(String, is_required=False, default_value='dagster'),
+    config_schema={
+        'gcs_bucket': Field(StringSource),
+        'gcs_prefix': Field(StringSource, is_required=False, default_value='dagster'),
     },
     required_resource_keys={'gcs'},
 )

@@ -1,3 +1,0 @@
-repository:
-  module: dagster_examples.pyspark_pagerank.repository
-  fn: define_repository

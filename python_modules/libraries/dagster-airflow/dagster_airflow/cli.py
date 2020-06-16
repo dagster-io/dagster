@@ -8,6 +8,7 @@ import yaml
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
@@ -15,7 +16,7 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
     # Load environment dict from either a preset or yaml file globs
     if preset_name:
         if env:
-            raise click.UsageError('Can not use --preset with --env.')
+            raise click.UsageError('Can not use --preset with --config.')
 
         cli_args = {
             'fn_name': pipeline_name,
@@ -23,24 +24,24 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
             'module_name': module_name,
         }
         pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
-        environment_dict = pipeline.get_preset(preset_name).environment_dict
+        run_config = pipeline.get_preset(preset_name).run_config
 
     else:
         env = list(env)
-        environment_dict = load_yaml_from_glob_list(env) if env else {}
+        run_config = load_yaml_from_glob_list(env) if env else {}
 
     # If not provided by the user, ensure we have storage location defined
-    if 'storage' not in environment_dict:
+    if 'storage' not in run_config:
         system_tmp_path = seven.get_system_temp_directory()
         dagster_tmp_path = os.path.join(system_tmp_path, 'dagster-airflow', pipeline_name)
-        environment_dict['storage'] = {
+        run_config['storage'] = {
             'filesystem': {'config': {'base_dir': six.ensure_str(dagster_tmp_path)}}
         }
 
-    return environment_dict
+    return run_config
 
 
-def construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict):
+def construct_scaffolded_file_contents(module_name, pipeline_name, run_config):
     yesterday = datetime.now() - timedelta(1)
 
     printer = IndentingStringIoPrinter(indent_level=4)
@@ -66,7 +67,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
     printer.comment('#')
     printer.line('#' * 80)
     printer.line('ENVIRONMENT = \'\'\'')
-    printer.line(yaml.dump(environment_dict, default_flow_style=False))
+    printer.line(yaml.dump(run_config, default_flow_style=False))
     printer.line('\'\'\'')
     printer.blank_line()
     printer.blank_line()
@@ -98,7 +99,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
         printer.comment('installed or available on sys.path, otherwise, this import will fail.')
         printer.line('module_name=\'{module_name}\','.format(module_name=module_name))
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
-        printer.line("environment_dict=yaml.safe_load(ENVIRONMENT),")
+        printer.line("run_config=yaml.safe_load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 
@@ -123,13 +124,13 @@ def main():
     default=os.getenv('AIRFLOW_HOME'),
 )
 @click.option(
-    '-e',
-    '--env',
+    '-c',
+    '--config',
     type=click.STRING,
     multiple=True,
     help=(
-        'Specify one or more environment files. These can also be file patterns. '
-        'If more than one environment file is captured then those files are merged. '
+        'Specify one or more run config files. These can also be file patterns. '
+        'If more than one run config file is captured then those files are merged. '
         'Files listed first take precendence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
@@ -142,8 +143,25 @@ def main():
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
 )
-def scaffold(module_name, pipeline_name, output_path, env, preset):
+@click.option(
+    # backcompat
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Please use -c / --config to specify one or more run config files. '
+        '-e / --env is deprecated and will be removed in 0.9.0.'
+    ),
+)
+def scaffold(module_name, pipeline_name, output_path, config, preset, env):
     '''Creates a DAG file for a specified dagster pipeline'''
+    env = (
+        canonicalize_backcompat_args(
+            (config if config else None), '--config', (env if env else None), '--env', '0.9.0',
+        )
+        or tuple()  # back to default empty tuple
+    )
 
     check.invariant(isinstance(env, tuple))
     check.invariant(
@@ -151,8 +169,8 @@ def scaffold(module_name, pipeline_name, output_path, env, preset):
         'You must specify --output-path or set AIRFLOW_HOME to use this script.',
     )
 
-    environment_dict = construct_environment_yaml(preset, env, pipeline_name, module_name)
-    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, environment_dict)
+    run_config = construct_environment_yaml(preset, env, pipeline_name, module_name)
+    file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, run_config)
 
     # Ensure output_path/dags exists
     dags_path = os.path.join(os.path.expanduser(output_path), 'dags')

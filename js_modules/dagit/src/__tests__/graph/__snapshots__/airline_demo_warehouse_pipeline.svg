@@ -31,7 +31,7 @@
     </g>
   </g>
   <g opacity="0.55"></g>
-  <g>
+  <g data-tooltip="average_sfo_outbound_avg_delays_by_destination" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="530" y="291" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="542" y="316.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="347.2" height="16" dominant-baseline="hanging">average_sfo_outbound_avg_delays_by_</text><text fill="#222" x="542" y="336.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="109.12" height="16" dominant-baseline="hanging">destination</text>
     <g>
       <title>q2_sfo_outbound_flights: SqlTableName
@@ -56,7 +56,7 @@
     <g></g>
     <rect x="870.96" y="368" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(336, 75%, 50%)" x="874.96" y="371" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" height="14" dominant-baseline="hanging">sql</text>
   </g>
-  <g>
+  <g data-tooltip="delays_vs_fares" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="110" y="524" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="122" y="559.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" height="16" dominant-baseline="hanging">delays_vs_fares</text>
     <g>
       <title>tickets_with_destination: SqlTableName
@@ -89,7 +89,7 @@
     <g></g>
     <rect x="450.96000000000004" y="601" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(336, 75%, 50%)" x="454.96000000000004" y="604" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" height="14" dominant-baseline="hanging">sql</text>
   </g>
-  <g>
+  <g data-tooltip="fares_vs_delays" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="110" y="721" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="122" y="756.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="148.8" height="16" dominant-baseline="hanging">fares_vs_delays</text>
     <g>
       <title>table_name: SqlTableName
@@ -113,7 +113,7 @@
     <g></g>
     <rect x="433.5999999999999" y="798" width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(25, 75%, 50%)" x="437.5999999999999" y="801" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" height="14" dominant-baseline="hanging">ipynb</text>
   </g>
-  <g>
+  <g data-tooltip="process_delays_by_geo" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="944" y="94" width="382" height="99" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="947" y="97" width="376" height="93" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
     <rect x="950" y="100" width="370" height="87" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="962" y="135.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" height="16" dominant-baseline="hanging">process_delays_by_geo</text>
@@ -127,7 +127,7 @@
     <g></g>
     <rect x="1264.92" y="177" width="60.08" height="20" rx="0" ry="0" fill="hsl(248, 10%, 95%)" stroke="hsl(248, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(248, 75%, 50%)" x="1268.92" y="180" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" height="14" dominant-baseline="hanging">Expand</text>
   </g>
-  <g>
+  <g data-tooltip="q2_sfo_outbound_flights" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="530" y="100" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="542" y="135.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="228.16" height="16" dominant-baseline="hanging">q2_sfo_outbound_flights</text>
     <g>
       <title>result: SqlTableName
@@ -142,7 +142,7 @@
     <g></g>
     <rect x="870.96" y="177" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(336, 75%, 50%)" x="874.96" y="180" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" height="14" dominant-baseline="hanging">sql</text>
   </g>
-  <g>
+  <g data-tooltip="sfo_delays_by_destination" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="540" y="506" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="552" y="541.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="248" height="16" dominant-baseline="hanging">sfo_delays_by_destination</text>
     <g>
       <title>table_name: SqlTableName
@@ -166,7 +166,7 @@
     <g></g>
     <rect x="863.5999999999999" y="583" width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(25, 75%, 50%)" x="867.5999999999999" y="586" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" height="14" dominant-baseline="hanging">ipynb</text>
   </g>
-  <g>
+  <g data-tooltip="tickets_with_destination" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="100" y="279" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="112" y="314.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="238.07999999999998" height="16" dominant-baseline="hanging">tickets_with_destination</text>
     <g>
       <title>result: SqlTableName
@@ -181,7 +181,7 @@
     <g></g>
     <rect x="440.96000000000004" y="356" width="34.04" height="20" rx="0" ry="0" fill="hsl(336, 10%, 95%)" stroke="hsl(336, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(336, 75%, 50%)" x="444.96000000000004" y="359" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="26.04" height="14" dominant-baseline="hanging">sql</text>
   </g>
-  <g>
+  <g data-tooltip="upload_delays_vs_fares_pdf_plots" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="110" y="918" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="122" y="953.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="317.44" height="16" dominant-baseline="hanging">upload_delays_vs_fares_pdf_plots</text>
     <g>
       <title>file_handle: FileHandle
@@ -201,7 +201,7 @@
     <ellipse cx="460" cy="918" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
     <ellipse cx="460" cy="918" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="455" y="912.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
   </g>
-  <g>
+  <g data-tooltip="upload_outbound_avg_delay_pdf_plots" data-tooltip-style="{&quot;top&quot;:-20,&quot;left&quot;:5}">
     <rect x="540" y="721" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="552" y="756.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="347.2" height="16" dominant-baseline="hanging">upload_outbound_avg_delay_pdf_plots</text>
     <g>
       <title>file_handle: FileHandle

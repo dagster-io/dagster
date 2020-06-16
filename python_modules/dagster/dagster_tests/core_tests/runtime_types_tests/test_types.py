@@ -389,9 +389,7 @@ def test_fan_in_custom_types_with_storage():
         # Fan-in
         get_foo([return_dict_1(), return_dict_2()])
 
-    pipeline_result = execute_pipeline(
-        dict_pipeline, environment_dict={'storage': {'filesystem': {}}}
-    )
+    pipeline_result = execute_pipeline(dict_pipeline, run_config={'storage': {'filesystem': {}}})
     assert pipeline_result.success
 
 

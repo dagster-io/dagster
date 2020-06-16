@@ -3,6 +3,8 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { PipelineSelector } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
@@ -1183,7 +1185,7 @@ export interface PipelineExplorerRootQuery {
 }
 
 export interface PipelineExplorerRootQueryVariables {
-  pipelineName?: string | null;
+  pipelineSelector?: PipelineSelector | null;
   snapshotId?: string | null;
   rootHandleID: string;
   requestScopeHandleID?: string | null;

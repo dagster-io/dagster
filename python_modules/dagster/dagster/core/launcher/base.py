@@ -2,12 +2,10 @@ from abc import ABCMeta, abstractmethod
 
 import six
 
-from dagster import check
-
 
 class RunLauncher(six.with_metaclass(ABCMeta)):
     @abstractmethod
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline):
         '''Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.
@@ -27,10 +25,13 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
                 state, or, if a synchronous failure occurs, the ``PipelineRunStatus.FAILURE`` state.
         '''
 
-    @property
-    def supports_termination(self):
-        return False
+    @abstractmethod
+    def can_terminate(self, run_id):
+        '''
+        Can this run_id be terminated by this run launcher.
+        '''
 
+    @abstractmethod
     def terminate(self, run_id):
         '''
         Terminates a process.
@@ -38,17 +39,6 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         Returns False is the process was already terminated. Returns true if
         the process was alive and was successfully terminated
         '''
-        check.str_param(run_id, 'run_id')
-        check.not_implemented(
-            'If a run launcher returns True on its supports_termination property '
-            'it must override the terminate method.'
-        )
 
-    @property
-    def hijack_start(self):
-        '''
-        Indicates whether or not this launcher should hijack the "Start" graphql
-        mutations in dagster-graphql to instead go through the "Launch" code paths.
-        This property is temporary while we perform that migration.
-        '''
-        return False
+    def join(self):
+        pass

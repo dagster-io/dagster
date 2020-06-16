@@ -1,9 +1,12 @@
+import sys
 import time
 
 import pytest
 
-from dagster import DagsterInvariantViolationError, RepositoryDefinition
-from dagster.core.scheduler import Schedule, ScheduleDefinitionData, ScheduleStatus
+from dagster import DagsterInvariantViolationError
+from dagster.core.code_pointer import ModuleCodePointer
+from dagster.core.origin import RepositoryPythonOrigin, SchedulePythonOrigin
+from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
 from dagster.utils.error import SerializableErrorInfo
 
@@ -34,18 +37,23 @@ class TestScheduleStorage:
             yield s
 
     @staticmethod
+    def fake_repo_target():
+        return RepositoryPythonOrigin(sys.executable, ModuleCodePointer('fake', 'fake'))
+
+    @classmethod
     def build_schedule(
-        schedule_name, cron_schedule, status=ScheduleStatus.STOPPED,
+        cls, schedule_name, cron_schedule, status=ScheduleStatus.STOPPED,
     ):
-        return Schedule(ScheduleDefinitionData(schedule_name, cron_schedule), status, "", "",)
+        fake_target = SchedulePythonOrigin(schedule_name, cls.fake_repo_target())
+
+        return ScheduleState(fake_target, status, cron_schedule)
 
     def test_basic_schedule_storage(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule(repository.name, schedule)
-        schedules = storage.all_schedules(repository.name)
+        storage.add_schedule_state(schedule)
+        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
         assert len(schedules) == 1
 
         schedule = schedules[0]
@@ -55,51 +63,48 @@ class TestScheduleStorage:
     def test_add_multiple_schedules(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
         schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
         schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
 
-        storage.add_schedule(repository.name, schedule)
-        storage.add_schedule(repository.name, schedule_2)
-        storage.add_schedule(repository.name, schedule_3)
+        storage.add_schedule_state(schedule)
+        storage.add_schedule_state(schedule_2)
+        storage.add_schedule_state(schedule_3)
 
-        schedules = storage.all_schedules(repository.name)
+        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
         assert len(schedules) == 3
 
         assert any(s.name == "my_schedule" for s in schedules)
         assert any(s.name == "my_schedule_2" for s in schedules)
         assert any(s.name == "my_schedule_3" for s in schedules)
 
-    def test_get_schedule_by_name(self, storage):
+    def test_get_schedule_state(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
-        storage.add_schedule(repository.name, self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_schedule_by_name(repository.name, "my_schedule")
+        state = self.build_schedule("my_schedule", "* * * * *")
+        storage.add_schedule_state(state)
+        schedule = storage.get_schedule_state(state.schedule_origin_id)
 
         assert schedule.name == "my_schedule"
 
-    def test_get_schedule_by_name_not_found(self, storage):
+    def test_get_schedule_state_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
-        storage.add_schedule(repository.name, self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_schedule_by_name(repository.name, "fake_schedule")
+        storage.add_schedule_state(self.build_schedule("my_schedule", "* * * * *"))
+        schedule = storage.get_schedule_state("fake_id")
 
         assert schedule is None
 
     def test_update_schedule(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule(repository.name, schedule)
+        storage.add_schedule_state(schedule)
 
         new_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        storage.update_schedule(repository.name, new_schedule)
+        storage.update_schedule_state(new_schedule)
 
-        schedules = storage.all_schedules(repository.name)
+        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
         assert len(schedules) == 1
 
         schedule = schedules[0]
@@ -109,54 +114,51 @@ class TestScheduleStorage:
     def test_update_schedule_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.update_schedule(repository.name, schedule)
+            storage.update_schedule_state(schedule)
 
-    def test_delete_schedule(self, storage):
+    def test_delete_schedule_state(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule(repository.name, schedule)
-        storage.delete_schedule(repository.name, schedule)
+        storage.add_schedule_state(schedule)
+        storage.delete_schedule_state(schedule.schedule_origin_id)
 
-        schedules = storage.all_schedules(repository.name)
+        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
         assert len(schedules) == 0
 
     def test_delete_schedule_not_found(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.delete_schedule(repository.name, schedule)
+            storage.delete_schedule_state(schedule.schedule_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule(repository.name, schedule)
+        storage.add_schedule_state(schedule)
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.add_schedule(repository.name, schedule)
+            storage.add_schedule_state(schedule)
 
     def build_tick(self, current_time, status=ScheduleTickStatus.STARTED, run_id=None, error=None):
-        return ScheduleTickData("my_schedule", "* * * * *", current_time, status, run_id, error)
+        return ScheduleTickData(
+            "my_schedule", "my_schedule", "* * * * *", current_time, status, run_id, error
+        )
 
     def test_create_tick(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         current_time = time.time()
-        tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
+        tick = storage.create_schedule_tick(self.build_tick(current_time))
         assert tick.tick_id == 1
 
-        ticks = storage.get_schedule_ticks_by_schedule(repository.name, "my_schedule")
+        ticks = storage.get_schedule_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == 1
@@ -170,16 +172,15 @@ class TestScheduleStorage:
     def test_update_tick_to_success(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         current_time = time.time()
-        tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
+        tick = storage.create_schedule_tick(self.build_tick(current_time))
 
         updated_tick = tick.with_status(ScheduleTickStatus.SUCCESS, run_id="1234")
         assert updated_tick.status == ScheduleTickStatus.SUCCESS
 
-        storage.update_schedule_tick(repository.name, updated_tick)
+        storage.update_schedule_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks_by_schedule(repository.name, "my_schedule")
+        ticks = storage.get_schedule_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == 1
@@ -193,16 +194,15 @@ class TestScheduleStorage:
     def test_update_tick_to_skip(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         current_time = time.time()
-        tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
+        tick = storage.create_schedule_tick(self.build_tick(current_time))
 
         updated_tick = tick.with_status(ScheduleTickStatus.SKIPPED)
         assert updated_tick.status == ScheduleTickStatus.SKIPPED
 
-        storage.update_schedule_tick(repository.name, updated_tick)
+        storage.update_schedule_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks_by_schedule(repository.name, "my_schedule")
+        ticks = storage.get_schedule_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == 1
@@ -216,9 +216,8 @@ class TestScheduleStorage:
     def test_update_tick_to_failure(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         current_time = time.time()
-        tick = storage.create_schedule_tick(repository.name, self.build_tick(current_time))
+        tick = storage.create_schedule_tick(self.build_tick(current_time))
 
         updated_tick = tick.with_status(
             ScheduleTickStatus.FAILURE,
@@ -226,9 +225,9 @@ class TestScheduleStorage:
         )
         assert updated_tick.status == ScheduleTickStatus.FAILURE
 
-        storage.update_schedule_tick(repository.name, updated_tick)
+        storage.update_schedule_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks_by_schedule(repository.name, "my_schedule")
+        ticks = storage.get_schedule_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == 1
@@ -242,33 +241,28 @@ class TestScheduleStorage:
     def test_get_schedule_stats(self, storage):
         assert storage
 
-        repository = RepositoryDefinition(name="repository_name")
         current_time = time.time()
 
         error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
         # Create ticks
         for x in range(2):
-            storage.create_schedule_tick(repository.name, self.build_tick(current_time))
+            storage.create_schedule_tick(self.build_tick(current_time))
 
         for x in range(3):
             storage.create_schedule_tick(
-                repository.name,
                 self.build_tick(current_time, ScheduleTickStatus.SUCCESS, run_id=str(x)),
             )
 
         for x in range(4):
-            storage.create_schedule_tick(
-                repository.name, self.build_tick(current_time, ScheduleTickStatus.SKIPPED),
-            )
+            storage.create_schedule_tick(self.build_tick(current_time, ScheduleTickStatus.SKIPPED),)
 
         for x in range(5):
             storage.create_schedule_tick(
-                repository.name,
                 self.build_tick(current_time, ScheduleTickStatus.FAILURE, error=error),
             )
 
-        stats = storage.get_schedule_tick_stats_by_schedule(repository.name, "my_schedule")
+        stats = storage.get_schedule_tick_stats("my_schedule")
         assert stats.ticks_started == 2
         assert stats.ticks_succeeded == 3
         assert stats.ticks_skipped == 4

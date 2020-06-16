@@ -1,15 +1,16 @@
 from __future__ import print_function
 
-import sys
+import os
 
+import yaml
 from click.testing import CliRunner
-from dagster_graphql.client.query import START_SCHEDULED_EXECUTION_MUTATION
-from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
+from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import reconcile_scheduler_state
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.scheduler import ScheduledExecutionSuccess
+from dagster.core.test_utils import environ
 from dagster.utils import file_relative_path, script_relative_path
 
 
@@ -31,41 +32,35 @@ def test_list_command():
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-y', script_relative_path('../repository.yaml')]
+        pipeline_list_command, ['-w', script_relative_path('../repository.yaml')]
     )
     assert result.exit_code == 0
 
 
 def test_schedules():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        with environ({'DAGSTER_HOME': temp_dir}):
+            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+                yaml.dump(
+                    {
+                        'scheduler': {
+                            'module': 'dagster.utils.test',
+                            'class': 'FilesystemTestScheduler',
+                            'config': {'base_dir': temp_dir},
+                        }
+                    },
+                    fd,
+                    default_flow_style=False,
+                )
 
-        context = define_context_for_repository_yaml(
-            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        # We need to call up on the scheduler handle to persist
-        # state about the schedules to disk before running them.
-        # Note: This dependency will be removed soon.
-        repository = context.legacy_get_repository_definition()
-        reconcile_scheduler_state(
-            python_path=sys.executable,
-            repository_path=file_relative_path(__file__, '../'),
-            repository=repository,
-            instance=instance,
-        )
-
-        for schedule_name in [
-            'many_events_every_min',
-            'pandas_hello_world_hourly',
-        ]:
-            result = execute_dagster_graphql(
-                context,
-                START_SCHEDULED_EXECUTION_MUTATION,
-                variables={'scheduleName': schedule_name},
+            recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
+                file_relative_path(__file__, '../repository.yaml')
             )
 
-            assert not result.errors
-            assert result.data
-            print(result.data)
-            assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+            for schedule_name in [
+                'many_events_every_min',
+                'pandas_hello_world_hourly',
+            ]:
+                schedule = recon_repo.get_reconstructable_schedule(schedule_name)
+                result = sync_launch_scheduled_execution(schedule.get_origin())
+                assert isinstance(result, ScheduledExecutionSuccess)

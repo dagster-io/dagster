@@ -8,7 +8,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster import execute_pipeline
 from dagster.seven import json, mock
 
-from .setup import noop_pipeline
+from .setup import main_repo_location_name, main_repo_name, noop_pipeline
 
 SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = '''
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
@@ -32,8 +32,8 @@ query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
 '''
 
 SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME = '''
-query PipelineSnapshotQueryByActivePipelineName($activePipelineName: String!) {
-    pipelineSnapshotOrError(activePipelineName: $activePipelineName) {
+query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: PipelineSelector!) {
+    pipelineSnapshotOrError(activePipelineSelector: $activePipelineSelector) {
         __typename
         ... on PipelineSnapshot {
             name
@@ -93,7 +93,13 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(graphql_context
     result = execute_dagster_graphql(
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
-        {'activePipelineName': 'csv_hello_world'},
+        {
+            'activePipelineSelector': {
+                'pipelineName': 'csv_hello_world',
+                'repositoryName': main_repo_name(),
+                'repositoryLocationName': main_repo_location_name(),
+            }
+        },
     )
 
     assert not result.errors
@@ -108,7 +114,13 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(graphql_conte
     result = execute_dagster_graphql(
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
-        {'activePipelineName': 'jkdjfkdj'},
+        {
+            'activePipelineSelector': {
+                'pipelineName': 'jkdjfkdj',
+                'repositoryName': main_repo_name(),
+                'repositoryLocationName': main_repo_location_name(),
+            }
+        },
     )
 
     assert not result.errors

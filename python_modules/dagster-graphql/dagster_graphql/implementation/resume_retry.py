@@ -20,16 +20,29 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
 
     parent_run = instance.get_run_by_id(parent_run_id)
     parent_run_logs = instance.all_logs(parent_run_id)
-    steps_in_parent_run_logs = set(
-        record.dagster_event.step_key
-        for record in parent_run_logs
-        if record.dagster_event and record.dagster_event.step_key
-    )
-    failed_step_keys = set(
-        record.dagster_event.step_key
-        for record in parent_run_logs
-        if record.dagster_event_type == DagsterEventType.STEP_FAILURE
-    )
+    all_steps_in_parent_run_logs = set([])
+    failed_steps_in_parent_run_logs = set([])
+    successful_steps_in_parent_run_logs = set([])
+    interrupted_steps_in_parent_run_logs = set([])
+    skipped_steps_in_parent_run_logs = set([])
+
+    for record in parent_run_logs:
+        if record.dagster_event and record.dagster_event.step_key:
+            all_steps_in_parent_run_logs.add(record.dagster_event.step_key)
+            if record.dagster_event_type == DagsterEventType.STEP_FAILURE:
+                failed_steps_in_parent_run_logs.add(record.dagster_event.step_key)
+            if record.dagster_event_type == DagsterEventType.STEP_SUCCESS:
+                successful_steps_in_parent_run_logs.add(record.dagster_event.step_key)
+            if record.dagster_event_type == DagsterEventType.STEP_SKIPPED:
+                skipped_steps_in_parent_run_logs.add(record.dagster_event.step_key)
+
+    for step_key in all_steps_in_parent_run_logs:
+        if (
+            step_key not in failed_steps_in_parent_run_logs
+            and step_key not in successful_steps_in_parent_run_logs
+            and step_key not in skipped_steps_in_parent_run_logs
+        ):
+            interrupted_steps_in_parent_run_logs.add(step_key)
 
     to_retry = []
 
@@ -38,13 +51,14 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
         if parent_run.step_keys_to_execute and step.key not in parent_run.step_keys_to_execute:
             continue
 
-        if step.key in failed_step_keys:
-            to_retry.append(step.key)
-            continue
-
-        # include the steps that did not run
-        # e.g. when the run was terminated through the dagit "terminate" button
-        if step.key not in steps_in_parent_run_logs:
+        if (
+            step.key in failed_steps_in_parent_run_logs
+            # Interrupted steps can occur when graceful cleanup from a step failure fails to run,
+            # and a step failure event is not generated
+            or step.key in interrupted_steps_in_parent_run_logs
+            # Missing steps did not execute, e.g. when a run was terminated
+            or step.key not in all_steps_in_parent_run_logs
+        ):
             to_retry.append(step.key)
             continue
 
@@ -69,7 +83,7 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
             graphene_info=graphene_info,
             external_pipeline=external_pipeline,
             mode=execution_params.mode,
-            environment_dict=execution_params.environment_dict,
+            run_config=execution_params.run_config,
             step_keys_to_execute=None,
         )
         return get_retry_steps_from_execution_plan(

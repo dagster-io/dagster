@@ -4,7 +4,11 @@ import gql from "graphql-tag";
 import { Colors } from "@blueprintjs/core";
 import { useQuery } from "react-apollo";
 import Loading from "../Loading";
-import { AssetQuery_assetOrError_Asset_assetMaterializations } from "./types/AssetQuery";
+import { AssetsRootQuery_assetsOrError_AssetConnection_nodes_key } from "./types/AssetsRootQuery";
+import {
+  AssetQuery_assetOrError_Asset_graphMaterializations,
+  AssetQuery_assetOrError_Asset_lastMaterializations
+} from "./types/AssetQuery";
 import {
   Header,
   Legend,
@@ -19,11 +23,13 @@ import { PipelineRunStatus } from "../types/globalTypes";
 import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
 
-type AssetMaterialization = AssetQuery_assetOrError_Asset_assetMaterializations;
+type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
+type GraphMaterialization = AssetQuery_assetOrError_Asset_graphMaterializations;
+type LastMaterialization = AssetQuery_assetOrError_Asset_lastMaterializations;
 
-export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
+export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
   const queryResult = useQuery(ASSET_QUERY, {
-    variables: { assetKey }
+    variables: { assetKey: { path: assetKey.path } }
   });
   return (
     <Loading queryResult={queryResult}>
@@ -31,18 +37,18 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
         if (assetOrError.__typename !== "Asset") {
           return null;
         }
-        if (!assetOrError.assetMaterializations.length) {
+        if (!assetOrError.lastMaterializations.length) {
           return (
             <Container>
-              <TitleHeader>Asset: {assetKey}</TitleHeader>
+              <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
             </Container>
           );
         }
 
-        const lastMaterialization = assetOrError.assetMaterializations[0];
+        const lastMaterialization = assetOrError.lastMaterializations[0];
         return (
           <Container>
-            <TitleHeader>Asset: {assetKey}</TitleHeader>
+            <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
             <AssetLastMaterialization
               assetMaterialization={lastMaterialization}
             />
@@ -52,7 +58,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
             </div>
             <AssetValueGraph
               assetKey={assetKey}
-              values={assetOrError.assetMaterializations}
+              values={assetOrError.graphMaterializations}
             />
           </Container>
         );
@@ -64,7 +70,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
 const AssetLastMaterialization = ({
   assetMaterialization
 }: {
-  assetMaterialization: AssetMaterialization;
+  assetMaterialization: LastMaterialization;
 }) => {
   const run =
     assetMaterialization.runOrError.__typename === "PipelineRun"
@@ -100,7 +106,7 @@ const AssetLastMaterialization = ({
           </RowColumn>
           <RowColumn style={{ maxWidth: 250 }}>
             {run ? (
-              <a href={`/runs/${run.pipeline.name}/${run.runId}`}>
+              <a href={`/runs/${run.pipelineName}/${run.runId}`}>
                 {titleForRun(run)}
               </a>
             ) : (
@@ -131,9 +137,9 @@ const AssetLastMaterialization = ({
 
 const AssetValueGraph = (props: any) => {
   const dataByLabel = {};
-  props.values.forEach((assetMaterialization: AssetMaterialization) => {
-    const timestamp = assetMaterialization.materializationEvent.timestamp;
-    assetMaterialization.materializationEvent.materialization.metadataEntries.forEach(
+  props.values.forEach((graphMaterialization: GraphMaterialization) => {
+    const timestamp = graphMaterialization.materializationEvent.timestamp;
+    graphMaterialization.materializationEvent.materialization.metadataEntries.forEach(
       entry => {
         if (entry.__typename === "EventFloatMetadataEntry") {
           dataByLabel[entry.label] = [
@@ -158,7 +164,7 @@ const AssetValueGraph = (props: any) => {
     }))
   };
   const options = {
-    title: { display: true, text: `${props.assetKey} values` },
+    title: { display: true, text: `${props.assetKey.path.join(".")} values` },
     scales: {
       yAxes: [{ scaleLabel: { display: true, labelString: "Value" } }],
       xAxes: [
@@ -194,18 +200,28 @@ const Container = styled.div`
 `;
 
 export const ASSET_QUERY = gql`
-  query AssetQuery($assetKey: String!) {
+  query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
-        key
-        assetMaterializations {
+        key {
+          path
+        }
+        graphMaterializations: assetMaterializations {
+          materializationEvent {
+            timestamp
+            materialization {
+              metadataEntries {
+                ...MetadataEntryFragment
+              }
+            }
+          }
+        }
+        lastMaterializations: assetMaterializations(limit: 1) {
           runOrError {
             ... on PipelineRun {
               runId
               status
-              pipeline {
-                name
-              }
+              pipelineName
             }
           }
           materializationEvent {
@@ -220,6 +236,7 @@ export const ASSET_QUERY = gql`
             }
           }
         }
+
         runs(limit: 10) {
           ...RunTableRunFragment
         }

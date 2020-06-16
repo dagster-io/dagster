@@ -30,8 +30,8 @@ class StepExecutionContext(object):
         return self._system_step_execution_context.run_id
 
     @property
-    def environment_dict(self):
-        return self._system_step_execution_context.environment_dict
+    def run_config(self):
+        return self._system_step_execution_context.run_config
 
     @property
     def pipeline_def(self):

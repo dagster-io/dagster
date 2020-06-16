@@ -1,0 +1,111 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Making Your Pipelines Testable and Maintainable | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+# Making Your Pipelines Testable and Maintainable
+
+The reality of building data applications is that they are notoriously difficult to test and are
+therefore typically un- or under-tested. Besides, pipeline authors generally do not have control
+over their input data, which led to an even more unfortunate reality&mdash;even if data pipelines are
+covered by sophisticated tests, pipeline breakage could still happen.
+
+Creating testable and verifiable data applications is one of the focuses of Dagster. We believe
+ensuring data quality is critical for managing the complexity of data systems. This section will
+talk about how you can build maintainable and testable data applications with Dagster.
+
+> - You can find the tutorial code on
+>   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e04_quality/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at
+>   `examples/dagster_examples/intro_tutorial/basics/e04_quality/`
+
+## Testing solids and pipelines
+
+Let's go back to our first solid and pipeline [`hello_cereal.py`](#execute-our-first-pipeline).
+
+It wouldn't be complete without some tests to ensure they're working as expected. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />
+to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" />
+to test our solid in isolation.
+
+These functions synchronously execute a pipeline or solid and return results objects (the <PyObject
+module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster"
+object="PipelineExecutionResult" />) whose methods let us investigate, in detail, the success or
+failure of execution, the outputs produced by solids, and (as we'll see later) other events
+associated with execution.
+
+```python literalinclude showLines startLine=32 caption=hello_cereal.py
+file:/dagster_examples/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
+lines:32-43
+```
+
+Now you can use pytest, or your test runner of choice, to run unit tests as you develop your data
+applications.
+
+```bash
+pytest hello_cereal_with_tests.py
+```
+
+**Note:** by convention, pytest tests are typically kept in separate files prefixed with `test_`.
+We've put them in the same file just to simplify the tutorial code.
+
+Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't
+admit this kind of API, which is intended to enable local tests like this.
+
+Dagster is written to make testing easy in a domain where it has historically been very difficult.
+Throughout the rest of this tutorial, we'll explore the writing of unit tests for each piece of the
+framework as we learn about it. You can learn more about Testing in Dagster by reading [Testing
+Guide](/docs/learn/guides/testing/testing).
+
+<br />
+
+## Type-checking Inputs with Python Type Annotations
+
+**Note:** _this section requires Python 3._
+
+If you zoom in on the **Definition** tab in Dagit and click on one of our pipeline solids, you'll
+see that its inputs and outputs are annotated with types.
+
+![inputs_figure_four.png](/assets/images/tutorial/inputs_figure_four.png)
+
+By default, every untyped value in Dagster is assigned the catch-all type <PyObject module="dagster" object="Any" />.
+This means that any errors in the config won't be surfaced until the pipeline
+is executed.
+
+For example, when we execute our pipeline with this config, it'll fail at runtime:
+
+```YAML literalinclude caption=inputs_env_bad.yaml
+file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
+```
+
+When we enter this mistyped config in Dagit and execute our pipeline, you'll see that an error
+appears in the structured log viewer:
+
+![inputs_figure_five.png](/assets/images/tutorial/inputs_figure_five.png)
+
+Click on "View Full Message" or on the red dot on the execution step that failed and a detailed
+stack trace will pop up.
+
+![inputs_figure_six.png](/assets/images/tutorial/inputs_figure_six.png)
+
+It would be better if we could catch this error earlier, when we specify the config. So let's make
+the inputs typed.
+
+A user can apply types to inputs and outputs using Python 3's type annotation syntax. In this case,
+we just want to type the input as the built-in `str`.
+
+```python literalinclude showLines startLine=7 emphasize-lines=2 caption=inputs_typed.py
+file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
+lines:7-15
+```
+
+By using typed input instead we can catch this error prior to execution, and reduce the surface area
+we need to test and guard against in user code.
+
+![inputs_figure_seven.png](/assets/images/tutorial/inputs_figure_seven.png)
+
+<br />

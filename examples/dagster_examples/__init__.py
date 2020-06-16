@@ -1,3 +1,6 @@
+from dagster import repository
+
+
 def get_toys_pipelines():
     from dagster_examples.toys.error_monster import error_monster
     from dagster_examples.toys.sleepy import sleepy_pipeline
@@ -45,16 +48,15 @@ def get_event_pipelines():
 
 
 def get_pyspark_pipelines():
-    from dagster_examples.pyspark_pagerank.pyspark_pagerank_pipeline import pyspark_pagerank
     from dagster_examples.simple_pyspark.pipelines import simple_pyspark_sfo_weather_pipeline
 
-    return [pyspark_pagerank, simple_pyspark_sfo_weather_pipeline]
+    return [simple_pyspark_sfo_weather_pipeline]
 
 
-def get_jaffle_pipelines():
-    from dagster_examples.jaffle_dbt.jaffle import jaffle_pipeline
+def get_lakehouse_pipelines():
+    from dagster_examples.simple_lakehouse.pipelines import simple_lakehouse_pipeline
 
-    return [jaffle_pipeline]
+    return [simple_lakehouse_pipeline]
 
 
 def get_bay_bikes_pipelines():
@@ -66,22 +68,24 @@ def get_bay_bikes_pipelines():
     return [generate_training_set_and_train_model, daily_weather_pipeline]
 
 
-def define_demo_repo():
+def define_internal_dagit_repository():
+
     # Lazy import here to prevent deps issues
-    from dagster import RepositoryDefinition
-    from .schedules import get_bay_bikes_schedules, get_toys_schedules
+    @repository
+    def internal_dagit_repository():
+        from .schedules import get_bay_bikes_schedules, get_toys_schedules
 
-    pipeline_defs = (
-        get_airline_demo_pipelines()
-        + get_bay_bikes_pipelines()
-        + get_event_pipelines()
-        + get_jaffle_pipelines()
-        + get_pyspark_pipelines()
-        + get_toys_pipelines()
-    )
+        pipeline_defs = (
+            get_airline_demo_pipelines()
+            + get_bay_bikes_pipelines()
+            + get_event_pipelines()
+            + get_pyspark_pipelines()
+            + get_lakehouse_pipelines()
+            + get_toys_pipelines()
+        )
 
-    return RepositoryDefinition(
-        name='internal-dagit-repository',
-        pipeline_defs=pipeline_defs,
-        schedule_defs=get_bay_bikes_schedules() + get_toys_schedules(),
-    )
+        schedule_defs = get_bay_bikes_schedules() + get_toys_schedules()
+
+        return pipeline_defs + schedule_defs
+
+    return internal_dagit_repository

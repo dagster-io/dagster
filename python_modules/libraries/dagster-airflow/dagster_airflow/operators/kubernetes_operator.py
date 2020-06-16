@@ -39,15 +39,17 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         self.pipeline_name = operator_parameters.pipeline_name
         self.pipeline_snapshot = operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = operator_parameters.execution_plan_snapshot
+        self.parent_pipeline_snapshot = operator_parameters.parent_pipeline_snapshot
         kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
             pipeline_name=self.pipeline_name, task_id=operator_parameters.task_id
         ).replace(
             '_', '-'  # underscores are not permissible DNS names
         )
 
-        self.environment_dict = operator_parameters.environment_dict
+        self.run_config = operator_parameters.run_config
         self.mode = operator_parameters.mode
         self.step_keys = operator_parameters.step_keys
+        self.recon_repo = operator_parameters.recon_repo
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
@@ -93,7 +95,12 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
     @property
     def query(self):
         variables = construct_variables(
-            self.mode, self.environment_dict, self.pipeline_name, self.run_id, self.step_keys,
+            self.recon_repo,
+            self.mode,
+            self.run_config,
+            self.pipeline_name,
+            self.run_id,
+            self.step_keys,
         )
         variables = add_airflow_tags(variables, self.airflow_ts)
 
@@ -173,15 +180,16 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     run = self.instance.register_managed_run(
                         pipeline_name=self.pipeline_name,
                         run_id=self.run_id,
-                        environment_dict=self.environment_dict,
+                        run_config=self.run_config,
                         mode=self.mode,
-                        solid_subset=None,
+                        solids_to_execute=None,
                         step_keys_to_execute=None,
                         tags=None,
                         root_run_id=None,
                         parent_run_id=None,
                         pipeline_snapshot=self.pipeline_snapshot,
                         execution_plan_snapshot=self.execution_plan_snapshot,
+                        parent_pipeline_snapshot=self.parent_pipeline_snapshot,
                     )
 
                 # we won't use the "result", which is the pod's xcom json file

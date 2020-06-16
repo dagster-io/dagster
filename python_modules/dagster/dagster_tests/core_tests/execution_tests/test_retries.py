@@ -32,7 +32,7 @@ executors = pytest.mark.parametrize(
 
 
 def define_run_retry_pipeline():
-    @solid(config={'fail': bool})
+    @solid(config_schema={'fail': bool})
     def can_fail(context, _start_fail):
         if context.solid_config['fail']:
             raise Exception('blah')
@@ -73,16 +73,14 @@ def test_retries(environment):
     fails = dict(environment)
     fails['solids'] = {'can_fail': {'config': {'fail': True}}}
 
-    result = execute_pipeline(
-        pipe, environment_dict=fails, instance=instance, raise_on_error=False,
-    )
+    result = execute_pipeline(pipe, run_config=fails, instance=instance, raise_on_error=False,)
 
     assert not result.success
 
     passes = dict(environment)
     passes['solids'] = {'can_fail': {'config': {'fail': False}}}
 
-    second_result = execute_pipeline(pipe, environment_dict=passes, instance=instance)
+    second_result = execute_pipeline(pipe, run_config=passes, instance=instance)
 
     assert second_result.success
     downstream_of_failed = second_result.result_for_solid('downstream_of_failed').output_value()
@@ -96,7 +94,7 @@ def test_retries(environment):
 
 
 def define_step_retry_pipeline():
-    @solid(config=str)
+    @solid(config_schema=str)
     def fail_first_time(context):
         file = os.path.join(context.solid_config, 'i_threw_up')
         if os.path.exists(file):
@@ -119,7 +117,7 @@ def test_step_retry(environment):
         env['solids'] = {'fail_first_time': {'config': tempdir}}
         result = execute_pipeline(
             reconstructable(define_step_retry_pipeline),
-            environment_dict=env,
+            run_config=env,
             instance=DagsterInstance.local_temp(),
         )
     assert result.success
@@ -154,7 +152,7 @@ def define_retry_limit_pipeline():
 def test_step_retry_limit(environment):
     result = execute_pipeline(
         reconstructable(define_retry_limit_pipeline),
-        environment_dict=environment,
+        run_config=environment,
         raise_on_error=False,
         instance=DagsterInstance.local_temp(),
     )
@@ -200,7 +198,7 @@ DELAY = 2
 
 
 def define_retry_wait_fixed_pipeline():
-    @solid(config=str)
+    @solid(config_schema=str)
     def fail_first_and_wait(context):
         file = os.path.join(context.solid_config, 'i_threw_up')
         if os.path.exists(file):
@@ -224,7 +222,7 @@ def test_step_retry_fixed_wait(environment):
 
         event_iter = execute_pipeline_iterator(
             reconstructable(define_retry_wait_fixed_pipeline),
-            environment_dict=env,
+            run_config=env,
             instance=DagsterInstance.local_temp(),
         )
         start_wait = None

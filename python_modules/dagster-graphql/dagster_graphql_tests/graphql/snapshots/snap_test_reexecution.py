@@ -6,158 +6,80 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_full_pipeline_reexecution_fs_storage 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_instance_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }
 
-snapshots['test_full_pipeline_reexecution_in_memory_storage 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_sync_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }
 
-snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_in_process_start] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_cli_api_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }
 
-snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_in_process_start] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[in_memory_instance_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }
 
-snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_instance_with_sync_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_sync_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }
 
-snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[in_memory_instance_with_sync_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_cli_api_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
         'run': {
+            'mode': 'default',
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_sync_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_cli_api_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_sync_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_cli_api_hijack] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_in_process_start] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
-        }
-    }
-}
-
-snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_subprocess_start] 1'] = {
-    'startPipelineExecution': {
-        '__typename': 'StartPipelineRunSuccess',
-        'run': {
-            'pipeline': {
-                'name': 'csv_hello_world'
-            },
-            'tags': [
-            ]
+            'status': 'NOT_STARTED'
         }
     }
 }

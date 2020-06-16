@@ -8,69 +8,64 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
     '''
 
     @abc.abstractmethod
-    def all_schedules(self, repository_name=None):
-        '''Return all schedules present in the storage
+    def all_stored_schedule_state(self, repository_origin_id=None):
+        '''Return all ScheduleStates present in storage
 
         Args:
-            repository_name (str): The repository the schedule belongs to
+            repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
         '''
 
     @abc.abstractmethod
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        '''Return the unique schedule with the given name
+    def get_schedule_state(self, schedule_origin_id):
+        '''Return the unique schedule with the given id
 
         Args:
-            repository_name (str): The repository the schedule belongs to
-            schedule_name (str): The name of the schedule
+            schedule_origin_id (str): The unique schedule identifier
         '''
 
     @abc.abstractmethod
-    def add_schedule(self, repository_name, schedule):
+    def add_schedule_state(self, schedule):
         '''Add a schedule to storage.
 
         Args:
-            repository_name (str): The repository the schedule belongs to
-            schedule (Schedule): The schedule to add
+            schedule (ScheduleState): The schedule to add
         '''
 
     @abc.abstractmethod
-    def update_schedule(self, repository_name, schedule):
+    def update_schedule_state(self, schedule):
         '''Update a schedule already in storage, using schedule name to match schedules.
 
         Args:
             repository_name (str): The repository the schedule belongs to
-            schedule (Schedule): The schedule to update
+            schedule (ScheduleState): The schedule to update
         '''
 
     @abc.abstractmethod
-    def delete_schedule(self, repository_name, schedule):
+    def delete_schedule_state(self, schedule_origin_id):
         '''Delete a schedule from storage.
 
         Args:
-            repository_name (str): The repository the schedule belongs to
-            schedule (Schedule): The schedule to delete
+            schedule_origin_id (str): The id of the ExternalSchedule target to delete
         '''
 
     @abc.abstractmethod
-    def get_schedule_ticks_by_schedule(self, repository_name, schedule_name):
+    def get_schedule_ticks(self, schedule_origin_id):
         '''Get all schedule ticks for a given schedule
 
         Args:
-            repository_name (str): The repository the schedule belongs to
-            schedule_name (str): The name of the schedule
+            schedule_origin_id (str): The id of the ExternalSchedule target
         '''
 
     @abc.abstractmethod
-    def get_schedule_tick_stats_by_schedule(self, repository_name, schedule_name):
+    def get_schedule_tick_stats(self, schedule_origin_id):
         '''Get summary statistics for schedule ticks for a given schedule
 
         Args:
-            repository_name (str): The repository the schedule belongs to
-            schedule_name (str): The name of the schedule
+            schedule_origin_id (str): The id of the ExternalSchedule target
         '''
 
     @abc.abstractmethod
-    def create_schedule_tick(self, repository_name, schedule_tick_data):
+    def create_schedule_tick(self, schedule_tick_data):
         '''Add a schedule tick to storage.
 
         Args:
@@ -79,7 +74,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def update_schedule_tick(self, repository_name, tick):
+    def update_schedule_tick(self, tick):
         '''Update a schedule tick already in storage.
 
         Args:
@@ -90,4 +85,9 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def wipe(self):
         '''Delete all schedules from storage
+        '''
+
+    @abc.abstractmethod
+    def upgrade(self):
+        '''Perform any needed migrations
         '''

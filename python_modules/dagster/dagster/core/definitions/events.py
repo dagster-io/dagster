@@ -1,8 +1,10 @@
 import os
+import re
 from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import whitelist_for_serdes
 
 from .utils import DEFAULT_OUTPUT
@@ -10,6 +12,88 @@ from .utils import DEFAULT_OUTPUT
 
 def last_file_comp(path):
     return os.path.basename(os.path.normpath(path))
+
+
+ASSET_KEY_REGEX = re.compile('^[a-zA-Z0-9_]+$')  # alphanumeric, _, -, .
+ASSET_KEY_SPLIT_REGEX = re.compile('[^a-zA-Z0-9_]')
+ASSET_KEY_STRUCTURED_DELIMITER = '.'
+
+
+def validate_asset_key_string(s):
+    if not s or not ASSET_KEY_REGEX.match(s):
+        raise DagsterInvalidAssetKey()
+
+    return s
+
+
+def parse_asset_key_string(s):
+    return list(filter(lambda x: x, re.split(ASSET_KEY_SPLIT_REGEX, s)))
+
+
+def validate_structured_asset_key(l):
+    if len(l) == 0:
+        raise DagsterInvalidAssetKey()
+
+    for s in l:
+        validate_asset_key_string(s)
+
+    return l
+
+
+@whitelist_for_serdes
+class AssetKey(namedtuple('_AssetKey', 'path')):
+    ''' Object representing the structure of an asset key.  Takes in a sanitized string or list of
+    strings.
+
+    Example usage:
+        AssetKey('flat_asset_key')
+        AssetKey(['parent', 'child', 'grandchild'])
+
+    Args:
+        asset_key_str_or_list (str|str[]): String or list of strings.  A list of strings represent
+            the hierarchical structure of the asset_key.
+    '''
+
+    def __new__(cls, path=None):
+        if check.is_str(path):
+            path = [validate_asset_key_string(path)]
+        else:
+            path = validate_structured_asset_key(
+                check.list_param(path, 'asset_key_str_or_list', of_type=str)
+            )
+
+        return super(AssetKey, cls).__new__(cls, path=path)
+
+    def __str__(self):
+        return 'AssetKey({})'.format(self.to_string())
+
+    def __repr__(self):
+        return 'AssetKey({})'.format(self.to_string())
+
+    def __hash__(self):
+        return hash(tuple(self.path))
+
+    def __eq__(self, other):
+        if not isinstance(other, AssetKey):
+            return False
+        return self.to_string() == other.to_string()
+
+    def to_string(self):
+        if not self.path:
+            return None
+        return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+
+    @staticmethod
+    def from_db_string(asset_key_string):
+        if not asset_key_string:
+            return None
+        return AssetKey(parse_asset_key_string(asset_key_string))
+
+    @staticmethod
+    def from_graphql_input(asset_key):
+        if asset_key and asset_key.get('path'):
+            return AssetKey(asset_key.get('path'))
+        return None
 
 
 @whitelist_for_serdes
@@ -254,8 +338,8 @@ class Materialization(
         description (Optional[str]): A longer human-radable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
-        asset_key (Optional[str]): An optional key string to identify the materialized asset across
-            pipeline runs
+        asset_key (Optional[str|AssetKey]): An optional parameter to identify the materialized asset
+            across pipeline runs
     '''
 
     @staticmethod
@@ -273,7 +357,20 @@ class Materialization(
             asset_key=asset_key,
         )
 
-    def __new__(cls, label, description=None, metadata_entries=None, asset_key=None):
+    def __new__(cls, label=None, description=None, metadata_entries=None, asset_key=None):
+        if asset_key and check.is_str(asset_key):
+            asset_key = AssetKey(parse_asset_key_string(asset_key))
+        else:
+            check.opt_inst_param(asset_key, 'asset_key', AssetKey)
+
+        if not label:
+            check.param_invariant(
+                asset_key and asset_key.path,
+                'label',
+                'Either label or asset_key with a path must be provided',
+            )
+            label = asset_key.to_string()
+
         return super(Materialization, cls).__new__(
             cls,
             label=check.str_param(label, 'label'),
@@ -281,7 +378,7 @@ class Materialization(
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
             ),
-            asset_key=check.opt_str_param(asset_key, 'asset_key'),
+            asset_key=asset_key,
         )
 
 

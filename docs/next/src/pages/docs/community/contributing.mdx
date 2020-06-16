@@ -21,10 +21,10 @@ up a local development environment.
     Homebrew:
 
 ```bash
-$ brew install pyenv pyenv-virtualenv
-$ pyenv install 3.7.4
-$ pyenv virtualenv 3.7.4 dagster37
-$ pyenv activate dagster37
+brew install pyenv pyenv-virtualenv
+pyenv install 3.7.4
+pyenv virtualenv 3.7.4 dagster37
+pyenv activate dagster37
 ```
 
 3.  Ensure that you have node installed by running _node -v_, and that you have
@@ -32,13 +32,13 @@ $ pyenv activate dagster37
     you can install yarn with Homebrew:
 
 ```bash
-$ brew install yarn
+brew install yarn
 ```
 
 4.  Clone the dagster repository to the destination of your choice:
 
 ```bash
-$ git clone git@github.com:dagster-io/dagster.git
+git clone git@github.com:dagster-io/dagster.git
 ```
 
 5.  Run `make dev_install` at the root of the repository. This sets up a
@@ -47,13 +47,13 @@ $ git clone git@github.com:dagster-io/dagster.git
     will take a few minutes.
 
 ```bash
-$ make dev_install
+make dev_install
 ```
 
 6.  Run some tests manually to make sure things are working:
 
 ```bash
-$ python -m pytest python_modules/dagster/dagster_tests
+python -m pytest python_modules/dagster/dagster_tests
 ```
 
 ## Developing Dagster
@@ -66,7 +66,7 @@ Some notes on developing in Dagster:
   any of the Python packages:
 
 ```bash
-$ PYENV=py27 tox
+PYENV=py27 tox
 ```
 
 - **Black/Pylint**: We use [black](https://github.com/python/black) to
@@ -88,23 +88,23 @@ the webapp, from any directory that contains a repository.yaml file. For
 example:
 
 ```bash
-$ cd dagster/examples/dagster_examples/intro_tutorial
-$ dagit -p 3333
+cd dagster/examples/dagster_examples/intro_tutorial
+dagit -p 3333
 ```
 
 Keep this running. Then, in another terminal, run the local development
 (autoreloading, etc.) version of the webapp:
 
 ```bash
-$ cd dagster/js_modules/dagit
-$ make dev_webapp
+cd dagster/js_modules/dagit
+make dev_webapp
 ```
 
 To run JavaScript tests for the dagit frontend, you can run:
 
 ```bash
-$ cd dagster/js_modules/dagit
-$ yarn test
+cd dagster/js_modules/dagit
+yarn test
 ```
 
 In webapp development it's handy to run `yarn run jest --watch` to have
@@ -124,8 +124,8 @@ Running a live html version of the docs can expedite documentation
 development:
 
 ```bash
-$ cd docs
-$ make livehtml
+cd docs
+make livehtml
 ```
 
 Our documentation employs a combination of Markdown and

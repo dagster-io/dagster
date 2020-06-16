@@ -23,8 +23,7 @@ def test_topological_sort():
 def test_create_execution_plan_with_bad_inputs():
     with pytest.raises(DagsterInvalidConfigError):
         create_execution_plan(
-            define_diamond_pipeline(),
-            environment_dict={'solids': {'add_three': {'inputs': {'num': 3}}}},
+            define_diamond_pipeline(), run_config={'solids': {'add_three': {'inputs': {'num': 3}}}},
         )
 
 

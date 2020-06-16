@@ -1,6 +1,8 @@
 import os
 from contextlib import contextmanager
 
+import boto3
+
 from dagster import Field, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -11,8 +13,6 @@ from dagster.core.storage.compute_log_manager import (
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
-
-from .utils import create_s3_session
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
@@ -61,9 +61,9 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         endpoint_url=None,
     ):
         _verify = False if not verify else verify_cert_path
-        self._s3_session = create_s3_session(
-            use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
-        )
+        self._s3_session = boto3.resource(
+            's3', use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
+        ).meta.client
         self._s3_bucket = check.str_param(bucket, 'bucket')
         self._s3_prefix = check.str_param(prefix, 'prefix')
         self._download_urls = {}

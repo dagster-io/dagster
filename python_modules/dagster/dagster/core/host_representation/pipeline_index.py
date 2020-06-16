@@ -7,10 +7,24 @@ from dagster.core.snap import (
 
 
 class PipelineIndex:
-    def __init__(self, pipeline_snapshot):
+    def __init__(self, pipeline_snapshot, parent_pipeline_snapshot):
         self.pipeline_snapshot = check.inst_param(
             pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
         )
+        self.parent_pipeline_snapshot = check.opt_inst_param(
+            parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot
+        )
+
+        if self.pipeline_snapshot.lineage_snapshot:
+            check.invariant(
+                self.parent_pipeline_snapshot is not None,
+                'Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot',
+            )
+            parent_id = create_pipeline_snapshot_id(self.parent_pipeline_snapshot)
+            check.invariant(
+                pipeline_snapshot.lineage_snapshot.parent_snapshot_id == parent_id,
+                'Mismatch in IDs between pipeline_snapshot lineage and parent_pipeline_snapshot',
+            )
 
         self._solid_defs_snaps_index = {
             sd.name: sd

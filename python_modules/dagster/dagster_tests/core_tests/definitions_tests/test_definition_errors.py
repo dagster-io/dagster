@@ -135,7 +135,7 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config='nope')
+        @solid(config_schema='nope')
         def _a_solid(_context):
             pass
 
@@ -146,7 +146,7 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
 def test_pass_unrelated_type_to_field_error_resource_definition():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
-        ResourceDefinition(resource_fn=lambda: None, config='wut')
+        ResourceDefinition(resource_fn=lambda: None, config_schema='wut')
 
     assert str(exc_info.value).startswith(
         "Error defining config. Original value passed: 'wut'. 'wut' cannot be resolved."
@@ -155,7 +155,9 @@ def test_pass_unrelated_type_to_field_error_resource_definition():
 
 def test_pass_unrelated_type_in_nested_field_error_resource_definition():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
-        ResourceDefinition(resource_fn=lambda: None, config={'field': {'nested_field': 'wut'}})
+        ResourceDefinition(
+            resource_fn=lambda: None, config_schema={'field': {'nested_field': 'wut'}}
+        )
     assert str(exc_info.value).startswith('Error')
 
     assert str(exc_info.value).startswith(

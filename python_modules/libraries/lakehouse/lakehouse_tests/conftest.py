@@ -1,44 +1,77 @@
-import os
-
 import pytest
-from dagster_pyspark import pyspark_resource
-from lakehouse import Lakehouse, construct_lakehouse_pipeline
+from lakehouse import Lakehouse, TypeStoragePolicy
 
-from dagster import Materialization, check, execute_pipeline
-
-
-class LocalOnDiskSparkCsvLakehouse(Lakehouse):
-    def __init__(self, root_dir):
-        self.lakehouse_path = check.str_param(root_dir, 'root_dir')
-
-    def _path_for_table(self, table_type):
-        return os.path.join(self.lakehouse_path, table_type.name)
-
-    def hydrate(self, context, table_type, _table_metadata, _table_handle, _dest_metadata):
-        path = self._path_for_table(table_type)
-        return context.resources.spark.spark_session.read.csv(path, header=True, inferSchema=True)
-
-    def materialize(self, _context, table_type, _table_metadata, value):
-        path = self._path_for_table(table_type)
-        value.write.csv(path=path, header=True, mode='overwrite')
-        return Materialization.file(path), None
+from dagster import ModeDefinition, PresetDefinition, resource
 
 
-@pytest.fixture(scope='session')
-def local_on_disk_spark_lakehouse():
-    return LocalOnDiskSparkCsvLakehouse
+@pytest.fixture
+def basic_lakehouse_and_storages():
+    class DictStorage:
+        def __init__(self):
+            self.the_dict = {}
+
+    storage1 = DictStorage()
+    storage2 = DictStorage()
+
+    @resource
+    def some_storage(_):
+        return storage1
+
+    @resource
+    def some_other_storage(_):
+        return storage2
+
+    dev_mode = ModeDefinition(
+        name='dev', resource_defs={'storage1': some_storage, 'storage2': some_other_storage,},
+    )
+    dev_preset = PresetDefinition(name='dev', mode='dev', run_config={}, solid_selection=None,)
+
+    class IntSomeStoragePolicy(TypeStoragePolicy):
+        @classmethod
+        def in_memory_type(cls):
+            return int
+
+        @classmethod
+        def storage_definition(cls):
+            return some_storage
+
+        @classmethod
+        def save(cls, obj, storage, path, _resources):
+            storage.the_dict[path] = obj
+
+        @classmethod
+        def load(cls, storage, path, _resources):
+            return storage.the_dict[path]
+
+    class IntSomeOtherStoragePolicy(TypeStoragePolicy):
+        @classmethod
+        def in_memory_type(cls):
+            return int
+
+        @classmethod
+        def storage_definition(cls):
+            return some_other_storage
+
+        @classmethod
+        def save(cls, obj, storage, path, _resources):
+            storage.the_dict[path] = obj
+
+        @classmethod
+        def load(cls, storage, path, _resources):
+            return storage.the_dict[path]
+
+    return (
+        Lakehouse(
+            mode_defs=[dev_mode],
+            preset_defs=[dev_preset],
+            type_storage_policies=[IntSomeStoragePolicy, IntSomeOtherStoragePolicy],
+        ),
+        storage1,
+        storage2,
+    )
 
 
-@pytest.fixture(scope='session')
-def execute_spark_lakehouse_build():
-    def _execute_spark_lakehouse_build(tables, lakehouse, environment_dict=None):
-        return execute_pipeline(
-            construct_lakehouse_pipeline(
-                name='spark_lakehouse_pipeline',
-                lakehouse_tables=tables,
-                resources={'lakehouse': lakehouse, 'spark': pyspark_resource},
-            ),
-            environment_dict=environment_dict,
-        )
-
-    return _execute_spark_lakehouse_build
+@pytest.fixture
+def basic_lakehouse(basic_lakehouse_and_storages):  # pylint: disable=redefined-outer-name
+    lakehouse, _, _ = basic_lakehouse_and_storages
+    return lakehouse

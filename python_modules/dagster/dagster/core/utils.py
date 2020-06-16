@@ -30,6 +30,10 @@ def str_format_list(items):
     return '[{items}]'.format(items=', '.join(['\'{item}\''.format(item=item) for item in items]))
 
 
+def str_format_set(items):
+    return '[{items}]'.format(items=', '.join(['\'{item}\''.format(item=item) for item in items]))
+
+
 def check_dagster_package_version(library_name, library_version):
     if __version__ != library_version:
         message = 'Found version mismatch between `dagster` ({}) and `{}` ({})'.format(

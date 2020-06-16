@@ -1,120 +1,237 @@
 import * as React from "react";
 
-import { NonIdealState } from "@blueprintjs/core";
+import {
+  Callout,
+  Intent,
+  Code,
+  Card,
+  Colors,
+  Button,
+  Spinner
+} from "@blueprintjs/core";
 import {
   Header,
   Legend,
   LegendColumn,
   ScrollContainer
 } from "../ListComponents";
-import { Query, QueryResult } from "react-apollo";
+import { useQuery, useMutation } from "react-apollo";
 import {
   SchedulesRootQuery,
-  SchedulesRootQuery_scheduler_Scheduler_runningSchedules
+  SchedulesRootQuery_scheduler,
+  SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
+  SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
 } from "./types/SchedulesRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
+import PythonErrorInfo from "../PythonErrorInfo";
 
-import { ScheduleRow, ScheduleRowFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
+
+import { useRepositorySelector } from "../DagsterRepositoryContext";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
-export default class SchedulesRoot extends React.Component {
-  render() {
+const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
+  if (scheduler.__typename === "SchedulerNotDefinedError") {
     return (
-      <Query
-        query={SCHEDULES_ROOT_QUERY}
-        variables={{
-          limit: NUM_RUNS_TO_DISPLAY
-        }}
-        fetchPolicy="cache-and-network"
-        pollInterval={15 * 1000}
-        partialRefetch={true}
+      <Callout
+        icon="calendar"
+        intent={Intent.WARNING}
+        title="The current dagster instance does not have a scheduler configured."
+        style={{ marginBottom: 40 }}
       >
-        {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
-          <Loading queryResult={queryResult} allowStaleData={true}>
-            {result => {
-              const { scheduler } = result;
+        <p>
+          A scheduler must be configured on the instance to run schedules.
+          Therefore, the schedules below are not currently running. You can
+          configure a scheduler on the instance through the{" "}
+          <Code>dagster.yaml</Code> file in <Code>$DAGSTER_HOME</Code>
+        </p>
 
-              if (scheduler.__typename === "SchedulerNotDefinedError") {
-                return (
-                  <ScrollContainer>
-                    <div style={{ marginTop: 100 }}>
-                      <NonIdealState
-                        icon="calendar"
-                        title="Scheduler"
-                        description={
-                          <p>
-                            A scheduler must be configured to view schedules.
-                            You can configure a scheduler on your instance
-                            through <code>dagster.yaml</code>. See the{" "}
-                            <a href="https://docs.dagster.io/docs/tutorial/scheduler/">
-                              scheduler documentation
-                            </a>{" "}
-                            for more information.
-                          </p>
-                        }
-                      />
-                    </div>
-                  </ScrollContainer>
-                );
-              } else if (scheduler.__typename === "PythonError") {
-                return (
-                  <ScrollContainer>
-                    <div style={{ marginTop: 100 }}>
-                      <NonIdealState
-                        icon="error"
-                        title="PythonError"
-                        description={scheduler.message}
-                      />
-                    </div>
-                    <pre>{scheduler.stack}</pre>
-                  </ScrollContainer>
-                );
-              } else if (scheduler.runningSchedules.length === 0) {
-                return (
-                  <ScrollContainer>
-                    <div style={{ marginTop: 100 }}>
-                      <NonIdealState
-                        icon="calendar"
-                        title="Scheduler"
-                        description="No schedules to display."
-                      />
-                    </div>
-                  </ScrollContainer>
-                );
-              }
-
-              const sortedRunningSchedules = scheduler.runningSchedules.sort(
-                (a, b) =>
-                  a.scheduleDefinition.name.localeCompare(
-                    b.scheduleDefinition.name
-                  )
-              );
-
-              return (
-                <>
-                  <ScrollContainer>
-                    <ScheduleTable schedules={sortedRunningSchedules} />
-                  </ScrollContainer>
-                </>
-              );
-            }}
-          </Loading>
-        )}
-      </Query>
+        <p>
+          See the{" "}
+          <a href="https://docs.dagster.io/docs/deploying/instance#instance-configuration-yaml">
+            instance configuration documentation
+          </a>{" "}
+          for more information.
+        </p>
+      </Callout>
     );
+  } else if (scheduler.__typename === "PythonError") {
+    return <PythonErrorInfo error={scheduler} />;
   }
-}
+
+  return null;
+};
+
+const GetStaleReconcileSection: React.FunctionComponent<{
+  scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
+  scheduleStatesWithoutDefinitions: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
+}> = ({
+  scheduleDefinitionsWithoutState,
+  scheduleStatesWithoutDefinitions
+}) => {
+  const repositorySelector = useRepositorySelector();
+  const refetchQueries = [
+    {
+      query: SCHEDULES_ROOT_QUERY,
+      variables: {
+        repositorySelector: repositorySelector,
+        limit: NUM_RUNS_TO_DISPLAY
+      }
+    }
+  ];
+  const [
+    reconcileScheduleState,
+    { loading: reconcileInFlight }
+  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, { refetchQueries });
+
+  if (
+    scheduleDefinitionsWithoutState.length === 0 &&
+    scheduleStatesWithoutDefinitions.length === 0
+  ) {
+    return null;
+  }
+
+  if (reconcileInFlight) {
+    return <Spinner />;
+  }
+
+  return (
+    <Card style={{ backgroundColor: Colors.LIGHT_GRAY4 }}>
+      <Callout intent={Intent.WARNING}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <div>
+            <p>
+              There have been changes to the list of schedule definitions in
+              this repository since the last time the scheduler state had been
+              reconciled. For the dagster scheduler to run schedules, schedule
+              definitions need to be reconciled with the internal schedule
+              storage database.
+            </p>
+            <p>
+              To reconcile schedule state, run{" "}
+              <Code>dagster schedule reconcile</Code> or click{" "}
+              <Button
+                small={true}
+                intent={Intent.SUCCESS}
+                onClick={() =>
+                  reconcileScheduleState({ variables: { repositorySelector } })
+                }
+              >
+                Reconcile
+              </Button>
+            </p>
+          </div>
+        </div>
+      </Callout>
+      <ScheduleWithoutStateTable schedules={scheduleDefinitionsWithoutState} />
+      <ScheduleStatesWithoutDefinitionsTable
+        scheduleStates={scheduleStatesWithoutDefinitions}
+      />
+    </Card>
+  );
+};
+
+const getScheduleDefinitionsSection = (
+  scheduleDefinitions: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[]
+) => {
+  return <ScheduleTable schedules={scheduleDefinitions} />;
+};
+
+const SchedulesRoot: React.FunctionComponent = () => {
+  const repositorySelector = useRepositorySelector();
+
+  const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
+    variables: {
+      repositorySelector: repositorySelector,
+      limit: NUM_RUNS_TO_DISPLAY
+    },
+    fetchPolicy: "cache-and-network",
+    pollInterval: 50 * 1000,
+    partialRefetch: true
+  });
+
+  return (
+    <Loading queryResult={queryResult} allowStaleData={false}>
+      {result => {
+        const {
+          scheduler,
+          scheduleDefinitionsOrError,
+          scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError
+        } = result;
+        const schedulerSection = getSchedulerSection(scheduler);
+        let staleReconcileSection = null;
+        let scheduleDefinitionsSection = null;
+
+        if (scheduleDefinitionsOrError.__typename === "PythonError") {
+          scheduleDefinitionsSection = (
+            <PythonErrorInfo error={scheduleDefinitionsOrError} />
+          );
+        } else if (
+          scheduleDefinitionsOrError.__typename === "ScheduleDefinitions"
+        ) {
+          const scheduleDefinitions = scheduleDefinitionsOrError.results;
+          const scheduleDefinitionsWithState = scheduleDefinitions.filter(
+            s => s.scheduleState
+          );
+          const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(
+            s => !s.scheduleState
+          );
+
+          scheduleDefinitionsSection = getScheduleDefinitionsSection(
+            scheduleDefinitionsWithState
+          );
+
+          if (
+            scheduleStatesWithoutDefinitionsOrError.__typename ===
+            "ScheduleStates"
+          ) {
+            const scheduleStatesWithoutDefinitions =
+              scheduleStatesWithoutDefinitionsOrError.results;
+            staleReconcileSection = (
+              <GetStaleReconcileSection
+                scheduleDefinitionsWithoutState={
+                  scheduleDefinitionsWithoutState
+                }
+                scheduleStatesWithoutDefinitions={
+                  scheduleStatesWithoutDefinitions
+                }
+              />
+            );
+          }
+        }
+
+        return (
+          <ScrollContainer>
+            {schedulerSection}
+            {staleReconcileSection}
+            {scheduleDefinitionsSection}
+          </ScrollContainer>
+        );
+      }}
+    </Loading>
+  );
+};
 
 interface ScheduleTableProps {
-  schedules: SchedulesRootQuery_scheduler_Scheduler_runningSchedules[];
+  schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
+  if (props.schedules.length === 0) {
+    return null;
+  }
+
   return (
-    <div>
-      <Header>{`Schedule (${props.schedules.length})`}</Header>
+    <div style={{ marginTop: 30 }}>
+      <Header>{`Schedules (${props.schedules.length})`}</Header>
       {props.schedules.length > 0 && (
         <Legend>
           <LegendColumn
@@ -129,36 +246,128 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         </Legend>
       )}
       {props.schedules.map(schedule => (
-        <ScheduleRow
-          schedule={schedule}
-          key={schedule.scheduleDefinition.name}
+        <ScheduleRow schedule={schedule} key={schedule.name} />
+      ))}
+    </div>
+  );
+};
+
+const ScheduleWithoutStateTable: React.FunctionComponent<ScheduleTableProps> = props => {
+  if (props.schedules.length === 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ marginTop: 10, marginBottom: 10 }}>
+      <h4>New Schedule Definitions</h4>
+      <p>
+        The following are new schedule definitions for which there are no
+        entries in schedule storage yet. After reconciliation, these schedules
+        can be turned on.
+      </p>
+      {props.schedules.length > 0 && (
+        <Legend>
+          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn>Pipeline</LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+        </Legend>
+      )}
+      {props.schedules.map(schedule => (
+        <ScheduleRow schedule={schedule} key={schedule.name} />
+      ))}
+    </div>
+  );
+};
+
+interface ScheduleStateTableProps {
+  scheduleStates: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
+}
+
+const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleStateTableProps> = props => {
+  if (props.scheduleStates.length === 0) {
+    return null;
+  }
+
+  return (
+    <div style={{ marginTop: 20, marginBottom: 10 }}>
+      <h4>Deleted Schedule Definitions</h4>
+      <p>
+        The following are entries in schedule storage for which there is no
+        matching schedule definition anymore. This means that the schedule
+        definition has been deleted or renamed. After reconciliation, these
+        entries will be deleted.
+      </p>
+      {props.scheduleStates.length > 0 && (
+        <Legend>
+          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Schedule Tick Stats</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
+        </Legend>
+      )}
+      {props.scheduleStates.map(scheduleState => (
+        <ScheduleStateRow
+          scheduleState={scheduleState}
+          key={scheduleState.scheduleOriginId}
         />
       ))}
     </div>
   );
 };
 
+const RECONCILE_SCHEDULE_STATE_MUTATION = gql`
+  mutation ReconcileSchedulerState($repositorySelector: RepositorySelector!) {
+    reconcileSchedulerState(repositorySelector: $repositorySelector) {
+      __typename
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on ReconcileSchedulerStateSuccess {
+        __typename
+        message
+      }
+    }
+  }
+`;
+
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery($limit: Int!) {
+  query SchedulesRootQuery(
+    $repositorySelector: RepositorySelector!
+    $limit: Int!
+  ) {
     scheduler {
       __typename
       ... on SchedulerNotDefinedError {
         message
       }
-      ... on Scheduler {
-        runningSchedules {
-          ...ScheduleFragment
+      ...PythonErrorFragment
+    }
+    scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
+      ... on ScheduleDefinitions {
+        results {
+          ...ScheduleDefinitionFragment
         }
       }
-      ... on SchedulerNotDefinedError {
-        message
+      ...PythonErrorFragment
+    }
+    scheduleStatesOrError(
+      repositorySelector: $repositorySelector
+      withNoScheduleDefinition: true
+    ) {
+      __typename
+      ... on ScheduleStates {
+        results {
+          ...ScheduleStateFragment
+        }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
 
-  ${ScheduleRowFragment}
+  ${ScheduleFragment}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
+
+export default SchedulesRoot;

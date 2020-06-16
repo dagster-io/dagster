@@ -1,5 +1,5 @@
 import path from "path";
-import { ROOT_PIPELINES_QUERY } from "../App";
+import { ROOT_REPOSITORIES_QUERY } from "../DagsterRepositoryContext";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
 import { SOLIDS_ROOT_QUERY } from "../solids/SolidsRoot";
@@ -15,16 +15,21 @@ import { SidebarTabbedContainerSolidQueryVariables } from "../types/SidebarTabbe
 
 export const MOCKS: CachedGraphQLRequest[] = [
   {
-    name: "ROOT_PIPELINES_QUERY",
-    query: ROOT_PIPELINES_QUERY,
+    name: "ROOT_REPOSITORIES_QUERY",
+    query: ROOT_REPOSITORIES_QUERY,
     variables: undefined,
-    filepath: path.join(__dirname, "__data__", "ROOT_PIPELINES_QUERY.json")
+    filepath: path.join(__dirname, "__data__", "ROOT_REPOSITORIES_QUERY.json")
   },
   {
     name: "PIPELINE_EXPLORER_ROOT_QUERY",
     query: PIPELINE_EXPLORER_ROOT_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline",
+      pipelineSelector: {
+        pipelineName: "airline_demo_ingest_pipeline",
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository",
+        solidSelection: undefined
+      },
       snapshotId: undefined,
       rootHandleID: "",
       requestScopeHandleID: ""
@@ -39,7 +44,11 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "TYPE_EXPLORER_CONTAINER_QUERY",
     query: TYPE_EXPLORER_CONTAINER_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline",
+      pipelineSelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      },
       dagsterTypeName: "PySparkDataFrame"
     } as TypeExplorerContainerQueryVariables,
     filepath: path.join(
@@ -52,27 +61,46 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: "TYPE_LIST_CONTAINER_QUERY",
     query: TYPE_LIST_CONTAINER_QUERY,
     variables: {
-      pipelineName: "airline_demo_ingest_pipeline"
+      pipelineSelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      }
     } as TypeListContainerQueryVariables,
     filepath: path.join(__dirname, "__data__", "TYPE_LIST_CONTAINER_QUERY.json")
   },
   {
     name: "SOLIDS_ROOT_QUERY",
     query: SOLIDS_ROOT_QUERY,
-    variables: {},
+    variables: {
+      repositorySelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository"
+      }
+    },
     filepath: path.join(__dirname, "__data__", "SOLIDS_ROOT_QUERY.json")
   },
   {
     name: "USED_SOLIDS_DETAILS_QUERY",
     query: USED_SOLID_DETAILS_QUERY,
-    variables: { name: "s3_to_df" },
+    variables: {
+      repositorySelector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository"
+      },
+      name: "s3_to_df"
+    },
     filepath: path.join(__dirname, "__data__", "USED_SOLID_DETAILS_QUERY.json")
   },
   {
     name: "SIDEBAR_TABBED_CONTAINER_SOLID_QUERY",
     query: SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     variables: {
-      pipeline: "airline_demo_ingest_pipeline",
+      selector: {
+        repositoryLocationName: "<<in_process>>",
+        repositoryName: "internal_dagit_repository",
+        pipelineName: "airline_demo_ingest_pipeline"
+      },
       handleID: "download_q2_sfo_weather"
     } as SidebarTabbedContainerSolidQueryVariables,
     filepath: path.join(

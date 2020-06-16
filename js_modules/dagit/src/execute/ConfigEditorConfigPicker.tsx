@@ -1,4 +1,5 @@
 import * as React from "react";
+import gql from "graphql-tag";
 import {
   Button,
   Menu,
@@ -8,51 +9,47 @@ import {
   IInputGroupProps,
   HTMLInputProps
 } from "@blueprintjs/core";
-import * as ReactDOM from "react-dom";
-
 import { Select, Suggest } from "@blueprintjs/select";
-import { useQuery } from "react-apollo";
-import {
-  ConfigPresetsQuery,
-  ConfigPresetsQuery_pipelineOrError_Pipeline_presets
-} from "./types/ConfigPresetsQuery";
+import styled from "styled-components";
+import * as ReactDOM from "react-dom";
+import { isEqual } from "apollo-utilities";
+import { useQuery, withApollo, WithApolloClient } from "react-apollo";
+
 import {
   ConfigPartitionsQuery,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results
 } from "./types/ConfigPartitionsQuery";
-import {
-  ConfigPartitionSetsQuery,
-  ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results
-} from "./types/ConfigPartitionSetsQuery";
-import gql from "graphql-tag";
 import { IExecutionSession } from "../LocalStorage";
-import { isEqual } from "apollo-utilities";
-import styled from "styled-components";
 import { ShortcutHandler } from "../ShortcutHandler";
+import { useRepositorySelector } from "../DagsterRepositoryContext";
+import { RepositorySelector } from "../types/globalTypes";
+import { ConfigEditorGeneratorPartitionSetsFragment_results } from "./types/ConfigEditorGeneratorPartitionSetsFragment";
+import {
+  ConfigEditorGeneratorPipelineFragment,
+  ConfigEditorGeneratorPipelineFragment_presets
+} from "./types/ConfigEditorGeneratorPipelineFragment";
 
-type Preset = ConfigPresetsQuery_pipelineOrError_Pipeline_presets;
-type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
+type Pipeline = ConfigEditorGeneratorPipelineFragment;
+type Preset = ConfigEditorGeneratorPipelineFragment_presets;
+type PartitionSet = ConfigEditorGeneratorPartitionSetsFragment_results;
 type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
 type ConfigGenerator = Preset | PartitionSet;
-interface Pipeline {
-  tags: {
-    key: string;
-    value: string;
-  }[];
-}
 
 interface ConfigEditorConfigPickerProps {
   base: IExecutionSession["base"];
-  pipelineName: string;
-  solidSubset: string[] | null;
+  pipeline: Pipeline;
+  partitionSets: PartitionSet[];
+  solidSelection: string[] | null;
   onSaveSession: (updates: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
+  onLoading: () => void;
+  onLoaded: () => void;
 }
 
 const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
 
-export class ConfigEditorConfigPicker extends React.Component<
-  ConfigEditorConfigPickerProps
+class ConfigEditorConfigPickerInternal extends React.Component<
+  WithApolloClient<ConfigEditorConfigPickerProps>
 > {
   onSelectPartitionSet = (partitionSet: PartitionSet) => {
     this.props.onSaveSession({
@@ -64,37 +61,60 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   onSelectPreset = (preset: Preset, pipeline?: Pipeline) => {
-    if (!pipeline || true) {
+    if (!pipeline) {
       console.error("Could not load pipeline tags");
     }
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
-      environmentConfigYaml: preset.environmentConfigYaml || "",
-      solidSubset: preset.solidSubset,
-      solidSubsetQuery:
-        preset.solidSubset === null ? "*" : preset.solidSubset.join(","),
+      runConfigYaml: preset.runConfigYaml || "",
+      solidSelection: preset.solidSelection,
+      solidSelectionQuery:
+        preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
       mode: preset.mode,
       tags: [...(pipeline?.tags || [])]
     });
   };
 
-  onSelectPartition = (partition: Partition, pipeline?: Pipeline) => {
-    if (!pipeline || true) {
-      console.error("Could not load pipeline tags");
-    }
-    this.onCommit({
-      name: partition.name,
-      base: Object.assign({}, this.props.base, {
-        partitionName: partition.name
-      }),
-      environmentConfigYaml: partition.environmentConfigYaml || "",
-      solidSubset: partition.solidSubset,
-      solidSubsetQuery:
-        partition.solidSubset === null ? "*" : partition.solidSubset.join(","),
-      mode: partition.mode,
-      tags: [...(pipeline?.tags || []), ...partition.tags]
-    });
+  onSelectPartition = async (
+    repositorySelector: RepositorySelector,
+    partitionSetName: string,
+    partitionName: string
+  ) => {
+    this.props.onLoading();
+    try {
+      const { data } = await this.props.client.query({
+        query: CONFIG_PARTITION_SELECTION_QUERY,
+        variables: { repositorySelector, partitionSetName, partitionName }
+      });
+
+      if (
+        !data ||
+        !data.partitionSetOrError ||
+        data.partitionSetOrError.__typename !== "PartitionSet"
+      ) {
+        this.props.onLoaded();
+        return;
+      }
+
+      const { partition } = data.partitionSetOrError;
+
+      this.onCommit({
+        name: partition.name,
+        base: Object.assign({}, this.props.base, {
+          partitionName: partition.name
+        }),
+        runConfigYaml: partition.runConfigYaml || "",
+        solidSelection: partition.solidSelection,
+        solidSelectionQuery:
+          partition.solidSelection === null
+            ? "*"
+            : partition.solidSelection.join(","),
+        mode: partition.mode,
+        tags: [...(this.props.pipeline?.tags || []), ...partition.tags]
+      });
+    } catch {}
+    this.props.onLoaded();
   };
 
   onCommit = (changes: Partial<IExecutionSession>) => {
@@ -102,14 +122,16 @@ export class ConfigEditorConfigPicker extends React.Component<
   };
 
   render() {
-    const { pipelineName, solidSubset, base } = this.props;
+    const { pipeline, solidSelection, base, partitionSets } = this.props;
 
     return (
       <PickerContainer>
         <ConfigEditorConfigGeneratorPicker
           value={base}
-          pipelineName={pipelineName}
-          solidSubset={solidSubset}
+          pipeline={pipeline}
+          presets={pipeline.presets}
+          partitionSets={partitionSets}
+          solidSelection={solidSelection}
           onSelectPreset={this.onSelectPreset}
           onSelectPartitionSet={this.onSelectPartitionSet}
         />
@@ -118,7 +140,7 @@ export class ConfigEditorConfigPicker extends React.Component<
             <div style={{ width: 5 }} />
             <ConfigEditorPartitionPicker
               key={base.partitionsSetName}
-              pipelineName={pipelineName}
+              pipeline={pipeline}
               partitionSetName={base.partitionsSetName}
               value={base.partitionName}
               onSelect={this.onSelectPartition}
@@ -130,20 +152,29 @@ export class ConfigEditorConfigPicker extends React.Component<
   }
 }
 
+export const ConfigEditorConfigPicker = withApollo<
+  ConfigEditorConfigPickerProps
+>(ConfigEditorConfigPickerInternal);
+
 interface ConfigEditorPartitionPickerProps {
-  pipelineName: string;
+  pipeline: Pipeline;
   partitionSetName: string;
   value: string | null;
-  onSelect: (partition: Partition, pipeline?: Pipeline) => void;
+  onSelect: (
+    repositorySelector: RepositorySelector,
+    partitionSetName: string,
+    partitionName: string
+  ) => void;
 }
 
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
   props => {
-    const { partitionSetName, pipelineName, value, onSelect } = props;
+    const { partitionSetName, value, onSelect } = props;
+    const repositorySelector = useRepositorySelector();
     const { data, loading } = useQuery<ConfigPartitionsQuery>(
       CONFIG_PARTITIONS_QUERY,
       {
-        variables: { partitionSetName, pipelineName },
+        variables: { repositorySelector, partitionSetName },
         fetchPolicy: "network-only"
       }
     );
@@ -205,12 +236,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         )}
         noResults={<Menu.Item disabled={true} text="No presets." />}
         onItemSelect={item => {
-          return onSelect(
-            item,
-            data?.pipelineOrError.__typename === "Pipeline"
-              ? data.pipelineOrError
-              : undefined
-          );
+          onSelect(repositorySelector, partitionSetName, item.name);
         }}
       />
     );
@@ -219,8 +245,10 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
 );
 
 interface ConfigEditorConfigGeneratorPickerProps {
-  pipelineName: string;
-  solidSubset: string[] | null;
+  pipeline: Pipeline;
+  presets: Preset[];
+  partitionSets: PartitionSet[];
+  solidSelection: string[] | null;
   value: IExecutionSession["base"];
   onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
   onSelectPartitionSet: (
@@ -231,17 +259,24 @@ interface ConfigEditorConfigGeneratorPickerProps {
 
 export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   props => {
-    const { pipelineName, onSelectPreset, onSelectPartitionSet, value } = props;
     const {
+      pipeline,
       presets,
       partitionSets,
-      loading,
-      pipeline
-    } = usePresetsAndPartitions(pipelineName);
+      onSelectPreset,
+      onSelectPartitionSet,
+      value
+    } = props;
 
-    const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets];
-    const empty = !loading && configGenerators.length === 0;
+    const byName = (a: { name: string }, b: { name: string }) =>
+      a.name.localeCompare(b.name);
 
+    const configGenerators: ConfigGenerator[] = [
+      ...presets,
+      ...partitionSets
+    ].sort(byName);
+
+    const empty = configGenerators.length === 0;
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
     const onSelect = (item: ConfigGenerator) => {
       if (item.__typename === "PartitionSet") {
@@ -321,10 +356,10 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
                     {item.name}
                     <div style={{ opacity: 0.4, fontSize: "0.75rem" }}>
                       {[
-                        item.solidSubset
-                          ? item.solidSubset.length === 1
-                            ? `Solids: ${item.solidSubset[0]}`
-                            : `Solids: ${item.solidSubset.length}`
+                        item.solidSelection
+                          ? item.solidSelection.length === 1
+                            ? `Solids: ${item.solidSelection[0]}`
+                            : `Solids: ${item.solidSelection.length}`
                           : `Solids: All`,
                         `Mode: ${item.mode}`
                       ].join(" - ")}
@@ -367,71 +402,48 @@ const PickerContainer = styled.div`
   align-items: center;
 `;
 
-export const CONFIG_PRESETS_QUERY = gql`
-  query ConfigPresetsQuery($pipelineName: String!) {
-    pipelineOrError(params: { name: $pipelineName }) {
+export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
+  fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
+    id
+    name
+    presets {
       __typename
-      ... on Pipeline {
-        name
-        presets {
-          __typename
-          name
-          mode
-          solidSubset
-          environmentConfigYaml
-        }
-        tags {
-          key
-          value
-        }
-      }
+      name
+      mode
+      solidSelection
+      runConfigYaml
+    }
+    tags {
+      key
+      value
     }
   }
 `;
 
-export const CONFIG_PARTITION_SETS_QUERY = gql`
-  query ConfigPartitionSetsQuery($pipelineName: String!) {
-    partitionSetsOrError(pipelineName: $pipelineName) {
-      __typename
-      ... on PartitionSets {
-        results {
-          name
-          mode
-          solidSubset
-        }
-      }
+export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
+  fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
+    results {
+      name
+      mode
+      solidSelection
     }
   }
 `;
 
-export const CONFIG_PARTITIONS_QUERY = gql`
+const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
+    $repositorySelector: RepositorySelector!
     $partitionSetName: String!
-    $pipelineName: String!
   ) {
-    pipelineOrError(params: { name: $pipelineName }) {
-      __typename
-      ... on Pipeline {
-        name
-        tags {
-          key
-          value
-        }
-      }
-    }
-    partitionSetOrError(partitionSetName: $partitionSetName) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
       __typename
       ... on PartitionSet {
         partitions {
           results {
             name
-            solidSubset
-            environmentConfigYaml
-            mode
-            tags {
-              key
-              value
-            }
           }
         }
       }
@@ -439,43 +451,29 @@ export const CONFIG_PARTITIONS_QUERY = gql`
   }
 `;
 
-function usePresetsAndPartitions(
-  pipelineName: string
-): {
-  presets: Preset[];
-  partitionSets: PartitionSet[];
-  loading: boolean;
-  pipeline?: Pipeline;
-} {
-  const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
-    fetchPolicy: "cache-and-network",
-    variables: { pipelineName }
-  });
-  const partitionSetsQuery = useQuery<ConfigPartitionSetsQuery>(
-    CONFIG_PARTITION_SETS_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-      variables: { pipelineName }
+const CONFIG_PARTITION_SELECTION_QUERY = gql`
+  query ConfigPartitionSelectionQuery(
+    $repositorySelector: RepositorySelector!
+    $partitionSetName: String!
+    $partitionName: String!
+  ) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
+      __typename
+      ... on PartitionSet {
+        partition(partitionName: $partitionName) {
+          name
+          solidSelection
+          runConfigYaml
+          mode
+          tags {
+            key
+            value
+          }
+        }
+      }
     }
-  );
-
-  const byName = (a: { name: string }, b: { name: string }) =>
-    a.name.localeCompare(b.name);
-
-  return {
-    loading: presetsQuery.loading || partitionSetsQuery.loading,
-    presets:
-      presetsQuery.data?.pipelineOrError?.__typename === "Pipeline"
-        ? presetsQuery.data.pipelineOrError.presets.sort(byName)
-        : [],
-    partitionSets:
-      partitionSetsQuery.data?.partitionSetsOrError?.__typename ===
-      "PartitionSets"
-        ? partitionSetsQuery.data.partitionSetsOrError.results.sort(byName)
-        : [],
-    pipeline:
-      presetsQuery.data?.pipelineOrError?.__typename === "Pipeline"
-        ? presetsQuery.data.pipelineOrError
-        : undefined
-  };
-}
+  }
+`;

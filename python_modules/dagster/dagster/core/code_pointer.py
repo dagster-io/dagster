@@ -24,7 +24,19 @@ class CodePointer(six.with_metaclass(ABCMeta)):
         pass
 
     @staticmethod
-    def from_yaml(file_path):
+    def from_module(module_name, definition):
+        check.str_param(module_name, 'module_name')
+        check.str_param(definition, 'definition')
+        return ModuleCodePointer(module_name, definition)
+
+    @staticmethod
+    def from_python_file(python_file, definition):
+        check.str_param(python_file, 'python_file')
+        check.str_param(definition, 'definition')
+        return FileCodePointer(python_file=python_file, fn_name=definition)
+
+    @staticmethod
+    def from_legacy_repository_yaml(file_path):
         check.str_param(file_path, 'file_path')
         config = load_yaml_from_path(file_path)
         repository_config = check.dict_elem(config, 'repository')
@@ -33,14 +45,32 @@ class CodePointer(six.with_metaclass(ABCMeta)):
         fn_name = check.str_elem(repository_config, 'fn')
 
         return (
-            ModuleCodePointer(module_name, fn_name)
+            CodePointer.from_module(module_name, fn_name)
             if module_name
-            else FileCodePointer(
-                # rebase file in config off of the path in the config file
-                python_file=os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name),
-                fn_name=fn_name,
-            )
+            # rebase file in config off of the path in the config file
+            else CodePointer.from_python_file(rebase_file(file_name, file_path), fn_name)
         )
+
+
+def rebase_file(relative_path_in_file, file_path_resides_in):
+    '''
+    In config files, you often put file paths that are meant to be relative
+    to the location of that config file. This does that calculation.
+    '''
+    check.str_param(relative_path_in_file, 'relative_path_in_file')
+    check.str_param(file_path_resides_in, 'file_path_resides_in')
+    return os.path.join(
+        os.path.dirname(os.path.abspath(file_path_resides_in)), relative_path_in_file
+    )
+
+
+def load_python_file(python_file):
+    '''
+    Takes a path to a python file and returns a loaded module
+    '''
+    check.str_param(python_file, 'python_file')
+    module_name = os.path.splitext(os.path.basename(python_file))[0]
+    return import_module_from_path(module_name, python_file)
 
 
 @whitelist_for_serdes
@@ -51,8 +81,7 @@ class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), Cod
         )
 
     def load_target(self):
-        module_name = os.path.splitext(os.path.basename(self.python_file))[0]
-        module = import_module_from_path(module_name, self.python_file)
+        module = load_python_file(self.python_file)
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
                 '{name} not found at module scope in file {file}.'.format(
@@ -66,7 +95,7 @@ class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), Cod
         return '{self.python_file}::{self.fn_name}'.format(self=self)
 
     def get_cli_args(self):
-        return '-f {python_file} -n {fn_name}'.format(
+        return '-f {python_file} -a {fn_name}'.format(
             python_file=os.path.abspath(os.path.expanduser(self.python_file)), fn_name=self.fn_name
         )
 
@@ -82,7 +111,9 @@ class ModuleCodePointer(namedtuple('_ModuleCodePointer', 'module fn_name'), Code
         module = importlib.import_module(self.module)
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
-                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+                '{name} not found in module {module}. dir: {dir}'.format(
+                    name=self.fn_name, module=self.module, dir=dir(module)
+                )
             )
 
         return getattr(module, self.fn_name)
@@ -91,7 +122,7 @@ class ModuleCodePointer(namedtuple('_ModuleCodePointer', 'module fn_name'), Code
         return 'from {self.module} import {self.fn_name}'.format(self=self)
 
     def get_cli_args(self):
-        return '-m {module} -n {fn_name}'.format(module=self.module, fn_name=self.fn_name)
+        return '-m {module} -a {fn_name}'.format(module=self.module, fn_name=self.fn_name)
 
 
 def get_python_file_from_previous_stack_frame():

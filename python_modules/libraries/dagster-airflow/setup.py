@@ -49,6 +49,8 @@ def _do_setup(name='dagster-airflow'):
             'python-dateutil>=2.8.0',
             'lazy_object_proxy',
             'pendulum==1.4.4',
+            # RSA 4.1+ is incompatible with py2.7
+            'rsa<=4.0; python_version<"3"',
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},

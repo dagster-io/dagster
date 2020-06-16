@@ -1,7 +1,7 @@
 from dagster import Field, Int, ModeDefinition, execute_pipeline, pipeline, resource, solid
 
 
-@resource(config=Field(Int, is_required=False))
+@resource(config_schema=Field(Int, is_required=False))
 def a_resource(context):
     raise Exception("Bad Resource")
 
@@ -20,6 +20,4 @@ def resource_error_pipeline():
 
 
 if __name__ == '__main__':
-    result = execute_pipeline(
-        resource_error_pipeline, environment_dict={'storage': {'filesystem': {}}}
-    )
+    result = execute_pipeline(resource_error_pipeline, run_config={'storage': {'filesystem': {}}})

@@ -17,7 +17,7 @@ def test_snowflake_resource(snowflake_connect):
 
     result = execute_solid(
         snowflake_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'snowflake': {
                     'config': {
@@ -63,7 +63,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
     with environ(env_vars):
         result = execute_solid(
             snowflake_solid,
-            environment_dict={
+            run_config={
                 'resources': {
                     'snowflake': {
                         'config': {

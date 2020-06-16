@@ -23,7 +23,7 @@ def test_hello_world_with_dataframe_fns():
 def run_hello_world(hello_world):
     assert len(hello_world.input_dict) == 1
 
-    result = execute_solid(hello_world, environment_dict=create_num_csv_environment())
+    result = execute_solid(hello_world, run_config=create_num_csv_environment())
 
     assert result.success
 

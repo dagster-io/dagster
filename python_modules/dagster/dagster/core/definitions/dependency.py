@@ -211,6 +211,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
             SolidHandle:
 
         Example:
+
+        .. code-block:: python
+
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
             ancestor = SolidHandle('bar', SolidHandle('foo', None))
             assert handle.pop(ancestor) == SolidHandle('baz', None)
@@ -236,6 +239,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
             SolidHandle:
 
         Example:
+
+        .. code-block:: python
+
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
             ancestor = SolidHandle('quux' None)
             assert handle.with_ancestor(ancestor) == SolidHandle(
@@ -308,6 +314,10 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __eq__(self, other):
         return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
 
+    @property
+    def solid_name(self):
+        return self.solid.name
+
 
 class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
     def __new__(cls, solid, output_def):
@@ -333,6 +343,10 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
 
     def __eq__(self, other):
         return self.solid.name == other.solid.name and self.output_def.name == other.output_def.name
+
+    @property
+    def solid_name(self):
+        return self.solid.name
 
 
 class InputToOutputHandleDict(defaultdict):

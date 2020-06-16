@@ -8,13 +8,21 @@ type ArrayConfigType implements ConfigType & WrappingConfigType {
 }
 
 type Asset {
-  key: String!
+  key: AssetKey!
   assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
   runs(cursor: String, limit: Int): [PipelineRun!]!
 }
 
 type AssetConnection {
   nodes: [Asset!]!
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 type AssetMaterialization {
@@ -157,16 +165,6 @@ type EnumConfigValue {
   description: String
 }
 
-scalar EnvironmentConfigData
-
-type EnvironmentSchema {
-  rootEnvironmentType: ConfigType!
-  allConfigTypes: [ConfigType!]!
-  isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
-}
-
-union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
-
 interface Error {
   message: String!
 }
@@ -251,6 +249,12 @@ type ExecutePlanSuccess {
   rawEventRecords: [String!]!
 }
 
+union ExecuteRunInProcessResult = ExecuteRunInProcessSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
+
+type ExecuteRunInProcessSuccess {
+  run: PipelineRun!
+}
+
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
@@ -260,7 +264,7 @@ input ExecutionMetadata {
 
 input ExecutionParams {
   selector: PipelineSelector!
-  environmentConfigData: EnvironmentConfigData
+  runConfigData: RunConfigData
   mode: String
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
@@ -464,9 +468,9 @@ interface ISolidDefinition {
   requiredResources: [ResourceRequirement!]!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!
@@ -561,18 +565,15 @@ type ModeNotFoundError implements Error {
 }
 
 type Mutation {
-  startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
-  startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
-  startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
-  startPipelineReexecution(executionParams: ExecutionParams!): StartPipelineReexecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
-  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  startSchedule(scheduleName: String!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
-  reloadDagit: Boolean!
+  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
+  startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  stopRunningSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
+  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
+  executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -651,9 +652,9 @@ type PageInfo {
 type Partition {
   name: String!
   partitionSetName: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
   mode: String!
-  environmentConfigYaml: String!
+  runConfigYaml: String!
   tags: [PipelineTag!]!
   runs: [PipelineRun!]!
 }
@@ -665,9 +666,10 @@ type Partitions {
 type PartitionSet {
   name: String!
   pipelineName: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
   mode: String!
   partitions(cursor: String, limit: Int, reverse: Boolean): Partitions!
+  partition(partitionName: String!): Partition
 }
 
 type PartitionSetNotFoundError implements Error {
@@ -683,10 +685,9 @@ type PartitionSets {
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
 
-type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot {
+type Pipeline implements SolidContainer & IPipelineSnapshot {
   solids: [Solid!]!
   name: String!
-  solidSubset: [String!]
   description: String
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
@@ -696,7 +697,8 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   runs: [PipelineRun!]!
-  schedules: [RunningSchedule!]!
+  schedules: [ScheduleDefinition!]!
+  id: ID!
   presets: [PipelinePreset!]!
 }
 
@@ -716,10 +718,6 @@ union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValida
 
 type PipelineConfigValidationValid {
   pipelineName: String!
-}
-
-type PipelineConnection {
-  nodes: [Pipeline!]!
 }
 
 interface PipelineEvent {
@@ -748,20 +746,22 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
 type PipelineNotFoundError implements Error {
   message: String!
   pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 type PipelinePreset {
   name: String!
-  solidSubset: [String!]
-  environmentConfigYaml: String!
+  solidSelection: [String!]
+  runConfigYaml: String!
   mode: String!
 }
 
 interface PipelineReference {
   name: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
 }
 
 type PipelineRun {
@@ -769,12 +769,14 @@ type PipelineRun {
   pipelineSnapshotId: String
   status: PipelineRunStatus!
   pipeline: PipelineReference!
+  pipelineName: String!
+  solidSelection: [String!]
   stats: PipelineRunStatsOrError!
   stepStats: [PipelineRunStepStats!]!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
-  environmentConfigYaml: String!
+  runConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]!
   rootRunId: String
@@ -852,14 +854,13 @@ type PipelineRunStepStats {
 }
 
 input PipelineSelector {
-  name: String
-  pipelineName: String
-  repositoryName: String
-  environmentName: String
-  solidSubset: [String!]
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+  solidSelection: [String!]
 }
 
-type PipelineSnapshot implements IPipelineSnapshot {
+type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   name: String!
   description: String
   pipelineSnapshotId: String!
@@ -870,8 +871,9 @@ type PipelineSnapshot implements IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  solidSelection: [String!]
   runs(cursor: String, limit: Int): [PipelineRun!]!
-  schedules: [RunningSchedule!]!
+  schedules: [ScheduleDefinition!]!
 }
 
 type PipelineSnapshotNotFoundError implements Error {
@@ -880,8 +882,6 @@ type PipelineSnapshotNotFoundError implements Error {
 }
 
 union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
-
-union PipelinesOrError = PipelineConnection | PythonError
 
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
   runId: String!
@@ -925,27 +925,33 @@ type PythonError implements Error {
 
 type Query {
   version: String!
-  reloadSupported: Boolean!
+  repositoriesOrError: RepositoriesOrError!
+  repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipelinesOrError: PipelinesOrError!
-  pipelineSnapshotOrError(snapshotId: String, activePipelineName: String): PipelineSnapshotOrError!
+  pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
-  scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
-  partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
-  partitionSetOrError(partitionSetName: String): PartitionSetOrError!
+  scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
+  scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
+  scheduleStatesOrError(repositorySelector: RepositorySelector!, withNoScheduleDefinition: Boolean): ScheduleStatesOrError!
+  partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
+  partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
-  usedSolids: [UsedSolid!]!
-  usedSolid(name: String!): UsedSolid
-  isPipelineConfigValid(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlanOrError(pipeline: PipelineSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanOrError!
-  environmentSchemaOrError(selector: PipelineSelector!, mode: String): EnvironmentSchemaOrError!
+  isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
+  executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
+  runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError: AssetsOrError!
-  assetOrError(assetKey: String!): AssetOrError!
+  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+}
+
+union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
+
+type ReconcileSchedulerStateSuccess {
+  message: String!
 }
 
 type RegularConfigType implements ConfigType {
@@ -971,6 +977,40 @@ type RegularDagsterType implements DagsterType {
   innerTypes: [DagsterType!]!
 }
 
+union RepositoriesOrError = RepositoryConnection | PythonError
+
+type Repository {
+  id: ID!
+  name: String!
+  location: RepositoryLocation!
+  pipelines: [Pipeline!]!
+  usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
+}
+
+type RepositoryConnection {
+  nodes: [Repository!]!
+}
+
+type RepositoryLocation {
+  name: String!
+  environmentPath: String
+  repositories: [Repository!]!
+}
+
+type RepositoryNotFoundError implements Error {
+  message: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+input RepositorySelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
 type Resource {
   name: String!
   description: String
@@ -980,6 +1020,16 @@ type Resource {
 type ResourceRequirement {
   resourceKey: String!
 }
+
+scalar RunConfigData
+
+type RunConfigSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+  isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+}
+
+union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
 
 type RunGroup {
   rootRunId: String!
@@ -999,27 +1049,6 @@ type RunGroupsOrError {
 
 type RunLauncher {
   name: String!
-}
-
-type RunLauncherNotDefinedError implements Error {
-  message: String!
-}
-
-type RunningSchedule {
-  scheduleDefinition: ScheduleDefinition!
-  pythonPath: String
-  repositoryPath: String
-  status: ScheduleStatus!
-  runs(limit: Int): [PipelineRun!]!
-  runsCount: Int!
-  ticks(limit: Int): [ScheduleTick!]!
-  ticksCount: Int!
-  stats: ScheduleTickStatsSnapshot!
-  logsPath: String!
-}
-
-type RunningScheduleResult {
-  schedule: RunningSchedule!
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {
@@ -1046,27 +1075,35 @@ type ScheduleDefinition {
   name: String!
   cronSchedule: String!
   pipelineName: String!
-  solidSubset: [String]
+  solidSelection: [String]
   mode: String!
-  environmentConfigYaml: String
+  scheduleState: ScheduleState
+  runConfigYaml: String
   partitionSet: PartitionSet
 }
 
-type ScheduledExecutionBlocked {
+type ScheduleDefinitionNotFoundError implements Error {
   message: String!
+  scheduleName: String!
 }
 
-union ScheduleMutationResult = PythonError | RunningScheduleResult
+union ScheduleDefinitionOrError = ScheduleDefinition | ScheduleDefinitionNotFoundError | PythonError
+
+type ScheduleDefinitions {
+  results: [ScheduleDefinition!]!
+}
+
+union ScheduleDefinitionsOrError = ScheduleDefinitions | RepositoryNotFoundError | PythonError
+
+union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleNotFoundError implements Error {
   message: String!
   scheduleName: String!
 }
 
-union ScheduleOrError = RunningSchedule | ScheduleNotFoundError | PythonError
-
 type Scheduler {
-  runningSchedules: [RunningSchedule!]!
+  schedulerClass: String
 }
 
 type SchedulerNotDefinedError implements Error {
@@ -1074,6 +1111,42 @@ type SchedulerNotDefinedError implements Error {
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+input ScheduleSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  scheduleName: String!
+}
+
+type ScheduleState {
+  scheduleOriginId: String!
+  scheduleName: String!
+  cronSchedule: String!
+  status: ScheduleStatus!
+  runs(limit: Int): [PipelineRun!]!
+  runsCount: Int!
+  ticks(limit: Int): [ScheduleTick!]!
+  ticksCount: Int!
+  stats: ScheduleTickStatsSnapshot!
+  logsPath: String!
+  runningScheduleCount: Int!
+  id: ID!
+}
+
+type ScheduleStateNotFoundError implements Error {
+  message: String!
+  scheduleOriginId: String!
+}
+
+type ScheduleStateResult {
+  scheduleState: ScheduleState!
+}
+
+type ScheduleStates {
+  results: [ScheduleState!]!
+}
+
+union ScheduleStatesOrError = ScheduleStates | RepositoryNotFoundError | PythonError
 
 enum ScheduleStatus {
   RUNNING
@@ -1152,22 +1225,6 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
-union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
-
-union StartPipelineExecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-union StartPipelineReexecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type StartPipelineRunDisabledError implements Error {
-  message: String!
-}
-
-type StartPipelineRunSuccess {
-  run: PipelineRun!
-}
-
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineRunSuccess | StartPipelineRunDisabledError | LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
 interface StepEvent {
   step: ExecutionStep
 }
@@ -1225,7 +1282,7 @@ type TypeCheck implements DisplayableEvent {
 
 type UnknownPipeline implements PipelineReference {
   name: String!
-  solidSubset: [String!]
+  solidSelection: [String!]
 }
 
 type UsedSolid {

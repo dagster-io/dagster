@@ -5,7 +5,7 @@ from celery import Celery
 from celery.utils.collections import force_mapping
 from dagster_celery.config import CeleryConfig, CeleryK8sJobConfig
 from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
-from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
+from dagster_graphql.client.util import parse_raw_log_lines
 from kombu import Queue
 
 from dagster import DagsterInstance, EventMetadataEntry, check, seven
@@ -41,7 +41,7 @@ def create_task(celery_app, **task_kwargs):
 
         execution_plan = create_execution_plan(
             pipeline,
-            pipeline_run.environment_dict,
+            pipeline_run.run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         ).build_subset_plan(step_keys)
@@ -60,7 +60,7 @@ def create_task(celery_app, **task_kwargs):
         for step_event in execute_plan_iterator(
             execution_plan,
             pipeline_run=pipeline_run,
-            environment_dict=pipeline_run.environment_dict,
+            run_config=pipeline_run.run_config,
             instance=instance,
             retries=retries,
         ):
@@ -78,18 +78,20 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         _self,
         instance_ref_dict,
         step_keys,
-        environment_dict,
+        run_config,
         mode,
-        pipeline_name,
+        repo_name,
+        repo_location_name,
         run_id,
         job_config_dict,
         job_namespace,
         load_incluster_config,
+        resources=None,
         kubeconfig_file=None,
     ):
         '''Run step execution in a K8s job pod.
         '''
-        from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
+        from dagster_k8s import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
         from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_job_success
 
         import kubernetes
@@ -99,9 +101,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.invariant(
             len(step_keys) == 1, 'Celery K8s task executor can only execute 1 step at a time'
         )
-        check.dict_param(environment_dict, 'environment_dict')
+        check.dict_param(run_config, 'run_config')
         check.str_param(mode, 'mode')
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(repo_name, 'repo_name')
+        check.str_param(repo_location_name, 'repo_location_name')
         check.str_param(run_id, 'run_id')
 
         # Celery will serialize this as a list
@@ -109,6 +112,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
         check.str_param(job_namespace, 'job_namespace')
         check.bool_param(load_incluster_config, 'load_incluster_config')
+        check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
         # For when launched via DinD or running the cluster
@@ -129,10 +133,23 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_name = 'dagster-stepjob-%s' % k8s_name_key
         pod_name = 'dagster-stepjob-%s' % k8s_name_key
 
-        variables = construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys)
+        variables = {
+            'executionParams': {
+                'runConfigData': run_config,
+                'mode': mode,
+                'selector': {
+                    'repositoryLocationName': repo_location_name,
+                    'repositoryName': repo_name,
+                    'pipelineName': pipeline_run.pipeline_name,
+                },
+                'executionMetadata': {'runId': run_id},
+                'stepKeys': step_keys,
+            }
+        }
+
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables)]
 
-        job = construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name)
+        job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)
 
         # Running list of events generated from this task execution
         events = []

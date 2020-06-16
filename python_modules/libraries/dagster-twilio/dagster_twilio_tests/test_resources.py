@@ -30,7 +30,7 @@ def test_twilio_resource():
 
     result = execute_solid(
         twilio_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'twilio': {'config': {'account_sid': account_sid, 'auth_token': auth_token}}
             }

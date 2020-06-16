@@ -20,6 +20,7 @@ from dagster.core.execution.api import (
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import ExecutionStep, StepOutputHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
 # TODO: Schema
 FLYTE_TYPES = {
@@ -31,12 +32,12 @@ FLYTE_TYPES = {
 
 
 class DagsterFlyteCompiler:
-    def __init__(self, pipeline, environment_dict, compute_dict):
+    def __init__(self, pipeline, run_config, compute_dict):
         check.inst(pipeline, PipelineDefinition)
-        check.inst(environment_dict, dict)
+        check.inst(run_config, dict)
 
         self.pipeline = pipeline
-        self.environment_dict = environment_dict
+        self.run_config = run_config
         self.compute_dict = defaultdict(dict, compute_dict) if compute_dict else defaultdict(dict)
         self.execution_plan = None
         self.sdk_node_dict = OrderedDict()
@@ -52,9 +53,7 @@ class DagsterFlyteCompiler:
         registers, in order  to discover the DAG structure.
         """
 
-        self.execution_plan = create_execution_plan(
-            self.pipeline, environment_dict=self.environment_dict
-        )
+        self.execution_plan = create_execution_plan(self.pipeline, run_config=self.run_config)
 
         self.build_flyte_sdk_workflow()
         nodes = {}
@@ -94,21 +93,24 @@ class DagsterFlyteCompiler:
         pipeline_run = instance.create_run(
             pipeline_name=self.execution_plan.pipeline_def.display_name,
             run_id=self.execution_plan.pipeline_def.display_name,
-            environment_dict=self.environment_dict,
+            run_config=self.run_config,
             mode=None,
-            solid_subset=None,
+            solids_to_execute=None,
             step_keys_to_execute=None,
             status=None,
             tags=None,
             root_run_id=None,
             parent_run_id=None,
-            pipeline_snapshot=None,
-            execution_plan_snapshot=None,
+            pipeline_snapshot=self.execution_plan.pipeline_def.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                self.execution_plan, self.execution_plan.pipeline_def.get_pipeline_snapshot_id()
+            ),
+            parent_pipeline_snapshot=self.execution_plan.pipeline_def.get_parent_pipeline_snapshot(),
         )
 
         initialization_manager = pipeline_initialization_manager(
             self.execution_plan,
-            self.environment_dict,
+            self.run_config,
             instance.get_run_by_id(self.execution_plan.pipeline_def.display_name),
             instance,
         )
@@ -167,12 +169,7 @@ class DagsterFlyteCompiler:
                 self.inject_intermediates(pipeline_context, execution_step, param, arg)
 
             results = list(
-                execute_plan(
-                    plan,
-                    instance,
-                    environment_dict=self.environment_dict,
-                    pipeline_run=pipeline_run,
-                )
+                execute_plan(plan, instance, run_config=self.run_config, pipeline_run=pipeline_run,)
             )
 
             for result in results:
@@ -380,12 +377,12 @@ class DagsterFlyteCompiler:
         )
 
 
-def compile_pipeline_to_flyte(pipeline, environment_dict, compute_dict=None, module=__name__):
+def compile_pipeline_to_flyte(pipeline, run_config, compute_dict=None, module=__name__):
     check.inst(pipeline, PipelineDefinition)
-    check.inst(environment_dict, dict)
+    check.inst(run_config, dict)
 
     flyte_compiler = DagsterFlyteCompiler(
-        pipeline, environment_dict=environment_dict, compute_dict=compute_dict
+        pipeline, run_config=run_config, compute_dict=compute_dict
     )
 
     return flyte_compiler(module=module)

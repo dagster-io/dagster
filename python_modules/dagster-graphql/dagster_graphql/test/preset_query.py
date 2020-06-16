@@ -1,22 +1,23 @@
-from .utils import execute_dagster_graphql
+from .utils import execute_dagster_graphql, infer_pipeline_selector
 
 PRESETS_QUERY = '''
-query PresetsQuery($name: String!) {
-  pipelineOrError(params: { name: $name }) {
+query PresetsQuery($selector: PipelineSelector!) {
+  pipelineOrError(params: $selector) {
     ... on Pipeline {
       name
       presets {
         __typename
         name
-        solidSubset
-        environmentConfigYaml
+        solidSelection
+        runConfigYaml
         mode
       }
     }
   }
-}  
+}
 '''
 
 
 def execute_preset_query(pipeline_name, context):
-    return execute_dagster_graphql(context, PRESETS_QUERY, variables={'name': pipeline_name})
+    selector = infer_pipeline_selector(context, pipeline_name)
+    return execute_dagster_graphql(context, PRESETS_QUERY, variables={'selector': selector})

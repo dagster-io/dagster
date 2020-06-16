@@ -16,5 +16,5 @@ if __name__ == '__main__':
         {pipeline_fn_name},
         '{solid_name}',
         mode='{mode_name}',
-        environment_dict={environment_dict},
+        run_config={run_config},
     )

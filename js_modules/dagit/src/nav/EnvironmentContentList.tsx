@@ -12,33 +12,55 @@ import { Link } from "react-router-dom";
 import styled from "styled-components/macro";
 
 import { tabForPipelinePathComponent } from "./PipelineNav";
-import { PipelineNamesContext } from "../PipelineNamesContext";
 import { ContentListSolidsQuery } from "./types/ContentListSolidsQuery";
+import { DagsterRepoOption } from "../DagsterRepositoryContext";
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
 
-export const EnvironmentContentList: React.FunctionComponent<{
+interface EnvironmentContentListProps {
   selector?: string;
   tab?: string;
-}> = ({ tab, selector }) => {
+  repo: DagsterRepoOption;
+}
+
+export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentListProps> = ({
+  tab,
+  repo,
+  selector
+}) => {
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
-  const pipelineNames = React.useContext(PipelineNamesContext);
   const pipelineTab = tabForPipelinePathComponent(tab);
   const [q, setQ] = React.useState<string>("");
-
   // Load solids, but only if the user clicks on the Solid option
   const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
-    fetchPolicy: "cache-first"
+    fetchPolicy: "cache-first",
+    variables: {
+      repositorySelector: {
+        repositoryLocationName: repo.repositoryLocation.name,
+        repositoryName: repo.repository.name
+      }
+    }
   });
   React.useEffect(() => {
     if (type === "solids") {
       solids.refetch();
     }
   }, [type, solids]);
+  const usedSolids =
+    solids.data?.repositoryOrError?.__typename === "Repository"
+      ? solids.data.repositoryOrError.usedSolids
+      : [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        borderTop: `1px solid ${Colors.DARK_GRAY4}`
+      }}
+    >
       <Header>
         <InputGroup
           type="text"
@@ -71,11 +93,16 @@ export const EnvironmentContentList: React.FunctionComponent<{
       </Header>
       {type === "pipelines" ? (
         <Items>
-          {pipelineNames
+          {repo.repository.pipelines
+            .map(pipeline => pipeline.name)
             .filter(p => !q || iincludes(p, q))
             .map(p => (
               <Item
                 key={p}
+                data-tooltip={p}
+                data-tooltip-style={
+                  p === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
+                }
                 className={p === selector ? "selected" : ""}
                 to={`/pipeline/${p}/${pipelineTab.pathComponent}`}
               >
@@ -85,7 +112,7 @@ export const EnvironmentContentList: React.FunctionComponent<{
         </Items>
       ) : (
         <Items>
-          {solids.data?.usedSolids
+          {usedSolids
             .filter(
               s =>
                 !q ||
@@ -162,17 +189,48 @@ const Item = styled(Link)`
   }
 `;
 
+const BaseTooltipStyle = {
+  fontSize: 13,
+  padding: 3,
+  paddingRight: 7,
+  left: 9,
+  top: 5,
+  color: Colors.WHITE,
+  background: Colors.DARK_GRAY1,
+  transform: "none",
+  border: 0,
+  borderRadius: 4
+};
+
+const ItemTooltipStyle = JSON.stringify({
+  ...BaseTooltipStyle,
+  color: Colors.WHITE,
+  background: Colors.DARK_GRAY1
+});
+
+const SelectedItemTooltipStyle = JSON.stringify({
+  ...BaseTooltipStyle,
+  color: Colors.WHITE,
+  background: Colors.BLACK,
+  fontWeight: 600
+});
+
 export const CONTENT_LIST_SOLIDS_QUERY = gql`
-  query ContentListSolidsQuery {
-    usedSolids {
-      __typename
-      definition {
-        name
-      }
-      invocations {
-        __typename
-        pipeline {
-          name
+  query ContentListSolidsQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      ... on Repository {
+        id
+        usedSolids {
+          __typename
+          definition {
+            name
+          }
+          invocations {
+            __typename
+            pipeline {
+              name
+            }
+          }
         }
       }
     }

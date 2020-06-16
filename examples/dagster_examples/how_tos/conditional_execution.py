@@ -5,7 +5,7 @@ from dagster import Failure, InputDefinition, Output, OutputDefinition, pipeline
 conditional = True
 
 
-@solid(output_defs=[OutputDefinition(int, 'a', is_optional=True)])
+@solid(output_defs=[OutputDefinition(int, 'a', is_required=False)])
 def my_solid(context):
     if conditional:
         yield Output(1, "a")
@@ -13,8 +13,8 @@ def my_solid(context):
 
 @solid(
     output_defs=[
-        OutputDefinition(int, 'a', is_optional=True),
-        OutputDefinition(int, 'b', is_optional=True),
+        OutputDefinition(int, 'a', is_required=False),
+        OutputDefinition(int, 'b', is_required=False),
     ]
 )
 def branching_solid(context):

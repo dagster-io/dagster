@@ -15,12 +15,17 @@ class HistoricalPipeline(RepresentedPipeline):
     since persistence.
     '''
 
-    def __init__(self, pipeline_snapshot, identifying_pipeline_snapshot_id):
+    def __init__(
+        self, pipeline_snapshot, identifying_pipeline_snapshot_id, parent_pipeline_snapshot
+    ):
         check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot)
         self._identifying_pipeline_snapshot_id = check.str_param(
             identifying_pipeline_snapshot_id, 'identifying_pipeline_snapshot_id'
         )
-        super(HistoricalPipeline, self).__init__(pipeline_index=PipelineIndex(pipeline_snapshot))
+        super(HistoricalPipeline, self).__init__(
+            pipeline_index=PipelineIndex(pipeline_snapshot, parent_pipeline_snapshot)
+        )
 
     @property
     def identifying_pipeline_snapshot_id(self):

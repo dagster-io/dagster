@@ -21,6 +21,7 @@ from dagster.core.events import (
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.storage.event_log import (
+    ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
@@ -40,9 +41,19 @@ def create_sqlite_run_event_logstorage():
         yield SqliteEventLogStorage(tmpdir_path)
 
 
+@contextmanager
+def create_consolidated_sqlite_run_event_log_storage():
+    with seven.TemporaryDirectory() as tmpdir_path:
+        yield ConsolidatedSqliteEventLogStorage(tmpdir_path)
+
+
 event_storage_test = pytest.mark.parametrize(
     'event_storage_factory_cm_fn',
-    [create_in_memory_event_log_storage, create_sqlite_run_event_logstorage],
+    [
+        create_in_memory_event_log_storage,
+        create_sqlite_run_event_logstorage,
+        create_consolidated_sqlite_run_event_log_storage,
+    ],
 )
 
 
@@ -51,7 +62,7 @@ def test_init_log_storage(event_storage_factory_cm_fn):
     with event_storage_factory_cm_fn() as storage:
         if isinstance(storage, InMemoryEventLogStorage):
             assert not storage.is_persistent
-        elif isinstance(storage, SqliteEventLogStorage):
+        elif isinstance(storage, (SqliteEventLogStorage, ConsolidatedSqliteEventLogStorage)):
             assert storage.is_persistent
         else:
             raise Exception("Invalid event storage type")

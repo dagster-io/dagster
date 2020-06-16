@@ -12,13 +12,14 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetForExecution
+from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
@@ -200,7 +201,7 @@ class DagsterInstance:
             schedule_storage, 'schedule_storage', ScheduleStorage
         )
         self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
-        self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
+        self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
         self._telemetry_settings = check.opt_dict_param(telemetry_settings, 'telemetry_settings')
 
@@ -212,10 +213,11 @@ class DagsterInstance:
 
     @staticmethod
     def ephemeral(tempdir=None):
+        from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -225,7 +227,8 @@ class DagsterInstance:
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
     @staticmethod
@@ -391,11 +394,16 @@ class DagsterInstance:
             return dagster_telemetry_enabled_default
 
     def upgrade(self, print_fn=lambda _: None):
-        print_fn('Updating run storage...')
-        self._run_storage.upgrade()
+        with upgrading_instance(self):
 
-        print_fn('Updating event storage...')
-        self._event_storage.upgrade()
+            print_fn('Updating run storage...')
+            self._run_storage.upgrade()
+
+            print_fn('Updating event storage...')
+            self._event_storage.upgrade()
+
+            print_fn('Updating schedule storage...')
+            self._schedule_storage.upgrade()
 
     def dispose(self):
         self._run_storage.dispose()
@@ -415,7 +423,15 @@ class DagsterInstance:
     def get_historical_pipeline(self, snapshot_id):
         from dagster.core.host_representation import HistoricalPipeline
 
-        return HistoricalPipeline(self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id)
+        snapshot = self._run_storage.get_pipeline_snapshot(snapshot_id)
+        parent_snapshot = (
+            self._run_storage.get_pipeline_snapshot(snapshot.lineage_snapshot.parent_snapshot_id)
+            if snapshot.lineage_snapshot
+            else None
+        )
+        return HistoricalPipeline(
+            self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id, parent_snapshot
+        )
 
     def has_historical_pipeline(self, snapshot_id):
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
@@ -440,14 +456,15 @@ class DagsterInstance:
         pipeline_def,
         execution_plan=None,
         run_id=None,
-        environment_dict=None,
+        run_config=None,
         mode=None,
-        solid_subset=None,
+        solids_to_execute=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
         root_run_id=None,
         parent_run_id=None,
+        solid_selection=None,
     ):
         from dagster.core.execution.api import create_execution_plan
         from dagster.core.execution.plan.plan import ExecutionPlan
@@ -456,24 +473,35 @@ class DagsterInstance:
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        if solid_subset:
-            if isinstance(pipeline_def, PipelineSubsetForExecution):
+        # note that solids_to_execute is required to execute the solid subset, which is the
+        # frozenset version of the previous solid_subset.
+        # solid_selection is not required and will not be converted to solids_to_execute here.
+        # i.e. this function doesn't handle solid queries.
+        # solid_selection is only used to pass the user queries further down.
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+
+        if solids_to_execute:
+            if isinstance(pipeline_def, PipelineSubsetDefinition):
+                # for the case when pipeline_def is created by ExecutablePipeline or ExternalPipeline
                 check.invariant(
-                    len(solid_subset) == len(pipeline_def.solid_subset)
-                    and set(solid_subset) == set(pipeline_def.solid_subset),
-                    'Cannot create a PipelineRun from pipeline subset {pipeline_solid_subset} that '
-                    'conflicts with solid_subset arg {solid_subset}'.format(
-                        pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
-                        solid_subset=str_format_list(solid_subset),
+                    solids_to_execute == pipeline_def.solids_to_execute,
+                    'Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} '
+                    'that conflicts with solids_to_execute arg {solids_to_execute}'.format(
+                        pipeline_solids_to_execute=str_format_list(pipeline_def.solids_to_execute),
+                        solids_to_execute=str_format_list(solids_to_execute),
                     ),
                 )
             else:
-                pipeline_def = pipeline_def.subset_for_execution(solid_subset=solid_subset)
+                # for cases when `create_run_for_pipeline` is directly called
+                pipeline_def = pipeline_def.get_pipeline_subset_def(
+                    solids_to_execute=solids_to_execute
+                )
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
                 pipeline_def,
-                environment_dict=environment_dict,
+                run_config=run_config,
                 mode=mode,
                 step_keys_to_execute=step_keys_to_execute,
             )
@@ -481,9 +509,10 @@ class DagsterInstance:
         return self.create_run(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name()),
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -493,15 +522,16 @@ class DagsterInstance:
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan, pipeline_def.get_pipeline_snapshot_id()
             ),
+            parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         )
 
     def _construct_run_with_snapshots(
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         status,
         tags,
@@ -509,6 +539,8 @@ class DagsterInstance:
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
+        solid_selection=None,
     ):
 
         # https://github.com/dagster-io/dagster/issues/2403
@@ -519,9 +551,10 @@ class DagsterInstance:
         pipeline_run = PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -532,13 +565,29 @@ class DagsterInstance:
         if pipeline_snapshot is not None:
             from dagster.core.snap import create_pipeline_snapshot_id
 
-            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+            if pipeline_snapshot.lineage_snapshot:
+                if not self._run_storage.has_pipeline_snapshot(
+                    pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                ):
+                    check.invariant(
+                        create_pipeline_snapshot_id(parent_pipeline_snapshot)
+                        == pipeline_snapshot.lineage_snapshot.parent_snapshot_id,
+                        'Parent pipeline snapshot id out of sync with passed parent pipeline snapshot',
+                    )
 
+                    returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                        parent_pipeline_snapshot
+                    )
+                    check.invariant(
+                        pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                        == returned_pipeline_snapshot_id
+                    )
+
+            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
             if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
                 returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
                     pipeline_snapshot
                 )
-
                 check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
 
             pipeline_run = pipeline_run.with_pipeline_snapshot_id(pipeline_snapshot_id)
@@ -576,9 +625,9 @@ class DagsterInstance:
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         status,
         tags,
@@ -586,13 +635,17 @@ class DagsterInstance:
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
+        solid_selection=None,
     ):
+
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -600,6 +653,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
         return self._run_storage.add_run(pipeline_run)
 
@@ -607,15 +661,17 @@ class DagsterInstance:
         self,
         pipeline_name,
         run_id,
-        environment_dict,
+        run_config,
         mode,
-        solid_subset,
+        solids_to_execute,
         step_keys_to_execute,
         tags,
         root_run_id,
         parent_run_id,
         pipeline_snapshot,
         execution_plan_snapshot,
+        parent_pipeline_snapshot,
+        solid_selection=None,
     ):
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -631,9 +687,10 @@ class DagsterInstance:
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
             run_id=run_id,
-            environment_dict=environment_dict,
+            run_config=run_config,
             mode=mode,
-            solid_subset=solid_subset,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=PipelineRunStatus.MANAGED,
             tags=tags,
@@ -641,6 +698,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
+            parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
         def get_run():
@@ -804,7 +862,7 @@ class DagsterInstance:
 
     # Run launcher
 
-    def launch_run(self, run_id, external_pipeline=None):
+    def launch_run(self, run_id, external_pipeline):
         '''Launch a pipeline run.
 
         This method delegates to the ``RunLauncher``, if any, configured on the instance, and will
@@ -821,58 +879,59 @@ class DagsterInstance:
 
     # Scheduler
 
-    def start_schedule(self, repository_name, schedule_name):
-        return self._scheduler.start_schedule(self, repository_name, schedule_name)
+    def reconcile_scheduler_state(self, external_repository):
+        return self._scheduler.reconcile_scheduler_state(self, external_repository)
 
-    def stop_schedule(self, repository_name, schedule_name):
-        return self._scheduler.stop_schedule(self, repository_name, schedule_name)
+    def start_schedule_and_update_storage_state(self, external_schedule):
+        return self._scheduler.start_schedule_and_update_storage_state(self, external_schedule)
 
-    def end_schedule(self, repository_name, schedule_name):
-        return self._scheduler.end_schedule(self, repository_name, schedule_name)
+    def stop_schedule_and_update_storage_state(self, schedule_origin_id):
+        return self._scheduler.stop_schedule_and_update_storage_state(self, schedule_origin_id)
+
+    def stop_schedule_and_delete_from_storage(self, schedule_origin_id):
+        return self._scheduler.stop_schedule_and_delete_from_storage(self, schedule_origin_id)
+
+    def running_schedule_count(self, schedule_origin_id):
+        if self._scheduler:
+            return self._scheduler.running_schedule_count(schedule_origin_id)
+        return 0
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
 
         errors = []
 
-        schedule_info = self.all_schedules_info()
         schedules = []
-        for repository_name, schedule in schedule_info:
-            if (
-                schedule.status == ScheduleStatus.RUNNING
-                and not self._scheduler.is_scheduler_job_running(repository_name, schedule.name)
+        for schedule_state in self.all_stored_schedule_state():
+            if schedule_state.status == ScheduleStatus.RUNNING and not self.running_schedule_count(
+                schedule_state.schedule_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be running, but the scheduler is not "
-                    "running the schedule. Run `dagster schedule up` to resolve".format(
-                        schedule_name=schedule.name
-                    )
+                    "running the schedule.".format(schedule_name=schedule_state.name)
                 )
-            elif (
-                schedule.status == ScheduleStatus.STOPPED
-                and self._scheduler.is_scheduler_job_running(repository_name, schedule.name)
+            elif schedule_state.status == ScheduleStatus.STOPPED and self.running_schedule_count(
+                schedule_state.schedule_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be stopped, but the scheduler is still running "
-                    "the schedule. Run `dagster schedule up` to resolve".format(
-                        schedule_name=schedule.name
-                    )
+                    "the schedule.".format(schedule_name=schedule_state.name)
                 )
 
-            if self._scheduler.is_scheduler_job_running(repository_name, schedule.name) > 1:
+            if self.running_schedule_count(schedule_state.schedule_origin_id) > 1:
                 errors.append(
                     "Duplicate jobs found: More than one job for schedule {schedule_name} are "
-                    "running on the scheduler.  "
-                    "Run `dagster schedule up` to resolve".format(schedule_name=schedule.name)
+                    "running on the scheduler.".format(schedule_name=schedule_state.name)
                 )
 
             schedule_info = {
-                schedule.name: {
-                    "status": schedule.status.value,
-                    "cron_schedule": schedule.cron_schedule,
-                    "python_path": schedule.python_path,
-                    "repository_name": repository_name,
-                    "repository_path": schedule.repository_path,
+                schedule_state.name: {
+                    "status": schedule_state.status.value,
+                    "cron_schedule": schedule_state.cron_schedule,
+                    "python_path": schedule_state.pipeline_origin.executable_path,
+                    "repository_pointer": schedule_state.pipeline_origin.get_repo_pointer().describe(),
+                    "schedule_origin_id": schedule_state.schedule_origin_id,
+                    "repository_origin_id": schedule_state.repository_origin_id,
                 }
             }
 
@@ -887,37 +946,32 @@ class DagsterInstance:
 
     # Schedule Storage
 
-    def create_schedule_tick(self, repository_name, schedule_tick_data):
-        return self._schedule_storage.create_schedule_tick(repository_name, schedule_tick_data)
+    def create_schedule_tick(self, schedule_tick_data):
+        return self._schedule_storage.create_schedule_tick(schedule_tick_data)
 
-    def update_schedule_tick(self, repository_name, tick):
-        return self._schedule_storage.update_schedule_tick(repository_name, tick)
+    def update_schedule_tick(self, tick):
+        return self._schedule_storage.update_schedule_tick(tick)
 
-    def get_schedule_ticks_by_schedule(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_ticks_by_schedule(repository_name, schedule_name)
+    def get_schedule_ticks(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_ticks(schedule_origin_id)
 
-    def get_schedule_tick_stats_by_schedule(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_tick_stats_by_schedule(
-            repository_name, schedule_name
-        )
+    def get_schedule_tick_stats(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_tick_stats(schedule_origin_id)
 
-    def all_schedules_info(self):
-        return self._schedule_storage.all_schedules_info()
+    def all_stored_schedule_state(self, repository_origin_id=None):
+        return self._schedule_storage.all_stored_schedule_state(repository_origin_id)
 
-    def all_schedules(self, repository_name=None):
-        return self._schedule_storage.all_schedules(repository_name)
+    def get_schedule_state(self, schedule_origin_id):
+        return self._schedule_storage.get_schedule_state(schedule_origin_id)
 
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_by_name(repository_name, schedule_name)
+    def add_schedule_state(self, schedule_state):
+        return self._schedule_storage.add_schedule_state(schedule_state)
 
-    def add_schedule(self, repository_name, schedule):
-        return self._schedule_storage.add_schedule(repository_name, schedule)
+    def update_schedule_state(self, schedule_state):
+        return self._schedule_storage.update_schedule_state(schedule_state)
 
-    def update_schedule(self, repository_name, schedule):
-        return self._schedule_storage.update_schedule(repository_name, schedule)
-
-    def delete_schedule(self, repository_name, schedule):
-        return self._schedule_storage.delete_schedule(repository_name, schedule)
+    def delete_schedule_state(self, schedule_origin_id):
+        return self._schedule_storage.delete_schedule_state(schedule_origin_id)
 
     def wipe_all_schedules(self):
         if self._scheduler:
@@ -925,5 +979,5 @@ class DagsterInstance:
 
         self._schedule_storage.wipe()
 
-    def log_path_for_schedule(self, repository_name, schedule_name):
-        return self._scheduler.get_log_path(self, repository_name, schedule_name)
+    def logs_path_for_schedule(self, schedule_origin_id):
+        return self._scheduler.get_logs_path(self, schedule_origin_id)

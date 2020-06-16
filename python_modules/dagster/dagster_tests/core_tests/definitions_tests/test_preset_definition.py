@@ -18,7 +18,7 @@ from dagster.utils import file_relative_path
 
 
 def test_presets():
-    @solid(config={'error': Bool})
+    @solid(config_schema={'error': Bool})
     def can_fail(context):
         if context.solid_config['error']:
             raise Exception('I did an error')
@@ -35,27 +35,27 @@ def test_presets():
             PresetDefinition.from_files(
                 'passing',
                 environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'passing_overide_to_fail',
                 environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ).with_additional_config({'solids': {'can_fail': {'config': {'error': True}}}}),
             PresetDefinition(
                 'passing_direct_dict',
-                environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
-                solid_subset=['can_fail'],
+                run_config={'solids': {'can_fail': {'config': {'error': False}}}},
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'failing_1',
                 environment_files=[file_relative_path(__file__, 'fail_env.yaml')],
-                solid_subset=['can_fail'],
+                solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'failing_2', environment_files=[file_relative_path(__file__, 'pass_env.yaml')]
             ),
-            PresetDefinition('subset', solid_subset=['can_fail'],),
+            PresetDefinition('subset', solid_selection=['can_fail'],),
         ],
     )
 
@@ -88,26 +88,26 @@ def test_presets():
     assert execute_pipeline(
         pipeline,
         preset='passing',
-        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
     with pytest.raises(
         check.CheckError,
         match=re.escape(
             'The environment set in preset \'passing\' does not agree with the environment passed '
-            'in the `environment_dict` argument.'
+            'in the `run_config` argument.'
         ),
     ):
         execute_pipeline(
             pipeline,
             preset='passing',
-            environment_dict={'solids': {'can_fail': {'config': {'error': True}}}},
+            run_config={'solids': {'can_fail': {'config': {'error': True}}}},
         )
 
     assert execute_pipeline(
         pipeline,
         preset='subset',
-        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
 
@@ -159,7 +159,7 @@ other: 4
 final: "result"
 '''
     preset = PresetDefinition.from_yaml_strings('passing', [a, b, c])
-    assert preset.environment_dict == {
+    assert preset.run_config == {
         'foo': {'bar': 1, 'one': 'one'},
         'baz': 3,
         'other': 4,
@@ -172,14 +172,14 @@ final: "result"
 
     res = PresetDefinition.from_yaml_strings('empty')
     assert res == PresetDefinition(
-        name='empty', environment_dict={}, solid_subset=None, mode='default'
+        name='empty', run_config={}, solid_selection=None, mode='default'
     )
 
 
 def test_from_pkg_resources():
     good = ('dagster_tests.core_tests.definitions_tests', 'pass_env.yaml')
     res = PresetDefinition.from_pkg_resources('pass', [good])
-    assert res.environment_dict == {'solids': {'can_fail': {'config': {'error': False}}}}
+    assert res.run_config == {'solids': {'can_fail': {'config': {'error': False}}}}
 
     bad_defs = [
         ('dagster_tests.core_tests.definitions_tests', 'does_not_exist.yaml'),

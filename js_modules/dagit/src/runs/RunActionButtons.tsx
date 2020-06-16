@@ -19,12 +19,10 @@ import { ExecutionType } from "../LocalStorage";
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../DomUtils";
 import { IStepState } from "../RunMetadataProvider";
-import { LaunchButtonGroup } from "../execute/PipelineExecutionButtonGroup";
 
 const CANCEL_TITLE = "Terminate";
 
 // Title of re-execute button group
-const START_REEXECUTE_TITLE = "Re-execute";
 const LAUNCH_REEXECUTE_TITLE = "Launch Re-execution";
 
 // Titles of re-execute options
@@ -72,7 +70,6 @@ interface RunActionButtonsProps {
   executionPlan?: {
     artifactsPersisted: boolean;
   } | null;
-  onExecute: (stepKeys?: string[], resumeRetry?: boolean) => Promise<void>;
   onLaunch: (stepKeys?: string[], resumeRetry?: boolean) => Promise<void>;
 }
 
@@ -217,7 +214,6 @@ interface ReexecuteButtonGroupProps {
   selectedSteps: string[];
   artifactsPersisted: boolean;
   onClick: (stepKeys?: string[], resumeRetry?: boolean) => void;
-  isLaunch: boolean;
   isPipelineUnknown: boolean;
   run?: RunActionButtonsRun;
   selectedStepStates: IStepState[];
@@ -231,7 +227,6 @@ export function ReexecuteButtonGroup(props: ReexecuteButtonGroupProps) {
     selectedSteps,
     artifactsPersisted,
     onClick,
-    isLaunch,
     isPipelineUnknown,
     run,
     selectedStepStates,
@@ -279,7 +274,7 @@ export function ReexecuteButtonGroup(props: ReexecuteButtonGroupProps) {
       >
         <Button
           small={true}
-          text={isLaunch ? LAUNCH_REEXECUTE_TITLE : START_REEXECUTE_TITLE}
+          text={LAUNCH_REEXECUTE_TITLE}
           icon="repeat"
           rightIcon="caret-down"
           disabled={isPipelineUnknown}
@@ -291,12 +286,8 @@ export function ReexecuteButtonGroup(props: ReexecuteButtonGroupProps) {
 }
 
 export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = props => {
-  const { run, executionPlan, onExecute, onLaunch } = props;
-  // TODO: temporary hack to try to force rerender of the action buttons based on
-  // the local storage state.  Real solution is to push the LaunchButtonGroup to use
-  // context (https://github.com/dagster-io/dagster/issues/2153)
-  const [, updateState] = React.useState<ExecutionType>(ExecutionType.START);
-
+  const [starting, setStarting] = React.useState(false);
+  const { run, executionPlan, onLaunch } = props;
   const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
   const isReexecutionDisabled = !(
     run?.status === PipelineRunStatus.FAILURE ||
@@ -305,47 +296,29 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
 
   return (
     <>
-      <LaunchButtonGroup small={true} onChange={updateState}>
-        <ExecutionStartButton
-          title={START_REEXECUTE_TITLE}
-          icon="repeat"
-          onClick={() => {}}
-          disabled={isReexecutionDisabled}
-          small={true}
-        >
-          <ReexecuteButtonGroup
-            // Re-execute button group
-            onClick={onExecute}
-            isLaunch={false}
-            selectedSteps={props.selectedSteps}
-            artifactsPersisted={props.artifactsPersisted}
-            isPipelineUnknown={isPipelineUnknown}
-            run={run}
-            selectedStepStates={props.selectedStepStates}
-            executionPlan={executionPlan}
-          />
-        </ExecutionStartButton>
-
-        <ExecutionStartButton
-          title={LAUNCH_REEXECUTE_TITLE}
-          icon="repeat"
-          onClick={() => {}}
-          disabled={isReexecutionDisabled}
-          small={true}
-        >
-          <ReexecuteButtonGroup
-            // Launch re-execution button group
-            onClick={onLaunch}
-            isLaunch={true}
-            selectedSteps={props.selectedSteps}
-            artifactsPersisted={props.artifactsPersisted}
-            isPipelineUnknown={isPipelineUnknown}
-            run={run}
-            selectedStepStates={props.selectedStepStates}
-            executionPlan={executionPlan}
-          />
-        </ExecutionStartButton>
-      </LaunchButtonGroup>
+      <ExecutionStartButton
+        title={LAUNCH_REEXECUTE_TITLE}
+        icon="repeat"
+        onClick={() => {}}
+        starting={starting}
+        disabled={isReexecutionDisabled}
+        small={true}
+      >
+        <ReexecuteButtonGroup
+          // Launch re-execution button group
+          onClick={async (...args) => {
+            setStarting(true);
+            await onLaunch(...args);
+            setStarting(false);
+          }}
+          selectedSteps={props.selectedSteps}
+          artifactsPersisted={props.artifactsPersisted}
+          isPipelineUnknown={isPipelineUnknown}
+          run={run}
+          selectedStepStates={props.selectedStepStates}
+          executionPlan={executionPlan}
+        />
+      </ExecutionStartButton>
       {run?.canTerminate && (
         <>
           <div style={{ minWidth: 6 }} />

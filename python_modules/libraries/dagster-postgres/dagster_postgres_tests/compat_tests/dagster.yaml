@@ -9,3 +9,9 @@ event_log_storage:
   class: PostgresEventLogStorage
   config:
     postgres_url: "postgresql://test:test@{hostname}:5432/test"
+
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_url: "postgresql://test:test@{hostname}:5432/test"

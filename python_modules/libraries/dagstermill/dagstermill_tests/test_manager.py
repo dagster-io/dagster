@@ -45,7 +45,7 @@ def in_pipeline_manager(
             pipeline_name=pipeline_name,
             run_id=run_id,
             mode=mode or 'default',
-            environment_dict=None,
+            run_config=None,
             step_keys_to_execute=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
@@ -58,7 +58,7 @@ def in_pipeline_manager(
                 'solid_handle_kwargs': solid_handle._asdict(),
                 'executable_dict': executable_dict,
                 'marshal_dir': marshal_dir,
-                'environment_dict': {},
+                'run_config': {},
                 'output_log_path': output_log_file_path,
                 'instance_ref_dict': pack_value(instance.get_ref()),
             }
@@ -160,7 +160,7 @@ def test_in_pipeline_manager_solid_config():
     with in_pipeline_manager(
         pipeline_name='hello_world_config_pipeline',
         solid_handle=SolidHandle('hello_world_config', None),
-        environment_dict={'solids': {'hello_world_config': {'config': {'greeting': 'bonjour'}}}},
+        run_config={'solids': {'hello_world_config': {'config': {'greeting': 'bonjour'}}}},
         executable_dict=ReconstructablePipeline.for_module(
             'dagstermill.examples.repository', 'define_hello_world_config_pipeline',
         ).to_dict(),
@@ -179,7 +179,7 @@ def test_in_pipeline_manager_with_resources():
                 'dagstermill.examples.repository', 'define_resource_pipeline',
             ).to_dict(),
             solid_handle=SolidHandle('hello_world_resource', None),
-            environment_dict={'resources': {'list': {'config': path}}},
+            run_config={'resources': {'list': {'config': path}}},
             mode='prod',
         ) as manager:
             assert len(manager.context.resources._asdict()) == 1

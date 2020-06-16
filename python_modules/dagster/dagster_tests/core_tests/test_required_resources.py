@@ -20,6 +20,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
@@ -131,27 +132,27 @@ def test_execution_plan_subset_strict_resources():
         pipeline_def, step_keys_to_execute=['consumes_resource_b.compute'],
     )
 
-    result = execute_run(pipeline_def, pipeline_run, instance)
+    result = execute_run(InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance)
 
     assert result.success
 
     assert set(resources_initted.keys()) == {'b'}
 
 
-def test_solid_subset_strict_resources():
+def test_solid_selection_strict_resources():
     resources_initted = {}
 
     selective_init_test_pipeline = get_resource_init_pipeline(resources_initted)
 
     result = execute_pipeline(
-        selective_init_test_pipeline.subset_for_execution(['consumes_resource_b'])
+        selective_init_test_pipeline.get_pipeline_subset_def({'consumes_resource_b'})
     )
     assert result.success
 
     assert set(resources_initted.keys()) == {'b'}
 
 
-def test_solid_subset_with_aliases_strict_resources():
+def test_solid_selection_with_aliases_strict_resources():
     resources_initted = {}
 
     @resource
@@ -177,7 +178,7 @@ def test_solid_subset_with_aliases_strict_resources():
         consumes_resource_a.alias('alias_for_a')()
         consumes_resource_b()
 
-    result = execute_pipeline(selective_init_test_pipeline.subset_for_execution(['alias_for_a']))
+    result = execute_pipeline(selective_init_test_pipeline.get_pipeline_subset_def({'alias_for_a'}))
     assert result.success
 
     assert set(resources_initted.keys()) == {'a'}
@@ -228,11 +229,11 @@ def create_composite_solid_pipeline(resources_initted):
     return selective_init_composite_test_pipeline
 
 
-def test_solid_subset_strict_resources_within_composite():
+def test_solid_selection_strict_resources_within_composite():
     resources_initted = {}
 
     result = execute_pipeline(
-        create_composite_solid_pipeline(resources_initted).subset_for_execution(['wraps_b'])
+        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def({'wraps_b'})
     )
     assert result.success
 
@@ -250,7 +251,7 @@ def test_execution_plan_subset_strict_resources_within_composite():
         pipeline_def, step_keys_to_execute=['wraps_b.consumes_resource_b.compute'],
     )
 
-    result = execute_run(pipeline_def, pipeline_run, instance)
+    result = execute_run(InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance)
 
     assert result.success
 
@@ -262,8 +263,8 @@ def test_unknown_resource_composite_error():
 
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
-            create_composite_solid_pipeline(resources_initted).subset_for_execution(
-                ['wraps_b_error']
+            create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def(
+                {'wraps_b_error'}
             )
         )
 
@@ -300,7 +301,9 @@ def test_execution_plan_subset_with_aliases():
         selective_init_test_pipeline_with_alias, step_keys_to_execute=['b_alias.compute'],
     )
 
-    result = execute_run(selective_init_test_pipeline_with_alias, pipeline_run, instance)
+    result = execute_run(
+        InMemoryExecutablePipeline(selective_init_test_pipeline_with_alias), pipeline_run, instance
+    )
 
     assert result.success
 

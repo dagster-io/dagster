@@ -85,7 +85,7 @@ repository:
 To make a pipeline partitionable, we'll use solid config. This will
 allow us to simply change the config to run the pipeline for different
 partitions. If you haven't explored the dagster config system, take a
-look at the [tutorial](/docs/tutorial/basics#parametrizing-solids-with-config).
+look at the [tutorial](/docs/tutorial/basics_solids#parametrizing-solids-with-config).
 
 Our first solid will take the stock ticker symbol as config, and query
 the API to return the volume traded from Jan 01 - Jan 31 2019. We pass
@@ -108,16 +108,15 @@ Great! Now we can wrap this up in a pipeline and repository, then open
 the repository in dagit to execute the pipeline.
 
 ```{.python}
-from dagster import pipeline, RepositoryDefinition
+from dagster import pipeline, repository
 
 @pipeline
 def compute_total_stock_volume():
     sum_volume(query_historical_stock_data())
 
-def define_repo():
-    return RepositoryDefinition(
-        name='partitioning-tutorial', pipeline_defs=[compute_total_stock_volume]
-    )
+@repository
+def partitioning_tutorial():
+    return [compute_total_stock_volume]
 ```
 
 ![pipeline.png](/assets/images/learn/guides/partitioning/pipeline.png)

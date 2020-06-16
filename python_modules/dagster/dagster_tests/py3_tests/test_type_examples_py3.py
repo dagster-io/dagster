@@ -228,7 +228,7 @@ def test_set_solid():
 def test_set_solid_configable_input():
     res = execute_solid(
         set_solid,
-        environment_dict={
+        run_config={
             'solids': {
                 'set_solid': {
                     'inputs': {'set_input': [{'value': 'foo'}, {'value': 'bar'}, {'value': 'baz'}]}
@@ -243,9 +243,7 @@ def test_set_solid_configable_input_bad():
     with pytest.raises(DagsterInvalidConfigError,) as exc_info:
         execute_solid(
             set_solid,
-            environment_dict={
-                'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}
-            },
+            run_config={'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}},
         )
 
     expected = (
@@ -264,7 +262,7 @@ def test_tuple_solid():
 def test_tuple_solid_configable_input():
     res = execute_solid(
         tuple_solid,
-        environment_dict={
+        run_config={
             'solids': {
                 'tuple_solid': {
                     'inputs': {'tuple_input': [{'value': 'foo'}, {'value': 1}, {'value': 3.1}]}
@@ -283,58 +281,58 @@ def test_dict_return_solid():
 ######
 
 
-@solid(config=Field(Any))
+@solid(config_schema=Field(Any))
 def any_config(context):
     return context.solid_config
 
 
-@solid(config=Field(Bool))
+@solid(config_schema=Field(Bool))
 def bool_config(context):
     return 'true' if context.solid_config else 'false'
 
 
-@solid(config=Int)
+@solid(config_schema=Int)
 def add_n(context, x: Int) -> int:
     return x + context.solid_config
 
 
-@solid(config=Field(Float))
+@solid(config_schema=Field(Float))
 def div_y(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config=Field(float))
+@solid(config_schema=Field(float))
 def div_y_var(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config=Field(String))
+@solid(config_schema=Field(String))
 def hello(context) -> str:
     return 'Hello, {friend}!'.format(friend=context.solid_config)
 
 
-@solid(config=Field(String))
+@solid(config_schema=Field(String))
 def unpickle(context) -> Any:
     with open(context.solid_config, 'rb') as fd:
         return pickle.load(fd)
 
 
-@solid(config=Field(list))
+@solid(config_schema=Field(list))
 def concat_typeless_list_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config=Field([str]))
+@solid(config_schema=Field([str]))
 def concat_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config={'word': String, 'times': Int})
+@solid(config_schema={'word': String, 'times': Int})
 def repeat_config(context) -> str:
     return context.solid_config['word'] * context.solid_config['times']
 
 
-@solid(config=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
+@solid(config_schema=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
 def hello_world(context) -> str:
     if 'haw' in context.solid_config:
         return 'Aloha honua!'
@@ -344,7 +342,7 @@ def hello_world(context) -> str:
 
 
 @solid(
-    config=Field(
+    config_schema=Field(
         Selector(
             {
                 'haw': {'whom': Field(String, default_value='honua', is_required=False)},
@@ -365,56 +363,52 @@ def hello_world_default(context) -> str:
         return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
 
 
-@solid(config=Field(Permissive({'required': Field(String)})))
+@solid(config_schema=Field(Permissive({'required': Field(String)})))
 def partially_specified_config(context) -> List:
     return sorted(list(context.solid_config.items()))
 
 
 def test_any_config():
-    res = execute_solid(any_config, environment_dict={'solids': {'any_config': {'config': 'foo'}}})
+    res = execute_solid(any_config, run_config={'solids': {'any_config': {'config': 'foo'}}})
     assert res.output_value() == 'foo'
 
     res = execute_solid(
-        any_config, environment_dict={'solids': {'any_config': {'config': {'zip': 'zowie'}}}}
+        any_config, run_config={'solids': {'any_config': {'config': {'zip': 'zowie'}}}}
     )
     assert res.output_value() == {'zip': 'zowie'}
 
 
 def test_bool_config():
-    res = execute_solid(bool_config, environment_dict={'solids': {'bool_config': {'config': True}}})
+    res = execute_solid(bool_config, run_config={'solids': {'bool_config': {'config': True}}})
     assert res.output_value() == 'true'
 
-    res = execute_solid(
-        bool_config, environment_dict={'solids': {'bool_config': {'config': False}}}
-    )
+    res = execute_solid(bool_config, run_config={'solids': {'bool_config': {'config': False}}})
     assert res.output_value() == 'false'
 
 
 def test_add_n():
     res = execute_solid(
-        add_n, input_values={'x': 3}, environment_dict={'solids': {'add_n': {'config': 7}}}
+        add_n, input_values={'x': 3}, run_config={'solids': {'add_n': {'config': 7}}}
     )
     assert res.output_value() == 10
 
 
 def test_div_y():
     res = execute_solid(
-        div_y, input_values={'x': 3.0}, environment_dict={'solids': {'div_y': {'config': 2.0}}}
+        div_y, input_values={'x': 3.0}, run_config={'solids': {'div_y': {'config': 2.0}}}
     )
     assert res.output_value() == 1.5
 
 
 def test_div_y_var():
     res = execute_solid(
-        div_y_var,
-        input_values={'x': 3.0},
-        environment_dict={'solids': {'div_y_var': {'config': 2.0}}},
+        div_y_var, input_values={'x': 3.0}, run_config={'solids': {'div_y_var': {'config': 2.0}}},
     )
     assert res.output_value() == 1.5
 
 
 def test_hello():
-    res = execute_solid(hello, environment_dict={'solids': {'hello': {'config': 'Max'}}})
+    res = execute_solid(hello, run_config={'solids': {'hello': {'config': 'Max'}}})
     assert res.output_value() == 'Hello, Max!'
 
 
@@ -423,16 +417,13 @@ def test_unpickle():
         filename = os.path.join(tmpdir, 'foo.pickle')
         with open(filename, 'wb') as f:
             pickle.dump('foo', f)
-        res = execute_solid(
-            unpickle, environment_dict={'solids': {'unpickle': {'config': filename}}}
-        )
+        res = execute_solid(unpickle, run_config={'solids': {'unpickle': {'config': filename}}})
         assert res.output_value() == 'foo'
 
 
 def test_concat_config():
     res = execute_solid(
-        concat_config,
-        environment_dict={'solids': {'concat_config': {'config': ['foo', 'bar', 'baz']}}},
+        concat_config, run_config={'solids': {'concat_config': {'config': ['foo', 'bar', 'baz']}}},
     )
     assert res.output_value() == 'foobarbaz'
 
@@ -440,9 +431,7 @@ def test_concat_config():
 def test_concat_typeless_config():
     res = execute_solid(
         concat_typeless_list_config,
-        environment_dict={
-            'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}
-        },
+        run_config={'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}},
     )
     assert res.output_value() == 'foobarbaz'
 
@@ -450,7 +439,7 @@ def test_concat_typeless_config():
 def test_repeat_config():
     res = execute_solid(
         repeat_config,
-        environment_dict={'solids': {'repeat_config': {'config': {'word': 'foo', 'times': 3}}}},
+        run_config={'solids': {'repeat_config': {'config': {'word': 'foo', 'times': 3}}}},
     )
     assert res.output_value() == 'foofoofoo'
 
@@ -458,14 +447,14 @@ def test_repeat_config():
 def test_tuple_none_config():
     with pytest.raises(check.CheckError, match='Param tuple_types cannot be none'):
 
-        @solid(config=Field(Tuple[None]))
+        @solid(config_schema=Field(Tuple[None]))
         def _tuple_none_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
 
 
 def test_selector_config():
     res = execute_solid(
-        hello_world, environment_dict={'solids': {'hello_world': {'config': {'haw': {}}}}}
+        hello_world, run_config={'solids': {'hello_world': {'config': {'haw': {}}}}}
     )
     assert res.output_value() == 'Aloha honua!'
 
@@ -476,13 +465,13 @@ def test_selector_config_default():
 
     res = execute_solid(
         hello_world_default,
-        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {}}}}},
+        run_config={'solids': {'hello_world_default': {'config': {'haw': {}}}}},
     )
     assert res.output_value() == 'Aloha honua!'
 
     res = execute_solid(
         hello_world_default,
-        environment_dict={'solids': {'hello_world_default': {'config': {'haw': {'whom': 'Max'}}}}},
+        run_config={'solids': {'hello_world_default': {'config': {'haw': {'whom': 'Max'}}}}},
     )
     assert res.output_value() == 'Aloha Max!'
 
@@ -490,7 +479,7 @@ def test_selector_config_default():
 def test_permissive_config():
     res = execute_solid(
         partially_specified_config,
-        environment_dict={
+        run_config={
             'solids': {
                 'partially_specified_config': {'config': {'required': 'yes', 'also': 'this'}}
             }

@@ -6,22 +6,10 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_pipeline_reexecution_info_query 1'] = [
+snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[sqlite_with_sync_run_launcher_in_process_env] 1'] = [
     'sum_sq_solid.compute'
 ]
 
-snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[sqlite_in_process_start] 1'] = [
-    'sum_sq_solid.compute'
-]
-
-snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[in_memory_in_process_start] 1'] = [
-    'sum_sq_solid.compute'
-]
-
-snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[sqlite_subprocess_start] 1'] = [
-    'sum_sq_solid.compute'
-]
-
-snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[in_memory_instance_with_sync_hijack] 1'] = [
+snapshots['TestRetryExecution.test_pipeline_reexecution_info_query[sqlite_with_cli_api_run_launcher_in_process_env] 1'] = [
     'sum_sq_solid.compute'
 ]

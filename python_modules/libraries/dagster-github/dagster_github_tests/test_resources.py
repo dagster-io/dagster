@@ -34,7 +34,7 @@ def test_github_resource_get_installations():
 
     result = execute_solid(
         github_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'github': {
                     'config': {
@@ -77,7 +77,7 @@ def test_github_resource_create_issue():
 
     result = execute_solid(
         github_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'github': {
                     'config': {
@@ -123,7 +123,7 @@ def test_github_resource_execute():
 
     result = execute_solid(
         github_solid,
-        environment_dict={
+        run_config={
             'resources': {
                 'github': {
                     'config': {

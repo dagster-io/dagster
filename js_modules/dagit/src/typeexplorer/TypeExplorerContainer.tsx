@@ -7,24 +7,26 @@ import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables
 } from "./types/TypeExplorerContainerQuery";
-import { PipelineSelector } from "../PipelineSelectorUtils";
+import { PipelineExplorerPath } from "../PipelinePathUtils";
+import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 interface ITypeExplorerContainerProps {
-  selector: PipelineSelector;
+  explorerPath: PipelineExplorerPath;
   typeName: string;
 }
 
 export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContainerProps> = ({
-  selector,
+  explorerPath,
   typeName
 }) => {
+  const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<
     TypeExplorerContainerQuery,
     TypeExplorerContainerQueryVariables
   >(TYPE_EXPLORER_CONTAINER_QUERY, {
     fetchPolicy: "cache-and-network",
     variables: {
-      pipelineName: selector.pipelineName,
+      pipelineSelector,
       dagsterTypeName: typeName
     }
   });
@@ -51,12 +53,13 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
 
 export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
   query TypeExplorerContainerQuery(
-    $pipelineName: String!
+    $pipelineSelector: PipelineSelector!
     $dagsterTypeName: String!
   ) {
-    pipelineOrError(params: { name: $pipelineName }) {
+    pipelineOrError(params: $pipelineSelector) {
       __typename
       ... on Pipeline {
+        id
         dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
           __typename
           ... on RegularDagsterType {

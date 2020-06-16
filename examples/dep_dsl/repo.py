@@ -1,10 +1,10 @@
 from dagster import (
     DependencyDefinition,
     PipelineDefinition,
-    RepositoryDefinition,
     SolidInvocation,
     check,
     file_relative_path,
+    repository,
     solid,
 )
 from dagster.utils import load_yaml_from_path
@@ -56,7 +56,6 @@ def define_dep_dsl_pipeline():
     )
 
 
-def define_repository():
-    return RepositoryDefinition(
-        name="my_repository", pipeline_dict={'some_example': define_dep_dsl_pipeline}
-    )
+@repository
+def my_repository():
+    return {'pipelines': {'some_example': define_dep_dsl_pipeline}}

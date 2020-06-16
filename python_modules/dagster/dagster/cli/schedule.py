@@ -1,19 +1,18 @@
 from __future__ import print_function
 
-import sys
+import os
 
 import click
 import six
 
 from dagster import DagsterInvariantViolationError, check
-from dagster.cli.load_handle import recon_repo_for_cli_args
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import (
-    ScheduleStatus,
-    get_schedule_change_set,
-    reconcile_scheduler_state,
+from dagster.cli.workspace.cli_target import (
+    get_external_repository_from_kwargs,
+    repository_target_argument,
 )
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.core.host_representation import ExternalRepository
+from dagster.core.instance import DagsterInstance
+from dagster.core.scheduler import ScheduleStatus, get_schedule_change_set
 
 
 def create_schedule_cli_group():
@@ -22,6 +21,7 @@ def create_schedule_cli_group():
     group.add_command(schedule_up_command)
     group.add_command(schedule_preview_command)
     group.add_command(schedule_start_command)
+    group.add_command(schedule_logs_command)
     group.add_command(schedule_stop_command)
     group.add_command(schedule_restart_command)
     group.add_command(schedule_wipe_command)
@@ -29,58 +29,54 @@ def create_schedule_cli_group():
     return group
 
 
-# With the SystemCronScheduler, we currently only target a repository.yaml file since we need
-# an absolute path to the repository that we can use in the cron job bash script. When using
-# the combination of --python-file --fn-name flags, ReconstructableRepository doesn't contain an
-# absolute path to the python file, but we can eventually change that to support these flags.
-REPO_TARGET_WARNING = 'Can only use --repository-yaml/-y'
-
-
-def apply_click_params(command, *click_params):
-    for click_param in click_params:
-        command = click_param(command)
-    return command
-
-
-def repository_target_argument(f):
-    return apply_click_params(
-        f,
-        click.option(
-            '--repository-yaml',
-            '-y',
-            type=click.Path(exists=True),
-            help=('Path to config file. Defaults to ./{default_filename} not specified').format(
-                default_filename=DEFAULT_REPOSITORY_YAML_FILENAME
-            ),
-        ),
-    )
-
-
 def print_changes(repository, instance, print_fn=print, preview=False):
-    changeset = get_schedule_change_set(
-        instance.all_schedules(repository.name), repository.schedule_defs
-    )
-    if len(changeset) == 0:
+    debug_info = instance.scheduler_debug_info()
+    errors = debug_info.errors
+    external_schedules = repository.get_external_schedules()
+    changeset = get_schedule_change_set(instance.all_stored_schedule_state(), external_schedules)
+
+    if len(errors) == 0 and len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
-            print_fn(
-                '{num} schedules will remain unchanged'.format(num=len(repository.schedule_defs))
-            )
+            print_fn('{num} schedules will remain unchanged'.format(num=len(external_schedules)))
         else:
             print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
-            print_fn('{num} schedules unchanged'.format(num=len(repository.schedule_defs)))
+            print_fn('{num} schedules unchanged'.format(num=len(external_schedules)))
         return
 
-    print_fn(click.style('Planned Changes:' if preview else 'Changes:', fg='magenta', bold=True))
+    if len(errors):
+        print_fn(
+            click.style(
+                'Planned Error Fixes:' if preview else 'Errors Resolved:', fg='magenta', bold=True
+            )
+        )
+        print_fn("\n".join(debug_info.errors))
+
+    if len(changeset):
+        print_fn(
+            click.style(
+                'Planned Schedule Changes:' if preview else 'Changes:', fg='magenta', bold=True
+            )
+        )
 
     for change in changeset:
-        change_type, schedule_name, changes = change
+        change_type, schedule_name, schedule_origin_id, changes = change
 
         if change_type == "add":
-            print_fn(click.style('  + %s (add)' % schedule_name, fg='green'))
+            print_fn(
+                click.style(
+                    '  + {name} (add) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
+                    fg='green',
+                )
+            )
 
         if change_type == "change":
-            print_fn(click.style('  ~ %s (update)' % schedule_name, fg='yellow'))
+            print_fn(
+                click.style(
+                    '  ~ {name} (update) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
+                    fg='yellow',
+                )
+            )
             for change_name, diff in changes:
                 if len(diff) == 2:
                     old, new = diff
@@ -97,16 +93,21 @@ def print_changes(repository, instance, print_fn=print, preview=False):
                     )
 
         if change_type == "remove":
-            print_fn(click.style('  - %s (delete)' % schedule_name, fg='red'))
+            print_fn(
+                click.style(
+                    '  - {name} (delete) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
+                    fg='red',
+                )
+            )
 
 
-def check_handle_and_scheduler(handle, instance):
+def check_repo_and_scheduler(repository, instance):
+    check.inst_param(repository, 'repository', ExternalRepository)
     check.inst_param(instance, 'instance', DagsterInstance)
 
-    repository = handle.get_definition()
     repository_name = repository.name
 
-    if not repository.schedule_defs:
+    if not repository.get_external_schedules():
         raise click.UsageError(
             "There are no schedules defined for repository {name}.".format(name=repository_name)
         )
@@ -129,13 +130,11 @@ def schedule_preview_command(**kwargs):
 
 
 def execute_preview_command(cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
-    repository = handle.get_definition()
-
-    print_changes(repository, instance, print_fn, preview=True)
+    print_changes(external_repo, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -154,29 +153,22 @@ def schedule_up_command(preview, **kwargs):
 
 
 def execute_up_command(preview, cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
-    repository = handle.get_definition()
-    python_path = sys.executable
-    repository_path = handle.yaml_path
-
-    print_changes(repository, instance, print_fn, preview=preview)
+    print_changes(external_repo, instance, print_fn, preview=preview)
     if preview:
         return
 
     try:
-        reconcile_scheduler_state(python_path, repository_path, repository, instance=instance)
+        instance.reconcile_scheduler_state(external_repo)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
 
 @click.command(
-    name='list',
-    help="List all schedules that correspond to a repository. {warning}".format(
-        warning=REPO_TARGET_WARNING
-    ),
+    name='list', help="List all schedules that correspond to a repository.",
 )
 @repository_target_argument
 @click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
@@ -187,12 +179,11 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
-    repository = handle.get_definition()
-    repository_name = repository.name
+    repository_name = external_repo.name
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository_name)
@@ -203,32 +194,36 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
     if running_filter:
         schedules = [
-            s for s in instance.all_schedules(repository_name) if s.status == ScheduleStatus.RUNNING
+            s
+            for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+            if s.status == ScheduleStatus.RUNNING
         ]
     elif stopped_filter:
         schedules = [
-            s for s in instance.all_schedules(repository_name) if s.status == ScheduleStatus.STOPPED
+            s
+            for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+            if s.status == ScheduleStatus.STOPPED
         ]
     else:
-        schedules = instance.all_schedules(repository_name)
+        schedules = instance.all_stored_schedule_state(external_repo.get_origin_id())
 
-    for schedule in schedules:
-        schedule_def = repository.get_schedule_def(schedule.name)
-
+    for schedule_state in schedules:
         # If --name filter is present, only print the schedule name
         if name_filter:
-            print_fn(schedule_def.name)
+            print_fn(schedule_state.name)
             continue
 
-        flag = "[{status}]".format(status=schedule.status.value) if schedule else ""
-        schedule_title = 'Schedule: {name} {flag}'.format(name=schedule_def.name, flag=flag)
+        flag = "[{status}]".format(status=schedule_state.status.value) if schedule_state else ""
+        schedule_title = 'Schedule: {name} {flag}'.format(name=schedule_state.name, flag=flag)
 
         if not first:
             print_fn('*' * len(schedule_title))
         first = False
 
         print_fn(schedule_title)
-        print_fn('Cron Schedule: {cron_schedule}'.format(cron_schedule=schedule_def.cron_schedule))
+        print_fn(
+            'Cron Schedule: {cron_schedule}'.format(cron_schedule=schedule_state.cron_schedule)
+        )
 
 
 def extract_schedule_name(schedule_name):
@@ -259,17 +254,16 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
-    repository = handle.get_definition()
-    repository_name = repository.name
+    repository_name = external_repo.name
 
     if all_flag:
-        for schedule in instance.all_schedules(repository_name):
+        for external_schedule in external_repo.get_external_schedules():
             try:
-                schedule = instance.start_schedule(repository_name, schedule.name)
+                instance.start_schedule_and_update_storage_state(external_schedule)
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
@@ -280,7 +274,10 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         )
     else:
         try:
-            schedule = instance.start_schedule(repository_name, schedule_name)
+
+            instance.start_schedule_and_update_storage_state(
+                external_repo.get_external_schedule(schedule_name)
+            )
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -296,19 +293,44 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
-
-    repository = handle.get_definition()
-    repository_name = repository.name
+    check_repo_and_scheduler(external_repo, instance)
 
     try:
-        instance.stop_schedule(repository_name, schedule_name)
+        instance.stop_schedule_and_update_storage_state(
+            external_repo.get_external_schedule(schedule_name).get_origin_id()
+        )
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
     print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
+
+
+@click.command(name='logs', help="Get logs for a schedule")
+@click.argument('schedule_name', nargs=-1)
+@repository_target_argument
+def schedule_logs_command(schedule_name, **kwargs):
+    schedule_name = extract_schedule_name(schedule_name)
+    if schedule_name is None:
+        print(
+            'Noop: dagster schedule logs was called without any arguments specifying which '
+            'schedules to retrieve logs for. Pass a schedule name'
+        )
+        return
+    return execute_logs_command(schedule_name, kwargs, click.echo)
+
+
+def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
+    external_repo = get_external_repository_from_kwargs(cli_args)
+    instance = DagsterInstance.get()
+    check_repo_and_scheduler(external_repo, instance)
+    logs_path = os.path.join(
+        instance.logs_path_for_schedule(
+            external_repo.get_external_schedule(schedule_name).get_origin_id()
+        )
+    )
+    print_fn(logs_path)
 
 
 @click.command(name='restart', help="Restart a running schedule")
@@ -326,19 +348,21 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
-    repository = handle.get_definition()
-    repository_name = repository.name
+    repository_name = external_repo.name
 
     if all_running_flag:
-        for schedule in instance.all_schedules(repository_name):
-            if schedule.status == ScheduleStatus.RUNNING:
+        for schedule_state in instance.all_stored_schedule_state(external_repo.get_origin_id()):
+            if schedule_state.status == ScheduleStatus.RUNNING:
                 try:
-                    instance.stop_schedule(repository_name, schedule.name)
-                    instance.start_schedule(repository_name, schedule.name)
+                    external_schedule = external_repo.get_external_schedule(schedule_state.name)
+                    instance.stop_schedule_and_update_storage_state(
+                        schedule_state.schedule_origin_id
+                    )
+                    instance.start_schedule_and_update_storage_state(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -346,17 +370,18 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             "Restarted all running schedules for repository {name}".format(name=repository_name)
         )
     else:
-        schedule = instance.get_schedule_by_name(repository_name, schedule_name)
-        if schedule.status != ScheduleStatus.RUNNING:
+        external_schedule = external_repo.get_external_schedule(schedule_name)
+        schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+        if schedule_state.status != ScheduleStatus.RUNNING:
             click.UsageError(
                 "Cannot restart a schedule {name} because is not currently running".format(
-                    name=schedule.name
+                    name=schedule_state.name
                 )
             )
 
         try:
-            instance.stop_schedule(repository_name, schedule_name)
-            instance.start_schedule(repository_name, schedule_name)
+            instance.stop_schedule_and_update_storage_state(schedule_state.schedule_origin_id)
+            instance.start_schedule_and_update_storage_state(external_schedule)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -370,9 +395,9 @@ def schedule_wipe_command(**kwargs):
 
 
 def execute_wipe_command(cli_args, print_fn):
-    handle = recon_repo_for_cli_args(cli_args)
+    external_repo = get_external_repository_from_kwargs(cli_args)
     instance = DagsterInstance.get()
-    check_handle_and_scheduler(handle, instance)
+    check_repo_and_scheduler(external_repo, instance)
 
     confirmation = click.prompt(
         'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
@@ -398,7 +423,7 @@ def execute_debug_command(print_fn):
 
     errors = debug_info.errors
     if len(errors):
-        title = "Errors"
+        title = "Errors (Run `dagster schedule up` to resolve)"
         output += "\n{title}\n{sep}\n{info}\n\n".format(
             title=title, sep="=" * len(title), info="\n".join(debug_info.errors),
         )

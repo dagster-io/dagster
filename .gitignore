@@ -110,6 +110,8 @@ python_modules/dagster/docs/_build
 
 dagit_run_logs
 
+python_modules/libraries/dagster-aws/dagster_aws/ecs/config.yaml
+
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
 
@@ -133,3 +135,6 @@ dask-worker-space
 
 # Examples outputs
 examples/dagster_examples/*/output/
+
+# Telemetry instance id
+.telemetry

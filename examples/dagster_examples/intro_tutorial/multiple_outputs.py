@@ -31,7 +31,7 @@ def read_csv(context, csv_path):
 
 
 @solid(
-    config={
+    config_schema={
         'process_hot': Field(Bool, is_required=False, default_value=True),
         'process_cold': Field(Bool, is_required=False, default_value=True),
     },
@@ -81,12 +81,12 @@ def multiple_outputs_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         }
     }
     result = execute_pipeline(
-        multiple_outputs_pipeline, environment_dict=environment_dict
+        multiple_outputs_pipeline, run_config=run_config
     )
     assert result.success

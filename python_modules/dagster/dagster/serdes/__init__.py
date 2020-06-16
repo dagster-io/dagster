@@ -13,6 +13,7 @@ Why not pickle?
 * This isn't meant to replace pickle in the conditions that pickle is reasonable to use
   (in memory, not human readable, etc) just handle the json case effectively.
 '''
+import hashlib
 import importlib
 import sys
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -26,6 +27,13 @@ from dagster import check, seven
 
 _WHITELISTED_TUPLE_MAP = {}
 _WHITELISTED_ENUM_MAP = {}
+
+
+def create_snapshot_id(snapshot):
+    json_rep = serialize_dagster_namedtuple(snapshot)
+    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    m.update(json_rep.encode())
+    return m.hexdigest()
 
 
 def serialize_pp(value):
@@ -151,7 +159,7 @@ def _pack_value(val, enum_map, tuple_map):
         klass_name = val.__class__.__name__
         check.invariant(
             klass_name in tuple_map,
-            'Can only serialize whitelisted namedtuples, received {}'.format(klass_name),
+            'Can only serialize whitelisted namedtuples, received tuple {}'.format(val),
         )
         base_dict = {
             key: _pack_value(value, enum_map, tuple_map) for key, value in val._asdict().items()
@@ -363,8 +371,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
     This same pattern should eventually be viable for other system components, e.g. engines.
 
-    The ConfigurableClass mixin provides the necessary hooks for classes to be instantiated from
-    an instance of ConfigurableClassData.
+    The ``ConfigurableClass`` mixin provides the necessary hooks for classes to be instantiated from
+    an instance of ``ConfigurableClassData``.
 
     Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
     type such as:
@@ -386,7 +394,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
-        serialized in an instance of ConfigurableClassData.
+        serialized in an instance of ``ConfigurableClassData``.
         '''
 
     @staticmethod
@@ -398,7 +406,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
-                `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.
+                ``value`` attribute of a
+                :py:class:`~dagster.core.types.evaluator.evaluation.EvaluateValueResult`.
 
 
         A common pattern is for the implementation to align the config_value with the signature

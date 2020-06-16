@@ -11,6 +11,7 @@ interface IExecutionStartButtonProps {
   icon: "repeat" | "play" | "disable" | "send-to";
   tooltip?: string;
   activeText?: string;
+  starting?: boolean;
   small?: boolean;
   disabled?: boolean;
   shortcutLabel?: string;
@@ -98,7 +99,7 @@ export default class ExecutionStartButton extends React.Component<
             );
           }
 
-          if (this.state.starting) {
+          if (this.state.starting || this.props.starting) {
             return (
               <ExecutionStartButtonContainer
                 role="button"
@@ -140,6 +141,7 @@ export default class ExecutionStartButton extends React.Component<
               </ExecutionStartButtonContainer>
             );
           }
+
           // Use custom button if it exists
           if (this.props.children) {
             return this.props.children;

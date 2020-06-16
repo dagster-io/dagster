@@ -28,7 +28,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import errno
-import fcntl
 import os
 import select
 import signal
@@ -41,10 +40,12 @@ from .utils import get_conn
 
 def get_wakeup_fd():
     pipe_r, pipe_w = os.pipe()
-    flags = fcntl.fcntl(pipe_w, fcntl.F_GETFL, 0)
-    flags = flags | os.O_NONBLOCK
-    flags = fcntl.fcntl(pipe_w, fcntl.F_SETFL, flags)
+    if "win" not in sys.platform:
+        import fcntl
 
+        flags = fcntl.fcntl(pipe_w, fcntl.F_GETFL, 0)
+        flags = os.O_NONBLOCK
+        flags = fcntl.fcntl(pipe_w, fcntl.F_SETFL, flags)
     signal.set_wakeup_fd(pipe_w)
     return pipe_r
 
@@ -141,5 +142,7 @@ def await_pg_notifications(
         conn.close()
         for s in signals_to_handle or []:
             if s in original_handlers:
-                signal_name = construct_signals(s).name
+                # Commenting out to get pylint to pass
+                # https://github.com/dagster-io/dagster/issues/2510
+                # signal_name = construct_signals(s).name
                 signal.signal(s, original_handlers[s])

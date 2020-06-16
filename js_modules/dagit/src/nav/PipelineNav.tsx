@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components/macro";
 import { Colors, Icon, IconName } from "@blueprintjs/core";
 import { useRouteMatch, useHistory } from "react-router-dom";
-import { selectorFromString } from "../PipelineSelectorUtils";
+import { explorerPathFromString } from "../PipelinePathUtils";
 
 const PIPELINE_TABS: {
   title: string;
@@ -35,7 +35,7 @@ export const PipelineNav: React.FunctionComponent = () => {
   }
 
   const active = tabForPipelinePathComponent(match.params.tab);
-  const { pipelineName } = selectorFromString(match.params.selector);
+  const { pipelineName } = explorerPathFromString(match.params.selector);
 
   return (
     <PipelineTabBarContainer>
@@ -95,7 +95,11 @@ const PipelineName = styled.div`
   padding-top: 3px;
   margin-left: 10px;
   margin-right: 30px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
+
 const PipelineTabContainer = styled.div<{ active: boolean }>`
   color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
 
@@ -109,6 +113,7 @@ const PipelineTabContainer = styled.div<{ active: boolean }>`
   line-height: 33px;
   height: 40px;
   position: relative;
+  white-space: nowrap;
   top: 3px;
 
   & .bp3-icon {

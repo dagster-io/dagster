@@ -391,12 +391,14 @@ class MaxValueColumnConstraint(ColumnConstraint):
 
 class InRangeColumnConstraint(ColumnConstraint):
     '''
-    A column constraint that ensures all values in a pandas column are between the lower and upper bound [inclusive].
+    A column constraint that ensures all values in a pandas column are between the lower and upper
+    bound [inclusive].
 
     Args:
         min_value (Union[int, float, datetime.datetime]): The lower bound.
         max_value (Union[int, float, datetime.datetime]): The upper bound.
-        ignore_missing_vals (bool): If true, this constraint will enforce the constraint on non missing values.
+        ignore_missing_vals (bool): If true, this constraint will enforce the constraint on non
+            missing values.
     '''
 
     def __init__(self, min_value, max_value, ignore_missing_vals):

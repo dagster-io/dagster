@@ -19,7 +19,7 @@ def test_execute_pipeline():
         ReconstructablePipeline.for_module(
             'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
         ),
-        environment_dict=environment,
+        run_config=environment,
     )
 
     assert result.success

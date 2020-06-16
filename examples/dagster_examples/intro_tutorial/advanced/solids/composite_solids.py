@@ -24,7 +24,7 @@ else:
 
 
 @solid(
-    config={
+    config_schema={
         'delimiter': Field(
             String,
             default_value=',',
@@ -138,12 +138,12 @@ def composite_solids_pipeline():
 
 
 if __name__ == '__main__':
-    environment_dict = {
+    run_config = {
         'solids': {
             'load_cereals': {
                 'solids': {
                     'read_cereals': {
-                        'inputs': {'csv_path': {'value': '../../cereal.csv'}}
+                        'inputs': {'csv_path': {'value': 'cereal.csv'}}
                     },
                     'read_manufacturers': {
                         'config': {'delimiter': ';'},
@@ -156,6 +156,6 @@ if __name__ == '__main__':
         }
     }
     result = execute_pipeline(
-        composite_solids_pipeline, environment_dict=environment_dict
+        composite_solids_pipeline, run_config=run_config
     )
     assert result.success
