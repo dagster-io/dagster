@@ -10,6 +10,13 @@ Executing pipelines
 
 .. autofunction:: execute_pipeline_iterator
 
+Re-executing pipelines
+-------------------
+
+.. autofunction:: reexecute_pipeline
+
+.. autofunction:: reexecute_pipeline_iterator
+
 Executing solids
 ----------------
 
@@ -128,7 +135,7 @@ Environment Dict Schema
                 # if an output_materialization_config is specified, that schema must be satisfied
                 # here; pickleable types will generally allow output as follows:
                 pickle: {
-                  path: String 
+                  path: String
                 }
               }
             }

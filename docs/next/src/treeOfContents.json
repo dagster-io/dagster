@@ -68,6 +68,10 @@
         "path": "/docs/tutorial/advanced_pipelines"
       },
       {
+        "name": "Advanced: Materializations",
+        "path": "/docs/tutorial/advanced_materializations"
+      },
+      {
         "name": "Advanced: Intermediates",
         "path": "/docs/tutorial/advanced_intermediates"
       },
