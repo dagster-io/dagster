@@ -43,10 +43,8 @@ def _do_setup(name='dagster-aws'):
             'dagster',
             'psycopg2-binary',
             'requests',
-            'terminaltables',
         ],
         extras_require={'pyspark': ['dagster-pyspark']},
-        entry_points={'console_scripts': ['dagster-aws = dagster_aws.cli.cli:main']},
         zip_safe=False,
     )
 
