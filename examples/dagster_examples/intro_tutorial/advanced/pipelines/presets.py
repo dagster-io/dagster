@@ -147,7 +147,7 @@ def normalize_calories(context, cereals):
             run_config={
                 'solids': {
                     'read_csv': {
-                        'inputs': {'csv_path': {'value': '../../cereal.csv'}}
+                        'inputs': {'csv_path': {'value': 'cereal.csv'}}
                     }
                 },
                 'resources': {
@@ -160,10 +160,13 @@ def normalize_calories(context, cereals):
             'dev',
             pkg_resource_defs=[
                 (
-                    'dagster_examples.intro_tutorial',
+                    'dagster_examples.intro_tutorial.advanced.pipelines',
                     'presets_dev_warehouse.yaml',
                 ),
-                ('dagster_examples.intro_tutorial', 'presets_csv.yaml'),
+                (
+                    'dagster_examples.intro_tutorial.advanced.pipelines',
+                    'presets_csv.yaml',
+                ),
             ],
             mode='dev',
         ),

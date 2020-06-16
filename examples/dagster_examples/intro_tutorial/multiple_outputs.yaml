@@ -1,9 +1,0 @@
-solids:
-  read_csv:
-    inputs:
-      csv_path:
-        value: "cereal.csv"
-  split_cereals:
-    config:
-      process_hot: true
-      process_cold: false

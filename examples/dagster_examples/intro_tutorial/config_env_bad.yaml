@@ -1,7 +1,0 @@
-solids:
-  read_csv:
-    config:
-      delimiter: ";"
-    inputs:
-      csv_path:
-        value: "cereal.csv"

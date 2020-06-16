@@ -135,6 +135,7 @@ dask-worker-space
 
 # Examples outputs
 examples/dagster_examples/*/output/
+examples/dagster_examples/**/**/output/
 
 # Telemetry instance id
 .telemetry

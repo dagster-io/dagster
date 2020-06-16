@@ -94,9 +94,7 @@ def resources_pipeline():
 if __name__ == '__main__':
     run_config = {
         'solids': {
-            'read_csv': {
-                'inputs': {'csv_path': {'value': '../../cereal.csv'}}
-            }
+            'read_csv': {'inputs': {'csv_path': {'value': 'cereal.csv'}}}
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }

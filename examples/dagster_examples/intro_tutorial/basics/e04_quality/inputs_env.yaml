@@ -3,5 +3,3 @@ solids:
     inputs:
       csv_path:
         value: "cereal.csv"
-storage:
-  filesystem:

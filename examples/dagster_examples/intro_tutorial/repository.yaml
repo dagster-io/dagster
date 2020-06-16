@@ -1,3 +1,0 @@
-repository:
-  module: dagster_examples.intro_tutorial.repos
-  fn: hello_cereal_repository

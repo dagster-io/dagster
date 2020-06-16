@@ -19,7 +19,9 @@ from dagster import (
 
 @input_hydration_config(Selector({'csv': Field(String)}))
 def less_simple_data_frame_input_hydration_config(context, selector):
-    with open(selector['csv'], 'r') as fd:
+    csv_path = os.path.join(os.path.dirname(__file__), selector['csv'])
+
+    with open(csv_path, 'r') as fd:
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
@@ -131,7 +133,7 @@ if __name__ == '__main__':
         {
             'solids': {
                 'sort_by_calories': {
-                    'inputs': {'cereals': {'csv': '../../cereal.csv'}},
+                    'inputs': {'cereals': {'csv': 'cereal.csv'}},
                     'outputs': [
                         {
                             'result': {

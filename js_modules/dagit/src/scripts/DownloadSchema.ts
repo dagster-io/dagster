@@ -15,7 +15,7 @@ if (
 }
 
 const result = execSync(
-  `dagster-graphql -w ../../examples/dagster_examples/intro_tutorial/repository.yaml -t '${getIntrospectionQuery(
+  `dagster-graphql -w ../../examples/dagster_examples/intro_tutorial/advanced/repositories/repository.yaml -t '${getIntrospectionQuery(
     {
       descriptions: false
     }

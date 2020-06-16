@@ -540,7 +540,7 @@ if __name__ == "__main__":
             # start small by making sure the local code type checks
             "mypy examples/dagster_examples/airline_demo "
             "examples/dagster_examples/bay_bikes "
-            "examples/dagster_examples/intro_tutorial/custom_types_mypy* "
+            "examples/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy* "
             "--ignore-missing-imports",
         )
         .on_integration_image(SupportedPython.V3_7)

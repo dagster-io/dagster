@@ -30,7 +30,7 @@ def test_smoke_app():
     flask_app = app.create_app_from_workspace(
         get_workspace_from_kwargs(
             dict(
-                module_name='dagster_examples.intro_tutorial.repos',
+                module_name='dagster_examples.intro_tutorial.advanced.repositories.repos',
                 definition='hello_cereal_repository',
             )
         ),
