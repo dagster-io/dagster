@@ -421,7 +421,7 @@ def git_repository_root():
 
 def segfault():
     '''Reliable cross-Python version segfault.
-    
+
     https://bugs.python.org/issue1215#msg143236
     '''
     import ctypes

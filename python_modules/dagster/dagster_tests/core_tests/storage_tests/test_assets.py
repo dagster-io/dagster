@@ -143,3 +143,17 @@ def test_asset_normalization(asset_aware_context):
         asset_key = asset_keys[0]
         assert asset_key.to_string() == 'path.to.asset_4'
         assert asset_key.path == ['path', 'to', 'asset_4']
+
+
+@asset_test
+def test_asset_wipe(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        result = execute_pipeline(pipeline_one, instance=instance)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 1
+        log_count = len(event_log_storage.get_logs_for_run(result.run_id))
+        instance.wipe_assets()
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 0
+        assert log_count == len(event_log_storage.get_logs_for_run(result.run_id))

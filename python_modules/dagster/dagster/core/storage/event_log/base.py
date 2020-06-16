@@ -89,3 +89,7 @@ class AssetAwareEventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_asset_run_ids(self, asset_key):
         pass
+
+    @abstractmethod
+    def wipe_asset(self, asset_key):
+        '''Remove asset index history from event log for given asset_key'''

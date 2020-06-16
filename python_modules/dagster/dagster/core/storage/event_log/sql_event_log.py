@@ -410,3 +410,37 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
             results = conn.execute(query).fetchall()
 
         return [run_id for (run_id, _timestamp) in results]
+
+    def wipe_asset(self, asset_key):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
+            SqlEventLogStorageTable.c.asset_key == asset_key.to_string()
+        )
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        for row_id, json_str in results:
+            try:
+                event_record = deserialize_json_to_dagster_namedtuple(json_str)
+                if not isinstance(event_record, EventRecord):
+                    continue
+
+                assert event_record.dagster_event.event_specific_data.materialization.asset_key
+
+                dagster_event = event_record.dagster_event
+                event_specific_data = dagster_event.event_specific_data
+                materialization = event_specific_data.materialization
+                updated_materialization = materialization._replace(asset_key=None)
+                updated_event_specific_data = event_specific_data._replace(
+                    materialization=updated_materialization
+                )
+                updated_dagster_event = dagster_event._replace(
+                    event_specific_data=updated_event_specific_data
+                )
+                updated_record = event_record._replace(dagster_event=updated_dagster_event)
+
+                # update the event_record here
+                self.update_event_log_record(row_id, updated_record)
+
+            except seven.JSONDecodeError:
+                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))

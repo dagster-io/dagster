@@ -745,6 +745,15 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
+    def wipe_assets(self):
+        from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
+
+        if not isinstance(self._event_storage, AssetAwareEventLogStorage):
+            return
+
+        for asset_key in self._event_storage.get_all_asset_keys():
+            self._event_storage.wipe_asset(asset_key)
+
     def delete_run(self, run_id):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)

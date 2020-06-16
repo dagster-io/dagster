@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 import gevent.lock
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
@@ -122,3 +123,32 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                     break
 
         return list(asset_run_ids)
+
+    def wipe_asset(self, asset_key):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+
+        for run_id in self._logs.keys():
+            with self._lock[run_id]:
+                updated_records = []
+                for record in self._logs[run_id]:
+                    if (
+                        not record.is_dagster_event
+                        or not record.dagster_event.asset_key
+                        or record.dagster_event.asset_key.to_string() != asset_key.to_string()
+                    ):
+                        # not an asset record
+                        updated_records.append(record)
+                    else:
+                        dagster_event = record.dagster_event
+                        event_specific_data = dagster_event.event_specific_data
+                        materialization = event_specific_data.materialization
+                        updated_materialization = materialization._replace(asset_key=None)
+                        updated_event_specific_data = event_specific_data._replace(
+                            materialization=updated_materialization
+                        )
+                        updated_dagster_event = dagster_event._replace(
+                            event_specific_data=updated_event_specific_data
+                        )
+                        updated_record = record._replace(dagster_event=updated_dagster_event)
+                        updated_records.append(updated_record)
+                self._logs[run_id] = updated_records
