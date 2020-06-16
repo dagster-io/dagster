@@ -321,6 +321,17 @@ export const ScheduleRow: React.FunctionComponent<{
       >
         <div>
           {runs.map(run => {
+            const [partition] = run.tags
+              .filter(tag => tag.key === "dagster/partition")
+              .map(tag => tag.value);
+            const runLabel = partition ? (
+              <>
+                <div>Run id: {titleForRun(run)}</div>
+                <div>Partition: {partition}</div>
+              </>
+            ) : (
+              titleForRun(run)
+            );
             return (
               <div
                 style={{
@@ -333,7 +344,7 @@ export const ScheduleRow: React.FunctionComponent<{
                 <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
                   <Tooltip
                     position={"top"}
-                    content={titleForRun(run)}
+                    content={runLabel}
                     wrapperTagName="div"
                     targetTagName="div"
                   >
