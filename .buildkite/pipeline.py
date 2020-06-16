@@ -322,6 +322,8 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/libraries/lakehouse',
         supported_pythons=[SupportedPython.V3_5, SupportedPython.V3_6, SupportedPython.V3_7],
     ),
+    # TODO: Add these tests back
+    # ModuleBuildSpec('docs/docs_examples'),
 ]
 
 
@@ -507,7 +509,7 @@ if __name__ == "__main__":
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
             "pip install -e python_modules/libraries/dagstermill -qqq",
-            "pytest -vv docs",
+            "pytest -vv docs/test_doc_build.py",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
