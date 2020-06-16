@@ -2,6 +2,7 @@ export type TreeLink = {
   name: string;
   path: string;
   children?: TreeLink[];
+  childPath?: boolean[];
   isExternal?: boolean;
   ignore?: boolean;
 };

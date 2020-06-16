@@ -84,6 +84,8 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                 router.asPath.startsWith(c.path) &&
                 router.asPath.length - c.path.length < 2;
 
+              const subHighlighted = subSelected && !c.childPath;
+
               const subChildSelected =
                 (c.children &&
                   c.children.reduce((accumulator, child) => {
@@ -102,7 +104,8 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                       className={cx(
                         `group flex justify-between items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
                         {
-                          'font-semibold text-blue-700 bg-blue-100': subSelected,
+                          'font-semibold': subSelected,
+                          'text-blue-700 bg-blue-100': subHighlighted,
                           'hover:font-semibold': !subSelected,
                         },
                       )}

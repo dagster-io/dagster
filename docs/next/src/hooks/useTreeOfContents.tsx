@@ -17,8 +17,12 @@ const createTreeOfContents = () => {
     }
   }
 
-  // Don't mutate state for now - hardcoded
-  // (treeOfContents['API Docs'] as TreeLink).children = API_DOCS_PAGES;
+  const { NEXT_PUBLIC_DEV_MODE } = process.env;
+  if (!NEXT_PUBLIC_DEV_MODE || NEXT_PUBLIC_DEV_MODE !== 'true') {
+    console.log('In dev mode, deleting overview');
+    delete treeOfContents['Overview'];
+  }
+
   return treeOfContents;
 };
 

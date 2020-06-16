@@ -81,6 +81,212 @@
       }
     ]
   },
+  "Overview": {
+    "name": "Overview",
+    "path": "/docs/overview",
+    "ignore": true,
+    "children": [
+      {
+        "name": "Principles",
+        "path": "/docs/overview/principles"
+      },
+      {
+        "name": "Solids and Pipelines",
+        "path": "/docs/overview/solids-pipelines/solids",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Solids",
+            "path": "/docs/overview/solids-pipelines/solids"
+          },
+          {
+            "name": "Pipelines",
+            "path": "/docs/overview/solids-pipelines/pipelines"
+          }
+        ]
+      },
+      {
+        "name": "Configuration",
+        "path": "/docs/overview/configuration/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/configuration/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/configuration/page2"
+          }
+        ]
+      },
+      {
+        "name": "Modes, Resources, & Presets",
+        "path": "/docs/overview/modes-resources-presets/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/modes-resources-presets/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/modes-resources-presets/page2"
+          }
+        ]
+      },
+      {
+        "name": "Types",
+        "path": "/docs/overview/types/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/types/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/types/page2"
+          }
+        ]
+      },
+      {
+        "name": "Intermediates & Materializations",
+        "path": "/docs/overview/intermediates-materializations/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/intermediates-materializations/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/intermediates-materializations/page2"
+          }
+        ]
+      },
+      {
+        "name": "Repositories & Workspaces",
+        "path": "/docs/overview/repositories-workspaces/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/repositories-workspaces/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/repositories-workspaces/page2"
+          }
+        ]
+      },
+      {
+        "name": "Dagit",
+        "path": "/docs/overview/dagit/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/dagit/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/dagit/page2"
+          }
+        ]
+      },
+      {
+        "name": "Composite Solids",
+        "path": "/docs/overview/composite-solids/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/composite-solids/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/composite-solids/page2"
+          }
+        ]
+      },
+      {
+        "name": "Logging",
+        "path": "/docs/overview/logging/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/logging/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/logging/page2"
+          }
+        ]
+      },
+      {
+        "name": "Scheduling & Partitions",
+        "path": "/docs/overview/scheduling-partitions/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/scheduling-partitions/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/scheduling-partitions/page2"
+          }
+        ]
+      },
+      {
+        "name": "Instances",
+        "path": "/docs/overview/instances/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/instances/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/instances/page2"
+          }
+        ]
+      },
+      {
+        "name": "Run Launchers & Executors",
+        "path": "/docs/overview/run-launchers-executors/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/run-launchers-executors/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/run-launchers-executors/page2"
+          }
+        ]
+      },
+      {
+        "name": "Packages",
+        "path": "/docs/overview/packages/page1",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Page 1",
+            "path": "/docs/overview/packages/page1"
+          },
+          {
+            "name": "Page 2",
+            "path": "/docs/overview/packages/page2"
+          }
+        ]
+      }
+    ]
+  },
   "Learn": {
     "name": "Learn",
     "path": "/docs/learn",
