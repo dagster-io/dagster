@@ -208,7 +208,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPython3sNo38,
         extra_cmds_fn=examples_extra_cmds_fn,
     ),
-    ModuleBuildSpec('examples/docs_snippets', upload_coverage=False),
     ModuleBuildSpec('python_modules/dagit', extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec(
         'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
@@ -340,6 +339,39 @@ def extra_library_tests():
     for library in library_packages:
         if library not in dirs:
             tests += ModuleBuildSpec(library).get_tox_build_steps()
+    return tests
+
+
+def examples_tests():
+    '''Auto-discover and test all new examples'''
+
+    # Temporarily skip these folders until we finish the work to clean up the examples folder
+    skip_examples = [
+        'airflow_ingest',
+        'basic_pyspark',
+        'dagster_examples',
+        'dagster_examples_tests',
+        'data',
+        'emr_pyspark',
+        'fan_in_pipeline',
+        'multi_location',
+        'pipeline_tags',
+        'pipeline_unittesting',
+    ]
+
+    examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
+
+    examples_packages = [
+        os.path.join('examples', example)
+        for example in os.listdir(examples_root)
+        if example not in skip_examples and os.path.isdir(os.path.join(examples_root, example))
+    ]
+
+    tests = []
+    for example in examples_packages:
+        tests += ModuleBuildSpec(
+            example, supported_pythons=SupportedPython3s, upload_coverage=False
+        ).get_tox_build_steps()
     return tests
 
 
@@ -562,6 +594,7 @@ if __name__ == "__main__":
     steps += version_equality_checks()
     steps += releasability_tests()
     steps += next_docs_build_tests()
+    steps += examples_tests()
 
     if DO_COVERAGE:
         steps += [wait_step(), coverage_step()]

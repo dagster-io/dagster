@@ -1,4 +1,4 @@
-from dagster import Field, RepositoryDefinition, Shape, composite_solid, pipeline, seven, solid
+from dagster import Field, Shape, composite_solid, pipeline, repository, seven, solid
 
 
 @solid(
@@ -44,9 +44,10 @@ def hello_external():
 
 
 @pipeline
-def my_pipeline():
+def example_pipeline():
     hello_external()
 
 
-def define_repository():
-    return RepositoryDefinition('config_mapping', pipeline_defs=[my_pipeline])
+@repository
+def config_mapping():
+    return [example_pipeline]

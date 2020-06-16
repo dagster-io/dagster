@@ -1,6 +1,6 @@
-from dep_dsl.repo import define_dep_dsl_pipeline
-
 from dagster import execute_pipeline
+
+from ..repo import define_dep_dsl_pipeline
 
 
 def test_basic_dep_dsl():
