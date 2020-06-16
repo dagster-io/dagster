@@ -81,7 +81,12 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import execute_pipeline, execute_pipeline_iterator
+from dagster.core.execution.api import (
+    execute_pipeline,
+    execute_pipeline_iterator,
+    reexecute_pipeline,
+    reexecute_pipeline_iterator,
+)
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
@@ -196,6 +201,8 @@ __all__ = [
     'mem_system_storage',
     'multiprocess_executor',
     'reconstructable',
+    'reexecute_pipeline_iterator',
+    'reexecute_pipeline',
     # Errors
     'DagsterConfigMappingFunctionError',
     'DagsterError',

@@ -8,15 +8,15 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
+    reexecute_pipeline,
 )
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
     DagsterRunNotFoundError,
 )
 from dagster.core.events import get_step_output_event
-from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
@@ -188,16 +188,12 @@ def test_pipeline_step_key_subset_execution():
 
     ## re-execute add_two
 
-    pipeline_run = instance.create_run_for_pipeline(
+    pipeline_reexecution_result = reexecute_pipeline(
         pipeline_def,
+        parent_run_id=result.run_id,
         run_config=run_config,
         step_keys_to_execute=['add_two.compute'],
-        parent_run_id=result.run_id,
-        root_run_id=result.run_id,
-    )
-
-    pipeline_reexecution_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+        instance=instance,
     )
 
     assert pipeline_reexecution_result.success
@@ -223,10 +219,10 @@ def test_pipeline_step_key_subset_execution():
     with pytest.raises(
         DagsterExecutionStepNotFoundError, match='Execution plan does not contain step'
     ):
-        pipeline_run = instance.create_run_for_pipeline(
+        reexecute_pipeline(
             pipeline_def,
+            parent_run_id=result.run_id,
             run_config=run_config,
             step_keys_to_execute=['nope.compute'],
-            parent_run_id=result.run_id,
-            root_run_id=result.run_id,
+            instance=instance,
         )

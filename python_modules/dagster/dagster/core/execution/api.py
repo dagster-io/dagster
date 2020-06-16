@@ -20,15 +20,17 @@ from .context_creation_pipeline import pipeline_initialization_manager, scoped_p
 from .results import PipelineExecutionResult
 
 ## Brief guide to the execution APIs
-# | function name             | operates over      | sync  | supports    | creates new PipelineRun |
-# |                           |                    |       | reexecution | in instance             |
-# | ------------------------- | ------------------ | ----- | ----------- | ----------------------- |
-# | execute_pipeline_iterator | ExecutablePipeline | async | no          | yes                     |
-# | execute_pipeline          | ExecutablePipeline | sync  | no          | yes                     |
-# | execute_run_iterator      | PipelineRun        | async | (1)         | no                      |
-# | execute_run               | PipelineRun        | sync  | (1)         | no                      |
-# | execute_plan_iterator     | ExecutionPlan      | async | (2)         | no                      |
-# | execute_plan              | ExecutionPlan      | sync  | (2)         | no                      |
+# | function name               | operates over      | sync  | supports    | creates new PipelineRun |
+# |                             |                    |       | reexecution | in instance             |
+# | --------------------------- | ------------------ | ----- | ----------- | ----------------------- |
+# | execute_pipeline_iterator   | ExecutablePipeline | async | no          | yes                     |
+# | execute_pipeline            | ExecutablePipeline | sync  | no          | yes                     |
+# | execute_run_iterator        | PipelineRun        | async | (1)         | no                      |
+# | execute_run                 | PipelineRun        | sync  | (1)         | no                      |
+# | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
+# | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
+# | reexecute_pipeline          | ExecutablePipeline | sync  | yes         | yes                     |
+# | reexecute_pipeline_iterator | ExecutablePipeline | async | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
@@ -323,6 +325,151 @@ def execute_pipeline(
     return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error)
 
 
+def reexecute_pipeline(
+    pipeline,
+    parent_run_id,
+    run_config=None,
+    step_keys_to_execute=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    instance=None,
+    raise_on_error=True,
+):
+    '''Reexecute an existing pipeline run.
+
+    Users will typically call this API when testing pipeline reexecution, or running standalone
+    scripts.
+
+    Parameters:
+        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
+            instance.
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+            as a dict.
+        step_keys_to_execute (Optional[List[str]]): Keys of the steps to execute.
+        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
+            and ``preset``.
+        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
+            ``mode`` and ``preset``.
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Defaults to ``True``, since this is the most useful behavior in test.
+
+    Returns:
+      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
+
+    For the asynchronous version, see :py:func:`reexecute_pipeline_iterator`.
+    '''
+    check.str_param(parent_run_id, 'parent_run_id')
+
+    (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
+        pipeline=pipeline,
+        run_config=run_config,
+        mode=mode,
+        preset=preset,
+        tags=tags,
+        instance=instance,
+    )
+
+    parent_pipeline_run = instance.get_run_by_id(parent_run_id)
+    check.invariant(
+        parent_pipeline_run,
+        'No parent run with id {parent_run_id} found in instance.'.format(
+            parent_run_id=parent_run_id
+        ),
+    )
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def=pipeline.get_definition(),
+        run_config=run_config,
+        mode=mode,
+        tags=tags,
+        solid_selection=parent_pipeline_run.solid_selection,
+        solids_to_execute=parent_pipeline_run.solids_to_execute,
+        step_keys_to_execute=step_keys_to_execute,
+        root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
+        parent_run_id=parent_pipeline_run.run_id,
+    )
+
+    return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error)
+
+
+def reexecute_pipeline_iterator(
+    pipeline,
+    parent_run_id,
+    run_config=None,
+    step_keys_to_execute=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    instance=None,
+):
+    '''Reexecute a pipeline iteratively.
+
+    Rather than package up the result of running a pipeline into a single object, like
+    :py:func:`reexecute_pipeline`, this function yields the stream of events resulting from pipeline
+    reexecution.
+
+    This is intended to allow the caller to handle these events on a streaming basis in whatever
+    way is appropriate.
+
+    Parameters:
+        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
+            instance.
+        run_config (Optional[dict]): The environment configuration that parametrizes this run,
+            as a dict.
+        step_keys_to_execute (Optional[List[str]]): Keys of the steps to execute.
+        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
+            and ``preset``.
+        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
+            ``mode`` and ``preset``.
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+
+    Returns:
+      Iterator[DagsterEvent]: The stream of events resulting from pipeline reexecution.
+    '''
+    check.str_param(parent_run_id, 'parent_run_id')
+
+    (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
+        pipeline=pipeline,
+        run_config=run_config,
+        mode=mode,
+        preset=preset,
+        tags=tags,
+        instance=instance,
+        solid_selection=None,
+    )
+    parent_pipeline_run = instance.get_run_by_id(parent_run_id)
+    check.invariant(
+        parent_pipeline_run,
+        'No parent run with id {parent_run_id} found in instance.'.format(
+            parent_run_id=parent_run_id
+        ),
+    )
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def=pipeline.get_definition(),
+        run_config=run_config,
+        mode=mode,
+        tags=tags,
+        solid_selection=parent_pipeline_run.solid_selection,
+        solids_to_execute=parent_pipeline_run.solids_to_execute,
+        step_keys_to_execute=step_keys_to_execute,
+        root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
+        parent_run_id=parent_pipeline_run.run_id,
+    )
+
+    return execute_run_iterator(pipeline, pipeline_run, instance)
+
+
 def execute_plan_iterator(
     execution_plan, pipeline_run, instance, retries=None, run_config=None,
 ):
@@ -505,7 +652,7 @@ class _ExecuteRunWithPlanIterable(object):
 
 
 def _check_execute_pipeline_args(
-    pipeline, run_config, mode, preset, tags, solid_selection, instance
+    pipeline, run_config, mode, preset, tags, instance, solid_selection=None
 ):
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()

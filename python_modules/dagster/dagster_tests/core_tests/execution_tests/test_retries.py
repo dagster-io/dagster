@@ -15,6 +15,7 @@ from dagster import (
     lambda_solid,
     pipeline,
     reconstructable,
+    reexecute_pipeline,
     seven,
     solid,
 )
@@ -80,8 +81,9 @@ def test_retries(environment):
     passes = dict(environment)
     passes['solids'] = {'can_fail': {'config': {'fail': False}}}
 
-    second_result = execute_pipeline(pipe, run_config=passes, instance=instance)
-
+    second_result = reexecute_pipeline(
+        pipe, parent_run_id=result.run_id, run_config=passes, instance=instance,
+    )
     assert second_result.success
     downstream_of_failed = second_result.result_for_solid('downstream_of_failed').output_value()
     assert downstream_of_failed == 'okay perfect'

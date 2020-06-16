@@ -24,13 +24,12 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.solid_container import _create_adjacency_lists
-from dagster.core.execution.api import execute_run
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
@@ -687,15 +686,8 @@ def test_reexecution_fs_storage():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def,
-        run_config=run_config,
-        parent_run_id=pipeline_result.run_id,
-        root_run_id=pipeline_result.run_id,
-    )
-
-    reexecution_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+    reexecution_result = reexecute_pipeline(
+        pipeline_def, pipeline_result.run_id, run_config=run_config, instance=instance,
     )
 
     assert reexecution_result.success
@@ -706,15 +698,8 @@ def test_reexecution_fs_storage():
     assert reexecution_run.parent_run_id == pipeline_result.run_id
     assert reexecution_run.root_run_id == pipeline_result.run_id
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def,
-        run_config=run_config,
-        parent_run_id=reexecution_result.run_id,
-        root_run_id=pipeline_result.run_id,
-    )
-
-    grandchild_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+    grandchild_result = reexecute_pipeline(
+        pipeline_def, reexecution_result.run_id, run_config=run_config, instance=instance,
     )
 
     assert grandchild_result.success
@@ -726,7 +711,7 @@ def test_reexecution_fs_storage():
     assert grandchild_run.root_run_id == pipeline_result.run_id
 
 
-def test_reexecution_fs_storage_with_subset():
+def test_reexecution_fs_storage_with_solid_selection():
     @lambda_solid
     def return_one():
         return 1
@@ -741,96 +726,74 @@ def test_reexecution_fs_storage_with_subset():
     )
     run_config = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
+    # Case 1: re-execute a part of a pipeline when the original pipeline doesn't have solid selection
     pipeline_result = execute_pipeline(pipeline_def, run_config, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
-    reexecution_pipeline_run = instance.create_run_for_pipeline(
+    reexecution_result_no_solid_selection = reexecute_pipeline(
         pipeline_def,
+        parent_run_id=pipeline_result.run_id,
         run_config=run_config,
         step_keys_to_execute=['return_one.compute'],
-        parent_run_id=pipeline_result.run_id,
-        root_run_id=pipeline_result.run_id,
+        instance=instance,
     )
-    reexecution_result_no_subset = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
-    )
-    assert reexecution_result_no_subset.success
-    assert len(reexecution_result_no_subset.solid_result_list) == 2
-    assert reexecution_result_no_subset.result_for_solid('add_one').skipped
-    assert reexecution_result_no_subset.result_for_solid('return_one').output_value() == 1
+    assert reexecution_result_no_solid_selection.success
+    assert len(reexecution_result_no_solid_selection.solid_result_list) == 2
+    assert reexecution_result_no_solid_selection.result_for_solid('add_one').skipped
+    assert reexecution_result_no_solid_selection.result_for_solid('return_one').output_value() == 1
 
-    pipeline_result_subset = execute_pipeline(
+    # Case 2: re-execute a pipeline when the original pipeline has solid selection
+    pipeline_result_solid_selection = execute_pipeline(
         pipeline_def, run_config=run_config, instance=instance, solid_selection=['return_one'],
     )
-    assert pipeline_result_subset.success
-    assert len(pipeline_result_subset.solid_result_list) == 1
+    assert pipeline_result_solid_selection.success
+    assert len(pipeline_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
-        pipeline_result_subset.result_for_solid('add_one')
-    assert pipeline_result_subset.result_for_solid('return_one').output_value() == 1
+        pipeline_result_solid_selection.result_for_solid('add_one')
+    assert pipeline_result_solid_selection.result_for_solid('return_one').output_value() == 1
 
-    reexecution_pipeline_run = instance.create_run_for_pipeline(
+    reexecution_result_solid_selection = reexecute_pipeline(
         pipeline_def,
+        parent_run_id=pipeline_result_solid_selection.run_id,
         run_config=run_config,
-        parent_run_id=pipeline_result_subset.run_id,
-        root_run_id=pipeline_result_subset.run_id,
-        solids_to_execute={'return_one'},
-        step_keys_to_execute=['return_one.compute'],
+        instance=instance,
     )
 
-    reexecution_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
-    )
-
-    assert reexecution_result.success
-    assert len(reexecution_result.solid_result_list) == 1
+    assert reexecution_result_solid_selection.success
+    assert len(reexecution_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
-        pipeline_result_subset.result_for_solid('add_one')
-    assert reexecution_result.result_for_solid('return_one').output_value() == 1
+        pipeline_result_solid_selection.result_for_solid('add_one')
+    assert reexecution_result_solid_selection.result_for_solid('return_one').output_value() == 1
 
+    # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
+    #   re-exeucte a step which hasn't been included in the original pipeline
     with pytest.raises(
         DagsterExecutionStepNotFoundError,
         match=re.escape('Execution plan does not contain step: add_one.compute'),
     ):
-        instance.create_run_for_pipeline(
+        reexecute_pipeline(
             pipeline_def,
+            parent_run_id=pipeline_result_solid_selection.run_id,
             run_config=run_config,
-            parent_run_id=pipeline_result_subset.run_id,
-            root_run_id=pipeline_result_subset.run_id,
-            solids_to_execute={'return_one'},
             step_keys_to_execute=['add_one.compute'],
+            instance=instance,
         )
 
-    re_reexecution_pipeline_run = instance.create_run_for_pipeline(
+    # Case 4: re-execute a pipeline partially when the original pipeline has solid selection and
+    #   re-exeucte a step which has been included in the original pipeline
+    re_reexecution_result = reexecute_pipeline(
         pipeline_def,
+        parent_run_id=reexecution_result_solid_selection.run_id,
         run_config=run_config,
-        parent_run_id=reexecution_result.run_id,
-        root_run_id=reexecution_result.run_id,
-        solids_to_execute={'return_one'},
+        instance=instance,
         step_keys_to_execute=['return_one.compute'],
-    )
-
-    re_reexecution_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), re_reexecution_pipeline_run, instance
     )
 
     assert re_reexecution_result.success
     assert len(re_reexecution_result.solid_result_list) == 1
     assert re_reexecution_result.result_for_solid('return_one').output_value() == 1
-
-    with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match=re.escape('Execution plan does not contain step: add_one'),
-    ):
-        instance.create_run_for_pipeline(
-            pipeline_def,
-            run_config=run_config,
-            parent_run_id=reexecution_result.run_id,
-            root_run_id=reexecution_result.run_id,
-            solids_to_execute={'return_one'},
-            step_keys_to_execute=['add_one.compute'],
-        )
 
 
 def test_single_step_reexecution():
@@ -853,16 +816,12 @@ def test_single_step_reexecution():
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
     # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
-    reexecution_pipeline_run = instance.create_run_for_pipeline(
+    reexecution_result = reexecute_pipeline(
         pipeline_def,
-        run_config=run_config,
-        step_keys_to_execute=['add_one.compute'],
         parent_run_id=pipeline_result.run_id,
-        root_run_id=pipeline_result.run_id,
-    )
-
-    reexecution_result = execute_run(
-        InMemoryExecutablePipeline(pipeline_def), reexecution_pipeline_run, instance
+        run_config=run_config,
+        instance=instance,
+        step_keys_to_execute=['add_one.compute'],
     )
 
     assert reexecution_result.success
@@ -889,18 +848,13 @@ def test_two_step_reexecution():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one_2').output_value() == 3
 
-    reexecution_pipeline_run = instance.create_run_for_pipeline(
+    reexecution_result = reexecute_pipeline(
         two_step_reexec,
-        run_config=run_config,
-        step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
         parent_run_id=pipeline_result.run_id,
-        root_run_id=pipeline_result.run_id,
+        run_config=run_config,
+        instance=instance,
+        step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
     )
-
-    reexecution_result = execute_run(
-        InMemoryExecutablePipeline(two_step_reexec), reexecution_pipeline_run, instance=instance
-    )
-
     assert reexecution_result.success
     assert reexecution_result.result_for_solid('return_one').output_value() == None
     assert reexecution_result.result_for_solid('add_one_2').output_value() == 3
