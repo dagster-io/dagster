@@ -56,6 +56,7 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
         name = 'RepositoryLocation'
 
     name = dauphin.NonNull(dauphin.String)
+    is_reload_supported = dauphin.NonNull(dauphin.Boolean)
     environment_path = dauphin.String()
     repositories = dauphin.non_null_list('Repository')
 
@@ -67,13 +68,17 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
             else None
         )
 
+        check.invariant(location.name is not None)
+
         super(DauphinRepositoryLocation, self).__init__(
-            name=location.name, environment_path=environment_path
+            name=location.name,
+            environment_path=environment_path,
+            is_reload_supported=location.is_reload_supported,
         )
 
     def resolve_repositories(self, graphene_info):
         return [
-            graphene_info.schema.type_named('Repository')(repository)
+            graphene_info.schema.type_named('Repository')(repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
 

@@ -36,6 +36,11 @@ class DagsterGraphQLContext:
     def has_repository_location(self, name):
         return name in self._repository_locations
 
+    def reload_repository_location(self, name):
+        new_location = self._repository_locations[name].create_reloaded_repository_location()
+        self._repository_locations[name] = new_location
+        return new_location
+
     def get_subset_external_pipeline(self, selector):
         check.inst_param(selector, 'selector', PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly

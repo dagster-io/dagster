@@ -85,6 +85,14 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     def get_subset_external_pipeline_result(self, selector):
         pass
 
+    @abstractmethod
+    def create_reloaded_repository_location(self):
+        pass
+
+    @abstractproperty
+    def is_reload_supported(self):
+        pass
+
     @staticmethod
     def from_handle(repository_location_handle):
         check.inst_param(
@@ -106,17 +114,24 @@ class InProcessRepositoryLocation(RepositoryLocation):
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self._handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
 
-        def_name = recon_repo.get_definition().name
+        repo_def = recon_repo.get_definition()
+        def_name = repo_def.name
         self._external_repo = external_repo_from_def(
-            recon_repo.get_definition(),
+            repo_def,
             RepositoryHandle(
                 repository_name=def_name,
                 repository_key=def_name,
                 repository_location_handle=self._handle,
             ),
         )
-
         self._repositories = {self._external_repo.name: self._external_repo}
+
+    def create_reloaded_repository_location(self):
+        raise NotImplementedError('Not implemented for in-process')
+
+    @property
+    def is_reload_supported(self):
+        return False
 
     def get_reconstructable_pipeline(self, name):
         return self._recon_repo.get_reconstructable_pipeline(name)
@@ -215,6 +230,13 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         self.external_repositories = {
             er.name: er for er in sync_get_external_repositories(self._handle)
         }
+
+    def create_reloaded_repository_location(self):
+        return PythonEnvRepositoryLocation(self._handle)
+
+    @property
+    def is_reload_supported(self):
+        return True
 
     def get_repository(self, name):
         check.str_param(name, 'name')

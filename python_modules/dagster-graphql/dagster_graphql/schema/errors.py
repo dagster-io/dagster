@@ -87,6 +87,28 @@ class DauphinPipelineSnapshotNotFoundError(dauphin.ObjectType):
         ).format(snapshot_id=snapshot_id)
 
 
+class DauphinReloadNotSupported(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ReloadNotSupported'
+        interfaces = (DauphinError,)
+
+    def __init__(self, location_name):
+        self.message = 'Location {location_name} does not support reloading.'.format(
+            location_name=location_name
+        )
+
+
+class DauphinRepositoryLocationNotFound(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RepositoryLocationNotFound'
+        interfaces = (DauphinError,)
+
+    def __init__(self, location_name):
+        self.message = 'Location {location_name} does not exist.'.format(
+            location_name=location_name
+        )
+
+
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineNotFoundError'

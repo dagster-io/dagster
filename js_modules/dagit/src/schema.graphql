@@ -572,6 +572,7 @@ type Mutation {
   stopRunningSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
+  reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
 }
@@ -977,6 +978,12 @@ type RegularDagsterType implements DagsterType {
   innerTypes: [DagsterType!]!
 }
 
+type ReloadNotSupported implements Error {
+  message: String!
+}
+
+union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound
+
 union RepositoriesOrError = RepositoryConnection | PythonError
 
 type Repository {
@@ -994,8 +1001,13 @@ type RepositoryConnection {
 
 type RepositoryLocation {
   name: String!
+  isReloadSupported: Boolean!
   environmentPath: String
   repositories: [Repository!]!
+}
+
+type RepositoryLocationNotFound implements Error {
+  message: String!
 }
 
 type RepositoryNotFoundError implements Error {

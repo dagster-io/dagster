@@ -447,6 +447,35 @@ class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
         return terminate_pipeline_execution(graphene_info, kwargs['runId'])
 
 
+class DauphinReloadRepositoryLocationMutationResult(dauphin.Union):
+    class Meta(object):
+        name = 'ReloadRepositoryLocationMutationResult'
+        types = ('RepositoryLocation', 'ReloadNotSupported', 'RepositoryLocationNotFound')
+
+
+class DauphinReloadRepositoryLocationMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'ReloadRepositoryLocationMutation'
+
+    class Arguments(object):
+        repositoryLocationName = dauphin.NonNull(dauphin.String)
+
+    Output = dauphin.NonNull('ReloadRepositoryLocationMutationResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        location_name = kwargs['repositoryLocationName']
+
+        if not graphene_info.context.has_repository_location(location_name):
+            return graphene_info.schema.type_named('RepositoryLocationNotFound')(location_name)
+
+        if not graphene_info.context.get_repository_location(location_name).is_reload_supported:
+            return graphene_info.schema.type_named('ReloadNotSupported')(location_name)
+
+        return graphene_info.schema.type_named('RepositoryLocation')(
+            graphene_info.context.reload_repository_location(location_name)
+        )
+
+
 class DauphinExecutionTag(dauphin.InputObjectType):
     class Meta(object):
         name = 'ExecutionTag'
@@ -588,6 +617,7 @@ class DauphinMutation(dauphin.ObjectType):
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
     terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
+    reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()
 
     # These below are never invoked by tools such as a dagit. They are in the
     # graphql layer because it was a convenient, pre-existing IPC layer.
