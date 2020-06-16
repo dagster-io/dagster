@@ -1,0 +1,20 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import PyObject from 'components/PyObject';
+
+<DynamicMetaTags title="Solid Factories | Dagster" />
+
+# Programmatically generating solids (Solid factories):
+
+You may find the need to create utilities that help generate solids.
+
+Generally, you want to parameterize solid behavior by adding solid
+configuration. You should reach for this pattern if you find yourself
+needing to vary the <PyObject module="dagster" object="SolidDefinition" /> or <PyObject module="dagster" object="solid" displayText="@solid" /> decorator
+arguments themselves, since they cannot be modified based on solid configuration.
+
+General solid factory pattern:
+
+```python literalinclude caption=solids.py
+file:/dagster_examples/how_tos/solids.py
+lines:80-98
+```

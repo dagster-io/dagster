@@ -106,6 +106,14 @@
           {
             "name": "Pipelines",
             "path": "/docs/overview/solids-pipelines/pipelines"
+          },
+          {
+            "name": "Solid Events",
+            "path": "/docs/overview/solids-pipelines/solid-events"
+          },
+          {
+            "name": "Solid Factories",
+            "path": "/docs/overview/solids-pipelines/solid-factories"
           }
         ]
       },

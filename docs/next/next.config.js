@@ -29,9 +29,15 @@ const transform = () => (tree) => {
       const isRelativeToProject =
         Object.keys(map).indexOf('relativeToProject') !== -1;
 
-      const root = isRelativeToProject
-        ? __dirname
-        : path.join(REPO, '/examples/');
+      const isRelativeToDocs =
+        Object.keys(map).indexOf('relativeToDocs') !== -1;
+
+      let root = path.join(REPO, '/examples/');
+      if (isRelativeToDocs) {
+        root = path.join(REPO, '/docs/docs_examples');
+      } else if (isRelativeToProject) {
+        root = __dirname;
+      }
 
       const filePath = path.join(root, map.file);
       try {
