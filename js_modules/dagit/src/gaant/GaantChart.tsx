@@ -30,6 +30,7 @@ import {
   DEFAULT_OPTIONS,
   BOX_HEIGHT,
   BOX_MARGIN_Y,
+  BOX_DOT_MARGIN_Y,
   BOX_SPACING_X,
   LINE_SIZE,
   CSS_DURATION,
@@ -501,6 +502,11 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     bounds.minY < viewport.top + viewport.height &&
     bounds.maxY > viewport.top;
 
+  // We track the number of lines that end at each X value (they go over and then down,
+  // so this tracks where the vertical lines are). We shift lines by {count}px if there
+  // are others at the same X so wide "tracks" show you where data is being collected.
+  const verticalLinesAtXCoord: { [x: string]: number } = {};
+
   if (options.mode !== GaantChartMode.FLAT) {
     layout.boxes.forEach(box => {
       box.children.forEach((child, childIdx) => {
@@ -513,6 +519,9 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
           ? !metadata.steps[child.node.name]?.state
           : false;
 
+        const overlapAtXCoord = verticalLinesAtXCoord[bounds.maxX] || 0;
+        verticalLinesAtXCoord[bounds.maxX] = overlapAtXCoord + 1;
+
         items.push(
           <GaantLine
             darkened={
@@ -524,7 +533,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
             dotted={childNotDrawn || childWaiting}
             key={`${box.key}-${child.key}-${childIdx}`}
             depNotDrawn={childNotDrawn}
-            depIdx={childIdx}
+            depIdx={overlapAtXCoord}
             {...bounds}
           />
         );
@@ -558,9 +567,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
             ${hoveredStep === box.node.name && "hovered"}`}
         style={{
           left: bounds.minX,
-          top:
-            bounds.minY +
-            (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+          top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
           width: useDot ? BOX_DOT_SIZE : box.width,
           ...boxStyleFor(box.state, { metadata, options })
         }}
@@ -589,9 +596,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
             ${useDot ? "marker-dot" : "marker-whiskers"}`}
             style={{
               left: bounds.minX,
-              top:
-                bounds.minY +
-                (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+              top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
               width: useDot ? BOX_DOT_SIZE : marker.width
             }}
           >
@@ -630,22 +635,36 @@ const boundsForBox = (a: GaantChartPlacement): Bounds => {
  * @param a: GaantChartBox
  */
 const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
-  const minIdx = Math.min(a.y, b.y);
-  const maxIdx = Math.max(a.y, b.y);
+  if (b.y < a.y) {
+    [a, b] = [b, a];
+  }
 
-  const straight = maxIdx === minIdx;
-  const maxY = straight
-    ? maxIdx * BOX_HEIGHT + BOX_HEIGHT / 2
-    : maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
-  const minY = straight
-    ? minIdx * BOX_HEIGHT + BOX_HEIGHT / 2
-    : minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
+  const aIsDot = a.width === BOX_DOT_WIDTH_CUTOFF;
+  const aCenterY = aIsDot
+    ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2
+    : BOX_HEIGHT / 2;
 
+  const bIsDot = b.width === BOX_DOT_WIDTH_CUTOFF;
+  const bCenterY = bIsDot
+    ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2
+    : BOX_HEIGHT / 2;
+
+  const straight = b.y === a.y;
+
+  // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const maxX =
-    maxIdx === minIdx
-      ? Math.max(a.x, b.x)
-      : Math.max(a.x + a.width / 2, b.x + b.width / 2);
+  const minY = straight
+    ? a.y * BOX_HEIGHT + aCenterY
+    : a.y * BOX_HEIGHT + aCenterY;
+
+  // Line ends on the center left edge of the box if it is on the
+  // same line, or drops into the top center of the box if it's below.
+  const maxX = straight
+    ? Math.max(a.x, b.x)
+    : Math.max(a.x + a.width / 2, b.x + (bIsDot ? BOX_DOT_SIZE : b.width) / 2);
+  const maxY = straight
+    ? b.y * BOX_HEIGHT + bCenterY
+    : b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
 
   return { minX, minY, maxX, maxY };
 };
@@ -674,6 +693,8 @@ const GaantLine = React.memo(
       darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
     }`;
 
+    const maxXAvoidingOverlap = maxX + (depIdx % 10) * LINE_SIZE;
+
     return (
       <>
         <div
@@ -681,7 +702,7 @@ const GaantLine = React.memo(
           style={{
             height: 1,
             left: minX,
-            width: depNotDrawn ? 50 : maxX + (depIdx % 10) * LINE_SIZE - minX,
+            width: depNotDrawn ? 50 : maxXAvoidingOverlap - minX,
             top: minY - 1,
             borderTop: border,
             zIndex: darkened ? 100 : 1
@@ -692,7 +713,7 @@ const GaantLine = React.memo(
             className="line"
             style={{
               width: 1,
-              left: maxX + (depIdx % 10) * LINE_SIZE,
+              left: maxXAvoidingOverlap,
               top: minY,
               height: maxY - minY,
               borderRight: border,

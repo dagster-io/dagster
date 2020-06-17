@@ -335,6 +335,9 @@ const positionUntimedBoxes = (
   earliestAllowedMs: number
 ) => {
   const visit = (box: GaantChartBox, parentX: number) => {
+    if (box.x >= parentX) {
+      return;
+    }
     if (box.x === 0) {
       box.x = Math.max(parentX, box.x, earliestAllowedMs);
     }
