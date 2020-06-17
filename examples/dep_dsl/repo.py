@@ -57,5 +57,5 @@ def define_dep_dsl_pipeline():
 
 
 @repository
-def my_repository():
+def define_repository():
     return {'pipelines': {'some_example': define_dep_dsl_pipeline}}
