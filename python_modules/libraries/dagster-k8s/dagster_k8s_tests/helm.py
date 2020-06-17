@@ -140,6 +140,16 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
                 'env_config_maps': [TEST_CONFIGMAP_NAME],
                 'env_secrets': [TEST_SECRET_NAME],
+                'livenessProbe': {
+                    'tcpSocket': {'port': 80},
+                    'periodSeconds': 20,
+                    'failureThreshold': 3,
+                },
+                'startupProbe': {
+                    'tcpSocket': {'port': 80},
+                    'failureThreshold': 6,
+                    'periodSeconds': 10,
+                },
             },
             'celery': {
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},

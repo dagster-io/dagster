@@ -80,16 +80,16 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.dagit.resources | nindent 12 }}
+        {{- if .Values.dagit.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.dagit.livenessProbe | nindent 12 }}
+        {{- end }}
+        {{- if .Values.dagit.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.dagit.startupProbe | nindent 12 }}
+        {{- end }}
       {{- with .Values.dagit.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

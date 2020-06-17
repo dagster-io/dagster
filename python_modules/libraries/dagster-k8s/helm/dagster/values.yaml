@@ -40,8 +40,7 @@ dagit:
   tolerations: []
   podSecurityContext: {}
   securityContext: {}
-  resources:
-    {}
+  resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
   # limits:
@@ -50,6 +49,24 @@ dagit:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+  # Liveness probe detects when to restart dagit.
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+  livenessProbe:
+    tcpSocket:
+      port: 80
+    # initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 3
+  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
+  # on workspace load times.
+  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # `initialDelaySeconds: 60` under `livenessProbe`
+  startupProbe:
+    tcpSocket:
+      port: 80
+    periodSeconds: 10
+    failureThreshold: 12
 
 ####################################################################################################
 # Pipeline Run: Configuration for user code containers
@@ -149,8 +166,7 @@ celery:
   tolerations: []
   podSecurityContext: {}
   securityContext: {}
-  resources:
-    {}
+  resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
   # limits:
@@ -206,8 +222,7 @@ flower:
   tolerations: []
   podSecurityContext: {}
   securityContext: {}
-  resources:
-    {}
+  resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
   # limits:
@@ -259,7 +274,6 @@ ingress:
       #   serviceName: "ssl-redirect"
       #   servicePort: "use-annotation"
 
-
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################
@@ -275,7 +289,6 @@ extraManifests:
 ##    spec:
 ##      securityPolicy:
 ##        name: "gcp-cloud-armor-policy-test"
-
 
 serviceAccount:
   create: true
