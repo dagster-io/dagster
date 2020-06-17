@@ -10,14 +10,23 @@ const PyObject: React.FunctionComponent<{
   const moduleObjects = objects[module];
   const objectData = moduleObjects && moduleObjects[object];
 
-  // This is just to supress errors for now. Once we switch over to this site,
-  // we shoud throw an error here. That will make sure we don't have docs
+  // This is just to suppress errors for now. Once we switch over to this site,
+  // we should throw an error here. That will make sure we don't have docs
   // that link to objects that don't exist anymore.
   if (!moduleObjects || !objectData) {
     return (
       <VersionedLink href="#">
         <a>
-          <code className="text-red-800">Invalid: {displayText || object}</code>
+          <code className="text-red-800">
+            Invalid:{' '}
+            {buildErrorString(
+              module,
+              moduleObjects,
+              object,
+              objectData,
+              displayText || object,
+            )}
+          </code>
         </a>
       </VersionedLink>
     );
@@ -36,5 +45,21 @@ const PyObject: React.FunctionComponent<{
     </VersionedLink>
   );
 };
+
+function buildErrorString(
+  module: string,
+  moduleObjects: any,
+  object: string,
+  objectData: any,
+  displayStr: string,
+): string {
+  if (!moduleObjects) {
+    return displayStr + ': Could not find module ' + module;
+  }
+  if (!objectData) {
+    return 'Could not find object ' + object;
+  }
+  return 'Should never display this';
+}
 
 export default PyObject;

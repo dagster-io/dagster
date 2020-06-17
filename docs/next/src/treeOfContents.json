@@ -269,16 +269,12 @@
       },
       {
         "name": "Run Launchers & Executors",
-        "path": "/docs/overview/run-launchers-executors/page1",
+        "path": "/docs/overview/run-launchers-executors/run-launcher",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/run-launchers-executors/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/run-launchers-executors/page2"
+            "name": "Run Launchers",
+            "path": "/docs/overview/run-launchers-executors/run-launcher"
           }
         ]
       },
