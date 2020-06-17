@@ -1,10 +1,10 @@
 import dagstermill as dm
 from dagster_examples.util import download_file
 
-from dagster import DependencyDefinition, Field, InputDefinition, Int, PipelineDefinition
+from dagster import Field, InputDefinition, Int, pipeline
 from dagster.utils import script_relative_path
 
-k_means_iris_solid = dm.define_dagstermill_solid(
+k_means_iris = dm.define_dagstermill_solid(
     'k_means_iris',
     script_relative_path('iris-kmeans_2.ipynb'),
     input_defs=[InputDefinition('path', str, description='Local path to the Iris dataset')],
@@ -14,9 +14,6 @@ k_means_iris_solid = dm.define_dagstermill_solid(
 )
 
 
-def define_iris_pipeline():
-    return PipelineDefinition(
-        name='iris_pipeline',
-        solid_defs=[download_file, k_means_iris_solid],
-        dependencies={'k_means_iris': {'path': DependencyDefinition('download_file', 'path')}},
-    )
+@pipeline
+def iris_pipeline():
+    k_means_iris(download_file())

@@ -59,7 +59,7 @@ Now you can execute this pipeline with Celery. Again, from the same
 directory in which you saved the pipeline file, run:
 
 ```shell
-dagit -f celery_pipeline.py -n parallel_pipeline
+dagit -f celery_pipeline.py
 ```
 
 Now you can execute the parallel pipeline from Dagit with the following
@@ -84,8 +84,7 @@ In the quick start, we cheated in a couple of ways:
   `celery_pipeline.py`, so that our Dagster code would be available
   both to Dagit and to the worker: i.e., the worker and Dagit can both
   find the pipeline definition in the same file
-  (`-f celery_pipeline.py`), under the same name
-  (`-n parallel_pipeline`).
+  (`-f celery_pipeline.py`).
 
 In production, more configuration is required.
 
