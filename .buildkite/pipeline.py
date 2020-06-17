@@ -208,6 +208,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPython3sNo38,
         extra_cmds_fn=examples_extra_cmds_fn,
     ),
+    ModuleBuildSpec('examples/docs_snippets', upload_coverage=False),
     ModuleBuildSpec('python_modules/dagit', extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec(
         'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
@@ -323,8 +324,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/libraries/lakehouse',
         supported_pythons=[SupportedPython.V3_5, SupportedPython.V3_6, SupportedPython.V3_7],
     ),
-    # TODO: Add these tests back
-    # ModuleBuildSpec('docs/docs_examples'),
 ]
 
 

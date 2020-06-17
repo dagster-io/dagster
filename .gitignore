@@ -139,3 +139,5 @@ examples/dagster_examples/**/**/output/
 
 # Telemetry instance id
 .telemetry
+
+test_results.xml

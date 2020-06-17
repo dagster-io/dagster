@@ -13,7 +13,7 @@ class ModuleBuildSpec(
     namedtuple(
         '_ModuleBuildSpec',
         'directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file '
-        'tox_env_suffixes buildkite_label retries',
+        'tox_env_suffixes buildkite_label retries upload_coverage',
     )
 ):
     '''Main spec for testing Dagster Python modules using tox.
@@ -44,9 +44,10 @@ class ModuleBuildSpec(
             env x env_suffix string. For example, given Python tox version py27, the
             tox_env_suffixes ["-a", "-b"] will result in running "tox -e py27-a" and "tox -e py27-b"
             as two build steps. Defaults to None.
-        buildkite_label: (str, optional): Optional label to override what's shown in Buildkite.
+        buildkite_label (str, optional): Optional label to override what's shown in Buildkite.
             Defaults to None (uses the package name as the label).
-        retries: (int, optional): Whether to retry these tests on failure
+        retries (int, optional): Whether to retry these tests on failure
+        upload_coverage (bool, optional): Whether to copy coverage artifacts. Enabled by default.
 
     Returns:
         List[dict]: List of test steps
@@ -63,6 +64,7 @@ class ModuleBuildSpec(
         tox_env_suffixes=None,
         buildkite_label=None,
         retries=None,
+        upload_coverage=True,
     ):
         return super(ModuleBuildSpec, cls).__new__(
             cls,
@@ -75,6 +77,7 @@ class ModuleBuildSpec(
             tox_env_suffixes,
             buildkite_label,
             retries,
+            upload_coverage,
         )
 
     def get_tox_build_steps(self):
@@ -87,10 +90,6 @@ class ModuleBuildSpec(
             for tox_env_suffix in tox_env_suffixes:
                 label = package + tox_env_suffix
 
-                coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
-                    label=label, version=version
-                )
-
                 extra_cmds = self.extra_cmds_fn(version) if self.extra_cmds_fn else []
 
                 # See: https://github.com/dagster-io/dagster/issues/2512
@@ -99,12 +98,16 @@ class ModuleBuildSpec(
                     tox_file=tox_file, tox_env_suffix=tox_env_suffix, ver=TOX_MAP[version]
                 )
 
-                cmds = extra_cmds + [
-                    'cd {directory}'.format(directory=self.directory),
-                    tox_cmd,
-                    'mv .coverage {file}'.format(file=coverage),
-                    'buildkite-agent artifact upload {file}'.format(file=coverage),
-                ]
+                cmds = extra_cmds + ['cd {directory}'.format(directory=self.directory), tox_cmd]
+
+                if self.upload_coverage:
+                    coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
+                        label=label, version=version
+                    )
+                    cmds += [
+                        'mv .coverage {file}'.format(file=coverage),
+                        'buildkite-agent artifact upload {file}'.format(file=coverage),
+                    ]
 
                 step = (
                     StepBuilder('{label} tests ({ver})'.format(label=label, ver=TOX_MAP[version]))

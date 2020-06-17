@@ -18,7 +18,6 @@ def one_plus_one_pipeline():
     add_one(return_one())
 
 
-
 one_plus_one_pipeline_def = PipelineDefinition(
     name='one_plus_one_pipeline',
     solid_defs=[return_one, add_one],

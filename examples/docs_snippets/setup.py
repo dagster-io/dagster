@@ -2,11 +2,10 @@ from setuptools import find_packages, setup
 
 if __name__ == '__main__':
     setup(
-        name='docs_examples',
+        name='docs_snippets',
         author='Elementl',
         license='Apache-2.0',
-        description='A Dagster integration for test',
-        url='https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-test',
+        url='https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets',
         classifiers=[
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.5',

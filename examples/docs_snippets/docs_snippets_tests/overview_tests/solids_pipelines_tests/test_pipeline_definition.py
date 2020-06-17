@@ -1,4 +1,4 @@
-from docs_examples.solids_pipelines.pipeline_definition import one_plus_one_pipeline
+from docs_snippets.overview.solids_pipelines.pipeline_definition import one_plus_one_pipeline
 
 from dagster import execute_pipeline
 

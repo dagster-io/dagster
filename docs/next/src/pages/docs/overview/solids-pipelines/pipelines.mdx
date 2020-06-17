@@ -25,8 +25,7 @@ we wrap a function that composes a set of solids.
 Within the body of the function that is decorated, we use function calls to indicate the dependency structure of the solids making up the pipeline.
 
 ```python literalinclude caption=solids.py
-relativeToDocs
-file:/docs_examples/solids_pipelines/pipeline_definition.py
+file:/docs_snippets/docs_snippets/overview/solids_pipelines/pipeline_definition.py
 lineno-start:
 lines:3-18
 ```
@@ -39,8 +38,7 @@ list of solid definitions, and a dictionary defining the dependency structure.
 The dependency structure declares the dependencies of each solid’s inputs on the outputs of other solids in the pipeline. Keys of the top level dict are either the string names of solids in the pipeline or, in the case of aliased solids, SolidInvocations. Values of the top level dict are themselves dicts, which map input names belonging to the solid or aliased solid to DependencyDefinitions.
 
 ```python literalinclude caption=solids.py
-relativeToDocs
-file:/docs_examples/solids_pipelines/pipeline_definition.py
+file:/docs_snippets/docs_snippets/overview/solids_pipelines/pipeline_definition.py
 lineno-start:
-lines:21-27
+lines:21-25
 ```
