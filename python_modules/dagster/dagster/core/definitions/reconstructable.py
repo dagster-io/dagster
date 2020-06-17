@@ -2,8 +2,6 @@ import os
 import sys
 from collections import namedtuple
 
-import six
-
 from dagster import check, seven
 from dagster.core.code_pointer import (
     CodePointer,
@@ -275,19 +273,16 @@ def def_from_pointer(pointer):
 
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
-    try:
-        return _check_is_loadable(target())
 
-    except TypeError as t_e:
-        six.raise_from(
-            DagsterInvariantViolationError(
-                'Error invoking function at {target} with no arguments. '
-                'Reconstructable target must be callable with no arguments'.format(
-                    target=pointer.describe()
-                )
-            ),
-            t_e,
+    if seven.get_args(target):
+        raise DagsterInvariantViolationError(
+            'Error invoking function at {target} with no arguments. '
+            'Reconstructable target must be callable with no arguments'.format(
+                target=pointer.describe()
+            )
         )
+
+    return _check_is_loadable(target())
 
 
 def pipeline_def_from_pointer(pointer):
