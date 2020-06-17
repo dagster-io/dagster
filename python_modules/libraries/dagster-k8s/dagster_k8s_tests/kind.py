@@ -49,7 +49,18 @@ def create_kind_cluster(cluster_name, should_cleanup=True):
             '--- \033[32m:k8s: Running kind cluster setup for cluster '
             '{cluster_name}\033[0m'.format(cluster_name=cluster_name)
         )
-        check_output(['kind', 'create', 'cluster', '--name', cluster_name])
+
+        p = subprocess.Popen(
+            ['kind', 'create', 'cluster', '--name', cluster_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout, stderr = p.communicate()
+
+        print('Kind create cluster command completed with stdout: ', stdout)
+        print('Kind create cluster command completed with stderr: ', stderr)
+
+        assert p.returncode == 0
         yield cluster_name
 
     finally:

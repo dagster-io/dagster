@@ -1,7 +1,6 @@
 import base64
 import os
 import subprocess
-import sys
 import time
 from contextlib import contextmanager
 
@@ -185,8 +184,12 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
 
         print('Running Helm Install: \n', ' '.join(helm_cmd), '\nWith config:\n', helm_config_yaml)
 
-        p = subprocess.Popen(helm_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, stderr=sys.stderr)
-        p.communicate(six.ensure_binary(helm_config_yaml))
+        p = subprocess.Popen(
+            helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = p.communicate(six.ensure_binary(helm_config_yaml))
+        print('Helm install completed with stdout: ', stdout)
+        print('Helm install completed with stderr: ', stderr)
         assert p.returncode == 0
 
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
