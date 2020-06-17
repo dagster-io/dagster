@@ -20,7 +20,7 @@ export function createLogRowStructuredContentTable(
   rows: { label: string; item: JSX.Element }[]
 ) {
   return (
-    <div>
+    <div style={{ overflow: "auto", paddingBottom: 10 }}>
       <LogRowStructuredContentTable cellPadding="0" cellSpacing="0">
         <tbody>
           {rows.map(({ label, item }, idx) => (

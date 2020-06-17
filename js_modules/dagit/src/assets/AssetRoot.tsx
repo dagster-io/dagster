@@ -89,9 +89,9 @@ const AssetLastMaterialization = ({
         <Legend>
           <LegendColumn style={{ maxWidth: 30 }}></LegendColumn>
           <LegendColumn style={{ maxWidth: 250 }}>Run</LegendColumn>
-          <LegendColumn>Materialization</LegendColumn>
-          <LegendColumn>Details</LegendColumn>
-          <LegendColumn style={{ maxWidth: 400 }}>Timestamp</LegendColumn>
+          <LegendColumn style={{ flex: 2 }}>Materialization</LegendColumn>
+          <LegendColumn style={{ flex: 3 }}>Details</LegendColumn>
+          <LegendColumn style={{ maxWidth: 300 }}>Timestamp</LegendColumn>
         </Legend>
 
         <RowContainer>
@@ -113,7 +113,7 @@ const AssetLastMaterialization = ({
               runId
             )}
           </RowColumn>
-          <RowColumn>
+          <RowColumn style={{ flex: 2 }}>
             {materialization.label}
             {materialization.description ? (
               <div style={{ fontSize: "0.8rem", marginTop: 10 }}>
@@ -121,12 +121,12 @@ const AssetLastMaterialization = ({
               </div>
             ) : null}
           </RowColumn>
-          <RowColumn>
+          <RowColumn style={{ flex: 3, fontSize: 12 }}>
             {metadataEntries && metadataEntries.length ? (
               <MetadataEntries entries={metadataEntries} />
             ) : null}
           </RowColumn>
-          <RowColumn style={{ maxWidth: 400 }}>
+          <RowColumn style={{ maxWidth: 300 }}>
             {new Date(parseInt(timestamp)).toLocaleString()}
           </RowColumn>
         </RowContainer>
