@@ -4,4 +4,4 @@ apiVersion: v1
 name: dagster
 description: Dagster is a system for building modern data applications.
 version: 0.1.0
-appVersion: 0.6.9
+icon: https://raw.githubusercontent.com/dagster-io/dagster/master/assets/Dagster.png
