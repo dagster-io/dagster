@@ -29,11 +29,13 @@ def create_schedule_cli_group():
     return group
 
 
-def print_changes(repository, instance, print_fn=print, preview=False):
+def print_changes(external_repository, instance, print_fn=print, preview=False):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
-    external_schedules = repository.get_external_schedules()
-    changeset = get_schedule_change_set(instance.all_stored_schedule_state(), external_schedules)
+    external_schedules = external_repository.get_external_schedules()
+    changeset = get_schedule_change_set(
+        instance.all_stored_schedule_state(external_repository.get_origin_id()), external_schedules
+    )
 
     if len(errors) == 0 and len(changeset) == 0:
         if preview:
