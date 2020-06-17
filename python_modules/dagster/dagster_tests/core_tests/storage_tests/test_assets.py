@@ -149,11 +149,20 @@ def test_asset_normalization(asset_aware_context):
 def test_asset_wipe(asset_aware_context):
     with asset_aware_context() as ctx:
         instance, event_log_storage = ctx
-        result = execute_pipeline(pipeline_one, instance=instance)
+        one = execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
         asset_keys = event_log_storage.get_all_asset_keys()
-        assert len(asset_keys) == 1
-        log_count = len(event_log_storage.get_logs_for_run(result.run_id))
-        instance.wipe_assets()
+        assert len(asset_keys) == 3
+        log_count = len(event_log_storage.get_logs_for_run(one.run_id))
+        instance.wipe_all_assets()
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 0
-        assert log_count == len(event_log_storage.get_logs_for_run(result.run_id))
+        assert log_count == len(event_log_storage.get_logs_for_run(one.run_id))
+
+        execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 3
+        instance.wipe_assets([AssetKey(['path', 'to', 'asset_3'])])
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 2

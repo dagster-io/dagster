@@ -12,6 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -745,7 +746,18 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
-    def wipe_assets(self):
+    def wipe_assets(self, asset_keys):
+        check.list_param(asset_keys, 'asset_keys', of_type=AssetKey)
+
+        from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
+
+        if not isinstance(self._event_storage, AssetAwareEventLogStorage):
+            return
+
+        for asset_key in asset_keys:
+            self._event_storage.wipe_asset(asset_key)
+
+    def wipe_all_assets(self):
         from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 
         if not isinstance(self._event_storage, AssetAwareEventLogStorage):
