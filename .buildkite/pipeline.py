@@ -192,13 +192,14 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         buildkite_label='airline-demo',
     ),
     # Examples: Events Demo
-    ModuleBuildSpec(
-        'examples',
-        env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
-        supported_pythons=SupportedPython3sNo38,
-        tox_file='tox_events.ini',
-        buildkite_label='events-demo',
-    ),
+    # TODO: https://github.com/dagster-io/dagster/issues/2617
+    # ModuleBuildSpec(
+    #     'examples',
+    #     env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
+    #     supported_pythons=SupportedPython3sNo38,
+    #     tox_file='tox_events.ini',
+    #     buildkite_label='events-demo',
+    # ),
     # Examples
     ModuleBuildSpec(
         'examples',
