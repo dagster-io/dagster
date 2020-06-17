@@ -140,12 +140,24 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 'env_config_maps': [TEST_CONFIGMAP_NAME],
                 'env_secrets': [TEST_SECRET_NAME],
                 'livenessProbe': {
-                    'tcpSocket': {'port': 80},
+                    'tcpSocket': {'port': 'http'},
                     'periodSeconds': 20,
                     'failureThreshold': 3,
                 },
                 'startupProbe': {
-                    'tcpSocket': {'port': 80},
+                    'tcpSocket': {'port': 'http'},
+                    'failureThreshold': 6,
+                    'periodSeconds': 10,
+                },
+            },
+            'flower': {
+                'livenessProbe': {
+                    'tcpSocket': {'port': 'flower'},
+                    'periodSeconds': 20,
+                    'failureThreshold': 3,
+                },
+                'startupProbe': {
+                    'tcpSocket': {'port': 'flower'},
                     'failureThreshold': 6,
                     'periodSeconds': 10,
                 },

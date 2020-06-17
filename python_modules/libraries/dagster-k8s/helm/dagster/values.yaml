@@ -53,7 +53,7 @@ dagit:
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
   livenessProbe:
     tcpSocket:
-      port: 80
+      port: "http"
     # initialDelaySeconds: 60
     periodSeconds: 20
     failureThreshold: 3
@@ -64,7 +64,7 @@ dagit:
   # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
     tcpSocket:
-      port: 80
+      port: "http"
     periodSeconds: 10
     failureThreshold: 12
 
@@ -236,6 +236,23 @@ flower:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+  # Liveness probe detects when to restart flower.
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+  livenessProbe:
+    tcpSocket:
+      port: "flower"
+    # initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 3
+  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # then liveness probe takes over.
+  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # `initialDelaySeconds: 60` under `livenessProbe`
+  startupProbe:
+    tcpSocket:
+      port: "flower"
+    periodSeconds: 10
+    failureThreshold: 6
 
 ####################################################################################################
 # Ingress: (Optional) Create ingresses for Dagit and Flower
