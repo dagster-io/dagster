@@ -22,7 +22,6 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidSubsetError,
-    DagsterInvariantViolationError,
     DagsterLaunchFailedError,
     DagsterSubprocessError,
     DagsterUserCodeExecutionError,
@@ -485,32 +484,29 @@ def _schedule_tick_state(instance, tick_data):
 @click.option('--schedule_name')
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
-        recon_repo = get_reconstructable_repository_from_origin_kwargs(kwargs)
-
         instance = DagsterInstance.get()
 
-        repo_def = recon_repo.get_definition()
-
-        if not repo_def.has_schedule_def(schedule_name):
-            raise DagsterInvariantViolationError(
-                'Schedule named "{sched}" not found in repository "{repo}"'.format(
-                    sched=schedule_name, repo=repo_def.name
-                )
-            )
-
+        recon_repo = get_reconstructable_repository_from_origin_kwargs(kwargs)
         schedule = recon_repo.get_reconstructable_schedule(schedule_name)
-        schedule_def = schedule.get_definition()
 
+        # open the tick scope before we call get_definition to make sure
+        # load errors are stored in DB
         with _schedule_tick_state(
             instance,
             ScheduleTickData(
                 schedule_origin_id=schedule.get_origin_id(),
-                schedule_name=schedule_def.name,
-                cron_schedule=schedule_def.cron_schedule,
+                schedule_name=schedule_name,
                 timestamp=time.time(),
+                cron_schedule=None,  # not yet loaded
                 status=ScheduleTickStatus.STARTED,
             ),
         ) as tick:
+
+            schedule_def = schedule.get_definition()
+
+            tick.update_with_status(
+                status=ScheduleTickStatus.STARTED, cron_schedule=schedule_def.cron_schedule,
+            )
 
             pipeline = recon_repo.get_reconstructable_pipeline(
                 schedule_def.pipeline_name

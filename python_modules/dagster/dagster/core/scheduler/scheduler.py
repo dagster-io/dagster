@@ -468,16 +468,24 @@ class ScheduleTickData(
             cls,
             check.str_param(schedule_origin_id, 'schedule_origin_id'),
             check.str_param(schedule_name, 'schedule_name'),
-            check.str_param(cron_schedule, 'cron_schedule'),
+            check.opt_str_param(cron_schedule, 'cron_schedule'),
             check.float_param(timestamp, 'timestamp'),
             status,
             run_id,
             error,
         )
 
-    def with_status(self, status, run_id=None, error=None):
+    def with_status(self, status, run_id=None, error=None, cron_schedule=None):
         check.inst_param(status, 'status', ScheduleTickStatus)
-        return self._replace(status=status, run_id=run_id, error=error)
+        return ScheduleTickData(
+            schedule_origin_id=self.schedule_origin_id,
+            schedule_name=self.schedule_name,
+            cron_schedule=cron_schedule if cron_schedule is not None else self.cron_schedule,
+            timestamp=self.timestamp,
+            status=status,
+            run_id=run_id if run_id is not None else self.run_id,
+            error=error if error is not None else self.error,
+        )
 
 
 class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
@@ -512,10 +520,12 @@ class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
             check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData),
         )
 
-    def with_status(self, status, run_id=None, error=None):
+    def with_status(self, status, run_id=None, error=None, cron_schedule=None):
         check.inst_param(status, 'status', ScheduleTickStatus)
         return self._replace(
-            schedule_tick_data=self.schedule_tick_data.with_status(status, run_id, error)
+            schedule_tick_data=self.schedule_tick_data.with_status(
+                status, run_id=run_id, error=error, cron_schedule=cron_schedule
+            )
         )
 
     @property

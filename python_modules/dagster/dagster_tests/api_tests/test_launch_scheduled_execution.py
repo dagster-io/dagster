@@ -178,3 +178,19 @@ def test_wrong_config():
 
             ticks = instance.get_schedule_ticks(wrong_config.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.SUCCESS
+
+
+def test_bad_load():
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            instance = DagsterInstance.get()
+
+            recon_repo = ReconstructableRepository.for_file(__file__, 'doesnt_exist')
+            schedule = recon_repo.get_reconstructable_schedule('also_doesnt_exist')
+
+            with pytest.raises(DagsterSubprocessError):
+                sync_launch_scheduled_execution(schedule.get_origin())
+
+            ticks = instance.get_schedule_ticks(schedule.get_origin_id())
+            assert ticks[0].status == ScheduleTickStatus.FAILURE
+            assert 'doesnt_exist not found at module scope in file' in ticks[0].error.message
