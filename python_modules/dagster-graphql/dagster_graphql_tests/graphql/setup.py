@@ -8,7 +8,7 @@ from copy import deepcopy
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.utils import (
     define_context_for_file,
-    define_subprocess_context_for_file,
+    define_out_of_process_context,
     infer_pipeline_selector,
 )
 
@@ -83,9 +83,9 @@ PoorMansDataFrame = PythonObjectDagsterType(
 )
 
 
-def define_test_subprocess_context(instance):
+def define_test_out_of_process_context(instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    return define_subprocess_context_for_file(__file__, "test_repo", instance)
+    return define_out_of_process_context(__file__, "test_repo", instance)
 
 
 def define_test_context(instance):

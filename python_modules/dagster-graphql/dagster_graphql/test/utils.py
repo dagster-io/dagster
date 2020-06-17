@@ -3,8 +3,13 @@ from dagster_graphql.schema import create_schema
 from graphql import graphql
 
 from dagster import check
+from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.host_representation import (
+    InProcessRepositoryLocation,
+    PythonEnvRepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.core.instance import DagsterInstance
 
 
@@ -45,11 +50,16 @@ def define_context_for_file(python_file, fn_name, instance):
     )
 
 
-def define_subprocess_context_for_file(python_file, fn_name, instance):
+def define_out_of_process_context(python_file, fn_name, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
+
     return DagsterGraphQLContext(
         locations=[
-            InProcessRepositoryLocation(ReconstructableRepository.for_file(python_file, fn_name))
+            PythonEnvRepositoryLocation(
+                RepositoryLocationHandle.create_out_of_process_location(
+                    'test_location', {fn_name: FileCodePointer(python_file, fn_name)}
+                )
+            )
         ],
         instance=instance,
     )
