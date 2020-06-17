@@ -101,14 +101,6 @@ def kind_sync_dockerconfig():
 
     docker_exe = which_('docker')
 
-    # https://github.com/kubernetes-client/python/issues/895#issuecomment-515025300
-    from kubernetes.client.models.v1_container_image import V1ContainerImage
-
-    def names(self, names):
-        self._names = names  # pylint: disable=protected-access
-
-    V1ContainerImage.names = V1ContainerImage.names.setter(names)  # pylint: disable=no-member
-
     nodes = kubernetes.client.CoreV1Api().list_node().items
     for node in nodes:
         node_name = node.metadata.name

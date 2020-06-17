@@ -52,7 +52,7 @@ ENV LANG=en_US.UTF-8 \
     SBT_VERSION=1.2.8 \
     PYSPARK_VERSION=2.4.4 \
     KUBECTL_VERSION=v1.16.4 \
-    KIND_VERSION=v0.5.1
+    KIND_VERSION=v0.8.1
 
 # Install kubectl
 RUN echo "--- \033[32m:k8s: Install kubectl\033[0m" \
