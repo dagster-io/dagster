@@ -165,6 +165,22 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             'celery': {
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
                 'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
+                'livenessProbe': {
+                    'exec': {
+                        'command': [
+                            '/bin/sh',
+                            '-c',
+                            'celery status -A dagster_celery.tasks -b {broker_url} | grep "{HOSTNAME}:.*OK"'.format(
+                                broker_url='some_broker_url', HOSTNAME='some_hostname',
+                            ),
+                        ]
+                    },
+                    'initialDelaySeconds': 15,
+                    'periodSeconds': 10,
+                    'timeoutSeconds': 10,
+                    'successThreshold': 1,
+                    'failureThreshold': 3,
+                },
             },
             'pipeline_run': {
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},

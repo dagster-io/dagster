@@ -180,6 +180,19 @@ celery:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+  # For livenessProbe, leave `default: true` to use
+  # exec:
+  #   command:
+  #     - /bin/sh
+  #     - -c
+  #     - celery status -A dagster_celery.tasks -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+  livenessProbe:
+    default: true
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
