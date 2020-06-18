@@ -32,6 +32,7 @@ def sum_sq_solid(_, sum_df: DataFrame, mult_df: DataFrame) -> DataFrame:
 
 
 @pipeline(
+    description='Demo pipeline showcasing `dagster_pandas.Dataframe` types as solid inputs/outputs.',
     preset_defs=[
         PresetDefinition.from_pkg_resources(
             'test',
@@ -45,13 +46,18 @@ def sum_sq_solid(_, sum_df: DataFrame, mult_df: DataFrame) -> DataFrame:
                 ('dagster_examples.toys.environments', 'pandas_hello_world_prod.yaml')
             ],
         ),
-    ]
+    ],
 )
 def pandas_hello_world_pipeline():
     return sum_sq_solid(sum_df=sum_solid(), mult_df=mult_solid())
 
 
-@pipeline
+@pipeline(
+    description=(
+        'Demo pipeline showcasing `dagster_pandas.Dataframe` types as solid inputs/outputs, using '
+        'the same csv path for all root inputs.'
+    )
+)
 def pandas_hello_world_pipeline_with_read_csv():
     csv = read_csv()
     return sum_sq_solid(sum_df=sum_solid(csv), mult_df=mult_solid(csv))

@@ -31,6 +31,6 @@ def int_to_float(_, num):
     return float(num)
 
 
-@pipeline
+@pipeline(description='Demo pipeline that makes use of composite solids.')
 def composition():
     div_four(int_to_float(add_four()))

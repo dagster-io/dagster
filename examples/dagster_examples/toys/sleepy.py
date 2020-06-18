@@ -63,6 +63,10 @@ def total(_, in_1, in_2, in_3, in_4):
 
 
 @pipeline(
+    description=(
+        'Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute '
+        'with the `multi` preset to take advantage of multi-process parallelism.'
+    ),
     preset_defs=[
         PresetDefinition(
             'multi',
@@ -72,7 +76,7 @@ def total(_, in_1, in_2, in_3, in_4):
                 'solids': {'giver': {'config': [2, 2, 2, 2]}},
             },
         )
-    ]
+    ],
 )
 def sleepy_pipeline():
     giver_res = giver()

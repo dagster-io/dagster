@@ -103,6 +103,10 @@ def str_to_num(context, string):
 
 
 @pipeline(
+    description=(
+        'Demo pipeline that enables configurable types of errors thrown during pipeline execution, '
+        'including solid execution errors, type errors, and resource initialization errors.'
+    ),
     mode_defs=[
         ModeDefinition(
             name='errorable_mode', resource_defs={'errorable_resource': define_errorable_resource()}

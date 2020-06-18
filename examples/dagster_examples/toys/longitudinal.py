@@ -109,7 +109,12 @@ def base_two_inputs(context, _a, _b):
         yield event
 
 
-@pipeline
+@pipeline(
+    description=(
+        'Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline '
+        'following a sigmoidal curve'
+    )
+)
 def longitudinal_pipeline():
     ingest_costs = base_no_input.alias('ingest_costs')
     persist_costs = base_one_input.alias('persist_costs')

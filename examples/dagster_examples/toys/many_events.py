@@ -179,7 +179,12 @@ def check_admins_both_succeed(_context):
     yield ExpectationResult(success=True, label='Event admins check out')
 
 
-@pipeline
+@pipeline(
+    description=(
+        'Demo pipeline that yields Materializations and ExpectationResults, along with the various '
+        'forms of metadata that can be attached to them.'
+    )
+)
 def many_events():
     raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
 

@@ -34,7 +34,10 @@ def spew(_, name):
         i += 1
 
 
-@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors)])
+@pipeline(
+    description='Demo pipeline that streams out logs to the compute logs stdout/stderr.',
+    mode_defs=[ModeDefinition(executor_defs=default_executors)],
+)
 def stdout_spew_pipeline():
     out_1, out_2 = spawn()
     spew(name=out_1)

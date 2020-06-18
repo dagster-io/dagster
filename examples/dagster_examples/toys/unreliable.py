@@ -20,7 +20,7 @@ def unreliable(context, num):
     return num
 
 
-@pipeline
+@pipeline(description='Demo pipeline of chained solids that fail with a configurable probability.')
 def unreliable_pipeline():
     one = unreliable.alias('one')
     two = unreliable.alias('two')
