@@ -11,14 +11,14 @@ import PyObject from 'components/PyObject';
 
 # Basics of Solids
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e02_solids/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/" />
 
 ## Parametrizing Solids with Inputs
 
 So far, we've only seen solids whose behavior is the same every time they're run:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=4 caption=hello_cereal.py
-file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 lines:7-20
 ```
 
@@ -27,7 +27,7 @@ able to parametrize our solid logic. Appropriately parameterized solids are more
 more reusable. Consider the following more generic solid:
 
 ```python literalinclude showLines startLine=7 caption=inputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
 lines:7-15
 ```
 
@@ -39,7 +39,7 @@ we can use the output of another upstream solid to determine which file to load.
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
 ```python literalinclude showLines startLine=1 emphasize-lines=38 caption=inputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
 lines:1-38
 ```
 
@@ -69,7 +69,7 @@ it can have [a lot of sections](/docs/apidocs/execution####config_schema), but w
 them here: per-solid configuration, which is specified under the key `solids`:
 
 ```python literalinclude showLines startLine=41 caption=inputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
 lines:42-46
 dedent:4
 ```
@@ -82,7 +82,7 @@ Now you can pass this run config to <PyObject module="dagster" object="execute_p
 displayText="execute_pipeline()" />:
 
 ```python literalinclude showLines startLine=49 caption=inputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
 lines:47-49
 dedent:4
 ```
@@ -98,7 +98,7 @@ When executing pipelines with the dagster CLI, we'll need to provide the run con
 use YAML for the file-based representation of configuration, but the values are the same as before:
 
 ```YAML literalinclude showLines caption=inputs_env.yaml
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
 dedent:4
 ```
 
@@ -168,7 +168,7 @@ they're invoked. For example, consider an extended version of our CSV-reading so
 more of the options available in the underlying Python API:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=9-15 caption=config_bad_1.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_1.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_1.py
 lines:7-29
 ```
 
@@ -182,7 +182,7 @@ But hoisting all of these parameters into the signature of the solid function as
 right answer either:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=5-11 caption=config_bad_2.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_2.py
 lines:7-39
 ```
 
@@ -199,7 +199,7 @@ values.
 The solution is to define a config schema for our solid:
 
 ```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89 caption=config.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/config.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config.py
 lines:1-104
 ```
 
@@ -237,7 +237,7 @@ values defined in the `config` argument to <PyObject module="dagster" object="so
 displayText="@solid" />.
 
 ```YAML literalinclude caption=config_env_bad.yaml
-file:/dagster_examples/intro_tutorial/basics/e02_solids/config_env_bad.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_env_bad.yaml
 ```
 
 Of course, this config won't give us the results we're expecting. The values in `cereal.csv` are
@@ -260,7 +260,7 @@ Suppose we're interested in splitting hot and cold cereals into separate dataset
 them separately, based on config.
 
 ```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26 caption=multiple_outputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.py
 lines:35-66
 ```
 
@@ -272,7 +272,7 @@ function must have a name that corresponds to one of these declared outputs.
 We'll define two downstream solids and hook them up to the multiple outputs from `split_cereals`.
 
 ```python literalinclude showLines startLine=58 emphasize-lines=23-25 caption=multiple_outputs.py
-file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.py
 lines:58-84
 ```
 
@@ -294,7 +294,7 @@ omitted and that the execution step corresponding to the downstream solid is mar
 execution pane:
 
 ```YAML literalinclude showLines caption=multiple_outputs.yaml
-file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.yaml
 ```
 
 ![conditional_outputs.png](/assets/images/tutorial/conditional_outputs.png)

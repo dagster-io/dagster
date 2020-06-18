@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Making Your Pipelines Testable and Maintainable
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e04_quality/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/" />
 
 The reality of building data applications is that they are notoriously difficult to test and are
 therefore typically un- or under-tested. Besides, pipeline authors generally do not have control
@@ -37,7 +37,7 @@ failure of execution, the outputs produced by solids, and (as we'll see later) o
 associated with execution.
 
 ```python literalinclude showLines startLine=32 caption=hello_cereal.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
 lines:32-43
 ```
 
@@ -77,7 +77,7 @@ is executed.
 For example, when we execute our pipeline with this config, it'll fail at runtime:
 
 ```YAML literalinclude caption=inputs_env_bad.yaml
-file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
 ```
 
 When we enter this mistyped config in Dagit and execute our pipeline, you'll see that an error
@@ -97,7 +97,7 @@ A user can apply types to inputs and outputs using Python 3's type annotation sy
 we just want to type the input as the built-in `str`.
 
 ```python literalinclude showLines startLine=7 emphasize-lines=2 caption=inputs_typed.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_typed.py
 lines:7-15
 ```
 

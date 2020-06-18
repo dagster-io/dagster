@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Dagster Types & Expectations
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e04_quality/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/" />
 
 ## Dagster Types
 
@@ -27,7 +27,7 @@ about typing in Dagster by reading [Dagster Types Guide](/docs/learn/guides/dags
 Let's look back at our simple `read_csv` solid.
 
 ```python literalinclude showLines startLine=7 caption=inputs_typed.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_typed.py
 lines:7-15
 ```
 
@@ -61,14 +61,14 @@ To do this, we'll use the <PyObject module="dagster" object="DagsterType" displa
 /> class:
 
 ```python literalinclude  showLines startLine=6 caption=custom_types.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types.py
 lines:6-10
 ```
 
 Now we can annotate the rest of our pipeline with our new type:
 
 ```python literalinclude showLines startLine=13 emphasize-lines=2,12 caption=custom_types.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types.py
 lines:13-36
 ```
 
@@ -98,7 +98,7 @@ of these OrderedDicts to have the same fields, in the same order.
 The type check function allows us to do this:
 
 ```python literalinclude showLines startLine=7 emphasize-lines=1,21 caption=custom_types_2.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_2.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_2.py
 lines:7-30
 ```
 
@@ -106,7 +106,7 @@ Now, if our solid logic fails to return the right type, we'll see a type check f
 replace our `read_csv` solid with the following bad logic:
 
 ```python literalinclude showLines startLine=32 caption=custom_types_2.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_2.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_2.py
 lines:32-39
 ```
 
@@ -129,7 +129,7 @@ We saw earlier how, when a solid doesn't receive all of its inputs from other so
 upstream in the pipeline, we can specify its input values in config:
 
 ```YAML literalinclude caption=inputs_env.yaml
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
 ```
 
 The Dagster framework knows how to interpret values provided via config as scalar inputs. In this
@@ -145,7 +145,7 @@ general purpose `read_csv` solid.
 What we want to be able to do is write:
 
 ```YAML literalinclude caption=custom_type_input.yaml
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_type_input.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_type_input.yaml
 ```
 
 In order for the Dagster machinery to be able to decode the config value
@@ -154,7 +154,7 @@ In order for the Dagster machinery to be able to decode the config value
 hydration config.
 
 ```python literalinclude showLines startLine=32 caption=custom_types_3.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_3.py
 lines:32-39
 ```
 
@@ -171,7 +171,7 @@ other formats and sources, and might have a selector with fields like `parquet`,
 Then insert this into the original declaration:
 
 ```python literalinclude showLines startLine=42 emphasize-lines=5 caption=custom_types_3.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_3.py
 lines:42-47
 ```
 
@@ -179,7 +179,7 @@ Now if you run a pipeline with this solid from dagit you will be able to
 provide sources for these inputs via config:
 
 ```python literalinclude showLines startLine=70 caption=custom_types_3.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_3.py
 lines:70-80
 ```
 
@@ -193,7 +193,7 @@ includes a utility function, <PyObject module="dagster" object="check_dagster_ty
 that lets you type check any Dagster type against any value.
 
 ```python literalinclude showLines startLine=102 caption=custom_types_test.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_test.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_test.py
 lines:102-114
 ```
 
@@ -214,7 +214,7 @@ One is using `InputDefinition` and `OutputDefinition` exclusively for dagster ty
 type annotations for naked Python types _only_. This is verbose, but is explicit and clear.
 
 ```python literalinclude showLines startLine=21 emphasize-lines=1-5,14-15 caption=custom_types_mypy_verbose.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy_verbose.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy_verbose.py
 lines:21-47
 ```
 
@@ -226,7 +226,7 @@ While inelegant, this centralizes boilerplate to the type instantiation, rather 
 places where the type is referenced.
 
 ```python literalinclude showLines startLine=7 emphasize-lines=1-8 caption=custom_types_mypy_typing_trick.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy_typing_trick.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy_typing_trick.py
 lines:7-25
 ```
 
@@ -242,7 +242,7 @@ contains metadata about the success or failure of the type check. Let's see how 
 some summary statistics about our DataFrame type:
 
 ```python literalinclude showLines startLine=18 emphasize-lines=3-9,33-53 caption=custom_types_4.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_4.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_4.py
 lines:18-71
 ```
 
@@ -284,7 +284,7 @@ structured side-channel result that a solid can yield. These extra events don't 
 downstream solids and they aren't used to define the data dependencies of a pipeline DAG.
 
 ```python literalinclude showLines startLine=93 emphasize-lines=1-3,31 caption=custom_types_bad_5.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_bad_5.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_bad_5.py
 lines:93-133
 ```
 
@@ -303,7 +303,7 @@ cereal is Corn Flakes (100 calories per serving) and the most caloric cereal Str
 To fix this, we can cast `calories` to `int` during the hydration process:
 
 ```python literalinclude showLines startLine=75 emphasize-lines=7 caption=custom_types_5.py
-file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_5.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_5.py
 lines:75-86
 ```
 

@@ -30,10 +30,10 @@ EXPECTED_KEYS = set(
     ]
 )
 
-
+# https://github.com/dagster-io/dagster/issues/2623
 def path_to_tutorial_file(path):
     return script_relative_path(
-        os.path.join('../../../../examples/dagster_examples/intro_tutorial/', path)
+        os.path.join('../../../../examples/docs_snippets/docs_snippets/intro_tutorial/', path)
     )
 
 

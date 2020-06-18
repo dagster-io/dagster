@@ -57,7 +57,7 @@ We support two modes of execution (each of which uses its own operator):
 For this quickstart, we'll use our familiar, simple demo pipeline:
 
 ```python literalinclude caption=airflow.py
-file:/dagster_examples/intro_tutorial/airflow.py
+file:/docs_snippets/docs_snippets/intro_tutorial/airflow.py
 ```
 
 To compile this existing pipeline to Airflow, we'll use the
@@ -66,7 +66,7 @@ Airflow-compatible DAG scaffold out to `$AIRFLOW_HOME/dags`.
 
 ```shell
 dagster-airflow scaffold \
-    --module-name dagster_examples.intro_tutorial.airflow \
+    --module-name docs_snippets.docs_snippets.intro_tutorial.airflow \
     --pipeline-name hello_cereal_pipeline
 Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 ```
@@ -74,7 +74,7 @@ Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 Let's take a look at the generated file:
 
 ```python literalinclude caption=hello_cereal_pipeline.py
-file:/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
+file:/docs_snippets/docs_snippets/intro_tutorial/hello_cereal_pipeline.py
 ```
 
 This is a fairly straightforward file with four parts.

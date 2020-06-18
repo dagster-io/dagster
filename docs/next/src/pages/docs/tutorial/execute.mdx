@@ -17,12 +17,12 @@ a pipeline to connect solids, and a way to execute the pipeline.
 If you haven't already, grab the dataset for this tutorial from Github:
 
 ```shell
-curl -O https://raw.githubusercontent.com/dagster-io/dagster/master/examples/dagster_examples/intro_tutorial/cereal.csv
+curl -O https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv
 ```
 
 ## Executing Your First Pipeline
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e01_first_pipeline/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/" />
 
 ## Hello, Solid!
 
@@ -36,7 +36,7 @@ The logic in our first solid is very straightforward: it just reads in the csv f
 and logs the number of rows it finds.
 
 ```python literalinclude showLines caption=hello_cereal.py
-file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 lines:1-20
 ```
 
@@ -55,7 +55,7 @@ typically define pipelines by annotating ordinary Python functions with the <PyO
 module="dagster" object="pipeline" displayText="@pipeline" /> decorator.
 
 ```python literalinclude showLines startLine=22 caption=hello_cereal.py
-file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 lines:22-24
 ```
 
@@ -108,7 +108,7 @@ using the dagster CLI at all. Just add a few lines to
 `hello_cereal.py`
 
 ```python literalinclude showLines startLine=27 caption=hello_cereal.py
-file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 lines:27-29
 ```
 

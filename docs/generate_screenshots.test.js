@@ -12,7 +12,7 @@ const runDagit = async (args, port) => {
   const dagitArgs = args.concat(["-p", port || 3000]);
 
   dagit = spawn("dagit", dagitArgs, {
-    cwd: "../examples/dagster_examples/intro_tutorial/",
+    cwd: "../examples/docs_snippets/docs_snippets/intro_tutorial/",
   });
 
   console.log(`Running: "dagit ${dagitArgs.join(" ")}" on pid ${dagit.pid}`);
@@ -57,10 +57,7 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
 
   beforeAll(async (done) => {
     // dagit -f hello_cereal.py -n hello_cereal_pipeline
-    dagit = await runDagit(
-      ["-f", "hello_cereal.py", "-a", "hello_cereal_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "hello_cereal.py", "-a", "hello_cereal_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -125,16 +122,13 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
 
           await newTab.reload({ waitUntil: "networkidle0" });
-          await newTab.waitFor(
-            "//span[contains(., 'Process for pipeline exited')]",
-            { timeout: 0 }
-          );
+          await newTab.waitFor("//span[contains(., 'Process for pipeline exited')]", {
+            timeout: 0,
+          });
           const image = await newTab.screenshot({
             path: screenshotPath("/hello_cereal_figure_three.png"),
           });
-          expect(image).toMatchImageSnapshot(
-            setConfig("hello_cereal_figure_three")
-          );
+          expect(image).toMatchImageSnapshot(setConfig("hello_cereal_figure_three"));
           resolve();
         } catch (error) {
           reject(error);
@@ -155,10 +149,7 @@ describe("for the serial pipeline in hello_dag", () => {
 
   beforeAll(async (done) => {
     // dagit -f serial_pipeline.py -n serial_pipeline
-    dagit = await runDagit(
-      ["-f", "serial_pipeline.py", "-a", "serial_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "serial_pipeline.py", "-a", "serial_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -202,10 +193,7 @@ describe("for the complex pipeline in hello_dag", () => {
 
   beforeAll(async (done) => {
     // dagit -f complex_pipeline.py -n complex_pipeline
-    dagit = await runDagit(
-      ["-f", "complex_pipeline.py", "-a", "complex_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "complex_pipeline.py", "-a", "complex_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -238,9 +226,7 @@ describe("for the complex pipeline in hello_dag", () => {
     const image = await page.screenshot({
       path: screenshotPath("/complex_pipeline_figure_one.png"),
     });
-    expect(image).toMatchImageSnapshot(
-      setConfig("complex_pipeline_figure_one")
-    );
+    expect(image).toMatchImageSnapshot(setConfig("complex_pipeline_figure_one"));
     return;
   });
 });
@@ -325,9 +311,7 @@ describe("for the config editor in inputs", () => {
         "    csv_path:\n" +
         '      value: "cereal.csv"'
     );
-    await page.waitForSelector(
-      'button[title="Start execution in a subprocess"]'
-    );
+    await page.waitForSelector('button[title="Start execution in a subprocess"]');
     const image = await page.screenshot({
       path: screenshotPath("/inputs_figure_three.png"),
     });
@@ -390,11 +374,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
     await sleep(500);
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        "  value: 2343"
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + "  value: 2343"
     );
     await sleep(500);
 
@@ -436,11 +416,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
     await sleep(500);
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        "  value: 2343"
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + "  value: 2343"
     );
     await sleep(500);
 
@@ -456,9 +432,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
           const newTab = pages[pages.length - 1];
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
-          const [viewFullMessage] = await newTab.$x(
-            "//div[contains(text(), 'View Full Message')]"
-          );
+          const [viewFullMessage] = await newTab.$x("//div[contains(text(), 'View Full Message')]");
           await viewFullMessage.click();
           await sleep(50);
           const image = await newTab.screenshot({
@@ -484,10 +458,7 @@ describe("for the typed pipeline in typed_inputs", () => {
 
   beforeAll(async (done) => {
     // dagit -f inputs_typed.py -n inputs_pipeline
-    dagit = await runDagit(
-      ["-f", "inputs_typed.py", "-a", "inputs_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "inputs_typed.py", "-a", "inputs_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -519,11 +490,7 @@ describe("for the typed pipeline in typed_inputs", () => {
     await sleep(500);
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        "  value: 2343"
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + "  value: 2343"
     );
     await sleep(500);
     await page.waitForSelector(".CodeMirror-lint-marker-error", {
@@ -577,20 +544,13 @@ describe("for the config pipeline in config", () => {
     await sleep(500);
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        "  value: 2343\n"
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + "  value: 2343\n"
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
       await page.keyboard.press("Backspace");
     }
-    await page.type(
-      ".CodeMirror textarea",
-      "    config:\n" + '  delimiter: ";"'
-    );
+    await page.type(".CodeMirror textarea", "    config:\n" + '  delimiter: ";"');
     await sleep(500);
     const image = await page.screenshot({
       path: screenshotPath("/config_figure_one.png"),
@@ -621,10 +581,7 @@ describe("for the custom types pipeline in types", () => {
 
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
-    dagit = await runDagit(
-      ["-f", "custom_types.py", "-a", "custom_type_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "custom_types.py", "-a", "custom_type_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -672,10 +629,7 @@ describe("for the custom types pipeline in metadata", () => {
 
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
-    dagit = await runDagit(
-      ["-f", "custom_types_4.py", "-a", "custom_type_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "custom_types_4.py", "-a", "custom_type_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -731,9 +685,7 @@ describe("for the custom types pipeline in metadata", () => {
           const image = await newTab.screenshot({
             path: screenshotPath("/custom_types_figure_two.png"),
           });
-          expect(image).toMatchImageSnapshot(
-            setConfig("custom_types_figure_two")
-          );
+          expect(image).toMatchImageSnapshot(setConfig("custom_types_figure_two"));
           resolve();
         } catch (error) {
           reject(error);
@@ -753,10 +705,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
 
   beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
-    dagit = await runDagit(
-      ["-f", "multiple_outputs.py", "-a", "multiple_outputs_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "multiple_outputs.py", "-a", "multiple_outputs_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -782,12 +731,9 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
   });
 
   it("renders the pipeline view for the multiple outputs pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
     const image = await page.screenshot({
       path: screenshotPath("/multiple_outputs.png"),
@@ -797,16 +743,11 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
   });
 
   it("renders the pipelines view with split_cereals selected", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/", {
+      waitUntil: "networkidle0",
+    });
 
-    const [zoomInButton] = await page.$x(
-      "//*[name()='svg'][@data-icon='zoom-in']"
-    );
+    const [zoomInButton] = await page.$x("//*[name()='svg'][@data-icon='zoom-in']");
     await zoomInButton.click();
     await sleep(50);
 
@@ -827,12 +768,9 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
   });
 
   it("renders execution results with cold cereal processing disabled", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/multiple_outputs_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/multiple_outputs_pipeline/", {
+      waitUntil: "networkidle0",
+    });
 
     // this is because localStorage has the stale config!!
     await page.evaluate(() => {
@@ -842,11 +780,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     await sleep(500);
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
@@ -854,10 +788,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     }
     await page.type(
       ".CodeMirror textarea",
-      "  split_cereals:\n" +
-        "  config:\n" +
-        "  process_hot: true\n" +
-        "process_cold: false"
+      "  split_cereals:\n" + "  config:\n" + "  process_hot: true\n" + "process_cold: false"
     );
     await sleep(500);
 
@@ -895,10 +826,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
 
   beforeAll(async (done) => {
     // dagit -f reusable_solids.py -n reusable_solids_pipeline
-    dagit = await runDagit(
-      ["-f", "reusable_solids.py", "-a", "reusable_solids_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "reusable_solids.py", "-a", "reusable_solids_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -924,17 +852,12 @@ describe("for the multiple outputs pipeline in reusable", () => {
   });
 
   it("renders the pipeline view for the reusable pipeline with sort_hot_cereals highlighted", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/pipeline/reusable_solids_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/pipeline/reusable_solids_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
-    const [zoomInButton] = await page.$x(
-      "//*[name()='svg'][@data-icon='zoom-in']"
-    );
+    const [zoomInButton] = await page.$x("//*[name()='svg'][@data-icon='zoom-in']");
     await zoomInButton.click();
     await sleep(50);
 
@@ -962,10 +885,7 @@ describe("for the composition pipeline in composite_solids", () => {
 
   beforeAll(async (done) => {
     // dagit -f composite_solids.py -n composite_solids_pipeline
-    dagit = await runDagit(
-      ["-f", "composite_solids.py", "-a", "composite_solids_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "composite_solids.py", "-a", "composite_solids_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -991,17 +911,12 @@ describe("for the composition pipeline in composite_solids", () => {
   });
 
   it("renders the pipeline view for the composite solids pipeline with load_cereals highlighted", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/pipeline/composite_solids_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/pipeline/composite_solids_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
-    const [zoomInButton] = await page.$x(
-      "//*[name()='svg'][@data-icon='zoom-in']"
-    );
+    const [zoomInButton] = await page.$x("//*[name()='svg'][@data-icon='zoom-in']");
     await zoomInButton.click();
     await sleep(50);
 
@@ -1017,17 +932,12 @@ describe("for the composition pipeline in composite_solids", () => {
   });
 
   it("renders the pipeline view for the composite solids pipeline with load_cereals expanded", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/pipeline/composite_solids_pipeline:/load_cereals/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/pipeline/composite_solids_pipeline:/load_cereals/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
-    const [zoomInButton] = await page.$x(
-      "//*[name()='svg'][@data-icon='zoom-in']"
-    );
+    const [zoomInButton] = await page.$x("//*[name()='svg'][@data-icon='zoom-in']");
     await zoomInButton.click();
     await sleep(50);
 
@@ -1038,12 +948,9 @@ describe("for the composition pipeline in composite_solids", () => {
   });
 
   it("renders execution results for the composite solids pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/composite_solids_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/composite_solids_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1107,9 +1014,7 @@ describe("for the composition pipeline in composite_solids", () => {
           const image = await newTab.screenshot({
             path: screenshotPath("/composite_solids_results.png"),
           });
-          expect(image).toMatchImageSnapshot(
-            setConfig("composite_solids_results")
-          );
+          expect(image).toMatchImageSnapshot(setConfig("composite_solids_results"));
           resolve();
         } catch (error) {
           reject(error);
@@ -1129,10 +1034,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
   beforeAll(async (done) => {
     // dagit -f materializations.py -n materialization_pipeline
-    dagit = await runDagit(
-      ["-f", "materializations.py", "-a", "materialization_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "materializations.py", "-a", "materialization_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -1158,12 +1060,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders execution results for the materializations pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1175,11 +1074,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await sleep(500);
 
@@ -1210,12 +1105,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders execution results for the materializations pipeline with intermediates enabled", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1227,11 +1119,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
@@ -1267,12 +1155,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders execution results for the materializations pipeline with reexecution (intermediates enabled)", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1284,11 +1169,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
@@ -1327,12 +1208,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders reexecution results for the materializations pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1344,11 +1222,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
@@ -1399,12 +1273,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders the config editor error for the materializations pipeline with pickle input but no subset", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1439,12 +1310,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders the subset selector for the materializations pipeline with pickle input", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1488,12 +1356,9 @@ describe("for the materialization pipeline in materializations and intermediates
   });
 
   it("renders the playground for the materializations pipeline with pickle input and a solid subset selected", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1547,12 +1412,7 @@ describe("for the output materialization pipeline in materializations", () => {
   beforeAll(async (done) => {
     // dagit -f output_materialization.py -n output_materialization_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        "output_materialization.py",
-        "-a",
-        "output_materialization_pipeline",
-      ],
+      ["-f", "output_materialization.py", "-a", "output_materialization_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1580,12 +1440,9 @@ describe("for the output materialization pipeline in materializations", () => {
   });
 
   it("renders execution results for the output materialization pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/output_materialization_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/output_materialization_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1631,9 +1488,7 @@ describe("for the output materialization pipeline in materializations", () => {
           const image = await newTab.screenshot({
             path: screenshotPath("/output_materializations.png"),
           });
-          expect(image).toMatchImageSnapshot(
-            setConfig("output_materializations")
-          );
+          expect(image).toMatchImageSnapshot(setConfig("output_materializations"));
           resolve();
         } catch (error) {
           reject(error);
@@ -1654,12 +1509,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
   beforeAll(async (done) => {
     // dagit -f serialization_strategy.py -n serialization_strategy_pipeline
     dagit = await runDagit(
-      [
-        "-f",
-        "serialization_strategy.py",
-        "-a",
-        "serialization_strategy_pipeline",
-      ],
+      ["-f", "serialization_strategy.py", "-a", "serialization_strategy_pipeline"],
       3000
     );
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
@@ -1687,12 +1537,9 @@ describe("for the serialization strategy pipeline in intermediates", () => {
   });
 
   it("renders execution results for the serialization strategy pipeline", async () => {
-    await page.goto(
-      "http://127.0.0.1:3000/playground/serialization_strategy_pipeline/",
-      {
-        waitUntil: "networkidle0",
-      }
-    );
+    await page.goto("http://127.0.0.1:3000/playground/serialization_strategy_pipeline/", {
+      waitUntil: "networkidle0",
+    });
     await sleep(500);
 
     // this is because localStorage has the stale config!!
@@ -1704,11 +1551,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
 
     await page.type(
       ".CodeMirror textarea",
-      "solids:\n" +
-        "  read_csv:\n" +
-        "  inputs:\n" +
-        "  csv_path:\n" +
-        '  value: "cereal.csv"\n'
+      "solids:\n" + "  read_csv:\n" + "  inputs:\n" + "  csv_path:\n" + '  value: "cereal.csv"\n'
     );
     await page.focus(".CodeMirror textarea");
     for (let i = 0; i < 4; i++) {
@@ -1731,9 +1574,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
           const image = await newTab.screenshot({
             path: screenshotPath("/serialization_strategy.png"),
           });
-          expect(image).toMatchImageSnapshot(
-            setConfig("serialization_strategy")
-          );
+          expect(image).toMatchImageSnapshot(setConfig("serialization_strategy"));
           resolve();
         } catch (error) {
           reject(error);
@@ -1808,10 +1649,7 @@ describe("for the presets pipeline in presets", () => {
 
   beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
-    dagit = await runDagit(
-      ["-f", "presets.py", "-a", "presets_pipeline"],
-      3000
-    );
+    dagit = await runDagit(["-f", "presets.py", "-a", "presets_pipeline"], 3000);
     browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
     done();
   });
@@ -1851,17 +1689,13 @@ describe("for the presets pipeline in presets", () => {
 
     await page.click("button[data-test-id='mode-picker-button']");
     await sleep(50);
-    const [devModeItem] = await page.$x(
-      '//li//a//div[contains(text(), "dev")]'
-    );
+    const [devModeItem] = await page.$x('//li//a//div[contains(text(), "dev")]');
     await devModeItem.click();
     await sleep(50);
 
     await page.click("button[data-test-id='preset-selector-button']");
     await sleep(50);
-    const [devPresetItem] = await page.$x(
-      '//li//a//div[contains(text(), "dev")]'
-    );
+    const [devPresetItem] = await page.$x('//li//a//div[contains(text(), "dev")]');
     await devPresetItem.click();
     await sleep(50);
 

@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Pipelines
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/pipelines/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/" />
 
 Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like
 Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with
@@ -39,7 +39,7 @@ This grossly understates the nutritional difference between our different cereal
 Let's transform our dataset and then store it in a normalized table in the warehouse:
 
 ```python literalinclude showLines startLine=59 emphasize-lines=18 caption=resources.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
 lines:59-82
 ```
 
@@ -60,7 +60,7 @@ instances of <PyObject module="dagster" object="SystemComputeExecutionContext" /
 an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
 ```python literalinclude showLines startLine=17 emphasize-lines=28-30 caption=resources.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
 lines:17-46
 ```
 
@@ -69,7 +69,7 @@ initialized when the pipeline run begins and made available to our solid logic a
 `context.resources.warehouse`.
 
 ```python literalinclude showLines startLine=85 emphasize-lines=2-6 caption=resources.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
 lines:85-94
 ```
 
@@ -82,7 +82,7 @@ we won't have to specify which mode to use (it will take the place of the `defau
 We can put it all together with the following config:
 
 ```YAML literalinclude emphasize-lines=1-4 caption=resources.yaml
-file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.yaml
 ```
 
 Here, we pass the special string `":memory:"` in config as the connection string for our
@@ -98,7 +98,7 @@ resource requirements, to make it easier to keep track of which resources need t
 pipeline.
 
 ```python literalinclude showLines startLine=57 emphasize-lines=1 caption=required_resources.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/required_resources.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/required_resources.py
 lines:57-80
 ```
 
@@ -120,7 +120,7 @@ environment, we can test business logic independent of environments that may be 
 difficult to test against.
 
 ```python literalinclude showLines startLine=77 caption=modes.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
 lines:77-86
 ```
 
@@ -129,7 +129,7 @@ implementation of the `warehouse` resource. To make this implementation availabl
 attach it to a <PyObject module="dagster" object="ModeDefinition" />.
 
 ```python literalinclude showLines startLine=130 caption=modes.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
 lines:130-145
 ```
 
@@ -144,7 +144,7 @@ dagster pipeline execute -f modes.py -e resources.yaml -d unittest
 Or, from the Python API:
 
 ```python literalinclude showLines startLine=149 emphasize-lines=12 caption=modes.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
 lines:149-161
 dedent:4
 ```
@@ -169,7 +169,7 @@ variables.
 Dagster calls this a config preset:
 
 ```python literalinclude showLines startLine=131 emphasize-lines=14-40 caption=presets.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/presets.py
 lines:131-172
 ```
 
@@ -193,7 +193,7 @@ dagster pipeline execute -f presets.py --preset unittest
 From Python, you can use <PyObject module="dagster" object="execute_pipeline" />
 
 ```python literalinclude showLines startLine=177 caption=presets.py
-file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/presets.py
 lines:177
 dedent:4
 ```

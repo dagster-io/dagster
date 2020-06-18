@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Materializations
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/materializations/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/" />
 
 Steps in a data pipeline often produce persistent artifacts, for instance,
 graphs or tables describing the result of some computation. Typically these
@@ -30,7 +30,7 @@ Suppose that we rewrite our `sort_calories` solid so that it saves
 the newly sorted data frame to disk.
 
 ```python literalinclude showLines startLine=25 emphasize-lines=20-23 caption=materializations.py
-file:/dagster_examples/intro_tutorial/advanced/materializations/materializations.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/materializations.py
 lines:25-47
 ```
 
@@ -39,7 +39,7 @@ different filename for each run of the pipeline. But there's no way for Dagit
 to know about this persistent artifact. So we'll add the following lines:
 
 ```python literalinclude showLines startLine=24 emphasize-lines=25-33 caption=materializations.py
-file:/dagster_examples/intro_tutorial/advanced/materializations/materializations.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/materializations.py
 lines:24-57
 ```
 
@@ -66,14 +66,14 @@ are human-readable and manipulable by a wide variety of third party tools,
 while pickle is a binary format.)
 
 ```python literalinclude showLines startLine=29 caption=output_materialization.py
-file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
 lines:29-70
 ```
 
 We set the output materialization config on the type:
 
 ```python literalinclude showLines startLine=93 emphasize-lines=5 caption=output_materialization.py
-file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
 lines:93-98
 ```
 
@@ -81,7 +81,7 @@ Now we can tell Dagster to materialize intermediate outputs of this type by
 providing config:
 
 ```YAML literalinclude emphasize-lines=6-10 caption=output_materialization.yaml
-file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.yaml
 lines:1-10
 ```
 

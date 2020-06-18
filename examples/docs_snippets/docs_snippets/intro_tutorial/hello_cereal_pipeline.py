@@ -1,5 +1,5 @@
 '''
-The airflow DAG scaffold for dagster_examples.intro_tutorial.airflow.hello_cereal_pipeline
+The airflow DAG scaffold for docs_snippets.intro_tutorial.airflow.hello_cereal_pipeline
 
 Note that this docstring must contain the strings "airflow" and "DAG" for
 Airflow to properly detect it as a DAG
@@ -39,9 +39,9 @@ DEFAULT_ARGS = {
 }
 
 dag, tasks = make_airflow_dag(
-    # NOTE: you must ensure that dagster_examples.intro_tutorial.airflow is
+    # NOTE: you must ensure that docs_snippets.intro_tutorial.airflow is
     # installed or available on sys.path, otherwise, this import will fail.
-    module_name='dagster_examples.intro_tutorial.airflow',
+    module_name='docs_snippets.intro_tutorial.airflow',
     pipeline_name='hello_cereal_pipeline',
     run_config=yaml.safe_load(ENVIRONMENT),
     dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1},

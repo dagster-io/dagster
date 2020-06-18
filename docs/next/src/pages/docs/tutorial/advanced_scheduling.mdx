@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Scheduling Pipeline Runs
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/scheduling/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/" />
 
 Dagster includes a simple built-in scheduler that works with Dagit, which is useful when you need to
 schedule pipelines to run at regular intervals, e.g. daily or hourly.
@@ -31,7 +31,7 @@ You must also ensure that `cron` is installed on the machine you're running the 
 ## Pipeline
 
 ```python literalinclude showLines caption=scheduler.py
-file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
 lines:1-34
 ```
 
@@ -61,7 +61,7 @@ We wrap the schedule definition in a function decorated with <PyObject module="d
 object="schedules" displayText="@schedules" />
 
 ```python literalinclude showLines startLine=36 caption=scheduler.py
-file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
 lines:36-45
 ```
 
@@ -69,7 +69,7 @@ To complete the picture, we'll need to extend the `repository.yaml` structure we
 a new key, `scheduler`.
 
 ```YAML literalinclude caption=scheduler.yaml
-file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.yaml
 ```
 
 ## Starting schedules

@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Organizing Pipelines in Repositories & Workspaces
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/repositories/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/" />
 
 In all of the examples we've seen so far, we've specified a file (`-f`) or a module (`-m`) in
 order to tell the CLI tools how to load a pipeline, e.g.:
@@ -29,7 +29,7 @@ the Dagster tools can target as a whole. Repositories are declared using the <Py
 module="dagster" object="RepositoryDefinition" /> API as follows:
 
 ```python literalinclude showLines startLine=14 caption=repos.py
-file:/dagster_examples/intro_tutorial/advanced/repositories/repos.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/repos.py
 lines:14-16
 ```
 
@@ -48,7 +48,7 @@ on demand. For that, you can also return a dictionary of function references, wh
 on demand:
 
 ```python literalinclude showLines startLine=14 caption=repos.py
-file:/dagster_examples/intro_tutorial/advanced/repositories/lazy_repos.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/lazy_repos.py
 lines:15-25
 ```
 
@@ -73,7 +73,7 @@ prevents you from having to type the same `-f` or `-m` flag repeatedly. But as y
 enables more capabilities.
 
 ```YAML literalinclude caption=workspace.yaml
-file:/dagster_examples/intro_tutorial/advanced/repositories/workspace.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/workspace.yaml
 ```
 
 Dagit will look for workspace.yaml in the current directory by default, so now you can launch dagit
@@ -89,7 +89,7 @@ You can also use `workspace.yaml` to load multiple repositories. This can be use
 purposes, in order to group pipelines and other artifacts by team.
 
 ```YAML literalinclude caption=multi_repo_workspace.yaml
-file:/dagster_examples/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_repo_workspace.yaml
 ```
 
 Load it:
@@ -109,7 +109,7 @@ communicate with those repositories using a cross-process RPC protocol.
 Via the workspace, you can configure where to launch repositories. See example:
 
 ```YAML literalinclude caption=multi_python_env_workspace_example.yaml
-file:/dagster_examples/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
 ```
 
 For this example to work, you need to change the executable path to point a virtual environment

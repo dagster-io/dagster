@@ -15,6 +15,7 @@ from dagster import (
     PresetDefinition,
     String,
     execute_pipeline,
+    file_relative_path,
     pipeline,
     resource,
     solid,
@@ -156,17 +157,11 @@ def normalize_calories(context, cereals):
             },
             mode='unittest',
         ),
-        PresetDefinition.from_pkg_resources(
+        PresetDefinition.from_files(
             'dev',
-            pkg_resource_defs=[
-                (
-                    'dagster_examples.intro_tutorial.advanced.pipelines',
-                    'presets_dev_warehouse.yaml',
-                ),
-                (
-                    'dagster_examples.intro_tutorial.advanced.pipelines',
-                    'presets_csv.yaml',
-                ),
+            environment_files=[
+                file_relative_path(__file__, 'presets_dev_warehouse.yaml'),
+                file_relative_path(__file__, 'presets_csv.yaml'),
             ],
             mode='dev',
         ),

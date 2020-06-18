@@ -25,12 +25,12 @@ SMOKE_TEST_QUERY = '''
 }
 '''
 
-
+# https://github.com/dagster-io/dagster/issues/2623
 def test_smoke_app():
     flask_app = app.create_app_from_workspace(
         get_workspace_from_kwargs(
             dict(
-                module_name='dagster_examples.intro_tutorial.advanced.repositories.repos',
+                module_name='docs_snippets.intro_tutorial.advanced.repositories.repos',
                 definition='hello_cereal_repository',
             )
         ),

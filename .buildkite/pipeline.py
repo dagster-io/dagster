@@ -208,6 +208,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPython3sNo38,
         extra_cmds_fn=examples_extra_cmds_fn,
     ),
+    ModuleBuildSpec(
+        'examples/docs_snippets',
+        extra_cmds_fn=examples_extra_cmds_fn,
+        upload_coverage=False,
+        supported_pythons=SupportedPython3s,
+    ),
     ModuleBuildSpec('python_modules/dagit', extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec(
         'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
@@ -345,8 +351,10 @@ def extra_library_tests():
 def examples_tests():
     '''Auto-discover and test all new examples'''
 
-    # Temporarily skip these folders until we finish the work to clean up the examples folder
     skip_examples = [
+        # Skip these folders because they need custom build config
+        'docs_snippets',
+        # Temporarily skip these folders until we finish the work to clean up the examples folder
         'dagster_examples',
         'dagster_examples_tests',
         'data',
@@ -567,7 +575,7 @@ if __name__ == "__main__":
             # start small by making sure the local code type checks
             "mypy examples/dagster_examples/airline_demo "
             "examples/dagster_examples/bay_bikes "
-            "examples/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy* "
+            "examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy* "
             "--ignore-missing-imports",
         )
         .on_integration_image(SupportedPython.V3_7)

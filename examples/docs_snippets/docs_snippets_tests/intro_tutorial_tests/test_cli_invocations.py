@@ -256,7 +256,7 @@ cli_args = [
 
 
 def path_to_tutorial_file(path):
-    return script_relative_path(os.path.join('../../dagster_examples/intro_tutorial/', path))
+    return script_relative_path(os.path.join('../../docs_snippets/intro_tutorial/', path))
 
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):

@@ -6,15 +6,15 @@ update_doc_snapshot:
 
 black:
 	black examples python_modules --line-length 100 --target-version py27 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/dagster_examples/intro_tutorial --line-length 78 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	black examples/docs_snippets/docs_snippets/intro_tutorial --line-length 78 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
 
 check_black:
 	black examples python_modules --check --line-length 100 --target-version py27 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/dagster_examples/intro_tutorial --check --line-length 78 --target-version py27 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	black examples/docs_snippets/docs_snippets/intro_tutorial --check --line-length 78 --target-version py27 --target-version py35 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
 
 isort:
-	isort `git ls-files '*.py' ':!:examples/dagster_examples/intro_tutorial'`
-	isort -l 78 `git ls-files 'examples/dagster_examples/intro_tutorial/*.py'`
+	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
+	isort -l 78 `git ls-files 'examples/docs_snippets/docs_snippets/intro_tutorial/*.py'`
 
 
 QUIET="-qqq"

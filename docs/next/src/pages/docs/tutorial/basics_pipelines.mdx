@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Basics of Pipelines
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/e03_pipelines/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/basics/e03_pipelines/" />
 
 Our pipelines wouldn't be very interesting if they were limited to solids acting in isolation from
 each other. Pipelines are useful because they let us connect solids into arbitrary
@@ -25,7 +25,7 @@ This new solid will consume the output of the first solid, which read the cereal
 disk, and in turn will sort the list of cereals by their calorie content per serving.
 
 ```python literalinclude emphasize-lines=16,20,38 caption=serial_pipeline.py
-file:/dagster_examples/intro_tutorial/basics/e03_pipelines/serial_pipeline.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e03_pipelines/serial_pipeline.py
 lines:1-40
 ```
 
@@ -61,7 +61,7 @@ number of other solids, and the outputs of several different solids can be consu
 solid.
 
 ```python literalinclude showLines emphasize-lines=55-59 startLine=7 caption=complex_pipeline.py
-file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
 lines:7-66
 ```
 
@@ -90,7 +90,7 @@ We'll write a simple test for this pipeline showing how we can assert that all f
 executed successfully.
 
 ```python literalinclude showLines startLine=73 caption=complex_pipeline.py
-file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
 lines:73-80
 ```
 

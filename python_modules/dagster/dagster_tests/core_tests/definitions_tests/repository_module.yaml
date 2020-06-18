@@ -1,3 +1,4 @@
 repository:
-  module: dagster_examples.intro_tutorial.advanced.repositories.repos
+  # https://github.com/dagster-io/dagster/issues/2623
+  module: docs_snippets.intro_tutorial.advanced.repositories.repos
   fn: hello_cereal_repository

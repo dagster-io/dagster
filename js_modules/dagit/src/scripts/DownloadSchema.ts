@@ -14,12 +14,14 @@ if (
   throw new Error(`Must use Python version >= 3.6 got ${errMsg}`);
 }
 
+// https://github.com/dagster-io/dagster/issues/2623
 const result = execSync(
-  `dagster-graphql -w ../../examples/dagster_examples/intro_tutorial/advanced/repositories/repository.yaml -t '${getIntrospectionQuery(
+  `dagster-graphql -w docs_snippets/intro_tutorial/advanced/repositories/repository.yaml -t '${getIntrospectionQuery(
     {
       descriptions: false
     }
-  )}'`
+  )}'`,
+  { cwd: "../../examples/docs_snippets/" }
 ).toString();
 
 const schemaJson = JSON.parse(result).data;

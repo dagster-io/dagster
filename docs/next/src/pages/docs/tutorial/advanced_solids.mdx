@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Solids
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/solids/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/" />
 
 Abstracting business logic into reusable, configurable solids is one important step towards making
 data applications like other software applications.
@@ -34,7 +34,7 @@ Let's replace `sort_hot_cereals_by_calories` and `sort_cold_cereals_by_calories`
 the same library solid:
 
 ```python literalinclude showLines startLine=56 emphasize-lines=17-18 caption=reusable_solids.py
-file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/reusable_solids.py
 lines:56-75
 ```
 
@@ -48,7 +48,7 @@ within this pipeline.
 Configuring solids also uses the aliases, as in the following YAML:
 
 ```YAML literalinclude emphasize-lines=6,8 caption=reusable_solids.yaml
-file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/reusable_solids.yaml
 ```
 
 <br />
@@ -67,7 +67,7 @@ some domain-specific logic for the specific purpose of joining our cereal datase
 table providing human-readable names for the cereal manufacturers.
 
 ```python literalinclude showLines startLine=128 caption=composite_solids.py
-file:/dagster_examples/intro_tutorial/advanced/solids/composite_solids.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/composite_solids.py
 lines:128-132
 ```
 
@@ -89,7 +89,7 @@ solid as a whole.
 Config for the individual solids making up the composite is nested, as follows:
 
 ```YAML literalinclude emphasize-lines=1-3 caption=composite_solids.yaml
-file:/dagster_examples/intro_tutorial/advanced/solids/composite_solids.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/solids/composite_solids.yaml
 ```
 
 When we execute this pipeline, Dagit includes information about the nesting of individual execution

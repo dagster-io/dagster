@@ -1,20 +1,20 @@
 import csv
 from collections import OrderedDict
 
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_2 import (
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_2 import (
     less_simple_data_frame_type_check as lsdftc2,
 )
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_2 import sort_by_calories
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_3 import (
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_2 import sort_by_calories
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_3 import (
     less_simple_data_frame_type_check as lsdftc3,
 )
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_4 import (
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_4 import (
     less_simple_data_frame_type_check as lsdftc4,
 )
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_5 import (
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_5 import (
     expect_column_to_be_integers,
 )
-from dagster_examples.intro_tutorial.basics.e04_quality.custom_types_5 import (
+from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_5 import (
     less_simple_data_frame_type_check as lsdftc5,
 )
 
@@ -42,9 +42,7 @@ def test_type_check():
 
 
 def test_sort():
-    with open(
-        script_relative_path('../../../dagster_examples/intro_tutorial/cereal.csv'), 'r',
-    ) as fd:
+    with open(script_relative_path('../../../docs_snippets/intro_tutorial/cereal.csv'), 'r',) as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
     execute_solid(sort_by_calories, input_values={'cereals': cereals})

@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Intermediates
 
-<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/intermediates/" />
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/" />
 
 We've already seen how solids can describe their persistent artifacts to the
 system using [materializations](/docs/tutorial/advanced_materializations).
@@ -28,7 +28,7 @@ computations.
 To turn intermediate storage on, just set another key in the pipeline config:
 
 ```YAML literalinclude caption=intermediates.yaml emphasize-lines=6-7
-file:/dagster_examples/intro_tutorial/advanced/intermediates/intermediates.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/intermediates.yaml
 ```
 
 When you execute the pipeline using this config, you'll see new structured
@@ -66,14 +66,14 @@ You can also manually specify intermediates from previous runs as inputs to
 solids. Recall the syntax we used to set input values using the config system:
 
 ```YAML literalinclude caption=inputs_env.yaml
-file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
 ```
 
 Instead of setting the key `value` (i.e., providing a ), we can
 also set `pickle`, as follows:
 
 ```YAML literalinclude caption=reexecution_env.yaml
-file:/dagster_examples/intro_tutorial/advanced/intermediates/reexecution_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution_env.yaml
 ```
 
 (Of course, you'll need to use the path to an intermediate that is actually
@@ -110,7 +110,7 @@ the original pipeline through the `parent_run_id` argument, and optionally use
 re-execute.
 
 ```python literalinclude showLines startLine=35 caption=reexecution.py
-file:/dagster_examples/intro_tutorial/advanced/intermediates/reexecution.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution.py
 lines:35-52
 ```
 
@@ -139,7 +139,7 @@ supposing it was not, let's set a custom **`SerializationStrategy`** on
 it to tell Dagster how to store intermediates of this type.
 
 ```python literalinclude showLines startLine=15 caption=serialization_strategy.py
-file:/dagster_examples/intro_tutorial/advanced/intermediates/serialization_strategy.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/serialization_strategy.py
 lines:15-39
 ```
 

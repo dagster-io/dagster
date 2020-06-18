@@ -61,7 +61,7 @@ $ dagit -f config.py -n config_pipeline
 Previously:
 
 ```
-.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/materializations.py
+.. literalinclude:: ../../../examples/docs_snippets/docs_snippets/intro_tutorial/materializations.py
    :lines: 23-56
    :linenos:
    :lineno-start: 23
