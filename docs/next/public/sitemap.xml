@@ -318,7 +318,131 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/overview/composite-solids/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/composite-solids/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/configuration/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/configuration/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/dagit/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/dagit/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/instances/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/instances/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/intermediates-materializations/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/intermediates-materializations/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/logging/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/logging/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/modes-resources-presets/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/modes-resources-presets/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/packages/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/packages/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/principles</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/repositories-workspaces/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/repositories-workspaces/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/run-launchers-executors/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/run-launchers-executors/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/scheduling-partitions/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/scheduling-partitions/page2</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/solids-pipelines/pipelines</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/solids-pipelines/solid-events</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/solids-pipelines/solid-factories</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/solids-pipelines/solids</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/types/page1</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/overview/types/page2</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/tutorial/advanced_intermediates</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced_materializations</loc>
   </url>
 
   <url>
