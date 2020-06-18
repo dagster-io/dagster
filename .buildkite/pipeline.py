@@ -347,7 +347,6 @@ def examples_tests():
 
     # Temporarily skip these folders until we finish the work to clean up the examples folder
     skip_examples = [
-        'airflow_ingest',
         'basic_pyspark',
         'dagster_examples',
         'dagster_examples_tests',
