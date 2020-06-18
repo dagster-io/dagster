@@ -47,6 +47,7 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             {"pypi": {"package": "pytest"}},
         ],
     },
+    "secrets": [],
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",

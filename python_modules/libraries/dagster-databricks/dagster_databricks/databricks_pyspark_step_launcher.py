@@ -15,7 +15,11 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 
-from .configs import define_databricks_storage_config, define_databricks_submit_run_config
+from .configs import (
+    define_databricks_secrets_config,
+    define_databricks_storage_config,
+    define_databricks_submit_run_config,
+)
 
 CODE_ZIP_NAME = "code.zip"
 
@@ -31,6 +35,7 @@ CODE_ZIP_NAME = "code.zip"
         "databricks_token": Field(
             StringSource, is_required=True, description="Databricks access token",
         ),
+        "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
         "local_pipeline_package_path": Field(
             StringSource,
@@ -82,6 +87,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         run_config,
         databricks_host,
         databricks_token,
+        secrets_to_env_variables,
         storage,
         local_pipeline_package_path,
         staging_prefix,
@@ -90,6 +96,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.run_config = check.dict_param(run_config, "run_config")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
+        self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
         self.storage = check.dict_param(storage, "storage")
         self.local_pipeline_package_path = check.str_param(
             local_pipeline_package_path, "local_pipeline_package_path"

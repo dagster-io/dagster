@@ -27,8 +27,7 @@ if "DATABRICKS_TOKEN" not in os.environ:
 
 
 def setup_s3_storage(storage):
-    """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them.
-    """
+    """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
 
     scope = storage["secret_scope"]
 
@@ -56,8 +55,7 @@ def setup_s3_storage(storage):
 
 
 def setup_adls2_storage(storage):
-    """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it.
-    """
+    """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it."""
     # dbutils is globally defined in the Databricks runtime
     storage_account_key = dbutils.secrets.get(  # noqa  # pylint: disable=undefined-variable
         scope=storage["secret_scope"], key=storage["storage_account_key_key"]
@@ -105,6 +103,23 @@ def setup_storage(step_run_ref):
         raise Exception("No valid storage found!")
 
 
+def setup_environment(step_run_ref):
+    """Setup any environment variables required by the run.
+
+    Extract any secrets in the run config and export them as environment variables.
+
+    This is important for any `StringSource` config since the environment variables
+    won't ordinarily be available in the Databricks execution environment.
+    """
+    for secret in step_run_ref.run_config.get("secrets", []):
+        name = secret["name"]
+        key = secret["key"]
+        scope = secret["scope"]
+        print("Exporting {} from Databricks secret {}, scope {}".format(name, key, scope))
+        val = dbutils.secrets.get(scope=scope, key=key)  # noqa pylint: disable=undefined-variable
+        os.environ[name] = val
+
+
 def main(step_run_ref_filepath, pipeline_zip):
     # Extract any zip files to a temporary directory and add that temporary directory
     # to the site path so the contained files can be imported.
@@ -123,6 +138,10 @@ def main(step_run_ref_filepath, pipeline_zip):
 
         setup_storage(step_run_ref)
 
+        print("Setting up environment variables")
+        setup_environment(step_run_ref)
+
+        print("Running pipeline")
         with DagsterInstance.ephemeral() as instance:
             events = list(run_step_from_ref(step_run_ref, instance))
 

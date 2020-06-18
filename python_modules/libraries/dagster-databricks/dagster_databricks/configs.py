@@ -604,3 +604,22 @@ def define_databricks_storage_config():
         "and the secret keys used to access either S3 or ADLS2.",
         is_required=True,
     )
+
+
+def define_databricks_secrets_config():
+    name = Field(
+        String,
+        description="The environment variable name, e.g. `DATABRICKS_TOKEN`.",
+        is_required=True,
+    )
+    key = Field(String, description="The key of the Databricks secret.", is_required=True)
+    scope = Field(String, description="The scope of the Databricks secret.", is_required=True)
+    return Field(
+        [Shape(fields={"name": name, "key": key, "scope": scope})],
+        description="Databricks secrets to be exported as environment variables. Since runs "
+        "will execute in the Databricks runtime environment, environment variables (such as those "
+        "required for a `StringSource` config variable) will not be accessible to Dagster. These "
+        "variables must be stored as Databricks secrets and specified here, which will ensure "
+        "they are re-exported as environment variables accessible to Dagster upon execution.",
+        is_required=False,
+    )
