@@ -8,9 +8,9 @@ from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 from dagster import (
     ModeDefinition,
     PresetDefinition,
-    RepositoryDefinition,
     make_python_type_usable_as_dagster_type,
     pipeline,
+    repository,
     solid,
 )
 
@@ -57,5 +57,6 @@ def my_pipeline():
     count_people(filter_over_50(make_people()))
 
 
-def define_repository():
-    return RepositoryDefinition('emr_pyspark', pipeline_defs=[my_pipeline])
+@repository
+def emr_pyspark_example():
+    return [my_pipeline]

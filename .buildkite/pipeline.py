@@ -347,11 +347,9 @@ def examples_tests():
 
     # Temporarily skip these folders until we finish the work to clean up the examples folder
     skip_examples = [
-        'basic_pyspark',
         'dagster_examples',
         'dagster_examples_tests',
         'data',
-        'emr_pyspark',
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
