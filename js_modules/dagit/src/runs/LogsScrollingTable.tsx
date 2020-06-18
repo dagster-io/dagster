@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { NonIdealState, Spinner } from "@blueprintjs/core";
+import { Colors, NonIdealState, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
   CellMeasurer,
@@ -171,6 +171,12 @@ class LogsScrollingTableSized extends React.Component<
     const node = this.props.nodes[index];
     const metadata = this.props.metadata;
     if (!node) return <span />;
+    const isLastRow = index === this.props.nodes.length - 1;
+    const lastRowStyles = isLastRow
+      ? {
+          borderBottom: `1px solid ${Colors.LIGHT_GRAY3}`
+        }
+      : {};
 
     return (
       <CellMeasurer
@@ -182,13 +188,13 @@ class LogsScrollingTableSized extends React.Component<
         {node.__typename === "LogMessageEvent" ? (
           <LogsRow.Unstructured
             node={node}
-            style={{ ...style, width: this.props.width }}
+            style={{ ...style, width: this.props.width, ...lastRowStyles }}
           />
         ) : (
           <LogsRow.Structured
             node={node}
             metadata={metadata}
-            style={{ ...style, width: this.props.width }}
+            style={{ ...style, width: this.props.width, ...lastRowStyles }}
           />
         )}
       </CellMeasurer>
@@ -225,6 +231,7 @@ class LogsScrollingTableSized extends React.Component<
           width={this.props.width}
           height={this.props.height}
           overscanRowCount={10}
+          style={{ paddingBottom: 100 }}
         />
       </div>
     );
