@@ -14,10 +14,44 @@ export interface ScheduleDefinitionFragment_partitionSet {
   name: string;
 }
 
+export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
+  __typename: "PipelineRun";
+  pipelineName: string;
+  status: PipelineRunStatus;
+  runId: string;
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
+  __typename: "ScheduleTickSuccessData";
+  run: ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
+  __typename: "ScheduleTickFailureData";
+  error: ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
+}
+
+export type ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
+
 export interface ScheduleDefinitionFragment_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
+  timestamp: number;
+  tickSpecificData: ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 }
 
 export interface ScheduleDefinitionFragment_scheduleState_runs_tags {
@@ -34,14 +68,6 @@ export interface ScheduleDefinitionFragment_scheduleState_runs {
   status: PipelineRunStatus;
 }
 
-export interface ScheduleDefinitionFragment_scheduleState_stats {
-  __typename: "ScheduleTickStatsSnapshot";
-  ticksStarted: number;
-  ticksSucceeded: number;
-  ticksSkipped: number;
-  ticksFailed: number;
-}
-
 export interface ScheduleDefinitionFragment_scheduleState {
   __typename: "ScheduleState";
   id: string;
@@ -52,7 +78,6 @@ export interface ScheduleDefinitionFragment_scheduleState {
   ticks: ScheduleDefinitionFragment_scheduleState_ticks[];
   runsCount: number;
   runs: ScheduleDefinitionFragment_scheduleState_runs[];
-  stats: ScheduleDefinitionFragment_scheduleState_stats;
   ticksCount: number;
   status: ScheduleStatus;
 }

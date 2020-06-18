@@ -19,7 +19,10 @@ import {
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { ScheduleDefinitionFragment } from "./types/ScheduleDefinitionFragment";
+import {
+  ScheduleDefinitionFragment,
+  ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData
+} from "./types/ScheduleDefinitionFragment";
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError
@@ -29,6 +32,7 @@ import {
   StopSchedule_stopRunningSchedule_PythonError
 } from "./types/StopSchedule";
 import { ScheduleStatus, ScheduleTickStatus } from "../types/globalTypes";
+import { Legend, LegendColumn } from "../ListComponents";
 
 import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
@@ -39,6 +43,9 @@ import { titleForRun, RunStatus } from "../runs/RunUtils";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
 import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
+import { assertUnreachable } from "../Util";
+
+type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -221,7 +228,6 @@ export const ScheduleRow: React.FunctionComponent<{
   const {
     status,
     runningScheduleCount,
-    stats,
     ticks,
     runs,
     runsCount
@@ -281,35 +287,13 @@ export const ScheduleRow: React.FunctionComponent<{
           )}
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1, textAlign: "center" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-around"
-          }}
-        >
-          <Stat>
-            <StatNumber>{stats.ticksStarted}</StatNumber> Running
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksSkipped}</StatNumber> Skipped
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksSucceeded}</StatNumber> Succeeded
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksFailed}</StatNumber> Failed
-          </Stat>
-        </div>
-        <div>
-          {latestTick && latestTick.status === ScheduleTickStatus.FAILURE && (
-            <ErrorTag>
-              <Tag fill={true} minimal={true} intent={Intent.WARNING}>
-                Latest Attempt failed
-              </Tag>
-            </ErrorTag>
-          )}
-        </div>
+      <RowColumn style={{ maxWidth: 100 }}>
+        {latestTick ? (
+          <TickTag
+            status={latestTick.status}
+            eventSpecificData={latestTick.tickSpecificData}
+          />
+        ) : null}
       </RowColumn>
       <RowColumn
         style={{
@@ -431,17 +415,37 @@ export const ScheduleRow: React.FunctionComponent<{
   );
 };
 
+export const ScheduleRowHeader: React.FunctionComponent<{
+  schedule: ScheduleDefinitionFragment;
+}> = ({ schedule }) => {
+  if (!schedule.scheduleState) {
+    return (
+      <Legend>
+        <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+        <LegendColumn>Pipeline</LegendColumn>
+        <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+        <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+      </Legend>
+    );
+  } else {
+    return (
+      <Legend>
+        <LegendColumn style={{ maxWidth: 60 }}></LegendColumn>
+        <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+        <LegendColumn>Pipeline</LegendColumn>
+        <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
+        <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
+        <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
+        <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+      </Legend>
+    );
+  }
+};
+
 export const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: ScheduleStateFragment;
 }> = ({ scheduleState }) => {
-  const {
-    scheduleName,
-    cronSchedule,
-    stats,
-    ticks,
-    runs,
-    runsCount
-  } = scheduleState;
+  const { scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -472,35 +476,13 @@ export const ScheduleStateRow: React.FunctionComponent<{
           )}
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1, textAlign: "center" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-around"
-          }}
-        >
-          <Stat>
-            <StatNumber>{stats.ticksStarted}</StatNumber> Running
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksSkipped}</StatNumber> Skipped
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksSucceeded}</StatNumber> Succeeded
-          </Stat>
-          <Stat>
-            <StatNumber>{stats.ticksFailed}</StatNumber> Failed
-          </Stat>
-        </div>
-        <div>
-          {latestTick && latestTick.status === ScheduleTickStatus.FAILURE && (
-            <ErrorTag>
-              <Tag fill={true} minimal={true} intent={Intent.WARNING}>
-                Latest Attempt failed
-              </Tag>
-            </ErrorTag>
-          )}
-        </div>
+      <RowColumn style={{ flex: 1 }}>
+        {latestTick ? (
+          <TickTag
+            status={latestTick.status}
+            eventSpecificData={latestTick.tickSpecificData}
+          />
+        ) : null}
       </RowColumn>
       <RowColumn
         style={{
@@ -552,6 +534,76 @@ export const ScheduleStateRow: React.FunctionComponent<{
   );
 };
 
+export const TickTag: React.FunctionComponent<{
+  status: ScheduleTickStatus;
+  eventSpecificData: TickSpecificData;
+}> = ({ status, eventSpecificData }) => {
+  switch (status) {
+    case ScheduleTickStatus.STARTED:
+      return (
+        <Tag minimal={true} intent={Intent.PRIMARY}>
+          Started
+        </Tag>
+      );
+    case ScheduleTickStatus.SUCCESS:
+      if (
+        !eventSpecificData ||
+        eventSpecificData.__typename !== "ScheduleTickSuccessData"
+      ) {
+        return (
+          <Tag minimal={true} intent={Intent.SUCCESS}>
+            Success
+          </Tag>
+        );
+      } else {
+        return (
+          <a
+            href={`/runs/${eventSpecificData.run?.pipelineName}/${eventSpecificData.run?.runId}`}
+            style={{ textDecoration: "none" }}
+          >
+            <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>
+              Success
+            </Tag>
+          </a>
+        );
+      }
+    case ScheduleTickStatus.SKIPPED:
+      return (
+        <Tag minimal={true} intent={Intent.WARNING}>
+          Skipped
+        </Tag>
+      );
+    case ScheduleTickStatus.FAILURE:
+      if (
+        !eventSpecificData ||
+        eventSpecificData.__typename !== "ScheduleTickFailureData"
+      ) {
+        return (
+          <Tag minimal={true} intent={Intent.DANGER}>
+            Failure
+          </Tag>
+        );
+      } else {
+        return (
+          <a
+            onClick={() =>
+              showCustomAlert({
+                title: "Schedule Response",
+                body: <PythonErrorInfo error={eventSpecificData.error} />
+              })
+            }
+          >
+            <Tag minimal={true} intent={Intent.DANGER} interactive={true}>
+              Failure
+            </Tag>
+          </a>
+        );
+      }
+    default:
+      return assertUnreachable(status);
+  }
+};
+
 export const ScheduleFragment = gql`
   fragment ScheduleStateFragment on ScheduleState {
     __typename
@@ -560,9 +612,25 @@ export const ScheduleFragment = gql`
     scheduleName
     cronSchedule
     runningScheduleCount
-    ticks(limit: $limit) {
+    ticks(limit: 1) {
       tickId
       status
+      timestamp
+      tickSpecificData {
+        __typename
+        ... on ScheduleTickSuccessData {
+          run {
+            pipelineName
+            status
+            runId
+          }
+        }
+        ... on ScheduleTickFailureData {
+          error {
+            ...PythonErrorFragment
+          }
+        }
+      }
     }
     runsCount
     runs(limit: 10) {
@@ -573,12 +641,6 @@ export const ScheduleFragment = gql`
       }
       pipelineName
       status
-    }
-    stats {
-      ticksStarted
-      ticksSucceeded
-      ticksSkipped
-      ticksFailed
     }
     ticksCount
     status
@@ -597,26 +659,11 @@ export const ScheduleFragment = gql`
       ...ScheduleStateFragment
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 const ScheduleName = styled.pre`
   margin: 0;
-`;
-
-const Stat = styled.div`
-  text-align: center;
-  padding: 2px;
-  font-size: 10px;
-`;
-
-const StatNumber = styled.div`
-  font-size: 15px;
-  font-weight: bold;
-`;
-
-const ErrorTag = styled.div`
-  display: block;
-  margin-top: 8px;
 `;
 
 const FETCH_SCHEDULE_YAML = gql`

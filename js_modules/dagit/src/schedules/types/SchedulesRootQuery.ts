@@ -42,10 +42,44 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   name: string;
 }
 
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
+  __typename: "PipelineRun";
+  pipelineName: string;
+  status: PipelineRunStatus;
+  runId: string;
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
+  __typename: "ScheduleTickSuccessData";
+  run: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
+  __typename: "ScheduleTickFailureData";
+  error: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
+}
+
+export type SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData = SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
+
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
+  timestamp: number;
+  tickSpecificData: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData | null;
 }
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs_tags {
@@ -62,14 +96,6 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   status: PipelineRunStatus;
 }
 
-export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_stats {
-  __typename: "ScheduleTickStatsSnapshot";
-  ticksStarted: number;
-  ticksSucceeded: number;
-  ticksSkipped: number;
-  ticksFailed: number;
-}
-
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState {
   __typename: "ScheduleState";
   id: string;
@@ -80,7 +106,6 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   ticks: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks[];
   runsCount: number;
   runs: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs[];
-  stats: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_stats;
   ticksCount: number;
   status: ScheduleStatus;
 }
@@ -120,10 +145,44 @@ export interface SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundErro
   __typename: "RepositoryNotFoundError";
 }
 
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
+  __typename: "PipelineRun";
+  pipelineName: string;
+  status: PipelineRunStatus;
+  runId: string;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData {
+  __typename: "ScheduleTickSuccessData";
+  run: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData {
+  __typename: "ScheduleTickFailureData";
+  error: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData_error;
+}
+
+export type SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData = SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickFailureData;
+
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
+  timestamp: number;
+  tickSpecificData: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData | null;
 }
 
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags {
@@ -140,14 +199,6 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   status: PipelineRunStatus;
 }
 
-export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_stats {
-  __typename: "ScheduleTickStatsSnapshot";
-  ticksStarted: number;
-  ticksSucceeded: number;
-  ticksSkipped: number;
-  ticksFailed: number;
-}
-
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results {
   __typename: "ScheduleState";
   id: string;
@@ -158,7 +209,6 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   ticks: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks[];
   runsCount: number;
   runs: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs[];
-  stats: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_stats;
   ticksCount: number;
   status: ScheduleStatus;
 }
@@ -191,5 +241,4 @@ export interface SchedulesRootQuery {
 
 export interface SchedulesRootQueryVariables {
   repositorySelector: RepositorySelector;
-  limit: number;
 }

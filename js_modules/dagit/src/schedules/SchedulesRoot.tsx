@@ -30,8 +30,6 @@ import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 
-const NUM_RUNS_TO_DISPLAY = 10;
-
 const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
   if (scheduler.__typename === "SchedulerNotDefinedError") {
     return (
@@ -76,8 +74,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
     {
       query: SCHEDULES_ROOT_QUERY,
       variables: {
-        repositorySelector: repositorySelector,
-        limit: NUM_RUNS_TO_DISPLAY
+        repositorySelector: repositorySelector
       }
     }
   ];
@@ -150,8 +147,7 @@ const SchedulesRoot: React.FunctionComponent = () => {
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
-      repositorySelector: repositorySelector,
-      limit: NUM_RUNS_TO_DISPLAY
+      repositorySelector: repositorySelector
     },
     fetchPolicy: "cache-and-network",
     pollInterval: 50 * 1000,
@@ -159,7 +155,7 @@ const SchedulesRoot: React.FunctionComponent = () => {
   });
 
   return (
-    <Loading queryResult={queryResult} allowStaleData={false}>
+    <Loading queryResult={queryResult} allowStaleData={true}>
       {result => {
         const {
           scheduler,
@@ -240,7 +236,7 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
           <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
           <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Schedule Tick Stats</LegendColumn>
+          <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
         </Legend>
@@ -302,7 +298,7 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
         <Legend>
           <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Schedule Tick Stats</LegendColumn>
+          <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
         </Legend>
       )}
@@ -333,10 +329,7 @@ const RECONCILE_SCHEDULE_STATE_MUTATION = gql`
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery(
-    $repositorySelector: RepositorySelector!
-    $limit: Int!
-  ) {
+  query SchedulesRootQuery($repositorySelector: RepositorySelector!) {
     scheduler {
       __typename
       ... on SchedulerNotDefinedError {
