@@ -1,4 +1,5 @@
 import { DynamicMetaTags } from 'components/MetaTags';
+import { CodeReferenceLink } from 'components/CodeReference';
 
 <DynamicMetaTags
   title="Advanced: Pipelines | Dagster"
@@ -10,16 +11,13 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Pipelines
 
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/pipelines/" />
+
 Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like
 Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with
 such systems, so that your business logic can remain the same across local/test, dev, prod, etc.
 environments. Resources represent these external systems, and modes/presets support swapping
 resource implementations across different environments.
-
-> - You can find the tutorial code on
->   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/pipelines/)
-> - If you’ve cloned the dagster git repository, you’ll find this example at
->   `examples/dagster_examples/intro_tutorial/advanced/pipelines/`
 
 ## Parametrizing Pipelines with Resources
 

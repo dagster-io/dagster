@@ -1,4 +1,5 @@
 import { DynamicMetaTags } from 'components/MetaTags';
+import { CodeReferenceLink } from 'components/CodeReference';
 
 <DynamicMetaTags
   title="Advanced Tutorials | Dagster"
@@ -10,15 +11,12 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Scheduling Pipeline Runs
 
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/scheduling/" />
+
 Dagster includes a simple built-in scheduler that works with Dagit, which is useful when you need to
 schedule pipelines to run at regular intervals, e.g. daily or hourly.
 
 Suppose that we need to run our simple cereal pipeline every morning before breakfast, at 6:45 AM.
-
-> - You can find the tutorial code on
->   [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/scheduling/)
-> - If you’ve cloned the dagster git repository, you’ll find this example at
->   `examples/dagster_examples/intro_tutorial/advanced/scheduling/`
 
 ## Requirements
 

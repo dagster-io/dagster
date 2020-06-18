@@ -1,4 +1,5 @@
 import { DynamicMetaTags } from 'components/MetaTags';
+import { CodeReferenceLink } from 'components/CodeReference';
 
 <DynamicMetaTags
   title="Advanced: Organizing Pipelines in Repositories &amp; Workspaces | Dagster"
@@ -10,8 +11,7 @@ import PyObject from 'components/PyObject';
 
 # Advanced: Organizing Pipelines in Repositories & Workspaces
 
-> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/repositories/)
-> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/repositories/`
+<CodeReferenceLink url="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/repositories/" />
 
 In all of the examples we've seen so far, we've specified a file (`-f`) or a module (`-m`) and named
 a pipeline definition function (`-n`) in order to tell the CLI tools how to load a pipeline, e.g.:
