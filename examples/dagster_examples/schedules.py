@@ -6,7 +6,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 from dagster.utils.partitions import date_partition_range
 
 
-def _fetch_runs_by_partition(instance, partition_set_def):
+def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
     # query runs db for this partition set
     filters = PipelineRunsFilter(tags={'dagster/partition_set': partition_set_def.name})
     partition_set_runs = instance.get_runs(filters)
@@ -14,15 +14,19 @@ def _fetch_runs_by_partition(instance, partition_set_def):
     runs_by_partition = defaultdict(list)
 
     for run in partition_set_runs:
-        runs_by_partition[run.tags['dagster/partition']].append(run)
+        if not status_filters or run.status in status_filters:
+            runs_by_partition[run.tags['dagster/partition']].append(run)
 
     return runs_by_partition
 
 
 def backfilling_partition_selector(
-    context: ScheduleExecutionContext, partition_set_def: PartitionSetDefinition
+    context: ScheduleExecutionContext, partition_set_def: PartitionSetDefinition, retry_failed=False
 ):
-    runs_by_partition = _fetch_runs_by_partition(context.instance, partition_set_def)
+    status_filters = [PipelineRunStatus.SUCCESS] if retry_failed else None
+    runs_by_partition = _fetch_runs_by_partition(
+        context.instance, partition_set_def, status_filters
+    )
 
     selected = None
     for partition in partition_set_def.get_partitions():
@@ -38,8 +42,13 @@ def backfilling_partition_selector(
     return selected
 
 
-def backfill_should_execute(context, partition_set_def, schedule_name):
-    runs_by_partition = _fetch_runs_by_partition(context.instance, partition_set_def)
+def backfill_should_execute(context, partition_set_def, retry_failed=False):
+    status_filters = (
+        [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
+    )
+    runs_by_partition = _fetch_runs_by_partition(
+        context.instance, partition_set_def, status_filters
+    )
     for runs in runs_by_partition.values():
         for run in runs:
             # if any active runs - don't start a new one
@@ -48,19 +57,7 @@ def backfill_should_execute(context, partition_set_def, schedule_name):
 
     available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])
     satisfied_partitions = set(runs_by_partition.keys())
-
-    # We only execute the scheduled run if there is a partition available to be run.
-    # In the case that there are no partitions left, the schedule stops itself by calling the
-    # stop_schedule method available on the instance.
     is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
-    if not is_remaining_partitions:
-        try:
-            context.instance.stop_schedule_and_update_storage_state(
-                'internal-dagit-repository', schedule_name
-            )
-        except OSError:
-            pass
-
     return is_remaining_partitions
 
 
@@ -79,7 +76,7 @@ def backfill_test_schedule():
     )
 
     def _should_execute(context):
-        return backfill_should_execute(context, partition_set, schedule_name)
+        return backfill_should_execute(context, partition_set)
 
     return partition_set.create_schedule_definition(
         schedule_name=schedule_name,
@@ -100,7 +97,7 @@ def materialization_schedule():
     )
 
     def _should_execute(context):
-        return backfill_should_execute(context, partition_set, schedule_name)
+        return backfill_should_execute(context, partition_set)
 
     return partition_set.create_schedule_definition(
         schedule_name=schedule_name,
@@ -122,11 +119,11 @@ def longitudinal_schedule():
     )
 
     def _should_execute(context):
-        return backfill_should_execute(context, partition_set, schedule_name)
+        return backfill_should_execute(context, partition_set, retry_failed=True)
 
     return partition_set.create_schedule_definition(
         schedule_name=schedule_name,
-        cron_schedule="* * * * *",  # tick every minute
+        cron_schedule="*/5 * * * *",  # tick every 5 minutes
         partition_selector=backfilling_partition_selector,
         should_execute=_should_execute,
     )
