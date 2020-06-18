@@ -1,3 +1,2 @@
-repository:
-  file: repo.py
-  fn: define_repository
+load_from:
+  - python_file: repo.py

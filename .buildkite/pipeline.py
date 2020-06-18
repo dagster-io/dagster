@@ -352,7 +352,6 @@ def examples_tests():
         'dagster_examples_tests',
         'data',
         'emr_pyspark',
-        'fan_in_pipeline',
         'multi_location',
         'pipeline_tags',
         'pipeline_unittesting',

@@ -1,4 +1,4 @@
-from dagster import InputDefinition, List, OutputDefinition, RepositoryDefinition, pipeline, solid
+from dagster import InputDefinition, List, OutputDefinition, pipeline, repository, solid
 
 
 @solid(output_defs=[OutputDefinition(int)])
@@ -19,5 +19,6 @@ def fan_in_pipeline():
     sum_fan_in(fan_outs)
 
 
-def define_repository():
-    return RepositoryDefinition("fan_in_pipeline", pipeline_defs=[fan_in_pipeline])
+@repository
+def fan_in_pipeline_repository():
+    return [fan_in_pipeline]
