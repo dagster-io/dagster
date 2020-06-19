@@ -1,4 +1,4 @@
-from dagster import RepositoryDefinition, pipeline, solid
+from dagster import pipeline, repository, solid
 
 
 @solid
@@ -13,5 +13,6 @@ def tags_pipeline():
     get_tag()
 
 
-def define_repository():
-    return RepositoryDefinition("pipeline_tags", pipeline_defs=[tags_pipeline])
+@repository
+def pipeline_tags_example():
+    return [tags_pipeline]

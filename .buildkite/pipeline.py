@@ -352,8 +352,6 @@ def examples_tests():
         'dagster_examples_tests',
         'data',
         'emr_pyspark',
-        'pipeline_tags',
-        'pipeline_unittesting',
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
