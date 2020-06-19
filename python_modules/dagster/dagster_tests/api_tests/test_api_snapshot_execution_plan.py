@@ -8,7 +8,7 @@ def test_execution_plan_snapshot_api():
     pipeline_handle = get_foo_pipeline_handle()
 
     execution_plan_snapshot = sync_get_external_execution_plan(
-        pipeline_handle.get_origin(), run_config={}, mode="default", snapshot_id="12345",
+        pipeline_handle.get_origin(), run_config={}, mode="default", pipeline_snapshot_id="12345",
     )
 
     assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
@@ -26,7 +26,7 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api():
         pipeline_handle.get_origin(),
         run_config={},
         mode="default",
-        snapshot_id="12345",
+        pipeline_snapshot_id="12345",
         step_keys_to_execute=['do_something.compute'],
     )
 
@@ -44,7 +44,7 @@ def test_execution_plan_with_subset_snapshot_api():
         pipeline_handle.get_origin(),
         run_config={'solids': {'do_input': {'inputs': {'x': {'value': "test"}}}}},
         mode="default",
-        snapshot_id="12345",
+        pipeline_snapshot_id="12345",
         solid_selection=["do_input"],
     )
 

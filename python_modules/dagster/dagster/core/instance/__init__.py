@@ -549,7 +549,28 @@ class DagsterInstance:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
 
-        pipeline_run = PipelineRun(
+        check.invariant(
+            not (not pipeline_snapshot and execution_plan_snapshot),
+            'It is illegal to have an execution plan snapshot and not have a pipeline snapshot. '
+            'It is possible to have no execution plan snapshot since we persist runs '
+            'that do not successfully compile execution plans in the scheduled case.',
+        )
+
+        pipeline_snapshot_id = (
+            self._ensure_persisted_pipeline_snapshot(pipeline_snapshot, parent_pipeline_snapshot)
+            if pipeline_snapshot
+            else None
+        )
+
+        execution_plan_snapshot_id = (
+            self._ensure_persisted_execution_plan_snapshot(
+                execution_plan_snapshot, pipeline_snapshot_id, step_keys_to_execute
+            )
+            if execution_plan_snapshot and pipeline_snapshot_id
+            else None
+        )
+
+        return PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             run_config=run_config,
@@ -561,66 +582,88 @@ class DagsterInstance:
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
+            pipeline_snapshot_id=pipeline_snapshot_id,
+            execution_plan_snapshot_id=execution_plan_snapshot_id,
         )
 
-        if pipeline_snapshot is not None:
-            from dagster.core.snap import create_pipeline_snapshot_id
+    def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
+        from dagster.core.snap import create_pipeline_snapshot_id, PipelineSnapshot
 
-            if pipeline_snapshot.lineage_snapshot:
-                if not self._run_storage.has_pipeline_snapshot(
-                    pipeline_snapshot.lineage_snapshot.parent_snapshot_id
-                ):
-                    check.invariant(
-                        create_pipeline_snapshot_id(parent_pipeline_snapshot)
-                        == pipeline_snapshot.lineage_snapshot.parent_snapshot_id,
-                        'Parent pipeline snapshot id out of sync with passed parent pipeline snapshot',
-                    )
+        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot)
 
-                    returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
-                        parent_pipeline_snapshot
-                    )
-                    check.invariant(
-                        pipeline_snapshot.lineage_snapshot.parent_snapshot_id
-                        == returned_pipeline_snapshot_id
-                    )
-
-            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-            if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
-                returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
-                    pipeline_snapshot
+        if pipeline_snapshot.lineage_snapshot:
+            if not self._run_storage.has_pipeline_snapshot(
+                pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+            ):
+                check.invariant(
+                    create_pipeline_snapshot_id(parent_pipeline_snapshot)
+                    == pipeline_snapshot.lineage_snapshot.parent_snapshot_id,
+                    'Parent pipeline snapshot id out of sync with passed parent pipeline snapshot',
                 )
-                check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
 
-            pipeline_run = pipeline_run.with_pipeline_snapshot_id(pipeline_snapshot_id)
+                returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                    parent_pipeline_snapshot
+                )
+                check.invariant(
+                    pipeline_snapshot.lineage_snapshot.parent_snapshot_id
+                    == returned_pipeline_snapshot_id
+                )
 
-        if execution_plan_snapshot is not None:
-            from dagster.core.snap import create_execution_plan_snapshot_id
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
+            returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                pipeline_snapshot
+            )
+            check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
 
-            check.invariant(execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id)
+        return pipeline_snapshot_id
 
-            check.invariant(
-                set(step_keys_to_execute) == set(execution_plan_snapshot.step_keys_to_execute)
-                if step_keys_to_execute
-                else set(execution_plan_snapshot.step_keys_to_execute)
-                == set([step.key for step in execution_plan_snapshot.steps]),
-                'We encode step_keys_to_execute twice in our stack, unfortunately. This check '
-                'ensures that they are consistent. We check that step_keys_to_execute in the plan '
-                'matches the step_keys_to_execute params if it is set. If it is not, this indicates '
-                'a full execution plan, and so we verify that.',
+    def _ensure_persisted_execution_plan_snapshot(
+        self, execution_plan_snapshot, pipeline_snapshot_id, step_keys_to_execute
+    ):
+        from dagster.core.snap.execution_plan_snapshot import (
+            ExecutionPlanSnapshot,
+            create_execution_plan_snapshot_id,
+        )
+
+        check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+        check.invariant(
+            execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
+            (
+                'Snapshot mismatch: Snapshot ID in execution plan snapshot is '
+                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
+                '"{pipeline_snapshot_id}"'
+            ).format(
+                ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
+                pipeline_snapshot_id=pipeline_snapshot_id,
+            ),
+        )
+
+        check.invariant(
+            set(step_keys_to_execute) == set(execution_plan_snapshot.step_keys_to_execute)
+            if step_keys_to_execute
+            else set(execution_plan_snapshot.step_keys_to_execute)
+            == set([step.key for step in execution_plan_snapshot.steps]),
+            'We encode step_keys_to_execute twice in our stack, unfortunately. This check '
+            'ensures that they are consistent. We check that step_keys_to_execute in the plan '
+            'matches the step_keys_to_execute params if it is set. If it is not, this indicates '
+            'a full execution plan, and so we verify that.',
+        )
+
+        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+
+        if not self._run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id):
+            returned_execution_plan_snapshot_id = self._run_storage.add_execution_plan_snapshot(
+                execution_plan_snapshot
             )
 
-            execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+            check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
 
-            if not self._run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id):
-                returned_execution_plan_snapshot_id = self._run_storage.add_execution_plan_snapshot(
-                    execution_plan_snapshot
-                )
-
-                check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
-
-            pipeline_run = pipeline_run.with_execution_plan_snapshot_id(execution_plan_snapshot_id)
-
-        return pipeline_run
+        return execution_plan_snapshot_id
 
     def create_run(
         self,

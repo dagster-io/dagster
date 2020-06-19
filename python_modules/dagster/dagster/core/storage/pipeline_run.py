@@ -205,12 +205,6 @@ class PipelineRun(
     def with_tags(self, tags):
         return self._replace(tags=tags)
 
-    def with_pipeline_snapshot_id(self, pipeline_snapshot_id):
-        return self._replace(pipeline_snapshot_id=pipeline_snapshot_id)
-
-    def with_execution_plan_snapshot_id(self, execution_plan_snapshot_id):
-        return self._replace(execution_plan_snapshot_id=execution_plan_snapshot_id)
-
     def get_root_run_id(self):
         return self.tags.get(ROOT_RUN_ID_TAG)
 

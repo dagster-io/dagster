@@ -6,7 +6,12 @@ from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_execution_plan(
-    pipeline_origin, run_config, mode, snapshot_id, solid_selection=None, step_keys_to_execute=None,
+    pipeline_origin,
+    run_config,
+    mode,
+    pipeline_snapshot_id,
+    solid_selection=None,
+    step_keys_to_execute=None,
 ):
     from dagster.cli.api import ExecutionPlanSnapshotArgs
 
@@ -15,7 +20,7 @@ def sync_get_external_execution_plan(
     check.dict_param(run_config, 'run_config')
     check.str_param(mode, 'mode')
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-    check.str_param(snapshot_id, 'snapshot_id')
+    check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
 
     return check.inst(
         execute_unary_api_cli_command(
@@ -27,7 +32,7 @@ def sync_get_external_execution_plan(
                 run_config=run_config,
                 mode=mode,
                 step_keys_to_execute=step_keys_to_execute,
-                snapshot_id=snapshot_id,
+                pipeline_snapshot_id=pipeline_snapshot_id,
             ),
         ),
         ExecutionPlanSnapshot,

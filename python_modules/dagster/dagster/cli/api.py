@@ -236,11 +236,17 @@ def pipeline_subset_snapshot_command(args):
 class ExecutionPlanSnapshotArgs(
     namedtuple(
         '_ExecutionPlanSnapshotArgs',
-        'pipeline_origin solid_selection run_config mode step_keys_to_execute snapshot_id',
+        'pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id',
     )
 ):
     def __new__(
-        cls, pipeline_origin, solid_selection, run_config, mode, step_keys_to_execute, snapshot_id,
+        cls,
+        pipeline_origin,
+        solid_selection,
+        run_config,
+        mode,
+        step_keys_to_execute,
+        pipeline_snapshot_id,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -253,7 +259,7 @@ class ExecutionPlanSnapshotArgs(
             step_keys_to_execute=check.opt_list_param(
                 step_keys_to_execute, 'step_keys_to_execute', of_type=str
             ),
-            snapshot_id=check.str_param(snapshot_id, 'snapshot_id'),
+            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
         )
 
 
@@ -283,7 +289,7 @@ def execution_plan_snapshot_command(args):
             mode=args.mode,
             step_keys_to_execute=args.step_keys_to_execute,
         ),
-        args.snapshot_id,
+        args.pipeline_snapshot_id,
     )
 
 

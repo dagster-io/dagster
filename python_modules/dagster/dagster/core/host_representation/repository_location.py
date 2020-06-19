@@ -272,7 +272,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             run_config=run_config,
             mode=mode,
             step_keys_to_execute=step_keys_to_execute,
-            snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
         )
 
         return ExternalExecutionPlan(
