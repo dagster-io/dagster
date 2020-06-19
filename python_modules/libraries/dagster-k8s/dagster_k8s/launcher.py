@@ -10,9 +10,13 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import merge_dicts
+from dagster.utils import frozentags, merge_dicts
 
-from .job import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
+from .job import (
+    DagsterK8sJobConfig,
+    construct_dagster_graphql_k8s_job,
+    get_k8s_resource_requirements,
+)
 from .utils import DagsterK8sError
 
 
@@ -158,6 +162,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
 
+        resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
+
         job = construct_dagster_graphql_k8s_job(
             self.job_config,
             args=[
@@ -175,6 +181,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',
+            resources=resources,
         )
 
         api = kubernetes.client.BatchV1Api()
@@ -345,6 +352,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=exc_config.get('env_secrets'),
         )
 
+        resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
+
         job = construct_dagster_graphql_k8s_job(
             job_config,
             args=[
@@ -362,6 +371,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',
+            resources=resources,
         )
 
         job_namespace = exc_config.get('job_namespace')

@@ -174,7 +174,15 @@ def resource_req_solid(context):
 
 
 def define_resources_limit_pipeline_celery():
-    @pipeline(mode_defs=celery_mode_defs())
+    @pipeline(
+        mode_defs=celery_mode_defs(),
+        tags={
+            'dagster-k8s/resource_requirements': {
+                'requests': {'cpu': '250m', 'memory': '64Mi'},
+                'limits': {'cpu': '500m', 'memory': '2560Mi'},
+            }
+        },
+    )
     def resources_limit_pipeline_celery():
         resource_req_solid()
 
