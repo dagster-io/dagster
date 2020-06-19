@@ -91,9 +91,10 @@ export function handleExecutionResult(
       window.location.href = url;
     }
   } else if (obj.__typename === "PythonError") {
-    console.log(obj);
-    const message = `${obj.message}`;
-    showCustomAlert({ body: message });
+    showCustomAlert({
+      title: "Error",
+      body: <PythonErrorInfo error={obj} />
+    });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
 
@@ -130,9 +131,10 @@ export function handleReexecutionResult(
       window.location.href = url;
     }
   } else if (obj.__typename === "PythonError") {
-    console.log(obj);
-    const message = `${obj.message}`;
-    showCustomAlert({ body: message });
+    showCustomAlert({
+      title: "Error",
+      body: <PythonErrorInfo error={obj} />
+    });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
 

@@ -1,0 +1,28 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import PyObject from 'components/PyObject';
+
+<DynamicMetaTags title="Schedules | Dagster" />
+
+# Schedules
+
+Dagster comes with a light weight scheduler that is capable of instigating runs on a given interval. To create a schedule, define a <PyObject module="dagster" object="ScheduleDefinition"/> and include it in your repository.
+
+A schedule has a number of properties:
+
+- Targets a pipeline
+- Defines a function that returns `run_config` for the targeted pipeline
+- Optionally defines `tags`, `mode`, `solid_selection` for the target pipeline
+- Optionally defines a `should_execute` function that can be used to skip a scheduled execution
+
+## Defining a Schedule
+
+There are two types of schedules:
+
+- A simple schedule creates runs at a given interval
+- A partition set based schedule that also runs at a given interval, but selects a partition to use at execution time to create a run
+
+### Cron-string based interval
+
+The simplest way to define a schedule is to use the <PyObject module="dagster" object=""
+
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
