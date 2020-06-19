@@ -15,6 +15,7 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.core.instance import InstanceRef
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.seven import is_module_available
@@ -217,7 +218,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
 
 def create_docker_task(celery_app, **task_kwargs):
-    @celery_app.task(name='execute_step_docker', **task_kwargs)
+    @celery_app.task(bind=True, name='execute_step_docker', **task_kwargs)
     def _execute_step_docker(
         _self,
         instance_ref_dict,
@@ -225,7 +226,6 @@ def create_docker_task(celery_app, **task_kwargs):
         run_config,
         mode,
         repo_name,
-        repo_location_name,
         run_id,
         docker_image,
         docker_creds
@@ -250,7 +250,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 'runConfigData': run_config,
                 'mode': mode,
                 'selector': {
-                    'repositoryLocationName': repo_location_name,
+                    'repositoryLocationName': IN_PROCESS_NAME,
                     'repositoryName': repo_name,
                     'pipelineName': pipeline_run.pipeline_name,
                 },

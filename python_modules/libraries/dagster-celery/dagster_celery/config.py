@@ -181,7 +181,7 @@ class CeleryDockerConfig(
     '''
 
     def __new__(
-        cls, retries, broker=None, backend=None, include=None, config_source=None,
+        cls, retries, broker=None, backend=None, include=None, config_source=None
     ):
 
         docker_creds = {
@@ -207,3 +207,12 @@ class CeleryDockerConfig(
         from .engine import CeleryDockerEngine
 
         return CeleryDockerEngine()
+
+    def app_args(self):
+        '''Only include celery app arguments, skip k8s config
+        '''
+        from .executor import CELERY_CONFIG
+
+        asdict = self._asdict()
+
+        return {key: asdict[key] for key in CELERY_CONFIG.keys()}

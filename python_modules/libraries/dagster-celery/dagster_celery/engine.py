@@ -61,7 +61,7 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
     check.callable_param(step_execution_fn, 'step_execution_fn')
 
     check.param_invariant(
-        isinstance(pipeline_context.executor_config, (CeleryConfig, CeleryK8sJobConfig)),
+        isinstance(pipeline_context.executor_config, (CeleryConfig, CeleryK8sJobConfig, CeleryDockerConfig)),
         'pipeline_context',
         'Expected executor_config to be Celery config got {}'.format(
             pipeline_context.executor_config
@@ -243,7 +243,6 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
         run_config=pipeline_context.pipeline_run.run_config,
         mode=pipeline_context.pipeline_run.mode,
         repo_name=recon_repo.get_definition().name,
-        repo_location_name=pipeline_context.executor_config.repo_location_name,
         run_id=pipeline_context.pipeline_run.run_id,
         docker_image=pipeline_context.pipeline_run.tags[DAGSTER_CELERY_DOCKER_IMAGE_TAG],
         docker_creds=pipeline_context.executor_config.docker_creds,

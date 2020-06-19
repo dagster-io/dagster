@@ -100,11 +100,10 @@ def celery_docker_executor(init_context):
     '''
     check_cross_process_constraints(init_context)
 
-    return CeleryConfig(
+    return CeleryDockerConfig(
         broker=init_context.executor_config.get('broker'),
         backend=init_context.executor_config.get('backend'),
         config_source=init_context.executor_config.get('config_source'),
         include=init_context.executor_config.get('include'),
         retries=Retries.from_config(init_context.executor_config['retries']),
-        docker_creds=init_context.executor_config.get('docker_creds'),
     )
