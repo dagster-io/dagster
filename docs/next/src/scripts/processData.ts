@@ -7,6 +7,8 @@ import data from '../data/searchindex.json';
 // Folder paths
 const DATA_PATH = path.join(__dirname, '../data');
 const MODULE_PATH = path.join(DATA_PATH, '_modules');
+const EXAMPLES_PATH = path.join(__dirname, '../../../../examples');
+const EXAMPLES_FOLDER_PATH = path.join(__dirname, '../pages/docs/examples');
 
 process.on('unhandledRejection', (error) => {
   console.error(error); // This prints error with stack included (as for normal errors)
@@ -70,6 +72,56 @@ async function createModuleIndex() {
   );
 
   console.log('✅ Generated list of all list and module files');
+}
+
+const dirs = async (dirPath: string) => {
+  let dirs: string[] = [];
+  for (const file of await fs.readdir(dirPath)) {
+    if ((await fs.stat(path.join(dirPath, file))).isDirectory()) {
+      dirs = [...dirs, file];
+    }
+  }
+  return dirs;
+};
+
+async function copyExamples() {
+  /* Generate list of all examples folders */
+  const skipExamples = ['.pytest_cache', 'legacy_examples', 'docs_snippets'];
+
+  const examples = (await dirs(EXAMPLES_PATH)).filter(
+    (i) => !skipExamples.includes(i),
+  );
+
+  // Delete existing examples files
+  const glob = path.join(EXAMPLES_FOLDER_PATH, '*.mdx');
+  const entries = await fg([glob], { ignore: ['index.mdx'] });
+  for (const file of entries) {
+    if (!file.endsWith('index.mdx')) {
+      await fs.unlink(file);
+    }
+  }
+
+  for (const exampleName of examples) {
+    const oldPath = path.join(EXAMPLES_PATH, exampleName, 'README.mdx');
+    const newPath = path.join(EXAMPLES_FOLDER_PATH, `${exampleName}.mdx`);
+
+    // Edit file to remove metadata
+    const data = (await fs.readFile(oldPath)).toString().split('\n');
+    const newData = data.splice(5).join('\n');
+    await fs.writeFile(newPath, newData);
+  }
+
+  const examplesMap: { [key: string]: any } = {};
+  for (const exampleName of examples) {
+    examplesMap[exampleName] = {};
+  }
+
+  await fs.writeFile(
+    path.join(DATA_PATH, 'examples.json'),
+    JSON.stringify(examplesMap),
+  );
+
+  console.log('✅ Copied examples');
 }
 
 async function createAlgoliaIndex() {
@@ -147,6 +199,7 @@ const steps = [
   preProcess,
   rewriteRelativeLinks,
   createModuleIndex,
+  copyExamples,
   createAlgoliaIndex,
 ];
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import data from 'data/searchindex.json';
+import examples from 'data/examples.json';
 import treeOfContents from 'treeOfContents.json';
 
 const createTreeOfContents = () => {
@@ -21,6 +22,25 @@ const createTreeOfContents = () => {
   if (!NEXT_PUBLIC_DEV_MODE || NEXT_PUBLIC_DEV_MODE !== 'true') {
     console.log('Not in dev mode, deleting overview');
     delete treeOfContents['Overview'];
+  }
+
+  if (NEXT_PUBLIC_DEV_MODE == 'true') {
+    const EXAMPLES_PAGES = [];
+    const exampleNames = Object.keys(examples);
+    for (const example of exampleNames) {
+      EXAMPLES_PAGES.push({
+        name: example,
+        path: '/docs/examples/' + example,
+      });
+    }
+
+    return Object.assign({}, treeOfContents, {
+      Examples: {
+        name: 'Examples',
+        path: '/docs/examples',
+        children: EXAMPLES_PAGES,
+      },
+    });
   }
 
   return treeOfContents;
