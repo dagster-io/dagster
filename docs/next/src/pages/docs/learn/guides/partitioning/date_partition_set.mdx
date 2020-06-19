@@ -14,7 +14,7 @@ create a <PyObject module="dagster" object="PartitionSetDefinition" /> for a set
 First, let's modify our solid to take a date range as config:
 
 ```python literalinclude caption=hello_cereal.py
-file:/dagster_examples/stocks/repository.py
+file:/legacy_examples/dagster_examples/stocks/repository.py
 lines:4-19
 ```
 
@@ -22,7 +22,7 @@ Just as before, we write a function that returns a list of partitions,
 but this time we return a list of `datetime` objects.
 
 ```python literalinclude caption=date_partitions.py
-file:/dagster_examples/stocks/date_partitions.py
+file:/legacy_examples/dagster_examples/stocks/date_partitions.py
 lines:9-15
 ```
 
@@ -31,7 +31,7 @@ returns config. Here, we calculate the first and last days of the
 previous month for each date partition to pass to the solid config.
 
 ```python literalinclude caption=hello_cereal.py
-file:/dagster_examples/stocks/date_partitions.py
+file:/legacy_examples/dagster_examples/stocks/date_partitions.py
 lines:18-34
 ```
 
@@ -42,7 +42,7 @@ and time interval: <PyObject module="dagster.utils.partitions" object="date_part
 We'll use this function instead of the one we wrote above.
 
 ```python literalinclude caption=repository.py
-file:/dagster_examples/stocks/date_partitions.py
+file:/legacy_examples/dagster_examples/stocks/date_partitions.py
 lines:37-46
 ```
 

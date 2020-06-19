@@ -1,6 +1,6 @@
 set -eu
 
-pushd examples
+pushd examples/legacy_examples
 docker-compose stop
 docker-compose rm -f
 popd

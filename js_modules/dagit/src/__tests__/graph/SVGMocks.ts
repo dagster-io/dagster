@@ -57,5 +57,5 @@ MOCKS.push({
     requestScopeHandleID: ""
   } as PipelineExplorerRootQueryVariables,
   filepath: path.join(dataDir, `fan_in_fan_out_pipeline.json`),
-  repo: "examples/dagster_examples/toys"
+  repo: "examples/legacy_examples/dagster_examples/toys"
 });

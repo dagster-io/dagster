@@ -83,7 +83,7 @@ def airflow_extra_cmds_fn(version):
 
 def airline_demo_extra_cmds_fn(_):
     return [
-        'pushd examples',
+        'pushd examples/legacy_examples',
         # Build the image we use for airflow in the demo tests
         './build_airline_demo_image.sh',
         'mkdir -p /home/circleci/airflow',
@@ -130,9 +130,9 @@ def dask_extra_cmds_fn(version):
     ]
 
 
-def examples_extra_cmds_fn(_):
+def legacy_examples_extra_cmds_fn(_):
     return [
-        "pushd examples",
+        "pushd examples/legacy_examples",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
@@ -185,7 +185,7 @@ def postgres_extra_cmds_fn(_):
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # Examples: Airline Demo
     ModuleBuildSpec(
-        'examples',
+        'examples/legacy_examples',
         supported_pythons=SupportedPython3sNo38,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         tox_file='tox_airline.ini',
@@ -202,15 +202,15 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # ),
     # Examples
     ModuleBuildSpec(
-        'examples',
+        'examples/legacy_examples',
         # See: https://github.com/dagster-io/dagster/issues/1960
         # Also, examples are py3-only
         supported_pythons=SupportedPython3sNo38,
-        extra_cmds_fn=examples_extra_cmds_fn,
+        extra_cmds_fn=legacy_examples_extra_cmds_fn,
     ),
     ModuleBuildSpec(
         'examples/docs_snippets',
-        extra_cmds_fn=examples_extra_cmds_fn,
+        extra_cmds_fn=legacy_examples_extra_cmds_fn,
         upload_coverage=False,
         supported_pythons=SupportedPython3s,
     ),
@@ -354,10 +354,7 @@ def examples_tests():
     skip_examples = [
         # Skip these folders because they need custom build config
         'docs_snippets',
-        # Temporarily skip these folders until we finish the work to clean up the examples folder
-        'dagster_examples',
-        'dagster_examples_tests',
-        'data',
+        'legacy_examples',
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
@@ -447,7 +444,7 @@ def pylint_steps():
                 -e python_modules/libraries/dagstermill \
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
-                -e examples
+                -e examples/legacy_examples
             """,
             "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % ' '.join(base_paths_ext),
         )
@@ -554,7 +551,7 @@ if __name__ == "__main__":
             "pip install -e python_modules/libraries/dagster-cron -qqq",
             "pip install -e python_modules/libraries/dagster-slack -qqq",
             "pip install -e python_modules/dagit -qqq",
-            "pip install -e examples -qqq",
+            "pip install -e examples/legacy_examples -qqq",
             "cd js_modules/dagit",
             "yarn install --offline",
             "yarn run ts",
@@ -573,8 +570,8 @@ if __name__ == "__main__":
         .run(
             "pip install mypy",
             # start small by making sure the local code type checks
-            "mypy examples/dagster_examples/airline_demo "
-            "examples/dagster_examples/bay_bikes "
+            "mypy examples/legacy_examples/dagster_examples/airline_demo "
+            "examples/legacy_examples/dagster_examples/bay_bikes "
             "examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy* "
             "--ignore-missing-imports",
         )

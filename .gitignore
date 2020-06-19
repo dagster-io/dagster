@@ -123,6 +123,9 @@ docs/gatsby/**/public
 docs/next/.mdx-data
 # Data
 data
+# Don't ignore data folders in examples
+!examples/*/data
+!examples/**/**/data
 
 # Dask
 dask-worker-space
@@ -134,7 +137,7 @@ dask-worker-space
 .codemod.bookmark
 
 # Examples outputs
-examples/dagster_examples/*/output/
+examples/legacy_examples/dagster_examples/*/output/
 examples/docs_snippets/docs_snippets/**/**/output/
 
 # Telemetry instance id

@@ -19,7 +19,7 @@ on the output will simply skip, such as short-circuiting or branching.
 For example:
 
 ```python literalinclude caption=conditional_execution.py
-file:/dagster_examples/how_tos/conditional_execution.py
+file:/legacy_examples/dagster_examples/how_tos/conditional_execution.py
 lines:8-11
 ```
 
@@ -32,7 +32,7 @@ For example, let's define a solid that has two optional outputs, and
 only yields one based on a conditional:
 
 ```python literalinclude caption=conditional_execution.py
-file:/dagster_examples/how_tos/conditional_execution.py
+file:/legacy_examples/dagster_examples/how_tos/conditional_execution.py
 lines:14-24
 ```
 
@@ -40,14 +40,14 @@ Then, we can have two downstream solids `path_1` and `path_2` that
 depend on output "a" and output "b", respectively:
 
 ```python literalinclude caption=conditional_execution.py
-file:/dagster_examples/how_tos/conditional_execution.py
+file:/legacy_examples/dagster_examples/how_tos/conditional_execution.py
 lines:27-34
 ```
 
 Finally, we can wire these solids up in a pipeline:
 
 ```python literalinclude caption=conditional_execution.py
-file:/dagster_examples/how_tos/conditional_execution.py
+file:/legacy_examples/dagster_examples/how_tos/conditional_execution.py
 lines:37-41
 ```
 
@@ -82,6 +82,6 @@ Any downstream solids that depend on the solid will be marked as skipped
 and will not execute.
 
 ```python literalinclude caption=hello_cereal.py
-file:/dagster_examples/how_tos/conditional_execution.py
+file:/legacy_examples/dagster_examples/how_tos/conditional_execution.py
 lines:52-59
 ```

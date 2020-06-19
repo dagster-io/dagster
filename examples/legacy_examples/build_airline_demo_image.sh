@@ -3,7 +3,7 @@
 set -eux
 
 ROOT=$(git rev-parse --show-toplevel)
-pushd $ROOT/examples
+pushd $ROOT/examples/legacy_examples
 
 pip install --upgrade pip
 
@@ -23,15 +23,15 @@ function cleanup {
 # ensure cleanup happens on error or normal exit
 trap cleanup EXIT
 
-cp -R ../python_modules/dagster .
-cp -R ../python_modules/dagster-graphql .
-cp -R ../python_modules/libraries/dagster-pandas .
-cp -R ../python_modules/libraries/dagstermill .
-cp -R ../python_modules/libraries/dagster-aws .
-cp -R ../python_modules/libraries/dagster-spark .
-cp -R ../python_modules/libraries/dagster-pyspark .
-cp -R ../python_modules/libraries/dagster-postgres .
-cp -R ../python_modules/libraries/dagster-cron .
+cp -R ../../python_modules/dagster .
+cp -R ../../python_modules/dagster-graphql .
+cp -R ../../python_modules/libraries/dagster-pandas .
+cp -R ../../python_modules/libraries/dagstermill .
+cp -R ../../python_modules/libraries/dagster-aws .
+cp -R ../../python_modules/libraries/dagster-spark .
+cp -R ../../python_modules/libraries/dagster-pyspark .
+cp -R ../../python_modules/libraries/dagster-postgres .
+cp -R ../../python_modules/libraries/dagster-cron .
 
 rm -rf dagster/.tox
 rm -rf dagster-graphql/.tox

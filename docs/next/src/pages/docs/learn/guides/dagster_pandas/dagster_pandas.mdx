@@ -24,7 +24,7 @@ list of `PandasColumn` objects which specify column-level schema and constraints
 can construct a custom dataframe type to represent a set of e-bike trips in the following way:
 
 ```python literalinclude caption=core_trip_pipeline.py
-file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
+file:/legacy_examples/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
 lines:9-22
 ```
 
@@ -32,7 +32,7 @@ Once our custom data type is defined, we can use it as the type declaration for 
 of our solid:
 
 ```python literalinclude caption=hello_cereal.py
-file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
+file:/legacy_examples/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
 lines:25-31
 ```
 
@@ -54,7 +54,7 @@ in the `dagster_pandas` [API docs](/docs/apidocs/libraries/dagster_pandas).
 This looks like:
 
 ```python literalinclude caption=shape_constrained_pipeline.py
-file:/dagster_examples/dagster_pandas_guide/shape_constrained_pipeline.py
+file:/legacy_examples/dagster_examples/dagster_pandas_guide/shape_constrained_pipeline.py
 lines:9-11
 ```
 
@@ -73,7 +73,7 @@ In complex pipelines, this can help debug and monitor data drift over
 time. Let's illustrate how this works in our example:
 
 ```python literalinclude caption=summary_stats_pipeline.py
-file:/dagster_examples/dagster_pandas_guide/summary_stats_pipeline.py
+file:/legacy_examples/dagster_examples/dagster_pandas_guide/summary_stats_pipeline.py
 lines:10-39
 ```
 
@@ -94,6 +94,6 @@ validation method which throws a `ColumnConstraintViolationException` if a row f
 This would look like the following:
 
 ```python literalinclude emphasize-lines=22-25 caption=custom_column_constraint_pipeline.py
-file:/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
+file:/legacy_examples/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
 lines:15-40
 ```

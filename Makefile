@@ -64,7 +64,7 @@ install_dev_python_modules:
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
-				-e examples[full] \
+				-e examples/legacy_examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
 	# Don't install dagster-azure as part of this target _yet_ - it has a dependency
@@ -99,4 +99,4 @@ dev_install: install_dev_python_modules_verbose rebuild_dagit
 dev_install_quiet: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
-	pytest examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
+	pytest examples/legacy_examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
