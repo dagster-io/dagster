@@ -47,8 +47,10 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
       return null;
     }
 
-    // select the most recent run
-    return runs[runs.length - 1];
+    // get most recent run
+    const toSort = runs.slice();
+    toSort.sort(_reverseSortRunCompare);
+    return toSort[0];
   }
 
   buildDatasetData() {
@@ -86,7 +88,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
     // stepData may have holes due to missing runs or missing steps.  For these to
     // render properly, fill in the holes with `undefined` values.
     Object.keys(stepData).forEach(stepKey => {
-      stepData[stepKey] = fillPartitions(partitionNames, stepData[stepKey]);
+      stepData[stepKey] = _fillPartitions(partitionNames, stepData[stepKey]);
     });
 
     return { pipelineData, stepData };
@@ -126,7 +128,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
   }
 }
 
-const fillPartitions = (partitionNames: string[], points: Point[]) => {
+const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   const pointData = {};
   points.forEach(point => {
     pointData[point.x] = point.y;
@@ -136,4 +138,22 @@ const fillPartitions = (partitionNames: string[], points: Point[]) => {
     x: partitionName,
     y: pointData[partitionName]
   }));
+};
+
+const _reverseSortRunCompare = (a: Run, b: Run) => {
+  if (
+    !a.stats ||
+    a.stats.__typename !== "PipelineRunStatsSnapshot" ||
+    !a.stats.startTime
+  ) {
+    return 1;
+  }
+  if (
+    !b.stats ||
+    b.stats.__typename !== "PipelineRunStatsSnapshot" ||
+    !b.stats.startTime
+  ) {
+    return -1;
+  }
+  return b.stats.startTime - a.stats.startTime;
 };
