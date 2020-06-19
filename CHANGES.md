@@ -5,6 +5,15 @@
 **Bugfix**
 
 - Reverted changed in 0.8.3 that caused error during run launch in certain circumstances
+- Updated partition graphs on schedule page to select most recent run
+- Forced reload of partitions for partition sets to ensure not serving stale data
+
+**New**
+
+- Added reload button to dagit to reload current repository
+- Added option to wipe a single asset key by using `dagster asset wipe <asset_key>`
+- Simplified schedule page, removing ticks table, adding tags for last tick attempt
+- Better debugging tools for launch errors
 
 ## 0.8.3
 
