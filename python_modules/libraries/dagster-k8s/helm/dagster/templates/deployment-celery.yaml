@@ -26,7 +26,8 @@ spec:
         {{- toYaml .Values.celery.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: postgres:9.6.16
+          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c',
             'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]

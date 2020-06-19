@@ -105,6 +105,11 @@ pipeline_run:
 # database that is accessible from this chart.
 ####################################################################################################
 postgresql:
+  # Used by init container to check that db is running. (Even if enabled:false)
+  image:
+    repository: "postgres"
+    tag: "9.6.16"
+    pullPolicy: IfNotPresent
   # set postgresql.enabled to be false to disable deploy of a PostgreSQL database and use an
   # existing external PostgreSQL database
   enabled: true
