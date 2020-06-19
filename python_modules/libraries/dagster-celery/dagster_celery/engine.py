@@ -10,13 +10,14 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import CeleryConfig, CeleryK8sJobConfig
+from .config import CeleryConfig, CeleryK8sJobConfig, CeleryDockerConfig
 from .defaults import task_default_priority, task_default_queue
 from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_STEP_PRIORITY_TAG,
     DAGSTER_STEP_PRIORITY_TAG,
+    DAGSTER_CELERY_DOCKER_IMAGE_TAG
 )
 
 TICK_SECONDS = 1
@@ -36,6 +37,19 @@ class CeleryK8sJobEngine(Engine):
     def execute(pipeline_context, execution_plan):
         return _core_celery_execution_loop(
             pipeline_context, execution_plan, step_execution_fn=_submit_task_k8s_job
+        )
+
+
+class CeleryDockerEngine(Engine):
+    @staticmethod
+    def execute(pipeline_context, execution_plan):
+        check.invariant(
+            DAGSTER_CELERY_DOCKER_IMAGE_TAG in pipeline_context.pipeline_run.tags,
+            'Run must be tagged with a docker image to use the Celery-Docker engine',
+        )
+
+        return _core_celery_execution_loop(
+            pipeline_context, execution_plan, step_execution_fn=_submit_task_docker
         )
 
 
@@ -213,6 +227,31 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         priority=priority,
         queue=queue,
         routing_key='{queue}.execute_step_k8s_job'.format(queue=queue),
+    )
+
+
+def _submit_task_docker(app, pipeline_context, step, queue, priority):
+    from .tasks import create_docker_task
+
+    task = create_docker_task(app)
+
+    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
+
+    task_signature = task.si(
+        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
+        step_keys=[step.key],
+        run_config=pipeline_context.pipeline_run.run_config,
+        mode=pipeline_context.pipeline_run.mode,
+        repo_name=recon_repo.get_definition().name,
+        repo_location_name=pipeline_context.executor_config.repo_location_name,
+        run_id=pipeline_context.pipeline_run.run_id,
+        docker_image=pipeline_context.pipeline_run.tags[DAGSTER_CELERY_DOCKER_IMAGE_TAG],
+        docker_creds=pipeline_context.executor_config.docker_creds,
+    )
+    return task_signature.apply_async(
+        priority=priority,
+        queue=queue,
+        routing_key='{queue}.execute_step_docker'.format(queue=queue),
     )
 
 

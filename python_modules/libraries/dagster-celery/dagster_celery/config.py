@@ -1,3 +1,5 @@
+import os
+
 from collections import namedtuple
 
 from dagster import check
@@ -160,3 +162,48 @@ class CeleryK8sJobConfig(
         asdict = self._asdict()
 
         return {key: asdict[key] for key in CELERY_CONFIG.keys()}
+
+
+class CeleryDockerConfig(
+    namedtuple(
+        'CeleryDockerConfig', 'docker_creds retries broker backend include config_source'
+    ),
+    ExecutorConfig,
+):
+    '''Configuration class for the Celery execution engine.
+
+    Params:
+        retries (Retries): Controls retry behavior
+        broker (Optional[str]): The URL of the Celery broker.
+        backend (Optional[str]): The URL of the Celery backend.
+        include (Optional[List[str]]): List of modules every worker should import.
+        config_source (Optional[Dict]): Config settings for the Celery app.
+    '''
+
+    def __new__(
+        cls, retries, broker=None, backend=None, include=None, config_source=None,
+    ):
+
+        docker_creds = {
+            'username': os.environ.get('DOCKER_USERNAME'),
+            'password': os.environ.get('DOCKER_PASSWORD'),
+            'registry': os.environ.get('DOCKER_REGISTRY'),
+        }
+
+        return super(CeleryDockerConfig, cls).__new__(
+            cls,
+            docker_creds=docker_creds,
+            retries=check.inst_param(retries, 'retries', Retries),
+            broker=check.opt_str_param(broker, 'broker', default=broker_url),
+            backend=check.opt_str_param(backend, 'backend', default=result_backend),
+            include=check.opt_list_param(include, 'include', of_type=str),
+            config_source=dict_wrapper(
+                dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+            ),
+        )
+
+    @staticmethod
+    def get_engine():
+        from .engine import CeleryDockerEngine
+
+        return CeleryDockerEngine()

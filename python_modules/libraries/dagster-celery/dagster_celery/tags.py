@@ -9,3 +9,6 @@ DAGSTER_CELERY_RUN_PRIORITY_TAG = 'dagster-celery/run_priority'
 
 # Used to select a Celery queue
 DAGSTER_CELERY_QUEUE_TAG = 'dagster-celery/queue'
+
+# Used to select a pipeline docker image
+DAGSTER_CELERY_DOCKER_IMAGE_TAG = 'dagster-celery/docker-image'
