@@ -1,10 +1,9 @@
-import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
-    get_partition_config,
-    get_partition_names,
+    get_partition_config_yaml,
     get_partition_tags,
+    get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.schema.errors import (
@@ -46,36 +45,21 @@ class DauphinPartition(dauphin.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_runConfigYaml(self, _):
-        run_config = get_partition_config(
+    def resolve_runConfigYaml(self, graphene_info):
+        return get_partition_config_yaml(
+            graphene_info,
             self._external_repository_handle,
             self._external_partition_set.name,
             self._partition_name,
         )
-
-        if run_config is None:
-            # TODO: surface user-facing error here
-            # https://github.com/dagster-io/dagster/issues/2576
-            return ''
-
-        return yaml.dump(run_config, default_flow_style=False)
 
     def resolve_tags(self, graphene_info):
-        tags = get_partition_tags(
+        return get_partition_tags(
+            graphene_info,
             self._external_repository_handle,
             self._external_partition_set.name,
             self._partition_name,
         )
-
-        if tags is None:
-            # TODO: surface user-facing error here
-            # https://github.com/dagster-io/dagster/issues/2576
-            return []
-
-        return [
-            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
-            for key, value in tags.items()
-        ]
 
     def resolve_runs(self, graphene_info):
         runs_filter = PipelineRunsFilter(
@@ -126,50 +110,13 @@ class DauphinPartitionSet(dauphin.ObjectType):
         )
 
     def resolve_partitions(self, graphene_info, **kwargs):
-        partition_names = get_partition_names(
-            self._external_repository_handle, self._external_partition_set.name,
-        )
-
-        cursor = kwargs.get("cursor")
-        limit = kwargs.get("limit")
-        reverse = kwargs.get('reverse')
-
-        start = 0
-        end = len(partition_names)
-        index = 0
-
-        if cursor:
-            index = next(
-                (
-                    idx
-                    for (idx, partition_name) in enumerate(partition_names)
-                    if partition_name == cursor
-                ),
-                None,
-            )
-
-            if reverse:
-                end = index
-            else:
-                start = index + 1
-
-        if limit:
-            if reverse:
-                start = end - limit
-            else:
-                end = start + limit
-
-        partition_names = partition_names[start:end]
-
-        return graphene_info.schema.type_named('Partitions')(
-            results=[
-                graphene_info.schema.type_named('Partition')(
-                    external_partition_set=self._external_partition_set,
-                    external_repository_handle=self._external_repository_handle,
-                    partition_name=partition_name,
-                )
-                for partition_name in partition_names
-            ]
+        return get_partitions(
+            graphene_info,
+            self._external_repository_handle,
+            self._external_partition_set,
+            cursor=kwargs.get("cursor"),
+            limit=kwargs.get("limit"),
+            reverse=kwargs.get('reverse'),
         )
 
     def resolve_partition(self, graphene_info, partition_name):

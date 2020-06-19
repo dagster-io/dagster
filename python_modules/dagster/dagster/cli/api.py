@@ -37,12 +37,14 @@ from dagster.core.host_representation import (
     external_repository_data_from_def,
 )
 from dagster.core.host_representation.external_data import (
-    ExternalPartitionData,
+    ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
+    ExternalPartitionTagsData,
     ExternalPipelineSubsetResult,
     ExternalRepositoryData,
     ExternalScheduleExecutionData,
+    ExternalScheduleExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
@@ -301,15 +303,15 @@ class PartitionApiCommandArgs(
 
 
 @unary_api_cli_command(
-    name='partition',
+    name='partition_config',
     help_str=(
         '[INTERNAL] Return the config for a partition. This is an internal utility. Users should '
         'generally not invoke this command interactively.'
     ),
     input_cls=PartitionApiCommandArgs,
-    output_cls=ExternalPartitionData,
+    output_cls=(ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
 )
-def partition_data_command(args):
+def partition_config_command(args):
     check.inst_param(args, 'args', PartitionApiCommandArgs)
     recon_repo = recon_repository_from_origin(args.repository_origin)
     definition = recon_repo.get_definition()
@@ -318,15 +320,45 @@ def partition_data_command(args):
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: 'Error occurred during the execution of user-provided partition functions for '
-            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
+            lambda: 'Error occurred during the evaluation of the `run_config_for_partition` '
+            'function for partition set {partition_set_name}'.format(
+                partition_set_name=partition_set_def.name
+            ),
         ):
             run_config = partition_set_def.run_config_for_partition(partition)
-            tags = partition_set_def.tags_for_partition(partition)
-            return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
+            return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
     except PartitionExecutionError:
-        return ExternalPartitionData(
-            name=partition.name, error=serializable_error_info_from_exc_info(sys.exc_info())
+        return ExternalPartitionExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
+@unary_api_cli_command(
+    name='partition_tags',
+    help_str=(
+        '[INTERNAL] Return the tags for a partition. This is an internal utility. Users should '
+        'generally not invoke this command interactively.'
+    ),
+    input_cls=PartitionApiCommandArgs,
+    output_cls=(ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
+)
+def partition_tags_command(args):
+    check.inst_param(args, 'args', PartitionApiCommandArgs)
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    definition = recon_repo.get_definition()
+    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
+    partition = partition_set_def.get_partition(args.partition_name)
+    try:
+        with user_code_error_boundary(
+            PartitionExecutionError,
+            lambda: 'Error occurred during the evaluation of the `tags_for_partition` function for '
+            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
+        ):
+            tags = partition_set_def.tags_for_partition(partition)
+            return ExternalPartitionTagsData(name=partition.name, tags=tags)
+    except PartitionExecutionError:
+        return ExternalPartitionExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -354,7 +386,7 @@ def partition_names_command(args):
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: 'Error occurred during the execution of user-provided partition functions for '
+            lambda: 'Error occurred during the execution of the partition generation function for '
             'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
         ):
             return ExternalPartitionNamesData(
@@ -362,7 +394,7 @@ def partition_names_command(args):
             )
     except PartitionExecutionError:
         return ExternalPartitionExecutionErrorData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
+            serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -380,7 +412,7 @@ class ScheduleExecutionDataCommandArgs(
         'generally not invoke this command interactively.'
     ),
     input_cls=ScheduleExecutionDataCommandArgs,
-    output_cls=ExternalScheduleExecutionData,
+    output_cls=(ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
 )
 def schedule_execution_data_command(args):
     recon_repo = recon_repository_from_origin(args.repository_origin)
@@ -395,12 +427,11 @@ def schedule_execution_data_command(args):
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             run_config = schedule_def.get_run_config(schedule_context)
-            schedule_execution_data = ExternalScheduleExecutionData(run_config=run_config)
+            return ExternalScheduleExecutionData(run_config=run_config)
     except ScheduleExecutionError:
-        schedule_execution_data = ExternalScheduleExecutionData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
+        return ExternalScheduleExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
         )
-    return schedule_execution_data
 
 
 # Execution CLI
@@ -690,7 +721,8 @@ def create_api_cli_group():
     group.add_command(pipeline_subset_snapshot_command)
     group.add_command(execution_plan_snapshot_command)
     group.add_command(list_repositories_command)
-    group.add_command(partition_data_command)
+    group.add_command(partition_config_command)
+    group.add_command(partition_tags_command)
     group.add_command(partition_names_command)
     group.add_command(schedule_execution_data_command)
     group.add_command(launch_scheduled_execution)

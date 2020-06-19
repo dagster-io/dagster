@@ -1,5 +1,8 @@
 from dagster import check
-from dagster.core.host_representation.external_data import ExternalScheduleExecutionData
+from dagster.core.host_representation.external_data import (
+    ExternalScheduleExecutionData,
+    ExternalScheduleExecutionErrorData,
+)
 from dagster.core.host_representation.handle import RepositoryHandle
 
 from .utils import execute_unary_api_cli_command
@@ -23,5 +26,5 @@ def sync_get_external_schedule_execution_data(instance, repository_handle, sched
                 schedule_name=schedule_name,
             ),
         ),
-        ExternalScheduleExecutionData,
+        (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
     )

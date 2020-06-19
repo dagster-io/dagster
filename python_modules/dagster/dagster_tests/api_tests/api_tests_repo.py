@@ -70,6 +70,14 @@ def error_partition_fn():
     raise Exception('womp womp')
 
 
+def error_partition_config_fn():
+    raise Exception('womp womp')
+
+
+def error_partition_tags_fn(_partition):
+    raise Exception('womp womp')
+
+
 def define_baz_partitions():
     return {
         'baz_partitions': PartitionSetDefinition(
@@ -79,12 +87,26 @@ def define_baz_partitions():
             run_config_fn_for_partition=lambda partition: {
                 'solids': {'do_input': {'inputs': {'x': {'value': partition.value}}}}
             },
+            tags_fn_for_partition=lambda _partition: {'foo': 'bar'},
         ),
         'error_partitions': PartitionSetDefinition(
             name='error_partitions',
             pipeline_name='baz',
             partition_fn=error_partition_fn,
             run_config_fn_for_partition=lambda partition: {},
+        ),
+        'error_partition_config': PartitionSetDefinition(
+            name='error_partition_config',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            run_config_fn_for_partition=error_partition_config_fn,
+        ),
+        'error_partition_tags': PartitionSetDefinition(
+            name='error_partition_tags',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            run_config_fn_for_partition=lambda partition: {},
+            tags_fn_for_partition=error_partition_tags_fn,
         ),
     }
 

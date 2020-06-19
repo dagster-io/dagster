@@ -1,13 +1,17 @@
+import yaml
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.api.snapshot_partition import (
-    sync_get_external_partition,
+    sync_get_external_partition_config,
     sync_get_external_partition_names,
+    sync_get_external_partition_tags,
 )
 from dagster.core.host_representation import (
+    ExternalPartitionConfigData,
     ExternalPartitionNamesData,
     ExternalPartitionSet,
+    ExternalPartitionTagsData,
     RepositoryHandle,
     RepositorySelector,
 )
@@ -74,30 +78,85 @@ def get_partition_by_name(graphene_info, repository_handle, partition_set, parti
     )
 
 
-def get_partition_config(repository_handle, partition_set_name, partition_name):
+def get_partition_config_yaml(
+    _graphene_info, repository_handle, partition_set_name, partition_name
+):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
-
-    return sync_get_external_partition(
+    result = sync_get_external_partition_config(
         repository_handle, partition_set_name, partition_name
-    ).run_config
+    )
+    if isinstance(result, ExternalPartitionConfigData):
+        return yaml.dump(result.run_config, default_flow_style=False)
+    else:
+        # TODO: surface user-facing error here, using the serialized error
+        # https://github.com/dagster-io/dagster/issues/2576
+        return ''
 
 
-def get_partition_tags(repository_handle, partition_set_name, partition_name):
+def get_partition_tags(graphene_info, repository_handle, partition_set_name, partition_name):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
-    return sync_get_external_partition(repository_handle, partition_set_name, partition_name).tags
-
-
-def get_partition_names(repository_handle, partition_set_name):
-    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
-    check.str_param(partition_set_name, 'partition_set_name')
-    result = sync_get_external_partition_names(repository_handle, partition_set_name)
-    if isinstance(result, ExternalPartitionNamesData):
-        return result.partition_names
+    result = sync_get_external_partition_tags(repository_handle, partition_set_name, partition_name)
+    if isinstance(result, ExternalPartitionTagsData):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in result.tags.items()
+        ]
     else:
         # TODO: surface user-facing error here, using the serialized error
         # https://github.com/dagster-io/dagster/issues/2576
         return []
+
+
+def get_partitions(
+    graphene_info, repository_handle, partition_set, cursor=None, limit=None, reverse=False
+):
+    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.inst_param(partition_set, 'partition_set', ExternalPartitionSet)
+    result = sync_get_external_partition_names(repository_handle, partition_set.name)
+
+    if isinstance(result, ExternalPartitionNamesData):
+        partition_names = _apply_cursor_limit_reverse(
+            result.partition_names, cursor, limit, reverse
+        )
+
+        return graphene_info.schema.type_named('Partitions')(
+            results=[
+                graphene_info.schema.type_named('Partition')(
+                    external_partition_set=partition_set,
+                    external_repository_handle=repository_handle,
+                    partition_name=partition_name,
+                )
+                for partition_name in partition_names
+            ]
+        )
+
+    else:
+        # TODO: surface user-facing error here, using the serialized error
+        # https://github.com/dagster-io/dagster/issues/2576
+        return []
+
+
+def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
+    start = 0
+    end = len(items)
+    index = 0
+
+    if cursor:
+        index = next((idx for (idx, item) in enumerate(items) if item == cursor), None)
+
+        if reverse:
+            end = index
+        else:
+            start = index + 1
+
+    if limit:
+        if reverse:
+            start = end - limit
+        else:
+            end = start + limit
+
+    return items[start:end]

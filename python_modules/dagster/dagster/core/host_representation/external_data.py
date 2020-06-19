@@ -16,7 +16,6 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.errors import PartitionExecutionError
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -166,14 +165,20 @@ class ExternalScheduleData(
 
 
 @whitelist_for_serdes
-class ExternalScheduleExecutionData(
-    namedtuple('_ExternalScheduleExecutionData', 'run_config error')
-):
-    def __new__(cls, run_config=None, error=None):
+class ExternalScheduleExecutionData(namedtuple('_ExternalScheduleExecutionData', 'run_config')):
+    def __new__(cls, run_config=None):
         return super(ExternalScheduleExecutionData, cls).__new__(
-            cls,
-            run_config=check.opt_dict_param(run_config, 'run_config'),
-            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            cls, run_config=check.opt_dict_param(run_config, 'run_config'),
+        )
+
+
+@whitelist_for_serdes
+class ExternalScheduleExecutionErrorData(
+    namedtuple('_ExternalScheduleExecutionErrorData', 'error')
+):
+    def __new__(cls, error):
+        return super(ExternalScheduleExecutionErrorData, cls).__new__(
+            cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
         )
 
 
@@ -200,24 +205,30 @@ class ExternalPartitionNamesData(namedtuple('_ExternalPartitionNamesData', 'part
 
 
 @whitelist_for_serdes
+class ExternalPartitionConfigData(namedtuple('_ExternalPartitionConfigData', 'name run_config')):
+    def __new__(cls, name, run_config=None):
+        return super(ExternalPartitionConfigData, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+        )
+
+
+@whitelist_for_serdes
+class ExternalPartitionTagsData(namedtuple('_ExternalPartitionTagsData', 'name tags')):
+    def __new__(cls, name, tags=None):
+        return super(ExternalPartitionTagsData, cls).__new__(
+            cls, name=check.str_param(name, 'name'), tags=check.opt_dict_param(tags, 'tags'),
+        )
+
+
+@whitelist_for_serdes
 class ExternalPartitionExecutionErrorData(
     namedtuple('_ExternalPartitionExecutionErrorData', 'error')
 ):
     def __new__(cls, error):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
             cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
-        )
-
-
-@whitelist_for_serdes
-class ExternalPartitionData(namedtuple('_ExternalPartitionData', 'name tags run_config error')):
-    def __new__(cls, name, tags=None, run_config=None, error=None):
-        return super(ExternalPartitionData, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            tags=check.opt_dict_param(tags, 'tags'),
-            run_config=check.opt_dict_param(run_config, 'run_config'),
-            error=check.opt_inst_param(error, 'error', PartitionExecutionError),
         )
 
 

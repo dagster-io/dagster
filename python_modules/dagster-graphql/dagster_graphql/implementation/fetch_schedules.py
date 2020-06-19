@@ -5,6 +5,7 @@ from dagster import check
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data
 from dagster.core.host_representation import (
     ExternalSchedule,
+    ExternalScheduleExecutionData,
     PipelineSelector,
     RepositorySelector,
     ScheduleSelector,
@@ -174,10 +175,13 @@ def get_schedule_definition_or_error(graphene_info, schedule_selector):
 def get_schedule_yaml(graphene_info, external_schedule):
     check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
     handle = external_schedule.handle.repository_handle
-    schedule_execution_data = sync_get_external_schedule_execution_data(
+    result = sync_get_external_schedule_execution_data(
         graphene_info.context.instance, handle, external_schedule.name
     )
-    if schedule_execution_data.error:
+    if isinstance(result, ExternalScheduleExecutionData):
+        run_config_yaml = yaml.safe_dump(result.run_config, default_flow_style=False)
+        return run_config_yaml if run_config_yaml else ''
+    else:
+        # TODO: surface user-facing error here, using the serialized error
+        # https://github.com/dagster-io/dagster/issues/2576
         return None
-    run_config_yaml = yaml.safe_dump(schedule_execution_data.run_config, default_flow_style=False)
-    return run_config_yaml if run_config_yaml else ''
