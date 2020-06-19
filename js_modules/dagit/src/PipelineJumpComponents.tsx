@@ -5,13 +5,7 @@ import { Button, MenuItem } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
 import { ShortcutHandler } from "./ShortcutHandler";
-import { DagsterRepositoryContext } from "./DagsterRepositoryContext";
 import styled from "styled-components/macro";
-
-interface PipelineJumpBarProps {
-  selectedPipelineName: string | undefined;
-  onChange: (pipelineName: string) => void;
-}
 
 interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;
@@ -54,55 +48,6 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
             rightIcon="double-caret-vertical"
           />
         </StringSelectNoIntrinsicWidth>
-      </ShortcutHandler>
-    );
-  }
-}
-
-export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
-  select: React.RefObject<Select<string>> = React.createRef();
-
-  onGlobalKeyDown = (event: KeyboardEvent) => {
-    if (event.keyCode === 80 && event.altKey) {
-      // Opt-P
-      activateSelect(this.select.current);
-      event.preventDefault();
-    }
-    if (this.select.current && this.select.current.state.isOpen) {
-      if (event.key === "Escape" && this.props.selectedPipelineName) {
-        this.props.onChange(this.props.selectedPipelineName);
-      }
-    }
-  };
-
-  render() {
-    const { onChange, selectedPipelineName } = this.props;
-
-    return (
-      <ShortcutHandler
-        onGlobalKeyDown={this.onGlobalKeyDown}
-        shortcutLabel={`⌥P`}
-      >
-        <DagsterRepositoryContext.Consumer>
-          {context => (
-            <StringSelectNoIntrinsicWidth
-              ref={this.select}
-              items={context.repository?.pipelines.map(x => x.name) || []}
-              itemRenderer={BasicStringRenderer}
-              itemListPredicate={BasicStringPredicate}
-              noResults={<MenuItem disabled={true} text="No results." />}
-              onItemSelect={onChange}
-            >
-              <Button
-                text={selectedPipelineName || "Select a pipeline..."}
-                id="playground-select-pipeline"
-                disabled={!context.repository?.pipelines.length}
-                rightIcon="double-caret-vertical"
-                icon="send-to-graph"
-              />
-            </StringSelectNoIntrinsicWidth>
-          )}
-        </DagsterRepositoryContext.Consumer>
       </ShortcutHandler>
     );
   }

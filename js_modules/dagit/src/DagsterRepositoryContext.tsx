@@ -32,6 +32,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
           }
           location {
             name
+            isReloadSupported
             environmentPath
           }
         }

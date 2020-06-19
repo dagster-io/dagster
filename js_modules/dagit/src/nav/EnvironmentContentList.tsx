@@ -14,6 +14,8 @@ import styled from "styled-components/macro";
 import { tabForPipelinePathComponent } from "./PipelineNav";
 import { ContentListSolidsQuery } from "./types/ContentListSolidsQuery";
 import { DagsterRepoOption } from "../DagsterRepositoryContext";
+import { ShortcutHandler } from "../ShortcutHandler";
+import { useHistory } from "react-router";
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
@@ -30,7 +32,11 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
   selector
 }) => {
   const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
+  const [focused, setFocused] = React.useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
   const pipelineTab = tabForPipelinePathComponent(tab);
+  const history = useHistory();
+
   const [q, setQ] = React.useState<string>("");
   // Load solids, but only if the user clicks on the Solid option
   const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
@@ -52,6 +58,36 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
       ? solids.data.repositoryOrError.usedSolids
       : [];
 
+  const items =
+    type === "pipelines"
+      ? repo.repository.pipelines
+          .map(pipeline => pipeline.name)
+          .filter(p => !q || iincludes(p, q))
+          .map(p => ({
+            to: `/pipeline/${p}/${pipelineTab.pathComponent}`,
+            label: p
+          }))
+      : usedSolids
+          .filter(
+            s =>
+              !q ||
+              iincludes(s.definition.name, q) ||
+              s.invocations.some(i => iincludes(i.pipeline.name, q))
+          )
+          .map(({ definition }) => ({
+            to: `/solid/${definition.name}`,
+            label: definition.name
+          }));
+
+  const onShiftFocus = (dir: 1 | -1) => {
+    const idx = items.findIndex(p => p.label === focused);
+    if (idx === -1 && items[0]) {
+      setFocused(items[0].label);
+    } else if (items[idx + dir]) {
+      setFocused(items[idx + dir].label);
+    }
+  };
+
   return (
     <div
       style={{
@@ -62,17 +98,38 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
       }}
     >
       <Header>
-        <InputGroup
-          type="text"
-          value={q}
-          small
-          placeholder={`Search ${type}...`}
-          onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
-          style={{
-            border: `1px solid ${Colors.DARK_GRAY5}`,
-            background: Colors.DARK_GRAY4
-          }}
-        />
+        <ShortcutHandler
+          onShortcut={() => inputRef.current?.focus()}
+          shortcutFilter={e => e.altKey && e.keyCode === 80}
+          shortcutLabel={`⌥P then Up / Down`}
+        >
+          <InputGroup
+            type="text"
+            inputRef={c => (inputRef.current = c)}
+            value={q}
+            small
+            placeholder={`Search ${type}...`}
+            onKeyDown={e => {
+              if (e.key === "ArrowDown") {
+                onShiftFocus(1);
+              }
+              if (e.key === "ArrowUp") {
+                onShiftFocus(-1);
+              }
+              if ((e.key === "Enter" || e.key === "Return") && focused) {
+                const item = items.find(p => p.label === focused);
+                if (item) {
+                  history.push(item.to);
+                }
+              }
+            }}
+            onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
+            style={{
+              border: `1px solid ${Colors.DARK_GRAY5}`,
+              background: Colors.DARK_GRAY4
+            }}
+          />
+        </ShortcutHandler>
         <div style={{ width: 4 }} />
         <ButtonGroup>
           <Button
@@ -91,45 +148,23 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
           />
         </ButtonGroup>
       </Header>
-      {type === "pipelines" ? (
-        <Items>
-          {repo.repository.pipelines
-            .map(pipeline => pipeline.name)
-            .filter(p => !q || iincludes(p, q))
-            .map(p => (
-              <Item
-                key={p}
-                data-tooltip={p}
-                data-tooltip-style={
-                  p === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
-                }
-                className={p === selector ? "selected" : ""}
-                to={`/pipeline/${p}/${pipelineTab.pathComponent}`}
-              >
-                {p}
-              </Item>
-            ))}
-        </Items>
-      ) : (
-        <Items>
-          {usedSolids
-            .filter(
-              s =>
-                !q ||
-                iincludes(s.definition.name, q) ||
-                s.invocations.some(i => iincludes(i.pipeline.name, q))
-            )
-            .map(({ definition }) => (
-              <Item
-                key={definition.name}
-                to={`/solid/${definition.name}`}
-                className={definition.name === selector ? "selected" : ""}
-              >
-                {definition.name}
-              </Item>
-            ))}
-        </Items>
-      )}
+      <Items>
+        {items.map(p => (
+          <Item
+            key={p.label}
+            data-tooltip={p.label}
+            data-tooltip-style={
+              p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
+            }
+            className={`${p.label === selector ? "selected" : ""} ${
+              p.label === focused ? "focused" : ""
+            }`}
+            to={p.to}
+          >
+            {p.label}
+          </Item>
+        ))}
+      </Items>
     </div>
   );
 };
@@ -186,6 +221,9 @@ const Item = styled(Link)`
     background: ${Colors.BLACK};
     font-weight: 600;
     color: ${Colors.WHITE} !important;
+  }
+  &.focused {
+    border-left: 4px solid ${Colors.COBALT3};
   }
 `;
 

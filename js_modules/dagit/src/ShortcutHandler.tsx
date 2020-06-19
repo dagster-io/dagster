@@ -181,7 +181,7 @@ const ShortcutAnnotation = styled.div`
   font-weight: 600;
   line-height: 14px;
   padding: 1px 3px;
-  z-index: 10;
+  z-index: 20;
   letter-spacing: 2px;
   transform: translate(-90%, -10px);
   color: ${Colors.BLACK};

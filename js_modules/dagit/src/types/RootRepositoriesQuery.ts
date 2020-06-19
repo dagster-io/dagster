@@ -15,6 +15,7 @@ export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location {
   __typename: "RepositoryLocation";
   name: string;
+  isReloadSupported: boolean;
   environmentPath: string | null;
 }
 
