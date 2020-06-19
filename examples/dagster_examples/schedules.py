@@ -121,10 +121,13 @@ def longitudinal_schedule():
     def _should_execute(context):
         return backfill_should_execute(context, partition_set, retry_failed=True)
 
+    def _partition_selector(context, partition_set):
+        return backfilling_partition_selector(context, partition_set, retry_failed=True)
+
     return partition_set.create_schedule_definition(
         schedule_name=schedule_name,
         cron_schedule="*/5 * * * *",  # tick every 5 minutes
-        partition_selector=backfilling_partition_selector,
+        partition_selector=_partition_selector,
         should_execute=_should_execute,
     )
 
