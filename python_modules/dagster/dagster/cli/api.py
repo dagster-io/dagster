@@ -25,7 +25,7 @@ from dagster.core.errors import (
     DagsterLaunchFailedError,
     DagsterSubprocessError,
     DagsterUserCodeExecutionError,
-    PartitionScheduleExecutionError,
+    PartitionExecutionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
@@ -38,6 +38,8 @@ from dagster.core.host_representation import (
 )
 from dagster.core.host_representation.external_data import (
     ExternalPartitionData,
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionNamesData,
     ExternalPipelineSubsetResult,
     ExternalRepositoryData,
     ExternalScheduleExecutionData,
@@ -134,7 +136,7 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
     check.str_param(name, 'name')
     check.str_param(help_str, 'help_str')
     check.type_param(input_cls, 'input_cls')
-    check.type_param(output_cls, 'output_cls')
+    check.inst_param(output_cls, 'output_cls', (tuple, check.type_types))
 
     def wrap(fn):
         @click.command(name=name, help=help_str)
@@ -309,16 +311,52 @@ def partition_data_command(args):
     partition = partition_set_def.get_partition(args.partition_name)
     try:
         with user_code_error_boundary(
-            PartitionScheduleExecutionError,
+            PartitionExecutionError,
             lambda: 'Error occurred during the execution of user-provided partition functions for '
             'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
         ):
             run_config = partition_set_def.run_config_for_partition(partition)
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionData(name=partition.name, tags=tags, run_config=run_config)
-    except PartitionScheduleExecutionError:
+    except PartitionExecutionError:
         return ExternalPartitionData(
             name=partition.name, error=serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
+@whitelist_for_serdes
+class PartitionNamesApiCommandArgs(
+    namedtuple('_PartitionNamesApiCommandArgs', 'repository_origin partition_set_name')
+):
+    pass
+
+
+@unary_api_cli_command(
+    name='partition_names',
+    help_str=(
+        '[INTERNAL] Return the partition names for a partition set . This is an internal utility. '
+        'Users should generally not invoke this command interactively.'
+    ),
+    input_cls=PartitionNamesApiCommandArgs,
+    output_cls=(ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
+)
+def partition_names_command(args):
+    check.inst_param(args, 'args', PartitionNamesApiCommandArgs)
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    definition = recon_repo.get_definition()
+    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
+    try:
+        with user_code_error_boundary(
+            PartitionExecutionError,
+            lambda: 'Error occurred during the execution of user-provided partition functions for '
+            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
+        ):
+            return ExternalPartitionNamesData(
+                partition_names=partition_set_def.get_partition_names()
+            )
+    except PartitionExecutionError:
+        return ExternalPartitionExecutionErrorData(
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -647,6 +685,7 @@ def create_api_cli_group():
     group.add_command(execution_plan_snapshot_command)
     group.add_command(list_repositories_command)
     group.add_command(partition_data_command)
+    group.add_command(partition_names_command)
     group.add_command(schedule_execution_data_command)
     group.add_command(launch_scheduled_execution)
     return group

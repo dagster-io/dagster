@@ -3,6 +3,7 @@ from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
     get_partition_config,
+    get_partition_names,
     get_partition_tags,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
@@ -125,7 +126,9 @@ class DauphinPartitionSet(dauphin.ObjectType):
         )
 
     def resolve_partitions(self, graphene_info, **kwargs):
-        partition_names = self._external_partition_set.partition_names
+        partition_names = get_partition_names(
+            self._external_repository_handle, self._external_partition_set.name,
+        )
 
         cursor = kwargs.get("cursor")
         limit = kwargs.get("limit")

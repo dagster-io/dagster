@@ -355,10 +355,6 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.solid_selection
 
     @property
-    def partition_names(self):
-        return self._external_partition_set_data.partition_names
-
-    @property
     def mode(self):
         return self._external_partition_set_data.mode
 

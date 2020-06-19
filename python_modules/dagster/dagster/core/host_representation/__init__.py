@@ -15,6 +15,8 @@ from .external import (
 )
 from .external_data import (
     ExternalPartitionData,
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionNamesData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalPipelineSubsetResult,

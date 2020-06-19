@@ -1,8 +1,12 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.api.snapshot_partition import sync_get_external_partition
+from dagster.api.snapshot_partition import (
+    sync_get_external_partition,
+    sync_get_external_partition_names,
+)
 from dagster.core.host_representation import (
+    ExternalPartitionNamesData,
     ExternalPartitionSet,
     RepositoryHandle,
     RepositorySelector,
@@ -85,3 +89,15 @@ def get_partition_tags(repository_handle, partition_set_name, partition_name):
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
     return sync_get_external_partition(repository_handle, partition_set_name, partition_name).tags
+
+
+def get_partition_names(repository_handle, partition_set_name):
+    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.str_param(partition_set_name, 'partition_set_name')
+    result = sync_get_external_partition_names(repository_handle, partition_set_name)
+    if isinstance(result, ExternalPartitionNamesData):
+        return result.partition_names
+    else:
+        # TODO: surface user-facing error here, using the serialized error
+        # https://github.com/dagster-io/dagster/issues/2576
+        return []

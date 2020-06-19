@@ -66,6 +66,10 @@ def define_bar_schedules():
     }
 
 
+def error_partition_fn():
+    raise Exception('womp womp')
+
+
 def define_baz_partitions():
     return {
         'baz_partitions': PartitionSetDefinition(
@@ -75,7 +79,13 @@ def define_baz_partitions():
             run_config_fn_for_partition=lambda partition: {
                 'solids': {'do_input': {'inputs': {'x': {'value': partition.value}}}}
             },
-        )
+        ),
+        'error_partitions': PartitionSetDefinition(
+            name='error_partitions',
+            pipeline_name='baz',
+            partition_fn=error_partition_fn,
+            run_config_fn_for_partition=lambda partition: {},
+        ),
     }
 
 

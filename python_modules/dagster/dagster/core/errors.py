@@ -405,7 +405,7 @@ class ScheduleExecutionError(DagsterUserCodeExecutionError):
     '''Errors raised during the execution of schedule.'''
 
 
-class PartitionScheduleExecutionError(ScheduleExecutionError):
+class PartitionExecutionError(DagsterUserCodeExecutionError):
     '''Errors raised during the execution of user-provided functions of a partition set schedule.'''
 
 
