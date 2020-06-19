@@ -49,6 +49,7 @@ from dagster_graphql.implementation.run_config_schema import (
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     UserFacingGraphQLError,
+    capture_dauphin_error,
     pipeline_selector_from_graphql,
 )
 
@@ -400,6 +401,17 @@ class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
         )
 
 
+@capture_dauphin_error
+def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
+    # refactored into a helper function here in order to wrap with @capture_dauphin_error,
+    # because create_execution_params may raise
+
+    return launch_pipeline_execution(
+        graphene_info,
+        execution_params=create_execution_params(graphene_info, execution_params_dict),
+    )
+
+
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
     class Meta(object):
         name = 'LaunchPipelineExecutionMutation'
@@ -411,10 +423,20 @@ class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
     Output = dauphin.NonNull('LaunchPipelineExecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return launch_pipeline_execution(
-            graphene_info,
-            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
+        return create_execution_params_and_launch_pipeline_exec(
+            graphene_info, kwargs['executionParams']
         )
+
+
+@capture_dauphin_error
+def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
+    # refactored into a helper function here in order to wrap with @capture_dauphin_error,
+    # because create_execution_params may raise
+
+    return launch_pipeline_reexecution(
+        graphene_info,
+        execution_params=create_execution_params(graphene_info, execution_params_dict),
+    )
 
 
 class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
@@ -428,9 +450,8 @@ class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
     Output = dauphin.NonNull('LaunchPipelineReexecutionResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return launch_pipeline_reexecution(
-            graphene_info,
-            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
+        return create_execution_params_and_launch_pipeline_reexec(
+            graphene_info, execution_params_dict=kwargs['executionParams'],
         )
 
 
@@ -520,27 +541,31 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
-
     preset_name = graphql_execution_params.get('preset')
     selector = pipeline_selector_from_graphql(
         graphene_info.context, graphql_execution_params['selector']
     )
     if preset_name:
-        # This should return proper GraphQL errors
-        # https://github.com/dagster-io/dagster/issues/2507
-        check.invariant(
-            not graphql_execution_params.get('runConfigData'),
-            'Invalid ExecutionParams. Cannot define run_config when using preset',
-        )
-        check.invariant(
-            not graphql_execution_params.get('mode'),
-            'Invalid ExecutionParams. Cannot define mode when using preset',
-        )
+        if graphql_execution_params.get('runConfigData'):
+            raise UserFacingGraphQLError(
+                graphene_info.schema.type_named('ConflictingExecutionParamsError')(
+                    conflicting_param='runConfigData'
+                )
+            )
 
-        check.invariant(
-            not selector.solid_selection,
-            'Invalid ExecutionParams. Cannot define selector.solid_selection when using preset',
-        )
+        if graphql_execution_params.get('mode'):
+            raise UserFacingGraphQLError(
+                graphene_info.schema.type_named('ConflictingExecutionParamsError')(
+                    conflicting_param='mode'
+                )
+            )
+
+        if selector.solid_selection:
+            raise UserFacingGraphQLError(
+                graphene_info.schema.type_named('ConflictingExecutionParamsError')(
+                    conflicting_param='selector.solid_selection'
+                )
+            )
 
         external_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
@@ -591,6 +616,17 @@ def create_execution_metadata(graphql_execution_metadata):
     )
 
 
+@capture_dauphin_error
+def create_execution_params_and_do_exec_plan(graphene_info, execution_params_dict):
+    # refactored into a helper function here in order to wrap with @capture_dauphin_error,
+    # because create_execution_params may raise
+
+    return do_execute_plan(
+        graphene_info,
+        execution_params=create_execution_params(graphene_info, execution_params_dict),
+    )
+
+
 class DauphinExecutePlan(dauphin.Mutation):
     class Meta(object):
         name = 'ExecutePlan'
@@ -601,9 +637,7 @@ class DauphinExecutePlan(dauphin.Mutation):
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return do_execute_plan(
-            graphene_info, create_execution_params(graphene_info, kwargs['executionParams'])
-        )
+        return create_execution_params_and_do_exec_plan(graphene_info, kwargs['executionParams'])
 
 
 class DauphinMutation(dauphin.ObjectType):

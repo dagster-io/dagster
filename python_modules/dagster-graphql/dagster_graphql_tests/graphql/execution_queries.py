@@ -151,6 +151,13 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
                 }
             }
         }
+        ... on ConflictingExecutionParamsError {
+            message
+        }
+        ... on PresetNotFoundError {
+            preset
+            message
+        }
         ... on PipelineConfigValidationInvalid {
             pipelineName
             errors { message }
@@ -220,6 +227,13 @@ LAUNCH_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
         ... on PipelineConfigValidationInvalid {
             pipelineName
             errors { message }
+        }
+         ... on ConflictingExecutionParamsError {
+            message
+        }
+        ... on PresetNotFoundError {
+            preset
+            message
         }
         ... on PipelineNotFoundError {
             pipelineName

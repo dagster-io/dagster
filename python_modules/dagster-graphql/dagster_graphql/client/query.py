@@ -184,6 +184,13 @@ fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
 			reason
 		}
 	}
+  ... on ConflictingExecutionParamsError {
+    message
+  }
+  ... on PresetNotFoundError {
+    message
+    preset
+  }
 	... on PipelineNotFoundError {
 		message
 		pipelineName

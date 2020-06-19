@@ -1,12 +1,10 @@
 import uuid
 from contextlib import contextmanager
 
-import pytest
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from dagster import check, seven
+from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
@@ -84,17 +82,18 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
-        with pytest.raises(UserFacingGraphQLError) as exc_info:
-            execute_dagster_graphql(
-                graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
-                variables={
-                    'executionParams': {'selector': selector, 'preset': 'undefined_preset',}
-                },
-            )
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            variables={'executionParams': {'selector': selector, 'preset': 'undefined_preset',}},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['launchPipelineExecution']['__typename'] == 'PresetNotFoundError'
         assert (
-            exc_info.value.dauphin_error.message
+            result.data['launchPipelineExecution']['message']
             == 'Preset undefined_preset not found in pipeline csv_hello_world.'
         )
 
@@ -102,43 +101,73 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         subset_selector = infer_pipeline_selector(
             graphql_context, 'csv_hello_world', ['sum_sq_solid']
         )
-        # These should check for proper graphql errors rather than check errors
-        # https://github.com/dagster-io/dagster/issues/2507
-        with pytest.raises(check.CheckError):
-            execute_dagster_graphql(
-                graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
-                variables={
-                    'executionParams': {'selector': subset_selector, 'preset': 'test_inline',}
-                },
-            )
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            variables={'executionParams': {'selector': subset_selector, 'preset': 'test_inline',}},
+        )
+
+        # while illegally defining selector.solid_selection
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['launchPipelineExecution']['__typename']
+            == 'ConflictingExecutionParamsError'
+        )
+        assert (
+            result.data['launchPipelineExecution']['message']
+            == 'Invalid ExecutionParams. Cannot define selector.solid_selection when using a preset.'
+        )
+
+        # while illegally defining runConfigData
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
-        with pytest.raises(check.CheckError):
-            execute_dagster_graphql(
-                graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
-                variables={
-                    'executionParams': {
-                        'selector': selector,
-                        'preset': 'test_inline',
-                        'runConfigData': csv_hello_world_solids_config(),
-                    }
-                },
-            )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': selector,
+                    'preset': 'test_inline',
+                    'runConfigData': csv_hello_world_solids_config(),
+                }
+            },
+        )
 
-        with pytest.raises(check.CheckError):
-            execute_dagster_graphql(
-                graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
-                variables={
-                    'executionParams': {
-                        'selector': selector,
-                        'preset': 'test_inline',
-                        'mode': 'default',
-                    }
-                },
-            )
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['launchPipelineExecution']['__typename']
+            == 'ConflictingExecutionParamsError'
+        )
+        assert (
+            result.data['launchPipelineExecution']['message']
+            == 'Invalid ExecutionParams. Cannot define runConfigData when using a preset.'
+        )
+
+        # while illegally defining mode
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': selector,
+                    'preset': 'test_inline',
+                    'mode': 'default',
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['launchPipelineExecution']['__typename']
+            == 'ConflictingExecutionParamsError'
+        )
+        assert (
+            result.data['launchPipelineExecution']['message']
+            == 'Invalid ExecutionParams. Cannot define mode when using a preset.'
+        )
 
     def test_basic_start_pipeline_execution_config_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')

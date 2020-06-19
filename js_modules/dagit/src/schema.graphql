@@ -101,6 +101,10 @@ type ConfigTypeNotFoundError implements Error {
   configTypeName: String!
 }
 
+type ConflictingExecutionParamsError implements Error {
+  message: String!
+}
+
 scalar Cursor
 
 interface DagsterType {
@@ -249,7 +253,7 @@ type ExecutePlanSuccess {
   rawEventRecords: [String!]!
 }
 
-union ExecuteRunInProcessResult = ExecuteRunInProcessSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
+union ExecuteRunInProcessResult = ExecuteRunInProcessSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | PipelineRunNotFoundError
 
 type ExecuteRunInProcessSuccess {
   run: PipelineRun!
@@ -468,9 +472,9 @@ interface ISolidDefinition {
   requiredResources: [ResourceRequirement!]!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type LaunchPipelineRunSuccess {
   run: PipelineRun!

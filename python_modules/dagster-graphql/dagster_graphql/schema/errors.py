@@ -192,6 +192,17 @@ class DauphinPresetNotFoundError(dauphin.ObjectType):
         )
 
 
+class DauphinConflictingExecutionParamsError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ConflictingExecutionParamsError'
+        interfaces = (DauphinError,)
+
+    def __init__(self, conflicting_param):
+        self.message = 'Invalid ExecutionParams. Cannot define {conflicting_param} when using a preset.'.format(
+            conflicting_param=conflicting_param
+        )
+
+
 class DauphinModeNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'ModeNotFoundError'
@@ -491,6 +502,11 @@ class DauphinPipelineRunConflict(dauphin.ObjectType):
         interfaces = (DauphinError,)
 
 
+create_execution_params_error_types = (
+    DauphinPresetNotFoundError,
+    DauphinConflictingExecutionParamsError,
+)
+
 pipeline_execution_error_types = (
     DauphinInvalidStepError,
     DauphinInvalidOutputError,
@@ -498,7 +514,7 @@ pipeline_execution_error_types = (
     DauphinPipelineNotFoundError,
     DauphinPipelineRunConflict,
     DauphinPythonError,
-)
+) + create_execution_params_error_types
 
 
 launch_pipeline_run_result_types = (DauphinLaunchPipelineRunSuccess,)
