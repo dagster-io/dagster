@@ -216,17 +216,21 @@
         ]
       },
       {
-        "name": "Scheduling & Partitions",
-        "path": "/docs/overview/scheduling-partitions/page1",
+        "name": "Partitions & Schedules",
+        "path": "/docs/overview/scheduling-partitions/partitions",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/scheduling-partitions/page1"
+            "name": "Partitions",
+            "path": "/docs/overview/scheduling-partitions/partitions"
           },
           {
-            "name": "Page 2",
-            "path": "/docs/overview/scheduling-partitions/page2"
+            "name": "Schedules",
+            "path": "/docs/overview/scheduling-partitions/schedules"
+          },
+          {
+            "name": "Backfills",
+            "path": "/docs/overview/scheduling-partitions/backfill"
           }
         ]
       },

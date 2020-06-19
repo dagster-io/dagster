@@ -5,7 +5,9 @@ import PyObject from 'components/PyObject';
 
 # Partition Sets
 
-Dagster provides the _partition set_ abstraction to make it easy to partition config for a pipeline. The most common dimension pipelines are partitioned by is time. Other examples of partitions could be countries, users, IDs, etc.
+Dagster provides the _partition set_ abstraction to make it easy to partition config for a pipeline.
+The most common dimension pipelines are partitioned by is time. Other examples of partitions could be
+countries, users, IDs, etc.
 
 ## Defining a Partition Set
 
@@ -13,26 +15,44 @@ To define a partition set, we use the <PyObject module="dagster" object="Partiti
 
 A partition set targets a pipeline, and must define the two functions:
 
-- `partition_fn`: Returns a list of <PyObject module="dagster" object="Partition"
+- `partition_fn`: Returns a list of <PyObject module="dagster" object="Partition"/>.
+- `run_config_fn_for_partition`: Given a <PyObject module="dagster" object="Partition"/>, returns the run
+  configuration that parameterizes the execution for this partition, as a dict.
 
-Dagster comes with a light weight scheduler that is capable of instigating runs on a given interval. To create a schedule, define a <PyObject module="dagster" object="ScheduleDefinition"/> and include it in your repository.
+### Example
 
-A schedule has a number of properties:
+For example, we have a pipeline that computes metrics data for a given day of the week.
 
-- Targets a pipeline
-- Defines a function that returns `run_config` for the targeted pipeline
-- Optionally defines `tags`, `mode`, `solid_selection` for the target pipeline
-- Optionally defines a `should_execute` function that can be used to skip a scheduled execution
+```python literalinclude caption=pipeline.py
+file:/docs_snippets/docs_snippets/overview/schedules_partitions/pipeline.py
+lineno-start:
+lines:4-12
+```
 
-## Defining a Schedule
+The solid `process_data_for_day` takes, as config, a string `day_of_week`. This piece of config will
+define which day to compute metrics data for. For example, if we wanted to compute metrics for Monday ("M"),
+we would execute the pipeline with the following config:
 
-There are two types of schedules:
+```python literalinclude caption=config.yaml
+file:/docs_snippets/docs_snippets/overview/schedules_partitions/config.yaml
+```
 
-- A simple schedule creates runs at a given interval
-- A partition set based schedule that also runs at a given interval, but selects a partition to use at execution time to create a run
+We can define a <PyObject module="dagster" object="PartitionSetDefinition"/> that defines the full set of
+partitions and how to define the run config for a given partition.
 
-### Cron-string based interval
+```python literalinclude caption=partition_definition.py
+file:/docs_snippets/docs_snippets/overview/schedules_partitions/partition_definition.py
+lineno-start:
+lines:4-26
+```
 
-The simplest way to define a schedule is to use the <PyObject module="dagster" object=""
+## Using Partitions in Dagit
 
-Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+You can view and use partitions in the Dagit playground view for a pipeline. In the top bar, you can
+select from the list of all available partition sets, then choose a specific partition.
+Within the config editor, the config for the selected partition will be populated.
+
+In the screenshot below, we select the `day_partition_set` and the `W` partition, and we can see that
+the correct run config for the partition has been populated in the editor.
+
+![Partitions in Dagit Playground](/assets/images/overview/schedules_partitions/partitions-playground.png)

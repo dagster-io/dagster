@@ -94,7 +94,7 @@ class PartitionSetDefinition(
             solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
         run_config_fn_for_partition (Callable[[Partition], [Dict]]): A
-            function that takes a :py:class:`~dagster.Partition` and returns the environment
+            function that takes a :py:class:`~dagster.Partition` and returns the run
             configuration that parameterizes the execution for this partition, as a dict
         tags_fn_for_partition (Callable[[Partition], Optional[dict[str, str]]]): A function that
             takes a :py:class:`~dagster.Partition` and returns a list of key value pairs that will

@@ -1,0 +1,4 @@
+solids:
+  process_data_for_day:
+    config:
+      day_of_week: "M"
