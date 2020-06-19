@@ -22,9 +22,7 @@ def test_repository_snap_all_props():
     assert len(external_repo_data.external_pipeline_datas) == 1
     assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
 
-    pipeline_snapshot = external_repo_data.external_pipeline_datas[
-        0
-    ].pipeline_snapshot_with_id.pipeline_snapshot
+    pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
     assert isinstance(pipeline_snapshot, PipelineSnapshot)
     assert pipeline_snapshot.name == 'noop_pipeline'
     assert pipeline_snapshot.description is None

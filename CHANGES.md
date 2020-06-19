@@ -1,10 +1,16 @@
 # Changelog
 
+## 0.8.4
+
+**Bugfix**
+
+- Reverted changed in 0.8.3 that caused error during run launch in certain circumstances
+
 ## 0.8.3
 
 **Breaking Changes**
 
-- Previously, the `gcs_resource` returned a `GCSResource` wrapper which had a single `client` property that returned a `google.cloud.storage.client.Client`. Now, the `gcs_resource` returns the client directly. 
+- Previously, the `gcs_resource` returned a `GCSResource` wrapper which had a single `client` property that returned a `google.cloud.storage.client.Client`. Now, the `gcs_resource` returns the client directly.
 
   To update solids that use the `gcp_resource`, change:
 
@@ -13,6 +19,7 @@
   ```
 
   To:
+
   ```
   context.resources.gcs
   ```
@@ -22,13 +29,13 @@
 - Introduced a new Python API `reexecute_pipeline` to reexecute an existing pipeline run.
 - Performance improvements in Pipeline Overview and other pages.
 - Long metadata entries in the asset details view are now scrollable.
-- Added a `project` field to the `gcs_resource` in `dagster_gcp`. 
+- Added a `project` field to the `gcs_resource` in `dagster_gcp`.
 - Added new CLI command `dagster asset wipe` to remove all existing asset keys.
 
 **Bugfix**
 
 - Several Dagit bugfixes and performance improvements
-- Fixes pipeline execution issue with custom run launchers that call `executeRunInProcess`. 
+- Fixes pipeline execution issue with custom run launchers that call `executeRunInProcess`.
 - Updates `dagster schedule up` output to be repository location scoped
 
 ## 0.8.2

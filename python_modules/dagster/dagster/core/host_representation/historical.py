@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.snap import PipelineSnapshot, PipelineSnapshotWithID
+from dagster.core.snap import PipelineSnapshot
 
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
@@ -24,12 +24,7 @@ class HistoricalPipeline(RepresentedPipeline):
             identifying_pipeline_snapshot_id, 'identifying_pipeline_snapshot_id'
         )
         super(HistoricalPipeline, self).__init__(
-            pipeline_index=PipelineIndex(
-                PipelineSnapshotWithID.from_snapshot(pipeline_snapshot),
-                PipelineSnapshotWithID.from_snapshot(parent_pipeline_snapshot)
-                if parent_pipeline_snapshot
-                else None,
-            )
+            pipeline_index=PipelineIndex(pipeline_snapshot, parent_pipeline_snapshot)
         )
 
     @property

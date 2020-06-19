@@ -432,17 +432,11 @@ class PipelineDefinition(IContainSolids):
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self):
-        from dagster.core.snap import (
-            PipelineSnapshot,
-            PipelineSnapshotWithID,
-        )
+        from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
 
         return PipelineIndex(
-            PipelineSnapshotWithID.from_snapshot(PipelineSnapshot.from_pipeline_def(self)),
-            PipelineSnapshotWithID.from_snapshot(self.get_parent_pipeline_snapshot())
-            if self.parent_pipeline_def
-            else None,
+            PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
         )
 
     def get_config_schema_snapshot(self):
@@ -482,9 +476,6 @@ class PipelineSubsetDefinition(PipelineDefinition):
 
     def get_parent_pipeline_snapshot(self):
         return self._parent_pipeline_def.get_pipeline_snapshot()
-
-    def get_parent_pipeline_snapshot_id(self):
-        return self._parent_pipeline_def.get_pipeline_snapshot_id()
 
     @property
     def is_subset_pipeline(self):

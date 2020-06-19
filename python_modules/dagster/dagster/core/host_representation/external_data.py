@@ -17,7 +17,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.errors import PartitionExecutionError
-from dagster.core.snap import PipelineSnapshotWithID
+from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -103,23 +103,18 @@ class ExternalPipelineSubsetResult(
 @whitelist_for_serdes
 class ExternalPipelineData(
     namedtuple(
-        '_ExternalPipelineData',
-        'name pipeline_snapshot_with_id active_presets parent_pipeline_snapshot_with_id',
+        '_ExternalPipelineData', 'name pipeline_snapshot active_presets parent_pipeline_snapshot'
     )
 ):
-    def __new__(
-        cls, name, pipeline_snapshot_with_id, active_presets, parent_pipeline_snapshot_with_id,
-    ):
+    def __new__(cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot):
         return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            pipeline_snapshot_with_id=check.inst_param(
-                pipeline_snapshot_with_id, 'pipeline_snapshot_with_id', PipelineSnapshotWithID
+            pipeline_snapshot=check.inst_param(
+                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
             ),
-            parent_pipeline_snapshot_with_id=check.opt_inst_param(
-                parent_pipeline_snapshot_with_id,
-                'parent_pipeline_snapshot_with_id',
-                PipelineSnapshotWithID,
+            parent_pipeline_snapshot=check.opt_inst_param(
+                parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot
             ),
             active_presets=check.list_param(
                 active_presets, 'active_presets', of_type=ExternalPresetData
@@ -250,15 +245,8 @@ def external_pipeline_data_from_def(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
-        pipeline_snapshot_with_id=PipelineSnapshotWithID(
-            pipeline_def.get_pipeline_snapshot(), pipeline_def.get_pipeline_snapshot_id()
-        ),
-        parent_pipeline_snapshot_with_id=PipelineSnapshotWithID(
-            pipeline_def.get_parent_pipeline_snapshot(),
-            pipeline_def.get_parent_pipeline_snapshot_id(),
-        )
-        if pipeline_def.parent_pipeline_def
-        else None,
+        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         active_presets=sorted(
             list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
             key=lambda pd: pd.name,
