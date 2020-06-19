@@ -5,7 +5,7 @@ import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster_graphql.client.mutations import execute_execute_plan_mutation
 from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_variables
+from dagster_graphql.client.util import construct_execute_plan_variables
 
 from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
@@ -113,7 +113,9 @@ def invoke_steps_within_python_operator(
 
     run_id = dag_run.run_id
 
-    variables = construct_variables(recon_repo, mode, run_config, pipeline_name, run_id, step_keys)
+    variables = construct_execute_plan_variables(
+        recon_repo, mode, run_config, pipeline_name, run_id, step_keys
+    )
     variables = add_airflow_tags(variables, ts)
 
     logging.info(

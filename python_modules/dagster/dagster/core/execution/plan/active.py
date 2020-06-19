@@ -48,13 +48,11 @@ class ActiveExecution(object):
         new_steps_to_execute = []
         new_steps_to_skip = []
         for step_key, requirements in self._pending.items():
-
             if requirements.issubset(self._completed):
                 if requirements.issubset(self._success):
                     new_steps_to_execute.append(step_key)
                 else:
                     new_steps_to_skip.append(step_key)
-
         for key in new_steps_to_execute:
             self._executable.append(key)
             del self._pending[key]
@@ -108,7 +106,6 @@ class ActiveExecution(object):
         for step in steps:
             self._in_flight.add(step.key)
             self._executable.remove(step.key)
-
         return steps
 
     def get_steps_to_skip(self):
@@ -126,7 +123,6 @@ class ActiveExecution(object):
     def skipped_step_events_iterator(self, pipeline_context):
         '''Process all steps that can be skipped by repeated calls to get_steps_to_skip
         '''
-
         failed_or_skipped_steps = self._skipped.union(self._failed)
 
         steps_to_skip = self.get_steps_to_skip()

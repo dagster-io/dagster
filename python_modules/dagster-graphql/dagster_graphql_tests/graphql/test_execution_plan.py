@@ -67,8 +67,8 @@ query PipelineQuery($runConfigData: RunConfigData, $pipeline: PipelineSelector!,
 '''
 
 EXECUTE_PLAN_QUERY = '''
-mutation ($executionParams: ExecutionParams!) {
-    executePlan(executionParams: $executionParams) {
+mutation ($executionParams: ExecutionParams!, $retries: Retries) {
+    executePlan(executionParams: $executionParams, retries: $retries) {
         __typename
         ... on ExecutePlanSuccess {
             pipeline { name }
@@ -167,7 +167,7 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -209,7 +209,7 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -250,7 +250,7 @@ def test_success_whole_execution_plan_with_in_memory_config(graphql_context, sna
                 'stepKeys': None,
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -294,7 +294,7 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
                 'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -357,7 +357,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
                 'stepKeys': ['sum_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -375,7 +375,7 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
                 'stepKeys': ['sum_sq_solid.compute'],
                 'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -469,7 +469,7 @@ def test_invalid_config_execute_plan(graphql_context, snapshot):
                 ],
                 'executionMetadata': {'runId': 'kdjkfjdfd'},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -505,7 +505,7 @@ def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
                 ],
                 'executionMetadata': {'runId': 'kdjkfjdfd'},
                 'mode': 'default',
-            }
+            },
         },
     )
 
@@ -555,7 +555,7 @@ def test_basic_execute_plan_with_materialization(graphql_context):
                     'stepKeys': ['sum_solid.compute', 'sum_sq_solid.compute'],
                     'executionMetadata': {'runId': pipeline_run.run_id},
                     'mode': 'default',
-                }
+                },
             },
         )
 

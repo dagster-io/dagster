@@ -235,6 +235,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         job_config_dict=pipeline_context.executor.job_config.to_dict(),
         job_namespace=pipeline_context.executor.job_namespace,
         resources=resources,
+        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
         kubeconfig_file=pipeline_context.executor.kubeconfig_file,
     )

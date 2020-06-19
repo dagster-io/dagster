@@ -86,6 +86,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_config_dict,
         job_namespace,
         load_incluster_config,
+        retries_dict,
         resources=None,
         kubeconfig_file=None,
     ):
@@ -113,6 +114,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
         check.str_param(job_namespace, 'job_namespace')
         check.bool_param(load_incluster_config, 'load_incluster_config')
+        check.dict_param(retries_dict, 'retries_dict')
+
         check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
@@ -131,8 +134,16 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         # Ensure we stay below k8s name length limits
         k8s_name_key = _get_k8s_name_key(run_id, step_keys)
-        job_name = 'dagster-stepjob-%s' % k8s_name_key
-        pod_name = 'dagster-stepjob-%s' % k8s_name_key
+
+        retries = Retries.from_config(retries_dict)
+
+        if retries.get_attempt_count(step_keys[0]):
+            attempt_number = retries.get_attempt_count(step_keys[0])
+            job_name = 'dagster-job-%s-%d' % (k8s_name_key, attempt_number)
+            pod_name = 'dagster-job-%s-%d' % (k8s_name_key, attempt_number)
+        else:
+            job_name = 'dagster-job-%s' % (k8s_name_key)
+            pod_name = 'dagster-job-%s' % (k8s_name_key)
 
         variables = {
             'executionParams': {
@@ -145,9 +156,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 },
                 'executionMetadata': {'runId': run_id},
                 'stepKeys': step_keys,
-            }
+            },
+            'retries': retries.to_graphql_input(),
         }
-
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables)]
 
         job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)
@@ -203,7 +214,6 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             logs += raw_logs.split('\n')
 
         res = parse_raw_log_lines(logs)
-
         handle_execution_errors(res, 'executePlan')
         step_events = handle_execute_plan_result(res)
 

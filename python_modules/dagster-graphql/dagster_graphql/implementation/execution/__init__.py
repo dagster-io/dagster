@@ -22,11 +22,13 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
+from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.system_config.objects import ExecutionConfig
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -148,9 +150,10 @@ def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=
 
 
 @capture_dauphin_error
-def do_execute_plan(graphene_info, execution_params):
+def do_execute_plan(graphene_info, execution_params, retries):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.opt_inst_param(retries, 'retries', Retries)
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, execution_params.selector)
     ensure_valid_config(
@@ -158,13 +161,14 @@ def do_execute_plan(graphene_info, execution_params):
         mode=execution_params.mode,
         run_config=execution_params.run_config,
     )
-    return _do_execute_plan(graphene_info, execution_params, external_pipeline)
+    return _do_execute_plan(graphene_info, execution_params, external_pipeline, retries)
 
 
-def _do_execute_plan(graphene_info, execution_params, external_pipeline):
+def _do_execute_plan(graphene_info, execution_params, external_pipeline, retries):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
     check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+    check.opt_inst_param(retries, 'retries', Retries)
 
     run_id = execution_params.execution_metadata.run_id
 
@@ -221,6 +225,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         run_config=execution_params.run_config,
         pipeline_run=pipeline_run,
         step_keys_to_execute=execution_params.step_keys,
+        retries=retries,
     )
 
     def to_graphql_event(event_record):

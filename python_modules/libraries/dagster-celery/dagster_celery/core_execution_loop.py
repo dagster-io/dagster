@@ -51,6 +51,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
     step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
     step_errors = {}
     completed_steps = set({})  # Set[step_key]
+
     active_execution = execution_plan.start(
         retries=pipeline_context.executor.retries, sort_key_fn=priority_for_step,
     )

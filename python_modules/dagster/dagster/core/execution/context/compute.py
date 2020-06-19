@@ -70,6 +70,11 @@ class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContex
         return self._system_compute_execution_context.pipeline_run
 
     @property
+    def instance(self):
+        '''The current Instance'''
+        return self._system_compute_execution_context.instance
+
+    @property
     def pdb(self):
         '''Allows pdb debugging from within the solid.
 

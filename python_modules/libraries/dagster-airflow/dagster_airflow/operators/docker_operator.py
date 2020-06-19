@@ -7,7 +7,7 @@ from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
+from dagster_graphql.client.util import construct_execute_plan_variables, parse_raw_log_lines
 from docker import APIClient, from_env
 
 from dagster import seven
@@ -226,7 +226,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
     @property
     def query(self):
-        variables = construct_variables(
+        variables = construct_execute_plan_variables(
             self.recon_repo,
             self.mode,
             self.run_config,

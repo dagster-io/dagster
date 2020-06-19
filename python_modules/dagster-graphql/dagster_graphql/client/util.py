@@ -208,7 +208,9 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     )
 
 
-def construct_variables(recon_repo, mode, run_config, pipeline_name, run_id, step_keys):
+def construct_execute_plan_variables(
+    recon_repo, mode, run_config, pipeline_name, run_id, step_keys
+):
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(mode, 'mode')
     check.dict_param(run_config, 'run_config')
@@ -227,7 +229,7 @@ def construct_variables(recon_repo, mode, run_config, pipeline_name, run_id, ste
             },
             'executionMetadata': {'runId': run_id},
             'stepKeys': step_keys,
-        }
+        },
     }
 
     return variables

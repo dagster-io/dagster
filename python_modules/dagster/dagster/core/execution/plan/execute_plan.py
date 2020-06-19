@@ -24,7 +24,6 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(retries, 'retries', Retries)
-
     for event in copy_required_intermediates_for_execution(pipeline_context, execution_plan):
         yield event
 
@@ -34,7 +33,6 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
     active_execution = execution_plan.start(retries=retries)
     while not active_execution.is_complete:
         step = active_execution.get_next_step()
-
         step_context = pipeline_context.for_step(step)
 
         missing_resources = [
@@ -145,7 +143,6 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(retries, 'retries', Retries)
-
     try:
         prior_attempt_count = retries.get_attempt_count(step_context.step.key)
         if step_context.step_launcher:

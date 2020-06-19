@@ -55,6 +55,7 @@ from dagster_graphql.implementation.utils import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import (
     RepositorySelector,
     RepresentedPipeline,
@@ -617,14 +618,34 @@ def create_execution_metadata(graphql_execution_metadata):
 
 
 @capture_dauphin_error
-def create_execution_params_and_do_exec_plan(graphene_info, execution_params_dict):
+def create_execution_params_and_do_exec_plan(graphene_info, execution_params_dict, retries_dict):
     # refactored into a helper function here in order to wrap with @capture_dauphin_error,
     # because create_execution_params may raise
-
     return do_execute_plan(
         graphene_info,
         execution_params=create_execution_params(graphene_info, execution_params_dict),
+        retries=create_retries_params(retries_dict),
     )
+
+
+class DauphinRetriesPreviousAttempts(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'RetriesPreviousAttempts'
+
+    key = dauphin.String()
+    count = dauphin.Int()
+
+
+class DauphinRetries(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'Retries'
+
+    mode = dauphin.Field(dauphin.String)
+    retries_previous_attempts = dauphin.List(DauphinRetriesPreviousAttempts)
+
+
+def create_retries_params(retries_config):
+    return Retries.from_graphql_input(retries_config)
 
 
 class DauphinExecutePlan(dauphin.Mutation):
@@ -633,11 +654,16 @@ class DauphinExecutePlan(dauphin.Mutation):
 
     class Arguments(object):
         executionParams = dauphin.NonNull('ExecutionParams')
+        retries = dauphin.Argument('Retries')
 
     Output = dauphin.NonNull('ExecutePlanResult')
 
     def mutate(self, graphene_info, **kwargs):
-        return create_execution_params_and_do_exec_plan(graphene_info, kwargs['executionParams'])
+        return create_execution_params_and_do_exec_plan(
+            graphene_info,
+            execution_params_dict=kwargs['executionParams'],
+            retries_dict=kwargs['retries'] if 'retries' in kwargs else None,
+        )
 
 
 class DauphinMutation(dauphin.ObjectType):

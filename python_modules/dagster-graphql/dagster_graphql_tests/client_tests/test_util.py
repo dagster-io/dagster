@@ -142,7 +142,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     'mode': mode,
                     'executionMetadata': {'runId': pipeline_run.run_id},
                     'stepKeys': [step.key],
-                }
+                },
             }
             res = execute_query(workspace, EXECUTE_PLAN_MUTATION, variables, instance=instance,)
 

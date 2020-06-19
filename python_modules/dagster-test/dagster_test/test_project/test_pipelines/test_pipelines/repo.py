@@ -16,6 +16,7 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    RetryRequested,
     String,
     default_executors,
     lambda_solid,
@@ -224,6 +225,24 @@ def define_schedules():
     }
 
 
+def define_step_retry_pipeline():
+    @solid
+    def fail_first_time(context):
+        event_records = context.instance.all_logs(context.run_id)
+        for event_record in event_records:
+            context.log.info(event_record.message)
+            if 'Started re-execution' in event_record.message:
+                return 'okay perfect'
+
+        raise RetryRequested()
+
+    @pipeline(mode_defs=celery_mode_defs())
+    def retry_pipeline():
+        fail_first_time()
+
+    return retry_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -237,6 +256,7 @@ def define_demo_execution_repo():
                 'demo_pipeline_gcs': demo_pipeline_gcs,
                 'demo_error_pipeline': demo_error_pipeline,
                 'resources_limit_pipeline_celery': define_resources_limit_pipeline_celery,
+                'retry_pipeline': define_step_retry_pipeline,
             },
             'schedules': define_schedules(),
         }

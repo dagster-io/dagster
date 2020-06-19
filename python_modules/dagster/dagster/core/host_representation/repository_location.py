@@ -77,7 +77,13 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def execute_plan(
-        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
+        self,
+        instance,
+        external_pipeline,
+        run_config,
+        pipeline_run,
+        step_keys_to_execute,
+        retries=None,
     ):
         pass
 
@@ -197,7 +203,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def execute_plan(
-        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
+        self,
+        instance,
+        external_pipeline,
+        run_config,
+        pipeline_run,
+        step_keys_to_execute,
+        retries=None,
     ):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
@@ -217,6 +229,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             instance=instance,
             pipeline_run=pipeline_run,
             run_config=run_config,
+            retries=retries,
         )
 
 
@@ -280,7 +293,13 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         )
 
     def execute_plan(
-        self, instance, external_pipeline, run_config, pipeline_run, step_keys_to_execute
+        self,
+        instance,
+        external_pipeline,
+        run_config,
+        pipeline_run,
+        step_keys_to_execute,
+        retries=None,
     ):
         if (
             is_repository_location_in_same_python_env(self.location_handle)
@@ -307,6 +326,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
                 instance=instance,
                 pipeline_run=pipeline_run,
                 run_config=run_config,
+                retries=retries,
             )
         else:
             raise NotImplementedError(

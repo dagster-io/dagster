@@ -577,7 +577,7 @@ type Mutation {
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
-  executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
+  executePlan(executionParams: ExecutionParams!, retries: Retries): ExecutePlanResult!
   executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
 }
 
@@ -1036,6 +1036,16 @@ type Resource {
 
 type ResourceRequirement {
   resourceKey: String!
+}
+
+input Retries {
+  mode: String
+  retriesPreviousAttempts: [RetriesPreviousAttempts]
+}
+
+input RetriesPreviousAttempts {
+  key: String
+  count: Int
 }
 
 scalar RunConfigData

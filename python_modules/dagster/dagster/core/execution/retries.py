@@ -67,3 +67,22 @@ class Retries:
     @staticmethod
     def disabled_mode():
         return Retries(RetryMode.DISABLED)
+
+    def to_graphql_input(self):
+        previous_attempts_list = []
+        for k, v in self._attempts.items():
+            previous_attempts_list.append({'key': k, 'count': v})
+
+        return {
+            'mode': self._mode.value,
+            'retriesPreviousAttempts': previous_attempts_list,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        if graphql_data == None:
+            return graphql_data
+        previous_attempts = {}
+        for item in graphql_data.retries_previous_attempts:
+            previous_attempts[item.get('key')] = item.get('count')
+        return Retries(mode=RetryMode(graphql_data.mode), previous_attempts=previous_attempts)

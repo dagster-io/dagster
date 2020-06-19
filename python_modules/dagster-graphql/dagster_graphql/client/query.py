@@ -236,9 +236,11 @@ EXECUTE_PLAN_MUTATION = (
     '''
 mutation(
   $executionParams: ExecutionParams!
+  $retries: Retries
 ) {
   executePlan(
     executionParams: $executionParams,
+    retries: $retries,
   ) {
     __typename
     ... on InvalidStepError {
@@ -280,9 +282,11 @@ mutation(
 RAW_EXECUTE_PLAN_MUTATION = '''
 mutation(
   $executionParams: ExecutionParams!
+  $retries: Retries
 ) {
   executePlan(
     executionParams: $executionParams,
+    retries: $retries,
   ) {
     __typename
     ... on InvalidStepError {
