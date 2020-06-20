@@ -134,18 +134,7 @@
       },
       {
         "name": "Modes, Resources, & Presets",
-        "path": "/docs/overview/modes-resources-presets/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/modes-resources-presets/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/modes-resources-presets/page2"
-          }
-        ]
+        "path": "/docs/overview/modes-resources-presets/modes-resources"
       },
       {
         "name": "Types",
