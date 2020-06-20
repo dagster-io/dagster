@@ -6,6 +6,7 @@ import Code from 'components/Code';
 import { AnchorHeadingsProvider } from 'hooks/AnchorHeadings';
 import { VersionedImage } from 'components/VersionedComponents';
 import { DynamicMetaTags } from 'components/MetaTags';
+import { useRouter } from 'next/router';
 
 import 'styles/index.css';
 import AnchorHeading from 'components/AnchorHeading';
@@ -44,6 +45,7 @@ function App({ Component, pageProps }: AppProps) {
       }
     }
   }, []);
+  const router = useRouter();
   return (
     <>
       <Head>
@@ -58,6 +60,11 @@ function App({ Component, pageProps }: AppProps) {
         <meta
           property="twitter:image"
           content="/assets/shared/dagster-preview.png"
+        />
+        {/* deal with multiple versions */}
+        <link
+          rel="canonical"
+          href={`https://docs.dagster.io${router.asPath}`}
         />
       </Head>
 
