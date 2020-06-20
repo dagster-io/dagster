@@ -226,6 +226,7 @@ def create_docker_task(celery_app, **task_kwargs):
         run_config,
         mode,
         repo_name,
+        repo_location_name,
         run_id,
         docker_image,
         docker_creds
@@ -250,7 +251,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 'runConfigData': run_config,
                 'mode': mode,
                 'selector': {
-                    'repositoryLocationName': IN_PROCESS_NAME,
+                    'repositoryLocationName': repo_location_name,
                     'repositoryName': repo_name,
                     'pipelineName': pipeline_run.pipeline_name,
                 },
@@ -282,16 +283,19 @@ def create_docker_task(celery_app, **task_kwargs):
 
         events = [engine_event]
 
-        res = seven.json.loads(
-            client.containers.run(
-                docker_image,
-                command=command,
-                detach=False,
-                auto_remove=True,
-                # pass through this worker's environment for things like AWS creds etc.
-                environment=dict(os.environ),
-            )
+        docker_response = client.containers.run(
+            docker_image,
+            command=command,
+            detach=False,
+            auto_remove=True,
+            # pass through this worker's environment for things like AWS creds etc.
+            environment=dict(os.environ),
         )
+
+        try:
+            res = seven.json.loads(docker_response)
+        except:
+            print(docker_response)
 
         handle_execution_errors(res, 'executePlan')
         step_events = handle_execute_plan_result(res)

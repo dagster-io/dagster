@@ -166,7 +166,7 @@ class CeleryK8sJobConfig(
 
 class CeleryDockerConfig(
     namedtuple(
-        'CeleryDockerConfig', 'docker_creds retries broker backend include config_source'
+        'CeleryDockerConfig', 'docker_creds retries broker backend include config_source repo_location_name'
     ),
     ExecutorConfig,
 ):
@@ -181,7 +181,7 @@ class CeleryDockerConfig(
     '''
 
     def __new__(
-        cls, retries, broker=None, backend=None, include=None, config_source=None
+        cls, retries, broker=None, backend=None, include=None, config_source=None, repo_location_name=None
     ):
 
         docker_creds = {
@@ -200,6 +200,7 @@ class CeleryDockerConfig(
             config_source=dict_wrapper(
                 dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
             ),
+            repo_location_name=check.str_param(repo_location_name, 'repo_location_name'),
         )
 
     @staticmethod

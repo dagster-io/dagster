@@ -1,6 +1,8 @@
 from dagster import Field, Noneable, Permissive, StringSource
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.execution.retries import Retries, get_retries_config
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
+from dagster.utils import merge_dicts
 
 from .config import CeleryConfig, CeleryDockerConfig
 
@@ -94,7 +96,21 @@ def celery_executor(init_context):
     )
 
 
-@executor(name='celery-docker', config_schema=CELERY_CONFIG)
+def celery_docker_config():
+    additional_config = {
+        'repo_location_name': Field(
+            StringSource,
+            is_required=False,
+            default_value=IN_PROCESS_NAME,
+            description='The repository location name to use for execution.',
+        ),
+    }
+
+    cfg = merge_dicts(CELERY_CONFIG, additional_config)
+    return cfg
+
+
+@executor(name='celery-docker', config_schema=celery_docker_config())
 def celery_docker_executor(init_context):
     '''Celery-based docker executor.
     '''
@@ -106,4 +122,5 @@ def celery_docker_executor(init_context):
         config_source=init_context.executor_config.get('config_source'),
         include=init_context.executor_config.get('include'),
         retries=Retries.from_config(init_context.executor_config['retries']),
+        repo_location_name=init_context.executor_config.get('repo_location_name'),
     )
