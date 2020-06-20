@@ -13,6 +13,7 @@ from dagster import (
     repository,
     solid,
 )
+from dagster.core.definitions.no_step_launcher import no_step_launcher
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)
@@ -35,8 +36,8 @@ def count_people(_, people: DataFrame) -> int:
     return people.count()
 
 
-mode = ModeDefinition(
-    name='prod',
+emr_mode = ModeDefinition(
+    name='emr',
     resource_defs={
         'pyspark_step_launcher': emr_pyspark_step_launcher,
         'pyspark': pyspark_resource,
@@ -45,13 +46,21 @@ mode = ModeDefinition(
     system_storage_defs=s3_plus_default_storage_defs,
 )
 
-preset = PresetDefinition.from_files(
-    name='prod', mode='prod', environment_files=['prod_resources.yaml', 's3_storage.yaml'],
+emr_preset = PresetDefinition.from_pkg_resources(
+    name='emr',
+    mode='emr',
+    pkg_resource_defs=[('emr_pyspark', 'prod_resources.yaml'), ('emr_pyspark', 's3_storage.yaml')],
+)
+
+
+local_mode = ModeDefinition(
+    name='local',
+    resource_defs={'pyspark_step_launcher': no_step_launcher, 'pyspark': pyspark_resource},
 )
 
 
 @pipeline(
-    mode_defs=[mode], preset_defs=[preset],
+    mode_defs=[emr_mode, local_mode], preset_defs=[emr_preset],
 )
 def my_pipeline():
     count_people(filter_over_50(make_people()))
