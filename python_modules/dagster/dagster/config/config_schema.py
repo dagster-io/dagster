@@ -3,9 +3,16 @@ class ConfigSchema(object):
     ConfigSchema is a placeholder type.  Any time that it appears in documentation, it means
     that any of the following types are acceptable:
 
-    #. A Python primitive type that resolves to a Dagster config type
+    #. A Python scalar type that resolves to a Dagster config type
        (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
-       :py:class:`~python:str`, or :py:class:`~python:list`).
+       or :py:class:`~python:str`
+
+       e.g. `@solid(config_schema=int)` or `@solid(config_schema=str)`
+
+    #. Built-in python collections such as :py:class:`~python:list`, or :py:class:`~python:dict`).
+       `list` is exactly equivalent to `Array[Any]` and `dict` is equivalent to `Permissive()`
+
+       e.g. `@solid(config_schema=list)` or `@solid(config_schema=dict)`
 
     #. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.IntSource`,
        :py:data:`~dagster.Float`, :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,

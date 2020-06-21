@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.5 (Upcoming)
+
+**New**
+
+- The python built-in `dict` can be used as an alias for `Permissive()` within a config schema declaration.
+
 ## 0.8.4
 
 **Bugfix**

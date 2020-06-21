@@ -1,6 +1,13 @@
 import pytest
 
-from dagster import DagsterInvalidConfigDefinitionError, Noneable, Selector, execute_solid, solid
+from dagster import (
+    DagsterInvalidConfigDefinitionError,
+    Noneable,
+    Permissive,
+    Selector,
+    execute_solid,
+    solid,
+)
 
 
 def test_kitchen_sink():
@@ -58,6 +65,23 @@ def test_kitchen_sink():
         ).output_value()
         == solid_config_two
     )
+
+
+def test_builtin_dict():
+    executed = {}
+
+    @solid(config_schema=dict)
+    def builtin_dict_solid(context):
+        executed['yup'] = True
+        return context.solid_config
+
+    assert isinstance(builtin_dict_solid.config_field.config_type, Permissive)
+
+    assert execute_solid(
+        builtin_dict_solid, run_config={'solids': {'builtin_dict_solid': {'config': {'a': 'b'}}}}
+    ).output_value() == {'a': 'b'}
+
+    assert executed['yup']
 
 
 def test_bad_solid_config_argument():
