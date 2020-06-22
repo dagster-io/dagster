@@ -224,16 +224,16 @@
       },
       {
         "name": "Logging",
-        "path": "/docs/overview/logging/page1",
+        "path": "/docs/overview/logging/logging",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/logging/page1"
+            "name": "Logging",
+            "path": "/docs/overview/logging/logging"
           },
           {
-            "name": "Page 2",
-            "path": "/docs/overview/logging/page2"
+            "name": "Customize Logging",
+            "path": "/docs/overview/logging/customize-logging"
           }
         ]
       },
