@@ -126,12 +126,12 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
 
 def step_run_ref_to_step_context(step_run_ref):
-    pipeline_def = step_run_ref.recon_pipeline.get_definition().get_pipeline_subset_def(
+    pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
         step_run_ref.pipeline_run.solids_to_execute
     )
 
     execution_plan = create_execution_plan(
-        pipeline_def, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
+        pipeline, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
     ).build_subset_plan([step_run_ref.step_key])
 
     initialization_manager = pipeline_initialization_manager(
