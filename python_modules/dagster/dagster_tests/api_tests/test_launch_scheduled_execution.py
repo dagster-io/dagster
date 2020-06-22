@@ -15,6 +15,8 @@ from dagster.core.scheduler import (
 )
 from dagster.core.test_utils import environ
 
+_COUPLE_DAYS_AGO = datetime.datetime.now() - datetime.timedelta(days=2)
+
 
 def _throw(_context):
     raise Exception('bananas')
@@ -34,40 +36,32 @@ def the_pipeline():
     the_solid()
 
 
-@daily_schedule(
-    pipeline_name='the_pipeline', start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-)
+@daily_schedule(pipeline_name='the_pipeline', start_date=_COUPLE_DAYS_AGO)
 def simple_schedule(_context):
     return {'solids': {'the_solid': {'config': {'work_amt': 'a lot'}}}}
 
 
-@daily_schedule(
-    pipeline_name='the_pipeline', start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-)
+@daily_schedule(pipeline_name='the_pipeline', start_date=_COUPLE_DAYS_AGO)
 def bad_env_fn_schedule():  # forgot context arg
     return {}
 
 
 @daily_schedule(
-    pipeline_name='the_pipeline',
-    start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-    should_execute=_throw,
+    pipeline_name='the_pipeline', start_date=_COUPLE_DAYS_AGO, should_execute=_throw,
 )
 def bad_should_execute_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name='the_pipeline',
-    start_date=datetime.datetime.now() - datetime.timedelta(days=1),
-    should_execute=_never,
+    pipeline_name='the_pipeline', start_date=_COUPLE_DAYS_AGO, should_execute=_never,
 )
 def skip_schedule(_context):
     return {}
 
 
 @daily_schedule(
-    pipeline_name='the_pipeline', start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+    pipeline_name='the_pipeline', start_date=_COUPLE_DAYS_AGO,
 )
 def wrong_config_schedule(_context):
     return {}
