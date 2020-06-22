@@ -41,7 +41,7 @@ class _Repository(object):
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
                 ):
-                    bad_definitions.append(i, type(definition))
+                    bad_definitions.append((i, type(definition)))
             if bad_definitions:
                 raise DagsterInvalidDefinitionError(
                     'Bad return value from repository construction function: all elements of list '

@@ -133,3 +133,11 @@ def test_key_mismatch():
 
     with pytest.raises(Exception, match='name in PipelineDefinition does not match'):
         some_repo.get_pipeline('foo')
+
+
+def test_non_pipeline_in_pipelines():
+    with pytest.raises(DagsterInvalidDefinitionError, match='all elements of list must be of type'):
+
+        @repository
+        def _some_repo():
+            return ['not-a-pipeline']
