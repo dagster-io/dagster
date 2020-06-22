@@ -92,7 +92,7 @@ sanity_check:
 	! pip list --exclude-editable | grep -e dagster -e dagit
 
 rebuild_dagit: sanity_check
-	cd js_modules/dagit/; yarn install --offline && yarn build-for-python
+	cd js_modules/dagit/; yarn install && yarn build-for-python
 
 dev_install: install_dev_python_modules_verbose rebuild_dagit
 

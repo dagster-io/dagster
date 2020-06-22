@@ -553,7 +553,7 @@ if __name__ == "__main__":
             "pip install -e python_modules/dagit -qqq",
             "pip install -e examples/legacy_examples -qqq",
             "cd js_modules/dagit",
-            "yarn install --offline",
+            "yarn install",
             "yarn run ts",
             "yarn run jest",
             "yarn run check-prettier",
