@@ -2,6 +2,10 @@
 
 ## 0.8.5 (Upcoming)
 
+**Breaking Changes**
+
+- Python 3.5 is no longer under test.
+
 **New**
 
 - The python built-in `dict` can be used as an alias for `Permissive()` within a config schema declaration.

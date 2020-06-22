@@ -327,7 +327,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         'python_modules/libraries/lakehouse',
-        supported_pythons=[SupportedPython.V3_5, SupportedPython.V3_6, SupportedPython.V3_7],
+        supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
     ),
 ]
 

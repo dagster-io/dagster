@@ -17,4 +17,4 @@ exclude = '''
   | snapshots
 )/
 '''
-target_version = ['py27', 'py35', 'py36', 'py37', 'py38']
+target_version = ['py27', 'py36', 'py37', 'py38']
