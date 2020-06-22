@@ -273,16 +273,16 @@
       },
       {
         "name": "Packages",
-        "path": "/docs/overview/packages/page1",
+        "path": "/docs/overview/packages/core-packages",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/packages/page1"
+            "name": "Core Packages",
+            "path": "/docs/overview/packages/core-packages"
           },
           {
-            "name": "Page 2",
-            "path": "/docs/overview/packages/page2"
+            "name": "Libraries",
+            "path": "/docs/overview/packages/libraries"
           }
         ]
       }
