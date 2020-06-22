@@ -52,7 +52,7 @@ def main(name):
             with open(fpath, 'w') as f:
                 f.write(s)
 
-            new_fname = fname.replace('.tmpl', '')
+            new_fname = fname.replace('.tmpl', '').replace('{{EXAMPLE_NAME}}', name)
             new_fpath = os.path.join(dname, new_fname)
             shutil.move(fpath, new_fpath)
             print('Created {path}'.format(path=new_fpath))
