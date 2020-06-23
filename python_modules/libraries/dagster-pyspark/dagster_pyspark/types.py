@@ -18,8 +18,8 @@ from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config_schema import output_selector_schema
 
-WriteMode = Enum(
-    'mode',
+WriteModeOptions = Enum(
+    'WriteMode',
     [
         EnumValue(
             'append', description="Append contents of this :class:`DataFrame` to existing data."
@@ -37,6 +37,40 @@ WriteMode = Enum(
 )
 
 
+WriteCompressionTextOptions = Enum(
+    'WriteCompressionText',
+    [
+        EnumValue('none'),
+        EnumValue('bzip2'),
+        EnumValue('gzip'),
+        EnumValue('lz4'),
+        EnumValue('snappy'),
+        EnumValue('deflate'),
+    ],
+)
+
+
+WriteCompressionOrcOptions = Enum(
+    'WriteCompressionOrc',
+    [EnumValue('none'), EnumValue('snappy'), EnumValue('zlib'), EnumValue('lzo'),],
+)
+
+
+WriteCompressionParquetOptions = Enum(
+    'WriteCompressionParquet',
+    [
+        EnumValue('none'),
+        EnumValue('uncompressed'),
+        EnumValue('snappy'),
+        EnumValue('gzip'),
+        EnumValue('lzo'),
+        EnumValue('brotli'),
+        EnumValue('lz4'),
+        EnumValue('zstd'),
+    ],
+)
+
+
 @output_selector_schema(
     Selector(
         {
@@ -48,22 +82,12 @@ WriteMode = Enum(
                         description="the path in any Hadoop supported file system.",
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
                     'compression': Field(
-                        Enum(
-                            'compression',
-                            [
-                                EnumValue('none'),
-                                EnumValue('bzip2'),
-                                EnumValue('gzip'),
-                                EnumValue('lz4'),
-                                EnumValue('snappy'),
-                                EnumValue('deflate'),
-                            ],
-                        ),
+                        WriteCompressionTextOptions,
                         is_required=False,
                         description="compression codec to use when saving to file.",
                     ),
@@ -148,7 +172,7 @@ WriteMode = Enum(
                         description="the path in any Hadoop supported file system.",
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
@@ -156,19 +180,7 @@ WriteMode = Enum(
                         String, is_required=False, description="names of partitioning columns."
                     ),
                     'compression': Field(
-                        Enum(
-                            'compression',
-                            [
-                                EnumValue('none'),
-                                EnumValue('uncompressed'),
-                                EnumValue('snappy'),
-                                EnumValue('gzip'),
-                                EnumValue('lzo'),
-                                EnumValue('brotli'),
-                                EnumValue('lz4'),
-                                EnumValue('zstd'),
-                            ],
-                        ),
+                        WriteCompressionParquetOptions,
                         is_required=False,
                         description="compression codec to use when saving to file. This will override ``spark.sql.parquet.compression.codec``. If None is set, it uses the value specified in ``spark.sql.parquet.compression.codec``.",
                     ),
@@ -182,22 +194,12 @@ WriteMode = Enum(
                         description="the path in any Hadoop supported file system.",
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
                     'compression': Field(
-                        Enum(
-                            'compression',
-                            [
-                                EnumValue('none'),
-                                EnumValue('bzip2'),
-                                EnumValue('gzip'),
-                                EnumValue('lz4'),
-                                EnumValue('snappy'),
-                                EnumValue('deflate'),
-                            ],
-                        ),
+                        WriteCompressionTextOptions,
                         is_required=False,
                         description="compression codec to use when saving to file.",
                     ),
@@ -236,7 +238,7 @@ WriteMode = Enum(
                         description="Name of the table in the external database.",
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
@@ -255,7 +257,7 @@ WriteMode = Enum(
                         description="the path in any Hadoop supported file system.",
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
@@ -263,15 +265,7 @@ WriteMode = Enum(
                         String, is_required=False, description="names of partitioning columns."
                     ),
                     'compression': Field(
-                        Enum(
-                            'compression',
-                            [
-                                EnumValue('none'),
-                                EnumValue('snappy'),
-                                EnumValue('zlib'),
-                                EnumValue('lzo'),
-                            ],
-                        ),
+                        WriteCompressionOrcOptions,
                         is_required=False,
                         description="compression codec to use when saving to file. This will override ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is set, it uses the value specified in ``spark.sql.orc.compression.codec``.",
                     ),
@@ -284,7 +278,7 @@ WriteMode = Enum(
                         String, is_required=False, description="the format used to save."
                     ),
                     'mode': Field(
-                        WriteMode,
+                        WriteModeOptions,
                         is_required=False,
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
@@ -304,17 +298,7 @@ WriteMode = Enum(
                         description="he path in any Hadoop supported file system.",
                     ),
                     'compression': Field(
-                        Enum(
-                            'compression',
-                            [
-                                EnumValue('none'),
-                                EnumValue('bzip2'),
-                                EnumValue('gzip'),
-                                EnumValue('lz4'),
-                                EnumValue('snappy'),
-                                EnumValue('deflate'),
-                            ],
-                        ),
+                        WriteCompressionTextOptions,
                         is_required=False,
                         description="compression codec to use when saving to file. This will override ``orc.compress`` and ``spark.sql.orc.compression.codec``. If None is set, it uses the value specified in ``spark.sql.orc.compression.codec``.",
                     ),
