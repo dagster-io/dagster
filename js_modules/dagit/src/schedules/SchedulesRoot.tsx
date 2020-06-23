@@ -1,21 +1,13 @@
 import * as React from "react";
 
-import {
-  Callout,
-  Intent,
-  Code,
-  Card,
-  Colors,
-  Button,
-  Spinner
-} from "@blueprintjs/core";
+import { Callout, Intent, Code, Card, Colors } from "@blueprintjs/core";
 import {
   Header,
   Legend,
   LegendColumn,
   ScrollContainer
 } from "../ListComponents";
-import { useQuery, useMutation } from "react-apollo";
+import { useQuery } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler,
@@ -29,6 +21,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
+import { ReconcileButton } from "./ReconcileButton";
 
 const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
   if (scheduler.__typename === "SchedulerNotDefinedError") {
@@ -69,29 +62,11 @@ const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState,
   scheduleStatesWithoutDefinitions
 }) => {
-  const repositorySelector = useRepositorySelector();
-  const refetchQueries = [
-    {
-      query: SCHEDULES_ROOT_QUERY,
-      variables: {
-        repositorySelector: repositorySelector
-      }
-    }
-  ];
-  const [
-    reconcileScheduleState,
-    { loading: reconcileInFlight }
-  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, { refetchQueries });
-
   if (
     scheduleDefinitionsWithoutState.length === 0 &&
     scheduleStatesWithoutDefinitions.length === 0
   ) {
     return null;
-  }
-
-  if (reconcileInFlight) {
-    return <Spinner />;
   }
 
   return (
@@ -115,15 +90,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
             <p>
               To reconcile schedule state, run{" "}
               <Code>dagster schedule reconcile</Code> or click{" "}
-              <Button
-                small={true}
-                intent={Intent.SUCCESS}
-                onClick={() =>
-                  reconcileScheduleState({ variables: { repositorySelector } })
-                }
-              >
-                Reconcile
-              </Button>
+              <ReconcileButton />
             </p>
           </div>
         </div>
@@ -311,22 +278,6 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
     </div>
   );
 };
-
-const RECONCILE_SCHEDULE_STATE_MUTATION = gql`
-  mutation ReconcileSchedulerState($repositorySelector: RepositorySelector!) {
-    reconcileSchedulerState(repositorySelector: $repositorySelector) {
-      __typename
-      ... on PythonError {
-        message
-        stack
-      }
-      ... on ReconcileSchedulerStateSuccess {
-        __typename
-        message
-      }
-    }
-  }
-`;
 
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery($repositorySelector: RepositorySelector!) {

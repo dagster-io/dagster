@@ -15,7 +15,8 @@ import {
   Intent,
   PopoverInteractionKind,
   Position,
-  Spinner
+  Spinner,
+  Code
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
@@ -44,6 +45,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
 import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
 import { assertUnreachable } from "../Util";
+import { ReconcileButton } from "./ReconcileButton";
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -92,13 +94,17 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
       <div>
         <h3>There are errors with this schedule.</h3>
 
-        <p>To resolve, run `dagster schedule up`.</p>
         <p>Errors:</p>
         <ul>
           {errors.map((error, index) => (
             <li key={index}>{error}</li>
           ))}
         </ul>
+
+        <p>
+          To resolve, click <ReconcileButton /> or run{" "}
+          <Code>dagster schedule up</Code>
+        </p>
       </div>
     </Popover>
   );
@@ -161,6 +167,8 @@ export const ScheduleRow: React.FunctionComponent<{
     scheduleState
   } = schedule;
 
+  const scheduleId = scheduleState?.scheduleOriginId;
+
   const scheduleSelector = useScheduleSelector(name);
 
   const [configRequested, setConfigRequested] = React.useState(false);
@@ -174,9 +182,15 @@ export const ScheduleRow: React.FunctionComponent<{
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
   ) : (
-    <Link to={`/schedules/${name}`}>
-      <ScheduleName>{name}</ScheduleName>
-    </Link>
+    <>
+      <Link to={`/schedules/${name}`}>
+        <ScheduleName>{name}</ScheduleName>
+      </Link>
+
+      {scheduleId && (
+        <span style={{ fontSize: 10 }}>Schedule ID: {scheduleId}</span>
+      )}
+    </>
   );
 
   if (!scheduleState) {
