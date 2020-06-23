@@ -56,6 +56,7 @@ def _do_setup(name='dagster'):
                 'dagster/core/storage/event_log/sqlite/alembic/*',
                 'dagster/core/storage/runs/sqlite/alembic/*',
                 'dagster/core/storage/schedules/sqlite/alembic/*',
+                'dagster/grpc/protos/*',
             ]
         },
         include_package_data=True,
@@ -74,10 +75,12 @@ def _do_setup(name='dagster'):
             # core (not explicitly expressed atm)
             'alembic>=1.2.1',
             'gevent',
+            'grpcio>=1.29.0',
             'pyrsistent>=0.14.8',
             'python-dateutil',
             'requests',
             'rx<=1.6.1',  # 3.0 was a breaking change. No py2 compatability as well.
+            'futures; python_version < "3"',
             'six',
             'tqdm',
             'sqlalchemy>=1.0',

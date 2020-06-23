@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import re
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -427,3 +428,10 @@ def segfault():
     import ctypes
 
     ctypes.string_at(0)
+
+
+def find_free_port():
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]

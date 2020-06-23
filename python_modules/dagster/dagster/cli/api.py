@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 import click
 
-from dagster import check
+from dagster import check, seven
 from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
@@ -60,6 +60,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.tags import check_tags
+from dagster.grpc import DagsterGrpcServer
 from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
@@ -544,6 +545,22 @@ def _schedule_tick_state(instance, tick_data):
         holder.write()
 
 
+@click.command(name='grpc', help='Serve the Dagster inter-process API over GRPC')
+@click.option('--port', '-p', type=click.INT, required=False)
+@click.option('--socket', '-f', type=click.Path(), required=False)
+@click.option('--host', '-h', type=click.STRING, required=False, default='localhost')
+def grpc_command(port=None, socket=None, host='localhost'):
+    if seven.IS_WINDOWS and port is None:
+        raise click.UsageError(
+            'You must pass a valid --port/-p on Windows: --socket/-f not supported.'
+        )
+    if not (port or socket and not (port and socket)):
+        raise click.UsageError('You must pass one and only one of --port/-p or --socket/-f.')
+
+    server = DagsterGrpcServer(port=port, socket=socket, host=host)
+    server.serve()
+
+
 ###################################################################################################
 # WARNING: these cli args are encoded in cron, so are not safely changed without migration
 ###################################################################################################
@@ -726,6 +743,7 @@ def create_api_cli_group():
     group.add_command(partition_names_command)
     group.add_command(schedule_execution_data_command)
     group.add_command(launch_scheduled_execution)
+    group.add_command(grpc_command)
     return group
 
 

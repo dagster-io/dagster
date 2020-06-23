@@ -1,8 +1,6 @@
 import os
 import random
-import socket
 import subprocess
-from contextlib import closing
 
 import six
 from dagster_graphql.client.util import parse_raw_log_lines
@@ -56,13 +54,6 @@ def check_output(*args, **kwargs):
     except subprocess.CalledProcessError as exc:
         output = exc.output.decode()
         six.raise_from(Exception(output), exc)
-
-
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def remove_none_recursively(obj):

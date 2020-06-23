@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package api;
+
+service DagsterApi {
+  rpc Ping (PingRequest) returns (PingReply) {}
+}
+
+message PingRequest {
+  string echo = 1;
+}
+
+message PingReply {
+  string echo = 1;
+}

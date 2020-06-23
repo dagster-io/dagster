@@ -13,6 +13,8 @@ from types import MethodType
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
+IS_WINDOWS = os.name == 'nt'
+
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
 else:
