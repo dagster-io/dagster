@@ -1,10 +1,16 @@
 import { NextPage } from 'next';
 import { GetStaticProps } from 'next';
 import { getApiDocsPaths } from 'lib/apiDocsPaths';
+import { DynamicMetaTags } from 'components/MetaTags';
 
-const API: NextPage<{ body: string }> = (props) => {
+const API: NextPage<{ body: string; title: string }> = (props) => {
   const markup = { __html: props.body };
-  return <div dangerouslySetInnerHTML={markup} />;
+  return (
+    <>
+      <DynamicMetaTags title={`API Docs - ${props.title} | Dagster`} />
+      <div dangerouslySetInnerHTML={markup} />)
+    </>
+  );
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
@@ -22,6 +28,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       body: data.body,
+      title: data.title,
     },
   };
 };
