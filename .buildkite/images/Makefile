@@ -36,5 +36,5 @@ build-integration-27:
 push-integration-27:
 	./docker/push.sh $(py27) $(VERSION)
 
-build-integration: build-integration-37 build-integration-36 build-integration-35 build-integration-27
-push-integration: push-integration-37 push-integration-36 push-integration-35 push-integration-27
+build-integration: build-integration-38 build-integration-37 build-integration-36 build-integration-27
+push-integration: push-integration-38 push-integration-37 push-integration-36 push-integration-27
