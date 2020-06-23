@@ -80,9 +80,10 @@ def ui(host, port, storage_fallback, **kwargs):
         port_lookup = False
 
     if storage_fallback is None:
-        storage_fallback = seven.TemporaryDirectory().name
-
-    host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
+        with seven.TemporaryDirectory() as storage_fallback:
+            host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
+    else:
+        host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
 
 
 def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):

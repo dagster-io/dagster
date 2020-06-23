@@ -11,6 +11,8 @@ DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
 def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
+    check.str_param(base_dir, 'base_dir')
+    check.invariant(os.path.isdir(base_dir), 'base_dir should be a directory')
     overrides = check.opt_dict_param(overrides, 'overrides')
     dagster_config_dict = merge_dicts(
         load_yaml_from_globs(os.path.join(base_dir, config_filename)), overrides

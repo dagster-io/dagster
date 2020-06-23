@@ -243,18 +243,7 @@
       },
       {
         "name": "Instances",
-        "path": "/docs/overview/instances/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/instances/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/instances/page2"
-          }
-        ]
+        "path": "/docs/overview/instances/dagster-instance"
       },
       {
         "name": "Run Launchers & Executors",

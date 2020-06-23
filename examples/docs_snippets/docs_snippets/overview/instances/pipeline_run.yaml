@@ -1,0 +1,63 @@
+# ==================================================================================================
+# Execution
+# ==================================================================================================
+# Configure single-, multi-process execution, or use custom executors like Celery. Custom executors
+# can be defined with the @executor decorator.
+#
+# **NOTE**: setting executors globally on the Dagster instance is not currently supported!
+#
+# Currently available executors:
+# - in_process (default)
+# - multiprocess
+# - celery (provided by dagster_celery)
+# - celery-k8s (provided by dagster_celery)
+# - dask (provided by dagster_dask)
+execution:
+  multiprocess:
+    config:
+      # Note that max_concurrent: 0 is equivalent to multiprocessing.cpu_count() - see:
+      # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.cpu_count
+      max_concurrent: 4
+
+# ==================================================================================================
+# Storage
+# ==================================================================================================
+# The storage key in pipeline run config is used to set where inputs/outputs are stored during
+# pipeline execution. Custom storage backend can be defined with the @system_storage decorator.
+#
+# **NOTE**: setting pipeline run storage globally on the Dagster instance is not currently
+# supported!
+#
+# You will need to configure persistent intermediates storage for all of your pipeline runs that you
+# would like to run on multiprocess or distributed executors. This is because those executors use
+# intermediates storage to exchange input and output values -- you should ensure that whatever
+# storage you use is accessible by all processes/nodes involved in execution.
+#
+# Generally, filesystem storage is suitable for local in_process/multiprocess execution, and object/
+# distributed storage like S3, GCS, or NFS is suitable for distributed execution.
+#
+# Currently available storage types:
+# - in_memory (default)
+# - filesystem
+# - s3 (provided by dagster_aws.s3)
+# - gcs (provided by dagster_gcp)
+storage:
+  filesystem:
+
+# ==================================================================================================
+# Loggers
+# ==================================================================================================
+# The loggers key in pipeline run config is used to set up customized loggers. Custom loggers can be
+# defined with the @logger decorator.
+#
+# **NOTE**: setting custom loggers globally on the Dagster instance is not currently supported!
+#
+# Currently available loggers:
+# - colored_console_logger (default)
+# - json_console_logger
+# - cloudwatch_logger (provided by dagster_azure.cloudwatch)
+# - papertrail_logger (provided by dagster_papertrail)
+loggers:
+  console:
+    config:
+      log_level: DEBUG
