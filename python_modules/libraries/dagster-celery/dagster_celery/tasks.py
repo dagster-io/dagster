@@ -3,7 +3,6 @@ import hashlib
 import six
 from celery import Celery
 from celery.utils.collections import force_mapping
-from dagster_celery.config import CeleryConfig, CeleryK8sJobConfig
 from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
 from dagster_graphql.client.util import parse_raw_log_lines
 from kombu import Queue
@@ -17,7 +16,9 @@ from dagster.core.instance import InstanceRef
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.seven import is_module_available
 
-from .engine import DELEGATE_MARKER, CeleryEngine, CeleryK8sJobEngine
+from .core_execution_loop import DELEGATE_MARKER
+from .executor import CeleryExecutor
+from .executor_k8s import CeleryK8sJobExecutor
 
 
 def create_task(celery_app, **task_kwargs):
@@ -52,7 +53,7 @@ def create_task(celery_app, **task_kwargs):
             EngineEventData(
                 [EventMetadataEntry.text(step_keys_str, 'step_keys'),], marker_end=DELEGATE_MARKER,
             ),
-            CeleryEngine,
+            CeleryExecutor,
             step_key=execution_plan.step_key_for_single_step_plans(),
         )
 
@@ -174,7 +175,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
-            CeleryK8sJobEngine,
+            CeleryK8sJobExecutor,
             # validated above that step_keys is length 1, and it is not possible to use ETH or
             # execution plan in this function (Celery K8s workers should not access to user code)
             step_key=step_keys[0],
@@ -191,7 +192,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             'Retrieving logs from Kubernetes Job pods',
             pipeline_run,
             EngineEventData([EventMetadataEntry.text('\n'.join(pod_names), 'Pod names')]),
-            CeleryK8sJobEngine,
+            CeleryK8sJobExecutor,
             step_key=step_keys[0],
         )
         events.append(engine_event)
@@ -214,14 +215,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
     return _execute_step_k8s_job
 
 
-def make_app(config=None):
-    config = check.opt_inst_param(config, 'config', (CeleryConfig, CeleryK8sJobConfig))
+def make_app(app_args=None):
+    app_ = Celery('dagster', **(app_args if app_args else {}))
 
-    app_args = config.app_args() if config is not None else {}
-
-    app_ = Celery('dagster', **app_args)
-
-    if config is None:
+    if app_args is None:
         app_.config_from_object('dagster_celery.defaults', force=True)
 
         if is_module_available('dagster_celery_config'):

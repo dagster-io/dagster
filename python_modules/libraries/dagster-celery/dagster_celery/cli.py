@@ -12,8 +12,7 @@ from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_path, mkdir_p
 
-from .config import CeleryConfig
-from .executor import celery_executor
+from .executor import CeleryExecutor, celery_executor
 from .tasks import make_app
 
 
@@ -34,14 +33,11 @@ def get_config_value_from_yaml(yaml_path):
 
 
 def get_app(config_yaml=None):
-    if config_yaml:
-        celery_config = CeleryConfig.for_cli(**get_config_value_from_yaml(config_yaml))
-    else:
-        celery_config = CeleryConfig.for_cli()
-
-    app = make_app(celery_config)
-
-    return app
+    return make_app(
+        CeleryExecutor.for_cli(**get_config_value_from_yaml(config_yaml)).app_args()
+        if config_yaml
+        else CeleryExecutor.for_cli().app_args()
+    )
 
 
 def get_worker_name(name=None):

@@ -1,10 +1,11 @@
-from dagster import Field, Noneable, StringSource, check
-from dagster.core.definitions.executor import check_cross_process_constraints, executor
+from dagster import Executor, Field, Noneable, StringSource, check, executor
+from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.utils import merge_dicts
 
-from .config import CeleryK8sJobConfig
+from .config import DEFAULT_CONFIG, dict_wrapper
+from .defaults import broker_url, result_backend
 from .executor import CELERY_CONFIG
 
 CELERY_K8S_CONFIG_KEY = 'celery-k8s'
@@ -141,7 +142,7 @@ def celery_k8s_job_executor(init_context):
     include = run_launcher.include or exc_cfg.get('include')
     retries = run_launcher.retries or Retries.from_config(exc_cfg.get('retries'))
 
-    return CeleryK8sJobConfig(
+    return CeleryK8sJobExecutor(
         broker=broker,
         backend=backend,
         config_source=config_source,
@@ -152,4 +153,94 @@ def celery_k8s_job_executor(init_context):
         load_incluster_config=exc_cfg.get('load_incluster_config'),
         kubeconfig_file=exc_cfg.get('kubeconfig_file'),
         repo_location_name=exc_cfg.get('repo_location_name'),
+    )
+
+
+class CeleryK8sJobExecutor(Executor):
+    def __init__(
+        self,
+        retries,
+        broker=None,
+        backend=None,
+        include=None,
+        config_source=None,
+        job_config=None,
+        job_namespace=None,
+        load_incluster_config=False,
+        kubeconfig_file=None,
+        repo_location_name=None,
+    ):
+        from dagster_k8s import DagsterK8sJobConfig
+
+        if load_incluster_config:
+            check.invariant(
+                kubeconfig_file is None,
+                '`kubeconfig_file` is set but `load_incluster_config` is True.',
+            )
+        else:
+            check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
+
+        self.retries = check.inst_param(retries, 'retries', Retries)
+        self.broker = check.opt_str_param(broker, 'broker', default=broker_url)
+        self.backend = check.opt_str_param(backend, 'backend', default=result_backend)
+        self.include = check.opt_list_param(include, 'include', of_type=str)
+        self.config_source = dict_wrapper(
+            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+        )
+        self.job_config = check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
+        self.job_namespace = check.opt_str_param(job_namespace, 'job_namespace', default='default')
+
+        self.load_incluster_config = check.bool_param(
+            load_incluster_config, 'load_incluster_config'
+        )
+
+        self.kubeconfig_file = check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
+        self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
+
+    def execute(self, pipeline_context, execution_plan):
+        from .core_execution_loop import core_celery_execution_loop
+
+        return core_celery_execution_loop(
+            pipeline_context, execution_plan, step_execution_fn=_submit_task_k8s_job
+        )
+
+    def app_args(self):
+        return {
+            'broker': self.broker,
+            'backend': self.backend,
+            'include': self.include,
+            'config_source': self.config_source,
+            'retries': self.retries,
+        }
+
+
+def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
+    from .tasks import create_k8s_job_task
+
+    from dagster_k8s.job import get_k8s_resource_requirements
+
+    resources = get_k8s_resource_requirements(step.tags)
+    task = create_k8s_job_task(app)
+
+    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
+
+    task_signature = task.si(
+        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
+        step_keys=[step.key],
+        run_config=pipeline_context.pipeline_run.run_config,
+        mode=pipeline_context.pipeline_run.mode,
+        repo_name=recon_repo.get_definition().name,
+        repo_location_name=pipeline_context.executor.repo_location_name,
+        run_id=pipeline_context.pipeline_run.run_id,
+        job_config_dict=pipeline_context.executor.job_config.to_dict(),
+        job_namespace=pipeline_context.executor.job_namespace,
+        resources=resources,
+        load_incluster_config=pipeline_context.executor.load_incluster_config,
+        kubeconfig_file=pipeline_context.executor.kubeconfig_file,
+    )
+
+    return task_signature.apply_async(
+        priority=priority,
+        queue=queue,
+        routing_key='{queue}.execute_step_k8s_job'.format(queue=queue),
     )

@@ -11,8 +11,10 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.execution.context_creation_pipeline import pipeline_initialization_manager
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle
 
@@ -96,6 +98,37 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
     Returns (StepRunRef):
         A reference to the step.
     '''
+
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+
+    # This is a bit goofy right now, as the relationship between
+    # step launcher and the executor is a little weird.
+    #
+    # As far as I can tell, the only goal of interacting with the executor here
+    # is for the step launcher to inherit the retry policy. The step launcher
+    # actually assumes that a retry policy exists (hence the invariants below).
+    # However this isn't a formal requirement, so this can break. E.g. right
+    # now using a dask executor and the step launcher would fail.
+    #
+    # Once migration is complete, I think we should add a retries property
+    # to the Executor abc and make it optional. Then change this to handle
+    # the "no retry" case
+    check.param_invariant(
+        hasattr(step_context.executor, 'retries'),
+        'step_context',
+        'Executor must have retries property',
+    )
+    check.param_invariant(
+        isinstance(step_context.executor.retries, Retries),
+        'step_context',
+        'Executor retries property must be of type Retries. Object was {}'.format(
+            step_context.executor
+        ),
+    )
+    check.int_param(prior_attempts_count, 'prior_attempts_count')
+
+    retries = step_context.executor.retries
+
     recon_pipeline = step_context.pipeline
     if package_dir:
         if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
@@ -119,7 +152,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
         pipeline_run=step_context.pipeline_run,
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
-        executor_config=step_context.executor_config,
+        retries=retries,
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
     )
@@ -144,7 +177,7 @@ def step_run_ref_to_step_context(step_run_ref):
         pass
     pipeline_context = initialization_manager.get_object()
 
-    retries = step_run_ref.executor_config.retries.for_inner_plan()
+    retries = step_run_ref.retries.for_inner_plan()
     active_execution = execution_plan.start(retries=retries)
     step = active_execution.get_next_step()
 

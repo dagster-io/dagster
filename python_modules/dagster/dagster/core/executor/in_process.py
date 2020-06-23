@@ -2,18 +2,21 @@ import os
 
 from dagster import check
 from dagster.core.events import DagsterEvent, EngineEventData
-from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.retries import Retries
 from dagster.utils.timing import format_duration, time_execution_scope
 
-from .engine_base import Engine
+from .base import Executor
 
 
-class InProcessEngine(Engine):  # pylint: disable=no-init
-    @staticmethod
-    def execute(pipeline_context, execution_plan):
+class InProcessExecutor(Executor):
+    def __init__(self, retries, marker_to_close):
+        self.retries = check.inst_param(retries, 'retries', Retries)
+        self.marker_to_close = check.opt_str_param(marker_to_close, 'marker_to_close')
+
+    def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -22,20 +25,12 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
-            event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute,),
+            event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
         )
 
         with time_execution_scope() as timer_result:
-            check.param_invariant(
-                isinstance(pipeline_context.executor_config, ExecutorConfig),
-                'pipeline_context',
-                'Expected executor_config to be ExecutorConfig got {}'.format(
-                    pipeline_context.executor_config
-                ),
-            )
-
             for event in inner_plan_execution_iterator(
-                pipeline_context, execution_plan, pipeline_context.executor_config.retries
+                pipeline_context, execution_plan, self.retries
             ):
                 yield event
 

@@ -6,7 +6,6 @@ from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.retries import Retries, get_retries_config
 from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
@@ -18,7 +17,7 @@ class ExecutorDefinition(object):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
             available in `init_context.executor_config`.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
-            and return an instance of :py:class:`ExecutorConfig`.
+            and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
 
@@ -73,7 +72,7 @@ def executor(name=None, config_schema=None, required_resource_keys=None, config=
     '''Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
-    of :py:class:`ExecutorConfig`.
+    of :py:class:`Executor`.
 
     Args:
         name (Optional[str]): The name of the executor.
@@ -144,11 +143,12 @@ def in_process_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     '''
-    from dagster.core.engine.init import InitExecutorContext
+    from dagster.core.executor.init import InitExecutorContext
+    from dagster.core.executor.in_process import InProcessExecutor
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 
-    return InProcessExecutorConfig(
+    return InProcessExecutor(
         # shouldn't need to .get() here - issue with defaults in config setup
         retries=Retries.from_config(init_context.executor_config.get('retries', {'enabled': {}})),
         marker_to_close=init_context.executor_config.get('marker_to_close'),
@@ -183,13 +183,14 @@ def multiprocess_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     '''
-    from dagster.core.engine.init import InitExecutorContext
+    from dagster.core.executor.init import InitExecutorContext
+    from dagster.core.executor.multiprocess import MultiprocessExecutor
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 
     check_cross_process_constraints(init_context)
 
-    return MultiprocessExecutorConfig(
+    return MultiprocessExecutor(
         pipeline=init_context.pipeline,
         max_concurrent=init_context.executor_config['max_concurrent'],
         retries=Retries.from_config(init_context.executor_config['retries']),
@@ -200,7 +201,7 @@ default_executors = [in_process_executor, multiprocess_executor]
 
 
 def check_cross_process_constraints(init_context):
-    from dagster.core.engine.init import InitExecutorContext
+    from dagster.core.executor.init import InitExecutorContext
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 

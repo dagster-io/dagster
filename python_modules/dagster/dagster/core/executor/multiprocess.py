@@ -1,12 +1,15 @@
+import multiprocessing
 import os
 
 from dagster import EventMetadataEntry, check
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.config import MultiprocessExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.retries import Retries
+from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
 from dagster.utils import get_multiprocessing_context, start_termination_thread
 from dagster.utils.timing import format_duration, time_execution_scope
@@ -17,25 +20,24 @@ from .child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from .engine_base import Engine
 
 DELEGATE_MARKER = 'multiprocess_subprocess_init'
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
-        self, run_config, pipeline_run, executor_config, step_key, instance_ref, term_event
+        self, run_config, pipeline_run, step_key, instance_ref, term_event, recon_pipeline, retries,
     ):
         self.run_config = run_config
-        self.executor_config = executor_config
         self.pipeline_run = pipeline_run
         self.step_key = step_key
         self.instance_ref = instance_ref
         self.term_event = term_event
+        self.recon_pipeline = recon_pipeline
+        self.retries = retries
 
     def execute(self):
-        check.inst(self.executor_config, MultiprocessExecutorConfig)
-        pipeline = self.executor_config.pipeline
+        pipeline = self.recon_pipeline
         instance = DagsterInstance.from_ref(self.instance_ref)
 
         start_termination_thread(self.term_event)
@@ -57,7 +59,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
-            MultiprocessEngine,
+            MultiprocessExecutor,
             self.step_key,
         )
 
@@ -65,20 +67,22 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             execution_plan,
             self.pipeline_run,
             run_config=self.run_config,
-            retries=self.executor_config.retries.for_inner_plan(),
+            retries=self.retries.for_inner_plan(),
             instance=instance,
         ):
             yield step_event
 
 
 def execute_step_out_of_process(step_context, step, errors, term_events):
+    executor = check.inst(step_context.executor, MultiprocessExecutor)
     command = InProcessExecutorChildProcessCommand(
-        step_context.run_config,
-        step_context.pipeline_run,
-        step_context.executor_config,
-        step.key,
-        step_context.instance.get_ref(),
-        term_events[step.key],
+        run_config=step_context.run_config,
+        pipeline_run=step_context.pipeline_run,
+        step_key=step.key,
+        instance_ref=step_context.instance.get_ref(),
+        term_event=term_events[step.key],
+        recon_pipeline=executor.pipeline,
+        retries=executor.retries,
     )
 
     yield DagsterEvent.engine_event(
@@ -106,13 +110,19 @@ def execute_step_out_of_process(step_context, step, errors, term_events):
             check.failed('Unexpected return value from child process {}'.format(type(ret)))
 
 
-class MultiprocessEngine(Engine):  # pylint: disable=no-init
-    @staticmethod
-    def execute(pipeline_context, execution_plan):
+class MultiprocessExecutor(Executor):
+    def __init__(self, pipeline, retries, max_concurrent=None):
+
+        self.pipeline = check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
+        self.retries = check.inst_param(retries, 'retries', Retries)
+        max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
+        self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
+
+    def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-        limit = pipeline_context.executor_config.max_concurrent
+        limit = self.max_concurrent
 
         yield DagsterEvent.engine_event(
             pipeline_context,
@@ -129,9 +139,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
 
-            active_execution = execution_plan.start(
-                retries=pipeline_context.executor_config.retries
-            )
+            active_execution = execution_plan.start(retries=self.retries)
             active_iters = {}
             errors = {}
             term_events = {}

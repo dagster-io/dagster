@@ -1,8 +1,9 @@
-from dagster import Field, Noneable, Permissive, StringSource
-from dagster.core.definitions.executor import check_cross_process_constraints, executor
-from dagster.core.execution.retries import Retries, get_retries_config
+from dagster import Executor, Field, Noneable, Permissive, StringSource, check, executor
+from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster.core.execution.retries import Retries, RetryMode, get_retries_config
 
-from .config import CeleryConfig
+from .config import DEFAULT_CONFIG, dict_wrapper
+from .defaults import broker_url, result_backend
 
 CELERY_CONFIG = {
     'broker': Field(
@@ -85,10 +86,66 @@ def celery_executor(init_context):
     '''
     check_cross_process_constraints(init_context)
 
-    return CeleryConfig(
+    return CeleryExecutor(
         broker=init_context.executor_config.get('broker'),
         backend=init_context.executor_config.get('backend'),
         config_source=init_context.executor_config.get('config_source'),
         include=init_context.executor_config.get('include'),
         retries=Retries.from_config(init_context.executor_config['retries']),
     )
+
+
+def _submit_task(app, pipeline_context, step, queue, priority):
+    from .tasks import create_task
+
+    task = create_task(app)
+
+    task_signature = task.si(
+        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
+        executable_dict=pipeline_context.pipeline.to_dict(),
+        run_id=pipeline_context.pipeline_run.run_id,
+        step_keys=[step.key],
+        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+    )
+    return task_signature.apply_async(
+        priority=priority, queue=queue, routing_key='{queue}.execute_plan'.format(queue=queue),
+    )
+
+
+class CeleryExecutor(Executor):
+    def __init__(
+        self, retries, broker=None, backend=None, include=None, config_source=None,
+    ):
+        self.broker = check.opt_str_param(broker, 'broker', default=broker_url)
+        self.backend = check.opt_str_param(backend, 'backend', default=result_backend)
+        self.include = check.opt_list_param(include, 'include', of_type=str)
+        self.config_source = dict_wrapper(
+            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+        )
+        self.retries = check.inst_param(retries, 'retries', Retries)
+
+    def execute(self, pipeline_context, execution_plan):
+        from .core_execution_loop import core_celery_execution_loop
+
+        return core_celery_execution_loop(
+            pipeline_context, execution_plan, step_execution_fn=_submit_task
+        )
+
+    @staticmethod
+    def for_cli(broker=None, backend=None, include=None, config_source=None):
+        return CeleryExecutor(
+            retries=Retries(RetryMode.DISABLED),
+            broker=broker,
+            backend=backend,
+            include=include,
+            config_source=config_source,
+        )
+
+    def app_args(self):
+        return {
+            'broker': self.broker,
+            'backend': self.backend,
+            'include': self.include,
+            'config_source': self.config_source,
+            'retries': self.retries,
+        }

@@ -31,10 +31,7 @@ Executors
 .. autoclass:: InitExecutorContext
     :members:
 
-.. autoclass:: ExecutorConfig
-    :members:
-
-.. autoclass:: Engine
+.. autoclass:: Executor
     :members:
 
 ----

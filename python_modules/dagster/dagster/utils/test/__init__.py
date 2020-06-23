@@ -28,7 +28,7 @@ from dagster.core.execution.api import create_execution_plan, scoped_pipeline_co
 from dagster.core.execution.context_creation_pipeline import (
     construct_pipeline_execution_context,
     create_context_creation_data,
-    create_executor_config,
+    create_executor,
     create_log_manager,
 )
 from dagster.core.instance import DagsterInstance
@@ -71,7 +71,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     creation_data = create_context_creation_data(execution_plan, run_config, pipeline_run, instance)
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
-    executor_config = create_executor_config(creation_data)
+    executor = create_executor(creation_data)
     return construct_pipeline_execution_context(
         context_creation_data=creation_data,
         scoped_resources_builder=scoped_resources_builder,
@@ -80,7 +80,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
             file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
         ),
         log_manager=log_manager,
-        executor_config=executor_config,
+        executor=executor,
         raise_on_error=True,
     )
 

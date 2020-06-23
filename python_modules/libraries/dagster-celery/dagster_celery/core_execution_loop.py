@@ -2,7 +2,6 @@ import sys
 import time
 
 from dagster import check
-from dagster.core.engine.engine_base import Engine
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -10,8 +9,9 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import CeleryConfig, CeleryK8sJobConfig
 from .defaults import task_default_priority, task_default_queue
+from .executor import CeleryExecutor
+from .executor_k8s import CeleryK8sJobExecutor
 from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
@@ -23,23 +23,7 @@ TICK_SECONDS = 1
 DELEGATE_MARKER = 'celery_queue_wait'
 
 
-class CeleryEngine(Engine):
-    @staticmethod
-    def execute(pipeline_context, execution_plan):
-        return _core_celery_execution_loop(
-            pipeline_context, execution_plan, step_execution_fn=_submit_task
-        )
-
-
-class CeleryK8sJobEngine(Engine):
-    @staticmethod
-    def execute(pipeline_context, execution_plan):
-        return _core_celery_execution_loop(
-            pipeline_context, execution_plan, step_execution_fn=_submit_task_k8s_job
-        )
-
-
-def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution_fn):
+def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_fn):
     from .tasks import make_app
 
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
@@ -47,14 +31,11 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
     check.callable_param(step_execution_fn, 'step_execution_fn')
 
     check.param_invariant(
-        isinstance(pipeline_context.executor_config, (CeleryConfig, CeleryK8sJobConfig)),
+        isinstance(pipeline_context.executor, (CeleryExecutor, CeleryK8sJobExecutor)),
         'pipeline_context',
-        'Expected executor_config to be Celery config got {}'.format(
-            pipeline_context.executor_config
-        ),
     )
 
-    celery_config = pipeline_context.executor_config
+    executor = pipeline_context.executor
 
     # https://github.com/dagster-io/dagster/issues/2440
     check.invariant(
@@ -63,7 +44,7 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
         'similar system that allows files to be available to all nodes), S3, or GCS',
     )
 
-    app = make_app(celery_config)
+    app = make_app(executor.app_args())
 
     priority_for_step = lambda step: (
         -1 * int(step.tags.get(DAGSTER_CELERY_STEP_PRIORITY_TAG, task_default_priority))
@@ -78,7 +59,7 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
     step_errors = {}
     completed_steps = set({})  # Set[step_key]
     active_execution = execution_plan.start(
-        retries=pipeline_context.executor_config.retries, sort_key_fn=priority_for_step
+        retries=pipeline_context.executor.retries, sort_key_fn=priority_for_step,
     )
     stopping = False
 
@@ -165,55 +146,6 @@ def _core_celery_execution_loop(pipeline_context, execution_plan, step_execution
             ),
             subprocess_error_infos=list(step_errors.values()),
         )
-
-
-def _submit_task(app, pipeline_context, step, queue, priority):
-    from .tasks import create_task
-
-    task = create_task(app)
-
-    task_signature = task.si(
-        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
-        executable_dict=pipeline_context.pipeline.to_dict(),
-        run_id=pipeline_context.pipeline_run.run_id,
-        step_keys=[step.key],
-        retries_dict=pipeline_context.executor_config.retries.for_inner_plan().to_config(),
-    )
-    return task_signature.apply_async(
-        priority=priority, queue=queue, routing_key='{queue}.execute_plan'.format(queue=queue),
-    )
-
-
-def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
-    from .tasks import create_k8s_job_task
-
-    from dagster_k8s.job import get_k8s_resource_requirements
-
-    resources = get_k8s_resource_requirements(step.tags)
-    task = create_k8s_job_task(app)
-
-    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
-
-    task_signature = task.si(
-        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
-        step_keys=[step.key],
-        run_config=pipeline_context.pipeline_run.run_config,
-        mode=pipeline_context.pipeline_run.mode,
-        repo_name=recon_repo.get_definition().name,
-        repo_location_name=pipeline_context.executor_config.repo_location_name,
-        run_id=pipeline_context.pipeline_run.run_id,
-        job_config_dict=pipeline_context.executor_config.job_config.to_dict(),
-        job_namespace=pipeline_context.executor_config.job_namespace,
-        resources=resources,
-        load_incluster_config=pipeline_context.executor_config.load_incluster_config,
-        kubeconfig_file=pipeline_context.executor_config.kubeconfig_file,
-    )
-
-    return task_signature.apply_async(
-        priority=priority,
-        queue=queue,
-        routing_key='{queue}.execute_step_k8s_job'.format(queue=queue),
-    )
 
 
 def _get_step_priority(context, step):

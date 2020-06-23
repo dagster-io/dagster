@@ -24,7 +24,7 @@ class SystemPipelineExecutionContextData(
         (
             'pipeline_run scoped_resources_builder environment_config pipeline '
             'mode_def system_storage_def instance intermediates_manager file_manager '
-            'executor_config raise_on_error'
+            'executor raise_on_error'
         ),
     )
 ):
@@ -44,13 +44,13 @@ class SystemPipelineExecutionContextData(
         instance,
         intermediates_manager,
         file_manager,
-        executor_config,
+        executor,
         raise_on_error,
     ):
         from dagster.core.definitions.system_storage import SystemStorageDefinition
-        from dagster.core.execution.config import ExecutorConfig
         from dagster.core.storage.intermediates_manager import IntermediatesManager
         from dagster.core.instance import DagsterInstance
+        from dagster.core.executor.base import Executor
 
         return super(SystemPipelineExecutionContextData, cls).__new__(
             cls,
@@ -71,7 +71,7 @@ class SystemPipelineExecutionContextData(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
             file_manager=check.inst_param(file_manager, 'file_manager', FileManager),
-            executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig),
+            executor=check.inst_param(executor, 'executor', Executor),
             raise_on_error=check.bool_param(raise_on_error, 'raise_on_error'),
         )
 
@@ -110,8 +110,8 @@ class SystemPipelineExecutionContext(object):
         return TypeCheckContext(self._pipeline_context_data, self.log, dagster_type)
 
     @property
-    def executor_config(self):
-        return self._pipeline_context_data.executor_config
+    def executor(self):
+        return self._pipeline_context_data.executor
 
     @property
     def pipeline_run(self):

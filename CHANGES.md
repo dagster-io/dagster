@@ -5,6 +5,7 @@
 **Breaking Changes**
 
 - Python 3.5 is no longer under test.
+- `Engine` and `ExecutorConfig` have been deleted in favor of `Executor`. Instead of the `@executor` decorator decorating a function that returns an `ExecutorConfig` it should now decorate a function that returns an `Executor`.
 
 **New**
 

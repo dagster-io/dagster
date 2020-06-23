@@ -6,16 +6,16 @@ from dagster import check
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
-from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import DagsterError
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
-from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.memoization import validate_reexecution_memoization
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_manager,
 )
+from dagster.core.executor.base import Executor
+from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
@@ -44,10 +44,6 @@ def system_storage_def_from_config(mode_definition, environment_config):
             environment_config.storage.system_storage_name
         )
     )
-
-
-def construct_executor_config(executor_init_context):
-    return executor_init_context.executor_def.executor_creation_fn(executor_init_context)
 
 
 def executor_def_from_config(mode_definition, environment_config):
@@ -161,7 +157,11 @@ def pipeline_initialization_event_generator(
         context_creation_data = create_context_creation_data(
             execution_plan, run_config, pipeline_run, instance,
         )
-        executor_config = create_executor_config(context_creation_data)
+
+        executor = check.inst(
+            create_executor(context_creation_data), Executor, 'Must return an Executor'
+        )
+
         log_manager = create_log_manager(context_creation_data)
         resources_manager = scoped_resources_builder_cm(
             execution_plan,
@@ -183,7 +183,7 @@ def pipeline_initialization_event_generator(
             scoped_resources_builder=scoped_resources_builder,
             system_storage_data=system_storage_data,
             log_manager=log_manager,
-            executor_config=executor_config,
+            executor=executor,
             raise_on_error=raise_on_error,
         )
 
@@ -261,10 +261,9 @@ def create_system_storage_data(
     return system_storage_data
 
 
-def create_executor_config(context_creation_data):
+def create_executor(context_creation_data):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
-
-    return construct_executor_config(
+    return context_creation_data.executor_def.executor_creation_fn(
         InitExecutorContext(
             pipeline=context_creation_data.pipeline,
             mode_def=context_creation_data.mode_def,
@@ -283,7 +282,7 @@ def construct_pipeline_execution_context(
     scoped_resources_builder,
     system_storage_data,
     log_manager,
-    executor_config,
+    executor,
     raise_on_error,
 ):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
@@ -294,7 +293,7 @@ def construct_pipeline_execution_context(
     )
     check.inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
-    check.inst_param(executor_config, 'executor_config', ExecutorConfig)
+    check.inst_param(executor, 'executor', Executor)
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
@@ -307,7 +306,7 @@ def construct_pipeline_execution_context(
             instance=context_creation_data.instance,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
-            executor_config=executor_config,
+            executor=executor,
             raise_on_error=raise_on_error,
         ),
         log_manager=log_manager,

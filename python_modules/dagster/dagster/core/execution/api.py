@@ -564,9 +564,7 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
     pipeline_success = True
     generator_closed = False
     try:
-        for event in pipeline_context.executor_config.get_engine().execute(
-            pipeline_context, execution_plan
-        ):
+        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
             if event.is_step_start:
                 steps_started.add(event.step_key)
             if event.is_step_success:

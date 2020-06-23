@@ -58,8 +58,6 @@ from dagster.core.definitions import (
     system_storage,
     weekly_schedule,
 )
-from dagster.core.engine import Engine
-from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -87,7 +85,6 @@ from dagster.core.execution.api import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -97,6 +94,8 @@ from dagster.core.execution.results import (
     PipelineExecutionResult,
     SolidExecutionResult,
 )
+from dagster.core.executor.base import Executor
+from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
@@ -177,8 +176,7 @@ __all__ = [
     'CompositeSolidExecutionResult',
     'DagsterEvent',
     'DagsterEventType',
-    'Engine',
-    'ExecutorConfig',
+    'Executor',
     'InitExecutorContext',
     'InitLoggerContext',
     'InitResourceContext',
