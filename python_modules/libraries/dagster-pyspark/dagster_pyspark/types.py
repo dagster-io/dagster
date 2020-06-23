@@ -104,7 +104,7 @@ WriteCompressionParquetOptions = Enum(
                     'escape': Field(
                         String,
                         is_required=False,
-                        description="sets a single character used for escaping quotes inside an already quoted value. If None is set, it uses the default value, ``\``.",
+                        description="sets a single character used for escaping quotes inside an already quoted value. If None is set, it uses the default value, ``\\``.",
                     ),
                     'escapeQuotes': Field(
                         Bool,

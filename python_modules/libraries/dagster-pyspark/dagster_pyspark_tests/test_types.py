@@ -2,16 +2,15 @@ import shutil
 
 import pytest
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from pyspark.sql import DataFrame as NativeSparkDataFrame
 from pyspark.sql import Row, SparkSession
 
-from dagster import OutputDefinition, execute_solid, make_python_type_usable_as_dagster_type, solid
+from dagster import OutputDefinition, execute_solid, solid
 from dagster.utils.test import get_temp_dir
 
 spark = SparkSession.builder.getOrCreate()
 
 
-def create_pyspark_df() -> NativeSparkDataFrame:
+def create_pyspark_df():
     data = [Row(_c0=str(i), _c1=str(i)) for i in range(100)]
     return spark.createDataFrame(data)
 
@@ -28,7 +27,7 @@ def test_dataframe_outputs(file_type, read):
     df = create_pyspark_df()
 
     @solid(output_defs=[OutputDefinition(dagster_type=DagsterPySparkDataFrame, name='df')])
-    def return_df(context):
+    def return_df(_):
         return df
 
     with get_temp_dir() as temp_path:
