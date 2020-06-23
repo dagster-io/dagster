@@ -93,11 +93,11 @@ def test_create_execution_plan_snapshot():
     assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
 
 
-@pytest.mark.parametrize('dirname', ('.', '..'))
-def test_dagster_home_raises(dirname):
-    os.environ['DAGSTER_HOME'] = dirname
+def test_dagster_home_raises(monkeypatch):
+    dirname = '.'
+    monkeypatch.setenv('DAGSTER_HOME', dirname)
 
     with pytest.raises(DagsterInvariantViolationError) as err:
         _dagster_home()
 
-    assert str(err.value) == 'DAGSTER_HOME must be absolute path'
+    assert str(err.value) == 'DAGSTER_HOME must be absolute path: {}'.format(dirname)

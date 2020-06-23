@@ -56,7 +56,7 @@ def _dagster_home():
 
     if not os.path.isabs(dagster_home_path):
         raise DagsterInvariantViolationError(
-            'DAGSTER_HOME must be absolute path'
+            'DAGSTER_HOME must be absolute path: {}'.format(dagster_home_path)
         )
     return dagster_home_path
 
