@@ -100,7 +100,12 @@ def define_schedules():
 @repository
 def test_repository():
     if os.getenv('DAGSTER_TEST_SMALL_REPO'):
-        return [no_config_pipeline] + define_schedules()[:-1]
+        return [no_config_pipeline] + list(
+            filter(
+                lambda x: not x.name == "default_config_pipeline_every_min_schedule",
+                define_schedules(),
+            )
+        )
 
     return [no_config_pipeline] + define_schedules()
 
@@ -286,15 +291,39 @@ def test_remove_schedule_def(
 def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
+        external_repo = get_smaller_external_repo()
 
         # Initialize scheduler
         instance.reconcile_scheduler_state(get_smaller_external_repo())
 
-        assert len(instance.all_stored_schedule_state()) == 2
+        # Start all schedule and verify cron tab, schedule storage, and errors
+        instance.start_schedule_and_update_storage_state(
+            external_repo.get_external_schedule("no_config_pipeline_daily_schedule")
+        )
+        instance.start_schedule_and_update_storage_state(
+            external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
+        )
 
+        assert len(instance.all_stored_schedule_state()) == 2
+        assert len(get_cron_jobs()) == 2
+        assert len(instance.scheduler_debug_info().errors) == 0
+
+        # Reconcile with an additional schedule added
         instance.reconcile_scheduler_state(get_test_external_repo())
 
         assert len(instance.all_stored_schedule_state()) == 3
+        assert len(get_cron_jobs()) == 2
+        assert len(instance.scheduler_debug_info().errors) == 0
+
+        # Start the new schedule
+        external_repo = get_test_external_repo()
+        instance.start_schedule_and_update_storage_state(
+            external_repo.get_external_schedule("default_config_pipeline_every_min_schedule")
+        )
+
+        assert len(instance.all_stored_schedule_state()) == 3
+        assert len(get_cron_jobs()) == 3
+        assert len(instance.scheduler_debug_info().errors) == 0
 
 
 def test_start_and_stop_schedule_cron_tab(
