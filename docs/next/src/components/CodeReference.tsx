@@ -1,11 +1,12 @@
 import React from 'react';
+import { VersionedGithubLink } from 'components/VersionedComponents';
 
 type Props = {
-  url?: string;
+  filePath: string;
 };
 
 export function CodeReferenceLink(props: Props) {
-  const { url } = props;
+  const { filePath } = props;
 
   return (
     <div className="bg-blue-50 rounded flex item-center p-4">
@@ -20,10 +21,7 @@ export function CodeReferenceLink(props: Props) {
       </div>
       <div className="pl-4 text-blue-600">
         You can find the code for this tutorial on{' '}
-        <a className="underline hover:text-blue-500" href={url} target="_blank">
-          Github
-        </a>
-        .
+        <VersionedGithubLink filePath={filePath} word="Github" />.
       </div>
     </div>
   );

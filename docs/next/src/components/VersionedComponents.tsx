@@ -23,3 +23,21 @@ export const VersionedImage: React.FunctionComponent<any> = ({
   src,
   ...props
 }) => <img src={`${basePath}${format(src)}`} {...props} />;
+
+export function VersionedGithubLink(props: { filePath: string; word: string }) {
+  const { filePath, word } = props;
+  // get version from base path
+  let version = 'master';
+  if (basePath) {
+    let match = /\/(\d+\.\d+\.\d+).*/.exec(basePath);
+    version = match ? match[1] : 'master';
+  }
+  return (
+    <a
+      href={`https://github.com/dagster-io/dagster/tree/${version}/${filePath}`}
+      target="_blank"
+    >
+      {word}
+    </a>
+  );
+}
