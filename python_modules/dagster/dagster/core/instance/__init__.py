@@ -52,7 +52,13 @@ def _dagster_home():
             'DAGSTER_HOME is not set, check is_dagster_home_set before invoking.'
         )
 
-    return os.path.expanduser(dagster_home_path)
+    dagster_home_path = os.path.expanduser(dagster_home_path)
+
+    if not os.path.isabs(dagster_home_path):
+        raise DagsterInvariantViolationError(
+            'DAGSTER_HOME must be absolute path'
+        )
+    return dagster_home_path
 
 
 def _check_run_equality(pipeline_run, candidate_run):
