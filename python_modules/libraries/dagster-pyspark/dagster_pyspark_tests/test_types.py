@@ -8,7 +8,6 @@ from pyspark.sql import Row, SparkSession
 from dagster import OutputDefinition, execute_solid, make_python_type_usable_as_dagster_type, solid
 from dagster.utils.test import get_temp_dir
 
-
 spark = SparkSession.builder.getOrCreate()
 
 
