@@ -37,7 +37,7 @@ def _do_setup(name='dagster-cron'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', "python-crontab>=2.3.8"],
+        install_requires=['dagster', "python-crontab>=2.4.1"],
         zip_safe=False,
     )
 

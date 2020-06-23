@@ -23,7 +23,6 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         self, inst_data=None,
     ):
         self._inst_data = inst_data
-        self._cron_tab = CronTab(user=True)
 
     @property
     def inst_data(self):
@@ -37,10 +36,13 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return SystemCronScheduler(inst_data=inst_data)
 
+    def get_cron_tab(self):
+        return CronTab(user=True)
+
     def debug_info(self):
         return "Running Cron Jobs:\n{jobs}\n".format(
             jobs="\n".join(
-                [str(job) for job in self._cron_tab if 'dagster-schedule:' in job.comment]
+                [str(job) for job in self.get_cron_tab() if 'dagster-schedule:' in job.comment]
             )
         )
 
@@ -112,11 +114,10 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             shutil.rmtree(logs_directory)
 
         # Remove all cron jobs
-        for job in self._cron_tab:
-            if 'dagster-schedule:' in job.comment:
-                self._cron_tab.remove_all(comment=job.comment)
-
-        self._cron_tab.write()
+        with self.get_cron_tab() as cron_tab:
+            for job in cron_tab:
+                if 'dagster-schedule:' in job.comment:
+                    cron_tab.remove_all(comment=job.comment)
 
     def _get_bash_script_file_path(self, instance, schedule_origin_id):
         check.inst_param(instance, 'instance', DagsterInstance)
@@ -146,26 +147,27 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         script_file = self._write_bash_script_to_file(instance, external_schedule)
         command = self._get_command(script_file, instance, schedule_origin_id)
 
-        job = self._cron_tab.new(
-            command=command,
-            comment='dagster-schedule: {schedule_origin_id}'.format(
-                schedule_origin_id=schedule_origin_id
-            ),
-        )
-        job.setall(external_schedule.cron_schedule)
-        self._cron_tab.write()
+        with self.get_cron_tab() as cron_tab:
+            job = cron_tab.new(
+                command=command,
+                comment='dagster-schedule: {schedule_origin_id}'.format(
+                    schedule_origin_id=schedule_origin_id
+                ),
+            )
+            job.setall(external_schedule.cron_schedule)
 
     def _end_cron_job(self, instance, schedule_origin_id):
-        self._cron_tab.remove_all(comment=self._cron_tag_for_schedule(schedule_origin_id))
-        self._cron_tab.write()
+        with self.get_cron_tab() as cron_tab:
+            cron_tab.remove_all(comment=self._cron_tag_for_schedule(schedule_origin_id))
 
         script_file = self._get_bash_script_file_path(instance, schedule_origin_id)
         if os.path.isfile(script_file):
             os.remove(script_file)
 
     def running_schedule_count(self, schedule_origin_id):
-        cron_tab = CronTab(user=True)
-        matching_jobs = cron_tab.find_comment(self._cron_tag_for_schedule(schedule_origin_id))
+        matching_jobs = self.get_cron_tab().find_comment(
+            self._cron_tag_for_schedule(schedule_origin_id)
+        )
 
         return len(list(matching_jobs))
 
