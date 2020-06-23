@@ -3,7 +3,8 @@ from dagster_graphql.client.mutations import (
     execute_execute_plan_mutation_raw,
 )
 
-from dagster.cli.workspace.cli_target import ModuleTarget, workspace_from_load_target
+from dagster import file_relative_path
+from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 
@@ -34,12 +35,23 @@ EXPECTED_EVENTS = {
 }
 
 
+def load_sleepy_workspace():
+    return workspace_from_load_target(
+        PythonFileTarget(file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline')
+    )
+
+
+def sleepy_recon_pipeline():
+    return ReconstructablePipeline.for_file(
+        file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline'
+    )
+
+
 def test_execute_execute_plan_mutation():
     pipeline_name = 'sleepy_pipeline'
-    pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
-    workspace = workspace_from_load_target(
-        ModuleTarget('dagster_examples.toys.sleepy', pipeline_name)
-    )
+
+    pipeline = sleepy_recon_pipeline()
+    workspace = load_sleepy_workspace()
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
@@ -64,10 +76,8 @@ def test_execute_execute_plan_mutation():
 
 def test_execute_execute_plan_mutation_raw():
     pipeline_name = 'sleepy_pipeline'
-    workspace = workspace_from_load_target(
-        ModuleTarget('dagster_examples.toys.sleepy', pipeline_name)
-    )
-    pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
+    pipeline = sleepy_recon_pipeline()
+    workspace = load_sleepy_workspace()
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
