@@ -154,7 +154,7 @@ def test_asset_wipe(asset_aware_context):
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 3
         log_count = len(event_log_storage.get_logs_for_run(one.run_id))
-        instance.wipe_all_assets()
+        instance.wipe_assets(asset_keys)
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 0
         assert log_count == len(event_log_storage.get_logs_for_run(one.run_id))

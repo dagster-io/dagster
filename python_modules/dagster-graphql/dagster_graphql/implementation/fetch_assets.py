@@ -1,30 +1,25 @@
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
-from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 
 
 def get_assets(graphene_info):
-    event_storage = (
-        graphene_info.context.instance._event_storage  # pylint: disable=protected-access
-    )
-    if not isinstance(event_storage, AssetAwareEventLogStorage):
+    instance = graphene_info.context.instance
+    if not instance.is_asset_aware:
         return graphene_info.schema.type_named('AssetsNotSupportedError')(
             message='The configured event log storage is not asset aware.'
         )
 
-    asset_keys = event_storage.get_all_asset_keys()
+    asset_keys = instance.all_asset_keys()
     return graphene_info.schema.type_named('AssetConnection')(
         nodes=[graphene_info.schema.type_named('Asset')(key=asset_key) for asset_key in asset_keys]
     )
 
 
 def get_asset(graphene_info, asset_key):
-    event_storage = (
-        graphene_info.context.instance._event_storage  # pylint: disable=protected-access
-    )
-
-    if not isinstance(event_storage, AssetAwareEventLogStorage):
+    check.inst_param(asset_key, 'asset_key', AssetKey)
+    instance = graphene_info.context.instance
+    if not instance.is_asset_aware:
         return graphene_info.schema.type_named('AssetsNotSupportedError')(
             message='The configured event log storage is not asset aware.'
         )
@@ -36,11 +31,12 @@ def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
     check.inst_param(asset_key, 'asset_key', AssetKey)
     check.opt_str_param(cursor, 'cursor')
     check.opt_int_param(limit, 'limit')
-    event_storage = (
-        graphene_info.context.instance._event_storage  # pylint: disable=protected-access
-    )
-    check.inst(event_storage, AssetAwareEventLogStorage)
-    events = event_storage.get_asset_events(asset_key, cursor, limit)
+    instance = graphene_info.context.instance
+    if not instance.is_asset_aware:
+        return graphene_info.schema.type_named('AssetsNotSupportedError')(
+            message='The configured event log storage is not asset aware.'
+        )
+    events = instance.events_for_asset_key(asset_key, cursor, limit)
     return [
         event
         for event in events
@@ -51,12 +47,13 @@ def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
 
 def get_asset_run_ids(graphene_info, asset_key):
     check.inst_param(asset_key, 'asset_key', AssetKey)
-    event_storage = (
-        graphene_info.context.instance._event_storage  # pylint: disable=protected-access
-    )
-    check.inst(event_storage, AssetAwareEventLogStorage)
-    run_ids = event_storage.get_asset_run_ids(asset_key)
-    return run_ids
+    instance = graphene_info.context.instance
+    if not instance.is_asset_aware:
+        return graphene_info.schema.type_named('AssetsNotSupportedError')(
+            message='The configured event log storage is not asset aware.'
+        )
+
+    return instance.run_ids_for_asset_key(asset_key)
 
 
 def get_assets_for_run_id(graphene_info, run_id):

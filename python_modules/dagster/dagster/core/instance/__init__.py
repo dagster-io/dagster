@@ -789,26 +789,6 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
-    def wipe_assets(self, asset_keys):
-        check.list_param(asset_keys, 'asset_keys', of_type=AssetKey)
-
-        from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
-
-        if not isinstance(self._event_storage, AssetAwareEventLogStorage):
-            return
-
-        for asset_key in asset_keys:
-            self._event_storage.wipe_asset(asset_key)
-
-    def wipe_all_assets(self):
-        from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
-
-        if not isinstance(self._event_storage, AssetAwareEventLogStorage):
-            return
-
-        for asset_key in self._event_storage.get_all_asset_keys():
-            self._event_storage.wipe_asset(asset_key)
-
     def delete_run(self, run_id):
         self._run_storage.delete_run(run_id)
         self._event_storage.delete_events(run_id)
@@ -823,6 +803,42 @@ class DagsterInstance:
 
     def watch_event_logs(self, run_id, cursor, cb):
         return self._event_storage.watch(run_id, cursor, cb)
+
+    # asset storage
+
+    @property
+    def is_asset_aware(self):
+        return self._event_storage.is_asset_aware
+
+    def check_asset_aware(self):
+        check.invariant(
+            self.is_asset_aware,
+            (
+                'Asset queries can only be performed on instances with asset-aware event log '
+                'storage. Use `instance.is_asset_aware` to verify that the instance is configured '
+                'with an EventLogStorage that implements `AssetAwareEventLogStorage`'
+            ),
+        )
+
+    def all_asset_keys(self):
+        self.check_asset_aware()
+        return self._event_storage.get_all_asset_keys()
+
+    def events_for_asset_key(self, asset_key, cursor=None, limit=None):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        self.check_asset_aware()
+        return self._event_storage.get_asset_events(asset_key, cursor, limit)
+
+    def run_ids_for_asset_key(self, asset_key):
+        check.inst_param(asset_key, 'asset_key', AssetKey)
+        self.check_asset_aware()
+        return self._event_storage.get_asset_run_ids(asset_key)
+
+    def wipe_assets(self, asset_keys):
+        check.list_param(asset_keys, 'asset_keys', of_type=AssetKey)
+        self.check_asset_aware()
+        for asset_key in asset_keys:
+            self._event_storage.wipe_asset(asset_key)
 
     # event subscriptions
 

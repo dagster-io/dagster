@@ -76,6 +76,10 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
     def dispose(self):
         '''Explicit lifecycle management.'''
 
+    @property
+    def is_asset_aware(self):
+        return isinstance(self, AssetAwareEventLogStorage)
+
 
 class AssetAwareEventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod

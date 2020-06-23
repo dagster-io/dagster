@@ -7,7 +7,7 @@ def test_materialized_assets():
     instance = DagsterInstance.ephemeral()
     res = execute_pipeline(materialization_pipeline, instance=instance)
     assert res.success
-    event_log_storage = instance._event_storage  # pylint: disable=protected-access
-    asset_keys = event_log_storage.get_all_asset_keys()
+    assert instance.is_asset_aware
+    asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 1
     assert asset_keys[0].to_string() == 'dashboards.analytics_dashboard'

@@ -4,7 +4,6 @@ from click.testing import CliRunner
 from dagster import AssetKey, Materialization, Output, execute_pipeline, pipeline, solid
 from dagster.cli.asset import asset_wipe_command
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 
 
 @pytest.fixture(name="asset_instance")
@@ -72,15 +71,14 @@ def test_asset_single_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    event_log_storage = asset_instance._event_storage  # pylint: disable=protected-access
-    assert isinstance(event_log_storage, AssetAwareEventLogStorage)
-    asset_keys = event_log_storage.get_all_asset_keys()
+    assert asset_instance.is_asset_aware
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 3
 
     result = runner.invoke(asset_wipe_command, ['path.to.asset_3'], input='DELETE\n')
     assert result.exit_code == 0
     assert 'Removed asset indexes from event logs' in result.output
-    asset_keys = event_log_storage.get_all_asset_keys()
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 2
 
 
@@ -88,15 +86,14 @@ def test_asset_multi_wipe(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    event_log_storage = asset_instance._event_storage  # pylint: disable=protected-access
-    assert isinstance(event_log_storage, AssetAwareEventLogStorage)
-    asset_keys = event_log_storage.get_all_asset_keys()
+    assert asset_instance.is_asset_aware
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 3
 
     result = runner.invoke(asset_wipe_command, ['path.to.asset_3', 'asset_1'], input='DELETE\n')
     assert result.exit_code == 0
     assert 'Removed asset indexes from event logs' in result.output
-    asset_keys = event_log_storage.get_all_asset_keys()
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 1
 
 
@@ -104,13 +101,12 @@ def test_asset_wipe_all(asset_instance):
     runner = CliRunner()
     execute_pipeline(pipeline_one, instance=asset_instance)
     execute_pipeline(pipeline_two, instance=asset_instance)
-    event_log_storage = asset_instance._event_storage  # pylint: disable=protected-access
-    assert isinstance(event_log_storage, AssetAwareEventLogStorage)
-    asset_keys = event_log_storage.get_all_asset_keys()
+    assert asset_instance.is_asset_aware
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 3
 
     result = runner.invoke(asset_wipe_command, ['--all'], input='DELETE\n')
     assert result.exit_code == 0
     assert 'Removed asset indexes from event logs' in result.output
-    asset_keys = event_log_storage.get_all_asset_keys()
+    asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 0
