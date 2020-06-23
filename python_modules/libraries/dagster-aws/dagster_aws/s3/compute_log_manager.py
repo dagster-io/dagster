@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import boto3
 
-from dagster import Field, check, seven
+from dagster import Field, StringSource, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -90,13 +90,13 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            'bucket': str,
-            'local_dir': Field(str, is_required=False),
-            'prefix': Field(str, is_required=False, default_value='dagster'),
+            'bucket': StringSource,
+            'local_dir': Field(StringSource, is_required=False),
+            'prefix': Field(StringSource, is_required=False, default_value='dagster'),
             'use_ssl': Field(bool, is_required=False, default_value=True),
             'verify': Field(bool, is_required=False, default_value=True),
-            'verify_cert_path': Field(str, is_required=False),
-            'endpoint_url': Field(str, is_required=False),
+            'verify_cert_path': Field(StringSource, is_required=False),
+            'endpoint_url': Field(StringSource, is_required=False),
         }
 
     @staticmethod
