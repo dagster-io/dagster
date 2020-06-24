@@ -89,6 +89,7 @@ graphql:
 	cd js_modules/dagit/; make generate-types
 
 sanity_check:
+	# Checking for prod installs - if any are listed below reinstall with 'pip -e'
 	! pip list --exclude-editable | grep -e dagster -e dagit
 
 rebuild_dagit: sanity_check
