@@ -45,7 +45,7 @@ CODE_ZIP_NAME = 'code.zip'
         'staging_prefix': Field(
             StringSource,
             is_required=False,
-            default_value='dagster_staging',
+            default_value='/dagster_staging',
             description='Directory in DBFS to use for uploaded job code. Must be absolute.',
         ),
         'wait_for_logs': Field(
@@ -95,6 +95,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             local_pipeline_package_path, 'local_pipeline_package_path'
         )
         self.staging_prefix = check.str_param(staging_prefix, 'staging_prefix')
+        check.invariant(staging_prefix.startswith('/'), 'staging_prefix must be an absolute path')
         self.wait_for_logs = check.bool_param(wait_for_logs, 'wait_for_logs')
 
         self.databricks_runner = DatabricksJobRunner(host=databricks_host, token=databricks_token)
