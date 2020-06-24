@@ -72,6 +72,12 @@ def import_module_from_path(module_name, path_to_file):
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(module_name, path_to_file)
+        if spec is None:
+            raise Exception(
+                'Can not import module {module_name} from path {path_to_file}, unable to load spec.'.format(
+                    module_name=module_name, path_to_file=path_to_file
+                )
+            )
         if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == os.path.abspath(
             spec.origin
         ):
