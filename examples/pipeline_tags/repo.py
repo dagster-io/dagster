@@ -5,7 +5,7 @@ from dagster import PresetDefinition, pipeline, repository, solid
 def get_tag(context):
     owner = context.pipeline_run.tags.get('owner')
     context.log.info('owner is {}'.format(owner))
-    return
+    return owner
 
 
 @pipeline(
