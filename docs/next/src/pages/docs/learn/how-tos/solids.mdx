@@ -29,7 +29,7 @@ resources and solid configuration. See [What is a solid
 context](#what-is-solid-context) for more information.
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lineno-start:
 lines:6-8
 ```
@@ -42,7 +42,7 @@ input definitions, output definitions, and a `compute_fn`. The compute
 function is the same as the function you would decorate using the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:11-17
 ```
 
@@ -60,7 +60,7 @@ and provides access to:
 For example, to access the logger
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:20-22
 ```
 
@@ -88,7 +88,7 @@ and must be in the same order after the context argument.
 For example, if we wanted a solid with two inputs of type `int`:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:25-27
 ```
 
@@ -98,7 +98,7 @@ Outputs are yielded from a solid's `compute_fn`. A solid can yield
 multiple outputs.
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:30-36
 ```
 
@@ -116,7 +116,7 @@ explicitly define <PyObject module="dagster" object="OutputDefinition" displayTe
 For example, the following are equivalent:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:39-49
 ```
 
@@ -135,7 +135,7 @@ following types:
 To return an output from a solid, simply `yield` an <PyObject module="dagster" object="Output" /> event:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:52-54
 ```
 
@@ -145,7 +145,7 @@ single <PyObject module="dagster" object="Output" /> event
 with the default output name "result". For example:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:57-65
 ```
 
@@ -155,7 +155,7 @@ for the system to tell which one the author of the solid meant to use as
 its output. For example:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:68-71
 ```
 
@@ -164,7 +164,7 @@ anything from the solid. Instead, you need to `yield` multiple <PyObject module=
 each of which is named and defined on `output_defs` to prevent ambiguity:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:74-77
 ```
 
@@ -180,6 +180,6 @@ arguments themselves, since they cannot be modified based on solid configuration
 General solid factory pattern:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/how_tos/solids.py
+file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:80-98
 ```

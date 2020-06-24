@@ -1,4 +1,4 @@
-from dagster_examples.stocks.repository import partitioning_tutorial
+from docs_snippets.legacy.stocks.repository import partitioning_tutorial
 
 
 def test_basic():

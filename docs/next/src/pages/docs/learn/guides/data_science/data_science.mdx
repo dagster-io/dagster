@@ -65,8 +65,7 @@ Once we turn our notebook into a solid, we can start to make its outputs
 more accessible.
 
 ```python literalinclude caption=iris_pipeline.py
-file:src/pages/docs/learn/guides/data_science/iris_pipeline.py
-relativeToProject
+file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline.py
 ```
 
 This is the simplest form of notebook integration -- we don't actually
@@ -117,8 +116,7 @@ might be handles to tables in the data warehouse or to files on S3, and
 your notebook will likely handle the task of fetching the data.
 
 ```python literalinclude emphasize-lines=3,5,11,18-19 caption=iris_pipeline_2.py
-file:src/pages/docs/learn/guides/data_science/iris_pipeline_2.py
-relativeToProject
+file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline_2.py
 ```
 
 We'll configure the `download_file` solid with the URL to download the
@@ -165,8 +163,7 @@ arbitrary Python code into a notebook:
 We'll use the following config:
 
 ```python literalinclude caption=iris_pipeline.yaml
-file:src/pages/docs/learn/guides/data_science/iris_pipeline.yaml
-relativeToProject
+file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline.yaml
 ```
 
 When we execute this pipeline with Dagit, the `parameters` cell in the
@@ -200,8 +197,7 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 configurable. We'll change our solid definition to include a config field:
 
 ```python literalinclude emphasize-lines=5-7 caption=iris_pipeline_3.py
-file:src/pages/docs/learn/guides/data_science/iris_pipeline_3.py
-relativeToProject
+file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline_3.py
 lines:8-15
 ```
 

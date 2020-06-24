@@ -22,7 +22,7 @@ First, we write a function that returns a list of partitions. Here, our
 partitions are simply the stock tickers, and we wrap them in <PyObject module="dagster" object="Partition"/> objects.
 
 ```python literalinclude emphasize-lines=4-10 caption=repository.py
-file:/legacy_examples/dagster_examples/stocks/simple_partitions.py
+file:/docs_snippets/docs_snippets/legacy/stocks/simple_partitions.py
 lines:1-10
 ```
 
@@ -32,14 +32,14 @@ to the `query_historical_stock_data` solid config, just like we did in
 the previous section.
 
 ```python literalinclude caption=repository.py
-file:/legacy_examples/dagster_examples/stocks/simple_partitions.py
+file:/docs_snippets/docs_snippets/legacy/stocks/simple_partitions.py
 lines:13-16
 ```
 
 Finally, we add the partitions to our repository definition:
 
 ```python literalinclude emphasize-lines=6
-file:/legacy_examples/dagster_examples/stocks/repository.py
+file:/docs_snippets/docs_snippets/legacy/stocks/repository.py
 caption:repository.py
 lines:43-49
 ```
