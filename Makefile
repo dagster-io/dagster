@@ -67,6 +67,7 @@ install_dev_python_modules:
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
 				-e examples/legacy_examples[full] \
+				-e examples/airline_demo[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
 # Don't install dagster-azure as part of this target _yet_ - it has a dependency

@@ -12,7 +12,15 @@ BUILDKITE = bool(os.getenv('BUILDKITE'))
 def is_postgres_running():
     try:
         output = subprocess.check_output(
-            ['docker', 'container', 'ps', '-f', 'name=test-postgres-db', '-f', 'status=running']
+            [
+                'docker',
+                'container',
+                'ps',
+                '-f',
+                'name=test-postgres-db-airline',
+                '-f',
+                'status=running',
+            ]
         )
         decoded = output.decode()
 
@@ -58,11 +66,11 @@ def postgres(pg_hostname):  # pylint: disable=redefined-outer-name
     if not is_postgres_running():
         with pushd(script_path):
             try:
-                subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
-                subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
+                subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db-airline'])
+                subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db-airline'])
             except Exception:  # pylint: disable=broad-except
                 pass
-            subprocess.check_output(['docker-compose', 'up', '-d', 'test-postgres-db'])
+            subprocess.check_output(['docker-compose', 'up', '-d', 'test-postgres-db-airline'])
 
     wait_for_connection(
         get_conn_string(username='test', password='test', hostname=pg_hostname, db_name='test')

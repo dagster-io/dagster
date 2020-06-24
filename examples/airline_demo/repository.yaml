@@ -1,0 +1,3 @@
+repository:
+  module: airline_demo
+  fn: define_internal_dagit_repository

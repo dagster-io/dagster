@@ -83,7 +83,7 @@ def airflow_extra_cmds_fn(version):
 
 def airline_demo_extra_cmds_fn(_):
     return [
-        'pushd examples/legacy_examples',
+        'pushd examples/airline_demo',
         # Build the image we use for airflow in the demo tests
         './build_airline_demo_image.sh',
         'mkdir -p /home/circleci/airflow',
@@ -93,7 +93,9 @@ def airline_demo_extra_cmds_fn(_):
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
         network_buildkite_container('postgres'),
-        connect_sibling_docker_container('postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'),
+        connect_sibling_docker_container(
+            'postgres', 'test-postgres-db-airline', 'POSTGRES_TEST_DB_HOST'
+        ),
         'popd',
     ]
 
@@ -185,10 +187,9 @@ def postgres_extra_cmds_fn(_):
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # Examples: Airline Demo
     ModuleBuildSpec(
-        'examples/legacy_examples',
+        'examples/airline_demo',
         supported_pythons=SupportedPython3sNo38,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
-        tox_file='tox_airline.ini',
         buildkite_label='airline-demo',
     ),
     # Examples: Events Demo
@@ -359,6 +360,7 @@ def examples_tests():
         # Skip these folders because they need custom build config
         'docs_snippets',
         'legacy_examples',
+        'airline_demo',
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
@@ -574,7 +576,7 @@ if __name__ == "__main__":
         .run(
             "pip install mypy",
             # start small by making sure the local code type checks
-            "mypy examples/legacy_examples/dagster_examples/airline_demo "
+            "mypy examples/airline_demo/airline_demo "
             "examples/legacy_examples/dagster_examples/bay_bikes "
             "examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_mypy* "
             "--ignore-missing-imports",

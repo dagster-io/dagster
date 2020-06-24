@@ -2,8 +2,8 @@ import sys
 import zipfile
 
 import boto3
+from airline_demo.unzip_file_handle import unzip_file_handle
 from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_system_storage
-from dagster_examples.airline_demo.unzip_file_handle import unzip_file_handle
 from moto import mock_s3
 
 from dagster import (

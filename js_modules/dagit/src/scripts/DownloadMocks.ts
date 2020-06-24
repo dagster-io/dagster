@@ -26,7 +26,7 @@ it(`builds mocks`, () => {
     const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
     // TODO: remove dependency on legacy_examples
     // https://github.com/dagster-io/dagster/issues/2653
-    const repo = `${dagsterRoot}/${mock.repo || "examples"}/repository.yaml`;
+    const repo = `${dagsterRoot}/${mock.repo || "examples/airline_demo"}/repository.yaml`;
 
     execSync(`dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`);
 

@@ -29,16 +29,16 @@ def get_toys_pipelines():
     ]
 
 
-def get_airline_demo_pipelines():
-    from dagster_examples.airline_demo.pipelines import (
-        airline_demo_ingest_pipeline,
-        airline_demo_warehouse_pipeline,
-    )
+# def get_airline_demo_pipelines():
+#     from dagster_examples.airline_demo.pipelines import (
+#         airline_demo_ingest_pipeline,
+#         airline_demo_warehouse_pipeline,
+#     )
 
-    return [
-        airline_demo_ingest_pipeline,
-        airline_demo_warehouse_pipeline,
-    ]
+#     return [
+#         airline_demo_ingest_pipeline,
+#         airline_demo_warehouse_pipeline,
+#     ]
 
 
 def get_event_pipelines():
@@ -76,8 +76,8 @@ def define_internal_dagit_repository():
         from .schedules import get_bay_bikes_schedules, get_toys_schedules
 
         pipeline_defs = (
-            get_airline_demo_pipelines()
-            + get_bay_bikes_pipelines()
+            # get_airline_demo_pipelines()
+            get_bay_bikes_pipelines()
             + get_event_pipelines()
             + get_pyspark_pipelines()
             + get_lakehouse_pipelines()

@@ -2,13 +2,13 @@ import os
 
 import botocore
 import pyspark
+from airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_aws.s3 import (
     S3IntermediateStore,
     s3_file_manager,
     s3_plus_default_storage_defs,
     s3_resource,
 )
-from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row, SparkSession
 

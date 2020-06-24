@@ -1,0 +1,3 @@
+repository:
+  module: airline_demo.repository
+  fn: airline_demo_repo

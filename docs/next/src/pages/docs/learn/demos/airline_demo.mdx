@@ -46,7 +46,7 @@ pip install -e .[full]
 docker-compose up -d
 
 # Load the airline demo in Dagit
-cd legacy_examples/dagster_examples/airline_demo
+cd airline_demo/airline_demo
 dagit
 ```
 
@@ -120,7 +120,7 @@ Let's start by looking at the pipeline definition (in
 to reuse the `s3_to_df` solid for several ingest steps:
 
 ```python literalinclude caption=pipelines.py
-file:/legacy_examples/dagster_examples/airline_demo/pipelines.py
+file:/airline_demo/airline_demo/pipelines.py
 lines:96-103
 ```
 
@@ -158,7 +158,7 @@ to interact with the external environment. In YAML, an entry in the
 config for one of our solids aliasing `s3_to_df` looks like this:
 
 ```yaml literalinclude caption=local_fast_ingest.yaml
-file:/legacy_examples/dagster_examples/airline_demo/environments/local_fast_ingest.yaml
+file:/airline_demo/airline_demo/environments/local_fast_ingest.yaml
 lines:32-38
 ```
 
@@ -224,7 +224,7 @@ CI/CD, with access to a production or replica environment, but where
 speed is of the essence; and remotely in production on live data.
 
 ```python literalinclude caption=hello_cereal.py
-file:/legacy_examples/dagster_examples/airline_demo/pipelines.py
+file:/airline_demo/airline_demo/pipelines.py
 lines:46-69
 ```
 
@@ -306,7 +306,7 @@ The terminal nodes of this pipeline are all aliased instances of
 `load_data_to_database_from_spark`:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/airline_demo/solids.py
+file:/airline_demo/airline_demo/solids.py
 lines:198-216
 ```
 
@@ -354,7 +354,7 @@ the data warehouse, an analyst only needs to supply light metadata along
 with their SQL query:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/airline_demo/solids.py
+file:/airline_demo/airline_demo/solids.py
 lines:403-429
 ```
 
@@ -393,7 +393,7 @@ down on the tag:
 Let's start with the definition of our `notebook_solid` helper:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/airline_demo/solids.py
+file:/airline_demo/airline_demo/solids.py
 lines:38-39
 ```
 
@@ -402,7 +402,7 @@ which tells Dagstermill where to look for the notebooks. We define a new
 solid by using this function and referencing a notebook file:
 
 ```python literalinclude caption=solids.py
-file:/legacy_examples/dagster_examples/airline_demo/solids.py
+file:/airline_demo/airline_demo/solids.py
 lines:431-453
 ```
 

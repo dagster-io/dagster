@@ -1,4 +1,4 @@
-from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
+from airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import Row
 

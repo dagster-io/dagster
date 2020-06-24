@@ -9,17 +9,17 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_globs
 
 ingest_pipeline = ReconstructablePipeline.for_module(
-    'dagster_examples.airline_demo.pipelines', 'define_airline_demo_ingest_pipeline',
+    'airline_demo.pipelines', 'define_airline_demo_ingest_pipeline',
 )
 
 warehouse_pipeline = ReconstructablePipeline.for_module(
-    'dagster_examples.airline_demo.pipelines', 'define_airline_demo_warehouse_pipeline',
+    'airline_demo.pipelines', 'define_airline_demo_warehouse_pipeline',
 )
 
 
 def config_path(relative_path):
     return file_relative_path(
-        __file__, os.path.join('../../dagster_examples/airline_demo/environments/', relative_path)
+        __file__, os.path.join('../airline_demo/environments/', relative_path)
     )
 
 

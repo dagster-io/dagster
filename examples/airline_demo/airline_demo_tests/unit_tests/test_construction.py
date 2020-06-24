@@ -1,5 +1,5 @@
 import pytest
-from dagster_examples.airline_demo.pipelines import (
+from airline_demo.pipelines import (
     define_airline_demo_ingest_pipeline,
     define_airline_demo_warehouse_pipeline,
 )

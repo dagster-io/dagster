@@ -8,7 +8,7 @@ those tests that don't require Spark, `pytest -m "not spark"`.
 """
 
 import pytest
-from dagster_examples.airline_demo.solids import sql_solid
+from airline_demo.solids import sql_solid
 
 from dagster import ModeDefinition
 from dagster.core.storage.temp_file_manager import tempfile_resource

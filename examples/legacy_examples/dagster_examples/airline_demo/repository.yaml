@@ -1,3 +1,0 @@
-repository:
-  module: dagster_examples.airline_demo.repository
-  fn: define_repo
