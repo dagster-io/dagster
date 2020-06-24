@@ -1,12 +1,17 @@
+import os
+
+import pytest
+
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, _dagster_home
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test
+from dagster.core.test_utils import create_run_for_test, environ
 
 
 def test_get_run_by_id():
@@ -86,3 +91,12 @@ def test_create_execution_plan_snapshot():
 
     assert run.execution_plan_snapshot_id == ep_snapshot_id
     assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
+
+
+@pytest.mark.parametrize("dirname", (".", ".."))
+def test_dagster_home_raises(dirname):
+    with environ({'DAGSTER_HOME': dirname}):
+        with pytest.raises(DagsterInvariantViolationError) as err:
+            _dagster_home()
+        msg = 'DAGSTER_HOME must be absolute path: {}'.format(dirname)
+        assert str(err.value) == msg
