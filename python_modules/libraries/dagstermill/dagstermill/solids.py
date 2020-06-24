@@ -78,8 +78,8 @@ def replace_parameters(context, nb, parameters):
                 'cell.'
             )
         )
-        before = nb.cells[:1]
-        after = nb.cells[1:]
+        before = []
+        after = nb.cells
 
     nb.cells = before + [newcell] + after
     nb.metadata.papermill['parameters'] = seven.json.dumps(parameters)

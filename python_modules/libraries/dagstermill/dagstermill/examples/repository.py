@@ -376,6 +376,18 @@ def reimport_pipeline():
     reimport_solid(lister())
 
 
+@solid_definition
+def yield_3_solid():
+    return dagstermill.define_dagstermill_solid(
+        'yield_3', nb_test_path('yield_3'), [], [OutputDefinition(Int)],
+    )
+
+
+@pipeline
+def yield_3_pipeline():
+    yield_3_solid()
+
+
 @repository
 def notebook_repo():
     pipeline_dict = {
@@ -391,6 +403,7 @@ def notebook_repo():
         'test_add_pipeline': define_add_pipeline,
         'test_notebook_dag': define_test_notebook_dag_pipeline,
         'reimport_pipeline': lambda: reimport_pipeline,
+        'yield_3_pipeline': lambda: yield_3_pipeline,
     }
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline

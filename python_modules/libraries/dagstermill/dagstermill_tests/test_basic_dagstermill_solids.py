@@ -355,3 +355,10 @@ def test_reimport():
     with exec_for_test('reimport_pipeline') as result:
         assert result.success
         assert result.result_for_solid('reimport').output_value() == 6
+
+
+@pytest.mark.notebook_test
+def test_yield_3_pipeline():
+    with exec_for_test('yield_3_pipeline') as result:
+        assert result.success
+        assert result.result_for_solid('yield_3').output_value() == 3
