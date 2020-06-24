@@ -122,8 +122,10 @@ class ExternalPipelineData(
 
 
 @whitelist_for_serdes
-class ExternalPresetData(namedtuple('_ExternalPresetData', 'name run_config solid_selection mode')):
-    def __new__(cls, name, run_config, solid_selection, mode):
+class ExternalPresetData(
+    namedtuple('_ExternalPresetData', 'name run_config solid_selection mode tags')
+):
+    def __new__(cls, name, run_config, solid_selection, mode, tags):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
@@ -132,6 +134,7 @@ class ExternalPresetData(namedtuple('_ExternalPresetData', 'name run_config soli
                 solid_selection, 'solid_selection', of_type=str
             ),
             mode=check.str_param(mode, 'mode'),
+            tags=check.opt_dict_param(tags, 'tags'),
         )
 
 
@@ -297,4 +300,5 @@ def external_preset_data_from_def(preset_def):
         run_config=preset_def.run_config,
         solid_selection=preset_def.solid_selection,
         mode=preset_def.mode,
+        tags=preset_def.tags,
     )

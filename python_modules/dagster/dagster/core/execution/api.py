@@ -704,6 +704,8 @@ def _check_execute_pipeline_args(
 
         mode = pipeline_preset.mode
 
+        tags = merge_dicts(pipeline_preset.tags, tags)
+
     if mode is not None:
         if not pipeline_def.has_mode_definition(mode):
             raise DagsterInvariantViolationError(

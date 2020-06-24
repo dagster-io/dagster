@@ -21,12 +21,19 @@ export interface PipelineExecutionRootQuery_pipelineOrError_PythonError {
   message: string;
 }
 
+export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
   solidSelection: string[] | null;
   runConfigYaml: string;
+  tags: PipelineExecutionRootQuery_pipelineOrError_Pipeline_presets_tags[];
 }
 
 export interface PipelineExecutionRootQuery_pipelineOrError_Pipeline_tags {

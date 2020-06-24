@@ -762,6 +762,7 @@ type PipelinePreset {
   solidSelection: [String!]
   runConfigYaml: String!
   mode: String!
+  tags: [PipelineTag!]!
 }
 
 interface PipelineReference {

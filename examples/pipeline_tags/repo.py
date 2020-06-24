@@ -1,4 +1,4 @@
-from dagster import pipeline, repository, solid
+from dagster import PresetDefinition, pipeline, repository, solid
 
 
 @solid
@@ -8,7 +8,10 @@ def get_tag(context):
     return
 
 
-@pipeline(tags={'owner': 'ml_team'})
+@pipeline(
+    tags={'owner': 'ml_team', 'source': 'pipeline'},
+    preset_defs=[PresetDefinition('tag_preset', tags={'oncall': 'ml_team', 'source': 'preset'})],
+)
 def tags_pipeline():
     get_tag()
 

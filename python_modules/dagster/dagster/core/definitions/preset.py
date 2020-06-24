@@ -10,13 +10,19 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import canonicalize_run_config, rename_warning
+from dagster.utils.backcompat import (
+    canonicalize_backcompat_args,
+    canonicalize_run_config,
+    rename_warning,
+)
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
 
 
-class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_selection mode')):
+class PresetDefinition(
+    namedtuple('_PresetDefinition', 'name run_config solid_selection mode tags')
+):
     '''Defines a preset configuration in which a pipeline can execute.
 
     Presets can be used in Dagit to load predefined configurations into the tool.
@@ -41,21 +47,47 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this preset. (default: 'default')
+        tags (Optional[Dict[str, Any]]): The tags to apply when executing this preset.
     '''
 
+    def __new__(
+        cls,
+        name,
+        run_config=None,
+        solid_selection=None,
+        mode=None,
+        environment_dict=None,
+        tags=None,
+    ):
+        run_config = canonicalize_run_config(run_config, environment_dict)
+
+        return super(PresetDefinition, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            run_config=run_config,
+            solid_selection=check.opt_nullable_list_param(
+                solid_selection, 'solid_selection', of_type=str
+            ),
+            mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
+        )
+
     @staticmethod
-    def from_files(name, environment_files=None, solid_selection=None, mode=None):
+    def from_files(
+        name, environment_files=None, config_files=None, solid_selection=None, mode=None, tags=None
+    ):
         '''Static constructor for presets from YAML files.
 
         Args:
             name (str): The name of this preset. Must be unique in the presets defined on a given
                 pipeline.
-            environment_files (Optional[List[str]]): List of paths or glob patterns for yaml files
+            config_files (Optional[List[str]]): List of paths or glob patterns for yaml files
                 to load and parse as the environment config for this preset.
             solid_selection (Optional[List[str]]): A list of solid subselection (including single
                 solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
+            tags (Optional[Dict[str, Any]]): The tags to apply when executing this preset.
 
         Returns:
             PresetDefinition: A PresetDefinition constructed from the provided YAML files.
@@ -65,7 +97,10 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 error.
         '''
         check.str_param(name, 'name')
-        environment_files = check.opt_list_param(environment_files, 'environment_files')
+        config_files = canonicalize_backcompat_args(
+            config_files, 'config_files', environment_files, 'environment_files', '0.9.0'
+        )
+        config_files = check.opt_list_param(config_files, 'config_files')
         solid_selection = check.opt_nullable_list_param(
             solid_selection, 'solid_selection', of_type=str
         )
@@ -95,10 +130,10 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 err,
             )
 
-        return PresetDefinition(name, merged, solid_selection, mode)
+        return PresetDefinition(name, merged, solid_selection, mode, tags)
 
     @staticmethod
-    def from_yaml_strings(name, yaml_strings=None, solid_selection=None, mode=None):
+    def from_yaml_strings(name, yaml_strings=None, solid_selection=None, mode=None, tags=None):
         '''Static constructor for presets from YAML strings.
 
         Args:
@@ -110,6 +145,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 solid names) to execute with the preset. e.g. ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
+            tags (Optional[Dict[str, Any]]): The tags to apply when executing this preset.
 
         Returns:
             PresetDefinition: A PresetDefinition constructed from the provided YAML strings
@@ -136,10 +172,12 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 err,
             )
 
-        return PresetDefinition(name, merged, solid_selection, mode)
+        return PresetDefinition(name, merged, solid_selection, mode, tags)
 
     @staticmethod
-    def from_pkg_resources(name, pkg_resource_defs=None, solid_selection=None, mode=None):
+    def from_pkg_resources(
+        name, pkg_resource_defs=None, solid_selection=None, mode=None, tags=None
+    ):
         '''Load a preset from a package resource, using :py:func:`pkg_resources.resource_string`.
 
         Example:
@@ -166,6 +204,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 ``['*some_solid+', 'other_solid']``
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
+            tags (Optional[Dict[str, Any]]): The tags to apply when executing this preset.
 
         Returns:
             PresetDefinition: A PresetDefinition constructed from the provided YAML strings
@@ -193,20 +232,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 err,
             )
 
-        return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_selection, mode)
-
-    def __new__(cls, name, run_config=None, solid_selection=None, mode=None, environment_dict=None):
-        run_config = canonicalize_run_config(run_config, environment_dict)
-
-        return super(PresetDefinition, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            run_config=run_config,
-            solid_selection=check.opt_nullable_list_param(
-                solid_selection, 'solid_selection', of_type=str
-            ),
-            mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
-        )
+        return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_selection, mode, tags)
 
     def get_environment_yaml(self):
         '''Get the environment dict set on a preset as YAML.
@@ -227,6 +253,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name run_config solid_se
                 name=self.name,
                 solid_selection=self.solid_selection,
                 mode=self.mode,
+                tags=self.tags,
                 run_config=merge_dicts(self.run_config, run_config),
             )
 

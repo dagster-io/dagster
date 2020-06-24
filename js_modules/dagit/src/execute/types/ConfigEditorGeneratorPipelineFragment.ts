@@ -7,12 +7,19 @@
 // GraphQL fragment: ConfigEditorGeneratorPipelineFragment
 // ====================================================
 
+export interface ConfigEditorGeneratorPipelineFragment_presets_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ConfigEditorGeneratorPipelineFragment_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
   solidSelection: string[] | null;
   runConfigYaml: string;
+  tags: ConfigEditorGeneratorPipelineFragment_presets_tags[];
 }
 
 export interface ConfigEditorGeneratorPipelineFragment_tags {

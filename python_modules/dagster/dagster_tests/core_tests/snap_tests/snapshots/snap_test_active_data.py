@@ -30,14 +30,16 @@ snapshots['test_external_repository_data 1'] = '''{
           },
           "solid_selection": [
             "a_solid"
-          ]
+          ],
+          "tags": {}
         },
         {
           "__class__": "ExternalPresetData",
           "mode": "default",
           "name": "plain_preset",
           "run_config": {},
-          "solid_selection": null
+          "solid_selection": null,
+          "tags": {}
         }
       ],
       "name": "a_pipeline",
@@ -1139,14 +1141,16 @@ snapshots['test_external_pipeline_data 1'] = '''{
       },
       "solid_selection": [
         "a_solid"
-      ]
+      ],
+      "tags": {}
     },
     {
       "__class__": "ExternalPresetData",
       "mode": "default",
       "name": "plain_preset",
       "run_config": {},
-      "solid_selection": null
+      "solid_selection": null,
+      "tags": {}
     }
   ],
   "name": "a_pipeline",

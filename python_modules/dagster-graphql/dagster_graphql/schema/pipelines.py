@@ -342,6 +342,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
     runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
+    tags = dauphin.non_null_list('PipelineTag')
 
     def __init__(self, active_preset_data, pipeline_name):
         self._active_preset_data = check.inst_param(
@@ -361,6 +362,12 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 
     def resolve_mode(self, _graphene_info):
         return self._active_preset_data.mode
+
+    def resolve_tags(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in self._active_preset_data.tags.items()
+        ]
 
 
 class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):

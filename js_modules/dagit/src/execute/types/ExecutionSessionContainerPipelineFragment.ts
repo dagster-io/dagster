@@ -7,12 +7,19 @@
 // GraphQL fragment: ExecutionSessionContainerPipelineFragment
 // ====================================================
 
+export interface ExecutionSessionContainerPipelineFragment_presets_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ExecutionSessionContainerPipelineFragment_presets {
   __typename: "PipelinePreset";
   name: string;
   mode: string;
   solidSelection: string[] | null;
   runConfigYaml: string;
+  tags: ExecutionSessionContainerPipelineFragment_presets_tags[];
 }
 
 export interface ExecutionSessionContainerPipelineFragment_tags {

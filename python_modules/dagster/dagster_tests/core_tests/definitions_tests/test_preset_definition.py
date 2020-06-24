@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     Bool,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     ModeDefinition,
@@ -12,6 +13,7 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    pipeline,
     solid,
 )
 from dagster.utils import file_relative_path
@@ -28,7 +30,7 @@ def test_presets():
     def always_fail():
         raise Exception('I always do this')
 
-    pipeline = PipelineDefinition(
+    pipe = PipelineDefinition(
         name='simple',
         solid_defs=[can_fail, always_fail],
         preset_defs=[
@@ -70,25 +72,23 @@ def test_presets():
             environment_files=[file_relative_path(__file__, 'test_repository_definition.py')],
         )
 
-    assert execute_pipeline(pipeline, preset='passing').success
+    assert execute_pipeline(pipe, preset='passing').success
 
-    assert execute_pipeline(pipeline, preset='passing_direct_dict').success
-    assert execute_pipeline(pipeline, preset='failing_1', raise_on_error=False).success == False
+    assert execute_pipeline(pipe, preset='passing_direct_dict').success
+    assert execute_pipeline(pipe, preset='failing_1', raise_on_error=False).success == False
 
-    assert execute_pipeline(pipeline, preset='failing_2', raise_on_error=False).success == False
+    assert execute_pipeline(pipe, preset='failing_2', raise_on_error=False).success == False
 
     with pytest.raises(DagsterInvariantViolationError, match='Could not find preset'):
-        execute_pipeline(pipeline, preset='not_failing', raise_on_error=False)
+        execute_pipeline(pipe, preset='not_failing', raise_on_error=False)
 
     assert (
-        execute_pipeline(pipeline, preset='passing_overide_to_fail', raise_on_error=False).success
+        execute_pipeline(pipe, preset='passing_overide_to_fail', raise_on_error=False).success
         == False
     )
 
     assert execute_pipeline(
-        pipeline,
-        preset='passing',
-        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
+        pipe, preset='passing', run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
     with pytest.raises(
@@ -99,15 +99,13 @@ def test_presets():
         ),
     ):
         execute_pipeline(
-            pipeline,
+            pipe,
             preset='passing',
             run_config={'solids': {'can_fail': {'config': {'error': True}}}},
         )
 
     assert execute_pipeline(
-        pipeline,
-        preset='subset',
-        run_config={'solids': {'can_fail': {'config': {'error': False}}}},
+        pipe, preset='subset', run_config={'solids': {'can_fail': {'config': {'error': False}}}},
     ).success
 
 
@@ -192,3 +190,43 @@ def test_from_pkg_resources():
             DagsterInvariantViolationError, match='Encountered error attempting to parse yaml',
         ):
             PresetDefinition.from_pkg_resources('bad_def', [bad_def])
+
+
+def test_tags():
+    @lambda_solid
+    def a_solid():
+        return 'solid'
+
+    @pipeline(
+        tags={'pipeline_tag': 'pipeline_tag', 'all': 'pipeline', 'defs': 'pipeline'},
+        preset_defs=[
+            PresetDefinition(
+                name='a_preset',
+                tags={'preset_tag': 'preset_tag', 'all': 'preset', 'defs': 'preset'},
+            )
+        ],
+    )
+    def a_pipeline():
+        a_solid()
+
+    instance = DagsterInstance.ephemeral()
+    result = execute_pipeline(
+        a_pipeline,
+        instance=instance,
+        preset='a_preset',
+        tags={'execute_tag': 'execute_tag', 'all': 'execute'},
+    )
+    assert result.success
+    pipeline_run = instance.get_run_by_id(result.run_id)
+
+    assert 'pipeline_tag' in pipeline_run.tags
+    assert 'preset_tag' in pipeline_run.tags
+    assert 'execute_tag' in pipeline_run.tags
+
+    # execute overwrites preset overwrites pipeline def
+    assert 'all' in pipeline_run.tags
+    assert pipeline_run.tags['all'] == 'execute'
+
+    # preset overwrites pipeline def
+    assert 'defs' in pipeline_run.tags
+    assert pipeline_run.tags['defs'] == 'preset'

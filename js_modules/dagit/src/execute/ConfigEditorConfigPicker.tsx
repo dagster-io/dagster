@@ -64,6 +64,15 @@ class ConfigEditorConfigPickerInternal extends React.Component<
     if (!pipeline) {
       console.error("Could not load pipeline tags");
     }
+
+    const tagsDict: { [key: string]: string } = [
+      ...(pipeline?.tags || []),
+      ...preset.tags
+    ].reduce((tags, kv) => {
+      tags[kv.key] = kv.value;
+      return tags;
+    }, {});
+
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
@@ -72,7 +81,9 @@ class ConfigEditorConfigPickerInternal extends React.Component<
       solidSelectionQuery:
         preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
       mode: preset.mode,
-      tags: [...(pipeline?.tags || [])]
+      tags: Object.entries(tagsDict).map(([key, value]) => {
+        return { key, value };
+      })
     });
   };
 
@@ -412,6 +423,10 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
       mode
       solidSelection
       runConfigYaml
+      tags {
+        key
+        value
+      }
     }
     tags {
       key
