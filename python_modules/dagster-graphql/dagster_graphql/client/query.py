@@ -1,49 +1,57 @@
-STEP_EVENT_FRAGMENTS = '''
-fragment eventMetadataEntryFragment on EventMetadataEntry {
+ERROR_FRAGMENT = '''
+fragment errorFragment on PythonError {
+  message
+  className
+  stack
+  cause {
+    message
+    className
+    stack
+    cause {
+      message
+      className
+      stack
+    }
+  }
+}
+'''
+
+STEP_EVENT_FRAGMENTS = (
+    ERROR_FRAGMENT
+    + '''
+fragment metadataEntryFragment on EventMetadataEntry {
   __typename
   label
   description
-  ... on EventPathMetadataEntry {
-    path
+  ... on EventFloatMetadataEntry {
+    value
   }
   ... on EventJsonMetadataEntry {
     jsonString
   }
-  ... on EventUrlMetadataEntry {
-    url
-  }
-  ... on EventTextMetadataEntry {
-    text
-  }
   ... on EventMarkdownMetadataEntry {
     mdStr
+  }
+  ... on EventPathMetadataEntry {
+    path
   }
   ... on EventPythonArtifactMetadataEntry {
     module
     name
   }
-}
-
-fragment errorFragment on PythonError {
-  message
-  stack
-  className
-  cause {
-    message
-    stack
-    className
-    cause {
-      message
-      stack
-      className
-    }
+  ... on EventTextMetadataEntry {
+    text
+  }
+  ... on EventUrlMetadataEntry {
+    url
   }
 }
-
 
 fragment stepEventFragment on StepEvent {
   step {
     key
+    solidHandleID
+    kind
     inputs {
       name
       type {
@@ -59,35 +67,31 @@ fragment stepEventFragment on StepEvent {
         key
       }
     }
-    solidHandleID
-    kind
     metadata {
       key
       value
     }
   }
-  ... on MessageEvent {
-    runId
-    message
-    timestamp
-    level
-  }
-  ... on StepExpectationResultEvent {
-    expectationResult {
-      success
-      label
-      description
-      metadataEntries {
-        ...eventMetadataEntryFragment
-      }
+
+  ... on EngineEvent {
+    metadataEntries {
+      ...metadataEntryFragment
+    }
+    markerStart
+    markerEnd
+    engineError: error {
+      ...errorFragment
     }
   }
-  ... on StepMaterializationEvent {
-    materialization {
+  ... on ExecutionStepFailureEvent {
+    error {
+      ...errorFragment
+    }
+    failureMetadata {
       label
       description
       metadataEntries {
-        ...eventMetadataEntryFragment
+        ...metadataEntryFragment
       }
     }
   }
@@ -99,7 +103,7 @@ fragment stepEventFragment on StepEvent {
       label
       description
       metadataEntries {
-        ...eventMetadataEntryFragment
+        ...metadataEntryFragment
       }
     }
   }
@@ -111,40 +115,60 @@ fragment stepEventFragment on StepEvent {
       label
       description
       metadataEntries {
-        ...eventMetadataEntryFragment
+        ...metadataEntryFragment
       }
     }
   }
-  ... on ExecutionStepFailureEvent {
-    error {
-      ...errorFragment
-    }
-    failureMetadata {
-      label
-      description
-      metadataEntries {
-        ...eventMetadataEntryFragment
-      }
-    }
-  }
+
   ... on ExecutionStepUpForRetryEvent {
     retryError: error {
       ...errorFragment
     }
     secondsToWait
   }
-  ... on EngineEvent {
-    metadataEntries {
-      ...eventMetadataEntryFragment
+
+  ... on ObjectStoreOperationEvent {
+        step { key }
+        operationResult {
+            op
+            metadataEntries {
+                ...metadataEntryFragment
+            }
+        }
     }
-    markerStart
-    markerEnd
-    engineError: error {
-      ...errorFragment
+
+  ... on StepExpectationResultEvent {
+    expectationResult {
+      success
+      label
+      description
+      metadataEntries {
+        ...metadataEntryFragment
+      }
     }
   }
+  ... on StepMaterializationEvent {
+    materialization {
+      label
+      description
+      metadataEntries {
+        ...metadataEntryFragment
+      }
+    }
+  }
+
+  ... on MessageEvent {
+    runId
+    message
+    timestamp
+    level
+  }
+
+
+
 }
 '''
+)
 
 MESSAGE_EVENT_FRAGMENTS = (
     '''
@@ -164,57 +188,9 @@ fragment messageEventFragment on MessageEvent {
     + STEP_EVENT_FRAGMENTS
 )
 
-
-EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT = '''
-fragment executeRunInProcessResultFragment on ExecuteRunInProcessResult {
-	__typename
-	... on InvalidStepError {
-		invalidStepKey
-	}
-	... on InvalidOutputError {
-		stepKey
-		invalidOutputName
-	}
-	... on PipelineConfigValidationInvalid {
-    pipelineName
-		errors {
-			__typename
-			message
-			path
-			reason
-		}
-	}
-  ... on ConflictingExecutionParamsError {
-    message
-  }
-  ... on PresetNotFoundError {
-    message
-    preset
-  }
-	... on PipelineNotFoundError {
-		message
-		pipelineName
-	}
-  ... on PythonError {
-    message
-    stack
-  }
-	... on ExecuteRunInProcessSuccess {
-		run {
-			runId
-			status
-			pipeline {
-				name
-			}
-			runConfigYaml
-			mode
-		}
-	}
-}
-'''
-
 EXECUTE_RUN_IN_PROCESS_MUTATION = (
-    '''
+    ERROR_FRAGMENT
+    + '''
 mutation(
   $repositoryLocationName: String!
   $repositoryName: String!
@@ -225,11 +201,62 @@ mutation(
     repositoryName: $repositoryName
     runId: $runId
   ) {
-    ...executeRunInProcessResultFragment
+    __typename
+    ... on ExecuteRunInProcessSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+
+        tags {
+          key
+          value
+        }
+        runConfigYaml
+        mode
+      }
+    }
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipelineName
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      ...errorFragment
+    }
+    ... on PipelineRunConflict {
+      message
+    }
+    ... on PipelineRunNotFoundError {
+      message
+    }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      message
+      preset
+    }
   }
 }
 '''
-    + EXECUTE_RUN_IN_PROCESS_RESULT_FRAGMENT
 )
 
 EXECUTE_PLAN_MUTATION = (
@@ -328,39 +355,138 @@ SUBSCRIPTION_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
     + '''
 subscription subscribeTest($runId: ID!) {
-    pipelineRunLogs(runId: $runId) {
+  pipelineRunLogs(runId: $runId) {
+    __typename
+    ... on PipelineRunLogsSubscriptionSuccess {
+      run {
+        runId
+      }
+      messages {
         __typename
-        ... on PipelineRunLogsSubscriptionSuccess {
-            run {
-              runId
-            },
-            messages {
-                __typename
-                ...messageEventFragment
+        ...messageEventFragment
+
+        # only include here because unstable between runs
+        ... on StepMaterializationEvent {
+          materialization {
+            label
+            description
+            metadataEntries {
+              __typename
+              ...metadataEntryFragment
             }
+          }
         }
-        ... on PipelineRunLogsSubscriptionFailure {
-            missingRunId
+
+        ... on ExecutionStepFailureEvent {
+          step {
+            key
+            kind
+          }
+          error {
+            ...errorFragment
+          }
         }
+      }
     }
+
+    ... on PipelineRunLogsSubscriptionFailure {
+      missingRunId
+      message
+    }
+  }
+}
+
+'''
+)
+
+LAUNCH_PIPELINE_EXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + '''
+mutation($executionParams: ExecutionParams!) {
+  launchPipelineExecution(executionParams: $executionParams) {
+    __typename
+
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on LaunchPipelineRunSuccess {
+      run {
+        runId
+        pipeline {
+          name
+        }
+        tags {
+          key
+          value
+        }
+        status
+        runConfigYaml
+        mode
+      }
+    }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      preset
+      message
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipelineName
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      ...errorFragment
+    }
+  }
 }
 '''
 )
 
-LAUNCH_PIPELINE_EXECUTION_MUTATION = '''
-mutation(
-  $executionParams: ExecutionParams!
-) {
-  launchPipelineExecution(
-    executionParams: $executionParams,
-  ) {
+
+LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
+    ERROR_FRAGMENT
+    + '''
+mutation($executionParams: ExecutionParams!) {
+  launchPipelineReexecution(executionParams: $executionParams) {
     __typename
-    ... on InvalidStepError {
-      invalidStepKey
+
+    ... on PythonError {
+      ...errorFragment
     }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
+    ... on LaunchPipelineRunSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+        tags {
+          key
+          value
+        }
+        runConfigYaml
+        mode
+        rootRunId
+        parentRunId
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
     }
     ... on PipelineConfigValidationInvalid {
       pipelineName
@@ -371,73 +497,32 @@ mutation(
         reason
       }
     }
-    ... on PipelineNotFoundError {
-      message
-      pipelineName
+    ... on InvalidStepError {
+      invalidStepKey
     }
-    ... on PythonError {
-      message
-      stack
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
     }
-    ... on LaunchPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-        runConfigYaml
-        mode
-      }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      preset
+      message
     }
   }
 }
 '''
+)
 
-
-LAUNCH_PIPELINE_REEXECUTION_MUTATION = '''
-mutation(
-  $executionParams: ExecutionParams!
-) {
-  launchPipelineReexecution(
-    executionParams: $executionParams,
-  ) {
+PIPELINE_REEXECUTION_INFO_QUERY = '''
+query ReexecutionInfoQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
     __typename
-    ... on InvalidStepError {
-      invalidStepKey
-    }
-    ... on InvalidOutputError {
-      stepKey
-      invalidOutputName
-    }
-    ... on PipelineConfigValidationInvalid {
-      pipelineName
-      errors {
-        __typename
-        message
-        path
-        reason
-      }
-    }
-    ... on PipelineNotFoundError {
-      message
-      pipelineName
-    }
-    ... on PythonError {
-      message
-      stack
-    }
-    ... on LaunchPipelineRunSuccess {
-      run {
-        runId
-        status
-        pipeline {
-          name
-        }
-        runConfigYaml
-        mode
+    ... on PipelineRun {
+        stepKeysToExecute
       }
     }
   }
-}
 '''

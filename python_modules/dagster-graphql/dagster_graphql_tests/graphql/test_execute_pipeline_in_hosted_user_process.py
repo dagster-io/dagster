@@ -1,10 +1,10 @@
+from dagster_graphql.client.query import EXECUTE_RUN_IN_PROCESS_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import DagsterInstance
 from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.core.utils import make_new_run_id
 
-from .execution_queries import EXECUTE_RUN_IN_PROCESS_QUERY
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import (
     csv_hello_world,
@@ -23,7 +23,7 @@ class TestStartPipelineForCreatedRunInHostedUserProcess(ExecutingGraphQLContextT
 
         result = execute_dagster_graphql(
             graphql_context,
-            EXECUTE_RUN_IN_PROCESS_QUERY,
+            EXECUTE_RUN_IN_PROCESS_MUTATION,
             variables={
                 'runId': pipeline_run.run_id,
                 'repositoryLocationName': main_repo_location_name(),
@@ -37,7 +37,7 @@ class TestStartPipelineForCreatedRunInHostedUserProcess(ExecutingGraphQLContextT
         run_id = make_new_run_id()
         result = execute_dagster_graphql(
             graphql_context,
-            EXECUTE_RUN_IN_PROCESS_QUERY,
+            EXECUTE_RUN_IN_PROCESS_MUTATION,
             variables={
                 'runId': run_id,
                 'repositoryLocationName': main_repo_location_name(),
@@ -59,7 +59,7 @@ def test_shameful_workaround():
 
     result = execute_dagster_graphql(
         graphql_context,
-        EXECUTE_RUN_IN_PROCESS_QUERY,
+        EXECUTE_RUN_IN_PROCESS_MUTATION,
         variables={
             'runId': pipeline_run.run_id,
             # in corect in process name represents launching from user process
@@ -72,7 +72,7 @@ def test_shameful_workaround():
 
     result = execute_dagster_graphql(
         graphql_context,
-        EXECUTE_RUN_IN_PROCESS_QUERY,
+        EXECUTE_RUN_IN_PROCESS_MUTATION,
         variables={
             'runId': pipeline_run.run_id,
             # but we don't apply workaround to other names

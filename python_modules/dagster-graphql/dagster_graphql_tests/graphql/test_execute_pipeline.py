@@ -1,6 +1,7 @@
 import uuid
 from contextlib import contextmanager
 
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
@@ -10,7 +11,6 @@ from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
-from .execution_queries import LAUNCH_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 from .utils import sync_execute_get_run_log_data
@@ -21,7 +21,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -45,7 +45,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={'executionParams': {'selector': selector, 'preset': 'test_inline',}},
         )
 
@@ -63,7 +63,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'hello_world_with_tags')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={'executionParams': {'selector': selector, 'mode': 'default',},},
         )
 
@@ -85,7 +85,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={'executionParams': {'selector': selector, 'preset': 'undefined_preset',}},
         )
 
@@ -104,7 +104,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={'executionParams': {'selector': subset_selector, 'preset': 'test_inline',}},
         )
 
@@ -124,7 +124,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -148,7 +148,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         # while illegally defining mode
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -173,7 +173,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -194,7 +194,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'sjkdfkdjkf')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -360,7 +360,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         result = execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,

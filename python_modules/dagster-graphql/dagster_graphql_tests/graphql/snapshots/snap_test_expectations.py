@@ -14,6 +14,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[i
             'label': 'always_false',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -23,10 +24,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[i
         },
         'level': 'DEBUG',
         'message': 'Failure',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_failed_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_failed_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -38,6 +48,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[i
             'label': 'always_true',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -47,10 +58,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[i
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -66,10 +86,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[i
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation_no_metadata.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation_no_metadata'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -81,6 +110,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_false',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -90,10 +120,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Failure',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_failed_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_failed_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -105,6 +144,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_true',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -114,10 +154,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -133,10 +182,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation_no_metadata.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation_no_metadata'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -148,6 +206,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_false',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -157,10 +216,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Failure',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_failed_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_failed_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -172,6 +240,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_true',
             'metadataEntries': [
                 {
+                    '__typename': 'EventJsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -181,10 +250,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -200,10 +278,19 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
         },
         'level': 'DEBUG',
         'message': 'Successful',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+            ],
             'key': 'emit_successful_expectation_no_metadata.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+            ],
             'solidHandleID': 'emit_successful_expectation_no_metadata'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -219,10 +306,36 @@ snapshots['TestExpectations.test_basic_input_output_expectations[in_memory_insta
         },
         'level': 'DEBUG',
         'message': 'Expectation some_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     },
     {
         '__typename': 'StepExpectationResultEvent',
@@ -235,10 +348,36 @@ snapshots['TestExpectations.test_basic_input_output_expectations[in_memory_insta
         },
         'level': 'DEBUG',
         'message': 'Expectation other_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -254,10 +393,36 @@ snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_syn
         },
         'level': 'DEBUG',
         'message': 'Expectation some_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     },
     {
         '__typename': 'StepExpectationResultEvent',
@@ -270,10 +435,36 @@ snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_syn
         },
         'level': 'DEBUG',
         'message': 'Expectation other_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]
 
@@ -289,10 +480,36 @@ snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_cli
         },
         'level': 'DEBUG',
         'message': 'Expectation some_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     },
     {
         '__typename': 'StepExpectationResultEvent',
@@ -305,9 +522,35 @@ snapshots['TestExpectations.test_basic_input_output_expectations[sqlite_with_cli
         },
         'level': 'DEBUG',
         'message': 'Expectation other_expectation passed',
+        'runId': '<runId dummy value>',
         'step': {
+            'inputs': [
+                {
+                    'dependsOn': [
+                        {
+                            'key': 'sum_solid.compute'
+                        }
+                    ],
+                    'name': 'sum_df',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'key': 'df_expectations_solid.compute',
+            'kind': 'COMPUTE',
+            'metadata': [
+            ],
+            'outputs': [
+                {
+                    'name': 'result',
+                    'type': {
+                        'key': 'PoorMansDataFrame'
+                    }
+                }
+            ],
             'solidHandleID': 'df_expectations_solid'
-        }
+        },
+        'timestamp': '<timestamp dummy value>'
     }
 ]

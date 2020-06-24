@@ -14,7 +14,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[in_memory_i
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }
@@ -27,7 +31,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }
@@ -40,7 +48,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }
@@ -53,7 +65,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[in_m
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }
@@ -66,7 +82,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }
@@ -79,7 +99,11 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
             'pipeline': {
                 'name': 'csv_hello_world'
             },
-            'status': 'NOT_STARTED'
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
         }
     }
 }

@@ -1,5 +1,10 @@
 from time import sleep
 
+from dagster_graphql.client.query import (
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+    PIPELINE_REEXECUTION_INFO_QUERY,
+)
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
@@ -13,12 +18,6 @@ from dagster.core.storage.intermediates_manager import IntermediateStoreIntermed
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
-from .execution_queries import (
-    LAUNCH_PIPELINE_EXECUTION_QUERY,
-    LAUNCH_PIPELINE_REEXECUTION_QUERY,
-    LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
-    PIPELINE_REEXECUTION_INFO_QUERY,
-)
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     GraphQLContextVariant,
@@ -130,7 +129,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'eventually_successful')
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -153,7 +152,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -180,7 +179,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -208,7 +207,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_three = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -239,7 +238,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'retry_resource_pipeline')
         result = execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -258,7 +257,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -283,7 +282,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         context = graphql_context
         result = execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': get_retry_multi_execution_params(context, should_fail=True)
             },
@@ -302,7 +301,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': get_retry_multi_execution_params(
                     context, should_fail=True, retry_id=run_id
@@ -323,7 +322,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': get_retry_multi_execution_params(
                     context, should_fail=False, retry_id=run_id
@@ -347,7 +346,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         run_id = make_new_run_id()
         result_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -390,7 +389,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -446,7 +445,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         run_id = make_new_run_id()
         execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -461,7 +460,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         new_run_id = make_new_run_id()
         execute_dagster_graphql_and_finish_runs(
             context,
-            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -499,7 +498,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -515,7 +514,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         result_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'selector': selector,
@@ -542,7 +541,7 @@ class TestHardFailures(OutOfProcessExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, 'hard_failer')
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -563,7 +562,7 @@ class TestHardFailures(OutOfProcessExecutingGraphQLContextTestMatrix):
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -607,7 +606,7 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
 
     retry_one = execute_dagster_graphql_and_finish_runs(
         graphql_context,
-        LAUNCH_PIPELINE_REEXECUTION_QUERY,
+        LAUNCH_PIPELINE_REEXECUTION_MUTATION,
         variables={
             'executionParams': {
                 'mode': 'default',
@@ -666,7 +665,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
         run_id = make_new_run_id()
         execute_dagster_graphql(
             graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_QUERY,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',
@@ -707,7 +706,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         execute_dagster_graphql_and_finish_runs(
             graphql_context,
-            LAUNCH_PIPELINE_REEXECUTION_QUERY,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
             variables={
                 'executionParams': {
                     'mode': 'default',

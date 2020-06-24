@@ -1,12 +1,12 @@
 import os
 import time
 
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import execute_pipeline
 from dagster.utils import safe_tempfile_path
 
-from .execution_queries import LAUNCH_PIPELINE_EXECUTION_QUERY
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .setup import main_repo_location_name
 
@@ -43,7 +43,7 @@ class TestRunVariantTermination(
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
                 variables={
                     'executionParams': {
                         'selector': selector,
@@ -90,7 +90,7 @@ class TestRunVariantTermination(
             graphql_context.instance.run_launcher.terminate = lambda _run_id: False
             result = execute_dagster_graphql(
                 graphql_context,
-                LAUNCH_PIPELINE_EXECUTION_QUERY,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
                 variables={
                     'executionParams': {
                         'selector': selector,
