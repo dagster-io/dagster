@@ -229,7 +229,7 @@ def create_docker_task(celery_app, **task_kwargs):
         repo_location_name,
         run_id,
         docker_image,
-        docker_creds
+        docker_creds,
     ):
         '''Run step execution in a Docker container.
         '''
