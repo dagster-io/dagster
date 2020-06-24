@@ -11,7 +11,7 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test
+from dagster.core.test_utils import create_run_for_test, environ
 
 
 def test_get_run_by_id():
@@ -93,11 +93,10 @@ def test_create_execution_plan_snapshot():
     assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
 
 
-def test_dagster_home_raises(monkeypatch):
-    dirname = '.'
-    monkeypatch.setenv('DAGSTER_HOME', dirname)
-
-    with pytest.raises(DagsterInvariantViolationError) as err:
-        _dagster_home()
-
-    assert str(err.value) == 'DAGSTER_HOME must be absolute path: {}'.format(dirname)
+@pytest.mark.parametrize("dirname", (".", ".."))
+def test_dagster_home_raises(dirname):
+    with environ({'DAGSTER_HOME': dirname}):
+        with pytest.raises(DagsterInvariantViolationError) as err:
+            _dagster_home()
+        msg = 'DAGSTER_HOME must be absolute path: {}'.format(dirname)
+        assert str(err.value) == msg
