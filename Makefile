@@ -42,6 +42,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-celery \
+				-e python_modules/libraries/dagster-celery-k8s \
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-datadog \
