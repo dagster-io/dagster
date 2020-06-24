@@ -89,10 +89,10 @@ def test_even_type_hydration_config():
             self.num = num
 
     @input_hydration_config(int)
-    def hydrate_event_type(_, cfg):
+    def hydrate_even_type(_, cfg):
         return EvenType(cfg)
 
-    EvenDagsterType = PythonObjectDagsterType(EvenType, input_hydration_config=hydrate_event_type)
+    EvenDagsterType = PythonObjectDagsterType(EvenType, input_hydration_config=hydrate_even_type)
 
     @solid
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
