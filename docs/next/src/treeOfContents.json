@@ -157,16 +157,16 @@
       },
       {
         "name": "Repositories & Workspaces",
-        "path": "/docs/overview/repositories-workspaces/page1",
+        "path": "/docs/overview/repositories-workspaces/repositories",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/repositories-workspaces/page1"
+            "name": "Repositories",
+            "path": "/docs/overview/repositories-workspaces/repositories"
           },
           {
-            "name": "Page 2",
-            "path": "/docs/overview/repositories-workspaces/page2"
+            "name": "Workspaces",
+            "path": "/docs/overview/repositories-workspaces/workspaces"
           }
         ]
       },
