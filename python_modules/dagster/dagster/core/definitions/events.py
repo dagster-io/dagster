@@ -46,7 +46,9 @@ class AssetKey(namedtuple('_AssetKey', 'path')):
     strings.
 
     Example usage:
+
         AssetKey('flat_asset_key')
+
         AssetKey(['parent', 'child', 'grandchild'])
 
     Args:

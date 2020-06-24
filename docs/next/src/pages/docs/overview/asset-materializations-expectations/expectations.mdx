@@ -1,0 +1,43 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import PyObject from 'components/PyObject';
+
+<DynamicMetaTags title="Expectation Results | Dagster" />
+
+# Expectation Results
+
+In Dagster, solids can emit structured events to represent the results of a data quality test. The
+data quality event class is the <PyObject module="dagster" object="ExpectationResult" />. To
+generate an expectation result, we can yield an <PyObject module="dagster" object="ExpectationResult" /> event
+in our solid.
+
+This would involve changing the following solid:
+
+```python literalinclude caption=expectation.py
+file:/docs_snippets/docs_snippets/overview/asset_materializations/expectation_solids.py
+lineno-start:
+lines:14-17
+```
+
+into something like this:
+
+```python literalinclude caption=materialization.py
+file:/docs_snippets/docs_snippets/overview/asset_materializations/expectation_solids.py
+lineno-start:
+lines:20-24
+```
+
+## Attaching Metadata to the Expectation Result
+
+Much like materialization events, there are a variety of types of metadata that can be associated
+with an expectation result event, all through the <PyObject module="dagster" object="EventMetadataEntry" /> class.
+Each expectation event optionally takes a list of metadata entries that are then displayed in the
+event log.
+
+```python literalinclude caption=materialization.py
+file:/docs_snippets/docs_snippets/overview/asset_materializations/expectation_solids.py
+lineno-start:
+lines:27-40
+```
+
+Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
+on they types of event metadata available.

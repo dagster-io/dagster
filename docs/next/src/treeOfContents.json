@@ -141,17 +141,17 @@
         "path": "/docs/overview/types"
       },
       {
-        "name": "Intermediates & Materializations",
-        "path": "/docs/overview/intermediates-materializations/page1",
+        "name": "Asset Materializations & Expectations ",
+        "path": "/docs/overview/asset-materializations-expectations/asset-materializations",
         "childPath": true,
         "children": [
           {
-            "name": "Page 1",
-            "path": "/docs/overview/intermediates-materializations/page1"
+            "name": "Asset Materializations",
+            "path": "/docs/overview/asset-materializations-expectations/asset-materializations"
           },
           {
-            "name": "Page 2",
-            "path": "/docs/overview/intermediates-materializations/page2"
+            "name": "Expectation Results",
+            "path": "/docs/overview/asset-materializations-expectations/expectations"
           }
         ]
       },
