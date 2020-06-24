@@ -269,4 +269,4 @@ class DatabricksJobRunner:
             except requests.exceptions.HTTPError:
                 num_attempts += 1
                 time.sleep(waiter_delay)
-        log.warn('Could not retrieve {} logs!')
+        log.warn('Could not retrieve cluster logs!')
