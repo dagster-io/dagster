@@ -18,7 +18,8 @@ def test_build_dags(clean_airflow_home):
     and that Airflow is able to successfully parse our DAGs.
     '''
     runner = CliRunner()
-
+    # TODO: remove dependency on legacy_examples
+    # https://github.com/dagster-io/dagster/issues/2653
     cli_args_to_test = [
         ['--module-name', 'dagster_examples.toys.log_spew', '--pipeline-name', 'log_spew'],
         ['--module-name', 'dagster_examples.toys.many_events', '--pipeline-name', 'many_events'],

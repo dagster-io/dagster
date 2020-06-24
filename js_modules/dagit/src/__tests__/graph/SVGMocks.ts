@@ -57,5 +57,7 @@ MOCKS.push({
     requestScopeHandleID: ""
   } as PipelineExplorerRootQueryVariables,
   filepath: path.join(dataDir, `fan_in_fan_out_pipeline.json`),
+  // TODO: remove dependency on legacy_examples
+  // https://github.com/dagster-io/dagster/issues/2653
   repo: "examples/legacy_examples/dagster_examples/toys"
 });

@@ -24,6 +24,8 @@ it(`builds mocks`, () => {
       .replace(/[\n\r]/g, "")
       .replace(/[ ][ ]+/g, " ");
     const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
+    // TODO: remove dependency on legacy_examples
+    // https://github.com/dagster-io/dagster/issues/2653
     const repo = `${dagsterRoot}/${mock.repo || "examples"}/repository.yaml`;
 
     execSync(

@@ -16,6 +16,8 @@ from dagster.utils import git_repository_root
 def test_my_custom_operator(
     dagster_airflow_custom_operator_pipeline, caplog,
 ):  # pylint: disable=redefined-outer-name
+    # TODO: remove dependency on legacy_examples
+    # https://github.com/dagster-io/dagster/issues/2653
     caplog.set_level(logging.INFO, logger='CustomOperatorLogger')
     pipeline_name = 'demo_pipeline'
     operator = CustomOperator
