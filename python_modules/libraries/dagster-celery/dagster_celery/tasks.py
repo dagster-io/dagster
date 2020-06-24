@@ -18,7 +18,6 @@ from dagster.seven import is_module_available
 
 from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor
-from .executor_k8s import CeleryK8sJobExecutor
 
 
 def create_task(celery_app, **task_kwargs):
@@ -94,6 +93,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         '''
         from dagster_k8s import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
         from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_job_success
+        from .executor_k8s import CeleryK8sJobExecutor
 
         import kubernetes
 

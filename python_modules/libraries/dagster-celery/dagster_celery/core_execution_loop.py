@@ -10,8 +10,6 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .defaults import task_default_priority, task_default_queue
-from .executor import CeleryExecutor
-from .executor_k8s import CeleryK8sJobExecutor
 from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
@@ -29,11 +27,6 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.callable_param(step_execution_fn, 'step_execution_fn')
-
-    check.param_invariant(
-        isinstance(pipeline_context.executor, (CeleryExecutor, CeleryK8sJobExecutor)),
-        'pipeline_context',
-    )
 
     executor = pipeline_context.executor
 
