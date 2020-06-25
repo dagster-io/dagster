@@ -149,18 +149,7 @@
       },
       {
         "name": "Types",
-        "path": "/docs/overview/types/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/types/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/types/page2"
-          }
-        ]
+        "path": "/docs/overview/types"
       },
       {
         "name": "Intermediates & Materializations",
