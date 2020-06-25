@@ -3,8 +3,8 @@ import * as React from "react";
 import { Query, QueryResult } from "react-apollo";
 import {
   PartitionLongitudinalQuery,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs
 } from "./types/PartitionLongitudinalQuery";
 import { Header } from "../ListComponents";
 import gql from "graphql-tag";
@@ -20,9 +20,10 @@ import { Colors } from "@blueprintjs/core";
 import { RunsFilter } from "../runs/RunsFilter";
 import { TokenizingFieldValue } from "../TokenizingField";
 import { useRepositorySelector } from "../DagsterRepositoryContext";
+import PythonErrorInfo from "../PythonErrorInfo";
 
-type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
-type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
+type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
+type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 
 interface PartitionViewProps {
   partitionSetName: string;
@@ -69,7 +70,10 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
               return null;
             }
             const partitionSet = partitionSetOrError;
-            const partitions = partitionSet.partitions.results;
+            const partitions =
+              partitionSet.partitionsOrError.__typename === "Partitions"
+                ? partitionSet.partitionsOrError.results
+                : [];
             const allStepKeys = {};
             partitions.forEach(partition => {
               partition.runs?.forEach(run => {
@@ -557,44 +561,50 @@ const PARTITION_SET_QUERY = gql`
     ) {
       ... on PartitionSet {
         name
-        partitions(
+        partitionsOrError(
           cursor: $partitionsCursor
           limit: $partitionsLimit
           reverse: $reverse
         ) {
-          results {
-            name
-            runs {
-              runId
-              tags {
-                key
-                value
-              }
-              stats {
-                __typename
-                ... on PipelineRunStatsSnapshot {
+          ... on Partitions {
+            results {
+              name
+              runs {
+                runId
+                tags {
+                  key
+                  value
+                }
+                stats {
+                  __typename
+                  ... on PipelineRunStatsSnapshot {
+                    startTime
+                    endTime
+                    materializations
+                  }
+                }
+                stepStats {
+                  __typename
+                  stepKey
                   startTime
                   endTime
-                  materializations
+                  materializations {
+                    __typename
+                  }
+                  expectationResults {
+                    success
+                  }
                 }
+                status
               }
-              stepStats {
-                __typename
-                stepKey
-                startTime
-                endTime
-                materializations {
-                  __typename
-                }
-                expectationResults {
-                  success
-                }
-              }
-              status
             }
+          }
+          ... on PythonError {
+            ...PythonErrorFragment
           }
         }
       }
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

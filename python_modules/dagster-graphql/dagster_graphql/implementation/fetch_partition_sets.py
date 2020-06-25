@@ -9,6 +9,7 @@ from dagster.api.snapshot_partition import (
 )
 from dagster.core.host_representation import (
     ExternalPartitionConfigData,
+    ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
     ExternalPartitionSet,
     ExternalPartitionTagsData,
@@ -78,9 +79,7 @@ def get_partition_by_name(graphene_info, repository_handle, partition_set, parti
     )
 
 
-def get_partition_config_yaml(
-    _graphene_info, repository_handle, partition_set_name, partition_name
-):
+def get_partition_config(graphene_info, repository_handle, partition_set_name, partition_name):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
@@ -88,11 +87,11 @@ def get_partition_config_yaml(
         repository_handle, partition_set_name, partition_name
     )
     if isinstance(result, ExternalPartitionConfigData):
-        return yaml.dump(result.run_config, default_flow_style=False)
+        return graphene_info.schema.type_named('PartitionRunConfig')(
+            yaml=yaml.safe_dump(result.run_config, default_flow_style=False)
+        )
     else:
-        # TODO: surface user-facing error here, using the serialized error
-        # https://github.com/dagster-io/dagster/issues/2576
-        return ''
+        return graphene_info.schema.type_named('PythonError')(result.error)
 
 
 def get_partition_tags(graphene_info, repository_handle, partition_set_name, partition_name):
@@ -101,14 +100,14 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
     check.str_param(partition_name, 'partition_name')
     result = sync_get_external_partition_tags(repository_handle, partition_set_name, partition_name)
     if isinstance(result, ExternalPartitionTagsData):
-        return [
-            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
-            for key, value in result.tags.items()
-        ]
+        return graphene_info.schema.type_named('PartitionTags')(
+            results=[
+                graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+                for key, value in result.tags.items()
+            ]
+        )
     else:
-        # TODO: surface user-facing error here, using the serialized error
-        # https://github.com/dagster-io/dagster/issues/2576
-        return []
+        return graphene_info.schema.type_named('PythonError')(result.error)
 
 
 def get_partitions(
@@ -135,9 +134,8 @@ def get_partitions(
         )
 
     else:
-        # TODO: surface user-facing error here, using the serialized error
-        # https://github.com/dagster-io/dagster/issues/2576
-        return []
+        assert isinstance(result, ExternalPartitionExecutionErrorData)
+        return graphene_info.schema.type_named('PythonError')(result.error)
 
 
 def _apply_cursor_limit_reverse(items, cursor, limit, reverse):

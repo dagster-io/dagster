@@ -1,5 +1,5 @@
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import get_schedule_yaml
+from dagster_graphql.implementation.fetch_schedules import get_schedule_config
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
@@ -40,11 +40,11 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     mode = dauphin.NonNull(dauphin.String)
     schedule_state = dauphin.Field('ScheduleState')
 
-    run_config_yaml = dauphin.Field(dauphin.String)
+    runConfigOrError = dauphin.Field('ScheduleRunConfigOrError')
     partition_set = dauphin.Field('PartitionSet')
 
-    def resolve_run_config_yaml(self, graphene_info):
-        return get_schedule_yaml(graphene_info, self._external_schedule)
+    def resolve_runConfigOrError(self, graphene_info):
+        return get_schedule_config(graphene_info, self._external_schedule)
 
     def resolve_partition_set(self, graphene_info):
         if self._external_schedule.partition_set_name is None:
@@ -82,3 +82,16 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             if self._schedule_state
             else None,
         )
+
+
+class DauphinScheduleRunConfig(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleRunConfig'
+
+    yaml = dauphin.NonNull(dauphin.String)
+
+
+class DauphinScheduleRunConfigOrError(dauphin.Union):
+    class Meta(object):
+        name = 'ScheduleRunConfigOrError'
+        types = (DauphinScheduleRunConfig, DauphinPythonError)

@@ -111,6 +111,7 @@ def longitudinal_schedule():
     from .toys.longitudinal import longitudinal_config
 
     schedule_name = 'longitudinal_demo'
+
     partition_set = PartitionSetDefinition(
         name='ingest_and_train',
         pipeline_name='longitudinal_pipeline',

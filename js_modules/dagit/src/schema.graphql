@@ -659,10 +659,16 @@ type Partition {
   partitionSetName: String!
   solidSelection: [String!]
   mode: String!
-  runConfigYaml: String!
-  tags: [PipelineTag!]!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
   runs: [PipelineRun!]!
 }
+
+type PartitionRunConfig {
+  yaml: String!
+}
+
+union PartitionRunConfigOrError = PartitionRunConfig | PythonError
 
 type Partitions {
   results: [Partition!]!
@@ -673,7 +679,7 @@ type PartitionSet {
   pipelineName: String!
   solidSelection: [String!]
   mode: String!
-  partitions(cursor: String, limit: Int, reverse: Boolean): Partitions!
+  partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
 }
 
@@ -689,6 +695,14 @@ type PartitionSets {
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
+
+union PartitionsOrError = Partitions | PythonError
+
+type PartitionTags {
+  results: [PipelineTag!]!
+}
+
+union PartitionTagsOrError = PartitionTags | PythonError
 
 type Pipeline implements SolidContainer & IPipelineSnapshot {
   solids: [Solid!]!
@@ -1105,7 +1119,7 @@ type ScheduleDefinition {
   solidSelection: [String]
   mode: String!
   scheduleState: ScheduleState
-  runConfigYaml: String
+  runConfigOrError: ScheduleRunConfigOrError
   partitionSet: PartitionSet
 }
 
@@ -1138,6 +1152,12 @@ type SchedulerNotDefinedError implements Error {
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+type ScheduleRunConfig {
+  yaml: String!
+}
+
+union ScheduleRunConfigOrError = ScheduleRunConfig | PythonError
 
 input ScheduleSelector {
   repositoryName: String!

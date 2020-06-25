@@ -15,9 +15,10 @@ import * as ReactDOM from "react-dom";
 import { isEqual } from "apollo-utilities";
 import { useQuery, withApollo, WithApolloClient } from "react-apollo";
 
+import { showCustomAlert } from "../CustomAlertProvider";
 import {
   ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results
 } from "./types/ConfigPartitionsQuery";
 import { IExecutionSession } from "../LocalStorage";
 import { ShortcutHandler } from "../ShortcutHandler";
@@ -28,11 +29,13 @@ import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorGeneratorPipelineFragment_presets
 } from "./types/ConfigEditorGeneratorPipelineFragment";
+import PythonErrorInfo from "../PythonErrorInfo";
+import { PythonErrorFragment } from "../types/PythonErrorFragment";
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
 type PartitionSet = ConfigEditorGeneratorPartitionSetsFragment_results;
-type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
+type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type ConfigGenerator = Preset | PartitionSet;
 
 interface ConfigEditorConfigPickerProps {
@@ -110,19 +113,42 @@ class ConfigEditorConfigPickerInternal extends React.Component<
 
       const { partition } = data.partitionSetOrError;
 
+      let tags;
+      if (partition.tagsOrError.__typename === "PythonError") {
+        tags = (this.props.pipeline?.tags || []).slice();
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.tagsOrError} />
+        });
+      } else {
+        tags = [
+          ...(this.props.pipeline?.tags || []),
+          ...partition.tagsOrError.results
+        ];
+      }
+
+      let runConfigYaml;
+      if (partition.runConfigOrError.__typename === "PythonError") {
+        runConfigYaml = "";
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.runConfigOrError} />
+        });
+      } else {
+        runConfigYaml = partition.runConfigOrError.yaml;
+      }
+
       this.onCommit({
         name: partition.name,
         base: Object.assign({}, this.props.base, {
           partitionName: partition.name
         }),
-        runConfigYaml: partition.runConfigYaml || "",
+        runConfigYaml,
         solidSelection: partition.solidSelection,
         solidSelectionQuery:
           partition.solidSelection === null
             ? "*"
             : partition.solidSelection.join(","),
         mode: partition.mode,
-        tags: [...(this.props.pipeline?.tags || []), ...partition.tags]
+        tags
       });
     } catch {}
     this.props.onLoaded();
@@ -191,9 +217,16 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
     );
 
     const partitions: Partition[] =
-      data?.partitionSetOrError.__typename === "PartitionSet"
-        ? data.partitionSetOrError.partitions.results
+      data?.partitionSetOrError.__typename === "PartitionSet" &&
+      data?.partitionSetOrError.partitionsOrError.__typename === "Partitions"
+        ? data.partitionSetOrError.partitionsOrError.results
         : [];
+
+    const error: PythonErrorFragment | null =
+      data?.partitionSetOrError.__typename === "PartitionSet" &&
+      data?.partitionSetOrError.partitionsOrError.__typename !== "Partitions"
+        ? data.partitionSetOrError.partitionsOrError
+        : null;
 
     const selected = partitions.find(p => p.name === value);
 
@@ -221,6 +254,12 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
           selectedItem={value}
         />
       );
+    }
+
+    if (error) {
+      showCustomAlert({
+        body: <PythonErrorInfo error={error} />
+      });
     }
 
     // Note: We don't want this Suggest to be a fully "controlled" React component.
@@ -456,14 +495,20 @@ const CONFIG_PARTITIONS_QUERY = gql`
     ) {
       __typename
       ... on PartitionSet {
-        partitions {
-          results {
-            name
+        partitionsOrError {
+          ... on Partitions {
+            results {
+              name
+            }
+          }
+          ... on PythonError {
+            ...PythonErrorFragment
           }
         }
       }
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 const CONFIG_PARTITION_SELECTION_QUERY = gql`
@@ -481,14 +526,29 @@ const CONFIG_PARTITION_SELECTION_QUERY = gql`
         partition(partitionName: $partitionName) {
           name
           solidSelection
-          runConfigYaml
+          runConfigOrError {
+            ... on PartitionRunConfig {
+              yaml
+            }
+            ... on PythonError {
+              ...PythonErrorFragment
+            }
+          }
           mode
-          tags {
-            key
-            value
+          tagsOrError {
+            ... on PartitionTags {
+              results {
+                key
+                value
+              }
+            }
+            ... on PythonError {
+              ...PythonErrorFragment
+            }
           }
         }
       }
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

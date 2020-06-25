@@ -65,7 +65,12 @@ query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
         pipelineName
         solidSelection
         mode
-        runConfigYaml
+        runConfigOrError {
+          __typename
+          ... on ScheduleRunConfig {
+            yaml
+          }
+        }
       }
     }
   }
@@ -180,11 +185,14 @@ def test_get_schedule_definitions_for_repository(graphql_context):
 
     for schedule in results:
         if schedule['name'] == 'run_config_error_schedule':
-            assert schedule['runConfigYaml'] is None
+            assert schedule['runConfigOrError']['__typename'] == 'PythonError'
         elif schedule['name'] == 'invalid_config_schedule':
-            assert schedule['runConfigYaml'] == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+            assert (
+                schedule['runConfigOrError']['yaml']
+                == 'solids:\n  takes_an_enum:\n    config: invalid\n'
+            )
         else:
-            assert schedule['runConfigYaml'] == 'storage:\n  filesystem: {}\n'
+            assert schedule['runConfigOrError']['yaml'] == 'storage:\n  filesystem: {}\n'
 
 
 def test_get_schedule_states_for_repository(graphql_context):

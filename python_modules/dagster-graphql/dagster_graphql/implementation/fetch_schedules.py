@@ -172,7 +172,7 @@ def get_schedule_definition_or_error(graphene_info, schedule_selector):
     )
 
 
-def get_schedule_yaml(graphene_info, external_schedule):
+def get_schedule_config(graphene_info, external_schedule):
     check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
     handle = external_schedule.handle.repository_handle
     result = sync_get_external_schedule_execution_data(
@@ -180,8 +180,8 @@ def get_schedule_yaml(graphene_info, external_schedule):
     )
     if isinstance(result, ExternalScheduleExecutionData):
         run_config_yaml = yaml.safe_dump(result.run_config, default_flow_style=False)
-        return run_config_yaml if run_config_yaml else ''
+        return graphene_info.schema.type_named('ScheduleRunConfig')(
+            yaml=run_config_yaml if run_config_yaml else ''
+        )
     else:
-        # TODO: surface user-facing error here, using the serialized error
-        # https://github.com/dagster-io/dagster/issues/2576
-        return None
+        return graphene_info.schema.type_named('PythonError')(result.error)

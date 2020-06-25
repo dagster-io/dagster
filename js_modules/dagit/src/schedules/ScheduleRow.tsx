@@ -177,7 +177,16 @@ export const ScheduleRow: React.FunctionComponent<{
     variables: { scheduleSelector },
     skip: !configRequested
   });
-  const runConfigYaml = data?.scheduleDefinitionOrError?.runConfigYaml;
+
+  const runConfigError =
+    data?.scheduleDefinitionOrError?.runConfigOrError.__typename ===
+    "PythonError"
+      ? data.scheduleDefinitionOrError.runConfigOrError
+      : null;
+
+  const runConfigYaml = runConfigError
+    ? null
+    : data?.scheduleDefinitionOrError?.runConfigOrError.yaml;
 
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
@@ -385,17 +394,23 @@ export const ScheduleRow: React.FunctionComponent<{
                 <MenuItem
                   text="View Configuration..."
                   icon="share"
-                  onClick={() =>
-                    showCustomAlert({
-                      title: "Config",
-                      body: (
-                        <HighlightedCodeBlock
-                          value={runConfigYaml || "Unable to resolve config"}
-                          languages={["yaml"]}
-                        />
-                      )
-                    })
-                  }
+                  onClick={() => {
+                    if (runConfigError) {
+                      showCustomAlert({
+                        body: <PythonErrorInfo error={runConfigError} />
+                      });
+                    } else {
+                      showCustomAlert({
+                        title: "Config",
+                        body: (
+                          <HighlightedCodeBlock
+                            value={runConfigYaml || "Unable to resolve config"}
+                            languages={["yaml"]}
+                          />
+                        )
+                      });
+                    }
+                  }}
                 />
                 <MenuItem
                   text="Open in Playground..."
@@ -599,7 +614,7 @@ export const TickTag: React.FunctionComponent<{
         );
       } else {
         return (
-          <a
+          <LinkButton
             onClick={() =>
               showCustomAlert({
                 title: "Schedule Response",
@@ -610,7 +625,7 @@ export const TickTag: React.FunctionComponent<{
             <Tag minimal={true} intent={Intent.DANGER} interactive={true}>
               Failure
             </Tag>
-          </a>
+          </LinkButton>
         );
       }
     default:
@@ -684,10 +699,18 @@ const FETCH_SCHEDULE_YAML = gql`
   query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
     scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
       ... on ScheduleDefinition {
-        runConfigYaml
+        runConfigOrError {
+          ... on ScheduleRunConfig {
+            yaml
+          }
+          ... on PythonError {
+            ...PythonErrorFragment
+          }
+        }
       }
     }
   }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 const START_SCHEDULE_MUTATION = gql`
@@ -728,4 +751,13 @@ const STOP_SCHEDULE_MUTATION = gql`
       }
     }
   }
+`;
+
+const LinkButton = styled.button`
+  background: inherit;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: none;
+  padding: 0;
 `;

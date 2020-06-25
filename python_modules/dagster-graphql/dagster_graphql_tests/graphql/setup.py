@@ -980,6 +980,7 @@ def define_partitions():
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
         run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        tags_fn_for_partition=lambda partition: {'foo': partition.name},
     )
 
     enum_set = PartitionSetDefinition(

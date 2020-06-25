@@ -1,13 +1,13 @@
 import * as React from "react";
 
-import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs } from "./types/PartitionLongitudinalQuery";
+import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs } from "./types/PartitionLongitudinalQuery";
 import { RowContainer } from "../ListComponents";
 
 import { createGlobalStyle } from "styled-components/macro";
 import { Line } from "react-chartjs-2";
 import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunUtils";
 
-type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
+type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {
   x: string;
   y: number;

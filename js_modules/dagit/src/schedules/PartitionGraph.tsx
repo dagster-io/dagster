@@ -1,13 +1,13 @@
 import * as React from "react";
 
-import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs } from "./types/PartitionLongitudinalQuery";
+import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs } from "./types/PartitionLongitudinalQuery";
 import { RowContainer } from "../ListComponents";
 
 import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
 import { Colors } from "@blueprintjs/core";
 
-type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
+type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 type PointValue = number | null | undefined;
 type Point = { x: string; y: PointValue };
 

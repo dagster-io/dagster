@@ -1,7 +1,7 @@
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
-    get_partition_config_yaml,
+    get_partition_config,
     get_partition_tags,
     get_partitions,
 )
@@ -25,8 +25,8 @@ class DauphinPartition(dauphin.ObjectType):
     partition_set_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
-    runConfigYaml = dauphin.NonNull(dauphin.String)
-    tags = dauphin.non_null_list('PipelineTag')
+    runConfigOrError = dauphin.NonNull('PartitionRunConfigOrError')
+    tagsOrError = dauphin.NonNull('PartitionTagsOrError')
     runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, external_repository_handle, external_partition_set, partition_name):
@@ -45,15 +45,15 @@ class DauphinPartition(dauphin.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_runConfigYaml(self, graphene_info):
-        return get_partition_config_yaml(
+    def resolve_runConfigOrError(self, graphene_info):
+        return get_partition_config(
             graphene_info,
             self._external_repository_handle,
             self._external_partition_set.name,
             self._partition_name,
         )
 
-    def resolve_tags(self, graphene_info):
+    def resolve_tagsOrError(self, graphene_info):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
@@ -86,8 +86,8 @@ class DauphinPartitionSet(dauphin.ObjectType):
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
-    partitions = dauphin.Field(
-        dauphin.NonNull('Partitions'),
+    partitionsOrError = dauphin.Field(
+        dauphin.NonNull('PartitionsOrError'),
         cursor=dauphin.String(),
         limit=dauphin.Int(),
         reverse=dauphin.Boolean(),
@@ -109,7 +109,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_partitions(self, graphene_info, **kwargs):
+    def resolve_partitionsOrError(self, graphene_info, **kwargs):
         return get_partitions(
             graphene_info,
             self._external_repository_handle,
@@ -141,7 +141,39 @@ class DauphinPartitionSets(dauphin.ObjectType):
     results = dauphin.non_null_list('PartitionSet')
 
 
+class DauphinPartitionTags(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PartitionTags'
+
+    results = dauphin.non_null_list('PipelineTag')
+
+
+class DauphinPartitionRunConfig(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PartitionRunConfig'
+
+    yaml = dauphin.NonNull(dauphin.String)
+
+
 class DauphinPartitionSetsOrError(dauphin.Union):
     class Meta(object):
         name = 'PartitionSetsOrError'
         types = (DauphinPartitionSets, DauphinPipelineNotFoundError, DauphinPythonError)
+
+
+class DauphinPartitionsOrError(dauphin.Union):
+    class Meta(object):
+        name = 'PartitionsOrError'
+        types = (DauphinPartitions, DauphinPythonError)
+
+
+class DauphinPartitionTagsOrError(dauphin.Union):
+    class Meta(object):
+        name = 'PartitionTagsOrError'
+        types = (DauphinPartitionTags, DauphinPythonError)
+
+
+class DauphinPartitionRunConfigOrError(dauphin.Union):
+    class Meta(object):
+        name = 'PartitionRunConfigOrError'
+        types = (DauphinPartitionRunConfig, DauphinPythonError)

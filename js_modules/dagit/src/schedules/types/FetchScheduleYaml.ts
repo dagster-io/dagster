@@ -13,9 +13,29 @@ export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinitionN
   __typename: "ScheduleDefinitionNotFoundError" | "PythonError";
 }
 
+export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_ScheduleRunConfig {
+  __typename: "ScheduleRunConfig";
+  yaml: string;
+}
+
+export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_PythonError_cause | null;
+}
+
+export type FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError = FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_ScheduleRunConfig | FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError_PythonError;
+
 export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition {
   __typename: "ScheduleDefinition";
-  runConfigYaml: string | null;
+  runConfigOrError: FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError | null;
 }
 
 export type FetchScheduleYaml_scheduleDefinitionOrError = FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinitionNotFoundError | FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition;

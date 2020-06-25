@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
@@ -38,9 +40,42 @@ GET_PARTITION_SET_QUERY = '''
                 pipelineName
                 solidSelection
                 mode
-                partitions {
-                    results {
-                        name
+                partitionsOrError {
+                    ... on Partitions {
+                        results {
+                            name
+                            tagsOrError {
+                                __typename
+                            }
+                            runConfigOrError {
+                                ... on PartitionRunConfig {
+                                    yaml
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+'''
+
+GET_PARTITION_SET_TAGS_QUERY = '''
+    query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
+        partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
+            ...on PartitionSet {
+                partitionsOrError(limit: 1) {
+                    ... on Partitions {
+                        results {
+                            tagsOrError {
+                                ... on PartitionTags {
+                                    results {
+                                        key
+                                        value
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -87,7 +122,6 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
             variables={'partitionSetName': 'invalid_partition', 'repositorySelector': selector},
         )
 
-        print(invalid_partition_set_result.data)
         assert (
             invalid_partition_set_result.data['partitionSetOrError']['__typename']
             == 'PartitionSetNotFoundError'
@@ -95,3 +129,23 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         assert invalid_partition_set_result.data
 
         snapshot.assert_match(invalid_partition_set_result.data)
+
+    def test_get_partition_tags(self, graphql_context):
+        selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SET_TAGS_QUERY,
+            variables={'partitionSetName': 'integer_partition', 'repositorySelector': selector},
+        )
+
+        assert not result.errors
+        assert result.data
+        partitions = result.data['partitionSetOrError']['partitionsOrError']['results']
+        assert len(partitions) == 1
+        sorted_items = sorted(partitions[0]['tagsOrError']['results'], key=lambda item: item['key'])
+        tags = OrderedDict({item['key']: item['value'] for item in sorted_items})
+        assert tags == {
+            'foo': '0',
+            'dagster/partition': '0',
+            'dagster/partition_set': 'integer_partition',
+        }

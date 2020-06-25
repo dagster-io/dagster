@@ -13,19 +13,59 @@ export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSetN
   __typename: "PartitionSetNotFoundError" | "PythonError";
 }
 
-export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tags {
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PartitionRunConfig {
+  __typename: "PartitionRunConfig";
+  yaml: string;
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError_cause | null;
+}
+
+export type ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError = ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PartitionRunConfig | ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError_PythonError;
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags_results {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags {
+  __typename: "PartitionTags";
+  results: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags_results[];
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError_cause | null;
+}
+
+export type ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError = ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PartitionTags | ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError_PythonError;
+
 export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition {
   __typename: "Partition";
   name: string;
   solidSelection: string[] | null;
-  runConfigYaml: string;
+  runConfigOrError: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_runConfigOrError;
   mode: string;
-  tags: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tags[];
+  tagsOrError: ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet_partition_tagsOrError;
 }
 
 export interface ConfigPartitionSelectionQuery_partitionSetOrError_PartitionSet {
