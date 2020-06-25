@@ -20,8 +20,8 @@ const createTreeOfContents = () => {
 
   const { NEXT_PUBLIC_DEV_MODE } = process.env;
   if (!NEXT_PUBLIC_DEV_MODE || NEXT_PUBLIC_DEV_MODE !== 'true') {
-    console.log('Not in dev mode, deleting overview');
-    delete treeOfContents['Overview'];
+    console.log('Not in dev mode, deleting overviews');
+    delete treeOfContents['Overviews'];
   }
 
   if (NEXT_PUBLIC_DEV_MODE == 'true') {

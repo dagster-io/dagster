@@ -36,7 +36,7 @@
         "path": "/docs/tutorial/setup"
       },
       {
-        "name": "Overview",
+        "name": "Overviews",
         "path": "/docs/tutorial/overview"
       },
       {
@@ -85,8 +85,8 @@
       }
     ]
   },
-  "Overview": {
-    "name": "Overview",
+  "Overviews": {
+    "name": "Overviews",
     "path": "/docs/overview",
     "ignore": true,
     "children": [
