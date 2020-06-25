@@ -26,14 +26,10 @@ def celery_docker_config():
             description='The docker registry to pull images from. Empty for local or public',
         ),
         'docker_username': Field(
-            StringSource,
-            is_required=False,
-            description='Registry username.',
+            StringSource, is_required=False, description='Registry username.',
         ),
         'docker_password': Field(
-            StringSource,
-            is_required=False,
-            description='Registry password.',
+            StringSource, is_required=False, description='Registry password.',
         ),
         'repo_location_name': Field(
             StringSource,

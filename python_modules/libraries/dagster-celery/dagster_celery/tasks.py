@@ -271,9 +271,7 @@ def create_docker_task(celery_app, **task_kwargs):
 
         if docker_username:
             client.login(
-                registry=docker_registry,
-                username=docker_username,
-                password=docker_password,
+                registry=docker_registry, username=docker_username, password=docker_password,
             )
 
         # Post event for starting execution
