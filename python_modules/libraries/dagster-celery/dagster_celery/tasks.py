@@ -229,7 +229,9 @@ def create_docker_task(celery_app, **task_kwargs):
         repo_location_name,
         run_id,
         docker_image,
-        docker_creds,
+        docker_registry,
+        docker_username,
+        docker_password,
     ):
         '''Run step execution in a Docker container.
         '''
@@ -267,8 +269,12 @@ def create_docker_task(celery_app, **task_kwargs):
 
         client = docker.client.from_env()
 
-        if docker_creds['username']:
-            client.login(**docker_creds)
+        if docker_username:
+            client.login(
+                registry=docker_registry,
+                username=docker_username,
+                password=docker_password,
+            )
 
         # Post event for starting execution
         engine_event = instance.report_engine_event(

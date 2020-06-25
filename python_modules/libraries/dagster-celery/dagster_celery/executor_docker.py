@@ -20,6 +20,21 @@ def celery_docker_config():
             is_required=True,
             description='The docker image used for pipeline execution.',
         ),
+        'docker_registry': Field(
+            StringSource,
+            is_required=False,
+            description='The docker registry to pull images from. Empty for local or public',
+        ),
+        'docker_username': Field(
+            StringSource,
+            is_required=False,
+            description='Registry username.',
+        ),
+        'docker_password': Field(
+            StringSource,
+            is_required=False,
+            description='Registry password.',
+        ),
         'repo_location_name': Field(
             StringSource,
             is_required=False,
@@ -74,6 +89,9 @@ def celery_docker_executor(init_context):
           celery-docker:
             config:
               docker_image: 'my_repo.com/image_name:latest'
+              docker_registry: 'my_repo.com'
+              docker_username: 'my_user'
+              docker_password: {env: 'DOCKER_PASSWORD'}
               broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
               backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
               include: ['my_module'] # Optional[List[str]]: Modules every worker should import
@@ -85,27 +103,10 @@ def celery_docker_executor(init_context):
     workers on which you hope to run were started. If, for example, you point the executor at a
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
-
-    If you want to use your private docker registry you have to pass your registry credentials
-    through ENV as follows:
-
-    .. code-block:: YAML
-
-        DOCKER_USERNAME: my_user
-        DOCKER_PASSWORD: my_secret_pass
-        DOCKER_REGISTRY: my_repo.com
-
     '''
     check_cross_process_constraints(init_context)
 
-    run_launcher = init_context.instance.run_launcher
     exc_cfg = init_context.executor_config
-
-    docker_creds = {
-        'username': os.environ.get('DOCKER_USERNAME'),
-        'password': os.environ.get('DOCKER_PASSWORD'),
-        'registry': os.environ.get('DOCKER_REGISTRY'),
-    }
 
     return CeleryDockerExecutor(
         broker=exc_cfg.get('broker'),
@@ -114,7 +115,9 @@ def celery_docker_executor(init_context):
         include=exc_cfg.get('include'),
         retries=Retries.from_config(exc_cfg.get('retries')),
         docker_image=exc_cfg.get('docker_image'),
-        docker_creds=docker_creds,
+        docker_registry=exc_cfg.get('docker_registry'),
+        docker_username=exc_cfg.get('docker_username'),
+        docker_password=exc_cfg.get('docker_password'),
         repo_location_name=exc_cfg.get('repo_location_name'),
     )
 
@@ -128,7 +131,9 @@ class CeleryDockerExecutor(Executor):
         include=None,
         config_source=None,
         docker_image=None,
-        docker_creds=None,
+        docker_registry=None,
+        docker_username=None,
+        docker_password=None,
         repo_location_name=None,
     ):
         self.retries = check.inst_param(retries, 'retries', Retries)
@@ -139,7 +144,9 @@ class CeleryDockerExecutor(Executor):
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
         )
         self.docker_image = check.str_param(docker_image, 'docker_image')
-        self.docker_creds = check.opt_dict_param(docker_creds, 'docker_creds')
+        self.docker_registry = check.opt_str_param(docker_registry, 'docker_registry')
+        self.docker_username = check.opt_str_param(docker_username, 'docker_username')
+        self.docker_password = check.opt_str_param(docker_password, 'docker_password')
         self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
 
     def execute(self, pipeline_context, execution_plan):
@@ -175,7 +182,9 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
         repo_location_name=pipeline_context.executor.repo_location_name,
         run_id=pipeline_context.pipeline_run.run_id,
         docker_image=pipeline_context.executor.docker_image,
-        docker_creds=pipeline_context.executor.docker_creds,
+        docker_registry=pipeline_context.executor.docker_registry,
+        docker_username=pipeline_context.executor.docker_username,
+        docker_password=pipeline_context.executor.docker_password,
     )
     return task_signature.apply_async(
         priority=priority,
