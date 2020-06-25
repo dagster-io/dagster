@@ -13,7 +13,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_path, mkdir_p
 
 from .executor import CeleryExecutor, celery_executor
-from .tasks import make_app
+from .make_app import make_app
 
 
 def create_worker_cli_group():
@@ -166,7 +166,7 @@ def worker_start_command(
 
     pythonpath = get_config_dir(config_yaml)
     subprocess_args = (
-        ['celery', '-A', 'dagster_celery.tasks', 'worker', '--prefetch-multiplier=1']
+        ['celery', '-A', 'dagster_celery.app', 'worker', '--prefetch-multiplier=1']
         + loglevel_args
         + queue_args
         + includes_args

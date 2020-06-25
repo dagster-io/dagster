@@ -161,7 +161,7 @@ class CeleryDockerExecutor(Executor):
 
 
 def _submit_task_docker(app, pipeline_context, step, queue, priority):
-    from .tasks import create_docker_task
+    from .docker_task import create_docker_task
 
     task = create_docker_task(app)
 

@@ -170,7 +170,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                         'command': [
                             '/bin/sh',
                             '-c',
-                            'celery status -A dagster_celery.tasks -b {broker_url} | grep "{HOSTNAME}:.*OK"'.format(
+                            'celery status -A dagster_celery.app -b {broker_url} | grep "{HOSTNAME}:.*OK"'.format(
                                 broker_url='some_broker_url', HOSTNAME='some_hostname',
                             ),
                         ]

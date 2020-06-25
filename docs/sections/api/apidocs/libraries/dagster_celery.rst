@@ -19,7 +19,7 @@ To run a celery worker:
 
 .. code-block:: bash
 
-    celery -A dagster_celery.tasks worker -l info
+    celery -A dagster_celery.app worker -l info
 
 
 To start multiple workers in the background, run:
@@ -27,7 +27,7 @@ To start multiple workers in the background, run:
 
 .. code-block:: bash
 
-    celery multi start w2 -A dagster_celery.tasks -l info
+    celery multi start w2 -A dagster_celery.app -l info
 
 
 To execute a pipeline using the celery-backed executor, you'll need to add the celery executor to
@@ -60,7 +60,7 @@ We advise using [Flower](https://celery.readthedocs.io/en/latest/userguide/monit
 
 .. code-block:: bash
 
-    celery -A dagster_celery.tasks flower
+    celery -A dagster_celery.app flower
 
 Customizing the Celery broker, backend, and other app configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -10,6 +10,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .defaults import task_default_priority, task_default_queue
+from .make_app import make_app
 from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
@@ -22,7 +23,6 @@ DELEGATE_MARKER = 'celery_queue_wait'
 
 
 def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_fn):
-    from .tasks import make_app
 
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)

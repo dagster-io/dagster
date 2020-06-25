@@ -6,7 +6,7 @@ import pytest
 import six
 from celery.contrib.testing import worker
 from celery.contrib.testing.app import setup_default_app
-from dagster_celery.tasks import make_app
+from dagster_celery.make_app import make_app
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
 from dagster.utils import git_repository_root

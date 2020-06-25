@@ -215,7 +215,7 @@ class CeleryK8sJobExecutor(Executor):
 
 
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
-    from .tasks import create_k8s_job_task
+    from .k8s_job_task import create_k8s_job_task
 
     from dagster_k8s.job import get_k8s_resource_requirements
 
