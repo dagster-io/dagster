@@ -45,8 +45,12 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
         return iter(())
 
     def teardown(self):
-        for _ in super(DagstermillResourceEventGenerationManager, self).generate_teardown_events():
-            pass
+        return [
+            teardown_event
+            for teardown_event in super(
+                DagstermillResourceEventGenerationManager, self
+            ).generate_teardown_events()
+        ]
 
 
 class Manager(object):

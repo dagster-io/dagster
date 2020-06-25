@@ -1,7 +1,7 @@
-from dagster.core.errors import DagsterUserCodeExecutionError
+from dagster.core.errors import DagsterError, DagsterUserCodeExecutionError
 
 
-class DagstermillError(Exception):
+class DagstermillError(DagsterError):
     '''Base class for errors raised by dagstermill.'''
 
 

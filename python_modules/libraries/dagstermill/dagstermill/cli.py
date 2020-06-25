@@ -27,14 +27,13 @@ def get_kernelspec(kernel):
     check.invariant(len(kernelspecs['kernelspecs']) > 0, 'No available Jupyter kernelspecs!')
 
     if kernel is None:
-        if 'dagster' in kernelspecs['kernelspecs']:
-            kernel = 'dagster'
-        elif 'python3' in kernelspecs['kernelspecs']:
-            kernel = 'python3'
-        elif 'python' in kernelspecs['kernelspecs']:
-            kernel = 'python'
-        else:
-            kernel = list(kernelspecs['kernelspecs'].keys())[0]
+        preferred_kernels = list(
+            filter(
+                lambda kernel_name: kernel_name in kernelspecs['kernelspecs'],
+                ['dagster', 'python3', 'python'],
+            )
+        ) + list(kernelspecs['kernelspecs'].keys())
+        kernel = preferred_kernels[0]
         print('No kernel specified, defaulting to \'{kernel}\''.format(kernel=kernel))
 
     check.invariant(

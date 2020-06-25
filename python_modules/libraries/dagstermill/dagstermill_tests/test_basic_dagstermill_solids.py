@@ -5,15 +5,16 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
+from dagstermill import DagstermillError, define_dagstermill_solid
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 from papermill import PapermillExecutionError
 
-from dagster import execute_pipeline
+from dagster import execute_pipeline, pipeline
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
-from dagster.utils import safe_tempfile_path
+from dagster.utils import file_relative_path, safe_tempfile_path
 
 try:
     import dagster_pandas as _
@@ -60,11 +61,11 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    pipeline = ReconstructablePipeline.for_module('dagstermill.examples.repository', fn_name)
+    recon_pipeline = ReconstructablePipeline.for_module('dagstermill.examples.repository', fn_name)
 
     try:
         result = execute_pipeline(
-            pipeline,
+            recon_pipeline,
             env,
             instance=DagsterInstance.local_temp(),
             raise_on_error=raise_on_error,
@@ -260,13 +261,13 @@ def test_hello_world_reexecution():
             reexecution_notebook_file.flush()
 
             result = None
-            pipeline = ReconstructablePipeline.for_file(
+            reexecution_pipeline = ReconstructablePipeline.for_file(
                 reexecution_notebook_file.name, 'define_reexecution_pipeline'
             )
 
             try:
                 reexecution_result = execute_pipeline(
-                    pipeline, instance=DagsterInstance.local_temp()
+                    reexecution_pipeline, instance=DagsterInstance.local_temp()
                 )
                 assert reexecution_result.success
             finally:
@@ -338,9 +339,9 @@ def test_resources_notebook_with_exception():
 
 
 @pytest.mark.notebook_test
-def define_bad_kernel_pipeline():
+def test_bad_kernel_pipeline():
     with pytest.raises(NoSuchKernel):
-        with exec_for_test('bad_kernel_pipeline'):
+        with exec_for_test('define_bad_kernel_pipeline'):
             pass
 
 
@@ -369,3 +370,14 @@ def test_yield_obj_pipeline():
     with exec_for_test('yield_obj_pipeline') as result:
         assert result.success
         assert result.result_for_solid('yield_obj').output_value().x == 3
+
+
+def test_non_reconstructable_pipeline():
+    foo_solid = define_dagstermill_solid('foo', file_relative_path(__file__, 'notebooks/foo.ipynb'))
+
+    @pipeline
+    def non_reconstructable():
+        foo_solid()
+
+    with pytest.raises(DagstermillError, match='pipeline that is not reconstructable.'):
+        execute_pipeline(non_reconstructable)
