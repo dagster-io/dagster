@@ -266,7 +266,9 @@ def create_docker_task(celery_app, **task_kwargs):
         )
 
         client = docker.client.from_env()
-        client.login(**docker_creds)
+
+        if docker_creds['username']:
+            client.login(**docker_creds)
 
         # Post event for starting execution
         engine_event = instance.report_engine_event(
