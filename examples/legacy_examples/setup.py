@@ -4,6 +4,7 @@ setup(
     name='dagster_examples',
     version='dev',
     author='Elementl',
+    author_email='hello@elementl.com',
     license='Apache-2.0',
     description='Dagster Examples',
     url='https://github.com/dagster-io/dagster',

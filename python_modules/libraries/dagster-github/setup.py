@@ -26,6 +26,7 @@ def _do_setup(name='dagster-github'):
         name=name,
         version=get_version(name),
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         description='A Github client resource for interacting with the github API with a github App',
         url='https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github',

@@ -33,6 +33,7 @@ def _do_setup(name='dagster-pandas'):
         name=name,
         version=get_version(name),
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         description=(
             'Utilities and examples for working with pandas and dagster, an opinionated '

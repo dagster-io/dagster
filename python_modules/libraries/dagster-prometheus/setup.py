@@ -26,6 +26,7 @@ def _do_setup(name='dagster-prometheus'):
         name=name,
         version=get_version(name),
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         description='A Dagster integration for prometheus',
         url='https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-prometheus',

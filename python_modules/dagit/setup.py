@@ -34,6 +34,7 @@ def _do_setup(name='dagit'):
         name=name,
         version=ver,
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         description='Web UI for dagster.',
         long_description=long_description(),

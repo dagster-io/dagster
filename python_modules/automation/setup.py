@@ -4,6 +4,7 @@ setup(
     name='automation',
     version='0.0.1',
     author='Elementl',
+    author_email='hello@elementl.com',
     license='Apache-2.0',
     description='Tools for infrastructure automation',
     url='https://github.com/dagster-io/dagster/tree/master/python_modules/automation',

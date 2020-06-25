@@ -26,6 +26,7 @@ def _do_setup(name='dagstermill'):
         name=name,
         version=get_version(name),
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         packages=find_packages(exclude=['dagstermill_tests']),
         classifiers=[

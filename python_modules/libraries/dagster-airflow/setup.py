@@ -29,6 +29,7 @@ def _do_setup(name='dagster-airflow'):
         name=name,
         version=ver,
         author='Elementl',
+        author_email='hello@elementl.com',
         license='Apache-2.0',
         description='Airflow plugin for Dagster',
         url='https://github.com/dagster-io/dagster',
