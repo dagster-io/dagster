@@ -108,19 +108,12 @@
         "path": "/docs/overview/types"
       },
       {
-        "name": "Asset Materializations & Expectations ",
-        "path": "/docs/overview/asset-materializations-expectations/asset-materializations",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Asset Materializations",
-            "path": "/docs/overview/asset-materializations-expectations/asset-materializations"
-          },
-          {
-            "name": "Expectation Results",
-            "path": "/docs/overview/asset-materializations-expectations/expectations"
-          }
-        ]
+        "name": "Assets & Materializations",
+        "path": "/docs/overview/asset-materializations"
+      },
+      {
+        "name": "Expectations",
+        "path": "/docs/overview/expectations"
       },
       {
         "name": "Repositories & Workspaces",
