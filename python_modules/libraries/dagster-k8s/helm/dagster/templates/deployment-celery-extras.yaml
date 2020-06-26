@@ -42,7 +42,7 @@ spec:
           imagePullPolicy: {{ $.Values.celery.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" $ }}"
           command: ["dagster-celery"]
-          args: ["worker", "start", "-y", "{{ $.Values.dagster_home }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.dagster_home }}/celery-config.yaml", "-q", "{{- $queue.name -}}"]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:

@@ -6,6 +6,19 @@ from dagster.seven import is_module_available
 
 
 def make_app(app_args=None):
+    return make_app_with_task_routes(
+        app_args=app_args,
+        task_routes={
+            'execute_plan': {'queue': 'dagster', 'routing_key': 'dagster.execute_plan'},
+            'execute_step_docker': {
+                'queue': 'dagster',
+                'routing_key': 'dagster.execute_step_docker',
+            },
+        },
+    )
+
+
+def make_app_with_task_routes(task_routes, app_args=None):
     app_ = Celery('dagster', **(app_args if app_args else {}))
 
     if app_args is None:
@@ -21,11 +34,7 @@ def make_app(app_args=None):
     app_.conf.task_queues = [
         Queue('dagster', routing_key='dagster.#', queue_arguments={'x-max-priority': 10})
     ]
-    app_.conf.task_routes = {
-        'execute_plan': {'queue': 'dagster', 'routing_key': 'dagster.execute_plan'},
-        'execute_step_k8s_job': {'queue': 'dagster', 'routing_key': 'dagster.execute_step_k8s_job'},
-        'execute_step_docker': {'queue': 'dagster', 'routing_key': 'dagster.execute_step_docker'},
-    }
+    app_.conf.task_routes = task_routes
     app_.conf.task_queue_max_priority = 10
     app_.conf.task_default_priority = 5
     return app_

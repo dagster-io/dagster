@@ -40,7 +40,7 @@ spec:
           imagePullPolicy: {{ .Values.celery.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" . }}"
           command: ["dagster-celery"]
-          args: ["worker", "start", "-y", "{{ .Values.dagster_home }}/celery-config.yaml", "-q", "dagster"]
+          args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ .Values.dagster_home }}/celery-config.yaml", "-q", "dagster"]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
@@ -83,7 +83,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - celery status -A dagster_celery.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+                - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
             {{- if hasKey .Values.celery.livenessProbe "initialDelaySeconds" }}
             initialDelaySeconds:
               {{- toYaml .Values.celery.livenessProbe.initialDelaySeconds | nindent 14 }}

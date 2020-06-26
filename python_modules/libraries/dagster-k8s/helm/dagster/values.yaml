@@ -185,7 +185,7 @@ celery:
   #   command:
   #     - /bin/sh
   #     - -c
-  #     - celery status -A dagster_celery.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+  #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
   livenessProbe:
     default: true
     initialDelaySeconds: 15

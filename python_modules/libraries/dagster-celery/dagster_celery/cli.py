@@ -147,10 +147,13 @@ def launch_background_worker(subprocess_args, env):
 @click.option(
     '--loglevel', '-l', type=click.STRING, default='INFO', help='Log level for the worker.'
 )
+@click.option('--app', '-A', type=click.STRING)
 @click.argument('additional_args', nargs=-1, type=click.UNPROCESSED)
 def worker_start_command(
-    name, config_yaml, background, queue, includes, loglevel, additional_args,
+    name, config_yaml, background, queue, includes, loglevel, app, additional_args,
 ):
+    check.invariant(app, 'App must be specified. E.g. dagster_celery.app or dagster_celery_k8s.app')
+
     loglevel_args = ['--loglevel', loglevel]
 
     if len(queue) > 4:
@@ -166,7 +169,7 @@ def worker_start_command(
 
     pythonpath = get_config_dir(config_yaml)
     subprocess_args = (
-        ['celery', '-A', 'dagster_celery.app', 'worker', '--prefetch-multiplier=1']
+        ['celery', '-A', app, 'worker', '--prefetch-multiplier=1']
         + loglevel_args
         + queue_args
         + includes_args

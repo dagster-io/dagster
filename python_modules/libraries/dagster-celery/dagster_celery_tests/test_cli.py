@@ -49,7 +49,9 @@ def pythonpath(path):
 def start_worker(name, args=None, exit_code=0, exception_str=''):
     args = check.opt_list_param(args, 'args')
     runner = CliRunner()
-    result = runner.invoke(main, ['worker', 'start', '-d'] + args + ['--name', name])
+    result = runner.invoke(
+        main, ['worker', 'start', '-A', 'dagster_celery.app', '-d'] + args + ['--name', name]
+    )
     assert result.exit_code == exit_code, str(result.exception)
     if exception_str:
         assert exception_str in str(result.exception)
