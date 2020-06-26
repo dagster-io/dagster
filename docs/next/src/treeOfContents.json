@@ -2,25 +2,7 @@
   "Install": {
     "name": "Install",
     "path": "/docs/install",
-    "ignore": true,
-    "children": [
-      {
-        "name": "Quick Start",
-        "path": "/docs/install"
-      },
-      {
-        "name": "Packages",
-        "path": "/docs/install/packages"
-      },
-      {
-        "name": "Python",
-        "path": "/docs/install/python"
-      },
-      {
-        "name": "Telemetry",
-        "path": "/docs/install/telemetry"
-      }
-    ]
+    "ignore": true
   },
   "Tutorial": {
     "name": "Tutorial",
