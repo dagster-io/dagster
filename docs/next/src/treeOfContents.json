@@ -373,33 +373,29 @@
     ]
   },
 
-  "Deploying": {
-    "name": "Deploying",
+  "Deploy": {
+    "name": "Deploy",
     "path": "/docs/deploying",
     "children": [
       {
-        "name": "The Dagster instance",
-        "path": "/docs/deploying/instance"
-      },
-      {
         "name": "Running Dagit as a service",
         "path": "/docs/deploying/local"
-      },
-      {
-        "name": "Celery executor",
-        "path": "/docs/deploying/celery"
       },
       {
         "name": "Deploying on Kubernetes",
         "path": "/docs/deploying/k8s"
       },
       {
-        "name": "Deploying to AWS",
+        "name": "Using AWS for storage",
         "path": "/docs/deploying/aws"
       },
       {
-        "name": "Deploying to GCP",
+        "name": "Using GCP for storage",
         "path": "/docs/deploying/gcp"
+      },
+      {
+        "name": "Executing on Celery",
+        "path": "/docs/deploying/celery"
       },
       {
         "name": "Executing on Dask",

@@ -7,22 +7,6 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 # Deploying Dagster
 
-Getting started with Dagster is as easy as running:
-
-```shell
-pip install dagit
-dagit
-```
-
-Dagster supports a wide variety of more sophisticated deployment strategies for production.
-Typically, you'll want to deploy Dagit somewhere, configure the way that it stores information and
-launches runs, and make sure your pipelines are configured to run appropriately for your
-environment.
-
-For example, if you're using the Celery engine, you'll want to run worker processes to parallelize
-execution. Alternatively, you may want to deploy Dagster pipelines into a completely different
-scheduling and execution environment, like Apache Airflow.
-
-A good place to start is the [Dagster instance page](/docs/deploying/instance), which showcases (1)
-which configurations should be set globally for your Dagster deployment and (2) which configurations
-are set per pipeline.
+Deploying Dagster usually means:
+- Setting up a [Dagster instance](/docs/overview/instances/dagster-instance), which is responsible for launching runs, storing logs and metadata from runs, and serving the Dagit UI.
+- Optionally, setting up an [executor](/docs/overview/run-launchers-executors/executor), e.g. [Celery](/docs/deploying/celery) or [Dask](/docs/deploying/dask), for executing solids within runs.
