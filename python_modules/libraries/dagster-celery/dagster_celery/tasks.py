@@ -1,6 +1,5 @@
-import copy
-import os
 import hashlib
+import os
 
 import six
 from celery import Celery
@@ -16,7 +15,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan_itera
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import InstanceRef
 from dagster.serdes import serialize_dagster_namedtuple
-from dagster.seven import is_module_available, JSONDecodeError
+from dagster.seven import JSONDecodeError, is_module_available
 
 from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor
@@ -246,10 +245,6 @@ def create_docker_task(celery_app, **task_kwargs):
         '''Run step execution in a Docker container.
         '''
         import docker.client
-        from dagster_graphql.client.mutations import (
-            handle_execution_errors,
-            handle_execute_plan_result,
-        )
         from .executor_docker import CeleryDockerExecutor
 
         instance_ref = InstanceRef.from_dict(instance_ref_dict)

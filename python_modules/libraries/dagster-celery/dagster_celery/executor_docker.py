@@ -1,5 +1,3 @@
-import os
-
 from dagster import Executor, Field, StringSource, check, executor
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.execution.retries import Retries
