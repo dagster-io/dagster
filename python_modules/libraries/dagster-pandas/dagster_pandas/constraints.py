@@ -380,6 +380,8 @@ def apply_ignore_missing_data_to_mask(mask, column):
 
 class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
     def validate(self, data, *columns, **kwargs):
+        if len(columns) == 0:
+            columns = data.columns
         relevant_data = data[list(columns)]
         offending_columns = set()
         offending_values = {}
@@ -413,6 +415,8 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     """
 
     def validate(self, data, *columns, **kwargs):
+        if len(columns) == 0:
+            columns = data.columns
         relevant_data = data[list(columns)]
         offending = {}
         offending_values = {}

@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 from dagster_pandas.constraints import (
     ColumnDTypeFnConstraint,
@@ -180,6 +182,10 @@ def create_dagster_pandas_dataframe_type(
     # Users can hydrate and persist their custom dataframes via configuration their own way if the default
     # configs don't suffice. This is purely optional.
     check.str_param(name, 'name')
+    warnings.warn(
+        """This method of constructing dataframe types is deprecated,
+     and is planned to be removed in a future version (tentatively 0.10.0)"""
+    )
     event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, 'description', default=''),
@@ -209,6 +215,95 @@ def create_dagster_pandas_dataframe_type(
             else None,
         )
 
+    return DagsterType(
+        name=name,
+        type_check_fn=_dagster_type_check,
+        input_hydration_config=input_hydration_config
+        if input_hydration_config
+        else dataframe_input_schema,
+        output_materialization_config=output_materialization_config
+        if output_materialization_config
+        else dataframe_output_schema,
+        description=description,
+    )
+
+
+def create_structured_dataframe_type(
+    name,
+    description=None,
+    columns_validator=None,
+    columns_aggregate_validator=None,
+    dataframe_validator=None,
+    input_hydration_config=None,
+    output_materialization_config=None,
+):
+    """
+
+    Args:
+        name (str): the name of the new type
+        description (Optional[str]): the description of the new type
+        columns_validator (Optional[Union[ColumnConstraintWithMetadata, MultiColumnConstraintWithMetadata]]):
+                    what column-level row by row validation you want to have applied.
+                    Leave empty for no column-level row by row validation.
+        columns_aggregate_validator (Optional[Union[ColumnAggregateConstraintWithMetadata,
+                                    MultiAggregateConstraintWithMetadata]]):
+                    what column-level aggregate validation you want to have applied,
+                    Leave empty for no column-level aggregate validation.
+        dataframe_validator (Optional[Union[ConstraintWithMetadata, MultiConstraintWithMetadata]]):
+                    what dataframe-wide validation you want to have applied.
+                    Leave empty for no dataframe-wide validation.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`~dagster.InputHydrationConfig`. If None, we will default
+            to using the `dataframe_input_schema` input_hydration_config.
+        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`~dagster.OutputMaterializationConfig`. If None, we will
+            default to using the `dataframe_output_schema` output_materialization_config.
+
+    Returns:
+        a DagsterType with the corresponding name and packaged validation.
+
+    """
+
+    def _dagster_type_check(_, value):
+        if not isinstance(value, pd.DataFrame):
+            return TypeCheck(
+                success=False,
+                description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(
+                    type_name=type(value).__name__
+                ),
+            )
+        individual_result_dict = {}
+        if columns_validator is not None:
+            individual_result_dict["columns"] = columns_validator.validate(value)
+
+        if columns_aggregate_validator is not None:
+            individual_result_dict["column aggregates"] = columns_aggregate_validator.validate(
+                value
+            )
+
+        if dataframe_validator is not None:
+            individual_result_dict["dataframe"] = dataframe_validator.validate(value)
+
+        typechecks_succeeded = True
+        metadata = []
+        overall_description = ""
+        for key, result in individual_result_dict.items():
+            result_val = result.success
+            if result_val:
+                continue
+            typechecks_succeeded = typechecks_succeeded and result_val
+            result_dict = result.metadata_entries[0].entry_data.data
+            metadata.append(
+                EventMetadataEntry.json(result_dict, '{}-constraint-metadata'.format(key),)
+            )
+            overall_description += "{} failing constraints, requiring {}".format(
+                key, result.description
+            )
+        return TypeCheck(
+            success=typechecks_succeeded, description=overall_description, metadata_entries=metadata
+        )
+
+    description = check.opt_str_param(description, 'description', default='')
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
