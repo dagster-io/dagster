@@ -73,10 +73,6 @@
     "ignore": true,
     "children": [
       {
-        "name": "Principles",
-        "path": "/docs/overview/principles"
-      },
-      {
         "name": "Solids and Pipelines",
         "path": "/docs/overview/solids-pipelines/solids",
         "childPath": true,
