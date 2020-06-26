@@ -151,9 +151,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._inst_data
 
     def launch_run(self, instance, run, external_pipeline):
+
+        from dagster_k8s.job import get_k8s_resource_requirements
+
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+
+        # extract the resource config from the target pipeline
+        pipeline_tags = external_pipeline.tags
+        resources = get_k8s_resource_requirements(pipeline_tags) if pipeline_tags else None;
 
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
@@ -175,6 +182,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',
+            resources=resources
         )
 
         api = kubernetes.client.BatchV1Api()
