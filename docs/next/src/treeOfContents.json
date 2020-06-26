@@ -118,22 +118,7 @@
         ]
       },
       {
-        "name": "Configuration",
-        "path": "/docs/overview/configuration/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/configuration/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/configuration/page2"
-          }
-        ]
-      },
-      {
-        "name": "Modes, Resources, & Presets",
+        "name": "Modes & Resources",
         "path": "/docs/overview/modes-resources-presets/modes-resources"
       },
       {
@@ -167,36 +152,6 @@
           {
             "name": "Workspaces",
             "path": "/docs/overview/repositories-workspaces/workspaces"
-          }
-        ]
-      },
-      {
-        "name": "Dagit",
-        "path": "/docs/overview/dagit/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/dagit/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/dagit/page2"
-          }
-        ]
-      },
-      {
-        "name": "Composite Solids",
-        "path": "/docs/overview/composite-solids/page1",
-        "childPath": true,
-        "children": [
-          {
-            "name": "Page 1",
-            "path": "/docs/overview/composite-solids/page1"
-          },
-          {
-            "name": "Page 2",
-            "path": "/docs/overview/composite-solids/page2"
           }
         ]
       },
