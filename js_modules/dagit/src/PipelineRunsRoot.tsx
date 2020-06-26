@@ -1,40 +1,51 @@
 import * as React from "react";
 
-import Loading from "../Loading";
+import Loading from "./Loading";
 import { RouteComponentProps } from "react-router";
-import { RunTable } from "./RunTable";
-import { RunsQueryRefetchContext } from "./RunUtils";
-import { RunsRootQuery, RunsRootQueryVariables } from "./types/RunsRootQuery";
+import { RunTable } from "./runs/RunTable";
+import {
+  PipelineRunsRootQuery,
+  PipelineRunsRootQueryVariables
+} from "./types/PipelineRunsRootQuery";
 import {
   RunsFilter,
-  runsFilterForSearchTokens,
-  useRunFiltering
-} from "./RunsFilter";
+  RunFilterTokenType,
+  useRunFiltering,
+  runsFilterForSearchTokens
+} from "./runs/RunsFilter";
 
 import gql from "graphql-tag";
+import styled from "styled-components/macro";
 import { IconNames } from "@blueprintjs/icons";
 import { NonIdealState } from "@blueprintjs/core";
-import { ScrollContainer, Header } from "../ListComponents";
-import styled from "styled-components/macro";
-import { useCursorPaginatedQuery } from "./useCursorPaginatedQuery";
-import { CursorPaginationControls } from "../CursorPaginationControls";
+import { ScrollContainer, Header } from "./ListComponents";
+import { RunsQueryRefetchContext } from "./runs/RunUtils";
+import { useCursorPaginatedQuery } from "./runs/useCursorPaginatedQuery";
+import { CursorPaginationControls } from "./CursorPaginationControls";
 
 const PAGE_SIZE = 25;
+const ENABLED_FILTERS: RunFilterTokenType[] = ["id", "status", "tag"];
 
-export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
-  const [filterTokens, setFilterTokens] = useRunFiltering();
+export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
+  pipelinePath: string;
+}>> = ({ match }) => {
+  const pipelineName = match.params.pipelinePath.split(":")[0];
+  const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
+
   const { queryResult, paginationProps } = useCursorPaginatedQuery<
-    RunsRootQuery,
-    RunsRootQueryVariables
+    PipelineRunsRootQuery,
+    PipelineRunsRootQueryVariables
   >({
+    query: PIPELINE_RUNS_ROOT_QUERY,
+    pageSize: PAGE_SIZE,
+    variables: {
+      filter: { ...runsFilterForSearchTokens(filterTokens), pipelineName }
+    },
     nextCursorForResult: runs => {
       if (runs.pipelineRunsOrError.__typename !== "PipelineRuns")
         return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
-    },
-    variables: { filter: runsFilterForSearchTokens(filterTokens) },
-    query: RUNS_ROOT_QUERY,
-    pageSize: PAGE_SIZE
+    }
   });
 
   return (
@@ -47,10 +58,14 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
             justifyContent: "space-between"
           }}
         >
-          <Header>All Runs</Header>
+          <Header>{`Runs`}</Header>
           <Filters>
             <RunsFilter
-              tokens={filterTokens}
+              enabledFilters={ENABLED_FILTERS}
+              tokens={[
+                { token: "pipeline", value: pipelineName },
+                ...filterTokens
+              ]}
               onChange={setFilterTokens}
               loading={queryResult.loading}
             />
@@ -68,12 +83,11 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                 />
               );
             }
+            const runs = pipelineRunsOrError.results;
+            const displayed = runs.slice(0, PAGE_SIZE);
             return (
               <>
-                <RunTable
-                  runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                  onSetFilter={setFilterTokens}
-                />
+                <RunTable runs={displayed} onSetFilter={setFilterTokens} />
                 <CursorPaginationControls {...paginationProps} />
               </>
             );
@@ -84,8 +98,15 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   );
 };
 
-export const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery(
+const Filters = styled.div`
+  float: right;
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+`;
+
+export const PIPELINE_RUNS_ROOT_QUERY = gql`
+  query PipelineRunsRootQuery(
     $limit: Int
     $cursor: String
     $filter: PipelineRunsFilter!
@@ -106,11 +127,4 @@ export const RUNS_ROOT_QUERY = gql`
   }
 
   ${RunTable.fragments.RunTableRunFragment}
-`;
-
-const Filters = styled.div`
-  float: right;
-  display: flex;
-  align-items: center;
-  margin-bottom: 14px;
 `;

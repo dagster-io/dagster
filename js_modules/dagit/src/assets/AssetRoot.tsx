@@ -18,7 +18,8 @@ import {
 } from "../ListComponents";
 import { MetadataEntries, MetadataEntry } from "../runs/MetadataEntry";
 import { RunTable } from "../runs/RunTable";
-import { RunStatus, titleForRun } from "../runs/RunUtils";
+import { RunStatus } from "../runs/RunStatusDots";
+import { titleForRun } from "../runs/RunUtils";
 import { PipelineRunStatus } from "../types/globalTypes";
 import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
@@ -106,7 +107,7 @@ const AssetLastMaterialization = ({
           </RowColumn>
           <RowColumn style={{ maxWidth: 250 }}>
             {run ? (
-              <a href={`/runs/${run.pipelineName}/${run.runId}`}>
+              <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                 {titleForRun(run)}
               </a>
             ) : (

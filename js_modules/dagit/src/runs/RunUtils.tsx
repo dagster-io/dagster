@@ -1,13 +1,10 @@
 import * as React from "react";
 import * as yaml from "yaml";
 
-import { Colors, Spinner } from "@blueprintjs/core";
-
 import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
 import { LaunchPipelineReexecution } from "./types/LaunchPipelineReexecution";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import styled from "styled-components/macro";
 import { RunTableRunFragment } from "./types/RunTableRunFragment";
 import { RunFragment } from "./types/RunFragment";
 import { RunActionMenuFragment } from "./types/RunActionMenuFragment";
@@ -15,33 +12,8 @@ import { RunTimeFragment } from "./types/RunTimeFragment";
 import { unixTimestampToString } from "../Util";
 import PythonErrorInfo from "../PythonErrorInfo";
 
-import { useMutation, useLazyQuery } from "react-apollo";
-import {
-  Button,
-  Menu,
-  MenuItem,
-  Popover,
-  MenuDivider,
-  Intent,
-  Icon,
-  Tooltip,
-  Position
-} from "@blueprintjs/core";
-import { SharedToaster } from "../DomUtils";
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
-import * as qs from "query-string";
+import { Popover, Icon } from "@blueprintjs/core";
 import { formatElapsedTime } from "../Util";
-import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
-import { DocumentNode } from "graphql";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
-import { RunStats } from "./RunStats";
-
-export type IRunStatus =
-  | "SUCCESS"
-  | "NOT_STARTED"
-  | "FAILURE"
-  | "STARTED"
-  | "MANAGED";
 
 export function subsetTitleForRun(run: {
   tags: { key: string; value: string }[];
@@ -54,20 +26,9 @@ export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
 }
 
-export const RUN_STATUS_COLORS = {
-  NOT_STARTED: Colors.GRAY1,
-  MANAGED: Colors.GRAY3,
-  STARTED: Colors.GRAY3,
-  SUCCESS: Colors.GREEN2,
-  FAILURE: Colors.RED3
-};
-export const RUN_STATUS_HOVER_COLORS = {
-  NOT_STARTED: Colors.GRAY3,
-  MANAGED: Colors.GRAY3,
-  STARTED: Colors.GRAY5,
-  SUCCESS: Colors.GREEN4,
-  FAILURE: Colors.RED5
-};
+export const RunsQueryRefetchContext = React.createContext<{
+  refetch: () => void;
+}>({ refetch: () => {} });
 
 export function handleExecutionResult(
   pipelineName: string,
@@ -84,7 +45,7 @@ export function handleExecutionResult(
   const obj = (result.data as LaunchPipelineExecution).launchPipelineExecution;
 
   if (obj.__typename === "LaunchPipelineRunSuccess") {
-    const url = `/runs/${obj.run.pipelineName}/${obj.run.runId}`;
+    const url = `/pipeline/${obj.run.pipelineName}/runs/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -124,7 +85,7 @@ export function handleReexecutionResult(
     .launchPipelineReexecution;
 
   if (obj.__typename === "LaunchPipelineRunSuccess") {
-    const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
+    const url = `/pipeline/${obj.run.pipeline.name}/runs/${obj.run.runId}`;
     if (opts.openInNewWindow) {
       window.open(url, "_blank");
     } else {
@@ -276,54 +237,6 @@ export function getReexecutionVariables(input: {
   }
 }
 
-export const RunStatusWithStats: React.SFC<RunStatusProps & {
-  runId: string;
-}> = ({ runId, ...rest }) => (
-  <Popover
-    position={"bottom"}
-    interactionKind={"hover"}
-    content={<RunStats runId={runId} />}
-    hoverOpenDelay={100}
-  >
-    <div style={{ padding: 1 }}>
-      <RunStatus {...rest} />
-    </div>
-  </Popover>
-);
-
-interface RunStatusProps {
-  status: IRunStatus;
-  size?: number;
-}
-
-export const RunStatus: React.SFC<RunStatusProps> = ({ status, size }) => {
-  if (status === "STARTED") {
-    return (
-      <div style={{ display: "inline-block" }}>
-        <Spinner size={size || 11} />
-      </div>
-    );
-  }
-  return <RunStatusDot status={status} size={size || 11} />;
-};
-
-// eslint-disable-next-line no-unexpected-multiline
-const RunStatusDot = styled.div<{
-  status: IRunStatus;
-  size: number;
-}>`
-  display: inline-block;
-  width: ${({ size }) => size}px;
-  height: ${({ size }) => size}px;
-  border-radius: ${({ size }) => size / 2}px;
-  align-self: center;
-  transition: background 200ms linear;
-  background: ${({ status }) => RUN_STATUS_COLORS[status]};
-  &:hover {
-    background: ${({ status }) => RUN_STATUS_HOVER_COLORS[status]};
-  }
-`;
-
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
@@ -409,160 +322,6 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ... on PythonError {
         message
         stack
-      }
-    }
-  }
-`;
-
-const OPEN_PLAYGROUND_UNKNOWN =
-  "Playground is unavailable because the pipeline is not present in the current repository.";
-
-export const RunActionsMenu: React.FunctionComponent<{
-  run: RunTableRunFragment | RunActionMenuFragment;
-  refetchQueries: { query: DocumentNode; variables: any }[];
-}> = ({ run, refetchQueries }) => {
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const [cancel] = useMutation(CANCEL_MUTATION, { refetchQueries });
-  const [destroy] = useMutation(DELETE_MUTATION, { refetchQueries });
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
-  const [loadEnv, { called, loading, data }] = useLazyQuery(
-    PipelineEnvironmentYamlQuery,
-    {
-      variables: { runId: run.runId }
-    }
-  );
-
-  const envYaml = data?.pipelineRunOrError?.runConfigYaml;
-  const infoReady = called ? !loading : false;
-  return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem
-            text={
-              loading ? "Loading Configuration..." : "View Configuration..."
-            }
-            disabled={envYaml == null}
-            icon="share"
-            onClick={() =>
-              showCustomAlert({
-                title: "Config",
-                body: (
-                  <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
-                )
-              })
-            }
-          />
-          <MenuDivider />
-
-          <Tooltip
-            content={OPEN_PLAYGROUND_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Open in Playground..."
-              disabled={!infoReady}
-              icon="edit"
-              target="_blank"
-              href={`/pipeline/${
-                run.pipelineName
-              }/playground/setup?${qs.stringify({
-                mode: run.mode,
-                config: envYaml,
-                solidSelection: run.solidSelection
-              })}`}
-            />
-          </Tooltip>
-          <Tooltip
-            content={REEXECUTE_PIPELINE_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Re-execute"
-              disabled={!infoReady}
-              icon="repeat"
-              onClick={async () => {
-                const result = await reexecute({
-                  variables: getReexecutionVariables({
-                    run,
-                    envYaml,
-                    repositoryLocationName: repositoryLocation?.name,
-                    repositoryName: repository?.name
-                  })
-                });
-                handleReexecutionResult(run.pipelineName, result, {
-                  openInNewWindow: false
-                });
-              }}
-            />
-          </Tooltip>
-          <MenuItem
-            text="Cancel"
-            icon="stop"
-            disabled={!run.canTerminate}
-            onClick={async () => {
-              const result = await cancel({ variables: { runId: run.runId } });
-              showToastFor(
-                result.data.terminatePipelineExecution,
-                "Run cancelled."
-              );
-            }}
-          />
-          <MenuDivider />
-          <MenuItem
-            text="Delete"
-            icon="trash"
-            disabled={run.canTerminate}
-            onClick={async () => {
-              const result = await destroy({ variables: { runId: run.runId } });
-              showToastFor(result.data.deletePipelineRun, "Run deleted.");
-            }}
-          />
-        </Menu>
-      }
-      position={"bottom"}
-      onOpening={() => {
-        if (!called) {
-          loadEnv();
-        }
-      }}
-    >
-      <Button minimal={true} icon="more" />
-    </Popover>
-  );
-};
-
-function showToastFor(
-  possibleError: { __typename: string; message?: string },
-  successMessage: string
-) {
-  if ("message" in possibleError) {
-    SharedToaster.show({
-      message: possibleError.message,
-      icon: "error",
-      intent: Intent.DANGER
-    });
-  } else {
-    SharedToaster.show({
-      message: successMessage,
-      icon: "confirm",
-      intent: Intent.SUCCESS
-    });
-  }
-}
-
-// Avoid fetching envYaml on load in Runs page. It is slow.
-const PipelineEnvironmentYamlQuery = gql`
-  query PipelineEnvironmentYamlQuery($runId: ID!) {
-    pipelineRunOrError(runId: $runId) {
-      ... on PipelineRun {
-        runConfigYaml
       }
     }
   }

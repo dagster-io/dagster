@@ -8,12 +8,8 @@ import {
 import { useQuery } from "react-apollo";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
-import {
-  RunTime,
-  RunElapsed,
-  RunComponentFragments,
-  RunStatus
-} from "../runs/RunUtils";
+import { RunTime, RunElapsed, RunComponentFragments } from "../runs/RunUtils";
+import { RunStatus } from "../runs/RunStatusDots";
 
 function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
   const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
@@ -51,7 +47,7 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({
       {runs.map((g: RunGroupPanelQuery_runGroupOrError_RunGroup_runs, idx) => (
         <RunGroupRun
           key={g.runId}
-          to={`/runs/${g.pipelineName}/${g.runId}`}
+          to={`/pipeline/${g.pipelineName}/runs/${g.runId}`}
           selected={g.runId === runId}
         >
           {idx < runs.length - 1 && <ThinLine style={{ height: 36 }} />}

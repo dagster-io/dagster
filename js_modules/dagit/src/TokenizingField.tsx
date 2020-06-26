@@ -56,7 +56,7 @@ export function tokenizedValuesFromString(
 export function tokenizedValueFromString(
   str: string,
   providers: SuggestionProvider[]
-) {
+): TokenizingFieldValue {
   const parts = str.split(":");
   if (parts.length === 2 && findProviderByToken(parts[0], providers)) {
     return { token: parts[0], value: parts[1] };

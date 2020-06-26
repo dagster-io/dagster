@@ -51,11 +51,10 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
   setRepo
 }) => {
   const history = useHistory();
-  const match = useRouteMatch<{ tab: string; selector: string }>([
-    "/pipeline/:selector/:tab?",
-    "/solid/:selector",
-    "/:tab?"
-  ]);
+  const match = useRouteMatch<
+    | { selector: string; tab: string; rootTab: undefined }
+    | { selector: undefined; tab: undefined; rootTab: string }
+  >(["/pipeline/:selector/:tab?", "/solid/:selector", "/:rootTab?"]);
 
   return (
     <LeftNavContainer>
@@ -82,7 +81,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
           >
             <Tab
               to={t.to}
-              className={match?.params.tab === t.tab ? "selected" : ""}
+              className={match?.params.rootTab === t.tab ? "selected" : ""}
             >
               {t.icon}
               <TabLabel>{t.label}</TabLabel>

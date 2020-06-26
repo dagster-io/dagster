@@ -8,6 +8,7 @@ import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
 import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
 import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
+import { PipelineRunsRoot } from "./PipelineRunsRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
@@ -31,9 +32,7 @@ import { CustomTooltipProvider } from "./CustomTooltipProvider";
 const AppRoutes = () => (
   <Switch>
     <Route path="/flags" component={FeatureFlagsRoot} />
-    <Route path="/runs/all/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
-    <Route path="/runs/:pipelineName/:runId" component={RunRoot} />
     <Route path="/solid/:name" component={SolidDetailsRoot} />
     <Route path="/solids/:name?" component={SolidsRoot} />
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
@@ -67,6 +66,15 @@ const AppRoutes = () => (
             <Route
               path="/pipeline/:pipelinePath/playground"
               component={PipelineExecutionRoot}
+            />
+            <Route
+              path="/pipeline/:pipelinePath/runs/:runId"
+              component={RunRoot}
+            />
+
+            <Route
+              path="/pipeline/:pipelinePath/runs"
+              component={PipelineRunsRoot}
             />
             {/* Capture solid subpath in a regex match */}
             <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />

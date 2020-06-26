@@ -571,6 +571,7 @@ const PARTITION_SET_QUERY = gql`
               name
               runs {
                 runId
+                pipelineName
                 tags {
                   key
                   value

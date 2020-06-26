@@ -40,7 +40,8 @@ import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
-import { titleForRun, RunStatus } from "../runs/RunUtils";
+import { titleForRun } from "../runs/RunUtils";
+import { RunStatus } from "../runs/RunStatusDots";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
 import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
@@ -348,7 +349,7 @@ export const ScheduleRow: React.FunctionComponent<{
                 }}
                 key={run.runId}
               >
-                <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+                <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                   <Tooltip
                     position={"top"}
                     content={runLabel}
@@ -532,7 +533,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
                 }}
                 key={run.runId}
               >
-                <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+                <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                   <Tooltip
                     position={"top"}
                     content={titleForRun(run)}
@@ -587,7 +588,7 @@ export const TickTag: React.FunctionComponent<{
       } else {
         return (
           <a
-            href={`/runs/${eventSpecificData.run?.pipelineName}/${eventSpecificData.run?.runId}`}
+            href={`/pipeline/${eventSpecificData.run?.pipelineName}/runs/${eventSpecificData.run?.runId}`}
             style={{ textDecoration: "none" }}
           >
             <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>

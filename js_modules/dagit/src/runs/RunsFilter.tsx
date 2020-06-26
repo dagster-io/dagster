@@ -1,6 +1,10 @@
+import gql from "graphql-tag";
 import * as React from "react";
+import * as querystring from "query-string";
 import { useQuery, QueryResult } from "react-apollo";
+import { __RouterContext as RouterContext } from "react-router";
 import { RunsSearchSpaceQuery } from "./types/RunsSearchSpaceQuery";
+import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
 import {
   DagsterRepositoryContext,
   useRepositorySelector
@@ -12,7 +16,8 @@ import {
   stringFromValue,
   tokenizedValuesFromString
 } from "../TokenizingField";
-import gql from "graphql-tag";
+
+export type RunFilterTokenType = "id" | "status" | "pipeline" | "tag";
 
 export const RUN_PROVIDERS_EMPTY = [
   {
@@ -32,6 +37,63 @@ export const RUN_PROVIDERS_EMPTY = [
     values: () => []
   }
 ];
+
+/**
+ * This React hook provides run filtering state similar to React.useState(), but syncs
+ * the value to the URL query string so that reloading the page / navigating "back"
+ * maintains your view as expected.
+ *
+ * @param enabledFilters: This is useful if you want to ignore some filters that could
+ * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
+ */
+export function useRunFiltering(enabledFilters?: RunFilterTokenType[]) {
+  const { history, location } = React.useContext(RouterContext);
+  const qs = querystring.parse(location.search);
+
+  const filterTokens = tokenizedValuesFromString(
+    (qs.q as string) || "",
+    RUN_PROVIDERS_EMPTY
+  ).filter(
+    t =>
+      !t.token ||
+      !enabledFilters ||
+      enabledFilters.includes(t.token as RunFilterTokenType)
+  );
+  const setFilterTokens = (tokens: TokenizingFieldValue[]) => {
+    // Note: changing search also clears the cursor so you're back on page 1
+    const params = { ...qs, q: stringFromValue(tokens), cursor: undefined };
+    history.push({ search: `?${querystring.stringify(params)}` });
+  };
+  return [filterTokens, setFilterTokens] as [
+    typeof filterTokens,
+    typeof setFilterTokens
+  ];
+}
+
+export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
+  if (!search[0]) return {};
+
+  const obj: PipelineRunsFilter = {};
+
+  for (const item of search) {
+    if (item.token === "pipeline") {
+      obj.pipelineName = item.value;
+    } else if (item.token === "id") {
+      obj.runId = item.value;
+    } else if (item.token === "status") {
+      obj.status = item.value as PipelineRunStatus;
+    } else if (item.token === "tag") {
+      const [key, value] = item.value.split("=");
+      if (obj.tags) {
+        obj.tags.push({ key, value });
+      } else {
+        obj.tags = [{ key, value }];
+      }
+    }
+  }
+
+  return obj;
+}
 
 function searchSuggestionsForRuns(
   result?: QueryResult<RunsSearchSpaceQuery>,
@@ -79,7 +141,7 @@ interface RunsFilterProps {
   loading?: boolean;
   tokens: TokenizingFieldValue[];
   onChange: (tokens: TokenizingFieldValue[]) => void;
-  enabledFilters?: string[];
+  enabledFilters?: RunFilterTokenType[];
 }
 
 export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({

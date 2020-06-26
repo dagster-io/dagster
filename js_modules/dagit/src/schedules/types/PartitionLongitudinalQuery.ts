@@ -53,6 +53,7 @@ export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_par
 export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs {
   __typename: "PipelineRun";
   runId: string;
+  pipelineName: string;
   tags: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs_tags[];
   stats: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs_stats;
   stepStats: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs_stepStats[];

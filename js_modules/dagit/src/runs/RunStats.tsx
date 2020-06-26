@@ -34,19 +34,20 @@ export const RunStats = ({ runId }: { runId: string }) => {
     return <PythonErrorInfo error={result.stats} />;
   }
 
+  const runPath = `/pipeline/${result.pipelineName}/runs/${runId}`;
   return (
     <RunStatsDetailsContainer>
       <Link
-        to={`/runs/${result.pipelineName}/${runId}?q=type:step_success`}
+        to={`${runPath}?q=type:step_success`}
       >{`${result.stats.stepsSucceeded} steps succeeded`}</Link>
-      <Link to={`/runs/${result.pipelineName}/${runId}?q=type:step_failure`}>
+      <Link to={`${runPath}?q=type:step_failure`}>
         {`${result.stats.stepsFailed} steps failed`}
       </Link>
       <Link
-        to={`/runs/${result.pipelineName}/${runId}?q=type:materialization`}
+        to={`${runPath}/${runId}?q=type:materialization`}
       >{`${result.stats.materializations} materializations`}</Link>
       <Link
-        to={`/runs/${result.pipelineName}/${runId}?q=type:expectation`}
+        to={`${runPath}?q=type:expectation`}
       >{`${result.stats.expectations} expectations passed`}</Link>
     </RunStatsDetailsContainer>
   );

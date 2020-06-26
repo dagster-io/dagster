@@ -2,7 +2,10 @@ import React from "react";
 import styled from "styled-components/macro";
 import { Colors, Icon, IconName } from "@blueprintjs/core";
 import { useRouteMatch, useHistory } from "react-router-dom";
-import { explorerPathFromString } from "../PipelinePathUtils";
+import {
+  explorerPathFromString,
+  explorerPathToString
+} from "../PipelinePathUtils";
 
 const PIPELINE_TABS: {
   title: string;
@@ -15,6 +18,11 @@ const PIPELINE_TABS: {
     title: "Playground",
     pathComponent: "playground",
     icon: "manually-entered-data"
+  },
+  {
+    title: "Runs",
+    pathComponent: "runs",
+    icon: "history"
   }
 ];
 
@@ -35,11 +43,19 @@ export const PipelineNav: React.FunctionComponent = () => {
   }
 
   const active = tabForPipelinePathComponent(match.params.tab);
-  const { pipelineName } = explorerPathFromString(match.params.selector);
+  const explorerPath = explorerPathFromString(match.params.selector);
+
+  // When you click one of the top tabs, it resets the snapshot you may be looking at
+  // in the Definition tab and also clears solids from the path
+  const explorerPathWithoutSnapshot = explorerPathToString({
+    ...explorerPath,
+    snapshotId: undefined,
+    pathSolids: []
+  });
 
   return (
     <PipelineTabBarContainer>
-      <PipelineName>{pipelineName}</PipelineName>
+      <PipelineName>{explorerPath.pipelineName}</PipelineName>
       {PIPELINE_TABS.map(tab => (
         <PipelineTab
           key={tab.title}
@@ -47,7 +63,7 @@ export const PipelineNav: React.FunctionComponent = () => {
           active={active === tab}
           onClick={() =>
             history.push(
-              `/pipeline/${match.params.selector}/${tab.pathComponent}`
+              `/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`
             )
           }
         />

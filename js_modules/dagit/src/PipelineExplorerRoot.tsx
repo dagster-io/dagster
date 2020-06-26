@@ -124,6 +124,7 @@ function explodeCompositesInHandleGraph(
 
   return results;
 }
+
 export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
   const explorerPath = explorerPathFromString(props.match.params["0"]);
 

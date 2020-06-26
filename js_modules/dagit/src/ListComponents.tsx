@@ -22,10 +22,9 @@ export const LegendColumn = styled.div`
 
 export const RowContainer = styled.div`
   display: flex;
-  background: ${Colors.WHITE};
   color: ${Colors.DARK_GRAY5};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
   margin-bottom: 9px;
+  border: 1px solid ${Colors.LIGHT_GRAY1};
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   padding: 2px 10px;
   text-decoration: none;
@@ -47,8 +46,8 @@ export const RowColumn = styled.div`
     border-right: none;
   }
 `;
+
 export const ScrollContainer = styled.div`
-  background-color: rgb(245, 248, 250);
   padding: 20px;
   overflow: auto;
   min-height: 100%;

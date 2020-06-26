@@ -5,13 +5,17 @@ import { RowContainer } from "../ListComponents";
 
 import { createGlobalStyle } from "styled-components/macro";
 import { Line } from "react-chartjs-2";
-import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunUtils";
+import {
+  RUN_STATUS_COLORS,
+  RUN_STATUS_HOVER_COLORS
+} from "../runs/RunStatusDots";
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {
   x: string;
   y: number;
   runId: string;
+  pipelineName: string;
   status: string;
 }
 
@@ -36,6 +40,7 @@ export const PartitionTable: React.FunctionComponent<{
           x: partitionName,
           y: i,
           runId: run.runId,
+          pipelineName: run.pipelineName,
           status: run.status
         };
         runs[run.status] = [...(runs[run.status] || []), point];
@@ -66,7 +71,10 @@ export const PartitionTable: React.FunctionComponent<{
     }
     const point = datasets[element._datasetIndex].data[element._index];
     if (point && point.runId) {
-      window.open(`/runs/all/${point.runId}`, "_blank");
+      window.open(
+        `/pipeline/${point.pipelineName}/runs/${point.runId}`,
+        "_blank"
+      );
     }
   };
 

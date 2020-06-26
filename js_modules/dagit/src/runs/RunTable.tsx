@@ -12,18 +12,17 @@ import {
   RunTableRunFragment_tags
 } from "./types/RunTableRunFragment";
 import { TokenizingFieldValue } from "../TokenizingField";
-import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { NonIdealState, Icon } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
 import {
   titleForRun,
-  RunStatusWithStats,
-  RunActionsMenu,
   RunTime,
   RunElapsed,
   RunComponentFragments
 } from "./RunUtils";
+import { RunActionsMenu } from "./RunActionsMenu";
+import { RunStatusWithStats } from "./RunStatusDots";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -63,7 +62,7 @@ export class RunTable extends React.Component<RunTableProps> {
           <NonIdealState
             icon="history"
             title="Pipeline Runs"
-            description="No runs to display. Use the Playground to start a pipeline."
+            description="No runs to display. Use the Playground to launch a pipeline."
           />
         </div>
       );
@@ -94,15 +93,11 @@ const RunRow: React.FunctionComponent<{
   run: RunTableRunFragment;
   onSetFilter: (search: TokenizingFieldValue[]) => void;
 }> = ({ run, onSetFilter }) => {
-  const variables = React.useContext(RunsQueryVariablesContext);
-
   const onTagClick = (tag: RunTableRunFragment_tags) => {
     onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
   };
 
   const pipelineLink = `/pipeline/${run.pipelineName}@${run.pipelineSnapshotId}/`;
-
-  const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
 
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
@@ -117,7 +112,7 @@ const RunRow: React.FunctionComponent<{
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
       <RowColumn style={{ maxWidth: 90, fontFamily: "monospace" }}>
-        <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
           {titleForRun(run)}
         </Link>
       </RowColumn>
@@ -139,7 +134,7 @@ const RunRow: React.FunctionComponent<{
         <RunElapsed run={run} />
       </RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
-        <RunActionsMenu run={run} refetchQueries={refetchQueries} />
+        <RunActionsMenu run={run} />
       </RowColumn>
     </RowContainer>
   );

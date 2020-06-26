@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router-dom";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
@@ -14,18 +15,17 @@ import {
   PipelineOverviewQueryVariables
 } from "./types/PipelineOverviewQuery";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { RunStatus, titleForRun, RunTime } from "../runs/RunUtils";
-import { Link } from "react-router-dom";
-import { unixTimestampToString } from "../Util";
 import {
-  RunElapsed,
-  RunActionsMenu,
-  RunStatusWithStats,
-  RunComponentFragments
+  titleForRun,
+  RunTime,
+  RunsQueryRefetchContext
 } from "../runs/RunUtils";
+import { RunStatus, RunStatusWithStats } from "../runs/RunStatusDots";
+import { unixTimestampToString } from "../Util";
+import { RunElapsed, RunComponentFragments } from "../runs/RunUtils";
+import { RunActionsMenu } from "../runs/RunActionsMenu";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
-import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "../runs/RunsRoot";
 import { usePipelineSelector } from "../DagsterRepositoryContext";
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
@@ -91,7 +91,8 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                     position: "relative",
                     height: 550,
                     maxWidth: "40vw",
-                    border: "1px solid #ececec"
+                    border: `1px solid ${Colors.LIGHT_GRAY1}`,
+                    boxShadow: `0 1px 1px rgba(0, 0, 0, 0.2)`
                   }}
                 >
                   <PipelineGraph
@@ -132,13 +133,17 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                     ))
                   : "No pipeline schedules"}
               </OverviewSection>
-              <OverviewSection title="Recent runs">
-                {pipelineSnapshotOrError.runs.length
-                  ? pipelineSnapshotOrError.runs.map(run => (
-                      <OverviewRun run={run} key={run.runId} />
-                    ))
-                  : "No recent runs"}
-              </OverviewSection>
+              <RunsQueryRefetchContext.Provider
+                value={{ refetch: queryResult.refetch }}
+              >
+                <OverviewSection title="Recent runs">
+                  {pipelineSnapshotOrError.runs.length
+                    ? pipelineSnapshotOrError.runs.map(run => (
+                        <OverviewRun run={run} key={run.runId} />
+                      ))
+                    : "No recent runs"}
+                </OverviewSection>
+              </RunsQueryRefetchContext.Provider>
             </SecondaryContainer>
             <SecondaryContainer>
               <OverviewAssets runs={pipelineSnapshotOrError.runs} />
@@ -201,7 +206,7 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
                   }}
                   key={run.runId}
                 >
-                  <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+                  <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                     <Tooltip
                       position={"top"}
                       content={titleForRun(run)}
@@ -221,7 +226,6 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
 };
 
 const OverviewRun = ({ run }: { run: Run }) => {
-  const variables = React.useContext(RunsQueryVariablesContext);
   const time =
     run.stats.__typename === "PipelineRunStatsSnapshot" ? (
       <RunTime run={run} />
@@ -231,15 +235,13 @@ const OverviewRun = ({ run }: { run: Run }) => {
       <RunElapsed run={run} />
     ) : null;
 
-  const refetchQueries = [{ query: RUNS_ROOT_QUERY, variables }];
-
   return (
     <RowContainer style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
         <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/runs/${run.pipelineName}/${run.runId}`}>
+        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
           {titleForRun(run)}
         </Link>
         <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>
@@ -247,7 +249,7 @@ const OverviewRun = ({ run }: { run: Run }) => {
         {elapsed}
       </RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
-        <RunActionsMenu run={run} refetchQueries={refetchQueries} />
+        <RunActionsMenu run={run} />
       </RowColumn>
     </RowContainer>
   );
@@ -280,11 +282,13 @@ const RootContainer = styled.div`
   flex: 1;
   display: flex;
 `;
+
 const MainContainer = styled.div`
   flex: 2;
   max-width: 1200px;
   padding: 20px;
 `;
+
 const SecondaryContainer = ({ children }: { children: React.ReactNode }) => (
   <div style={{ maxWidth: 600, padding: 20, flex: 1 }}>
     <div style={{ maxWidth: "25vw" }}>{children}</div>
