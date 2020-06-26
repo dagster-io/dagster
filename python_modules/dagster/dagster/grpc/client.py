@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import grpc
 
 from dagster import check, seven
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
 
@@ -14,6 +15,7 @@ from .server import (
     SERVER_FAILED_TO_BIND_TOKEN_BYTES,
     SERVER_STARTED_TOKEN_BYTES,
     CouldNotBindGrpcServerToAddress,
+    ExecutionPlanSnapshotArgs,
 )
 
 
@@ -78,6 +80,19 @@ class DagsterGrpcClient(object):
         check.str_param(echo, 'echo')
         res = self._query('Ping', api_pb2.PingRequest, echo=echo)
         return res.echo
+
+    def execution_plan_snapshot(self, execution_plan_snapshot_args):
+        check.inst_param(
+            execution_plan_snapshot_args, 'execution_plan_snapshot_args', ExecutionPlanSnapshotArgs
+        )
+        res = self._query(
+            'ExecutionPlanSnapshot',
+            api_pb2.ExecutionPlanSnapshotRequest,
+            serialized_execution_plan_snapshot_args=serialize_dagster_namedtuple(
+                execution_plan_snapshot_args
+            ),
+        )
+        return deserialize_json_to_dagster_namedtuple(res.serialized_execution_plan_snapshot)
 
 
 def _wait_for_grpc_server(server_process, timeout=3):

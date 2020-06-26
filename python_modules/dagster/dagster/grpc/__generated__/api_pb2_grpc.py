@@ -27,12 +27,23 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.PingRequest.SerializeToString,
             response_deserializer=api__pb2.PingReply.FromString,
         )
+        self.ExecutionPlanSnapshot = channel.unary_unary(
+            '/api.DagsterApi/ExecutionPlanSnapshot',
+            request_serializer=api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
+            response_deserializer=api__pb2.ExecutionPlanSnapshotReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecutionPlanSnapshot(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -45,6 +56,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.Ping,
             request_deserializer=api__pb2.PingRequest.FromString,
             response_serializer=api__pb2.PingReply.SerializeToString,
+        ),
+        'ExecutionPlanSnapshot': grpc.unary_unary_rpc_method_handler(
+            servicer.ExecutionPlanSnapshot,
+            request_deserializer=api__pb2.ExecutionPlanSnapshotRequest.FromString,
+            response_serializer=api__pb2.ExecutionPlanSnapshotReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
@@ -73,6 +89,33 @@ class DagsterApi(object):
             '/api.DagsterApi/Ping',
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExecutionPlanSnapshot(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExecutionPlanSnapshot',
+            api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
+            api__pb2.ExecutionPlanSnapshotReply.FromString,
             options,
             channel_credentials,
             call_credentials,

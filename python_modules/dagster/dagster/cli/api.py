@@ -61,6 +61,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
+from dagster.grpc.server import ExecutionPlanSnapshotArgs
 from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
@@ -233,37 +234,6 @@ def pipeline_subset_snapshot_command(args):
     return get_external_pipeline_subset_result(
         recon_pipeline_from_origin(args.pipeline_origin), args.solid_selection
     )
-
-
-@whitelist_for_serdes
-class ExecutionPlanSnapshotArgs(
-    namedtuple(
-        '_ExecutionPlanSnapshotArgs',
-        'pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id',
-    )
-):
-    def __new__(
-        cls,
-        pipeline_origin,
-        solid_selection,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        pipeline_snapshot_id,
-    ):
-        return super(ExecutionPlanSnapshotArgs, cls).__new__(
-            cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
-            solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
-            run_config=check.dict_param(run_config, 'run_config'),
-            mode=check.str_param(mode, 'mode'),
-            step_keys_to_execute=check.opt_list_param(
-                step_keys_to_execute, 'step_keys_to_execute', of_type=str
-            ),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
-        )
 
 
 @unary_api_cli_command(

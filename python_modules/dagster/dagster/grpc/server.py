@@ -1,14 +1,55 @@
 import os
 import sys
+from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 
 from dagster import check, seven
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    whitelist_for_serdes,
+)
 from dagster.serdes.ipc import setup_interrupt_support
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
+
+
+@whitelist_for_serdes
+class ExecutionPlanSnapshotArgs(
+    namedtuple(
+        '_ExecutionPlanSnapshotArgs',
+        'pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id',
+    )
+):
+    def __new__(
+        cls,
+        pipeline_origin,
+        solid_selection,
+        run_config,
+        mode,
+        step_keys_to_execute,
+        pipeline_snapshot_id,
+    ):
+        return super(ExecutionPlanSnapshotArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
+            ),
+            solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
+            run_config=check.dict_param(run_config, 'run_config'),
+            mode=check.str_param(mode, 'mode'),
+            step_keys_to_execute=check.opt_list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            ),
+            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+        )
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -19,6 +60,34 @@ class DagsterApiServer(DagsterApiServicer):
     def Ping(self, request, _context):
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
+
+    def ExecutionPlanSnapshot(self, request, _context):
+        execution_plan_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_execution_plan_snapshot_args
+        )
+
+        check.inst_param(execution_plan_args, 'execution_plan_args', ExecutionPlanSnapshotArgs)
+
+        recon_pipeline = (
+            recon_pipeline_from_origin(execution_plan_args.pipeline_origin).subset_for_execution(
+                execution_plan_args.solid_selection
+            )
+            if execution_plan_args.solid_selection
+            else recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
+        )
+
+        execution_plan_snapshot = snapshot_from_execution_plan(
+            create_execution_plan(
+                pipeline=recon_pipeline,
+                run_config=execution_plan_args.run_config,
+                mode=execution_plan_args.mode,
+                step_keys_to_execute=execution_plan_args.step_keys_to_execute,
+            ),
+            execution_plan_args.pipeline_snapshot_id,
+        )
+        return api_pb2.ExecutionPlanSnapshotReply(
+            serialized_execution_plan_snapshot=serialize_dagster_namedtuple(execution_plan_snapshot)
+        )
 
 
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom

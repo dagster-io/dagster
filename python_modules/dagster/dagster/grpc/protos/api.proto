@@ -4,6 +4,7 @@ package api;
 
 service DagsterApi {
   rpc Ping (PingRequest) returns (PingReply) {}
+  rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
 }
 
 message PingRequest {
@@ -12,4 +13,12 @@ message PingRequest {
 
 message PingReply {
   string echo = 1;
+}
+
+message ExecutionPlanSnapshotRequest {
+  string serialized_execution_plan_snapshot_args = 1;
+}
+
+message ExecutionPlanSnapshotReply {
+  string serialized_execution_plan_snapshot = 1;
 }
