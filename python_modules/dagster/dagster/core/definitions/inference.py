@@ -1,13 +1,15 @@
 import inspect
 import sys
 
+from docstring_parser import parse
 import six
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.seven import funcsigs
 
-from .input import InputDefinition
+from .input import InputDefinition, _NoValueSentinel
 from .output import OutputDefinition
 
 
@@ -52,6 +54,71 @@ def infer_input_definitions_for_lambda_solid(solid_name, fn):
     return _infer_inputs_from_params(params, '@lambda_solid', solid_name)
 
 
+def _infer_output_definitions_from_docstring(solid_name, fn):
+    docstring = parse(fn.__doc__)
+
+    if docstring.returns is None:
+        return []
+
+    type_name = docstring.returns.type_name
+    name = docstring.returns.return_name or "result"
+
+    try:
+        ttype = eval(type_name)
+    except NameError as type_error:
+        six.raise_from(
+            DagsterInvalidDefinitionError(
+                'Error inferring Dagster type for return type '
+                '"{type_name}" from @solid "{solid}". '
+                'Correct the issue or explicitly pass definitions to @solid.'.format(
+                    type_name=type_name, solid=solid_name,
+                )
+            ),
+            type_error,
+        )
+
+    dtype = resolve_dagster_type(ttype)
+    description = docstring.returns.description
+    output_def = OutputDefinition(name=name, dagster_type=dtype, description=description)
+    return [output_def]
+
+
+def _infer_input_definitions_from_docstring(solid_name, fn):
+    docstring = parse(fn.__doc__)
+
+    params = {}
+    input_defs = []
+
+    for p in docstring.params:
+        try:
+            name = p.arg_name
+            ttype = eval(p.type_name)
+            default = _NoValueSentinel
+
+            if p.default != "None":
+                default = ttype(p.default)
+
+            description = p.description
+
+            dtype = resolve_dagster_type(ttype)
+
+            input_def = InputDefinition(name, dtype, description, default)
+            input_defs.append(input_def)
+        except (NameError, ValueError) as type_error:
+            six.raise_from(
+                DagsterInvalidDefinitionError(
+                    'Error infering dagster type from docstring param {param} typed '
+                    'as {param_type} from @solid "{solid}". '
+                    'Correct the issue or explicitly pass definitions to @solid'.format(
+                        param=p.arg_name, param_type=p.type_name, solid=solid_name,
+                    )
+                ),
+                type_error,
+            )
+
+    return input_defs
+
+
 def _infer_inputs_from_params(params, decorator_name, solid_name):
     input_defs = []
     for param in params:
@@ -86,12 +153,21 @@ def _infer_inputs_from_params(params, decorator_name, solid_name):
 def infer_input_definitions_for_composite_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
+    defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
 
-    return _infer_inputs_from_params(params, '@composite_solid', solid_name)
+    if not defs:
+        defs = _infer_input_definitions_from_docstring(solid_name, fn)
+
+    return defs
 
 
 def infer_input_definitions_for_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
+    defs = _infer_inputs_from_params(params[1:], '@solid', solid_name)
 
-    return _infer_inputs_from_params(params[1:], '@solid', solid_name)
+    if not defs:
+        # try to infer from docstrings
+        defs = _infer_input_definitions_from_docstring(solid_name, fn)
+
+    return defs
