@@ -356,6 +356,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         depends_on_fn=test_image_depends_fn,
     ),
     ModuleBuildSpec(
+        'python_modules/libraries/dagster-celery-docker',
+        env_vars=['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+        extra_cmds_fn=celery_extra_cmds_fn,
+        depends_on_fn=test_image_depends_fn,
+    ),
+    ModuleBuildSpec(
         'python_modules/libraries/dagster-dask',
         env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
         supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],

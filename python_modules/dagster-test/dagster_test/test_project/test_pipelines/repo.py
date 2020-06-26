@@ -83,6 +83,24 @@ def define_demo_pipeline_celery():
     return demo_pipeline_celery
 
 
+def define_docker_celery_pipeline():
+    from dagster_celery_docker import celery_docker_executor
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                system_storage_defs=s3_plus_default_storage_defs,
+                resource_defs={'s3': s3_resource},
+                executor_defs=default_executors + [celery_docker_executor],
+            )
+        ]
+    )
+    def docker_celery_pipeline():
+        count_letters(multiply_the_word())
+
+    return docker_celery_pipeline
+
+
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -350,6 +368,7 @@ def define_demo_execution_repo():
                 'slow_pipeline': define_slow_pipeline,
                 'fan_in_fan_out_pipeline': define_fan_in_fan_out_pipeline,
                 'resource_pipeline': define_resource_pipeline,
+                'docker_celery_pipeline': define_docker_celery_pipeline,
             },
             'schedules': define_schedules(),
         }

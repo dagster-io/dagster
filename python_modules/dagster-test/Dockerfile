@@ -22,6 +22,7 @@ RUN pip install \
     -e dagster-gcp \
     -e dagster-k8s \
     -e dagster-celery-k8s \
+    -e dagster-celery-docker \
     -e dagster-airflow \
     -e .
 

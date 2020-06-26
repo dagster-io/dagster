@@ -308,6 +308,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.PIPELINE_FAILURE
 
     @property
+    def is_pipeline_init_failure(self):
+        return self.event_type == DagsterEventType.PIPELINE_INIT_FAILURE
+
+    @property
     def is_failure(self):
         return self.event_type in FAILURE_EVENTS
 

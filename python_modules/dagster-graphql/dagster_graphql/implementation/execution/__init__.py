@@ -217,6 +217,12 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline, retries
     def to_graphql_event(event_record):
         return from_dagster_event_record(event_record, external_pipeline.name)
 
+    for event in event_logs:
+        if event.dagster_event.is_pipeline_init_failure:
+            return graphene_info.schema.type_named('PythonError')(
+                event.dagster_event.pipeline_init_failure_data.error
+            )
+
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=DauphinPipeline(external_pipeline),
         has_failures=any(

@@ -31,6 +31,12 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(['./build.sh', base_python, tag], cwd=test_repo_path())
 
 
+def get_test_project_recon_pipeline(pipeline_name):
+    return ReconstructableRepository.for_file(
+        file_relative_path(__file__, 'test_pipelines/repo.py'), 'define_demo_execution_repo',
+    ).get_reconstructable_pipeline(pipeline_name)
+
+
 def get_test_project_external_pipeline(pipeline_name):
     return (
         InProcessRepositoryLocation(
