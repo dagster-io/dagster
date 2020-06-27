@@ -30,7 +30,7 @@ from dagster.core.test_utils import nesting_composite_pipeline
 
 def celery_mode_defs():
     from dagster_celery import celery_executor
-    from dagster_celery.executor_k8s import celery_k8s_job_executor
+    from dagster_celery_k8s import celery_k8s_job_executor
 
     return [
         ModeDefinition(
@@ -221,7 +221,7 @@ def define_schedules():
         },
     )
     def frequent_large_pipe(_):
-        from dagster_k8s import get_celery_engine_config
+        from dagster_celery_k8s.config import get_celery_engine_config
 
         cfg = get_celery_engine_config()
         cfg['storage'] = {'s3': {'config': {'s3_bucket': 'dagster-scratch-80542c2'}}}

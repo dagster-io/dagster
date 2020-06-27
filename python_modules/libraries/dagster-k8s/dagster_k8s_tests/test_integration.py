@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster_k8s import get_celery_engine_config
+from dagster_celery_k8s.config import get_celery_engine_config
 from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,

@@ -1,5 +1,4 @@
 import kubernetes
-from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
     construct_dagster_graphql_k8s_job,
@@ -17,11 +16,13 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 
+from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
+
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     '''In contrast to the :py:class:`K8sRunLauncher`, which launches pipeline runs as single K8s
     Jobs, this run launcher is intended for use in concert with
-    :py:func:`dagster_celery.executor_k8s.celery_k8s_job_executor`.
+    :py:func:`dagster_celery_k8s.celery_k8s_job_executor`.
 
     With this run launcher, execution is delegated to:
 
@@ -29,7 +30,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
            steps to Celery queues for execution;
         2. The step executions which are submitted to Celery queues are picked up by Celery workers,
            and each step execution spawns a step execution Kubernetes Job. See the implementation
-           defined in :py:func:`dagster_celery.tasks.create_k8s_job_task`.
+           defined in :py:func:`dagster_celery_k8.executor.create_k8s_job_task`.
 
     You may configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:

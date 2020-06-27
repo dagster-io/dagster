@@ -106,8 +106,6 @@ API
 .. autodata:: celery_executor
   :annotation: ExecutorDefinition
 
-.. autodata:: dagster_celery.executor_k8s.celery_k8s_job_executor
-  :annotation: ExecutorDefinition
 
 CLI
 ~~~
