@@ -1,57 +1,57 @@
 [
-  {
-    "name": "airflow_ingest",
-    "title": "Airflow Ingest",
-    "description": "Create a pipeline from an Airflow DAG"
-  },
-  {
-    "name": "basic_pyspark",
-    "title": "PySpark",
-    "description": "Run PySpark code in solids"
-  },
-  {
-    "name": "config_mapping",
-    "title": "Config Mapping",
-    "description": ""
-  },
-  {
-    "name": "dep_dsl",
-    "title": "Dependency DSL",
-    "description": "Create a custom DSL for defining pipelines"
-  },
-  {
-    "name": "deploy_k8s",
-    "title": "Kubernetes Deployment",
-    "description": "Deploying Dagster on Kubernetes"
-  },
-  {
-    "name": "emr_pyspark",
-    "title": "EMR PySpark",
-    "description": "Run PySpark solids on EMR"
-  },
-  {
-    "name": "fan_in_pipeline",
-    "title": "Fan-In Dependency",
-    "description": "Create a pipeline with a fan-in dependency"
-  },
-  {
-    "name": "materializations",
-    "title": "Asset Materialization",
-    "description": "Record that a solid materialized an asset"
-  },
-  {
-    "name": "multi_location",
-    "title": "Multi-Location Repository",
-    "description": ""
-  },
-  {
-    "name": "pipeline_tags",
-    "title": "Pipeline Tags",
-    "description": "Tag a pipeline"
-  },
-  {
-    "name": "pipeline_unittesting",
-    "title": "Pipeline Unit Test",
-    "description": "Unit-test a pipeline"
-  }
+    {
+        "name": "airflow_ingest",
+        "title": "Airflow Ingest",
+        "description": "Create a pipeline from an Airflow DAG"
+    },
+    {
+        "name": "basic_pyspark",
+        "title": "PySpark",
+        "description": "Run PySpark code in solids"
+    },
+    {
+        "name": "config_mapping",
+        "title": "Config Mapping",
+        "description": ""
+    },
+    {
+        "name": "dep_dsl",
+        "title": "Dependency DSL",
+        "description": "Create a custom DSL for defining pipelines"
+    },
+    {
+        "name": "emr_pyspark",
+        "title": "EMR PySpark",
+        "description": "Run a PySpark solids in EMR"
+    },
+    {
+        "name": "fan_in_pipeline",
+        "title": "Fan-In Dependency",
+        "description": "Create a pipeline with a fan-in dependency"
+    },
+    {
+        "name": "materializations",
+        "title": "Asset Materialization",
+        "description": "Record that a solid materialized an asset"
+    },
+    {
+        "name": "multi_location",
+        "title": "Multi-Location Repository",
+        "description": ""
+    },
+    {
+        "name": "pipeline_tags",
+        "title": "Pipeline Tags",
+        "description": "Tag a pipeline"
+    },
+    {
+        "name": "pipeline_unittesting",
+        "title": "Pipeline Unit Test",
+        "description": "Unit-test a pipeline"
+    },
+    {
+        "name": "nothing",
+        "title": "No-Data Dependencies",
+        "description": "Modeling dependencies without inputs and outputs"
+    }
 ]
