@@ -26,7 +26,7 @@ data:
           port: {{ .Values.postgresql.service.port }}
 
     run_launcher:
-      module: dagster_k8s.launcher
+      module: dagster_celery_k8s
       class: CeleryK8sRunLauncher
       config:
         dagster_home:

@@ -109,19 +109,20 @@ def celery_k8s_job_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
     '''
-    from dagster_k8s import DagsterK8sJobConfig, CeleryK8sRunLauncher
+    from dagster_k8s import DagsterK8sJobConfig
 
     check_cross_process_constraints(init_context)
 
     run_launcher = init_context.instance.run_launcher
     exc_cfg = init_context.executor_config
 
-    check.inst(
-        run_launcher,
-        CeleryK8sRunLauncher,
-        'This engine is only compatible with a CeleryK8sRunLauncher; configure the '
-        'CeleryK8sRunLauncher on your instance to use it.',
-    )
+    # Re-enable check once this is moved to dagster_celery_k8s
+    # check.inst(
+    #     run_launcher,
+    #     CeleryK8sRunLauncher,
+    #     'This engine is only compatible with a CeleryK8sRunLauncher; configure the '
+    #     'CeleryK8sRunLauncher on your instance to use it.',
+    # )
 
     job_config = DagsterK8sJobConfig(
         dagster_home=run_launcher.dagster_home,

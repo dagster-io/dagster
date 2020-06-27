@@ -1,7 +1,7 @@
 import pytest
 from dagster_celery.executor_k8s import CELERY_K8S_CONFIG_KEY
+from dagster_celery_k8s.launcher import _get_validated_celery_k8s_executor_config
 from dagster_k8s import get_celery_engine_config
-from dagster_k8s.launcher import _get_validated_celery_k8s_executor_config
 
 from dagster import check
 from dagster.core.test_utils import environ
