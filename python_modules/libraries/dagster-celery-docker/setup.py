@@ -37,7 +37,7 @@ def _do_setup(name='dagster-celery-docker'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster'],
+        install_requires=['dagster', 'dagster-celery', 'dagster-graphql', 'docker'],
         tests_require=[],
         zip_safe=False,
     )

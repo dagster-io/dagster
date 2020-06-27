@@ -8,13 +8,7 @@ from dagster.seven import is_module_available
 def make_app(app_args=None):
     return make_app_with_task_routes(
         app_args=app_args,
-        task_routes={
-            'execute_plan': {'queue': 'dagster', 'routing_key': 'dagster.execute_plan'},
-            'execute_step_docker': {
-                'queue': 'dagster',
-                'routing_key': 'dagster.execute_step_docker',
-            },
-        },
+        task_routes={'execute_plan': {'queue': 'dagster', 'routing_key': 'dagster.execute_plan'}},
     )
 
 

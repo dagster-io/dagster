@@ -1,12 +1,30 @@
-from dagster import Executor, Field, StringSource, check, executor
+import os
+
+import docker.client
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_execution_loop
+from dagster_celery.defaults import broker_url, result_backend
+from dagster_celery.executor import CELERY_CONFIG
+from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
+
+from dagster import (
+    DagsterInstance,
+    EventMetadataEntry,
+    Executor,
+    Field,
+    StringSource,
+    check,
+    executor,
+    seven,
+)
 from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation.handle import IN_PROCESS_NAME
+from dagster.core.instance import InstanceRef
+from dagster.serdes import serialize_dagster_namedtuple
+from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts
-
-from .config import DEFAULT_CONFIG, dict_wrapper
-from .defaults import broker_url, result_backend
-from .executor import CELERY_CONFIG
 
 CELERY_DOCKER_CONFIG_KEY = 'celery-docker'
 
@@ -144,7 +162,6 @@ class CeleryDockerExecutor(Executor):
         self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
 
     def execute(self, pipeline_context, execution_plan):
-        from .core_execution_loop import core_celery_execution_loop
 
         return core_celery_execution_loop(
             pipeline_context, execution_plan, step_execution_fn=_submit_task_docker
@@ -161,8 +178,6 @@ class CeleryDockerExecutor(Executor):
 
 
 def _submit_task_docker(app, pipeline_context, step, queue, priority):
-    from .docker_task import create_docker_task
-
     task = create_docker_task(app)
 
     recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
@@ -185,3 +200,113 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
         queue=queue,
         routing_key='{queue}.execute_step_docker'.format(queue=queue),
     )
+
+
+def create_docker_task(celery_app, **task_kwargs):
+    @celery_app.task(bind=True, name='execute_step_docker', **task_kwargs)
+    def _execute_step_docker(
+        _self,
+        instance_ref_dict,
+        step_keys,
+        run_config,
+        mode,
+        repo_name,
+        repo_location_name,
+        run_id,
+        docker_image,
+        docker_registry,
+        docker_username,
+        docker_password,
+    ):
+        '''Run step execution in a Docker container.
+        '''
+
+        instance_ref = InstanceRef.from_dict(instance_ref_dict)
+        instance = DagsterInstance.from_ref(instance_ref)
+        pipeline_run = instance.get_run_by_id(run_id)
+        check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
+
+        step_keys_str = ", ".join(step_keys)
+
+        variables = {
+            'executionParams': {
+                'runConfigData': run_config,
+                'mode': mode,
+                'selector': {
+                    'repositoryLocationName': repo_location_name,
+                    'repositoryName': repo_name,
+                    'pipelineName': pipeline_run.pipeline_name,
+                },
+                'executionMetadata': {'runId': run_id},
+                'stepKeys': step_keys,
+            }
+        }
+
+        command = 'dagster-graphql -v \'{variables}\' -p executePlan'.format(
+            variables=seven.json.dumps(variables)
+        )
+
+        client = docker.client.from_env()
+
+        if docker_username:
+            client.login(
+                registry=docker_registry, username=docker_username, password=docker_password,
+            )
+
+        # Post event for starting execution
+        engine_event = instance.report_engine_event(
+            'Executing steps {} in Docker container {}'.format(step_keys_str, docker_image),
+            pipeline_run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(step_keys_str, 'Step keys'),
+                    EventMetadataEntry.text(docker_image, 'Job image'),
+                ],
+                marker_end=DELEGATE_MARKER,
+            ),
+            CeleryDockerExecutor,
+            step_key=step_keys[0],
+        )
+
+        events = [engine_event]
+
+        docker_response = client.containers.run(
+            docker_image,
+            command=command,
+            detach=False,
+            auto_remove=True,
+            # pass through this worker's environment for things like AWS creds etc.
+            environment=dict(os.environ),
+        )
+
+        try:
+            res = seven.json.loads(docker_response)
+
+        except JSONDecodeError:
+            fail_event = instance.report_engine_event(
+                'Failed to run steps {} in Docker container {}'.format(step_keys_str, docker_image),
+                pipeline_run,
+                EngineEventData(
+                    [
+                        EventMetadataEntry.text(step_keys_str, 'Step keys'),
+                        EventMetadataEntry.text(docker_image, 'Job image'),
+                        EventMetadataEntry.text(docker_response, 'Docker Response'),
+                    ],
+                    marker_end=DELEGATE_MARKER,
+                ),
+                CeleryDockerExecutor,
+                step_key=step_keys[0],
+            )
+
+            events.append(fail_event)
+
+        else:
+            handle_execution_errors(res, 'executePlan')
+            step_events = handle_execute_plan_result(res)
+
+        events += step_events
+
+        serialized_events = [serialize_dagster_namedtuple(event) for event in events]
+        return serialized_events
+
+    return _execute_step_docker

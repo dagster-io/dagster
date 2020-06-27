@@ -3,11 +3,9 @@
 # Examples:
 #   - See `worker_start_command` in dagster_celery.cli
 #   - deployment-flower.yaml helm chart
-from .docker_task import create_docker_task
 from .make_app import make_app
 from .tasks import create_task
 
 app = make_app()
 
 execute_plan = create_task(app)
-execute_step_docker = create_docker_task(app)
