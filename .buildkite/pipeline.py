@@ -286,6 +286,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         retries=2,
     ),
     ModuleBuildSpec(
+        'python_modules/libraries/dagster-ge',
+        supported_pythons=SupportedPython3sNo38,
+    ),
+    ModuleBuildSpec(
         'python_modules/libraries/dagster-k8s',
         env_vars=[
             'AWS_ACCOUNT_ID',
