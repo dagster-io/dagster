@@ -69,6 +69,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @contextmanager
     def connect(self, _run_id=None):  # pylint: disable=arguments-differ
+        conn = None
         try:
             conn = self._engine.connect()
             with handle_schema_errors(
@@ -76,7 +77,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             ):
                 yield self._engine
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
