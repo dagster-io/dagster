@@ -89,6 +89,8 @@ You can then run the celery worker using:
 
     celery -A my_module worker --loglevel=info
 
+This customization mechanism is used to implement `dagster_celery_k8s` and `dagster_celery_k8s` which delegate the execution of steps to ephemeral kubernetes pods and docker containers, respectively.
+
 Celery best practices
 ^^^^^^^^^^^^^^^^^^^^^
 

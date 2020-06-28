@@ -76,6 +76,9 @@ def celery_k8s_job_executor(init_context):
     workers on which you hope to run were started. If, for example, you point the executor at a
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
+
+    In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
+    commands must be invoked with the `-A dagster_celery_k8s.app` argument.
     '''
 
     check_cross_process_constraints(init_context)

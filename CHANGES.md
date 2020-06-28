@@ -1,30 +1,36 @@
 # Changelog
 
-## 0.8.5 
+## 0.8.6 (Upcoming)
 
 **Breaking Changes**
 
-* Python 3.5 is no longer under test.
-* `Engine` and `ExecutorConfig` have been deleted in favor of `Executor`. Instead of the `@executor` decorator decorating a function that returns an `ExecutorConfig` it should now decorate a function that returns an `Executor`.
+- The `dagster-celery` module has been broken apart to manage dependencies more coherently. There are now three modules: `dagster-celery`, `dagster-celery-k8s`, and `dagster-celery-docker`.
+- Related to above, the `dagster-celery worker start` command now takes a required `-A` parameter which must point to the `app.py` file within the appropriate module. E.g if you are using the `celery_k8s_job_executor` then you must use the `-A dagster_celery_k8s.app` option when using the `celery` or `dagster-celery` cli tools. Similar for the `celery_docker_executor`: `-A dagster_celery_docker.app` must be used.
+
+## 0.8.5
+
+**Breaking Changes**
+
+- Python 3.5 is no longer under test.
+- `Engine` and `ExecutorConfig` have been deleted in favor of `Executor`. Instead of the `@executor` decorator decorating a function that returns an `ExecutorConfig` it should now decorate a function that returns an `Executor`.
 
 **New**
 
-* The python built-in `dict` can be used as an alias for `Permissive()` within a config schema declaration.
-* Use `StringSource` in the `S3ComputeLogManager` configuration schema to support using environment variables in the configuration (Thanks @mrdrprofuroboros!)
-* Improve Backfill CLI help text
-* Add options to spark_df_output_schema (Thanks @DavidKatz-il!)
-* Helm: Added support for overriding the PostgreSQL image/version used in the init container checks.
-* Update celery k8s helm chart to include liveness checks for celery workers and flower
-* Support step level retries to celery k8s executor
-
+- The python built-in `dict` can be used as an alias for `Permissive()` within a config schema declaration.
+- Use `StringSource` in the `S3ComputeLogManager` configuration schema to support using environment variables in the configuration (Thanks @mrdrprofuroboros!)
+- Improve Backfill CLI help text
+- Add options to spark_df_output_schema (Thanks @DavidKatz-il!)
+- Helm: Added support for overriding the PostgreSQL image/version used in the init container checks.
+- Update celery k8s helm chart to include liveness checks for celery workers and flower
+- Support step level retries to celery k8s executor
 
 **Bugfixes**
 
-* Improve error message shown when a RepositoryDefinition returns objects that are not one of the allowed definition types (Thanks @sd2k!)
-* Show error message when `$DAGSTER_HOME` environment variable is not an absolute path (Thanks @AndersonReyes!)
-* Update default value for `staging_prefix` in the `DatabricksPySparkStepLauncher` configuration to be an absolute path (Thanks @sd2k!)
-* Improve error message shown when Databricks logs can't be retrieved (Thanks @sd2k!)
-* Fix errors in documentation fo `input_hydration_config` (Thanks @joeyfreund!)
+- Improve error message shown when a RepositoryDefinition returns objects that are not one of the allowed definition types (Thanks @sd2k!)
+- Show error message when `$DAGSTER_HOME` environment variable is not an absolute path (Thanks @AndersonReyes!)
+- Update default value for `staging_prefix` in the `DatabricksPySparkStepLauncher` configuration to be an absolute path (Thanks @sd2k!)
+- Improve error message shown when Databricks logs can't be retrieved (Thanks @sd2k!)
+- Fix errors in documentation fo `input_hydration_config` (Thanks @joeyfreund!)
 
 ## 0.8.4
 
