@@ -5,12 +5,13 @@ from dagster_aws.s3 import (
     S3FileHandle,
     file_handle_to_s3,
     s3_file_cache,
+    s3_file_manager,
     s3_plus_default_storage_defs,
     s3_resource,
 )
 from dagster_pyspark import pyspark_resource
 
-from dagster import ModeDefinition, PresetDefinition, composite_solid, pipeline
+from dagster import ModeDefinition, PresetDefinition, composite_solid, local_file_manager, pipeline
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
@@ -44,6 +45,7 @@ test_mode = ModeDefinition(
         'tempfile': tempfile_resource,
         's3': s3_resource,
         'file_cache': fs_file_cache,
+        'file_manager': local_file_manager,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -58,6 +60,7 @@ local_mode = ModeDefinition(
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
         'file_cache': fs_file_cache,
+        'file_manager': local_file_manager,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )
@@ -72,6 +75,7 @@ prod_mode = ModeDefinition(
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         'file_cache': s3_file_cache,
+        'file_manager': s3_file_manager,
     },
     system_storage_defs=s3_plus_default_storage_defs,
 )

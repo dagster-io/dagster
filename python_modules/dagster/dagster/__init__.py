@@ -98,7 +98,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
+from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
@@ -263,6 +263,7 @@ __all__ = [
     # file things
     'FileHandle',
     'LocalFileHandle',
+    'local_file_manager',
     # instance
     'DagsterInstance',
     # partitions and schedules

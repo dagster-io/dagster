@@ -2,25 +2,56 @@ import os
 
 import botocore
 import pyspark
-from dagster_aws.s3 import S3IntermediateStore
+from dagster_aws.s3 import (
+    S3IntermediateStore,
+    s3_file_manager,
+    s3_plus_default_storage_defs,
+    s3_resource,
+)
 from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
-from dagster_pyspark import DataFrame
+from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row, SparkSession
 
 from dagster import (
     InputDefinition,
     LocalFileHandle,
+    ModeDefinition,
     OutputDefinition,
     execute_pipeline,
     file_relative_path,
+    local_file_manager,
     pipeline,
     seven,
     solid,
 )
+from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.temp_file_manager import tempfile_resource
 
-from .test_solids import spark_mode
+spark_local_fs_mode = ModeDefinition(
+    name='spark',
+    resource_defs={
+        'pyspark': pyspark_resource,
+        'tempfile': tempfile_resource,
+        's3': s3_resource,
+        'pyspark_step_launcher': no_step_launcher,
+        'file_manager': local_file_manager,
+    },
+    system_storage_defs=s3_plus_default_storage_defs,
+)
+
+spark_s3_mode = ModeDefinition(
+    name='spark',
+    resource_defs={
+        'pyspark': pyspark_resource,
+        'tempfile': tempfile_resource,
+        's3': s3_resource,
+        'pyspark_step_launcher': no_step_launcher,
+        'file_manager': s3_file_manager,
+    },
+    system_storage_defs=s3_plus_default_storage_defs,
+)
 
 
 def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
@@ -28,7 +59,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     def nonce(_):
         return LocalFileHandle(file_relative_path(__file__, 'data/test.csv'))
 
-    @pipeline(mode_defs=[spark_mode])
+    @pipeline(mode_defs=[spark_local_fs_mode])
     def spark_df_test_pipeline():
         ingest_csv_file_handle_to_spark(nonce())
 
@@ -65,12 +96,12 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
 
 
 def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
-    @solid
+    @solid(required_resource_keys={'file_manager'})
     def nonce(context):
         with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
-            return context.file_manager.write_data(fd.read())
+            return context.resources.file_manager.write_data(fd.read())
 
-    @pipeline(mode_defs=[spark_mode])
+    @pipeline(mode_defs=[spark_s3_mode])
     def spark_df_test_pipeline():
 
         ingest_csv_file_handle_to_spark(nonce())
@@ -79,7 +110,10 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
         spark_df_test_pipeline,
         run_config={
             'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
-            'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
+            'resources': {
+                'pyspark': {'config': {'spark_conf': spark_config}},
+                'file_manager': {'config': {'s3_bucket': s3_bucket}},
+            },
         },
         mode='spark',
     )

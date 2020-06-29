@@ -1,7 +1,20 @@
+from contextlib import contextmanager
+
 from dagster import LocalFileHandle, execute_solid, solid
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.file_manager import local_file_manager
+from dagster.core.storage.file_manager import LocalFileManager
 from dagster.utils.temp_file import get_temp_file_handle_with_data
+
+
+@contextmanager
+def local_file_manager(instance, run_id):
+    manager = None
+    try:
+        manager = LocalFileManager.for_instance(instance, run_id)
+        yield manager
+    finally:
+        if manager:
+            manager.delete_local_temp()
 
 
 def test_basic_file_manager_copy_handle_to_local_temp():

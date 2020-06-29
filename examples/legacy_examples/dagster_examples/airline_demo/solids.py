@@ -149,7 +149,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 
 @solid(
-    required_resource_keys={'pyspark_step_launcher', 'pyspark'},
+    required_resource_keys={'pyspark_step_launcher', 'pyspark', 'file_manager'},
     description='''Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
 
@@ -168,7 +168,7 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> Dat
     #    the implementation of copy_handle_to_local_temp to not to do this in the
     #    local fs case. Somewhat more dangerous though.
     # s3 case: downloads from s3 to local temp directory
-    temp_file_name = context.file_manager.copy_handle_to_local_temp(csv_file_handle)
+    temp_file_name = context.resources.file_manager.copy_handle_to_local_temp(csv_file_handle)
 
     # In fact for a generic component this should really be using
     # the spark APIs to load directly from whatever object store, rather

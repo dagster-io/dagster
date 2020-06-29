@@ -2,7 +2,7 @@ import sys
 import zipfile
 
 import boto3
-from dagster_aws.s3 import S3FileHandle, s3_system_storage
+from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_system_storage
 from dagster_examples.airline_demo.unzip_file_handle import unzip_file_handle
 from moto import mock_s3
 
@@ -12,6 +12,7 @@ from dagster import (
     OutputDefinition,
     ResourceDefinition,
     execute_pipeline,
+    local_file_manager,
     pipeline,
     solid,
 )
@@ -40,7 +41,7 @@ def test_unzip_file_handle():
         def to_zip_file_handle(_):
             return LocalFileHandle(zip_file_name)
 
-        @pipeline
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={'file_manager': local_file_manager})])
         def do_test_unzip_file_handle():
             return unzip_file_handle(to_zip_file_handle())
 
@@ -61,22 +62,26 @@ def test_unzip_file_handle():
 def test_unzip_file_handle_on_fake_s3():
     foo_bytes = 'foo'.encode()
 
-    @solid(output_defs=[OutputDefinition(S3FileHandle)])
+    @solid(required_resource_keys={'file_manager'}, output_defs=[OutputDefinition(S3FileHandle)])
     def write_zipped_file_to_s3_store(context):
         with get_temp_file_name() as zip_file_name:
             write_zip_file_to_disk(zip_file_name, 'an_archive_member', foo_bytes)
             with open(zip_file_name, 'rb') as ff:
-                s3_file_handle = context.file_manager.write_data(ff.read())
+                s3_file_handle = context.resources.file_manager.write_data(ff.read())
                 return s3_file_handle
 
     # Uses mock S3
     s3 = boto3.client('s3')
     s3.create_bucket(Bucket='some-bucket')
+    file_manager = S3FileManager(s3_session=s3, s3_bucket='some-bucket', s3_base_key='dagster')
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3)},
+                resource_defs={
+                    's3': ResourceDefinition.hardcoded_resource(s3),
+                    'file_manager': ResourceDefinition.hardcoded_resource(file_manager),
+                },
                 system_storage_defs=[s3_system_storage],
             )
         ]

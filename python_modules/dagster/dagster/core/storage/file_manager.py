@@ -8,6 +8,9 @@ from contextlib import contextmanager
 import six
 
 from dagster import check
+from dagster.config import Field
+from dagster.config.source import StringSource
+from dagster.core.definitions.resource import resource
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.decorator import usable_as_dagster_type
 from dagster.utils import mkdir_p
@@ -19,7 +22,7 @@ from .temp_file_manager import TempfileManager
 @usable_as_dagster_type
 class FileHandle(six.with_metaclass(ABCMeta)):
     '''A file handle is a reference to a file.
-    
+
     Files can be be resident in the local file system, an object store, or any arbitrary place
     where a file can be stored.
 
@@ -56,15 +59,15 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     abstraction that allows a Dagster user to pass files in between solids, and the file
     manager is responsible for marshalling those files to and from the nodes where
     the actual Dagster computation occur.
-    
+
     If the user does their file manipulations using this abstraction, it is straightforward to write
     a pipeline that executes both:
-    
+
         (a) in a local development environment with no external dependencies, where files are
             available directly on the filesystem and
         (b) in a cluster environment where those files would need to be on a distributed filesystem
             (e.g. hdfs) or an object store (s3).
-            
+
     The business logic remains constant and a new implementation of the file manager is swapped out
     based on the system storage specified by the operator.
     '''
@@ -119,7 +122,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         Args:
             file_handle (FileHandle): The file handle for which to return bytes.
-        
+
         Returns:
             bytes: Bytes for a given file handle.
         '''
@@ -129,7 +132,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def write(self, file_obj, mode='wb', ext=None):
         '''Write the bytes contained within the given ``file_obj`` into the file manager.
         This returns a :py:class:`~dagster.FileHandle` corresponding to the newly created file.
-        
+
         File managers typically return a subclass of :py:class:`~dagster.FileHandle` appropriate for
         their implementation: e.g., a
         :py:class:`~dagster.core.storage.file_manager.LocalFileManager` returns a
@@ -141,7 +144,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
             mode (Optional[str]): The mode in which to write the file into storage. Default: ``'wb'``.
             ext (Optional[str]): For file managers that support file extensions, the extension with
                 which to write the file. Default: ``None``.
-        
+
         Returns:
             FileHandle: A handle to the newly created file.
         '''
@@ -150,7 +153,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def write_data(self, data, ext=None):
         '''Write raw bytes into storage.
-        
+
         Args:
             data (bytes): The bytes to write into storage.
             ext (Optional[str]): For file managers that support file extensions, the extension with
@@ -162,15 +165,9 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-@contextmanager
-def local_file_manager(instance, run_id):
-    manager = None
-    try:
-        manager = LocalFileManager.for_instance(instance, run_id)
-        yield manager
-    finally:
-        if manager:
-            manager.delete_local_temp()
+@resource(config_schema={'base_dir': Field(StringSource, default_value='.', is_required=False)})
+def local_file_manager(init_context):
+    return LocalFileManager(init_context.resource_config['base_dir'])
 
 
 def check_file_like_obj(obj):

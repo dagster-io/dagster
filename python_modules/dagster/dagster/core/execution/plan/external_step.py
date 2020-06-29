@@ -16,7 +16,7 @@ from dagster.core.execution.context_creation_pipeline import pipeline_initializa
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.file_manager import LocalFileHandle
+from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 
 PICKLED_EVENTS_FILE_NAME = 'events.pkl'
 PICKLED_STEP_RUN_REF_FILE_NAME = 'step_run_ref.pkl'
@@ -60,8 +60,9 @@ class LocalExternalStepLauncher(StepLauncher):
         subprocess.call(command_tokens, stdout=sys.stdout, stderr=sys.stderr)
 
         events_file_path = os.path.join(step_run_dir, PICKLED_EVENTS_FILE_NAME)
+        file_manager = LocalFileManager('.')
         events_file_handle = LocalFileHandle(events_file_path)
-        events_data = step_context.file_manager.read_data(events_file_handle)
+        events_data = file_manager.read_data(events_file_handle)
         events = pickle.loads(events_data)
 
         for event in events:
