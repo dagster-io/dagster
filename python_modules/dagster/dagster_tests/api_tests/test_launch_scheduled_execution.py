@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 import pytest
 
@@ -188,3 +189,25 @@ def test_bad_load():
             ticks = instance.get_schedule_ticks(schedule.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.FAILURE
             assert 'doesnt_exist not found at module scope in file' in ticks[0].error.message
+
+
+def test_origin_ids_stable(monkeypatch):
+    # This test asserts fixed schedule origin IDs to prevent any changes from
+    # accidentally shifting these ids that are persisted to ScheduleStorage
+
+    # stable exe path for test
+    monkeypatch.setattr(sys, 'executable', '/fake/python')
+
+    file_repo = ReconstructableRepository.for_file('/path/to/file', 'the_repo')
+
+    # ensure monkeypatch worked
+    assert file_repo.get_origin().executable_path == '/fake/python'
+
+    assert file_repo.get_origin_id() == '9ce1e0f6f059725bb6f85deeaea0322734bd77d6'
+    schedule = file_repo.get_reconstructable_schedule('simple_schedule')
+    assert schedule.get_origin_id() == 'f1a21671fccf4c986d20f40cac0730e47daa0183'
+
+    module_repo = ReconstructableRepository.for_module('dummy_module', 'the_repo')
+    assert module_repo.get_origin_id() == '86503fc349d4ecf44bd22ca1de64c10f8ffcebbd'
+    module_schedule = module_repo.get_reconstructable_schedule('simple_schedule')
+    assert module_schedule.get_origin_id() == 'e4c7131b74ad600969876d8fa461f215ced9631a'
