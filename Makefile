@@ -92,8 +92,9 @@ graphql:
 	cd js_modules/dagit/; make generate-types
 
 sanity_check:
-# Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	pip list --exclude-editable | grep -e dagster -e dagit | echo
+#NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
+	echo Checking for prod installs - if any are listed below reinstall with 'pip -e'
+	! (pip list --exclude-editable | grep -e dagster -e dagit)
 
 rebuild_dagit: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build-for-python
