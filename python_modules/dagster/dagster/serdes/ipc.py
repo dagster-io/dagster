@@ -171,14 +171,14 @@ def setup_interrupt_support():
         signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
 
 
-def open_ipc_subprocess(parts):
+def open_ipc_subprocess(parts, **kwargs):
     ''' Sets new process group flags on Windows to support graceful termination. '''
     check.list_param(parts, 'parts', str)
 
     creationflags = 0
     if sys.platform == 'win32':
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-    return subprocess.Popen(parts, creationflags=creationflags)
+    return subprocess.Popen(parts, creationflags=creationflags, **kwargs)
 
 
 def interrupt_ipc_subprocess(proc):

@@ -6,7 +6,7 @@ from contextlib import contextmanager
 import grpc
 
 from dagster import check, seven
-from dagster.serdes.ipc import interrupt_ipc_subprocess
+from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -100,7 +100,7 @@ def _wait_for_grpc_server(server_process, timeout=3):
 def open_server_process(port, socket):
     check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
 
-    server_process = subprocess.Popen(
+    server_process = open_ipc_subprocess(
         ['dagster', 'api', 'grpc']
         + (['-p', str(port)] if port else [])
         + (['-f', socket] if socket else []),

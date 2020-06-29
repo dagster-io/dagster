@@ -62,6 +62,7 @@ def test_client_bad_port():
         DagsterGrpcClient(port=port).ping('foobar')
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason='Unix-only test')
 def test_client_bad_socket():
     with safe_tempfile_path() as bad_socket:
         with pytest.raises(grpc.RpcError, match='failed to connect to all addresses'):
@@ -86,6 +87,7 @@ def test_client_port_bad_host():
         DagsterGrpcClient(port=port, host=None)
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason='Unix-only test')
 def test_client_socket():
     with safe_tempfile_path() as skt:
         assert DagsterGrpcClient(socket=skt)
