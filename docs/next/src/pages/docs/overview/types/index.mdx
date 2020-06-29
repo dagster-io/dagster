@@ -3,75 +3,25 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Dagster Types | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Dagster Types."
 />
 
 # Dagster Types
 
-Every dependency between solids in dagster is attached to an input and
-output. Each of these inputs and outputs are annotated with a type
-within the dagster type system. The type system is _gradual_ and
-_optional_. Inputs and outputs default to the `Any` type.
+The Dagster type system helps users describe what kind of values their solids accept and produce.  Each solid input and output can be annotated with a <PyObject module="dagster" object="DagsterType" />.
 
-The dagster type system is independent from the PEP 484 Python type
+The type system is _gradual_ and
+_optional_ - pipelines can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere. Inputs and outputs default to the <PyObject module="dagster" object="Any" /> type.
+
+The Dagster type system is independent from the [PEP 484](https://www.python.org/dev/peps/pep-0484/) Python type
 system, although we overload the type annotation syntax on functions to
 make it easier to specify the input and output types of your solids.
 
-A solid's metadata are meant to be self-describing and reusable. A
-solid, ideally, communicates through metadata the conditions required in
-order for successful execution. Put another way, through metadata it
-describes the state of the external world that must exist for the
-computation to succeed.
-
-These conditions are expressed through three different abstractions:
-
-1.  Environment: Solids communicate their environment requirements
-    through _required_resource_keys_. Examples of
-    environment requirements include a database connections or a spark
-    context. Resources specified in this way are accessible via the
-    _context_ object passed to the body of solids.
-2.  Configuration: Solids declare a schema for their configuration.
-    Configuration expresses parameters that are control or behavioral
-    concerns which would never be produced by previous computation.
-3.  Data Requirements: Solids ingest data and produce data. Inputs
-    represent either existing data whose value are managed by dagster's
-    intermediate store -- such as a dataframe -- or the representation
-    of data not managed by dagster's intermediate store -- such as a
-    database table.
-
-The type system and the input/out system is designed to capture and
-model the third category: data requirements.
-
-Dagster types pass or fail typechecks based on arbitrary, user-defined
-computation. This allows types to express data requirements with maximum
-flexibility, going far beyond the capabilities of Python's builtin
-types. This flexibility has costs, as it does not guarantee the ability
-of types to verify compatibility prior to computation.
-
-Features of Dagster Types:
-
-- **Gradual and Optional**: Typechecks are use-defined computation
-  that is arbitrarily strict.
-- **Self-Describing**: Types include a description and metadata,
-  accessible via an API and, therefore, tooling.
-- **Configuration**: Inputs modeled Dagster types can be hydrated from
-  existing via configuration, and similarly outputs can be
-  materialized to user-controlled locations. Types declare their
-  config schema requires and define a function that translates the
-  config value into an in-memory value from existing data made
-  available as an input.
-- **API**: All metadata is accessible over an API and available for
-  tool building.
-- **Compute-time Metadata**: Type checks can return structured
-  metadata -- e.g. summary statistics -- at runtime, also accessible
-  over an API.
-- **Serialization**: Types determine serialization behavior, used by
-  dagster's intermediate store infrastructure to pass data between
-  solids that reside in different processes or nodes at runtime.
+Dagster type-checking happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects.  When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed.  When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
 
 ## DagsterType
 
-The core API for creating dagster types is DagsterType.
+The core API for defining dagster types is <PyObject module="dagster" object="DagsterType" />.
 
 ```python literalinclude caption=test_type_guide.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -79,8 +29,7 @@ lineno-start:1
 lines:28-31
 ```
 
-Once created, this type can be attached to solids via either an a)
-`InputDefinition` and `OutputDefinition` or b) type annotations.
+Once created, types can be attached to solid <PyObject module="dagster" object="InputDefinition" />s and <PyObject module="dagster" object="OutputDefinition" />s.
 
 ```python literalinclude caption=types_on_definitions.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -88,8 +37,8 @@ lineno-start:1
 lines:51-56
 ```
 
-Using python 3 and type annotations, the exact same declaration can be
-expressed:
+Using Python 3 and type annotations, the same declaration can be
+expressed as:
 
 ```python literalinclude caption=type_annotations.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -101,12 +50,6 @@ When raw DagsterTypes are passed, this is not compliant with mypy or
 other python static type-checking system (we will refer to just mypy
 throughout the remainder of this document for convenience). We detail
 how to do that later in this document.
-
-The type_check_fn must succeed by returning either `True` or a
-`TypeCheck` object with `success` set to True for the type check to
-pass. If either the input value or the output value fails the associated
-typecheck, then the solid will be marked as a failure and any downstream
-solids will not be executed.
 
 ### Scalars
 
@@ -127,9 +70,9 @@ relationships between python and dagster types.
 
 ## PythonObjectDagsterType
 
-Although type checks are very flexible, it is also common to define
+It is common to define
 types that just do _isinstance_ checks as the dagster type
-check. We provided an API to do just that.
+check. <PyObject module="dagster" object="PythonObjectDagsterType" /> does just that.
 
 ```python literalinclude caption=python_object_dagster_type.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -146,17 +89,16 @@ lineno-start:1
 lines:74-80
 ```
 
-The examples above are contrived. The type system truly shines once the
+The type system truly shines once the
 type check expresses richer behavior, such as column-level schema on a
-dataframe. The dagster-pandas library is an example of that capability
-(link).
+dataframe. The dagster-pandas library offers that capability through <PyObject module="dagster_pandas" object="create_dagster_pandas_dataframe_type" />.
 
-## Configurability
+## Hydrating from Config
 
-Solids are parameterized by their inputs. When executing a pipeline or
-solid whose data are not produced by a dependency -- very common for a
-solid at the beginning of a pipeline or execution subset -- the data
-need to come from somewhere. This is specified by config.
+When executing a pipeline or
+solid whose data are not produced by a dependency - e.g. for a
+solid at the beginning of a pipeline or execution subset - the data
+needs to come from somewhere. This can be specified by config.
 
 The type must declare its interaction with the config system. This means
 declaring the input schema and a function which the validated config
@@ -182,10 +124,6 @@ using config in a similar fashion.
 
 ## Dagster Type Use Cases
 
-Dagster types are checked via arbitrary, user-defined computation, and
-can be used to cover a wide variety of use cases common within data
-applications.
-
 Inputs and Outputs can represent, via the type system:
 
 1.  **In-Memory-Data**: In-memory data that is either produced a
@@ -201,62 +139,13 @@ Inputs and Outputs can represent, via the type system:
     lake with a user-defined URL scheme.
 3.  **Preconditions**: Preconditions about external state necessary for
     computation to succeed. An example of this is a hard-coded database
-    table name. In some pipelines, parameterizing this is not necessary,
-    as testability might be achieved by swapping out an environmental
-    concern, such as a database instance.
+    table name.
 4.  **Execution Ordering**: In some pipelines there is no data to pass
     in between solids and there are no preconditions. This is a common
     in cases where one is migrating workflows from other systems --
     that do not have this concept -- to dagster, or where the upstream
     solids are purely operational whose effects are difficult or awkward
     to model. For these cases we offer the `Nothing` type.
-
-### Execution Order Dependencies
-
-Sometimes one wishes to declare a dependency that specifies execution
-order and does not encode a data dependency. This is often useful when
-porting workflows into dagster from other systems with no notion of data
-dependencies, or in cases where it is awkward to express a data
-dependency.
-
-Use of the `Nothing` type is used, typically point to a situation in
-which although there does exist some semantic dependency between two
-solids, usually to do with external state. An example would be a
-database table created in an upstream solid with hard-coded name.
-
-In general, a `Nothing` dependency is in actuality an unexpressed
-dependency on external state, making a pipeline harder to understand,
-and solids within that pipeline harder to test and reuse.
-
-We also believe that any purely operational and environment concern
-means that there are missing APIs or abstractions in Dagster itself. Our
-goal is for as many solids and pipelines and possible to be expressed in
-terms of pure business logic.
-
-Here is an example usage of the `Nothing` type:
-
-```python literalinclude caption=serial_nothing_pipeline.py
-file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
-lineno-start:1
-lines:180-194
-```
-
-Note that the input with the `Nothing` type is not passed to the solid
-definition function. It is also not possible to use type annotations to
-specify inputs and outputs with the `Nothing` type.
-
-<PyObject module="dagster" object="InputDefinition" /> and `OutputDefinition` must
-be used.
-
-`Nothing` is also useful when fanning in multiple dependencies. An input
-with a `Nothing` type can depend on multiple outputs upstream. (Note:
-this is also true for dagster.List)
-
-```python literalinclude caption=fanin_nothing_pipeline.py
-file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
-lineno-start:1
-lines:198-233
-```
 
 ## Python Types and Dagster Types
 
@@ -313,8 +202,8 @@ on other techniques to achieve mypy compliance.
 Users who do not use "usable-as-dagster" python types types by choice
 or necessity and who desire mypy compliance need additional support.
 
-This is a challenge to do elegantly in light of the fact that as of mypy
-0.761 there is no way to directly annotate a object to treat it as a
+This is a challenge to do elegantly in light of the fact that, as of mypy
+0.761, there is no way to directly annotate a object to treat it as a
 type during a type checking pass. However there is a way to do this.
 
 ```python literalinclude caption=type_checking_mypy_compliance.py
