@@ -47,6 +47,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-gcp \
+				-e python_modules/libraries/dagster-ge \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \
 				-e python_modules/libraries/dagster-pagerduty \
@@ -68,15 +69,16 @@ install_dev_python_modules:
 				-e examples/legacy_examples[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
-	# Don't install dagster-azure as part of this target _yet_ - it has a dependency
-	# conflict with dagster-snowflake which causes any import of dagster-snowflake to
-	# fail with an ImportError (e.g. in examples).
-	# Uncomment only when snowflake-connector-python can be installed with optional (or compatible)
-	# Azure dependencies.
-	# See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
-	# pip install -e python_modules/libraries/dagster-azure $(QUIET)
+# Don't install dagster-azure as part of this target _yet_ - it has a dependency
+# conflict with dagster-snowflake which causes any import of dagster-snowflake to
+# fail with an ImportError (e.g. in examples).
+# Uncomment only when snowflake-connector-python can be installed with optional (or compatible)
+# Azure dependencies.
+# See https://github.com/dagster-io/dagster/pull/2483#issuecomment-635174157
+# pip install -e python_modules/libraries/dagster-azure $(QUIET)
 
 	set SLUGIFY_USES_TEXT_UNIDECODE=yes
+
 	pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
 	-pip install -e python_modules/libraries/dagster-flyte $(QUIET)
@@ -90,8 +92,8 @@ graphql:
 	cd js_modules/dagit/; make generate-types
 
 sanity_check:
-	# Checking for prod installs - if any are listed below reinstall with 'pip -e'
-	! pip list --exclude-editable | grep -e dagster -e dagit
+# Checking for prod installs - if any are listed below reinstall with 'pip -e'
+	pip list --exclude-editable | grep -e dagster -e dagit | echo
 
 rebuild_dagit: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build-for-python
@@ -101,6 +103,6 @@ dev_install: install_dev_python_modules_verbose rebuild_dagit
 dev_install_quiet: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
-	# TODO: remove dependency on legacy_examples
-	# https://github.com/dagster-io/dagster/issues/2653
+# TODO: remove dependency on legacy_examples
+# https://github.com/dagster-io/dagster/issues/2653
 	pytest examples/legacy_examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
