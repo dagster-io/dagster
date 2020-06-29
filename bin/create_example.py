@@ -6,12 +6,14 @@ To use, run
 """
 from __future__ import absolute_import
 
+import json
 import os
 import shutil
 import sys
 
 import click
 
+EXAMPLES_JSON_PATH = 'docs/next/src/data/examples.json'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, BASE_PATH)
 
@@ -29,14 +31,37 @@ def copy_directory(src, dest):
         print('Directory not copied. Error: %s' % e)
 
 
+def add_to_examples_json(name):
+    with open(EXAMPLES_JSON_PATH, 'r') as examples_file:
+        examples = json.load(examples_file)
+
+    if name in {example['name'] for example in examples}:
+        raise click.UsageError(
+            'Example with name {name} already exists in {path}'.format(
+                name=name, path=EXAMPLES_JSON_PATH
+            )
+        )
+
+    examples.append({'name': name, 'title': '', 'description': ''})
+
+    with open(EXAMPLES_JSON_PATH, 'w') as examples_file:
+        json.dump(examples, examples_file, indent=4)
+
+
 @click.command()
 @click.option('--name', prompt='Name of example to create', help='Name of example')
 def main(name):
     template_library_path = os.path.abspath('bin/assets/dagster-example-tmpl')
     new_template_library_path = os.path.abspath('examples/{name}'.format(name=name))
+    doc_path = os.path.abspath('./docs/next/src/pages/docs/examples/{name}.mdx'.format(name=name))
 
     if os.path.exists(new_template_library_path):
         raise click.UsageError('Example with name {name} already exists'.format(name=name))
+
+    if os.path.exists(doc_path):
+        raise click.UsageError('Docs page already exists: {doc_path}'.format(doc_path=doc_path))
+
+    add_to_examples_json(name)
 
     copy_directory(template_library_path, new_template_library_path)
 
@@ -60,7 +85,11 @@ def main(name):
         new_dname = dname.replace('example-tmpl', name)
         shutil.move(dname, new_dname)
 
+    shutil.move(os.path.join(new_template_library_path, 'README.mdx'), doc_path)
+
     print('Example created at {path}'.format(path=new_template_library_path))
+    print('Documentation stub created at {path}'.format(path=doc_path))
+    print('Added metadata to {path}'.format(path=EXAMPLES_JSON_PATH))
 
 
 if __name__ == "__main__":
