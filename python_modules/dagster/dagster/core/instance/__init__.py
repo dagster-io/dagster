@@ -58,6 +58,12 @@ def _dagster_home():
         raise DagsterInvariantViolationError(
             'DAGSTER_HOME must be absolute path: {}'.format(dagster_home_path)
         )
+
+    if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
+        raise DagsterInvariantViolationError(
+            'DAGSTER_HOME "{}" is not a folder or does not exist!'.format(dagster_home_path)
+        )
+
     return dagster_home_path
 
 

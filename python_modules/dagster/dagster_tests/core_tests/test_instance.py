@@ -96,7 +96,19 @@ def test_create_execution_plan_snapshot():
 @pytest.mark.parametrize("dirname", (".", ".."))
 def test_dagster_home_raises(dirname):
     with environ({'DAGSTER_HOME': dirname}):
-        with pytest.raises(DagsterInvariantViolationError) as err:
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match='DAGSTER_HOME must be absolute path: {}'.format(dirname),
+        ):
             _dagster_home()
-        msg = 'DAGSTER_HOME must be absolute path: {}'.format(dirname)
-        assert str(err.value) == msg
+
+
+def test_dagster_home_not_dir():
+    dirname = '/this/path/does/not/exist'
+
+    with environ({'DAGSTER_HOME': dirname}):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match='DAGSTER_HOME "{}" is not a folder or does not exist!'.format(dirname),
+        ):
+            _dagster_home()
