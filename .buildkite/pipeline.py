@@ -224,13 +224,24 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         'python_modules/dagster-graphql',
         tox_env_suffixes=[
-            '-not_graphql_context_test_suite',
             '-in_memory_instance_hosted_user_process_env',
             '-in_memory_instance_out_of_process_env',
             '-in_memory_instance_multi_location',
             '-sqlite_instance_hosted_user_process_env',
             '-sqlite_instance_out_of_process_env',
             '-sqlite_instance_multi_location',
+        ],
+    ),
+    ModuleBuildSpec(
+        'python_modules/dagster-graphql',
+        extra_cmds_fn=postgres_extra_cmds_fn,
+        tox_file='tox_postgres.ini',
+        buildkite_label='dagster-graphql-postgres',
+        tox_env_suffixes=[
+            '-not_graphql_context_test_suite',
+            '-postgres_instance_hosted_user_process_env',
+            '-postgres_instance_out_of_process_env',
+            '-postgres_instance_multi_location',
         ],
     ),
     ModuleBuildSpec(

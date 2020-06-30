@@ -52,6 +52,7 @@ class TestAssetAwareEventLog(
         context_variants=[
             GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
+            GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
         ]
     )
 ):
@@ -66,6 +67,12 @@ class TestAssetAwareEventLog(
 
         result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
         assert result.data
+        assert result.data['assetsOrError']
+        assert result.data['assetsOrError']['nodes']
+
+        # sort by materialization asset key to keep list order is consistent for snapshot
+        result.data['assetsOrError']['nodes'].sort(key=lambda e: e['key']['path'][0])
+
         snapshot.assert_match(result.data)
 
     def test_get_asset_key_materialization(self, graphql_context, snapshot):
