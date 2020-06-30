@@ -1,0 +1,174 @@
+{
+  "data_asset_type": "Dataset",
+  "expectation_suite_name": "basic.warning",
+  "expectations": [
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "max_value": 33,
+        "min_value": 27
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_table_column_count_to_equal",
+      "kwargs": {
+        "value": 3
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_table_columns_to_match_ordered_list",
+      "kwargs": {
+        "column_list": [
+          "Team",
+          " \"Payroll (millions)\"",
+          " \"Wins\""
+        ]
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": " \"Payroll (millions)\""
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_min_to_be_between",
+      "kwargs": {
+        "column": " \"Payroll (millions)\"",
+        "max_value": 56.24,
+        "min_value": 54.24
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_max_to_be_between",
+      "kwargs": {
+        "column": " \"Payroll (millions)\"",
+        "max_value": 198.96,
+        "min_value": 196.96
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_mean_to_be_between",
+      "kwargs": {
+        "column": " \"Payroll (millions)\"",
+        "max_value": 99.01899999999998,
+        "min_value": 97.01899999999998
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_median_to_be_between",
+      "kwargs": {
+        "column": " \"Payroll (millions)\"",
+        "max_value": 86.75,
+        "min_value": 84.75
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_quantile_values_to_be_between",
+      "kwargs": {
+        "allow_relative_error": false,
+        "column": " \"Payroll (millions)\"",
+        "quantile_ranges": {
+          "quantiles": [
+            0.05,
+            0.25,
+            0.5,
+            0.75,
+            0.95
+          ],
+          "value_ranges": [
+            [
+              54.37,
+              56.37
+            ],
+            [
+              74.48,
+              76.48
+            ],
+            [
+              82.31,
+              84.31
+            ],
+            [
+              116.62,
+              118.62
+            ],
+            [
+              173.54,
+              175.54
+            ]
+          ]
+        }
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "Team"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_value_lengths_to_be_between",
+      "kwargs": {
+        "column": "Team",
+        "min_value": 1
+      },
+      "meta": {}
+    }
+  ],
+  "meta": {
+    "BasicSuiteBuilderProfiler": {
+      "batch_kwargs": {
+        "data_asset_name": "basic",
+        "datasource": "blink",
+        "path": "C:\\Users\\leorf\\PycharmProjects\\elementl\\dagster\\python_modules\\libraries\\dagster-ge\\great_expectations\\..\\.\\basic.csv"
+      },
+      "created_at": 1592942378.2444508,
+      "created_by": "BasicSuiteBuilderProfiler"
+    },
+    "citations": [
+      {
+        "batch_kwargs": {
+          "data_asset_name": "basic",
+          "datasource": "blink",
+          "path": "C:\\Users\\leorf\\PycharmProjects\\elementl\\dagster\\python_modules\\libraries\\dagster-ge\\great_expectations\\..\\.\\basic.csv"
+        },
+        "batch_markers": {
+          "ge_load_time": "20200623T195938.167653Z",
+          "pandas_data_fingerprint": "8c46fdaf0bd356fd58b7bcd9b2e6012d"
+        },
+        "batch_parameters": null,
+        "citation_date": "20200623T195938.274371Z",
+        "comment": "BasicSuiteBuilderProfiler added a citation based on the current batch."
+      }
+    ],
+    "columns": {
+      " \"Payroll (millions)\"": {
+        "description": ""
+      },
+      " \"Wins\"": {
+        "description": ""
+      },
+      "Team": {
+        "description": ""
+      }
+    },
+    "great_expectations.__version__": "0.11.5",
+    "notes": {
+      "content": [
+        "#### This is an _example_ suite\n\n- This suite was made by quickly glancing at 1000 rows of your data.\n- This is **not a production suite**. It is meant to show examples of expectations.\n- Because this suite was auto-generated using a very basic profiler that does not know your data like you do, many of the expectations may not be meaningful.\n"
+      ],
+      "format": "markdown"
+    }
+  }
+}

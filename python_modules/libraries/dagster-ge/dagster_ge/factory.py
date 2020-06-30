@@ -40,11 +40,21 @@ def ge_validation_solid_factory(datasource_name, suite_name):
 
     @solid(
         input_defs=[InputDefinition('pandas_df', dagster_type=DataFrame)],
-        output_defs=[OutputDefinition()],
+        output_defs=[
+            OutputDefinition(
+                dagster_type=dict,
+                description="""
+        This solid yields an expectationResult with a structured dict of metadata from the GE suite,
+        as well as the full result in case a user wants to process it differently.
+        The structured dict contains both summary stats from the suite as well as expectation by expectation
+        results/details.
+        """,
+            )
+        ],
         required_resource_keys={'ge_data_context'},
+        tags={'kind': 'ge'},
     )
     def ge_validation_solid(context, pandas_df):
-
         data_context = context.resources.ge_data_context
         suite = data_context.get_expectation_suite(suite_name)
         batch_kwargs = {
@@ -59,12 +69,11 @@ def ge_validation_solid_factory(datasource_name, suite_name):
         results = data_context.run_validation_operator(
             "action_list_operator", assets_to_validate=[batch], run_id=run_id
         )
-        res = convert_to_json_serializable(results.list_validation_results())
+        res = convert_to_json_serializable(results.list_validation_results())[0]
         nmeta = EventMetadataEntry.json(
-            {'overall': res[0]['statistics'], 'individual': res[0]['results']},
-            'constraint-metadata',
+            {'overall': res['statistics'], 'individual': res['results']}, 'constraint-metadata',
         )
-        yield ExpectationResult(success=res[0]["success"], metadata_entries=[nmeta])
+        yield ExpectationResult(success=res["success"], metadata_entries=[nmeta])
         yield Output(res)
 
     return ge_validation_solid
