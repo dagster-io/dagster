@@ -88,6 +88,20 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
     }
   };
 
+  const onConfirmFocused = () => {
+    if (focused) {
+      const item = items.find(p => p.label === focused);
+      if (item) {
+        history.push(item.to);
+        return;
+      }
+    }
+    if (items.length) {
+      history.push(items[0].to);
+      setFocused(items[0].label);
+    }
+  };
+
   return (
     <div
       style={{
@@ -116,11 +130,8 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
               if (e.key === "ArrowUp") {
                 onShiftFocus(-1);
               }
-              if ((e.key === "Enter" || e.key === "Return") && focused) {
-                const item = items.find(p => p.label === focused);
-                if (item) {
-                  history.push(item.to);
-                }
+              if (e.key === "Enter" || e.key === "Return") {
+                onConfirmFocused();
               }
             }}
             onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
@@ -215,15 +226,15 @@ const Item = styled(Link)`
   &:focus {
     outline: 0;
   }
+  &.focused {
+    border-left: 4px solid ${Colors.GRAY3};
+  }
   &.selected {
     border-left: 4px solid ${Colors.COBALT3};
     border-bottom: 1px solid ${Colors.DARK_GRAY2};
     background: ${Colors.BLACK};
     font-weight: 600;
     color: ${Colors.WHITE} !important;
-  }
-  &.focused {
-    border-left: 4px solid ${Colors.COBALT3};
   }
 `;
 

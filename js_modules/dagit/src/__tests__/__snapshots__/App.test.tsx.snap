@@ -337,7 +337,7 @@ exports[`renders execution 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/playground"
@@ -346,7 +346,7 @@ exports[`renders execution 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/playground"
@@ -355,7 +355,7 @@ exports[`renders execution 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/playground"
@@ -364,7 +364,7 @@ exports[`renders execution 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/playground"
@@ -373,7 +373,7 @@ exports[`renders execution 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/playground"
@@ -382,7 +382,7 @@ exports[`renders execution 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/playground"
@@ -391,7 +391,7 @@ exports[`renders execution 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/playground"
@@ -400,7 +400,7 @@ exports[`renders execution 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/playground"
@@ -409,7 +409,7 @@ exports[`renders execution 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/playground"
@@ -418,7 +418,7 @@ exports[`renders execution 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/playground"
@@ -427,7 +427,7 @@ exports[`renders execution 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/playground"
@@ -436,7 +436,7 @@ exports[`renders execution 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/playground"
@@ -445,7 +445,7 @@ exports[`renders execution 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/playground"
@@ -454,7 +454,7 @@ exports[`renders execution 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/playground"
@@ -463,7 +463,7 @@ exports[`renders execution 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/playground"
@@ -472,7 +472,7 @@ exports[`renders execution 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/playground"
@@ -481,7 +481,7 @@ exports[`renders execution 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/playground"
@@ -1077,7 +1077,7 @@ exports[`renders pipeline page 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -1086,7 +1086,7 @@ exports[`renders pipeline page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -1095,7 +1095,7 @@ exports[`renders pipeline page 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -1104,7 +1104,7 @@ exports[`renders pipeline page 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -1113,7 +1113,7 @@ exports[`renders pipeline page 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -1122,7 +1122,7 @@ exports[`renders pipeline page 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -1131,7 +1131,7 @@ exports[`renders pipeline page 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -1140,7 +1140,7 @@ exports[`renders pipeline page 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -1149,7 +1149,7 @@ exports[`renders pipeline page 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -1158,7 +1158,7 @@ exports[`renders pipeline page 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -1167,7 +1167,7 @@ exports[`renders pipeline page 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -1176,7 +1176,7 @@ exports[`renders pipeline page 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -1185,7 +1185,7 @@ exports[`renders pipeline page 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -1194,7 +1194,7 @@ exports[`renders pipeline page 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -1203,7 +1203,7 @@ exports[`renders pipeline page 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -1212,7 +1212,7 @@ exports[`renders pipeline page 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -1221,7 +1221,7 @@ exports[`renders pipeline page 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
@@ -5767,7 +5767,7 @@ exports[`renders pipeline solid page 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -5776,7 +5776,7 @@ exports[`renders pipeline solid page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -5785,7 +5785,7 @@ exports[`renders pipeline solid page 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -5794,7 +5794,7 @@ exports[`renders pipeline solid page 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -5803,7 +5803,7 @@ exports[`renders pipeline solid page 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -5812,7 +5812,7 @@ exports[`renders pipeline solid page 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -5821,7 +5821,7 @@ exports[`renders pipeline solid page 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -5830,7 +5830,7 @@ exports[`renders pipeline solid page 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -5839,7 +5839,7 @@ exports[`renders pipeline solid page 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -5848,7 +5848,7 @@ exports[`renders pipeline solid page 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -5857,7 +5857,7 @@ exports[`renders pipeline solid page 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -5866,7 +5866,7 @@ exports[`renders pipeline solid page 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -5875,7 +5875,7 @@ exports[`renders pipeline solid page 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -5884,7 +5884,7 @@ exports[`renders pipeline solid page 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -5893,7 +5893,7 @@ exports[`renders pipeline solid page 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -5902,7 +5902,7 @@ exports[`renders pipeline solid page 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -5911,7 +5911,7 @@ exports[`renders pipeline solid page 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
@@ -10457,7 +10457,7 @@ exports[`renders solids explorer 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -10466,7 +10466,7 @@ exports[`renders solids explorer 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -10475,7 +10475,7 @@ exports[`renders solids explorer 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -10484,7 +10484,7 @@ exports[`renders solids explorer 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -10493,7 +10493,7 @@ exports[`renders solids explorer 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -10502,7 +10502,7 @@ exports[`renders solids explorer 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -10511,7 +10511,7 @@ exports[`renders solids explorer 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -10520,7 +10520,7 @@ exports[`renders solids explorer 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -10529,7 +10529,7 @@ exports[`renders solids explorer 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -10538,7 +10538,7 @@ exports[`renders solids explorer 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -10547,7 +10547,7 @@ exports[`renders solids explorer 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -10556,7 +10556,7 @@ exports[`renders solids explorer 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -10565,7 +10565,7 @@ exports[`renders solids explorer 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -10574,7 +10574,7 @@ exports[`renders solids explorer 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -10583,7 +10583,7 @@ exports[`renders solids explorer 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -10592,7 +10592,7 @@ exports[`renders solids explorer 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -10601,7 +10601,7 @@ exports[`renders solids explorer 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
@@ -12275,7 +12275,7 @@ exports[`renders type page 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -12284,7 +12284,7 @@ exports[`renders type page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -12293,7 +12293,7 @@ exports[`renders type page 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -12302,7 +12302,7 @@ exports[`renders type page 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -12311,7 +12311,7 @@ exports[`renders type page 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -12320,7 +12320,7 @@ exports[`renders type page 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -12329,7 +12329,7 @@ exports[`renders type page 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -12338,7 +12338,7 @@ exports[`renders type page 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -12347,7 +12347,7 @@ exports[`renders type page 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -12356,7 +12356,7 @@ exports[`renders type page 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -12365,7 +12365,7 @@ exports[`renders type page 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -12374,7 +12374,7 @@ exports[`renders type page 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -12383,7 +12383,7 @@ exports[`renders type page 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -12392,7 +12392,7 @@ exports[`renders type page 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -12401,7 +12401,7 @@ exports[`renders type page 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -12410,7 +12410,7 @@ exports[`renders type page 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -12419,7 +12419,7 @@ exports[`renders type page 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
@@ -16965,7 +16965,7 @@ exports[`renders type page 2`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -16974,7 +16974,7 @@ exports[`renders type page 2`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -16983,7 +16983,7 @@ exports[`renders type page 2`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -16992,7 +16992,7 @@ exports[`renders type page 2`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -17001,7 +17001,7 @@ exports[`renders type page 2`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -17010,7 +17010,7 @@ exports[`renders type page 2`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -17019,7 +17019,7 @@ exports[`renders type page 2`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -17028,7 +17028,7 @@ exports[`renders type page 2`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -17037,7 +17037,7 @@ exports[`renders type page 2`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -17046,7 +17046,7 @@ exports[`renders type page 2`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -17055,7 +17055,7 @@ exports[`renders type page 2`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -17064,7 +17064,7 @@ exports[`renders type page 2`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -17073,7 +17073,7 @@ exports[`renders type page 2`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -17082,7 +17082,7 @@ exports[`renders type page 2`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -17091,7 +17091,7 @@ exports[`renders type page 2`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -17100,7 +17100,7 @@ exports[`renders type page 2`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -17109,7 +17109,7 @@ exports[`renders type page 2`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
@@ -21655,7 +21655,7 @@ exports[`renders without error 1`] = `
           className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW selected "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -21664,7 +21664,7 @@ exports[`renders without error 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -21673,7 +21673,7 @@ exports[`renders without error 1`] = `
             airline_demo_warehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="composition"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/composition/"
@@ -21682,7 +21682,7 @@ exports[`renders without error 1`] = `
             composition
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="daily_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/daily_weather_pipeline/"
@@ -21691,7 +21691,7 @@ exports[`renders without error 1`] = `
             daily_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="error_monster"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/error_monster/"
@@ -21700,7 +21700,7 @@ exports[`renders without error 1`] = `
             error_monster
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="event_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/event_ingest_pipeline/"
@@ -21709,7 +21709,7 @@ exports[`renders without error 1`] = `
             event_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="generate_training_set_and_train_model"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/generate_training_set_and_train_model/"
@@ -21718,7 +21718,7 @@ exports[`renders without error 1`] = `
             generate_training_set_and_train_model
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="log_spew"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/log_spew/"
@@ -21727,7 +21727,7 @@ exports[`renders without error 1`] = `
             log_spew
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="longitudinal_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/longitudinal_pipeline/"
@@ -21736,7 +21736,7 @@ exports[`renders without error 1`] = `
             longitudinal_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="many_events"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/many_events/"
@@ -21745,7 +21745,7 @@ exports[`renders without error 1`] = `
             many_events
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline/"
@@ -21754,7 +21754,7 @@ exports[`renders without error 1`] = `
             pandas_hello_world_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="pandas_hello_world_pipeline_with_read_csv"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/pandas_hello_world_pipeline_with_read_csv/"
@@ -21763,7 +21763,7 @@ exports[`renders without error 1`] = `
             pandas_hello_world_pipeline_with_read_csv
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_lakehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_lakehouse_pipeline/"
@@ -21772,7 +21772,7 @@ exports[`renders without error 1`] = `
             simple_lakehouse_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="simple_pyspark_sfo_weather_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/simple_pyspark_sfo_weather_pipeline/"
@@ -21781,7 +21781,7 @@ exports[`renders without error 1`] = `
             simple_pyspark_sfo_weather_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="sleepy_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/sleepy_pipeline/"
@@ -21790,7 +21790,7 @@ exports[`renders without error 1`] = `
             sleepy_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="stdout_spew_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/stdout_spew_pipeline/"
@@ -21799,7 +21799,7 @@ exports[`renders without error 1`] = `
             stdout_spew_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eBsGEW  "
+            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
             data-tooltip="unreliable_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/unreliable_pipeline/"
