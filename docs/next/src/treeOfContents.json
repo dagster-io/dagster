@@ -96,6 +96,10 @@
         ]
       },
       {
+        "name": "Configuration",
+        "path": "/docs/overview/configuration/"
+      },
+      {
         "name": "Modes & Resources",
         "path": "/docs/overview/modes-resources-presets/modes-resources"
       },
