@@ -13,6 +13,11 @@ collects a list of `SolidOutputHandle`s, one for each `return_one` `solid`, whic
 In the case where the preceding `solid`s are not of the same type, the `SolidOutputHandle`s can be
 passed into the "fan-in" solid individually (instead of in a `List`).
 
+```python literalinclude caption=repo.py
+file:/fan_in_pipeline/repo.py
+lines:1-25
+```
+
 An example with configurable levels of fan-ins and fan-outs can be found
 [here](https://github.com/dagster-io/dagster/blob/master/examples/legacy_examples/dagster_examples/toys/fan_in_fan_out.py).
 
