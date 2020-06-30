@@ -1,0 +1,14 @@
+execution:
+  celery-k8s:
+    config:
+      job_image: "YOUR_DOCKER_REPOSITORY/dagster-k8s-demo:dagster-pipe-example"
+      image_pull_policy: "Always"
+      env_config_maps:
+        - "dagster-pipeline-env"
+      repo_location_name: "example_repo"
+
+storage:
+  s3:
+    config:
+      s3_bucket: "YOUR_BUCKET"
+      s3_prefix: "dagster-k8s-test"
