@@ -69,7 +69,7 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
           <div
             style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}
           >
-            ENVIRONMENT
+            REPOSITORY
           </div>
           <RepoTitle>
             {repo ? (

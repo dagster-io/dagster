@@ -169,7 +169,7 @@ exports[`renders execution 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -909,7 +909,7 @@ exports[`renders pipeline page 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -5599,7 +5599,7 @@ exports[`renders pipeline solid page 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -10289,7 +10289,7 @@ exports[`renders solids explorer 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -12107,7 +12107,7 @@ exports[`renders type page 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -16797,7 +16797,7 @@ exports[`renders type page 2`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
@@ -21487,7 +21487,7 @@ exports[`renders without error 1`] = `
                   }
                 }
               >
-                ENVIRONMENT
+                REPOSITORY
               </div>
               <div
                 className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
