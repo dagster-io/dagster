@@ -54,11 +54,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
   }
 
   buildDatasetData() {
-    const {
-      runsByPartitionName,
-      getPipelineDataForRun,
-      getStepDataForRun
-    } = this.props;
+    const { runsByPartitionName, getPipelineDataForRun, getStepDataForRun } = this.props;
 
     const pipelineData: Point[] = [];
     const stepData = {};
@@ -117,12 +113,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
     const options = this.getDefaultOptions();
     return (
       <RowContainer style={{ margin: "20px 0" }}>
-        <Line
-          data={graphData}
-          height={100}
-          options={options}
-          ref={this.chart}
-        />
+        <Line data={graphData} height={100} options={options} ref={this.chart} />
       </RowContainer>
     );
   }
@@ -141,18 +132,10 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
 };
 
 const _reverseSortRunCompare = (a: Run, b: Run) => {
-  if (
-    !a.stats ||
-    a.stats.__typename !== "PipelineRunStatsSnapshot" ||
-    !a.stats.startTime
-  ) {
+  if (!a.stats || a.stats.__typename !== "PipelineRunStatsSnapshot" || !a.stats.startTime) {
     return 1;
   }
-  if (
-    !b.stats ||
-    b.stats.__typename !== "PipelineRunStatsSnapshot" ||
-    !b.stats.startTime
-  ) {
+  if (!b.stats || b.stats.__typename !== "PipelineRunStatsSnapshot" || !b.stats.startTime) {
     return -1;
   }
   return b.stats.startTime - a.stats.startTime;

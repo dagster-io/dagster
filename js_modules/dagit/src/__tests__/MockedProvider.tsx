@@ -6,11 +6,7 @@ import { ApolloProvider } from "react-apollo";
 import { DefaultOptions } from "apollo-client/ApolloClient";
 import { InMemoryCache as Cache } from "apollo-cache-inmemory";
 
-import {
-  MockLink,
-  MockedResponse,
-  CachedGraphQLRequest
-} from "./MockedApolloLinks";
+import { MockLink, MockedResponse, CachedGraphQLRequest } from "./MockedApolloLinks";
 
 export interface MockedProviderProps<TSerializedCache = {}> {
   mocks: CachedGraphQLRequest[];
@@ -23,10 +19,7 @@ export interface MockedProviderState {
   client: ApolloClient<any>;
 }
 
-export class MockedProvider extends React.Component<
-  MockedProviderProps,
-  MockedProviderState
-> {
+export class MockedProvider extends React.Component<MockedProviderProps, MockedProviderState> {
   public static defaultProps: MockedProviderProps = {
     mocks: [],
     addTypename: true
@@ -55,10 +48,6 @@ export class MockedProvider extends React.Component<
   }
 
   public render() {
-    return (
-      <ApolloProvider client={this.state.client}>
-        {this.props.children}
-      </ApolloProvider>
-    );
+    return <ApolloProvider client={this.state.client}>{this.props.children}</ApolloProvider>;
   }
 }

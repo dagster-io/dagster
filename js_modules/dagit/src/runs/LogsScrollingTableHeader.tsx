@@ -29,10 +29,7 @@ export class ColumnWidthsProvider extends React.Component<
   state = ColumnWidths;
 
   onWidthsChangedFromContext = (columnWidths: typeof ColumnWidths) => {
-    window.localStorage.setItem(
-      ColumnWidthsStorageKey,
-      JSON.stringify(columnWidths)
-    );
+    window.localStorage.setItem(ColumnWidthsStorageKey, JSON.stringify(columnWidths));
     this.props.onWidthsChanged(columnWidths);
     this.setState(columnWidths);
   };
@@ -126,10 +123,7 @@ export const Headers: React.FunctionComponent<{}> = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
-      <Header
-        width={widths.solid}
-        onResize={width => widths.onChange({ ...widths, solid: width })}
-      >
+      <Header width={widths.solid} onResize={width => widths.onChange({ ...widths, solid: width })}>
         Solid
       </Header>
       <Header
@@ -178,7 +172,6 @@ const HeaderDragHandle = styled.div<{
   & > div {
     width: 1px;
     height: 100%;
-    background: ${({ isDragging }) =>
-      isDragging ? Colors.GRAY1 : Colors.LIGHT_GRAY3};
+    background: ${({ isDragging }) => (isDragging ? Colors.GRAY1 : Colors.LIGHT_GRAY3)};
   }
 `;

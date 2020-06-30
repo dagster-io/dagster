@@ -1,8 +1,4 @@
-import {
-  IRunMetadataDict,
-  IStepState,
-  IStepAttempt
-} from "../RunMetadataProvider";
+import { IRunMetadataDict, IStepState, IStepAttempt } from "../RunMetadataProvider";
 import { Colors } from "@blueprintjs/core";
 import {
   GaantChartLayoutOptions,
@@ -22,17 +18,14 @@ export interface BuildLayoutParams {
   mode: GaantChartMode;
 }
 
-const ROUNDING_GRADIENT =
-  "linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))";
+const ROUNDING_GRADIENT = "linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))";
 
 export const buildLayout = (params: BuildLayoutParams) => {
   const { nodes, mode } = params;
 
   // Step 1: Place the nodes that have no dependencies into the layout.
   const hasNoDependencies = (g: IGaantNode) =>
-    !g.inputs.some(i =>
-      i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name))
-    );
+    !g.inputs.some(i => i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name)));
 
   const boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
     node: node,
@@ -61,9 +54,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
       return;
     }
     box.x = x;
-    box.children.forEach(child =>
-      deepen(child, box.x + box.width + BOX_SPACING_X)
-    );
+    box.children.forEach(child => deepen(child, box.x + box.width + BOX_SPACING_X));
   };
   roots.forEach(box => deepen(box, LEFT_INSET));
 
@@ -115,9 +106,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
         const parentX = highestYParent.x;
         const willCross = onTargetY.some(r => r.x > parentX && r.x < box.x);
         const willCauseCrossing = onTargetY.some(
-          r =>
-            r.x < box.x &&
-            r.children.some(c => c.y >= highestYParent.y && c.x > box.x)
+          r => r.x < box.x && r.children.some(c => c.y >= highestYParent.y && c.x > box.x)
         );
         if (willCross || willCauseCrossing) continue;
 
@@ -166,11 +155,7 @@ const ensureChildrenAfterParentInArray = (
   }
 };
 
-const addChildren = (
-  boxes: GaantChartBox[],
-  box: GaantChartBox,
-  params: BuildLayoutParams
-) => {
+const addChildren = (boxes: GaantChartBox[], box: GaantChartBox, params: BuildLayoutParams) => {
   const idx = boxes.indexOf(box);
   const seen: string[] = [];
   const added: GaantChartBox[] = [];
@@ -232,18 +217,14 @@ export const boxStyleFor = (
   }
 ) => {
   // Not running and not viewing waterfall? We always use a nice blue
-  if (
-    !context.metadata.firstLogAt &&
-    context.options.mode !== GaantChartMode.WATERFALL_TIMED
-  ) {
+  if (!context.metadata.firstLogAt && context.options.mode !== GaantChartMode.WATERFALL_TIMED) {
     return { background: `${ROUNDING_GRADIENT}, #2491eb` };
   }
 
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      background: `${ROUNDING_GRADIENT}, ${ColorsForStates[state] ||
-        Colors.GRAY3}`
+      background: `${ROUNDING_GRADIENT}, ${ColorsForStates[state] || Colors.GRAY3}`
     };
   }
 
@@ -260,10 +241,7 @@ export const boxStyleFor = (
 // This requires special logic because (for easy graph travesal), boxes.children references
 // other elements of the boxes array. A basic deepClone would replicate these into
 // copies rather than references.
-const cloneLayout = ({
-  boxes,
-  markers
-}: GaantChartLayout): GaantChartLayout => {
+const cloneLayout = ({ boxes, markers }: GaantChartLayout): GaantChartLayout => {
   const map = new WeakMap();
   const nextMarkers = markers.map(m => ({ ...m }));
   const nextBoxes: GaantChartBox[] = [];
@@ -330,10 +308,7 @@ const positionAndSplitBoxes = (
 /** Traverse the graph from the root and place boxes that still have x=0 locations.
 (Unstarted or skipped boxes) so that they appear downstream of running boxes
 we have position / time data for. */
-const positionUntimedBoxes = (
-  boxes: GaantChartBox[],
-  earliestAllowedMs: number
-) => {
+const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedMs: number) => {
   const visit = (box: GaantChartBox, parentX: number) => {
     if (box.x >= parentX) {
       return;
@@ -431,10 +406,7 @@ export const adjustLayoutWithRunMetadata = (
 /**
  * Returns a set of query presets that highlight interesting slices of the visualization.
  */
-export const interestingQueriesFor = (
-  metadata: IRunMetadataDict,
-  layout: GaantChartLayout
-) => {
+export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GaantChartLayout) => {
   if (layout.boxes.length === 0) {
     return;
   }

@@ -68,21 +68,20 @@ class ConfigEditorConfigPickerInternal extends React.Component<
       console.error("Could not load pipeline tags");
     }
 
-    const tagsDict: { [key: string]: string } = [
-      ...(pipeline?.tags || []),
-      ...preset.tags
-    ].reduce((tags, kv) => {
-      tags[kv.key] = kv.value;
-      return tags;
-    }, {});
+    const tagsDict: { [key: string]: string } = [...(pipeline?.tags || []), ...preset.tags].reduce(
+      (tags, kv) => {
+        tags[kv.key] = kv.value;
+        return tags;
+      },
+      {}
+    );
 
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || "",
       solidSelection: preset.solidSelection,
-      solidSelectionQuery:
-        preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
+      solidSelectionQuery: preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
       mode: preset.mode,
       tags: Object.entries(tagsDict).map(([key, value]) => {
         return { key, value };
@@ -120,10 +119,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
           body: <PythonErrorInfo error={partition.tagsOrError} />
         });
       } else {
-        tags = [
-          ...(this.props.pipeline?.tags || []),
-          ...partition.tagsOrError.results
-        ];
+        tags = [...(this.props.pipeline?.tags || []), ...partition.tagsOrError.results];
       }
 
       let runConfigYaml;
@@ -144,9 +140,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
         runConfigYaml,
         solidSelection: partition.solidSelection,
         solidSelectionQuery:
-          partition.solidSelection === null
-            ? "*"
-            : partition.solidSelection.join(","),
+          partition.solidSelection === null ? "*" : partition.solidSelection.join(","),
         mode: partition.mode,
         tags
       });
@@ -189,9 +183,9 @@ class ConfigEditorConfigPickerInternal extends React.Component<
   }
 }
 
-export const ConfigEditorConfigPicker = withApollo<
-  ConfigEditorConfigPickerProps
->(ConfigEditorConfigPickerInternal);
+export const ConfigEditorConfigPicker = withApollo<ConfigEditorConfigPickerProps>(
+  ConfigEditorConfigPickerInternal
+);
 
 interface ConfigEditorPartitionPickerProps {
   pipeline: Pipeline;
@@ -208,13 +202,10 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
   props => {
     const { partitionSetName, value, onSelect } = props;
     const repositorySelector = useRepositorySelector();
-    const { data, loading } = useQuery<ConfigPartitionsQuery>(
-      CONFIG_PARTITIONS_QUERY,
-      {
-        variables: { repositorySelector, partitionSetName },
-        fetchPolicy: "network-only"
-      }
-    );
+    const { data, loading } = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
+      variables: { repositorySelector, partitionSetName },
+      fetchPolicy: "network-only"
+    });
 
     const partitions: Partition[] =
       data?.partitionSetOrError.__typename === "PartitionSet" &&
@@ -273,9 +264,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         items={partitions}
         inputProps={inputProps}
         inputValueRenderer={partition => partition.name}
-        itemPredicate={(query, partition) =>
-          query.length === 0 || partition.name.includes(query)
-        }
+        itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
         itemRenderer={(partition, props) => (
           <Menu.Item
             active={props.modifiers.active}
@@ -301,30 +290,16 @@ interface ConfigEditorConfigGeneratorPickerProps {
   solidSelection: string[] | null;
   value: IExecutionSession["base"];
   onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
-  onSelectPartitionSet: (
-    partitionSet: PartitionSet,
-    pipeline?: Pipeline
-  ) => void;
+  onSelectPartitionSet: (partitionSet: PartitionSet, pipeline?: Pipeline) => void;
 }
 
 export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   props => {
-    const {
-      pipeline,
-      presets,
-      partitionSets,
-      onSelectPreset,
-      onSelectPartitionSet,
-      value
-    } = props;
+    const { pipeline, presets, partitionSets, onSelectPreset, onSelectPartitionSet, value } = props;
 
-    const byName = (a: { name: string }, b: { name: string }) =>
-      a.name.localeCompare(b.name);
+    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 
-    const configGenerators: ConfigGenerator[] = [
-      ...presets,
-      ...partitionSets
-    ].sort(byName);
+    const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets].sort(byName);
 
     const empty = configGenerators.length === 0;
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
@@ -363,11 +338,7 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
             }
-            itemListRenderer={({
-              itemsParentRef,
-              renderItem,
-              filteredItems
-            }) => {
+            itemListRenderer={({ itemsParentRef, renderItem, filteredItems }) => {
               const renderedPresetItems = filteredItems
                 .filter(item => item.__typename === "PipelinePreset")
                 .map(renderItem)
@@ -379,19 +350,14 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
                 .filter(Boolean);
 
               const bothTypesPresent =
-                renderedPresetItems.length > 0 &&
-                renderedPartitionSetItems.length > 0;
+                renderedPresetItems.length > 0 && renderedPartitionSetItems.length > 0;
 
               return (
                 <Menu ulRef={itemsParentRef}>
-                  {bothTypesPresent && (
-                    <MenuItem disabled={true} text={`Presets`} />
-                  )}
+                  {bothTypesPresent && <MenuItem disabled={true} text={`Presets`} />}
                   {renderedPresetItems}
                   {bothTypesPresent && <Menu.Divider />}
-                  {bothTypesPresent && (
-                    <MenuItem disabled={true} text={`Partition Sets`} />
-                  )}
+                  {bothTypesPresent && <MenuItem disabled={true} text={`Partition Sets`} />}
                   {renderedPartitionSetItems}
                 </Menu>
               );

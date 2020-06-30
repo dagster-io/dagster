@@ -137,11 +137,7 @@ function itemsForMetadataEntries(
           actionText: "[Show Metadata]",
           action: IStepDisplayActionType.SHOW_IN_MODAL,
           // take JSON string, parse, and then pretty print
-          actionValue: JSON.stringify(
-            JSON.parse(metadataEntry.jsonString),
-            null,
-            2
-          )
+          actionValue: JSON.stringify(JSON.parse(metadataEntry.jsonString), null, 2)
         });
 
         break;
@@ -207,11 +203,7 @@ export function extractMetadataFromLogs(
     return marker;
   };
 
-  const upsertState = (
-    step: IStepMetadata,
-    time: number,
-    state: IStepState
-  ) => {
+  const upsertState = (step: IStepMetadata, time: number, state: IStepState) => {
     step.transitions.push({ time, state });
     step.state = state;
     step.attempts = [];
@@ -232,10 +224,7 @@ export function extractMetadataFromLogs(
       metadata.initFailed = true;
       metadata.exitedAt = timestamp;
     }
-    if (
-      log.__typename === "PipelineFailureEvent" ||
-      log.__typename === "PipelineSuccessEvent"
-    ) {
+    if (log.__typename === "PipelineFailureEvent" || log.__typename === "PipelineSuccessEvent") {
       metadata.exitedAt = timestamp;
     }
 
@@ -354,9 +343,7 @@ interface IRunMetadataProviderProps {
   children: (metadata: IRunMetadataDict) => React.ReactElement<any>;
 }
 
-export class RunMetadataProvider extends React.Component<
-  IRunMetadataProviderProps
-> {
+export class RunMetadataProvider extends React.Component<IRunMetadataProviderProps> {
   static fragments = {
     RunMetadataProviderMessageFragment: gql`
       fragment TempMetadataEntryFragment on EventMetadataEntry {

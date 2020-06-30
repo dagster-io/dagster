@@ -6,12 +6,9 @@ import { Link } from "react-router-dom";
 import { InstanceDetailSummaryQuery } from "./types/InstanceDetailSummaryQuery";
 
 export const InstanceDetailsLink: React.FunctionComponent = () => {
-  const { data } = useQuery<InstanceDetailSummaryQuery>(
-    INSTANCE_DETAIL_SUMMARY_QUERY,
-    {
-      fetchPolicy: "cache-and-network"
-    }
-  );
+  const { data } = useQuery<InstanceDetailSummaryQuery>(INSTANCE_DETAIL_SUMMARY_QUERY, {
+    fetchPolicy: "cache-and-network"
+  });
 
   if (!data) {
     return <span />;
@@ -22,10 +19,7 @@ export const InstanceDetailsLink: React.FunctionComponent = () => {
       {data.version}
       {data.instance && data.instance.info && " | "}
       {data.instance && data.instance.info && (
-        <Link
-          to="/instance"
-          style={{ color: Colors.GRAY5, textDecoration: "underline" }}
-        >
+        <Link to="/instance" style={{ color: Colors.GRAY5, textDecoration: "underline" }}>
           Instance Details
         </Link>
       )}

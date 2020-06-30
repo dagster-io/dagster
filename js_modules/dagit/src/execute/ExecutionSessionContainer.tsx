@@ -34,10 +34,7 @@ import { ShortcutHandler } from "../ShortcutHandler";
 import { PipelineSelector } from "../types/globalTypes";
 import { PipelineRunTag } from "../LocalStorage";
 
-import {
-  PreviewConfigQuery,
-  PreviewConfigQueryVariables
-} from "./types/PreviewConfigQuery";
+import { PreviewConfigQuery, PreviewConfigQueryVariables } from "./types/PreviewConfigQuery";
 import { ExecutionSessionContainerPipelineFragment } from "./types/ExecutionSessionContainerPipelineFragment";
 import {
   ExecutionSessionContainerRunConfigSchemaFragment,
@@ -248,10 +245,7 @@ export default class ExecutionSessionContainer extends React.Component<
 
     this.setState({ previewLoading: true });
 
-    const { data } = await client.query<
-      PreviewConfigQuery,
-      PreviewConfigQueryVariables
-    >({
+    const { data } = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
       fetchPolicy: "no-cache",
       query: PREVIEW_CONFIG_QUERY,
       variables: {
@@ -270,10 +264,7 @@ export default class ExecutionSessionContainer extends React.Component<
       });
     }
 
-    return responseToYamlValidationResult(
-      configJSON,
-      data.isPipelineConfigValid
-    );
+    return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
   };
 
   openTagEditor = () => this.setState({ tagEditorOpen: true });
@@ -283,13 +274,7 @@ export default class ExecutionSessionContainer extends React.Component<
   onConfigLoaded = () => this.setState({ configLoading: false });
 
   render() {
-    const {
-      currentSession,
-      onCreateSession,
-      onSaveSession,
-      partitionSets,
-      pipeline
-    } = this.props;
+    const { currentSession, onCreateSession, onSaveSession, partitionSets, pipeline } = this.props;
     const {
       preview,
       previewLoading,
@@ -311,10 +296,7 @@ export default class ExecutionSessionContainer extends React.Component<
         firstInitialPercent={75}
         first={
           <>
-            <LoadingOverlay
-              isLoading={configLoading}
-              message={LOADING_CONFIG_FOR_PARTITION}
-            />
+            <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
             <SessionSettingsBar>
               <ConfigEditorConfigPicker
                 pipeline={pipeline}
@@ -329,8 +311,7 @@ export default class ExecutionSessionContainer extends React.Component<
               <div style={{ width: 5 }} />
               <SolidSelector
                 serverProvidedSubsetError={
-                  preview?.isPipelineConfigValid.__typename ===
-                  "InvalidSubsetError"
+                  preview?.isPipelineConfigValid.__typename === "InvalidSubsetError"
                     ? preview.isPipelineConfigValid
                     : undefined
                 }
@@ -352,9 +333,7 @@ export default class ExecutionSessionContainer extends React.Component<
                   shortcutFilter={e => e.keyCode === 84 && e.altKey}
                   onShortcut={this.openTagEditor}
                 >
-                  <TagEditorLink onClick={this.openTagEditor}>
-                    + Add tags
-                  </TagEditorLink>
+                  <TagEditorLink onClick={this.openTagEditor}>+ Add tags</TagEditorLink>
                 </ShortcutHandler>
               )}
               <TagEditor
@@ -364,18 +343,14 @@ export default class ExecutionSessionContainer extends React.Component<
                 onRequestClose={this.closeTagEditor}
               />
             </SessionSettingsBar>
-            {tags.length ? (
-              <TagContainer tags={tags} onRequestEdit={this.openTagEditor} />
-            ) : null}
+            {tags.length ? <TagContainer tags={tags} onRequestEdit={this.openTagEditor} /> : null}
             <ConfigEditorDisplayOptionsContainer>
               <Button
                 icon="paragraph"
                 small={true}
                 active={showWhitespace}
                 style={{ marginLeft: "auto" }}
-                onClick={() =>
-                  this.setState({ showWhitespace: !showWhitespace })
-                }
+                onClick={() => this.setState({ showWhitespace: !showWhitespace })}
               />
             </ConfigEditorDisplayOptionsContainer>
             <ConfigEditorContainer>
@@ -410,24 +385,19 @@ export default class ExecutionSessionContainer extends React.Component<
           <>
             <LoadingOverlay
               isLoading={!runConfigSchema || previewLoading}
-              message={
-                !runConfigSchema ? LOADING_CONFIG_SCHEMA : LOADING_RUN_PREVIEW
-              }
+              message={!runConfigSchema ? LOADING_CONFIG_SCHEMA : LOADING_RUN_PREVIEW}
             />
             <RunPreview
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
               runConfigSchema={runConfigSchema}
-              onHighlightPath={path =>
-                this.editor.current?.moveCursorToPath(path)
-              }
+              onHighlightPath={path => this.editor.current?.moveCursorToPath(path)}
               actions={
                 <LaunchRootExecutionButton
                   pipelineName={pipeline.name}
                   getVariables={this.buildExecutionVariables}
                   disabled={
-                    preview?.isPipelineConfigValid?.__typename !==
-                    "PipelineConfigValidationValid"
+                    preview?.isPipelineConfigValid?.__typename !== "PipelineConfigValidationValid"
                   }
                 />
               }
@@ -472,12 +442,7 @@ export const ExecutionSessionContainerLoading: React.FunctionComponent = () => (
         <SessionSettingsBar />
       </>
     }
-    second={
-      <LoadingOverlay
-        isLoading
-        message={"Loading pipeline and partition sets..."}
-      />
-    }
+    second={<LoadingOverlay isLoading message={"Loading pipeline and partition sets..."} />}
   />
 );
 
@@ -487,11 +452,7 @@ const PREVIEW_CONFIG_QUERY = gql`
     $runConfigData: RunConfigData!
     $mode: String!
   ) {
-    isPipelineConfigValid(
-      pipeline: $pipeline
-      runConfigData: $runConfigData
-      mode: $mode
-    ) {
+    isPipelineConfigValid(pipeline: $pipeline, runConfigData: $runConfigData, mode: $mode) {
       ...ConfigEditorValidationFragment
       ...RunPreviewValidationFragment
     }

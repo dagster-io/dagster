@@ -133,9 +133,7 @@ export function layoutPipeline(
   let marginy = marginBase;
   let marginx = marginBase;
   if (parentSolid) {
-    parentIOPadding =
-      Math.max(parentSolid.inputs.length, parentSolid.outputs.length) *
-      IO_HEIGHT;
+    parentIOPadding = Math.max(parentSolid.inputs.length, parentSolid.outputs.length) * IO_HEIGHT;
     marginx = PARENT_DEFINITION_PADDING + PARENT_INVOCATION_PADDING;
     marginy = marginx + parentIOPadding;
   }
@@ -164,10 +162,7 @@ export function layoutPipeline(
     // can reference them in a single pass later
     solid.inputs.forEach(input => {
       input.dependsOn.forEach(dep => {
-        if (
-          solidNamesPresent[dep.solid.name] &&
-          solidNamesPresent[solid.name]
-        ) {
+        if (solidNamesPresent[dep.solid.name] && solidNamesPresent[solid.name]) {
           g.setEdge({ v: dep.solid.name, w: solid.name }, { weight: 1 });
 
           connections.push({
@@ -232,16 +227,9 @@ export function layoutPipeline(
       if (desiredCount === 1) continue;
 
       for (let r = 0; r < desiredCount; r++) {
-        const newRowNodes = rowNodes.slice(
-          r * MAX_PER_ROW,
-          (r + 1) * MAX_PER_ROW
-        );
-        const maxHeight =
-          Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
-        const totalWidth = newRowNodes.reduce(
-          (sum, n) => sum + n.width + SOLID_BASE_HEIGHT,
-          0
-        );
+        const newRowNodes = rowNodes.slice(r * MAX_PER_ROW, (r + 1) * MAX_PER_ROW);
+        const maxHeight = Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        const totalWidth = newRowNodes.reduce((sum, n) => sum + n.width + SOLID_BASE_HEIGHT, 0);
 
         let x = firstRowCenterX - totalWidth / 2;
 
@@ -257,8 +245,7 @@ export function layoutPipeline(
 
         // shift all nodes in the graph beneath this row down by
         // the height of the newly inserted row.
-        const shiftedMaxHeight =
-          Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        const shiftedMaxHeight = Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
 
         for (let jj = ii + 1; jj < rows.length; jj++) {
           nodesInRows[`${rows[jj]}`].forEach(n => (n.y += shiftedMaxHeight));
@@ -300,9 +287,7 @@ export function layoutPipeline(
   // Read the Dagre layout and map "edges" back to our data model. We don't
   // currently use the "closest points on the node" Dagre suggests (but we could).
   g.edges().forEach(function(e) {
-    const conn = connections.find(
-      c => c.from.solidName === e.v && c.to.solidName === e.w
-    );
+    const conn = connections.find(c => c.from.solidName === e.v && c.to.solidName === e.w);
     const points = g.edge(e).points;
     if (conn) {
       conn.from.point = points[0];
@@ -321,11 +306,7 @@ export function layoutPipeline(
   if (parentSolid) {
     // Now that we've computed the pipeline layout fully, lay out the
     // composite solid around the completed DAG.
-    result.parent = layoutParentCompositeSolid(
-      result,
-      parentSolid,
-      parentIOPadding
-    );
+    result.parent = layoutParentCompositeSolid(result, parentSolid, parentIOPadding);
   }
 
   return result;
@@ -400,11 +381,7 @@ function layoutParentCompositeSolid(
   return result;
 }
 
-function layoutExternalConnections(
-  links: SolidLinkInfo[],
-  y: number,
-  layoutWidth: number
-) {
+function layoutExternalConnections(links: SolidLinkInfo[], y: number, layoutWidth: number) {
   // fill evenly from 0 to layoutWidth from left to right, then center them if there's overflow.
   const inset = PARENT_INVOCATION_PADDING + PORT_INSET_X;
   const insetWidth = layoutWidth - inset * 2;
@@ -423,10 +400,7 @@ function layoutExternalConnections(
   return result;
 }
 
-export function layoutSolid(
-  solid: ILayoutSolid,
-  root: IPoint
-): IFullSolidLayout {
+export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   // Starting at the root (top left) X,Y, return the layout information for a solid with
   // input blocks, then the main block, then output blocks (arranged vertically)
   let accY = root.y;
@@ -526,9 +500,6 @@ export function pointsToBox(a: IPoint, b: IPoint): ILayout {
 
 export function layoutsIntersect(a: ILayout, b: ILayout) {
   return (
-    a.x + a.width >= b.x &&
-    b.x + b.width >= a.x &&
-    a.y + a.height >= b.y &&
-    b.y + b.height >= a.y
+    a.x + a.width >= b.x && b.x + b.width >= a.x && a.y + a.height >= b.y && b.y + b.height >= a.y
   );
 }

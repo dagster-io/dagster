@@ -9,12 +9,7 @@ import { MappingLine } from "./MappingLine";
 import { titleOfIO } from "../Util";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { SolidNameOrPath } from "../PipelineExplorer";
-import {
-  SolidIOBox,
-  metadataForCompositeParentIO,
-  PARENT_OUT,
-  PARENT_IN
-} from "./SolidIOBox";
+import { SolidIOBox, metadataForCompositeParentIO, PARENT_OUT, PARENT_IN } from "./SolidIOBox";
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;
@@ -97,9 +92,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
       })}
       {solid.definition.inputDefinitions.map((input, idx) => {
         const metadata = metadataForCompositeParentIO(solid.definition, input);
-        const invocationInput = solid.inputs.find(
-          i => i.definition.name === input.name
-        )!;
+        const invocationInput = solid.inputs.find(i => i.definition.name === input.name)!;
 
         return (
           <React.Fragment key={idx}>
@@ -131,9 +124,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
       })}
       {solid.definition.outputDefinitions.map((output, idx) => {
         const metadata = metadataForCompositeParentIO(solid.definition, output);
-        const invocationOutput = solid.outputs.find(
-          i => i.definition.name === output.name
-        )!;
+        const invocationOutput = solid.outputs.find(i => i.definition.name === output.name)!;
 
         return (
           <React.Fragment key={idx}>
@@ -168,6 +159,5 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
 };
 
 export const SVGLabeledParentRect = styled(SVGLabeledRect)`
-  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out,
-    height 250ms ease-out;
+  transition: x 250ms ease-out, y 250ms ease-out, width 250ms ease-out, height 250ms ease-out;
 `;

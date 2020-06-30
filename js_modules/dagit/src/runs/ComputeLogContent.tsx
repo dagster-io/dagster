@@ -21,9 +21,7 @@ interface IComputeLogContentProps {
 const TRUNCATE_PREFIX = "\u001b[33m...logs truncated...\u001b[39m\n";
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
 
-export class ComputeLogContent extends React.Component<
-  IComputeLogContentProps
-> {
+export class ComputeLogContent extends React.Component<IComputeLogContentProps> {
   static fragments = {
     ComputeLogContentFragment: gql`
       fragment ComputeLogContentFileFragment on ComputeLogFile {
@@ -98,9 +96,7 @@ export class ComputeLogContent extends React.Component<
       return null;
     }
     const isRelativeUrl = (x?: string) => x && x.startsWith("/");
-    return isRelativeUrl(downloadUrl)
-      ? ROOT_SERVER_URI + downloadUrl
-      : downloadUrl;
+    return isRelativeUrl(downloadUrl) ? ROOT_SERVER_URI + downloadUrl : downloadUrl;
   }
 
   renderScrollToTop() {
@@ -138,22 +134,17 @@ export class ComputeLogContent extends React.Component<
   }
 
   renderContent(ioType: string, content: string | null | undefined) {
-    const isTruncated =
-      content && Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
+    const isTruncated = content && Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
 
     if (content && isTruncated) {
       const nextLine = content.indexOf("\n") + 1;
-      const truncated =
-        nextLine < content.length ? content.slice(nextLine) : content;
+      const truncated = nextLine < content.length ? content.slice(nextLine) : content;
       content = TRUNCATE_PREFIX + truncated;
     }
     const downloadUrl = this.getDownloadUrl();
     const warning = isTruncated ? (
       <FileWarning>
-        <Icon
-          icon={IconNames.WARNING_SIGN}
-          style={{ marginRight: 10, color: Colors.ORANGE5 }}
-        />
+        <Icon icon={IconNames.WARNING_SIGN} style={{ marginRight: 10, color: Colors.ORANGE5 }} />
         This log has exceeded the 5MB limit.{" "}
         {downloadUrl ? (
           <a href={downloadUrl} download>
@@ -199,16 +190,10 @@ export class ComputeLogContent extends React.Component<
         <FileContainer>
           <FileHeader>
             <Row>
-              <Tab
-                selected={selected === "stderr"}
-                onClick={() => this.select("stderr")}
-              >
+              <Tab selected={selected === "stderr"} onClick={() => this.select("stderr")}>
                 stderr
               </Tab>
-              <Tab
-                selected={selected === "stdout"}
-                onClick={() => this.select("stdout")}
-              >
+              <Tab selected={selected === "stdout"} onClick={() => this.select("stdout")}>
                 stdout
               </Tab>
             </Row>
@@ -327,9 +312,7 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     if (!content) {
       return (
         <div className={className} ref={this.container}>
-          <ContentContainer
-            style={{ justifyContent: "center", alignItems: "center" }}
-          >
+          <ContentContainer style={{ justifyContent: "center", alignItems: "center" }}>
             {content == null ? "No log file available" : "No output"}
           </ContentContainer>
         </div>
@@ -337,12 +320,7 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     }
 
     return (
-      <div
-        className={className}
-        style={{ outline: "none" }}
-        ref={this.container}
-        tabIndex={0}
-      >
+      <div className={className} style={{ outline: "none" }} ref={this.container} tabIndex={0}>
         <ContentContainer>
           <LineNumbers content={content} />
           <Content>
@@ -484,8 +462,7 @@ const SolarizedColors = createGlobalStyle`
   }
 `;
 const Tab = styled.div`
-  background-color: ${({ selected }: { selected: boolean }) =>
-    selected ? "#333333" : "#444444"};
+  background-color: ${({ selected }: { selected: boolean }) => (selected ? "#333333" : "#444444")};
   cursor: pointer;
   height: 30px;
   display: flex;
@@ -493,25 +470,20 @@ const Tab = styled.div`
   align-items: center;
   padding: 0 150px;
   margin-right: 1px;
-  margin-bottom: ${({ selected }: { selected: boolean }) =>
-    selected ? "-10px" : "-9px"};
+  margin-bottom: ${({ selected }: { selected: boolean }) => (selected ? "-10px" : "-9px")};
   border-top-right-radius: 5px;
   border-top-left-radius: 5px;
   border-top: 0.5px solid
-    ${({ selected }: { selected: boolean }) =>
-      selected ? "#5c7080" : "transparent"};
+    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
   border-left: 0.5px solid
-    ${({ selected }: { selected: boolean }) =>
-      selected ? "#5c7080" : "transparent"};
+    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
   border-right: 0.5px solid
-    ${({ selected }: { selected: boolean }) =>
-      selected ? "#5c7080" : "transparent"};
+    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
   &:hover {
     border-top: 0.5px solid #5c7080;
     border-left: 0.5px solid #5c7080;
     border-right: 0.5px solid #5c7080;
-    height: ${({ selected }: { selected: boolean }) =>
-      selected ? "30px" : "28px"};
+    height: ${({ selected }: { selected: boolean }) => (selected ? "30px" : "28px")};
   }
 `;
 
@@ -523,8 +495,7 @@ const FileContent = styled.div`
   right: 0;
   display: flex;
   flex-direction: column;
-  ${({ isSelected }: { isSelected: boolean }) =>
-    isSelected ? null : "visibility: hidden;"}
+  ${({ isSelected }: { isSelected: boolean }) => (isSelected ? null : "visibility: hidden;")}
 `;
 const RelativeContainer = styled.div`
   flex: 1;

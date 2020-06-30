@@ -42,8 +42,7 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
       filter: { ...runsFilterForSearchTokens(filterTokens), pipelineName }
     },
     nextCursorForResult: runs => {
-      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns")
-        return undefined;
+      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
     }
   });
@@ -62,10 +61,7 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
           <Filters>
             <RunsFilter
               enabledFilters={ENABLED_FILTERS}
-              tokens={[
-                { token: "pipeline", value: pipelineName },
-                ...filterTokens
-              ]}
+              tokens={[{ token: "pipeline", value: pipelineName }, ...filterTokens]}
               onChange={setFilterTokens}
               loading={queryResult.loading}
             />
@@ -106,11 +102,7 @@ const Filters = styled.div`
 `;
 
 export const PIPELINE_RUNS_ROOT_QUERY = gql`
-  query PipelineRunsRootQuery(
-    $limit: Int
-    $cursor: String
-    $filter: PipelineRunsFilter!
-  ) {
+  query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {
         results {

@@ -17,21 +17,14 @@ import { act } from "react-dom/test-utils";
 
 // https://stackoverflow.com/questions/23892547/what-is-the-best-way-to-trigger-onchange-event-in-react-js
 const setValue = (node: HTMLInputElement, value: string) => {
-  Object.getOwnPropertyDescriptor((node as any).__proto__, "value")!.set!.call(
-    node,
-    value
-  );
+  Object.getOwnPropertyDescriptor((node as any).__proto__, "value")!.set!.call(node, value);
   node.dispatchEvent(new Event("change", { bubbles: true }));
 };
 
 const suggestions = [
   {
     token: "pipeline",
-    values: () => [
-      "airline_demo_ingest",
-      "airline_demo_warehouse",
-      "composition"
-    ]
+    values: () => ["airline_demo_ingest", "airline_demo_warehouse", "composition"]
   },
   {
     token: "status",
@@ -55,9 +48,9 @@ afterEach(() => {
 });
 
 function expectOptions(expected: string[]) {
-  const actual = Array.from(
-    document.documentElement.querySelectorAll(".bp3-menu-item")
-  ).map(el => el.textContent);
+  const actual = Array.from(document.documentElement.querySelectorAll(".bp3-menu-item")).map(
+    el => el.textContent
+  );
 
   expect(actual).toEqual(expected);
 }
@@ -79,10 +72,7 @@ it("renders with tokens [snapshot]", () => {
   const onChange = jest.fn();
   const component = TestRenderer.create(
     <TokenizingField
-      values={[
-        { token: "pipeline", value: "composition" },
-        { value: "freeform" }
-      ]}
+      values={[{ token: "pipeline", value: "composition" }, { value: "freeform" }]}
       maxValues={2}
       onChange={onChange}
       suggestionProviders={suggestions}
@@ -96,11 +86,7 @@ it("renders with tokens [snapshot]", () => {
 it("shows available autocompletion options when clicked", () => {
   const onChange = jest.fn();
   ReactDOM.render(
-    <TokenizingField
-      values={[]}
-      onChange={onChange}
-      suggestionProviders={suggestions}
-    />,
+    <TokenizingField values={[]} onChange={onChange} suggestionProviders={suggestions} />,
     container
   );
   act(() => {
@@ -113,11 +99,7 @@ it("shows available autocompletion options when clicked", () => {
 it("filters properly when typing `pipeline` prefix", () => {
   const onChange = jest.fn();
   ReactDOM.render(
-    <TokenizingField
-      values={[]}
-      onChange={onChange}
-      suggestionProviders={suggestions}
-    />,
+    <TokenizingField values={[]} onChange={onChange} suggestionProviders={suggestions} />,
     container
   );
   const inputEl = container.querySelector("input")!;
@@ -153,11 +135,7 @@ it("filters properly when typing `pipeline` prefix", () => {
 it("filters properly when typing a value without the preceding token", () => {
   const onChange = jest.fn();
   ReactDOM.render(
-    <TokenizingField
-      values={[]}
-      onChange={onChange}
-      suggestionProviders={suggestions}
-    />,
+    <TokenizingField values={[]} onChange={onChange} suggestionProviders={suggestions} />,
     container
   );
   const inputEl = container.querySelector("input")!;
@@ -166,8 +144,5 @@ it("filters properly when typing a value without the preceding token", () => {
     setValue(inputEl, "airline");
     inputEl.dispatchEvent(new Event("change", { bubbles: true }));
   });
-  expectOptions([
-    "pipeline:airline_demo_ingest",
-    "pipeline:airline_demo_warehouse"
-  ]);
+  expectOptions(["pipeline:airline_demo_ingest", "pipeline:airline_demo_warehouse"]);
 });

@@ -15,13 +15,10 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
   explorerPath
 }) => {
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
-  const queryResult = useQuery<TypeListContainerQuery>(
-    TYPE_LIST_CONTAINER_QUERY,
-    {
-      fetchPolicy: "cache-and-network",
-      variables: { pipelineSelector }
-    }
-  );
+  const queryResult = useQuery<TypeListContainerQuery>(TYPE_LIST_CONTAINER_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: { pipelineSelector }
+  });
 
   return (
     <Loading queryResult={queryResult}>

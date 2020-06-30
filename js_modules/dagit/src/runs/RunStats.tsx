@@ -8,12 +8,9 @@ import { RunStatsQuery, RunStatsQueryVariables } from "./types/RunStatsQuery";
 import { Spinner } from "@blueprintjs/core";
 
 export const RunStats = ({ runId }: { runId: string }) => {
-  const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(
-    RUN_STATS_QUERY,
-    {
-      variables: { runId }
-    }
-  );
+  const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
+    variables: { runId }
+  });
 
   if (stats.loading || !stats.data) {
     return (

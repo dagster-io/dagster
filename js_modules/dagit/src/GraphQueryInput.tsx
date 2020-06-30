@@ -1,14 +1,6 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import {
-  Colors,
-  MenuItem,
-  Menu,
-  Popover,
-  InputGroup,
-  Button,
-  Intent
-} from "@blueprintjs/core";
+import { Colors, MenuItem, Menu, Popover, InputGroup, Button, Intent } from "@blueprintjs/core";
 import { GraphQueryItem } from "./GraphQueryImpl";
 import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
@@ -71,9 +63,7 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
 
 export const GraphQueryInput = React.memo(
   (props: GraphQueryInputProps) => {
-    const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(
-      null
-    );
+    const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
     const [focused, setFocused] = React.useState<boolean>(false);
     const [pendingValue, setPendingValue] = React.useState<string>(props.value);
 
@@ -96,9 +86,7 @@ export const GraphQueryInput = React.memo(
         : [];
 
     const onConfirmSuggestion = (suggestion: string) => {
-      const preceding = lastClause
-        ? pendingValue.substr(0, lastClause.index)
-        : "";
+      const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : "";
       setPendingValue(preceding + prefix + suggestion + suffix);
     };
 
@@ -181,12 +169,7 @@ export const GraphQueryInput = React.memo(
 
     return (
       <>
-        <Popover
-          minimal={true}
-          isOpen={menu !== undefined}
-          position={"bottom"}
-          content={menu}
-        >
+        <Popover minimal={true} isOpen={menu !== undefined} position={"bottom"} content={menu}>
           <GraphQueryInputField
             intent={props.intent}
             title="graph-query-input"
@@ -194,13 +177,8 @@ export const GraphQueryInput = React.memo(
             value={pendingValue}
             leftIcon={"send-to-graph"}
             autoFocus={props.autoFocus}
-            placeholder={placeholderTextForItems(
-              props.placeholder,
-              props.items
-            )}
-            onChange={(e: React.ChangeEvent<any>) =>
-              setPendingValue(e.target.value)
-            }
+            placeholder={placeholderTextForItems(props.placeholder, props.items)}
+            onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
             onFocus={() => {
               setFocused(true);
               props.onFocus?.();

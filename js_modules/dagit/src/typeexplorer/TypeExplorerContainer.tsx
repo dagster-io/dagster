@@ -20,16 +20,16 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
   typeName
 }) => {
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
-  const queryResult = useQuery<
-    TypeExplorerContainerQuery,
-    TypeExplorerContainerQueryVariables
-  >(TYPE_EXPLORER_CONTAINER_QUERY, {
-    fetchPolicy: "cache-and-network",
-    variables: {
-      pipelineSelector,
-      dagsterTypeName: typeName
+  const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
+    TYPE_EXPLORER_CONTAINER_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      variables: {
+        pipelineSelector,
+        dagsterTypeName: typeName
+      }
     }
-  });
+  );
   return (
     <Loading queryResult={queryResult}>
       {data => {
@@ -37,12 +37,9 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
           data.pipelineOrError &&
           data.pipelineOrError.__typename === "Pipeline" &&
           data.pipelineOrError.dagsterTypeOrError &&
-          data.pipelineOrError.dagsterTypeOrError.__typename ===
-            "RegularDagsterType"
+          data.pipelineOrError.dagsterTypeOrError.__typename === "RegularDagsterType"
         ) {
-          return (
-            <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />
-          );
+          return <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />;
         } else {
           return <div>Type Not Found</div>;
         }

@@ -8,10 +8,7 @@ import { PipelineRunStatus } from "../types/globalTypes";
 import { PipelineRunLogsSubscriptionStatusFragment } from "./types/PipelineRunLogsSubscriptionStatusFragment";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { Run } from "./Run";
-import {
-  TokenizingFieldValue,
-  tokenizedValuesFromString
-} from "../TokenizingField";
+import { TokenizingFieldValue, tokenizedValuesFromString } from "../TokenizingField";
 
 export enum LogLevel {
   DEBUG = "DEBUG",
@@ -30,14 +27,7 @@ export function GetFilterProviders(stepNames: string[] = []) {
     },
     {
       token: "type",
-      values: () => [
-        "expectation",
-        "materialization",
-        "engine",
-        "input",
-        "output",
-        "pipeline"
-      ]
+      values: () => ["expectation", "materialization", "engine", "input", "output", "pipeline"]
     }
   ];
 }
@@ -50,10 +40,7 @@ export const GetDefaultLogFilter = () => {
     since: 0,
     values: tokenizedValuesFromString(q, GetFilterProviders()),
     levels: Object.assign(
-      Object.keys(LogLevel).reduce(
-        (dict, key) => ({ ...dict, [key]: true }),
-        {}
-      ),
+      Object.keys(LogLevel).reduce((dict, key) => ({ ...dict, [key]: true }), {}),
       { [LogLevel.DEBUG]: false }
     )
   } as LogFilter;
@@ -121,9 +108,7 @@ export class LogsProvider extends React.Component<
       return;
     }
 
-    this._subscription = new DirectGraphQLSubscription<
-      PipelineRunLogsSubscription
-    >(
+    this._subscription = new DirectGraphQLSubscription<PipelineRunLogsSubscription>(
       PIPELINE_RUN_LOGS_SUBSCRIPTION,
       { runId: runId, after: null },
       this.onHandleMessages,
@@ -137,19 +122,14 @@ export class LogsProvider extends React.Component<
     }
   }
 
-  onHandleMessages = (
-    messages: PipelineRunLogsSubscription[],
-    isFirstResponse: boolean
-  ) => {
+  onHandleMessages = (messages: PipelineRunLogsSubscription[], isFirstResponse: boolean) => {
     // Note: if the socket says this is the first response, it may be becacuse the connection
     // was dropped and re-opened, so we reset our local state to an empty array.
     const nextNodes = isFirstResponse ? [] : [...(this.state.nodes || [])];
 
     let nextPipelineStatus: PipelineRunStatus | null = null;
     for (const msg of messages) {
-      if (
-        msg.pipelineRunLogs.__typename === "PipelineRunLogsSubscriptionFailure"
-      ) {
+      if (msg.pipelineRunLogs.__typename === "PipelineRunLogsSubscriptionFailure") {
         break;
       }
 
@@ -184,9 +164,7 @@ export class LogsProvider extends React.Component<
   };
 
   syncPipelineStatusToApolloCache(status: PipelineRunStatus) {
-    const local = this.props.client.readFragment<
-      PipelineRunLogsSubscriptionStatusFragment
-    >({
+    const local = this.props.client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
       fragmentName: "PipelineRunLogsSubscriptionStatusFragment",
       fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
       id: `PipelineRun.${this.props.runId}`
@@ -194,10 +172,7 @@ export class LogsProvider extends React.Component<
 
     if (local) {
       local.status = status;
-      if (
-        status === PipelineRunStatus.FAILURE ||
-        status === PipelineRunStatus.SUCCESS
-      ) {
+      if (status === PipelineRunStatus.FAILURE || status === PipelineRunStatus.SUCCESS) {
         local.canTerminate = false;
       }
       this.props.client.writeFragment({

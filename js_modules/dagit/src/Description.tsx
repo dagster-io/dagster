@@ -31,10 +31,7 @@ function removeLeadingSpaces(input: string) {
   return lines.map(l => l.substr(leadingSpaces[1].length)).join("\n");
 }
 
-export default class Description extends React.Component<
-  IDescriptionProps,
-  IDescriptionState
-> {
+export default class Description extends React.Component<IDescriptionProps, IDescriptionState> {
   private _container: React.RefObject<HTMLDivElement> = React.createRef();
 
   public state: IDescriptionState = {
@@ -82,9 +79,7 @@ export default class Description extends React.Component<
       >
         {!expanded && hasMore && <Mask />}
         {hasMore && (
-          <ShowMoreHandle
-            onClick={() => this.setState({ expanded: !expanded })}
-          >
+          <ShowMoreHandle onClick={() => this.setState({ expanded: !expanded })}>
             {expanded ? "Show Less" : "Show More"}
           </ShowMoreHandle>
         )}

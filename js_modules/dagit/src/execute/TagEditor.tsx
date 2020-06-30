@@ -17,15 +17,8 @@ interface ITagContainerProps {
   onRequestEdit: () => void;
 }
 
-export const TagEditor = ({
-  tags: propTags,
-  open,
-  onChange,
-  onRequestClose
-}: ITagEditorProps) => {
-  const [tags, setTags] = React.useState(
-    propTags.length ? propTags : [{ key: "", value: "" }]
-  );
+export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: ITagEditorProps) => {
+  const [tags, setTags] = React.useState(propTags.length ? propTags : [{ key: "", value: "" }]);
   React.useEffect(() => {
     setTags(propTags.length ? propTags : [{ key: "", value: "" }]);
   }, [propTags]);
@@ -53,11 +46,7 @@ export const TagEditor = ({
   const disabled = tags === propTags || !!toError.length;
 
   const onTagEdit = (key: string, value: string, idx: number) => {
-    const newTags = [
-      ...tags.slice(0, idx),
-      { key, value },
-      ...tags.slice(idx + 1)
-    ];
+    const newTags = [...tags.slice(0, idx), { key, value }, ...tags.slice(idx + 1)];
     setTags(newTags);
   };
   const onRemove = (idx: number) => {
@@ -140,8 +129,7 @@ export const TagContainer = ({ tags, onRequestEdit }: ITagContainerProps) => {
         return <RunTag tag={tag} key={idx} />;
       })}
       <TagEditorLink onRequestOpen={onRequestEdit}>
-        <Icon icon={IconNames.EDIT} iconSize={12} style={{ marginBottom: 2 }} />{" "}
-        Edit Tags
+        <Icon icon={IconNames.EDIT} iconSize={12} style={{ marginBottom: 2 }} /> Edit Tags
       </TagEditorLink>
     </Container>
   );
@@ -152,10 +140,7 @@ interface ITagEditorLinkProps {
   children: React.ReactNode;
 }
 
-export const TagEditorLink = ({
-  onRequestOpen,
-  children
-}: ITagEditorLinkProps) => (
+export const TagEditorLink = ({ onRequestOpen, children }: ITagEditorLinkProps) => (
   <ShortcutHandler
     shortcutLabel={"⌥T"}
     shortcutFilter={e => e.keyCode === 84 && e.altKey}

@@ -31,9 +31,7 @@ export default class CustomAlertProvider extends React.Component<
   bodyRef = React.createRef<HTMLDivElement>();
 
   componentDidMount() {
-    document.addEventListener(CURRENT_ALERT_CHANGED, () =>
-      this.setState({ alert: CurrentAlert })
-    );
+    document.addEventListener(CURRENT_ALERT_CHANGED, () => this.setState({ alert: CurrentAlert }));
   }
 
   render() {
@@ -62,11 +60,7 @@ export default class CustomAlertProvider extends React.Component<
             >
               Copy
             </Button>
-            <Button
-              intent="primary"
-              autoFocus={true}
-              onClick={() => setCustomAlert(null)}
-            >
+            <Button intent="primary" autoFocus={true} onClick={() => setCustomAlert(null)}>
               OK
             </Button>
           </div>

@@ -16,9 +16,7 @@ function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
   return stepsTag ? stepsTag.value : "*";
 }
 
-export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({
-  runId
-}) => {
+export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({ runId }) => {
   const queryResult = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
     variables: { runId },
     fetchPolicy: "cache-and-network",
@@ -31,9 +29,7 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({
     return <div />;
   }
   if (group.__typename === "PythonError") {
-    return (
-      <div>The run group for this run could not be loaded: {group.message}</div>
-    );
+    return <div>The run group for this run could not be loaded: {group.message}</div>;
   }
   if (group.runs?.length === 1) {
     return <div />;
@@ -122,8 +118,7 @@ const RunGroupContainer = styled.div`
 
 const RunGroupRun = styled(Link)<{ selected: boolean }>`
   align-items: flex-start;
-  background: ${({ selected }) =>
-    selected ? Colors.LIGHT_GRAY2 : Colors.WHITE};
+  background: ${({ selected }) => (selected ? Colors.LIGHT_GRAY2 : Colors.WHITE)};
   padding: 3px 6px;
   font-size: 13px;
   line-height: 20px;
@@ -132,8 +127,7 @@ const RunGroupRun = styled(Link)<{ selected: boolean }>`
   padding-left: 6px;
   &:hover {
     text-decoration: none;
-    background: ${({ selected }) =>
-      selected ? Colors.LIGHT_GRAY2 : Colors.LIGHT_GRAY5};
+    background: ${({ selected }) => (selected ? Colors.LIGHT_GRAY2 : Colors.LIGHT_GRAY5)};
   }
 `;
 

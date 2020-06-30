@@ -89,9 +89,9 @@ const AppStackTraceLink = ({ error }: { error: DagsterGraphQLError }) => {
       >
         messaging in the Dagster slack
       </a>
-      . Use the <code>&quot;Copy&quot;</code> button below to include error
-      information that is helpful for the core development team to diagnose what
-      is happening and to improve Dagster in recovering from unexpected errors.
+      . Use the <code>&quot;Copy&quot;</code> button below to include error information that is
+      helpful for the core development team to diagnose what is happening and to improve Dagster in
+      recovering from unexpected errors.
     </div>
   );
 
@@ -129,9 +129,7 @@ const AppStackTraceLink = ({ error }: { error: DagsterGraphQLError }) => {
   return (
     <span
       style={{ cursor: "pointer", textDecoration: "underline", marginLeft: 30 }}
-      onClick={() =>
-        showCustomAlert({ title, body, copySelector: ".errorInfo" })
-      }
+      onClick={() => showCustomAlert({ title, body, copySelector: ".errorInfo" })}
     >
       View error info
     </span>

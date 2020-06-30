@@ -25,9 +25,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
   switch (node.__typename) {
     // Errors
     case "PipelineInitFailureEvent":
-      return (
-        <FailureContent error={node.error} eventType="Pipeline Init Failed" />
-      );
+      return <FailureContent error={node.error} eventType="Pipeline Init Failed" />;
     case "ExecutionStepFailureEvent":
       return (
         <FailureContent
@@ -82,18 +80,13 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
 
     case "ExecutionStepSuccessEvent":
       return (
-        <DefaultContent
-          message={node.message}
-          eventType="Step Finished"
-          eventIntent="success"
-        />
+        <DefaultContent message={node.message} eventType="Step Finished" eventIntent="success" />
       );
     case "ExecutionStepInputEvent":
       return (
         <DefaultContent
           message={
-            node.message +
-            (node.typeCheck.description ? " " + node.typeCheck.description : "")
+            node.message + (node.typeCheck.description ? " " + node.typeCheck.description : "")
           }
           eventType="Input"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
@@ -105,8 +98,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       return (
         <DefaultContent
           message={
-            node.message +
-            (node.typeCheck.description ? " " + node.typeCheck.description : "")
+            node.message + (node.typeCheck.description ? " " + node.typeCheck.description : "")
           }
           eventType="Output"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
@@ -147,11 +139,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
     case "PipelineFailureEvent":
       return (
-        <DefaultContent
-          message={node.message}
-          eventType="Pipeline Failed"
-          eventIntent="danger"
-        />
+        <DefaultContent message={node.message} eventType="Pipeline Failed" eventIntent="danger" />
       );
     case "PipelineSuccessEvent":
       return (
@@ -163,14 +151,10 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
 
     case "PipelineStartEvent":
-      return (
-        <DefaultContent message={node.message} eventType="Pipeline Started" />
-      );
+      return <DefaultContent message={node.message} eventType="Pipeline Started" />;
     case "EngineEvent":
       if (node.engineError) {
-        return (
-          <FailureContent error={node.engineError} eventType="Engine Event" />
-        );
+        return <FailureContent error={node.engineError} eventType="Engine Event" />;
       }
       return (
         <DefaultContent
@@ -245,9 +229,7 @@ const FailureContent: React.FunctionComponent<{
     <span style={{ flex: 1 }}>
       <span style={{ color: Colors.RED3 }}>{`${error.message}`}</span>
       <MetadataEntries entries={metadataEntries} />
-      <span style={{ color: Colors.RED3 }}>
-        {`\nStack Trace:\n${error.stack}`}
-      </span>
+      <span style={{ color: Colors.RED3 }}>{`\nStack Trace:\n${error.stack}`}</span>
     </span>
   </>
 );

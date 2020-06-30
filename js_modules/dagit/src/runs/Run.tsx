@@ -118,10 +118,7 @@ export class Run extends React.Component<RunProps, RunState> {
     selectedSteps: []
   };
 
-  onShowStateDetails = (
-    stepKey: string,
-    logs: RunPipelineRunEventFragment[]
-  ) => {
+  onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
       node =>
         node.__typename === "ExecutionStepFailureEvent" &&
@@ -208,10 +205,7 @@ interface RunWithDataProps {
   onSetQuery: (v: string) => void;
   onSetSelectedSteps: (v: string[]) => void;
   onSetLogsFilter: (v: LogFilter) => void;
-  onShowStateDetails: (
-    stepKey: string,
-    logs: RunPipelineRunEventFragment[]
-  ) => void;
+  onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
   getReexecutionVariables: (input: {
     run: RunFragment;
     stepKeys?: string[];
@@ -236,12 +230,8 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   onSetSelectedSteps,
   getReexecutionVariables
 }) => {
-  const [launchPipelineReexecution] = useMutation(
-    LAUNCH_PIPELINE_REEXECUTION_MUTATION
-  );
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
+  const [launchPipelineReexecution] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== "*" ? query : "";
   const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
@@ -307,10 +297,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                   mode: GaantChartMode.WATERFALL_TIMED
                 }}
                 toolbarLeftActions={
-                  <SplitPanelToggles
-                    axis={"vertical"}
-                    container={splitPanelContainer}
-                  />
+                  <SplitPanelToggles axis={"vertical"} container={splitPanelContainer} />
                 }
                 toolbarActions={
                   <RunActionButtons
@@ -336,10 +323,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                 onSetQuery={onSetQuery}
               />
             ) : (
-              <NonIdealState
-                icon={IconNames.ERROR}
-                title="Unable to build execution plan"
-              />
+              <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />
             )
           }
           second={

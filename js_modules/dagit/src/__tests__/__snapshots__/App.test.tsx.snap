@@ -5383,7 +5383,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Description
@@ -5435,7 +5435,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Modes
@@ -10103,7 +10103,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Description
@@ -10155,7 +10155,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Modes
@@ -11130,7 +11130,7 @@ exports[`renders solids explorer 1`] = `
         <div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               Definition
@@ -11224,8 +11224,7 @@ exports[`renders solids explorer 1`] = `
                     ) ⇒ (
                     <span>
                       result
-                      :
-                       
+                      : 
                       <a
                         href="/?typeExplorer=PySparkDataFrame"
                         onClick={[Function]}
@@ -11246,7 +11245,7 @@ exports[`renders solids explorer 1`] = `
           </div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               Description
@@ -11324,7 +11323,7 @@ more detail.
           </div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               Required Resources
@@ -11493,7 +11492,7 @@ more detail.
           </div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               Inputs
@@ -11592,7 +11591,7 @@ more detail.
           </div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               Outputs
@@ -11668,7 +11667,7 @@ more detail.
           </div>
           <div>
             <div
-              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+              className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
               onClick={[Function]}
             >
               All Invocations
@@ -16641,7 +16640,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Description
@@ -16693,7 +16692,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Modes
@@ -21361,7 +21360,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Description
@@ -21413,7 +21412,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Modes
@@ -26081,7 +26080,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Description
@@ -26133,7 +26132,7 @@ load_q2_sfo_weather:data_frame
             </div>
             <div>
               <div
-                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 gOctcE"
+                className="SidebarComponents__CollapsingHeaderBar-sc-1tax5rq-7 XbAgq"
                 onClick={[Function]}
               >
                 Modes

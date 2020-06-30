@@ -152,16 +152,10 @@ function updateLinting(cm, annotationsNotSorted) {
       cm.setGutterMarker(
         line,
         GUTTER_ID,
-        makeMarker(
-          tipLabel,
-          maxSeverity,
-          anns.length > 1,
-          state.options.tooltips
-        )
+        makeMarker(tipLabel, maxSeverity, anns.length > 1, state.options.tooltips)
       );
   }
-  if (options.onUpdateLinting)
-    options.onUpdateLinting(annotationsNotSorted, annotations, cm);
+  if (options.onUpdateLinting) options.onUpdateLinting(annotationsNotSorted, annotations, cm);
 }
 
 function lintAsync(cm, getAnnotations, passOptions) {
@@ -195,8 +189,7 @@ function startLinting(cm) {
    * about unrecognized rules like `onUpdateLinting`, `delay`, `lintOnChange`, etc.
    */
   const passOptions = options.options || options;
-  const getAnnotations =
-    options.getAnnotations || cm.getHelper(CodeMirror.Pos(0, 0), "lint");
+  const getAnnotations = options.getAnnotations || cm.getHelper(CodeMirror.Pos(0, 0), "lint");
   if (!getAnnotations) return;
   if (options.async || getAnnotations.async) {
     lintAsync(cm, getAnnotations, passOptions);
@@ -284,13 +277,8 @@ function LintState(cm, options, hasGutter) {
 CodeMirror.defineOption("lint", false, function(cm, val, old) {
   if (old && old !== CodeMirror.Init) {
     clearMarks(cm);
-    if (cm.state.lint.options.lintOnChange !== false)
-      cm.off("change", onChange);
-    CodeMirror.off(
-      cm.getWrapperElement(),
-      "mouseover",
-      cm.state.lint.onMouseOver
-    );
+    if (cm.state.lint.options.lintOnChange !== false) cm.off("change", onChange);
+    CodeMirror.off(cm.getWrapperElement(), "mouseover", cm.state.lint.onMouseOver);
     clearTimeout(cm.state.lint.timeout);
     delete cm.state.lint;
   }
@@ -298,13 +286,8 @@ CodeMirror.defineOption("lint", false, function(cm, val, old) {
   if (val) {
     const gutters = cm.getOption("gutters");
     let hasLintGutter = false;
-    for (let i = 0; i < gutters.length; ++i)
-      if (gutters[i] === GUTTER_ID) hasLintGutter = true;
-    const state = (cm.state.lint = new LintState(
-      cm,
-      parseOptions(cm, val),
-      hasLintGutter
-    ));
+    for (let i = 0; i < gutters.length; ++i) if (gutters[i] === GUTTER_ID) hasLintGutter = true;
+    const state = (cm.state.lint = new LintState(cm, parseOptions(cm, val), hasLintGutter));
     if (state.options.lintOnChange !== false) cm.on("change", onChange);
     if (state.options.tooltips !== false && state.options.tooltips !== "gutter")
       CodeMirror.on(cm.getWrapperElement(), "mouseover", state.onMouseOver);

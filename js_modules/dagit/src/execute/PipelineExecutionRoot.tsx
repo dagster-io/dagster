@@ -18,10 +18,7 @@ import {
 } from "./types/PipelineExecutionRootQuery";
 import { ExecutionTabs } from "./ExecutionTabs";
 import { RouteComponentProps } from "react-router-dom";
-import {
-  usePipelineSelector,
-  useRepositorySelector
-} from "../DagsterRepositoryContext";
+import { usePipelineSelector, useRepositorySelector } from "../DagsterRepositoryContext";
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables
@@ -34,15 +31,9 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   const [data, onSave] = useStorage(pipelineName);
   const session = data.sessions[data.current];
   const { repositoryName, repositoryLocationName } = useRepositorySelector();
-  const pipelineSelector = usePipelineSelector(
-    pipelineName,
-    session?.solidSelection || undefined
-  );
+  const pipelineSelector = usePipelineSelector(pipelineName, session?.solidSelection || undefined);
 
-  const onSaveSession = (
-    session: string,
-    changes: IExecutionSessionChanges
-  ) => {
+  const onSaveSession = (session: string, changes: IExecutionSessionChanges) => {
     onSave(applyChangesToSession(data, session, changes));
   };
 
@@ -64,10 +55,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
         partialRefetch={true}
       >
         {result => (
-          <Query<
-            PipelineExecutionConfigSchemaQuery,
-            PipelineExecutionConfigSchemaQueryVariables
-          >
+          <Query<PipelineExecutionConfigSchemaQuery, PipelineExecutionConfigSchemaQueryVariables>
             key={JSON.stringify({ pipelineSelector, mode: session?.mode })}
             variables={{ selector: pipelineSelector, mode: session?.mode }}
             query={PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY}
@@ -75,10 +63,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
             partialRefetch={true}
           >
             {configResult => {
-              const pipelineOrError =
-                result.data && result.data.pipelineOrError;
-              const partitionSetsOrError =
-                result.data && result.data.partitionSetsOrError;
+              const pipelineOrError = result.data && result.data.pipelineOrError;
+              const partitionSetsOrError = result.data && result.data.partitionSetsOrError;
               const configSchemaOrError =
                 configResult.data && configResult.data.runConfigSchemaOrError;
 
@@ -110,19 +96,11 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                 );
               }
 
-              if (
-                pipelineOrError &&
-                pipelineOrError.__typename === "InvalidSubsetError"
-              ) {
-                throw new Error(
-                  `Should never happen because we do not request a subset`
-                );
+              if (pipelineOrError && pipelineOrError.__typename === "InvalidSubsetError") {
+                throw new Error(`Should never happen because we do not request a subset`);
               }
 
-              if (
-                pipelineOrError &&
-                pipelineOrError.__typename === "PythonError"
-              ) {
+              if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
                 return (
                   <ExecutionSessionContainerError
                     icon={IconNames.ERROR}
@@ -131,10 +109,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                   />
                 );
               }
-              if (
-                partitionSetsOrError &&
-                partitionSetsOrError.__typename === "PythonError"
-              ) {
+              if (partitionSetsOrError && partitionSetsOrError.__typename === "PythonError") {
                 return (
                   <ExecutionSessionContainerError
                     icon={IconNames.ERROR}
@@ -147,12 +122,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
               return (
                 <ExecutionSessionContainer
                   data={data}
-                  onSaveSession={changes =>
-                    onSaveSession(data.current, changes)
-                  }
-                  onCreateSession={initial =>
-                    onSave(applyCreateSession(data, initial))
-                  }
+                  onSaveSession={changes => onSaveSession(data.current, changes)}
+                  onCreateSession={initial => onSave(applyCreateSession(data, initial))}
                   pipeline={pipelineOrError}
                   partitionSets={partitionSetsOrError}
                   runConfigSchemaOrError={configSchemaOrError}
@@ -210,17 +181,12 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     }
   }
 
-  ${ExecutionSessionContainer.fragments
-    .ExecutionSessionContainerPipelineFragment}
-  ${ExecutionSessionContainer.fragments
-    .ExecutionSessionContainerPartitionSetsFragment}
+  ${ExecutionSessionContainer.fragments.ExecutionSessionContainerPipelineFragment}
+  ${ExecutionSessionContainer.fragments.ExecutionSessionContainerPartitionSetsFragment}
 `;
 
 const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
-  query PipelineExecutionConfigSchemaQuery(
-    $selector: PipelineSelector!
-    $mode: String
-  ) {
+  query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
       ...ExecutionSessionContainerRunConfigSchemaFragment
     }

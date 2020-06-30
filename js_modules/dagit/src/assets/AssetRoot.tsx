@@ -9,13 +9,7 @@ import {
   AssetQuery_assetOrError_Asset_graphMaterializations,
   AssetQuery_assetOrError_Asset_lastMaterializations
 } from "./types/AssetQuery";
-import {
-  Header,
-  Legend,
-  LegendColumn,
-  RowContainer,
-  RowColumn
-} from "../ListComponents";
+import { Header, Legend, LegendColumn, RowContainer, RowColumn } from "../ListComponents";
 import { MetadataEntries, MetadataEntry } from "../runs/MetadataEntry";
 import { RunTable } from "../runs/RunTable";
 import { RunStatus } from "../runs/RunStatusDots";
@@ -50,17 +44,12 @@ export const AssetRoot = ({ assetKey }: { assetKey: AssetKey }) => {
         return (
           <Container>
             <TitleHeader>Asset: {assetKey.path.join(".")}</TitleHeader>
-            <AssetLastMaterialization
-              assetMaterialization={lastMaterialization}
-            />
+            <AssetLastMaterialization assetMaterialization={lastMaterialization} />
             <div>
               <Header>Recent Runs</Header>
               <RunTable runs={assetOrError.runs} onSetFilter={_ => {}} />
             </div>
-            <AssetValueGraph
-              assetKey={assetKey}
-              values={assetOrError.graphMaterializations}
-            />
+            <AssetValueGraph assetKey={assetKey} values={assetOrError.graphMaterializations} />
           </Container>
         );
       }}
@@ -77,11 +66,7 @@ const AssetLastMaterialization = ({
     assetMaterialization.runOrError.__typename === "PipelineRun"
       ? assetMaterialization.runOrError
       : undefined;
-  const {
-    runId,
-    materialization,
-    timestamp
-  } = assetMaterialization.materializationEvent;
+  const { runId, materialization, timestamp } = assetMaterialization.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
   return (
     <Section>
@@ -96,9 +81,7 @@ const AssetLastMaterialization = ({
         </Legend>
 
         <RowContainer>
-          <RowColumn
-            style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}
-          >
+          <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
             {run ? (
               <RunStatus status={run.status} />
             ) : (
@@ -107,9 +90,7 @@ const AssetLastMaterialization = ({
           </RowColumn>
           <RowColumn style={{ maxWidth: 250 }}>
             {run ? (
-              <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
-                {titleForRun(run)}
-              </a>
+              <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</a>
             ) : (
               runId
             )}
@@ -117,9 +98,7 @@ const AssetLastMaterialization = ({
           <RowColumn style={{ flex: 2 }}>
             {materialization.label}
             {materialization.description ? (
-              <div style={{ fontSize: "0.8rem", marginTop: 10 }}>
-                {materialization.description}
-              </div>
+              <div style={{ fontSize: "0.8rem", marginTop: 10 }}>{materialization.description}</div>
             ) : null}
           </RowColumn>
           <RowColumn style={{ flex: 3, fontSize: 12 }}>
@@ -140,16 +119,14 @@ const AssetValueGraph = (props: any) => {
   const dataByLabel = {};
   props.values.forEach((graphMaterialization: GraphMaterialization) => {
     const timestamp = graphMaterialization.materializationEvent.timestamp;
-    graphMaterialization.materializationEvent.materialization.metadataEntries.forEach(
-      entry => {
-        if (entry.__typename === "EventFloatMetadataEntry") {
-          dataByLabel[entry.label] = [
-            ...(dataByLabel[entry.label] || []),
-            { x: parseInt(timestamp, 10), y: entry.value }
-          ];
-        }
+    graphMaterialization.materializationEvent.materialization.metadataEntries.forEach(entry => {
+      if (entry.__typename === "EventFloatMetadataEntry") {
+        dataByLabel[entry.label] = [
+          ...(dataByLabel[entry.label] || []),
+          { x: parseInt(timestamp, 10), y: entry.value }
+        ];
       }
-    );
+    });
   });
 
   if (!Object.keys(dataByLabel).length) {

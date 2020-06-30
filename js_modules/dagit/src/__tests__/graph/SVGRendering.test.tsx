@@ -76,9 +76,7 @@ MOCKS.forEach(mock => {
 
 it(`renders the expected SVG when viewing a composite`, () => {
   // load the GraphQL response and pull out the first layer of solids
-  const pipeline = readMock(
-    MOCKS.find(m => m.name === "airline_demo_ingest_pipeline_composite")!
-  );
+  const pipeline = readMock(MOCKS.find(m => m.name === "airline_demo_ingest_pipeline_composite")!);
   const solids = pipeline.solidHandles.map(h => h.solid);
 
   const expectedPath = path.join(snapshotsDir, `airline-composite.svg`);

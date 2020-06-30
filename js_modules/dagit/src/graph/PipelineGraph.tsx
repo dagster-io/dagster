@@ -5,11 +5,7 @@ import { Colors } from "@blueprintjs/core";
 import SVGViewport, { DETAIL_ZOOM, SVGViewportInteractor } from "./SVGViewport";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
-import {
-  IFullPipelineLayout,
-  IFullSolidLayout,
-  ILayout
-} from "./getFullSolidLayout";
+import { IFullPipelineLayout, IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { SolidLinks } from "./SolidLinks";
 import { Edge, isHighlighted, isSolidHighlighted } from "./highlighting";
@@ -112,17 +108,15 @@ export class PipelineGraphContents extends React.PureComponent<
 
     return (
       <>
-        {parentSolid &&
-          layout.parent &&
-          layout.parent.invocationBoundingBox.width > 0 && (
-            <SVGLabeledParentRect
-              {...layout.parent.invocationBoundingBox}
-              key={`composite-rect-${parentHandleID}`}
-              label={parentSolid.name}
-              fill={Colors.LIGHT_GRAY5}
-              minified={minified}
-            />
-          )}
+        {parentSolid && layout.parent && layout.parent.invocationBoundingBox.width > 0 && (
+          <SVGLabeledParentRect
+            {...layout.parent.invocationBoundingBox}
+            key={`composite-rect-${parentHandleID}`}
+            label={parentSolid.name}
+            fill={Colors.LIGHT_GRAY5}
+            minified={minified}
+          />
+        )}
         {selectedSolid && (
           // this rect is hidden beneath the user's selection with a React key so that
           // when they expand the composite solid React sees this component becoming
@@ -193,10 +187,7 @@ export class PipelineGraphContents extends React.PureComponent<
                 ? this.state.highlighted
                 : EmptyHighlightedArray
             }
-            dim={
-              highlightedSolids.length > 0 &&
-              highlightedSolids.indexOf(solid) === -1
-            }
+            dim={highlightedSolids.length > 0 && highlightedSolids.indexOf(solid) === -1}
           />
         ))}
       </>
@@ -208,9 +199,7 @@ export class PipelineGraphContents extends React.PureComponent<
 // so that SolidNode can use shallow equality comparisons in shouldComponentUpdate.
 const EmptyHighlightedArray: never[] = [];
 
-export default class PipelineGraph extends React.Component<
-  IPipelineGraphProps
-> {
+export default class PipelineGraph extends React.Component<IPipelineGraphProps> {
   static fragments = {
     PipelineGraphSolidFragment: gql`
       fragment PipelineGraphSolidFragment on Solid {
@@ -331,10 +320,7 @@ export default class PipelineGraph extends React.Component<
     if (prevProps.layout !== this.props.layout) {
       this.viewportEl.current!.autocenter();
     }
-    if (
-      prevProps.selectedSolid !== this.props.selectedSolid &&
-      this.props.selectedSolid
-    ) {
+    if (prevProps.selectedSolid !== this.props.selectedSolid && this.props.selectedSolid) {
       this.centerSolid(this.props.selectedSolid);
     }
   }

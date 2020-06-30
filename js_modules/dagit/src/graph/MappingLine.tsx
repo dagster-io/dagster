@@ -25,10 +25,7 @@ export const MappingLine: React.FunctionComponent<MappingLineProps> = ({
   const highlighted = isHighlighted(highlightedEdges, edge);
 
   return (
-    <g
-      onMouseEnter={() => onHighlightEdges([edge])}
-      onMouseLeave={() => onHighlightEdges([])}
-    >
+    <g onMouseEnter={() => onHighlightEdges([edge])} onMouseLeave={() => onHighlightEdges([])}>
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"

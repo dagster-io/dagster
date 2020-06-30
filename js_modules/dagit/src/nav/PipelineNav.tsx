@@ -2,10 +2,7 @@ import React from "react";
 import styled from "styled-components/macro";
 import { Colors, Icon, IconName } from "@blueprintjs/core";
 import { useRouteMatch, useHistory } from "react-router-dom";
-import {
-  explorerPathFromString,
-  explorerPathToString
-} from "../PipelinePathUtils";
+import { explorerPathFromString, explorerPathToString } from "../PipelinePathUtils";
 
 const PIPELINE_TABS: {
   title: string;
@@ -35,9 +32,7 @@ export function tabForPipelinePathComponent(component?: string) {
 
 export const PipelineNav: React.FunctionComponent = () => {
   const history = useHistory();
-  const match = useRouteMatch<{ tab: string; selector: string }>([
-    "/pipeline/:selector/:tab?"
-  ]);
+  const match = useRouteMatch<{ tab: string; selector: string }>(["/pipeline/:selector/:tab?"]);
   if (!match) {
     return <span />;
   }
@@ -62,9 +57,7 @@ export const PipelineNav: React.FunctionComponent = () => {
           tab={tab}
           active={active === tab}
           onClick={() =>
-            history.push(
-              `/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`
-            )
+            history.push(`/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`)
           }
         />
       ))}

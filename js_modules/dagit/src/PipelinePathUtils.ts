@@ -18,12 +18,7 @@ export function explorerPathToString(path: PipelineExplorerPath) {
 export function explorerPathFromString(path: string) {
   const [root, ...pathSolids] = path.split("/");
   const match = /^([^:@]+)@?([^:]+)?:?(.*)$/.exec(root);
-  const [, pipelineName, snapshotId, solidsQuery] = [
-    ...(match || []),
-    "",
-    "",
-    ""
-  ];
+  const [, pipelineName, snapshotId, solidsQuery] = [...(match || []), "", "", ""];
 
   return {
     pipelineName,

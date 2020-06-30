@@ -37,15 +37,8 @@ function hideShortcuts() {
 }
 
 window.addEventListener("keydown", event => {
-  if (
-    !shortcutsTimer &&
-    !shortcutsVisible &&
-    MODIFIER_KEYCODES.includes(event.keyCode)
-  ) {
-    shortcutsTimer = setTimeout(
-      () => setShortcutsVisible(true),
-      SHORTCUT_VISIBLITY_DELAY
-    );
+  if (!shortcutsTimer && !shortcutsVisible && MODIFIER_KEYCODES.includes(event.keyCode)) {
+    shortcutsTimer = setTimeout(() => setShortcutsVisible(true), SHORTCUT_VISIBLITY_DELAY);
   }
 });
 window.addEventListener("keyup", event => {
@@ -75,29 +68,20 @@ interface ShortcutHandlerState {
   previewPosition: null | { left: number; top: number };
 }
 
-export class ShortcutHandler extends React.Component<
-  ShortcutHandlerProps,
-  ShortcutHandlerState
-> {
+export class ShortcutHandler extends React.Component<ShortcutHandlerProps, ShortcutHandlerState> {
   state: ShortcutHandlerState = {
     previewPosition: null
   };
 
   componentDidMount() {
     window.addEventListener("keydown", this.onGlobalKeydown);
-    window.addEventListener(
-      SHORTCUT_VISIBILITY_EVENT_TYPE,
-      this.onShortcutVisiblityChange
-    );
+    window.addEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
     this.onShortcutVisiblityChange();
   }
 
   componentWillUnmount() {
     window.removeEventListener("keydown", this.onGlobalKeydown);
-    window.removeEventListener(
-      SHORTCUT_VISIBILITY_EVENT_TYPE,
-      this.onShortcutVisiblityChange
-    );
+    window.removeEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
   }
 
   onShortcutVisiblityChange = () => {
@@ -135,11 +119,7 @@ export class ShortcutHandler extends React.Component<
 
     this.props.onGlobalKeyDown?.(event);
 
-    if (
-      this.props.onShortcut &&
-      this.props.shortcutFilter &&
-      this.props.shortcutFilter(event)
-    ) {
+    if (this.props.onShortcut && this.props.shortcutFilter && this.props.shortcutFilter(event)) {
       event.preventDefault();
 
       // Pull the focus out of the currently focused field (if there is one). This better
@@ -162,9 +142,7 @@ export class ShortcutHandler extends React.Component<
       return (
         <>
           {children}
-          <ShortcutAnnotation
-            style={{ top: previewPosition.top, left: previewPosition.left }}
-          >
+          <ShortcutAnnotation style={{ top: previewPosition.top, left: previewPosition.left }}>
             {shortcutLabel}
           </ShortcutAnnotation>
         </>

@@ -68,9 +68,7 @@ export const Invocation = (props: {
   const handlePath = handleID.split(".");
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && (
-        <div style={{ color: Colors.BLUE1 }}>{pipelineName}</div>
-      )}
+      {pipelineName && <div style={{ color: Colors.BLUE1 }}>{pipelineName}</div>}
       <SolidColumn stepKey={handlePath.join(".")} />
     </InvocationContainer>
   );

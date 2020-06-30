@@ -5,10 +5,7 @@ import { useQuery, QueryResult } from "react-apollo";
 import { __RouterContext as RouterContext } from "react-router";
 import { RunsSearchSpaceQuery } from "./types/RunsSearchSpaceQuery";
 import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
-import {
-  DagsterRepositoryContext,
-  useRepositorySelector
-} from "../DagsterRepositoryContext";
+import { DagsterRepositoryContext, useRepositorySelector } from "../DagsterRepositoryContext";
 import {
   TokenizingField,
   TokenizingFieldValue,
@@ -54,20 +51,14 @@ export function useRunFiltering(enabledFilters?: RunFilterTokenType[]) {
     (qs.q as string) || "",
     RUN_PROVIDERS_EMPTY
   ).filter(
-    t =>
-      !t.token ||
-      !enabledFilters ||
-      enabledFilters.includes(t.token as RunFilterTokenType)
+    t => !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType)
   );
   const setFilterTokens = (tokens: TokenizingFieldValue[]) => {
     // Note: changing search also clears the cursor so you're back on page 1
     const params = { ...qs, q: stringFromValue(tokens), cursor: undefined };
     history.push({ search: `?${querystring.stringify(params)}` });
   };
-  return [filterTokens, setFilterTokens] as [
-    typeof filterTokens,
-    typeof setFilterTokens
-  ];
+  return [filterTokens, setFilterTokens] as [typeof filterTokens, typeof setFilterTokens];
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
@@ -150,9 +141,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters
 }) => {
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
+  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
@@ -163,10 +152,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
     enabledFilters
   );
 
-  const search = tokenizedValuesFromString(
-    stringFromValue(tokens),
-    suggestions
-  );
+  const search = tokenizedValuesFromString(stringFromValue(tokens), suggestions);
 
   const suggestionProvidersFilter = (
     suggestionProviders: SuggestionProvider[],
@@ -186,13 +172,9 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
 
     // Can only have one filter value for pipeline, status, or id
     const limitedTokens = new Set<string>(["id", "pipeline", "status"]);
-    const presentLimitedTokens = tokens.filter(token =>
-      limitedTokens.has(token)
-    );
+    const presentLimitedTokens = tokens.filter(token => limitedTokens.has(token));
 
-    return suggestionProviders.filter(
-      provider => !presentLimitedTokens.includes(provider.token)
-    );
+    return suggestionProviders.filter(provider => !presentLimitedTokens.includes(provider.token));
   };
 
   return (

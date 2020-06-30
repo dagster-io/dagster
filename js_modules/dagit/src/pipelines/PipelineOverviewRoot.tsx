@@ -15,11 +15,7 @@ import {
   PipelineOverviewQueryVariables
 } from "./types/PipelineOverviewQuery";
 import { RowColumn, RowContainer } from "../ListComponents";
-import {
-  titleForRun,
-  RunTime,
-  RunsQueryRefetchContext
-} from "../runs/RunUtils";
+import { titleForRun, RunTime, RunsQueryRefetchContext } from "../runs/RunUtils";
 import { RunStatus, RunStatusWithStats } from "../runs/RunStatusDots";
 import { unixTimestampToString } from "../Util";
 import { RunElapsed, RunComponentFragments } from "../runs/RunUtils";
@@ -36,20 +32,18 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
 }>> = ({ match }) => {
   const pipelineName = match.params.pipelinePath.split(":")[0];
   const pipelineSelector = usePipelineSelector(pipelineName);
-  const queryResult = useQuery<
-    PipelineOverviewQuery,
-    PipelineOverviewQueryVariables
-  >(PIPELINE_OVERVIEW_QUERY, {
-    fetchPolicy: "cache-and-network",
-    partialRefetch: true,
-    variables: { pipelineSelector, limit: 5 }
-  });
+  const queryResult = useQuery<PipelineOverviewQuery, PipelineOverviewQueryVariables>(
+    PIPELINE_OVERVIEW_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      partialRefetch: true,
+      variables: { pipelineSelector, limit: 5 }
+    }
+  );
   return (
     <Loading queryResult={queryResult}>
       {({ pipelineSnapshotOrError }) => {
-        if (
-          pipelineSnapshotOrError.__typename === "PipelineSnapshotNotFoundError"
-        ) {
+        if (pipelineSnapshotOrError.__typename === "PipelineSnapshotNotFoundError") {
           return (
             <NonIdealState
               icon={IconNames.FLOW_BRANCH}
@@ -77,9 +71,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
           );
         }
 
-        const solids = pipelineSnapshotOrError.solidHandles.map(
-          handle => handle.solid
-        );
+        const solids = pipelineSnapshotOrError.solidHandles.map(handle => handle.solid);
         const schedules = pipelineSnapshotOrError.schedules;
 
         return (
@@ -111,31 +103,23 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                       margin: "10px 0"
                     }}
                   >
-                    <Link to={`/pipeline/${pipelineName}:`}>
-                      Explore Pipeline Definition &gt;
-                    </Link>
+                    <Link to={`/pipeline/${pipelineName}:`}>Explore Pipeline Definition &gt;</Link>
                   </div>
                 </div>
               </OverviewSection>
               <OverviewSection title="Description">
-                {pipelineSnapshotOrError.description ||
-                  "No description provided"}
+                {pipelineSnapshotOrError.description || "No description provided"}
               </OverviewSection>
             </MainContainer>
             <SecondaryContainer>
               <OverviewSection title="Schedule">
                 {schedules.length
                   ? schedules.map(schedule => (
-                      <OverviewSchedule
-                        schedule={schedule}
-                        key={schedule.name}
-                      />
+                      <OverviewSchedule schedule={schedule} key={schedule.name} />
                     ))
                   : "No pipeline schedules"}
               </OverviewSection>
-              <RunsQueryRefetchContext.Provider
-                value={{ refetch: queryResult.refetch }}
-              >
+              <RunsQueryRefetchContext.Provider value={{ refetch: queryResult.refetch }}>
                 <OverviewSection title="Recent runs">
                   {pipelineSnapshotOrError.runs.length
                     ? pipelineSnapshotOrError.runs.map(run => (
@@ -168,10 +152,7 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
     <OverviewSection title="Related assets">
       {assetKeys.length
         ? assetKeys.map(assetKey => (
-            <RowContainer
-              key={assetKey}
-              style={{ padding: 10, paddingBottom: 30 }}
-            >
+            <RowContainer key={assetKey} style={{ padding: 10, paddingBottom: 30 }}>
               <Link to={`/assets/${assetKey}`}>{assetKey}</Link>
             </RowContainer>
           ))
@@ -226,14 +207,9 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
 };
 
 const OverviewRun = ({ run }: { run: Run }) => {
-  const time =
-    run.stats.__typename === "PipelineRunStatsSnapshot" ? (
-      <RunTime run={run} />
-    ) : null;
+  const time = run.stats.__typename === "PipelineRunStatsSnapshot" ? <RunTime run={run} /> : null;
   const elapsed =
-    run.stats.__typename === "PipelineRunStatsSnapshot" ? (
-      <RunElapsed run={run} />
-    ) : null;
+    run.stats.__typename === "PipelineRunStatsSnapshot" ? <RunElapsed run={run} /> : null;
 
   return (
     <RowContainer style={{ paddingRight: 3 }}>
@@ -241,9 +217,7 @@ const OverviewRun = ({ run }: { run: Run }) => {
         <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
-          {titleForRun(run)}
-        </Link>
+        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
         <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>
         {time}
         {elapsed}
@@ -255,13 +229,7 @@ const OverviewRun = ({ run }: { run: Run }) => {
   );
 };
 
-const OverviewSection = ({
-  title,
-  children
-}: {
-  title: string;
-  children: any;
-}) => {
+const OverviewSection = ({ title, children }: { title: string; children: any }) => {
   return (
     <div style={{ marginBottom: 50 }}>
       <div
@@ -319,10 +287,7 @@ const ScheduleFragment = gql`
 `;
 
 export const PIPELINE_OVERVIEW_QUERY = gql`
-  query PipelineOverviewQuery(
-    $pipelineSelector: PipelineSelector!
-    $limit: Int!
-  ) {
+  query PipelineOverviewQuery($pipelineSelector: PipelineSelector!, $limit: Int!) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
         name

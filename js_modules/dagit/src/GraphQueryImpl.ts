@@ -18,10 +18,7 @@ export interface GraphQueryItem {
   }[];
 }
 
-type TraverseStepFunction<T> = (
-  item: T,
-  callback: (nextItem: T) => void
-) => void;
+type TraverseStepFunction<T> = (item: T, callback: (nextItem: T) => void) => void;
 
 class GraphTraverser<T extends GraphQueryItem> {
   itemNameMap: { [name: string]: T } = {};
@@ -79,10 +76,7 @@ function expansionDepthForClause(clause: string) {
   return clause.includes("*") ? Number.MAX_SAFE_INTEGER : clause.length;
 }
 
-export function filterByQuery<T extends GraphQueryItem>(
-  items: T[],
-  query: string
-) {
+export function filterByQuery<T extends GraphQueryItem>(items: T[], query: string) {
   if (query === "*") {
     return { all: items, focus: [] };
   }
@@ -103,9 +97,7 @@ export function filterByQuery<T extends GraphQueryItem>(
     if (!parts) continue;
     const [, parentsClause, itemName, descendentsClause] = parts;
     const itemsMatching = items.filter(
-      s =>
-        itemName === s.name ||
-        (itemName.length > 3 && s.name.includes(itemName))
+      s => itemName === s.name || (itemName.length > 3 && s.name.includes(itemName))
     );
 
     for (const item of itemsMatching) {
@@ -114,12 +106,8 @@ export function filterByQuery<T extends GraphQueryItem>(
 
       focus.add(item);
       results.add(item);
-      traverser
-        .fetchUpstream(item, upDepth)
-        .forEach(other => results.add(other));
-      traverser
-        .fetchDownstream(item, downDepth)
-        .forEach(other => results.add(other));
+      traverser.fetchUpstream(item, upDepth).forEach(other => results.add(other));
+      traverser.fetchDownstream(item, downDepth).forEach(other => results.add(other));
     }
   }
 

@@ -12,10 +12,7 @@ interface ISidebarSectionState {
   isOpen: boolean;
 }
 
-export class SidebarSection extends React.Component<
-  ISidebarSectionProps,
-  ISidebarSectionState
-> {
+export class SidebarSection extends React.Component<ISidebarSectionProps, ISidebarSectionState> {
   storageKey: string;
 
   constructor(props: ISidebarSectionProps) {
@@ -44,9 +41,7 @@ export class SidebarSection extends React.Component<
       <div>
         <CollapsingHeaderBar onClick={this.onToggle}>
           {this.props.title}
-          <DisclosureIcon
-            icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP}
-          />
+          <DisclosureIcon icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP} />
         </CollapsingHeaderBar>
         <Collapse isOpen={isOpen}>
           <SectionInner>{this.props.children}</SectionInner>
@@ -109,11 +104,7 @@ export const SectionItemContainer = styled.div`
 const CollapsingHeaderBar = styled.div`
   padding: 6px;
   padding-left: 12px;
-  background: linear-gradient(
-    to bottom,
-    ${Colors.LIGHT_GRAY5},
-    ${Colors.LIGHT_GRAY4}
-  );
+  background: linear-gradient(to bottom, ${Colors.LIGHT_GRAY5}, ${Colors.LIGHT_GRAY4});
   border-top: 1px solid ${Colors.LIGHT_GRAY4};
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   color: ${Colors.GRAY1};

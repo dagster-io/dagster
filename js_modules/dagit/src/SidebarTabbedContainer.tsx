@@ -45,9 +45,7 @@ const TabInfo: Array<ITabInfo> = [
   }
 ];
 
-export default class SidebarTabbedContainer extends React.Component<
-  ISidebarTabbedContainerProps
-> {
+export default class SidebarTabbedContainer extends React.Component<ISidebarTabbedContainerProps> {
   static fragments = {
     SidebarTabbedContainerPipelineFragment: gql`
       fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
@@ -77,12 +75,7 @@ export default class SidebarTabbedContainer extends React.Component<
 
     if (typeExplorer) {
       activeTab = "types";
-      content = (
-        <TypeExplorerContainer
-          explorerPath={explorerPath}
-          typeName={typeExplorer}
-        />
-      );
+      content = <TypeExplorerContainer explorerPath={explorerPath} typeName={typeExplorer} />;
     } else if (types) {
       activeTab = "types";
       content = <TypeListContainer explorerPath={explorerPath} />;

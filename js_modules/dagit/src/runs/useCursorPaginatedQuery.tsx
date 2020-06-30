@@ -29,10 +29,7 @@ interface CursorPaginationQueryVariables {
  * The returned paginationProps expose methods for moving to the next / previous page and are
  * used by <CursorPaginationControls /> to render the pagination buttons.
  */
-export function useCursorPaginatedQuery<
-  T,
-  TVars extends CursorPaginationQueryVariables
->(options: {
+export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVariables>(options: {
   query: DocumentNode;
   nextCursorForResult: (result: T) => string | undefined;
   variables: Omit<Omit<TVars, "cusor">, "limit">;
@@ -64,8 +61,7 @@ export function useCursorPaginatedQuery<
   const paginationProps: CursorPaginationProps = {
     hasPrevPage: !!cursor,
     hasNextPage:
-      queryResult.data instanceof Array &&
-      queryResult.data.length === options.pageSize + 1,
+      queryResult.data instanceof Array && queryResult.data.length === options.pageSize + 1,
     onPrevPage: () => {
       const nextStack = [...cursorStack];
       setCursor(nextStack.pop());
@@ -73,8 +69,7 @@ export function useCursorPaginatedQuery<
     },
     onNextPage: () => {
       if (cursor) setCursorStack([...cursorStack, cursor]);
-      const nextCursor =
-        queryResult.data && options.nextCursorForResult(queryResult.data);
+      const nextCursor = queryResult.data && options.nextCursorForResult(queryResult.data);
       if (!nextCursor) return;
       setCursor(nextCursor);
     },

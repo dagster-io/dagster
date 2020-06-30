@@ -14,9 +14,7 @@ interface IPythonErrorInfoProps {
   failureMetadata?: { metadataEntries: MetadataEntryFragment[] } | null;
 }
 
-export default class PythonErrorInfo extends React.Component<
-  IPythonErrorInfoProps
-> {
+export default class PythonErrorInfo extends React.Component<IPythonErrorInfoProps> {
   static fragments = {
     PythonErrorFragment: gql`
       fragment PythonErrorFragment on PythonError {
@@ -55,13 +53,10 @@ export default class PythonErrorInfo extends React.Component<
         {cause ? (
           <>
             <CauseHeader>
-              The above exception was the direct cause of the following
-              exception:
+              The above exception was the direct cause of the following exception:
             </CauseHeader>
             <ErrorHeader>{cause.message}</ErrorHeader>
-            <Trace>
-              {cause.stack ? cause.stack.join("") : "No Stack Provided."}
-            </Trace>
+            <Trace>{cause.stack ? cause.stack.join("") : "No Stack Provided."}</Trace>
           </>
         ) : null}
         {this.props.showReload && (

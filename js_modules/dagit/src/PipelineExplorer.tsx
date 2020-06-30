@@ -17,10 +17,7 @@ import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSol
 import { filterByQuery } from "./GraphQueryImpl";
 import { SolidJumpBar } from "./PipelineJumpComponents";
 import { GraphQueryInput } from "./GraphQueryInput";
-import {
-  PipelineExplorerPath,
-  explorerPathToString
-} from "./PipelinePathUtils";
+import { PipelineExplorerPath, explorerPathToString } from "./PipelinePathUtils";
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -77,9 +74,7 @@ export default class PipelineExplorer extends React.Component<
 
   handleQueryChange = (solidsQuery: string) => {
     const { history, explorerPath } = this.props;
-    history.replace(
-      `/pipeline/${explorerPathToString({ ...explorerPath, solidsQuery })}`
-    );
+    history.replace(`/pipeline/${explorerPathToString({ ...explorerPath, solidsQuery })}`);
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
@@ -87,13 +82,9 @@ export default class PipelineExplorer extends React.Component<
     const pathSolids = [...explorerPath.pathSolids];
     const retValue = fn(pathSolids);
     if (retValue !== undefined) {
-      throw new Error(
-        "handleAdjustPath function is expected to mutate the array"
-      );
+      throw new Error("handleAdjustPath function is expected to mutate the array");
     }
-    history.push(
-      `/pipeline/${explorerPathToString({ ...explorerPath, pathSolids })}`
-    );
+    history.push(`/pipeline/${explorerPathToString({ ...explorerPath, pathSolids })}`);
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -146,13 +137,7 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const {
-      options,
-      pipeline,
-      explorerPath,
-      parentHandle,
-      selectedHandle
-    } = this.props;
+    const { options, pipeline, explorerPath, parentHandle, selectedHandle } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
@@ -160,17 +145,13 @@ export default class PipelineExplorer extends React.Component<
     const explodeCompositesEnabled =
       !parentHandle &&
       (options.explodeComposites ||
-        solids.some(
-          f => f.definition.__typename === "CompositeSolidDefinition"
-        ));
+        solids.some(f => f.definition.__typename === "CompositeSolidDefinition"));
 
     const queryResultSolids = solidsQueryEnabled
       ? filterByQuery(solids, explorerPath.solidsQuery)
       : { all: solids, focus: [] };
 
-    const highlightedSolids = queryResultSolids.all.filter(s =>
-      s.name.includes(highlighted)
-    );
+    const highlightedSolids = queryResultSolids.all.filter(s => s.name.includes(highlighted));
 
     const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
     const backgroundTranslucent = Color(backgroundColor)
@@ -183,10 +164,7 @@ export default class PipelineExplorer extends React.Component<
         firstInitialPercent={70}
         first={
           <>
-            <PathOverlay
-              style={{ background: backgroundTranslucent }}
-              ref={this.pathOverlayEl}
-            >
+            <PathOverlay style={{ background: backgroundTranslucent }} ref={this.pathOverlayEl}>
               {explorerPath.pathSolids
                 .slice(0, explorerPath.pathSolids.length - 1)
                 .map((name, idx) => (
@@ -247,8 +225,9 @@ export default class PipelineExplorer extends React.Component<
                 />
               </OptionsOverlay>
             )}
-            {queryResultSolids.all.length === 0 &&
-              !explorerPath.solidsQuery.length && <LargeDAGNotice />}
+            {queryResultSolids.all.length === 0 && !explorerPath.solidsQuery.length && (
+              <LargeDAGNotice />
+            )}
             <PipelineGraphContainer
               pipelineName={pipeline.name}
               backgroundColor={backgroundColor}
@@ -340,9 +319,8 @@ const LargeDAGNotice = () => (
   <LargeDAGContainer>
     <LargeDAGInstructionBox>
       <p>
-        This is a large DAG that may be difficult to visualize. Type{" "}
-        <code>*</code> in the subset box below to render the entire thing, or
-        type a solid name and use:
+        This is a large DAG that may be difficult to visualize. Type <code>*</code> in the subset
+        box below to render the entire thing, or type a solid name and use:
       </p>
       <ul style={{ marginBottom: 0 }}>
         <li>

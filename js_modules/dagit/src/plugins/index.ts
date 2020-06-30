@@ -15,9 +15,7 @@ export interface IPluginSidebarProps {
 }
 
 export interface IPluginInterface {
-  SidebarComponent:
-    | React.ComponentClass<IPluginSidebarProps>
-    | React.SFC<IPluginSidebarProps>;
+  SidebarComponent: React.ComponentClass<IPluginSidebarProps> | React.SFC<IPluginSidebarProps>;
 }
 
 export function pluginForMetadata(

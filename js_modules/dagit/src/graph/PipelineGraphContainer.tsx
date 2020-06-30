@@ -4,10 +4,7 @@ import PipelineGraph from "./PipelineGraph";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { PipelineExplorerSolidHandleFragment } from "../types/PipelineExplorerSolidHandleFragment";
-import {
-  getDagrePipelineLayout,
-  asyncDagrePipelineLayout
-} from "./getFullSolidLayout";
+import { getDagrePipelineLayout, asyncDagrePipelineLayout } from "./getFullSolidLayout";
 import { IFullPipelineLayout } from "./layout";
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
@@ -50,10 +47,7 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   React.useEffect(() => {
     async function delegateDagrePipelineLayout() {
       setLoading(true);
-      const _layout = (await asyncDagrePipelineLayout(
-        solids,
-        parentSolid
-      )) as IFullPipelineLayout;
+      const _layout = (await asyncDagrePipelineLayout(solids, parentSolid)) as IFullPipelineLayout;
       setLayout(_layout);
       setLoading(false);
       setLayoutSolidKey(solidKey);
@@ -92,11 +86,7 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   );
 }
 
-function PipelineGraphLoading({
-  backgroundColor
-}: {
-  backgroundColor: string;
-}) {
+function PipelineGraphLoading({ backgroundColor }: { backgroundColor: string }) {
   return (
     <div
       style={{

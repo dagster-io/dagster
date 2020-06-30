@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Colors,
-  InputGroup,
-  ButtonGroup,
-  Button,
-  Icon
-} from "@blueprintjs/core";
+import { Colors, InputGroup, ButtonGroup, Button, Icon } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { Link } from "react-router-dom";
@@ -164,9 +158,7 @@ export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentL
           <Item
             key={p.label}
             data-tooltip={p.label}
-            data-tooltip-style={
-              p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle
-            }
+            data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
             className={`${p.label === selector ? "selected" : ""} ${
               p.label === focused ? "focused" : ""
             }`}

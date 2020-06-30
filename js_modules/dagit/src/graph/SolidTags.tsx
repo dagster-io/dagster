@@ -1,9 +1,5 @@
 import * as React from "react";
-import {
-  SVGFlowLayoutRect,
-  SVGFlowLayoutFiller,
-  SVGMonospaceText
-} from "./SVGComponents";
+import { SVGFlowLayoutRect, SVGFlowLayoutFiller, SVGMonospaceText } from "./SVGComponents";
 
 export interface ISolidTag {
   label: string;
@@ -30,13 +26,7 @@ function hueForTag(text = "") {
   );
 }
 
-const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
-  tags,
-  x,
-  y,
-  width,
-  minified
-}) => {
+const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({ tags, x, y, width, minified }) => {
   const height = minified ? 32 : 20;
   const overhang = 10;
 

@@ -24,14 +24,8 @@ import {
   ScheduleDefinitionFragment,
   ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData
 } from "./types/ScheduleDefinitionFragment";
-import {
-  StartSchedule,
-  StartSchedule_startSchedule_PythonError
-} from "./types/StartSchedule";
-import {
-  StopSchedule,
-  StopSchedule_stopRunningSchedule_PythonError
-} from "./types/StopSchedule";
+import { StartSchedule, StartSchedule_startSchedule_PythonError } from "./types/StartSchedule";
+import { StopSchedule, StopSchedule_stopRunningSchedule_PythonError } from "./types/StopSchedule";
 import { ScheduleStatus, ScheduleTickStatus } from "../types/globalTypes";
 import { Legend, LegendColumn } from "../ListComponents";
 
@@ -73,9 +67,7 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
       "Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule"
     );
   } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
-    errors.push(
-      "Schedule is set to be stopped, but the scheduler is still running the schedule"
-    );
+    errors.push("Schedule is set to be stopped, but the scheduler is still running the schedule");
   }
 
   if (runningScheduleCount > 0) {
@@ -103,8 +95,7 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
         </ul>
 
         <p>
-          To resolve, click <ReconcileButton /> or run{" "}
-          <Code>dagster schedule up</Code>
+          To resolve, click <ReconcileButton /> or run <Code>dagster schedule up</Code>
         </p>
       </div>
     </Popover>
@@ -117,10 +108,7 @@ const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
     | StopSchedule_stopRunningSchedule_PythonError
     | null = null;
 
-  if (
-    "startSchedule" in data &&
-    data.startSchedule.__typename === "PythonError"
-  ) {
+  if ("startSchedule" in data && data.startSchedule.__typename === "PythonError") {
     error = data.startSchedule;
   } else if (
     "stopRunningSchedule" in data &&
@@ -146,27 +134,14 @@ export const ScheduleRow: React.FunctionComponent<{
 }> = ({ schedule }) => {
   const match = useRouteMatch("/schedules/:scheduleName");
 
-  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors
-    }
-  );
-  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors
-    }
-  );
+  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
+  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
 
-  const {
-    name,
-    cronSchedule,
-    pipelineName,
-    mode,
-    solidSelection,
-    scheduleState
-  } = schedule;
+  const { name, cronSchedule, pipelineName, mode, solidSelection, scheduleState } = schedule;
 
   const scheduleId = scheduleState?.scheduleOriginId;
 
@@ -180,8 +155,7 @@ export const ScheduleRow: React.FunctionComponent<{
   });
 
   const runConfigError =
-    data?.scheduleDefinitionOrError?.runConfigOrError.__typename ===
-    "PythonError"
+    data?.scheduleDefinitionOrError?.runConfigOrError.__typename === "PythonError"
       ? data.scheduleDefinitionOrError.runConfigOrError
       : null;
 
@@ -197,9 +171,7 @@ export const ScheduleRow: React.FunctionComponent<{
         <ScheduleName>{name}</ScheduleName>
       </Link>
 
-      {scheduleId && (
-        <span style={{ fontSize: 10 }}>Schedule ID: {scheduleId}</span>
-      )}
+      {scheduleId && <span style={{ fontSize: 10 }}>Schedule ID: {scheduleId}</span>}
     </>
   );
 
@@ -249,13 +221,7 @@ export const ScheduleRow: React.FunctionComponent<{
     );
   }
 
-  const {
-    status,
-    runningScheduleCount,
-    ticks,
-    runs,
-    runsCount
-  } = scheduleState;
+  const { status, runningScheduleCount, ticks, runs, runsCount } = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -313,10 +279,7 @@ export const ScheduleRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn style={{ maxWidth: 100 }}>
         {latestTick ? (
-          <TickTag
-            status={latestTick.status}
-            eventSpecificData={latestTick.tickSpecificData}
-          />
+          <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
       </RowColumn>
       <RowColumn
@@ -365,9 +328,7 @@ export const ScheduleRow: React.FunctionComponent<{
 
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
-              to={`/runs/?q=${encodeURIComponent(
-                `tag:dagster/schedule_name=${name}`
-              )}`}
+              to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
               style={{ verticalAlign: "top" }}
             >
               {" "}
@@ -418,13 +379,11 @@ export const ScheduleRow: React.FunctionComponent<{
                   icon="edit"
                   target="_blank"
                   disabled={!runConfigYaml}
-                  href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify(
-                    {
-                      mode,
-                      solidSelection,
-                      config: runConfigYaml
-                    }
-                  )}`}
+                  href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify({
+                    mode,
+                    solidSelection,
+                    config: runConfigYaml
+                  })}`}
                 />
                 <MenuDivider />
               </Menu>
@@ -508,10 +467,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
         {latestTick ? (
-          <TickTag
-            status={latestTick.status}
-            eventSpecificData={latestTick.tickSpecificData}
-          />
+          <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
       </RowColumn>
       <RowColumn
@@ -549,9 +505,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
 
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
-              to={`/runs/?q=${encodeURIComponent(
-                `tag:dagster/schedule_name=${scheduleName}`
-              )}`}
+              to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${scheduleName}`)}`}
               style={{ verticalAlign: "top" }}
             >
               {" "}
@@ -576,10 +530,7 @@ export const TickTag: React.FunctionComponent<{
         </Tag>
       );
     case ScheduleTickStatus.SUCCESS:
-      if (
-        !eventSpecificData ||
-        eventSpecificData.__typename !== "ScheduleTickSuccessData"
-      ) {
+      if (!eventSpecificData || eventSpecificData.__typename !== "ScheduleTickSuccessData") {
         return (
           <Tag minimal={true} intent={Intent.SUCCESS}>
             Success
@@ -604,10 +555,7 @@ export const TickTag: React.FunctionComponent<{
         </Tag>
       );
     case ScheduleTickStatus.FAILURE:
-      if (
-        !eventSpecificData ||
-        eventSpecificData.__typename !== "ScheduleTickFailureData"
-      ) {
+      if (!eventSpecificData || eventSpecificData.__typename !== "ScheduleTickFailureData") {
         return (
           <Tag minimal={true} intent={Intent.DANGER}>
             Failure

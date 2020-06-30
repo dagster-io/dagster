@@ -32,10 +32,7 @@ export interface IExecutionSession {
   key: string;
   name: string;
   runConfigYaml: string;
-  base:
-    | { presetName: string }
-    | { partitionsSetName: string; partitionName: string | null }
-    | null;
+  base: { presetName: string } | { partitionsSetName: string; partitionName: string | null } | null;
   mode: string | null;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
@@ -69,11 +66,7 @@ export function applyChangesToSession(
   changes: IExecutionSessionChanges
 ) {
   const saved = data.sessions[key];
-  if (
-    changes.runConfigYaml &&
-    changes.runConfigYaml !== saved.runConfigYaml &&
-    saved.runId
-  ) {
+  if (changes.runConfigYaml && changes.runConfigYaml !== saved.runConfigYaml && saved.runId) {
     changes.configChangedSinceRun = true;
   }
 
@@ -114,10 +107,7 @@ export function applyCreateSession(
 
 // StorageProvider component that vends `IStorageData` via a render prop
 
-export type StorageHook = [
-  IStorageData,
-  React.Dispatch<React.SetStateAction<IStorageData>>
-];
+export type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
 
 let _data: IStorageData | null = null;
 let _dataNamespace = "";

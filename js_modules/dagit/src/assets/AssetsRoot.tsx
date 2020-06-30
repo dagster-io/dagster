@@ -7,28 +7,13 @@ import { AssetsRootQuery_assetsOrError_AssetConnection_nodes } from "./types/Ass
 import Loading from "../Loading";
 import { Link, RouteComponentProps } from "react-router-dom";
 import { AssetRoot } from "./AssetRoot";
-import {
-  Header,
-  Legend,
-  LegendColumn,
-  RowContainer,
-  RowColumn
-} from "../ListComponents";
+import { Header, Legend, LegendColumn, RowContainer, RowColumn } from "../ListComponents";
 import { useHistory } from "react-router";
-import {
-  Icon,
-  InputGroup,
-  NonIdealState,
-  Popover,
-  Menu,
-  MenuItem
-} from "@blueprintjs/core";
+import { Icon, InputGroup, NonIdealState, Popover, Menu, MenuItem } from "@blueprintjs/core";
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 
-export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
-  match
-}) => {
+export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({ match }) => {
   const urlPathString = match.params["0"];
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
@@ -43,11 +28,9 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
                 title="Assets"
                 description={
                   <p>
-                    An asset-aware event storage (e.g.{" "}
-                    <code>PostgresEventLogStorage</code>) must be configured in
-                    order to use any Asset-based features. You can configure
-                    this on your instance through <code>dagster.yaml</code>. See
-                    the{" "}
+                    An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must be
+                    configured in order to use any Asset-based features. You can configure this on
+                    your instance through <code>dagster.yaml</code>. See the{" "}
                     <a href="https://docs.dagster.io/docs/deploying/instance#event-log-storage">
                       instance documentation
                     </a>{" "}
@@ -59,18 +42,14 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
           );
         }
 
-        const currentPath = (urlPathString || "")
-          .split("/")
-          .filter((x: string) => x);
+        const currentPath = (urlPathString || "").split("/").filter((x: string) => x);
         const [exactMatchingAsset] = assetsOrError.nodes.filter(
           (asset: Asset) => asset.key.path.join("/") === urlPathString
         );
         const prefixMatchingAssets = assetsOrError.nodes.filter(
           (asset: Asset) =>
             currentPath.length < asset.key.path.length &&
-            currentPath.every(
-              (part: string, i: number) => part === asset.key.path[i]
-            )
+            currentPath.every((part: string, i: number) => part === asset.key.path[i])
         );
 
         if (!prefixMatchingAssets.length && !exactMatchingAsset) {
@@ -83,9 +62,8 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
                   <p>
                     There are no {urlPathString ? "matching " : "known "}
                     materialized assets with {urlPathString ? "the " : "a "}
-                    specified asset key. Any asset keys that have been specified
-                    with a <code>Materialization</code> during a pipeline run
-                    will appear here. See the{" "}
+                    specified asset key. Any asset keys that have been specified with a{" "}
+                    <code>Materialization</code> during a pipeline run will appear here. See the{" "}
                     <a href="https://docs.dagster.io/docs/apidocs/solids#dagster.Materialization">
                       Materialization documentation
                     </a>{" "}
@@ -101,14 +79,9 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({
           <Wrapper>
             <AssetsTopNav path={currentPath} />
             {prefixMatchingAssets.length ? (
-              <AssetsTable
-                assets={prefixMatchingAssets}
-                currentPath={currentPath}
-              />
+              <AssetsTable assets={prefixMatchingAssets} currentPath={currentPath} />
             ) : null}
-            {exactMatchingAsset ? (
-              <AssetRoot assetKey={exactMatchingAsset.key} />
-            ) : null}
+            {exactMatchingAsset ? <AssetRoot assetKey={exactMatchingAsset.key} /> : null}
           </Wrapper>
         );
       }}
@@ -138,9 +111,7 @@ const AssetsTopNav = ({ path }: { path: string[] }) => {
         idx ? (
           <span key={idx}>
             <Icon icon="chevron-right" />
-            <Link to={`/assets/${path.slice(0, idx).join("/")}`}>
-              {path[idx - 1]}
-            </Link>
+            <Link to={`/assets/${path.slice(0, idx).join("/")}`}>{path[idx - 1]}</Link>
           </span>
         ) : (
           <Link to="/assets" key="navRoot">
@@ -168,18 +139,14 @@ const AssetSearch = ({ assets }: { assets: Asset[] }) => {
     history.push(`/assets/${asset.key.path.join("/")}`);
   };
 
-  const matching = assets.filter(
-    asset => !q || matches(asset.key.path.join("."), q)
-  );
+  const matching = assets.filter(asset => !q || matches(asset.key.path.join("."), q));
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
     if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
       if (active) {
-        const picked = assets.find(
-          asset => asset.key.path.join(".") === active.text
-        );
+        const picked = assets.find(asset => asset.key.path.join(".") === active.text);
         if (!picked) throw new Error("Selection out of sync with suggestions");
         selectOption(picked);
         e.preventDefault();
@@ -259,10 +226,7 @@ const AssetSearch = ({ assets }: { assets: Asset[] }) => {
 const timestampForAsset = (asset: Asset) => {
   return asset.assetMaterializations.length
     ? new Date(
-        parseInt(
-          asset.assetMaterializations[0].materializationEvent.timestamp,
-          10
-        )
+        parseInt(asset.assetMaterializations[0].materializationEvent.timestamp, 10)
       ).toLocaleString()
     : null;
 };
@@ -274,25 +238,15 @@ const matches = (haystack: string, needle: string) =>
     .filter(x => x)
     .every(word => haystack.toLowerCase().includes(word));
 
-const AssetsTable = ({
-  assets,
-  currentPath
-}: {
-  assets: Asset[];
-  currentPath: string[];
-}) => {
+const AssetsTable = ({ assets, currentPath }: { assets: Asset[]; currentPath: string[] }) => {
   const pathMap: { [key: string]: Asset } = {};
   assets.forEach(asset => {
-    const [pathKey] = asset.key.path.slice(
-      currentPath.length,
-      currentPath.length + 1
-    );
+    const [pathKey] = asset.key.path.slice(currentPath.length, currentPath.length + 1);
     if (pathKey in pathMap) {
       const currentTimestamp = timestampForAsset(asset);
       const existingTimestamp = timestampForAsset(pathMap[pathKey]);
       pathMap[pathKey] =
-        !existingTimestamp ||
-        (currentTimestamp && currentTimestamp > existingTimestamp)
+        !existingTimestamp || (currentTimestamp && currentTimestamp > existingTimestamp)
           ? asset
           : pathMap[pathKey];
     } else {

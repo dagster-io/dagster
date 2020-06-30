@@ -2,10 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
-import {
-  ConfigEditorHelpContext,
-  isHelpContextEqual
-} from "../configeditor/ConfigEditor";
+import { ConfigEditorHelpContext, isHelpContextEqual } from "../configeditor/ConfigEditor";
 import { ConfigTypeSchema, TypeData } from "../ConfigTypeSchema";
 
 interface ConfigEditorHelpProps {
@@ -21,15 +18,9 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
     return (
       <Container>
         <ConfigScrollWrap>
-          <ConfigTypeSchema
-            type={context.type}
-            typesInScope={allInnerTypes}
-            maxDepth={2}
-          />
+          <ConfigTypeSchema type={context.type} typesInScope={allInnerTypes} maxDepth={2} />
         </ConfigScrollWrap>
-        <AutocompletionsNote>
-          Ctrl+Space to show auto-completions inline.
-        </AutocompletionsNote>
+        <AutocompletionsNote>Ctrl+Space to show auto-completions inline.</AutocompletionsNote>
       </Container>
     );
   },

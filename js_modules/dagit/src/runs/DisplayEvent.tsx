@@ -19,21 +19,14 @@ const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent["items"][0]> =
 
   if (action === "copy") {
     actionEl = (
-      <DisplayEventLink
-        title={"Copy to clipboard"}
-        onClick={e => copyValue(e, actionValue)}
-      >
+      <DisplayEventLink title={"Copy to clipboard"} onClick={e => copyValue(e, actionValue)}>
         {actionText}
       </DisplayEventLink>
     );
   }
   if (action === "open-in-tab") {
     actionEl = (
-      <DisplayEventLink
-        href={actionValue}
-        title={`Open in a new tab`}
-        target="__blank"
-      >
+      <DisplayEventLink href={actionValue} title={`Open in a new tab`} target="__blank">
         {actionText}
       </DisplayEventLink>
     );
@@ -60,9 +53,7 @@ const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent["items"][0]> =
   );
 };
 
-export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({
-  event
-}) => (
+export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({ event }) => (
   <DisplayEventContainer>
     <LabelColumn>
       {"status" in event

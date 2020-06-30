@@ -1,11 +1,7 @@
 import * as React from "react";
 import { Colors } from "@blueprintjs/core";
 import { pathVerticalDiagonal } from "@vx/shape";
-import {
-  ILayoutConnection,
-  IFullPipelineLayout,
-  IFullSolidLayout
-} from "./getFullSolidLayout";
+import { ILayoutConnection, IFullPipelineLayout, IFullSolidLayout } from "./getFullSolidLayout";
 import styled from "styled-components/macro";
 import { weakmapMemoize } from "../Util";
 
@@ -19,10 +15,7 @@ const buildSVGPath = pathVerticalDiagonal({
 });
 
 const buildSVGPaths = weakmapMemoize(
-  (
-    connections: ILayoutConnection[],
-    solids: { [name: string]: IFullSolidLayout }
-  ) =>
+  (connections: ILayoutConnection[], solids: { [name: string]: IFullSolidLayout }) =>
     connections.map(({ from, to }) => ({
       path: buildSVGPath({
         // can also use from.point for the "Dagre" closest point on node
@@ -42,19 +35,15 @@ export const SolidLinks = React.memo(
     onHighlight: (arr: Edge[]) => void;
   }) => (
     <g opacity={props.opacity}>
-      {buildSVGPaths(props.connections, props.layout.solids).map(
-        ({ path, from, to }, idx) => (
-          <g
-            key={idx}
-            onMouseLeave={() => props.onHighlight([])}
-            onMouseEnter={() =>
-              props.onHighlight([{ a: from.solidName, b: to.solidName }])
-            }
-          >
-            <StyledPath d={path} />
-          </g>
-        )
-      )}
+      {buildSVGPaths(props.connections, props.layout.solids).map(({ path, from, to }, idx) => (
+        <g
+          key={idx}
+          onMouseLeave={() => props.onHighlight([])}
+          onMouseEnter={() => props.onHighlight([{ a: from.solidName, b: to.solidName }])}
+        >
+          <StyledPath d={path} />
+        </g>
+      ))}
     </g>
   )
 );

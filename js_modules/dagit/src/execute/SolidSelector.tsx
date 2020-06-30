@@ -40,9 +40,7 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
     if (pipelineOrError.__typename !== "Pipeline") {
       return (
         <SolidSelectorModalContainer>
-          {errorMessage && (
-            <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>
-          )}
+          {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
         </SolidSelectorModalContainer>
       );
     }
@@ -111,9 +109,7 @@ export default (props: ISolidSelectorProps) => {
       : [];
 
   const pipelineErrorMessage =
-    data?.pipelineOrError.__typename !== "Pipeline"
-      ? data?.pipelineOrError.message || null
-      : null;
+    data?.pipelineOrError.__typename !== "Pipeline" ? data?.pipelineOrError.message || null : null;
 
   if (pipelineErrorMessage) {
     console.error(`Could not load pipeline ${props.pipelineName}`);
@@ -132,10 +128,7 @@ export default (props: ISolidSelectorProps) => {
     if (applied === "") {
       applied = "*";
     }
-    const queryResultSolids = filterByQuery(
-      data.pipelineOrError.solids,
-      applied
-    ).all;
+    const queryResultSolids = filterByQuery(data.pipelineOrError.solids, applied).all;
 
     // If all solids are returned, we set the subset to null rather than sending
     // a comma separated list of evey solid to the API
@@ -151,17 +144,12 @@ export default (props: ISolidSelectorProps) => {
 
   return (
     <div style={{ position: "relative" }}>
-      <ShortcutHandler
-        shortcutLabel={"⌥S"}
-        shortcutFilter={e => e.keyCode === 83 && e.altKey}
-      >
+      <ShortcutHandler shortcutLabel={"⌥S"} shortcutFilter={e => e.keyCode === 83 && e.altKey}>
         <GraphQueryInput
           width={(pending !== "*" && pending !== "") || focused ? 350 : 90}
           intent={errorMessage ? Intent.DANGER : Intent.NONE}
           items={
-            data?.pipelineOrError.__typename === "Pipeline"
-              ? data?.pipelineOrError.solids
-              : []
+            data?.pipelineOrError.__typename === "Pipeline" ? data?.pipelineOrError.solids : []
           }
           value={pending}
           placeholder="Type a Solid Subset"

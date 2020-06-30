@@ -58,9 +58,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({ open: false })}>
-                Close
-              </Button>
+              <Button onClick={() => this.setState({ open: false })}>Close</Button>
             </div>
           </div>
         </Dialog>

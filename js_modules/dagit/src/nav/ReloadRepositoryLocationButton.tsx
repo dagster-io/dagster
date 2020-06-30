@@ -65,13 +65,7 @@ export const ReloadRepositoryLocationButton: React.FunctionComponent<{
         content={"Reload metadata from this repository location."}
       >
         <Button
-          icon={
-            reloading ? (
-              <Spinner size={12} />
-            ) : (
-              <Icon icon="refresh" iconSize={12} />
-            )
-          }
+          icon={reloading ? <Spinner size={12} /> : <Icon icon="refresh" iconSize={12} />}
           disabled={reloading}
           onClick={onClick}
         />

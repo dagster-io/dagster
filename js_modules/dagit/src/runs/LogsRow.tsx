@@ -31,10 +31,7 @@ interface StructuredState {
   expanded: boolean;
 }
 
-export class Structured extends React.Component<
-  StructuredProps,
-  StructuredState
-> {
+export class Structured extends React.Component<StructuredProps, StructuredState> {
   static fragments = {
     LogsRowStructuredFragment: gql`
       fragment LogsRowStructuredFragment on PipelineRunEvent {
@@ -131,12 +128,7 @@ export class Structured extends React.Component<
     if (node.__typename === "ExecutionStepFailureEvent") {
       showCustomAlert({
         title: "Error",
-        body: (
-          <PythonErrorInfo
-            error={node.error}
-            failureMetadata={node.failureMetadata}
-          />
-        )
+        body: <PythonErrorInfo error={node.error} failureMetadata={node.failureMetadata} />
       });
     } else if (node.__typename === "PipelineInitFailureEvent") {
       showCustomAlert({
@@ -163,10 +155,7 @@ export class Structured extends React.Component<
   render() {
     return (
       <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <StructuredMemoizedContent
-          node={this.props.node}
-          metadata={this.props.metadata}
-        />
+        <StructuredMemoizedContent node={this.props.node} metadata={this.props.metadata} />
       </CellTruncationProvider>
     );
   }
@@ -216,9 +205,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
   onExpand = () => {
     showCustomAlert({
-      body: (
-        <div style={{ whiteSpace: "pre-wrap" }}>{this.props.node.message}</div>
-      )
+      body: <div style={{ whiteSpace: "pre-wrap" }}>{this.props.node.message}</div>
     });
   };
 

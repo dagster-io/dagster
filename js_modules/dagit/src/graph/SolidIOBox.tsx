@@ -6,11 +6,7 @@ import {
   SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
   SolidNodeDefinitionFragment
 } from "./types/SolidNodeDefinitionFragment";
-import {
-  SVGEllipseInRect,
-  SVGFlowLayoutRect,
-  SVGMonospaceText
-} from "./SVGComponents";
+import { SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText } from "./SVGComponents";
 
 import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
 import { Edge, isHighlighted } from "./highlighting";
@@ -74,9 +70,7 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
         strokeWidth={1}
         maxWidth={300}
         fill={
-          highlighted
-            ? PipelineColorScale(`${colorKey}Highlighted`)
-            : PipelineColorScale(colorKey)
+          highlighted ? PipelineColorScale(`${colorKey}Highlighted`) : PipelineColorScale(colorKey)
         }
         padding={8}
         spacing={7}
@@ -170,8 +164,7 @@ export function metadataForIO(
   let jumpTargetSolid: string | null = null;
 
   if (invocation && item.__typename === "InputDefinition") {
-    const others = invocation.inputs.find(i => i.definition.name === item.name)!
-      .dependsOn;
+    const others = invocation.inputs.find(i => i.definition.name === item.name)!.dependsOn;
     if (others.length) {
       title += `\n\nFrom:\n` + others.map(titleOfIO).join("\n");
       jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;
@@ -180,9 +173,7 @@ export function metadataForIO(
     edges.push({ a: `${invocation.name}:${item.name}`, b: PARENT_IN });
   }
   if (invocation && item.__typename === "OutputDefinition") {
-    const others = invocation.outputs.find(
-      i => i.definition.name === item.name
-    )!.dependedBy;
+    const others = invocation.outputs.find(i => i.definition.name === item.name)!.dependedBy;
     if (others.length) {
       title += "\n\nUsed By:\n" + others.map(o => titleOfIO(o)).join("\n");
       jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;

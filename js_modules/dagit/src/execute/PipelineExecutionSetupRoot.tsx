@@ -1,10 +1,6 @@
 import * as React from "react";
 import { Redirect } from "react-router";
-import {
-  useStorage,
-  applyCreateSession,
-  IExecutionSession
-} from "../LocalStorage";
+import { useStorage, applyCreateSession, IExecutionSession } from "../LocalStorage";
 import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router-dom";
 

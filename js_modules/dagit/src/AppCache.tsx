@@ -40,8 +40,7 @@ const AppCache = new InMemoryCache({
       return `${object.__typename}.${object.runId}`;
     } else if (
       object.name &&
-      (object.__typename === "RegularType" ||
-        object.__typename === "CompositeType")
+      (object.__typename === "RegularType" || object.__typename === "CompositeType")
     ) {
       return `Type.${object.name}`;
     } else {

@@ -8,10 +8,7 @@ import { layoutPipeline, ILayoutSolid } from "./layout";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import LayoutWorker from "worker-loader!babel-loader!../workers/dagre_layout.worker";
 
-const _layoutCacheKey = (
-  solids: ILayoutSolid[],
-  parentSolid?: ILayoutSolid
-) => {
+const _layoutCacheKey = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
   const solidKey = solids.map(x => x.name).join("|");
   const parentKey = parentSolid?.name;
   return `${solidKey}:${parentKey}`;
@@ -19,10 +16,7 @@ const _layoutCacheKey = (
 
 export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 
-const _asyncDagrePipelineLayout = (
-  solids: ILayoutSolid[],
-  parentSolid?: ILayoutSolid
-) => {
+const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayoutSolid) => {
   return new Promise(resolve => {
     const worker = new LayoutWorker();
     worker.addEventListener("message", function(event) {
@@ -33,9 +27,6 @@ const _asyncDagrePipelineLayout = (
   });
 };
 
-export const asyncDagrePipelineLayout = asyncMemoize(
-  _asyncDagrePipelineLayout,
-  _layoutCacheKey
-);
+export const asyncDagrePipelineLayout = asyncMemoize(_asyncDagrePipelineLayout, _layoutCacheKey);
 
 export * from "./layout";

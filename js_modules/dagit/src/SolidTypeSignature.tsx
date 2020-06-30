@@ -10,9 +10,7 @@ interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;
 }
 
-export default class SolidTypeSignature extends React.Component<
-  ISolidTypeSignature
-> {
+export default class SolidTypeSignature extends React.Component<ISolidTypeSignature> {
   static fragments = {
     SolidTypeSignatureFragment: gql`
       fragment SolidTypeSignatureFragment on ISolidDefinition {
@@ -45,8 +43,7 @@ export default class SolidTypeSignature extends React.Component<
     ));
     const outputSide = outputDefinitions.map((output, i) => (
       <span key={i}>
-        {breakOnUnderscores(output.name)}:{" "}
-        <TypeWithTooltip type={output.type} />
+        {breakOnUnderscores(output.name)}: <TypeWithTooltip type={output.type} />
         {i < outputDefinitions.length - 1 ? ", " : ""}
       </span>
     ));

@@ -9,11 +9,7 @@ interface ISolidConfigPortProps {
   minified: boolean;
 }
 
-export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({
-  x,
-  y,
-  minified
-}) => {
+export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({ x, y, minified }) => {
   return (
     <>
       <SVGEllipseInRect

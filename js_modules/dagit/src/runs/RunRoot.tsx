@@ -33,9 +33,7 @@ export const RunById: React.FunctionComponent<{
       <NonIdealState
         icon={IconNames.SEND_TO_GRAPH}
         title="No Run"
-        description={
-          "The run with this ID does not exist or has been cleaned up."
-        }
+        description={"The run with this ID does not exist or has been cleaned up."}
       />
     );
   }

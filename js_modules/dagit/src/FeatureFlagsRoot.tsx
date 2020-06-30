@@ -11,9 +11,7 @@ export const FeatureFlagsRoot = () => {
   });
 
   const toggleFlag = (flag: FeatureFlag) => {
-    setFlags(
-      flags.includes(flag) ? flags.filter(f => f !== flag) : [...flags, flag]
-    );
+    setFlags(flags.includes(flag) ? flags.filter(f => f !== flag) : [...flags, flag]);
   };
 
   return (

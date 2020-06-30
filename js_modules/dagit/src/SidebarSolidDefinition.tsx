@@ -116,26 +116,15 @@ export class SidebarSolidDefinition extends React.Component<
   };
 
   public render() {
-    const {
-      definition,
-      getInvocations,
-      showingSubsolids,
-      onClickInvocation
-    } = this.props;
+    const { definition, getInvocations, showingSubsolids, onClickInvocation } = this.props;
     const Plugin = pluginForMetadata(definition.metadata);
     const isComposite = definition.__typename === "CompositeSolidDefinition";
-    const configField =
-      definition.__typename === "SolidDefinition"
-        ? definition.configField
-        : null;
+    const configField = definition.__typename === "SolidDefinition" ? definition.configField : null;
 
     const inputMappings: SolidMappingTable = {};
     const outputMappings: SolidMappingTable = {};
 
-    if (
-      showingSubsolids &&
-      definition.__typename === "CompositeSolidDefinition"
-    ) {
+    if (showingSubsolids && definition.__typename === "CompositeSolidDefinition") {
       definition.inputMappings.forEach(
         m =>
           (inputMappings[m.definition.name] = [
@@ -159,9 +148,7 @@ export class SidebarSolidDefinition extends React.Component<
     return (
       <div>
         <SidebarSection title={"Definition"}>
-          <SidebarSubhead>
-            {isComposite ? "Composite Solid" : "Solid"}
-          </SidebarSubhead>
+          <SidebarSubhead>{isComposite ? "Composite Solid" : "Solid"}</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(definition.name)}</SidebarTitle>
           <SolidTypeSignature definition={definition} />
         </SidebarSection>
@@ -187,11 +174,7 @@ export class SidebarSolidDefinition extends React.Component<
           <SidebarSection title={"Required Resources"}>
             {definition.requiredResources.sort().map(requirement => (
               <ResourceContainer key={requirement.resourceKey}>
-                <Icon
-                  iconSize={14}
-                  icon={IconNames.LAYERS}
-                  color={Colors.DARK_GRAY2}
-                />
+                <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
               </ResourceContainer>
             ))}
@@ -200,33 +183,23 @@ export class SidebarSolidDefinition extends React.Component<
         <SidebarSection title={"Inputs"}>
           {definition.inputDefinitions.map((inputDef, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionSmallHeader>
-                {breakOnUnderscores(inputDef.name)}
-              </SectionSmallHeader>
+              <SectionSmallHeader>{breakOnUnderscores(inputDef.name)}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
-              <SolidLinks
-                title="Mapped to:"
-                items={inputMappings[inputDef.name]}
-              />
+              <SolidLinks title="Mapped to:" items={inputMappings[inputDef.name]} />
             </SectionItemContainer>
           ))}
         </SidebarSection>
         <SidebarSection title={"Outputs"}>
           {definition.outputDefinitions.map((outputDef, idx) => (
             <SectionItemContainer key={idx}>
-              <SectionSmallHeader>
-                {breakOnUnderscores(outputDef.name)}
-              </SectionSmallHeader>
+              <SectionSmallHeader>{breakOnUnderscores(outputDef.name)}</SectionSmallHeader>
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
-              <SolidLinks
-                title="Mapped from:"
-                items={outputMappings[outputDef.name]}
-              />
+              <SolidLinks title="Mapped from:" items={outputMappings[outputDef.name]} />
               <Description description={outputDef.description} />
             </SectionItemContainer>
           ))}
@@ -249,9 +222,7 @@ const InvocationList: React.FunctionComponent<{
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }> = ({ invocations, onClickInvocation }) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
-  const displayed = showAll
-    ? invocations
-    : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);
+  const displayed = showAll ? invocations : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
   return (
     <>

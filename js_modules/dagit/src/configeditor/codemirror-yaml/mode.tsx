@@ -30,20 +30,14 @@ interface IParseState {
 
 // Helper methods that mutate parser state. These must return new JavaScript objects.
 //
-function parentsPoppingItemsDeeperThan(
-  parents: IParseStateParent[],
-  indent: number
-) {
+function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
   while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
     parents = parents.slice(0, parents.length - 1);
   }
   return parents;
 }
 
-function parentsAddingChildKeyToLast(
-  parents: IParseStateParent[],
-  key: string
-) {
+function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) {
   if (parents.length === 0) return [];
 
   const immediateParent = parents[parents.length - 1];
@@ -57,11 +51,7 @@ function parentsAddingChildKeyToLast(
   ];
 }
 
-function parentsAddingChildKeyAtIndent(
-  parents: IParseStateParent[],
-  key: string,
-  indent: number
-) {
+function parentsAddingChildKeyAtIndent(parents: IParseStateParent[], key: string, indent: number) {
   parents = parentsPoppingItemsDeeperThan(parents, indent);
   parents = parentsAddingChildKeyToLast(parents, key);
   parents = [...parents, { key, indent: indent, childKeys: [] }];
@@ -163,10 +153,7 @@ CodeMirror.defineMode("yaml", () => {
       // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch === "{") {
-          state.inlineContainers = [
-            ...state.inlineContainers,
-            ContainerType.Dict
-          ];
+          state.inlineContainers = [...state.inlineContainers, ContainerType.Dict];
           state.inValue = false;
         } else if (ch === "}") {
           state.inlineContainers = state.inlineContainers.slice(
@@ -176,10 +163,7 @@ CodeMirror.defineMode("yaml", () => {
           state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = state.inlineContainers.length > 0;
         } else if (ch === "[") {
-          state.inlineContainers = [
-            ...state.inlineContainers,
-            ContainerType.List
-          ];
+          state.inlineContainers = [...state.inlineContainers, ContainerType.List];
         } else if (ch === "]") {
           state.inlineContainers = state.inlineContainers.slice(
             0,
@@ -194,8 +178,7 @@ CodeMirror.defineMode("yaml", () => {
       // Handle inline separators. For dictionaries, we pop from value parsing state back to
       // key parsing state after a comma and unwind the parent stack.
       if (state.inlineContainers && !wasEscaped && ch === ",") {
-        const current =
-          state.inlineContainers[state.inlineContainers.length - 1];
+        const current = state.inlineContainers[state.inlineContainers.length - 1];
         if (current === ContainerType.Dict) {
           state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = false;
@@ -223,11 +206,7 @@ CodeMirror.defineMode("yaml", () => {
         if (match) {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
-          state.parents = parentsAddingChildKeyAtIndent(
-            state.parents,
-            key,
-            keyIndent
-          );
+          state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
           return "atom";
         }
       }
@@ -258,11 +237,7 @@ CodeMirror.defineMode("yaml", () => {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
           state.inValue = false;
-          state.parents = parentsAddingChildKeyAtIndent(
-            state.parents,
-            key,
-            keyIndent
-          );
+          state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
           result = "atom";
         }
 
@@ -391,10 +366,7 @@ CodeMirror.registerHelper(
       if (!type) {
         return false;
       }
-      return (
-        type.__typename === "ArrayConfigType" ||
-        type.__typename === "CompositeConfigType"
-      );
+      return type.__typename === "ArrayConfigType" || type.__typename === "CompositeConfigType";
     };
 
     const formatReplacement = (
@@ -410,9 +382,9 @@ CodeMirror.registerHelper(
       const tokenIsColon = token.string.startsWith(":");
 
       if (isCompositeOrList && tokenIsColon) {
-        replacement = `\n${" ".repeat(prevToken.start + 2)}${
-          field.name
-        }:\n${" ".repeat(prevToken.start + 4)}`;
+        replacement = `\n${" ".repeat(prevToken.start + 2)}${field.name}:\n${" ".repeat(
+          prevToken.start + 4
+        )}`;
       } else if (isCompositeOrList) {
         replacement = `${field.name}:\n${" ".repeat(start + 2)}`;
       } else if (tokenIsColon) {
@@ -433,9 +405,7 @@ CodeMirror.registerHelper(
         if (description) {
           const docs = document.createElement("div");
           docs.innerText =
-            description.length < 90
-              ? description
-              : description.substr(0, 87) + "...";
+            description.length < 90 ? description : description.substr(0, 87) + "...";
           docs.style.opacity = "0.5";
           docs.style.overflow = "hidden";
           docs.style.maxHeight = "33px";
@@ -458,8 +428,7 @@ CodeMirror.registerHelper(
     // union type
     if (
       context.availableFields.length &&
-      (context.type.__typename === "CompositeConfigType" ||
-        isScalarUnionNewLine)
+      (context.type.__typename === "CompositeConfigType" || isScalarUnionNewLine)
     ) {
       return {
         list: context.availableFields
@@ -487,10 +456,7 @@ CodeMirror.registerHelper(
     }
 
     // Completion of boolean field values
-    if (
-      context.type.__typename === "RegularConfigType" &&
-      context.type.givenName === "Bool"
-    ) {
+    if (context.type.__typename === "RegularConfigType" && context.type.givenName === "Bool") {
       return {
         list: ["True", "False"]
           .filter(val => val.startsWith(searchString))
@@ -502,9 +468,7 @@ CodeMirror.registerHelper(
     // non-scalar suggestions
     const type = context.type;
     if (type.__typename === "ScalarUnionConfigType") {
-      const scalarType = options.schema.allConfigTypes.find(
-        x => x.key === type.scalarTypeKey
-      );
+      const scalarType = options.schema.allConfigTypes.find(x => x.key === type.scalarTypeKey);
       const nonScalarType = options.schema.allConfigTypes.find(
         x => x.key === type.nonScalarTypeKey
       );
@@ -555,9 +519,7 @@ function findAutocompletionContext(
     return;
   }
 
-  let type = schema.allConfigTypes.find(
-    t => t.key === schema.rootConfigType.key
-  );
+  let type = schema.allConfigTypes.find(t => t.key === schema.rootConfigType.key);
   if (!type || type.__typename !== "CompositeConfigType") {
     return null;
   }
@@ -594,13 +556,8 @@ function findAutocompletionContext(
       if (type.__typename === "ScalarUnionConfigType") {
         available = [];
         const nonScalarTypeKey = type.nonScalarTypeKey;
-        const nonScalarType = schema.allConfigTypes.find(
-          x => x.key === nonScalarTypeKey
-        );
-        if (
-          nonScalarType &&
-          nonScalarType.__typename === "CompositeConfigType"
-        ) {
+        const nonScalarType = schema.allConfigTypes.find(x => x.key === nonScalarTypeKey);
+        if (nonScalarType && nonScalarType.__typename === "CompositeConfigType") {
           available = nonScalarType.fields;
         }
       } else if (type.__typename === "CompositeConfigType") {
@@ -608,9 +565,7 @@ function findAutocompletionContext(
         available = type.fields;
 
         if (parent === immediateParent && childEntriesUnique) {
-          available = available.filter(
-            item => immediateParent.childKeys.indexOf(item.name) === -1
-          );
+          available = available.filter(item => immediateParent.childKeys.indexOf(item.name) === -1);
         }
       } else {
         available = [];
@@ -623,8 +578,7 @@ function findAutocompletionContext(
 
 // Find context for a fully- or partially- typed key or value in the YAML document
 export function expandAutocompletionContextAtCursor(editor: any) {
-  const schema: ConfigEditorRunConfigSchemaFragment =
-    editor.options.hintOptions.schema;
+  const schema: ConfigEditorRunConfigSchemaFragment = editor.options.hintOptions.schema;
 
   const cursor = editor.getCursor();
   const token: CodemirrorToken = editor.getTokenAt(cursor);
@@ -673,9 +627,7 @@ export type YamlModeValidationResult =
       errors: YamlModeValidationError[];
     };
 
-export type YamlModeValidateFunction = (
-  configJSON: object
-) => Promise<YamlModeValidationResult>;
+export type YamlModeValidateFunction = (configJSON: object) => Promise<YamlModeValidationResult>;
 
 export type YamlModeValidationError = {
   message: string;
@@ -683,36 +635,27 @@ export type YamlModeValidationError = {
   reason: string;
 };
 
-CodeMirror.registerHelper(
-  "dagster-docs",
-  "yaml",
-  (editor: any, pos: CodeMirror.Position) => {
-    const token = editor.getTokenAt(pos);
+CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: CodeMirror.Position) => {
+  const token = editor.getTokenAt(pos);
 
-    const schema: ConfigEditorRunConfigSchemaFragment =
-      editor.options.hintOptions.schema;
+  const schema: ConfigEditorRunConfigSchemaFragment = editor.options.hintOptions.schema;
 
-    if (token.type !== "atom") {
-      return null;
-    }
-
-    const context = findAutocompletionContext(
-      schema,
-      token.state.parents,
-      token.start
-    );
-    const match =
-      context &&
-      context.type.__typename === "CompositeConfigType" &&
-      context.type.fields.find(f => f.name === token.string);
-
-    if (match && match.description) {
-      return match.description;
-    }
-
+  if (token.type !== "atom") {
     return null;
   }
-);
+
+  const context = findAutocompletionContext(schema, token.state.parents, token.start);
+  const match =
+    context &&
+    context.type.__typename === "CompositeConfigType" &&
+    context.type.fields.find(f => f.name === token.string);
+
+  if (match && match.description) {
+    return match.description;
+  }
+
+  return null;
+});
 
 CodeMirror.registerHelper(
   "lint",
@@ -760,8 +703,7 @@ CodeMirror.registerHelper(
         ch: 0
       };
       lints.push({
-        message: `${yamlDoc.errors.length -
-          lints.length} more errors - bailed out.`,
+        message: `${yamlDoc.errors.length - lints.length} more errors - bailed out.`,
         severity: "warning",
         type: "syntax",
         from: nextLineLocation,
@@ -774,11 +716,7 @@ CodeMirror.registerHelper(
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
-          const lint = validationErrorToCodemirrorError(
-            error,
-            yamlDoc,
-            codeMirrorDoc
-          );
+          const lint = validationErrorToCodemirrorError(error, yamlDoc, codeMirrorDoc);
           if (lint) {
             lints.push(lint);
           }
@@ -802,9 +740,7 @@ export function validationErrorToCodemirrorError(
     message: error.message,
     severity: "error",
     type: "syntax",
-    from: codeMirrorDoc.posFromIndex(
-      range ? range.start : 0
-    ) as CodeMirror.Position,
+    from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position,
     to: codeMirrorDoc.posFromIndex(
       range ? range.end : Number.MAX_SAFE_INTEGER
     ) as CodeMirror.Position
@@ -846,25 +782,15 @@ function nodeAtPath(
       node = node.value;
     }
 
-    if (
-      node &&
-      node.type &&
-      (node.type === "SEQ" || node.type === "FLOW_SEQ")
-    ) {
+    if (node && node.type && (node.type === "SEQ" || node.type === "FLOW_SEQ")) {
       const index = Number.parseInt(part);
       if (!Number.isNaN(index)) {
         node = node.items[index];
       } else {
         return null;
       }
-    } else if (
-      node &&
-      node.type &&
-      (node.type === "FLOW_MAP" || node.type === "MAP")
-    ) {
-      const item = node.items.find(
-        ({ key }: { key: any }) => key.value === part
-      );
+    } else if (node && node.type && (node.type === "FLOW_MAP" || node.type === "MAP")) {
+      const item = node.items.find(({ key }: { key: any }) => key.value === part);
       if (item && item.type && item.type === "PAIR") {
         node = item;
       } else {

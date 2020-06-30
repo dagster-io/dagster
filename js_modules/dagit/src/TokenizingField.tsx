@@ -44,10 +44,7 @@ function findProviderByToken(token: string, providers: SuggestionProvider[]) {
   return providers.find(p => p.token.toLowerCase() === token.toLowerCase());
 }
 
-export function tokenizedValuesFromString(
-  str: string,
-  providers: SuggestionProvider[]
-) {
+export function tokenizedValuesFromString(str: string, providers: SuggestionProvider[]) {
   if (str === "") return [];
   const tokens = str.split(",");
   return tokens.map(token => tokenizedValueFromString(token, providers));
@@ -212,10 +209,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (str === "") return;
 
     setTyped("");
-    onChange([
-      ...values,
-      tokenizedValueFromString(str, filteredSuggestionProviders)
-    ]);
+    onChange([...values, tokenizedValueFromString(str, filteredSuggestionProviders)]);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {

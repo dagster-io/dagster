@@ -5,11 +5,7 @@ import { RouteComponentProps } from "react-router";
 import { RunTable } from "./RunTable";
 import { RunsQueryRefetchContext } from "./RunUtils";
 import { RunsRootQuery, RunsRootQueryVariables } from "./types/RunsRootQuery";
-import {
-  RunsFilter,
-  runsFilterForSearchTokens,
-  useRunFiltering
-} from "./RunsFilter";
+import { RunsFilter, runsFilterForSearchTokens, useRunFiltering } from "./RunsFilter";
 
 import gql from "graphql-tag";
 import { IconNames } from "@blueprintjs/icons";
@@ -28,8 +24,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
     RunsRootQueryVariables
   >({
     nextCursorForResult: runs => {
-      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns")
-        return undefined;
+      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
     },
     variables: { filter: runsFilterForSearchTokens(filterTokens) },
@@ -85,11 +80,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
 };
 
 export const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery(
-    $limit: Int
-    $cursor: String
-    $filter: PipelineRunsFilter!
-  ) {
+  query RunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {
         results {

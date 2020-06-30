@@ -5,20 +5,14 @@ export const DEFAULT_RESULT_NAME = "result";
 
 // This helper is here so that we can swap out Moment in the future as needed and
 // encourage use of the same default format string across the app.
-export function unixTimestampToString(
-  unix: number | null,
-  format = "MMM DD, H:mm A"
-) {
+export function unixTimestampToString(unix: number | null, format = "MMM DD, H:mm A") {
   if (!unix) {
     return null;
   }
   return moment(unix * 1000).format(format);
 }
 
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait = 100
-): T {
+export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100): T {
   let timeout: any | null = null;
   let args: any[] | null = null;
   let timestamp = 0;
@@ -96,9 +90,7 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
     // nodes are selected. If the selection on the page is text within
     // codemirror or an input or textarea, this returns "" and we fall
     // through to the default pasteboard content.
-    const text = (window.getSelection() || "")
-      .toString()
-      .replace(/_\u200b/g, "_");
+    const text = (window.getSelection() || "").toString().replace(/_\u200b/g, "_");
 
     if (text.length) {
       event.preventDefault();
@@ -162,10 +154,7 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function titleOfIO(i: {
-  solid: { name: string };
-  definition: { name: string };
-}) {
+export function titleOfIO(i: { solid: { name: string }; definition: { name: string } }) {
   return i.solid.name !== DEFAULT_RESULT_NAME
     ? `${i.solid.name}:${i.definition.name}`
     : i.solid.name;
@@ -201,7 +190,5 @@ export function colorHash(str: string) {
     return 255 * (value - Math.floor(value));
   };
 
-  return `rgb(${random255(seed++)}, ${random255(seed++)}, ${random255(
-    seed++
-  )})`;
+  return `rgb(${random255(seed++)}, ${random255(seed++)}, ${random255(seed++)})`;
 }

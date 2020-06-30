@@ -45,11 +45,7 @@ interface LeftNavProps {
   setRepo: (repo: DagsterRepoOption) => void;
 }
 
-export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
-  options,
-  repo,
-  setRepo
-}) => {
+export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, setRepo }) => {
   const history = useHistory();
   const match = useRouteMatch<
     | { selector: string; tab: string; rootTab: undefined }
@@ -79,10 +75,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
             shortcutLabel={`⌥${i + 1}`}
             shortcutFilter={e => e.keyCode === KEYCODE_FOR_1 + i && e.altKey}
           >
-            <Tab
-              to={t.to}
-              className={match?.params.rootTab === t.tab ? "selected" : ""}
-            >
+            <Tab to={t.to} className={match?.params.rootTab === t.tab ? "selected" : ""}>
               {t.icon}
               <TabLabel>{t.label}</TabLabel>
             </Tab>
@@ -101,11 +94,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
         <EnvironmentPicker options={options} repo={repo} setRepo={setRepo} />
         {repo &&
           REPO_SCOPE_TABS.map(t => (
-            <Tab
-              to={t.to}
-              key={t.tab}
-              className={match?.params.tab === t.tab ? "selected" : ""}
-            >
+            <Tab to={t.to} key={t.tab} className={match?.params.tab === t.tab ? "selected" : ""}>
               {t.icon}
               <TabLabel>{t.label}</TabLabel>
             </Tab>

@@ -42,9 +42,7 @@ function useLaunchButtonCommonState({ disabled }: { disabled: boolean }) {
   };
 
   let forced: Partial<LaunchButtonConfiguration> = {};
-  let status = disabled
-    ? LaunchButtonStatus.Disabled
-    : LaunchButtonStatus.Ready;
+  let status = disabled ? LaunchButtonStatus.Disabled : LaunchButtonStatus.Ready;
 
   if (websocketStatus !== WebSocket.OPEN) {
     status = LaunchButtonStatus.Disabled;
@@ -77,10 +75,7 @@ interface LaunchButtonProps {
   config: LaunchButtonConfiguration;
 }
 
-export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({
-  config,
-  small
-}) => {
+export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ config, small }) => {
   const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
     disabled: config.disabled
   });
@@ -146,9 +141,7 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
                   text={option.title}
                   disabled={option.disabled}
                   onClick={() => onConfigSelected(option)}
-                  icon={
-                    option.icon === "dagster-spinner" ? "blank" : option.icon
-                  }
+                  icon={option.icon === "dagster-spinner" ? "blank" : option.icon}
                 />
               </Tooltip>
             ))}
@@ -197,11 +190,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   >
     <ButtonContainer
       role="button"
-      style={
-        small
-          ? { height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15 }
-          : {}
-      }
+      style={small ? { height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15 } : {}}
       status={status}
       onClick={onClick}
       rightIcon={rightIcon}
@@ -232,12 +221,9 @@ const ButtonContainer = styled(Button)<{
     flex-shrink: 0;
     background: ${({ status }) =>
       ({
-        disabled:
-          "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-        ready:
-          "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
-        starting:
-          "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+        disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
+        ready: "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
+        starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
       }[status])};
     border-top: 1px solid rgba(255, 255, 255, 0.25);
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
@@ -245,8 +231,7 @@ const ButtonContainer = styled(Button)<{
     justify-content: center;
     align-items: center;
     display: inline-flex;
-    color: ${({ status }) =>
-      status === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
+    color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
     cursor: ${({ status }) => (status !== "ready" ? "normal" : "pointer")};
     z-index: 2;
     min-width: 150px;
@@ -258,12 +243,9 @@ const ButtonContainer = styled(Button)<{
     &.bp3-active {
       background: ${({ status }) =>
         ({
-          disabled:
-            "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-          ready:
-            "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
-          starting:
-            "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+          disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
+          ready: "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
+          starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
         }[status])};
     }
 
@@ -272,8 +254,7 @@ const ButtonContainer = styled(Button)<{
     }
 
     .bp3-icon {
-      color: ${({ status }) =>
-        status === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
+      color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
     }
     .bp3-button-text {
       display: flex;

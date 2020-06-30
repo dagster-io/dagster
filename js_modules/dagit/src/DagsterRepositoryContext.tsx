@@ -43,12 +43,8 @@ export const ROOT_REPOSITORIES_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-export const isRepositoryOptionEqual = (
-  a: DagsterRepoOption,
-  b: DagsterRepoOption
-) =>
-  a.repository.name === b.repository.name &&
-  a.repositoryLocation.name === b.repositoryLocation.name
+export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
+  a.repository.name === b.repository.name && a.repositoryLocation.name === b.repositoryLocation.name
     ? true
     : false;
 
@@ -64,20 +60,16 @@ export const useRepositoryOptions = () => {
     return { options: [], error: data.repositoriesOrError };
   }
 
-  const options: DagsterRepoOption[] = data.repositoriesOrError.nodes.map(
-    repository => ({
-      repository,
-      repositoryLocation: repository.location
-    })
-  );
+  const options: DagsterRepoOption[] = data.repositoriesOrError.nodes.map(repository => ({
+    repository,
+    repositoryLocation: repository.location
+  }));
 
   return { error: null, options };
 };
 
 export const useRepositorySelector = () => {
-  const { repository, repositoryLocation } = React.useContext(
-    DagsterRepositoryContext
-  );
+  const { repository, repositoryLocation } = React.useContext(DagsterRepositoryContext);
 
   if (!repository || !repositoryLocation) {
     // use legacy fields
@@ -90,10 +82,7 @@ export const useRepositorySelector = () => {
   };
 };
 
-export const usePipelineSelector = (
-  pipelineName: string,
-  solidSelection?: string[]
-) => {
+export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
   const repositorySelector = useRepositorySelector();
   return {
     ...repositorySelector,

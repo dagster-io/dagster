@@ -78,10 +78,7 @@ const StringSelectNoIntrinsicWidth = styled(Select.ofType<string>())`
 const BasicStringPredicate = (text: string, items: string[]) =>
   items.filter(i => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
 
-const BasicStringRenderer = (
-  item: string,
-  options: { handleClick: any; modifiers: any }
-) => (
+const BasicStringRenderer = (item: string, options: { handleClick: any; modifiers: any }) => (
   <MenuItem
     key={item}
     text={item}

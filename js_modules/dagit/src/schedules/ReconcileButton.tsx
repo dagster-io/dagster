@@ -30,9 +30,7 @@ export const ReconcileButton: React.FunctionComponent<{}> = () => {
     <Button
       small={true}
       intent={Intent.SUCCESS}
-      onClick={() =>
-        reconcileScheduleState({ variables: { repositorySelector } })
-      }
+      onClick={() => reconcileScheduleState({ variables: { repositorySelector } })}
     >
       Reconcile
     </Button>

@@ -4,10 +4,7 @@ import styled from "styled-components";
 import { Slider, Icon, Colors } from "@blueprintjs/core";
 
 export interface SVGViewportInteractor {
-  onMouseDown(
-    viewport: SVGViewport,
-    event: React.MouseEvent<HTMLDivElement>
-  ): void;
+  onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
   onWheel(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
   render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
@@ -49,10 +46,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       return;
     }
 
-    if (
-      event.target instanceof HTMLElement &&
-      event.target.closest("#zoom-slider-container")
-    ) {
+    if (event.target instanceof HTMLElement && event.target.closest("#zoom-slider-container")) {
       return;
     }
 
@@ -143,10 +137,7 @@ const NoneInteractor: SVGViewportInteractor = {
   }
 };
 
-export default class SVGViewport extends React.Component<
-  SVGViewportProps,
-  SVGViewportState
-> {
+export default class SVGViewport extends React.Component<SVGViewportProps, SVGViewportState> {
   static Interactors = {
     PanAndZoom: PanAndZoomInteractor,
     None: NoneInteractor
@@ -183,10 +174,7 @@ export default class SVGViewport extends React.Component<
     const dw = ownerRect.width / this.props.graphWidth;
     const dh = ownerRect.height / this.props.graphHeight;
     const desiredScale = Math.min(dw, dh);
-    const boundedScale = Math.max(
-      Math.min(desiredScale, MAX_AUTOCENTER_ZOOM),
-      MIN_AUTOCENTER_ZOOM
-    );
+    const boundedScale = Math.max(Math.min(desiredScale, MAX_AUTOCENTER_ZOOM), MIN_AUTOCENTER_ZOOM);
 
     if (
       this.state.scale < boundedScale &&
@@ -276,13 +264,7 @@ export default class SVGViewport extends React.Component<
   };
 
   render() {
-    const {
-      children,
-      onKeyDown,
-      onDoubleClick,
-      interactor,
-      backgroundColor
-    } = this.props;
+    const { children, onKeyDown, onDoubleClick, interactor, backgroundColor } = this.props;
     const { x, y, scale } = this.state;
 
     return (

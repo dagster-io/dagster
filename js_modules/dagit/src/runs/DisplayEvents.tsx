@@ -18,10 +18,7 @@ interface IDisplayEventsState {
   materializationsExpanded: boolean;
 }
 
-export class DisplayEvents extends React.Component<
-  IDisplayEventsProps,
-  IDisplayEventsState
-> {
+export class DisplayEvents extends React.Component<IDisplayEventsProps, IDisplayEventsState> {
   state = {
     expectationsExpanded: false,
     materializationsExpanded: true
@@ -31,12 +28,10 @@ export class DisplayEvents extends React.Component<
     const { expectationsExpanded, materializationsExpanded } = this.state;
     const { expectationResults, materializations } = this.props;
 
-    const nPassed = expectationResults.filter(
-      e => e.status === IExpectationResultStatus.PASSED
-    ).length;
-    const nFailed = expectationResults.filter(
-      e => e.status === IExpectationResultStatus.FAILED
-    ).length;
+    const nPassed = expectationResults.filter(e => e.status === IExpectationResultStatus.PASSED)
+      .length;
+    const nFailed = expectationResults.filter(e => e.status === IExpectationResultStatus.FAILED)
+      .length;
 
     return (
       <DisplayEventsContainer>
@@ -50,9 +45,7 @@ export class DisplayEvents extends React.Component<
             >
               <DisclosureTriangle
                 expanded={expectationsExpanded}
-                onClick={() =>
-                  this.setState({ expectationsExpanded: !expectationsExpanded })
-                }
+                onClick={() => this.setState({ expectationsExpanded: !expectationsExpanded })}
               />
               <div style={{ width: 4 }} />
               <span style={{ fontWeight: 500 }}> Expectations</span>&nbsp;
@@ -73,9 +66,7 @@ export class DisplayEvents extends React.Component<
             )}
           </div>
         )}
-        {expectationResults.length > 0 && materializations.length > 0 && (
-          <Divider />
-        )}
+        {expectationResults.length > 0 && materializations.length > 0 && <Divider />}
         {materializations.length > 0 && (
           <div>
             <div
@@ -99,9 +90,7 @@ export class DisplayEvents extends React.Component<
               </ExpectationsTag>
             </div>
             {materializationsExpanded &&
-              materializations.map((e, idx) => (
-                <DisplayEvent event={e} key={`${idx}`} />
-              ))}
+              materializations.map((e, idx) => <DisplayEvent event={e} key={`${idx}`} />)}
           </div>
         )}
       </DisplayEventsContainer>
@@ -134,6 +123,5 @@ const DisclosureTriangle = styled.div<{ expanded: boolean }>`
   border-right: 5px solid transparent;
   border-top: 8px solid rgba(0, 0, 0, 0.5);
   transition: transform 150ms linear;
-  transform: ${({ expanded }) =>
-    expanded ? "rotate(0deg)" : "rotate(-90deg)"};
+  transform: ${({ expanded }) => (expanded ? "rotate(0deg)" : "rotate(-90deg)")};
 `;

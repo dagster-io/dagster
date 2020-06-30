@@ -1,26 +1,13 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import {
-  Legend,
-  LegendColumn,
-  RowColumn,
-  RowContainer
-} from "../ListComponents";
+import { Legend, LegendColumn, RowColumn, RowContainer } from "../ListComponents";
 import { RunTag } from "./RunTag";
-import {
-  RunTableRunFragment,
-  RunTableRunFragment_tags
-} from "./types/RunTableRunFragment";
+import { RunTableRunFragment, RunTableRunFragment_tags } from "./types/RunTableRunFragment";
 import { TokenizingFieldValue } from "../TokenizingField";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { NonIdealState, Icon } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
-import {
-  titleForRun,
-  RunTime,
-  RunElapsed,
-  RunComponentFragments
-} from "./RunUtils";
+import { titleForRun, RunTime, RunElapsed, RunComponentFragments } from "./RunUtils";
 import { RunActionsMenu } from "./RunActionsMenu";
 import { RunStatusWithStats } from "./RunStatusDots";
 
@@ -78,11 +65,7 @@ export class RunTable extends React.Component<RunTableProps> {
           <LegendColumn style={{ maxWidth: 50 }}></LegendColumn>
         </Legend>
         {this.props.runs.map(run => (
-          <RunRow
-            run={run}
-            key={run.runId}
-            onSetFilter={this.props.onSetFilter}
-          />
+          <RunRow run={run} key={run.runId} onSetFilter={this.props.onSetFilter} />
         ))}
       </div>
     );
@@ -112,9 +95,7 @@ const RunRow: React.FunctionComponent<{
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
       <RowColumn style={{ maxWidth: 90, fontFamily: "monospace" }}>
-        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
-          {titleForRun(run)}
-        </Link>
+        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
       <RowColumn style={{ flex: 5 }}>
         <div style={{ display: "flex" }}>

@@ -5,20 +5,10 @@ import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { assertUnreachable } from "../Util";
 import { copyValue } from "../DomUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
-import {
-  Button,
-  Dialog,
-  Classes,
-  Colors,
-  Icon,
-  Position,
-  Tooltip
-} from "@blueprintjs/core";
+import { Button, Dialog, Classes, Colors, Icon, Position, Tooltip } from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";
 
-export function createLogRowStructuredContentTable(
-  rows: { label: string; item: JSX.Element }[]
-) {
+export function createLogRowStructuredContentTable(rows: { label: string; item: JSX.Element }[]) {
   return (
     <div style={{ overflow: "auto", paddingBottom: 10 }}>
       <LogRowStructuredContentTable cellPadding="0" cellSpacing="0">
@@ -97,10 +87,7 @@ export class MetadataEntry extends React.Component<{
       case "EventPathMetadataEntry":
         return (
           <>
-            <MetadataEntryLink
-              title={"Copy to clipboard"}
-              onClick={e => copyValue(e, entry.path)}
-            >
+            <MetadataEntryLink title={"Copy to clipboard"} onClick={e => copyValue(e, entry.path)}>
               {entry.path}
             </MetadataEntryLink>{" "}
             <Icon
@@ -134,11 +121,7 @@ export class MetadataEntry extends React.Component<{
       case "EventUrlMetadataEntry":
         return (
           <>
-            <MetadataEntryLink
-              href={entry.url}
-              title={`Open in a new tab`}
-              target="__blank"
-            >
+            <MetadataEntryLink href={entry.url} title={`Open in a new tab`} target="__blank">
               {entry.url}
             </MetadataEntryLink>{" "}
             <a href={entry.url} target="__blank">
@@ -176,14 +159,8 @@ const PythonArtifactLink = ({
   description: string;
 }) => (
   <>
-    <Tooltip
-      hoverOpenDelay={100}
-      position={Position.TOP}
-      content={`${module}.${name}`}
-    >
-      <span style={{ cursor: "pointer", textDecoration: "underline" }}>
-        {name}
-      </span>
+    <Tooltip hoverOpenDelay={100} position={Position.TOP} content={`${module}.${name}`}>
+      <span style={{ cursor: "pointer", textDecoration: "underline" }}>{name}</span>
     </Tooltip>{" "}
     - {description}
   </>
@@ -206,9 +183,7 @@ class MarkdownMetadataLink extends React.Component<{
     const { isExpanded } = this.state;
     return (
       <>
-        <MetadataEntryLink onClick={this.onView}>
-          [Show Metadata]
-        </MetadataEntryLink>
+        <MetadataEntryLink onClick={this.onView}>[Show Metadata]</MetadataEntryLink>
         {isExpanded && (
           <Dialog
             icon="info-sign"
@@ -224,11 +199,7 @@ class MarkdownMetadataLink extends React.Component<{
 
             <div className={Classes.DIALOG_FOOTER}>
               <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                <Button
-                  intent="primary"
-                  autoFocus={true}
-                  onClick={this.onClose}
-                >
+                <Button intent="primary" autoFocus={true} onClick={this.onClose}>
                   Close
                 </Button>
               </div>

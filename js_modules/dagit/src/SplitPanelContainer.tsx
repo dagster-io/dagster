@@ -124,10 +124,7 @@ interface SplitPanelTogglesProps {
   container: React.RefObject<SplitPanelContainer>;
 }
 
-export const SplitPanelToggles = ({
-  container,
-  axis
-}: SplitPanelTogglesProps) => {
+export const SplitPanelToggles = ({ container, axis }: SplitPanelTogglesProps) => {
   return (
     <ButtonGroup style={{ flexShrink: 0 }}>
       <Button
@@ -151,8 +148,7 @@ const DividerWrapper = {
     width: 4px;
     z-index: 2;
     background: ${Colors.WHITE};
-    border-left: 1px solid
-      ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-left: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
     border-right: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;
@@ -161,8 +157,7 @@ const DividerWrapper = {
     height: 4px;
     z-index: 2;
     background: ${Colors.WHITE};
-    border-top: 1px solid
-      ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-top: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
     border-bottom: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;

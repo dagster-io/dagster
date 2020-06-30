@@ -5,12 +5,7 @@ import { Popover } from "@blueprintjs/core";
 import { RunStats } from "./RunStats";
 import { Colors } from "@blueprintjs/core";
 
-export type IRunStatus =
-  | "SUCCESS"
-  | "NOT_STARTED"
-  | "FAILURE"
-  | "STARTED"
-  | "MANAGED";
+export type IRunStatus = "SUCCESS" | "NOT_STARTED" | "FAILURE" | "STARTED" | "MANAGED";
 
 export const RUN_STATUS_COLORS = {
   NOT_STARTED: Colors.GRAY1,

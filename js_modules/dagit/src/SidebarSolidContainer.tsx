@@ -62,9 +62,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
               showingSubsolids={showingSubsolids}
               definition={pipelineOrError!.solidHandle!.solid.definition}
               getInvocations={getInvocations}
-              onClickInvocation={({ handleID }) =>
-                onClickSolid({ path: handleID.split(".") })
-              }
+              onClickInvocation={({ handleID }) => onClickSolid({ path: handleID.split(".") })}
             />
           </>
         );
@@ -74,10 +72,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
 };
 
 export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
-  query SidebarTabbedContainerSolidQuery(
-    $selector: PipelineSelector!
-    $handleID: String!
-  ) {
+  query SidebarTabbedContainerSolidQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {

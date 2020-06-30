@@ -15,9 +15,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import { Popover, Icon } from "@blueprintjs/core";
 import { formatElapsedTime } from "../Util";
 
-export function subsetTitleForRun(run: {
-  tags: { key: string; value: string }[];
-}) {
+export function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
   const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
   return stepsTag ? stepsTag.value : "Full Pipeline";
 }
@@ -81,8 +79,7 @@ export function handleReexecutionResult(
     return;
   }
 
-  const obj = (result.data as LaunchPipelineReexecution)
-    .launchPipelineReexecution;
+  const obj = (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
 
   if (obj.__typename === "LaunchPipelineRunSuccess") {
     const url = `/pipeline/${obj.run.pipeline.name}/runs/${obj.run.runId}`;
@@ -122,12 +119,7 @@ function getExecutionMetadata(
       // Clean up tags related to run grouping once we decide its persistence
       // https://github.com/dagster-io/dagster/issues/2495
       ...run.tags
-        .filter(
-          tag =>
-            !["dagster/is_resume_retry", "dagster/step_selection"].includes(
-              tag.key
-            )
-        )
+        .filter(tag => !["dagster/is_resume_retry", "dagster/step_selection"].includes(tag.key))
         .map(tag => ({
           key: tag.key,
           value: tag.value
@@ -331,10 +323,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
   size?: "standard" | "minimal";
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({
-  run,
-  size
-}) => {
+export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) => {
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -378,9 +367,7 @@ export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({ run }) => {
     );
   }
 
-  return (
-    <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
-  );
+  return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
 };
 
 export class TimeElapsed extends React.Component<{

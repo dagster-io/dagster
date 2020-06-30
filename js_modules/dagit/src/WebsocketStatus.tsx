@@ -3,9 +3,7 @@ import { SubscriptionClient } from "subscriptions-transport-ws";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 
-export const WebsocketStatusContext = React.createContext<number>(
-  WebSocket.CONNECTING
-);
+export const WebsocketStatusContext = React.createContext<number>(WebSocket.CONNECTING);
 
 const WS_EVENTS = [
   "connecting",
@@ -70,33 +68,15 @@ export const WebsocketStatus: React.FunctionComponent = props => (
     {status =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle
-            style={{ background: Colors.GREEN5 }}
-            title="Connecting..."
-            {...props}
-          />
+          <Circle style={{ background: Colors.GREEN5 }} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle
-            style={{ background: Colors.GREEN3 }}
-            title="Connected"
-            {...props}
-          />
+          <Circle style={{ background: Colors.GREEN3 }} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle
-            style={{ background: Colors.GRAY3 }}
-            title="Closing..."
-            {...props}
-          />
+          <Circle style={{ background: Colors.GRAY3 }} title="Closing..." {...props} />
         )
-      }[status] || (
-        <Circle
-          style={{ background: Colors.GRAY3 }}
-          title="Disconnected"
-          {...props}
-        />
-      ))
+      }[status] || <Circle style={{ background: Colors.GRAY3 }} title="Disconnected" {...props} />)
     }
   </WebsocketStatusContext.Consumer>
 );

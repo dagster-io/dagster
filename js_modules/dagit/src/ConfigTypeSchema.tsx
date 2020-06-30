@@ -70,11 +70,7 @@ function renderTypeRecursive(
   depth: number,
   props: ConfigTypeSchemaProps
 ): React.ReactElement<HTMLElement> {
-  if (
-    type.__typename === "CompositeConfigType" &&
-    props.maxDepth &&
-    depth === props.maxDepth
-  ) {
+  if (type.__typename === "CompositeConfigType" && props.maxDepth && depth === props.maxDepth) {
     return <span>...</span>;
   }
   if (type.__typename === "CompositeConfigType") {
@@ -83,27 +79,16 @@ function renderTypeRecursive(
       <>
         {`{`}
         {type.isSelector && (
-          <DictBlockComment
-            indent={innerIndent}
-            content={`One of the following:`}
-          />
+          <DictBlockComment indent={innerIndent} content={`One of the following:`} />
         )}
         {type.fields.map(fieldData => (
           <DictEntry key={fieldData.name}>
-            <DictBlockComment
-              indent={innerIndent}
-              content={fieldData.description}
-            />
+            <DictBlockComment indent={innerIndent} content={fieldData.description} />
             {innerIndent}
             <DictKey theme={props.theme}>{fieldData.name}</DictKey>
             {!fieldData.isRequired && Optional}
             {`: `}
-            {renderTypeRecursive(
-              typeLookup[fieldData.configTypeKey],
-              typeLookup,
-              depth + 1,
-              props
-            )}
+            {renderTypeRecursive(typeLookup[fieldData.configTypeKey], typeLookup, depth + 1, props)}
           </DictEntry>
         ))}
         {"  ".repeat(depth) + "}"}
@@ -112,11 +97,7 @@ function renderTypeRecursive(
   }
   if (type.__typename === "ArrayConfigType") {
     const ofTypeKey = type.typeParamKeys[0];
-    return (
-      <>
-        [{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]
-      </>
-    );
+    return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
   }
   if (type.__typename === "NullableConfigType") {
     const ofTypeKey = type.typeParamKeys[0];
@@ -152,9 +133,7 @@ function renderTypeRecursive(
   return <span>{type.givenName}</span>;
 }
 
-export class ConfigTypeSchema extends React.PureComponent<
-  ConfigTypeSchemaProps
-> {
+export class ConfigTypeSchema extends React.PureComponent<ConfigTypeSchemaProps> {
   static fragments = {
     ConfigTypeSchemaFragment: gql`
       fragment ConfigTypeSchemaFragment on ConfigType {
@@ -223,20 +202,9 @@ const DictComment = styled.div`
   white-space: initial;
 `;
 
-const DictBlockComment = ({
-  indent = "",
-  content
-}: {
-  indent: string;
-  content: string | null;
-}) =>
+const DictBlockComment = ({ indent = "", content }: { indent: string; content: string | null }) =>
   content !== null && content !== "" ? (
-    <DictComment>{`${indent.replace(
-      / /g,
-      "\u00A0"
-    )}/* ${content} */`}</DictComment>
+    <DictComment>{`${indent.replace(/ /g, "\u00A0")}/* ${content} */`}</DictComment>
   ) : null;
 
-const Optional = (
-  <span style={{ fontWeight: 500, color: Colors.ORANGE2 }}>?</span>
-);
+const Optional = <span style={{ fontWeight: 500, color: Colors.ORANGE2 }}>?</span>;

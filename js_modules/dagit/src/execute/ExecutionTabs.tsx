@@ -23,10 +23,7 @@ interface ExecutationTabState {
   editing: boolean;
 }
 
-class ExecutionTab extends React.Component<
-  ExecutationTabProps,
-  ExecutationTabState
-> {
+class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabState> {
   input = React.createRef<HTMLInputElement>();
 
   state = { editing: false };
@@ -47,11 +44,7 @@ class ExecutionTab extends React.Component<
     const { editing } = this.state;
 
     return (
-      <TabContainer
-        active={active || false}
-        onDoubleClick={this.onDoubleClick}
-        onClick={onClick}
-      >
+      <TabContainer active={active || false} onDoubleClick={this.onDoubleClick} onClick={onClick}>
         {editing ? (
           <input
             ref={this.input}
@@ -95,8 +88,7 @@ function sessionNamesAndKeysHash(data: IStorageData) {
 export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   shouldComponentUpdate(prevProps: ExecutionTabsProps) {
     return (
-      sessionNamesAndKeysHash(prevProps.data) !==
-        sessionNamesAndKeysHash(this.props.data) ||
+      sessionNamesAndKeysHash(prevProps.data) !== sessionNamesAndKeysHash(this.props.data) ||
       prevProps.data.current !== this.props.data.current
     );
   }
@@ -127,10 +119,7 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
             }
           />
         ))}
-        <ExecutionTab
-          title="Add..."
-          onClick={() => onApply(applyCreateSession)}
-        />
+        <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
       </ExecutionTabsContainer>
     );
   }
@@ -157,8 +146,7 @@ const TabContainer = styled.div<{ active: boolean }>`
   top: 1px;
 
   border: 1px solid ${Colors.GRAY5};
-  border-bottom: 1px solid
-    ${({ active }) => (active ? "transparent" : Colors.GRAY5)};
+  border-bottom: 1px solid ${({ active }) => (active ? "transparent" : Colors.GRAY5)};
   border-right: 0;
   &:last-child {
     border-right: 1px solid ${Colors.GRAY5};

@@ -85,8 +85,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                 });
               });
             });
-            const showLoading =
-              queryResult.loading && queryResult.networkStatus !== 6;
+            const showLoading = queryResult.loading && queryResult.networkStatus !== 6;
             return (
               <div style={{ marginTop: 30 }}>
                 <Header>{`Partition Set: ${partitionSetName}`}</Header>
@@ -133,13 +132,7 @@ const PartitionContent = ({
   const successGraph = React.useRef<any>(undefined);
   const failureGraph = React.useRef<any>(undefined);
   const rateGraph = React.useRef<any>(undefined);
-  const graphs = [
-    durationGraph,
-    materializationGraph,
-    successGraph,
-    failureGraph,
-    rateGraph
-  ];
+  const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
 
   const onStepChange = (selectedKeys: { [stepKey: string]: boolean }) => {
     setSelectedStepKeys(selectedKeys);
@@ -148,8 +141,7 @@ const PartitionContent = ({
       const datasets = chart?.data?.datasets || [];
       datasets.forEach((dataset: any, idx: number) => {
         const meta = chart.getDatasetMeta(idx);
-        meta.hidden =
-          dataset.label in selectedKeys ? !selectedKeys[dataset.label] : false;
+        meta.hidden = dataset.label in selectedKeys ? !selectedKeys[dataset.label] : false;
       });
     });
   };
@@ -164,10 +156,7 @@ const PartitionContent = ({
   return (
     <PartitionContentContainer>
       <div style={{ flex: 1 }}>
-        <PartitionTable
-          title="Runs by Partition"
-          runsByPartitionName={runsByPartitionName}
-        />
+        <PartitionTable title="Runs by Partition" runsByPartitionName={runsByPartitionName} />
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
@@ -218,11 +207,7 @@ const PartitionContent = ({
         <NavContainer>
           <NavSectionHeader>Run filters</NavSectionHeader>
           <NavSection>
-            <RunsFilter
-              tokens={tokens}
-              onChange={setTokens}
-              enabledFilters={["status", "tag"]}
-            />
+            <RunsFilter tokens={tokens} onChange={setTokens} enabledFilters={["status", "tag"]} />
           </NavSection>
           <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
         </NavContainer>
@@ -269,9 +254,7 @@ const StepSelector = ({
             key={stepKey}
             shown={selected[stepKey]}
             onClick={onStepClick(stepKey)}
-            color={
-              stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)
-            }
+            color={stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)}
           >
             <div
               style={{
@@ -316,8 +299,7 @@ const Item = styled.div`
   list-style-type: none;
   padding: 5px 2px;
   cursor: pointer;
-  text-decoration: ${({ shown }: { shown: boolean }) =>
-    shown ? "none" : "line-through"};
+  text-decoration: ${({ shown }: { shown: boolean }) => (shown ? "none" : "line-through")};
   user-select: none;
   font-size: 12px;
   color: ${props => (props.shown ? props.color : "#aaaaaa")};
@@ -389,9 +371,7 @@ const getStepMaterializationCountForRun = (run: Run) => {
 };
 
 const getPipelineExpectationSuccessForRun = (run: Run) => {
-  const stepCounts: { [key: string]: number } = getStepExpectationSuccessForRun(
-    run
-  );
+  const stepCounts: { [key: string]: number } = getStepExpectationSuccessForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
@@ -406,9 +386,7 @@ const getStepExpectationSuccessForRun = (run: Run) => {
 };
 
 const getPipelineExpectationFailureForRun = (run: Run) => {
-  const stepCounts: { [key: string]: number } = getStepExpectationFailureForRun(
-    run
-  );
+  const stepCounts: { [key: string]: number } = getStepExpectationFailureForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
@@ -561,11 +539,7 @@ const PARTITION_SET_QUERY = gql`
     ) {
       ... on PartitionSet {
         name
-        partitionsOrError(
-          cursor: $partitionsCursor
-          limit: $partitionsLimit
-          reverse: $reverse
-        ) {
+        partitionsOrError(cursor: $partitionsCursor, limit: $partitionsLimit, reverse: $reverse) {
           ... on Partitions {
             results {
               name

@@ -2,10 +2,7 @@ import * as React from "react";
 import { IconNames } from "@blueprintjs/icons";
 import { Button, Intent } from "@blueprintjs/core";
 import { useMutation } from "react-apollo";
-import {
-  LaunchButtonDropdown,
-  LaunchButtonConfiguration
-} from "../execute/LaunchButton";
+import { LaunchButtonDropdown, LaunchButtonConfiguration } from "../execute/LaunchButton";
 import { PipelineRunStatus } from "../types/globalTypes";
 
 import { CANCEL_MUTATION } from "./RunUtils";
@@ -24,20 +21,16 @@ const REEXECUTE_FROM_FAILURE_TITLE = "From Failure";
 export const REEXECUTE_PIPELINE_UNKNOWN =
   "Re-execute is unavailable because the pipeline is not present in the current repository.";
 
-const REEXECUTE_FULL_PIPELINE_DESCRIPTION =
-  "Re-execute the pipeline run from scratch";
+const REEXECUTE_FULL_PIPELINE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 
-const REEXECUTE_SUBSET =
-  "Re-run the following steps with existing configuration:";
+const REEXECUTE_SUBSET = "Re-run the following steps with existing configuration:";
 const REEXECUTE_SUBSET_NO_SELECTION =
   "Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.";
 const REEXECUTE_SUBSET_NO_ARTIFACTS =
   "Use a persisting storage mode such as 'filesystem' to enable step re-execution";
-const REEXECUTE_SUBSET_NOT_DONE =
-  "Wait for the selected steps to finish to re-execute it.";
+const REEXECUTE_SUBSET_NOT_DONE = "Wait for the selected steps to finish to re-execute it.";
 
-const RETRY_DESCRIPTION =
-  "Retry the pipeline run, skipping steps that completed successfully";
+const RETRY_DESCRIPTION = "Retry the pipeline run, skipping steps that completed successfully";
 const RETRY_DISABLED = "Retry is only enabled when the pipeline has failed.";
 const RETRY_NO_ARTIFACTS =
   "Retry is only enabled on persistent storage. Try rerunning with a different storage configuration.";
@@ -108,10 +101,8 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState)
   );
   const isFinalStatus =
-    run?.status === PipelineRunStatus.FAILURE ||
-    run?.status === PipelineRunStatus.SUCCESS;
-  const isFailedWithPlan =
-    executionPlan && run && run.status === PipelineRunStatus.FAILURE;
+    run?.status === PipelineRunStatus.FAILURE || run?.status === PipelineRunStatus.SUCCESS;
+  const isFailedWithPlan = executionPlan && run && run.status === PipelineRunStatus.FAILURE;
 
   const options: LaunchButtonConfiguration[] = [
     {
@@ -122,14 +113,9 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
       onClick: () => onLaunch()
     },
     {
-      title: isSelectionPresent
-        ? REEXECUTE_SUBSET_TITLE
-        : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
+      title: isSelectionPresent ? REEXECUTE_SUBSET_TITLE : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
       disabled:
-        isPipelineUnknown ||
-        !isSelectionPresent ||
-        !isSelectionFinished ||
-        !artifactsPersisted,
+        isPipelineUnknown || !isSelectionPresent || !isSelectionFinished || !artifactsPersisted,
       tooltip: (
         <div>
           {!artifactsPersisted
@@ -142,10 +128,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
           <div style={{ paddingLeft: "10px" }}>
             {isSelectionPresent &&
               selectedSteps.map(step => (
-                <span
-                  key={step}
-                  style={{ display: "block" }}
-                >{`* ${step}`}</span>
+                <span key={step} style={{ display: "block" }}>{`* ${step}`}</span>
               ))}
           </div>
         </div>
@@ -168,11 +151,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
 
   return (
     <>
-      <LaunchButtonDropdown
-        small={true}
-        options={options}
-        title="Launch Re-execution"
-      />
+      <LaunchButtonDropdown small={true} options={options} title="Launch Re-execution" />
       {run?.canTerminate && (
         <>
           <div style={{ minWidth: 6 }} />

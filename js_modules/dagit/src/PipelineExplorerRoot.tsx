@@ -72,9 +72,7 @@ function explodeComposite(
   // because we'd have to dig through `handles` to find each solid based on it's
   // name + parentHandleID and then get it's handleID - dependsOn, etc. provide
   // Solid references not SolidHandle references.)
-  const nested = handles.filter(
-    h => h.handleID === `${handle.handleID}.${h.solid.name}`
-  );
+  const nested = handles.filter(h => h.handleID === `${handle.handleID}.${h.solid.name}`);
   nested.forEach(n => {
     n.solid.name = n.handleID;
     n.solid.inputs.forEach(i => {
@@ -100,9 +98,7 @@ function explodeComposite(
  *
  * @param handles All the SolidHandles in the pipeline (NOT just current layer)
  */
-function explodeCompositesInHandleGraph(
-  handles: PipelineExplorerSolidHandleFragment[]
-) {
+function explodeCompositesInHandleGraph(handles: PipelineExplorerSolidHandleFragment[]) {
   // Clone the entire graph so we can modify solid names in-place
   handles = JSON.parse(JSON.stringify(handles));
 
@@ -132,8 +128,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
     explodeComposites: false
   });
 
-  const selectedName =
-    explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
+  const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
   return (
     <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
@@ -146,9 +141,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
-        const selectedHandle = displayedHandles.find(
-          h => h.solid.name === selectedName
-        );
+        const selectedHandle = displayedHandles.find(h => h.solid.name === selectedName);
 
         // Run a few assertions on the state of the world and redirect the user
         // back to safety if they've landed in an invalid place. Note that we can
@@ -156,9 +149,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
         // valid parent.
         const invalidSelection = selectedName && !selectedHandle;
         const invalidParent =
-          parentHandle &&
-          parentHandle.solid.definition.__typename !==
-            "CompositeSolidDefinition";
+          parentHandle && parentHandle.solid.definition.__typename !== "CompositeSolidDefinition";
 
         if (invalidSelection || invalidParent) {
           const n = { ...explorerPath };
@@ -169,9 +160,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
         return (
           <>
             {explorerPath.snapshotId && (
-              <SnapshotNotice>
-                You are viewing a historical pipeline snapshot.
-              </SnapshotNotice>
+              <SnapshotNotice>You are viewing a historical pipeline snapshot.</SnapshotNotice>
             )}
             <PipelineExplorer
               options={options}
@@ -202,10 +191,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    pipelineSnapshotOrError(
-      snapshotId: $snapshotId
-      activePipelineSelector: $pipelineSelector
-    ) {
+    pipelineSnapshotOrError(snapshotId: $snapshotId, activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
         name
         ...PipelineExplorerFragment
@@ -253,27 +239,22 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
   explorerPath,
   options
 }) => {
-  const parentNames = explorerPath.pathSolids.slice(
-    0,
-    explorerPath.pathSolids.length - 1
-  );
+  const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
 
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
-  const queryResult = useQuery<
-    PipelineExplorerRootQuery,
-    PipelineExplorerRootQueryVariables
-  >(PIPELINE_EXPLORER_ROOT_QUERY, {
-    fetchPolicy: "cache-and-network",
-    partialRefetch: true,
-    variables: {
-      pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
-      snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
-      rootHandleID: parentNames.join("."),
-      requestScopeHandleID: options.explodeComposites
-        ? undefined
-        : parentNames.join(".")
+  const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
+    PIPELINE_EXPLORER_ROOT_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      partialRefetch: true,
+      variables: {
+        pipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
+        snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
+        rootHandleID: parentNames.join("."),
+        requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join(".")
+      }
     }
-  });
+  );
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
       {({ pipelineSnapshotOrError }) => {

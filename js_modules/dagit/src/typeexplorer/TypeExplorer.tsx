@@ -3,12 +3,7 @@ import gql from "graphql-tag";
 import { Link } from "react-router-dom";
 import { ConfigTypeSchema } from "../ConfigTypeSchema";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
-import {
-  SidebarSubhead,
-  SidebarSection,
-  SidebarTitle,
-  SectionInner
-} from "../SidebarComponents";
+import { SidebarSubhead, SidebarSection, SidebarTitle, SectionInner } from "../SidebarComponents";
 
 import Description from "../Description";
 
@@ -41,12 +36,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
   };
 
   render() {
-    const {
-      name,
-      inputSchemaType,
-      outputSchemaType,
-      description
-    } = this.props.type;
+    const { name, inputSchemaType, outputSchemaType, description } = this.props.type;
 
     return (
       <div>

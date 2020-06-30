@@ -55,27 +55,15 @@ const AppRoutes = () => (
         >
           <PipelineNav />
           <Switch>
-            <Route
-              path="/pipeline/:pipelinePath/overview"
-              component={PipelineOverviewRoot}
-            />
+            <Route path="/pipeline/:pipelinePath/overview" component={PipelineOverviewRoot} />
             <Route
               path="/pipeline/:pipelinePath/playground/setup"
               component={PipelineExecutionSetupRoot}
             />
-            <Route
-              path="/pipeline/:pipelinePath/playground"
-              component={PipelineExecutionRoot}
-            />
-            <Route
-              path="/pipeline/:pipelinePath/runs/:runId"
-              component={RunRoot}
-            />
+            <Route path="/pipeline/:pipelinePath/playground" component={PipelineExecutionRoot} />
+            <Route path="/pipeline/:pipelinePath/runs/:runId" component={RunRoot} />
 
-            <Route
-              path="/pipeline/:pipelinePath/runs"
-              component={PipelineRunsRoot}
-            />
+            <Route path="/pipeline/:pipelinePath/runs" component={PipelineRunsRoot} />
             {/* Capture solid subpath in a regex match */}
             <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
           </Switch>

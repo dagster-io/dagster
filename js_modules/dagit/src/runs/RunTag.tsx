@@ -64,9 +64,7 @@ export const RunTag = ({ tag, onClick }: IRunTagProps) => {
       >
         {tag.key}
       </span>
-      <span style={{ padding: "2px 5px", backgroundColor: "#7d8c98" }}>
-        {tag.value}
-      </span>
+      <span style={{ padding: "2px 5px", backgroundColor: "#7d8c98" }}>{tag.value}</span>
     </TagElement>
   );
 };

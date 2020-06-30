@@ -52,10 +52,7 @@ export class SolidCard extends React.Component<SolidCardProps> {
 
     return (
       <SolidCardContainer>
-        <SVGContainer
-          width={layout.boundingBox.width}
-          height={layout.boundingBox.height}
-        >
+        <SVGContainer width={layout.boundingBox.width} height={layout.boundingBox.height}>
           <SolidNode
             invocation={undefined}
             definition={this.props.definition}

@@ -175,32 +175,21 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   handleKindClicked = (e: React.MouseEvent) => {
     this.handleClick(e);
-    window.requestAnimationFrame(() =>
-      document.dispatchEvent(new Event("show-kind-info"))
-    );
+    window.requestAnimationFrame(() => document.dispatchEvent(new Event("show-kind-info")));
   };
 
-  renderSurroundingBox(style: {
-    stroke: string;
-    fill: string;
-    dashed: boolean;
-  }) {
+  renderSurroundingBox(style: { stroke: string; fill: string; dashed: boolean }) {
     const { x, y, width, height } = this.props.layout.boundingBox;
     return (
       <rect
         x={x - 10}
         y={y - 10}
         width={width + 20}
-        height={
-          height +
-          (this.props.definition.outputDefinitions.length > 0 ? 20 : 30)
-        }
+        height={height + (this.props.definition.outputDefinitions.length > 0 ? 20 : 30)}
         stroke={style.stroke}
         fill={style.fill}
         strokeWidth={this.props.minified ? 5 : 3}
-        strokeDasharray={
-          style.dashed ? (this.props.minified ? 8 : 4) : undefined
-        }
+        strokeDasharray={style.dashed ? (this.props.minified ? 8 : 4) : undefined}
       />
     );
   }
@@ -261,15 +250,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   public render() {
-    const {
-      definition,
-      invocation,
-      layout,
-      dim,
-      focused,
-      selected,
-      minified
-    } = this.props;
+    const { definition, invocation, layout, dim, focused, selected, minified } = this.props;
     const { metadata } = definition;
     const { x, y, width, height } = layout.solid;
 
@@ -330,18 +311,10 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           />
         ))}
 
-        {configField && (
-          <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
-        )}
+        {configField && <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />}
 
         {tags.length > 0 && (
-          <SolidTags
-            x={x}
-            y={y + height}
-            width={width + 5}
-            minified={minified}
-            tags={tags}
-          />
+          <SolidTags x={x} y={y + height} width={width + 5} minified={minified} tags={tags} />
         )}
       </g>
     );

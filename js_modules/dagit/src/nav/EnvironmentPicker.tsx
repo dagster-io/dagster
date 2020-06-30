@@ -1,16 +1,6 @@
 import React from "react";
-import {
-  Colors,
-  Icon,
-  Popover,
-  Menu,
-  MenuItem,
-  Spinner
-} from "@blueprintjs/core";
-import {
-  DagsterRepoOption,
-  isRepositoryOptionEqual
-} from "../DagsterRepositoryContext";
+import { Colors, Icon, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
+import { DagsterRepoOption, isRepositoryOptionEqual } from "../DagsterRepositoryContext";
 import styled from "styled-components/macro";
 import { useHistory } from "react-router";
 import { ReloadRepositoryLocationButton } from "./ReloadRepositoryLocationButton";
@@ -66,19 +56,12 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
     >
       <EnvironmentPickerFlexContainer>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}
-          >
-            REPOSITORY
-          </div>
+          <div style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}>REPOSITORY</div>
           <RepoTitle>
             {repo ? (
               <>
                 {repo.repository.name}
-                <Icon
-                  icon="caret-down"
-                  style={{ opacity: 0.9, marginLeft: 3 }}
-                />
+                <Icon icon="caret-down" style={{ opacity: 0.9, marginLeft: 3 }} />
               </>
             ) : (
               <Spinner size={16} />
@@ -86,9 +69,7 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
           </RepoTitle>
         </div>
         {repo?.repositoryLocation.isReloadSupported && (
-          <ReloadRepositoryLocationButton
-            location={repo.repositoryLocation.name}
-          />
+          <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
         )}
       </EnvironmentPickerFlexContainer>
     </Popover>

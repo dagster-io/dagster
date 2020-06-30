@@ -1,14 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import {
-  Colors,
-  Icon,
-  Checkbox,
-  Tooltip,
-  Intent,
-  Position
-} from "@blueprintjs/core";
+import { Colors, Icon, Checkbox, Tooltip, Intent, Position } from "@blueprintjs/core";
 
 import PythonErrorInfo from "../PythonErrorInfo";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -61,10 +54,7 @@ interface RunPreviewState {
   errorsOnly: boolean;
 }
 
-export class RunPreview extends React.Component<
-  RunPreviewProps,
-  RunPreviewState
-> {
+export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState> {
   static fragments = {
     RunPreviewValidationFragment: gql`
       fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
@@ -114,10 +104,7 @@ export class RunPreview extends React.Component<
     errorsOnly: false
   };
 
-  shouldComponentUpdate(
-    nextProps: RunPreviewProps,
-    nextState: RunPreviewState
-  ) {
+  shouldComponentUpdate(nextProps: RunPreviewProps, nextState: RunPreviewState) {
     return (
       nextProps.validation !== this.props.validation ||
       nextProps.runConfigSchema !== this.props.runConfigSchema ||
@@ -139,9 +126,7 @@ export class RunPreview extends React.Component<
     if (root?.__typename !== "CompositeConfigType") return children;
 
     root.fields.forEach(field => {
-      const allConfigVersion = allConfigTypes.find(
-        t => t.key === field.configTypeKey
-      );
+      const allConfigVersion = allConfigTypes.find(t => t.key === field.configTypeKey);
       if (allConfigVersion?.__typename !== "CompositeConfigType") return;
       children[field.name] = allConfigVersion;
     });
@@ -159,10 +144,7 @@ export class RunPreview extends React.Component<
       error: ValidationErrorOrNode;
     }[] = [];
 
-    if (
-      validation &&
-      validation.__typename === "PipelineConfigValidationInvalid"
-    ) {
+    if (validation && validation.__typename === "PipelineConfigValidationInvalid") {
       validation.errors.forEach(e => {
         const path = errorStackToYamlPath(e.stack.entries);
 
@@ -189,9 +171,7 @@ export class RunPreview extends React.Component<
         error: (
           <>
             PythonError{" "}
-            <span onClick={() => showCustomAlert({ body: info })}>
-              click for details
-            </span>
+            <span onClick={() => showCustomAlert({ body: info })}>click for details</span>
           </>
         )
       });
@@ -208,9 +188,7 @@ export class RunPreview extends React.Component<
           const path = [...parents, name];
           const pathKey = path.join(".");
           const pathErrors = errorsAndPaths
-            .filter(
-              e => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`)
-            )
+            .filter(e => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`))
             .map(e => e.error);
 
           const isPresent = pathExistsInObject(path, document);
@@ -242,9 +220,7 @@ export class RunPreview extends React.Component<
                 state={state}
                 onClick={() => {
                   const first = pathErrors.find(isValidationError);
-                  onHighlightPath(
-                    first ? errorStackToYamlPath(first.stack.entries) : path
-                  );
+                  onHighlightPath(first ? errorStackToYamlPath(first.stack.entries) : path);
                 }}
               >
                 {name}
@@ -269,11 +245,7 @@ export class RunPreview extends React.Component<
             <Section>
               <SectionTitle>Errors</SectionTitle>
               {errorsAndPaths.map((item, idx) => (
-                <ErrorRow
-                  key={idx}
-                  error={item.error}
-                  onHighlight={onHighlightPath}
-                />
+                <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
               ))}
             </Section>
           </ErrorListContainer>
@@ -326,9 +298,7 @@ export class RunPreview extends React.Component<
                 onChange={() => this.setState({ errorsOnly: !errorsOnly })}
               />
             </div>
-            <div style={{ position: "absolute", bottom: 14, right: 14 }}>
-              {actions}
-            </div>
+            <div style={{ position: "absolute", bottom: 14, right: 14 }}>{actions}</div>
           </>
         }
       />
@@ -465,9 +435,7 @@ const ErrorRow: React.FunctionComponent<{
   return (
     <ErrorRowContainer
       hoverable={!!target}
-      onClick={() =>
-        target && onHighlight(errorStackToYamlPath(target.stack.entries))
-      }
+      onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{ paddingRight: 8 }}>
         <Icon icon="error" iconSize={14} color={Colors.RED4} />

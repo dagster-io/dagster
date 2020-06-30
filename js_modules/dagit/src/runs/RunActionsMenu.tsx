@@ -37,15 +37,10 @@ export const RunActionsMenu: React.FunctionComponent<{
   const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, { onCompleted: refetch });
   const [destroy] = useMutation(DELETE_MUTATION, { onCompleted: refetch });
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
-  const [loadEnv, { called, loading, data }] = useLazyQuery(
-    PipelineEnvironmentYamlQuery,
-    {
-      variables: { runId: run.runId }
-    }
-  );
+  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
+  const [loadEnv, { called, loading, data }] = useLazyQuery(PipelineEnvironmentYamlQuery, {
+    variables: { runId: run.runId }
+  });
 
   const envYaml = data?.pipelineRunOrError?.runConfigYaml;
   const infoReady = called ? !loading : false;
@@ -54,17 +49,13 @@ export const RunActionsMenu: React.FunctionComponent<{
       content={
         <Menu>
           <MenuItem
-            text={
-              loading ? "Loading Configuration..." : "View Configuration..."
-            }
+            text={loading ? "Loading Configuration..." : "View Configuration..."}
             disabled={envYaml == null}
             icon="share"
             onClick={() =>
               showCustomAlert({
                 title: "Config",
-                body: (
-                  <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
-                )
+                body: <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
               })
             }
           />
@@ -81,9 +72,7 @@ export const RunActionsMenu: React.FunctionComponent<{
               disabled={!infoReady}
               icon="edit"
               target="_blank"
-              href={`/pipeline/${
-                run.pipelineName
-              }/playground/setup?${qs.stringify({
+              href={`/pipeline/${run.pipelineName}/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
                 solidSelection: run.solidSelection
@@ -121,10 +110,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             disabled={!run.canTerminate}
             onClick={async () => {
               const result = await cancel({ variables: { runId: run.runId } });
-              showToastFor(
-                result.data.terminatePipelineExecution,
-                "Run cancelled."
-              );
+              showToastFor(result.data.terminatePipelineExecution, "Run cancelled.");
             }}
           />
           <MenuDivider />

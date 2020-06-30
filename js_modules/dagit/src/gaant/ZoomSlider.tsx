@@ -13,23 +13,17 @@ export const ZoomSlider: React.FunctionComponent<{
     <div
       className="bp3-slider bp3-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
-        const rect = e.currentTarget
-          .closest(".bp3-slider")!
-          .getBoundingClientRect();
+        const rect = e.currentTarget.closest(".bp3-slider")!.getBoundingClientRect();
 
         let initialX: number;
-        if (
-          e.target instanceof HTMLElement &&
-          e.target.classList.contains("bp3-slider-handle")
-        ) {
+        if (e.target instanceof HTMLElement && e.target.classList.contains("bp3-slider-handle")) {
           initialX = e.pageX;
         } else {
           initialX = rect.left + (props.value / 100) * rect.width;
         }
 
         const onUpdate = (e: MouseEvent) => {
-          const nextValue =
-            props.value + (e.pageX - initialX) * (100 / rect.width);
+          const nextValue = props.value + (e.pageX - initialX) * (100 / rect.width);
           props.onChange(Math.max(0, Math.min(100, nextValue)));
         };
         const onRelease = (e: MouseEvent) => {
@@ -42,10 +36,7 @@ export const ZoomSlider: React.FunctionComponent<{
       }}
     >
       <div className="bp3-slider-track">
-        <div
-          className="bp3-slider-progress"
-          style={{ left: 0, right: 0, top: 0 }}
-        />
+        <div className="bp3-slider-progress" style={{ left: 0, right: 0, top: 0 }} />
         <div
           className="bp3-slider-progress bp3-intent-primary"
           style={{ left: 0, right: `${100 - props.value}%`, top: 0 }}

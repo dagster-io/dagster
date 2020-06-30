@@ -3,12 +3,7 @@ import * as querystring from "query-string";
 
 import Loading from "../Loading";
 import { RouteComponentProps } from "react-router";
-import {
-  CellMeasurer,
-  CellMeasurerCache,
-  AutoSizer,
-  List
-} from "react-virtualized";
+import { CellMeasurer, CellMeasurerCache, AutoSizer, List } from "react-virtualized";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import styled from "styled-components/macro";
@@ -19,14 +14,8 @@ import {
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { Colors, NonIdealState } from "@blueprintjs/core";
 import SolidTypeSignature from "../SolidTypeSignature";
-import {
-  DagsterRepositoryContext,
-  useRepositorySelector
-} from "../DagsterRepositoryContext";
-import {
-  UsedSolidDetails,
-  SolidDetailScrollContainer
-} from "./SolidDetailsRoot";
+import { DagsterRepositoryContext, useRepositorySelector } from "../DagsterRepositoryContext";
+import { UsedSolidDetails, SolidDetailScrollContainer } from "./SolidDetailsRoot";
 import {
   SuggestionProvider,
   TokenizingFieldValue,
@@ -55,34 +44,22 @@ function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
     },
     {
       token: "pipeline",
-      values: () =>
-        flatUniq(solids.map(s => s.invocations.map(i => i.pipeline.name)))
+      values: () => flatUniq(solids.map(s => s.invocations.map(i => i.pipeline.name)))
     },
     {
       token: "input",
       values: () =>
-        flatUniq(
-          solids.map(s =>
-            s.definition.inputDefinitions.map(d => d.type.displayName)
-          )
-        )
+        flatUniq(solids.map(s => s.definition.inputDefinitions.map(d => d.type.displayName)))
     },
     {
       token: "output",
       values: () =>
-        flatUniq(
-          solids.map(s =>
-            s.definition.outputDefinitions.map(d => d.type.displayName)
-          )
-        )
+        flatUniq(solids.map(s => s.definition.outputDefinitions.map(d => d.type.displayName)))
     }
   ];
 }
 
-function filterSolidsWithSearch(
-  solids: Solid[],
-  search: TokenizingFieldValue[]
-) {
+function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[]) {
   return solids.filter(s => {
     for (const item of search) {
       if (
@@ -91,25 +68,18 @@ function filterSolidsWithSearch(
       ) {
         return false;
       }
-      if (
-        item.token === "pipeline" &&
-        !s.invocations.some(i => i.pipeline.name === item.value)
-      ) {
+      if (item.token === "pipeline" && !s.invocations.some(i => i.pipeline.name === item.value)) {
         return false;
       }
       if (
         item.token === "input" &&
-        !s.definition.inputDefinitions.some(i =>
-          i.type.displayName.startsWith(item.value)
-        )
+        !s.definition.inputDefinitions.some(i => i.type.displayName.startsWith(item.value))
       ) {
         return false;
       }
       if (
         item.token === "output" &&
-        !s.definition.outputDefinitions.some(i =>
-          i.type.displayName.startsWith(item.value)
-        )
+        !s.definition.outputDefinitions.some(i => i.type.displayName.startsWith(item.value))
       ) {
         return false;
       }
@@ -121,9 +91,7 @@ function filterSolidsWithSearch(
 type SolidsRootProps = RouteComponentProps<{ name: string }>;
 
 export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
+  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
     skip: !repository || !repositoryLocation,
@@ -132,16 +100,8 @@ export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
   return (
     <Loading queryResult={queryResult}>
       {({ repositoryOrError }) => {
-        if (
-          repositoryOrError?.__typename === "Repository" &&
-          repositoryOrError.usedSolids
-        ) {
-          return (
-            <SolidsRootWithData
-              usedSolids={repositoryOrError.usedSolids}
-              {...props}
-            />
-          );
+        if (repositoryOrError?.__typename === "Repository" && repositoryOrError.usedSolids) {
+          return <SolidsRootWithData usedSolids={repositoryOrError.usedSolids} {...props} />;
         }
         return null;
       }}
@@ -157,9 +117,7 @@ const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
   const search = tokenizedValuesFromString((q as string) || "", suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
-  const selected = usedSolids.find(
-    s => s.definition.name === match.params.name
-  );
+  const selected = usedSolids.find(s => s.definition.name === match.params.name);
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.push({
@@ -226,9 +184,7 @@ const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
             <UsedSolidDetails
               name={selected.definition.name}
               onClickInvocation={({ pipelineName, handleID }) =>
-                history.push(
-                  `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
-                )
+                history.push(`/pipeline/${pipelineName}/${handleID.split(".").join("/")}`)
               }
             />
           </SolidDetailScrollContainer>
@@ -250,9 +206,7 @@ const SolidList: React.FunctionComponent<{
   selected: Solid | undefined;
   onClickSolid: (name: string) => void;
 }> = props => {
-  const cache = React.useRef(
-    new CellMeasurerCache({ defaultHeight: 60, fixedWidth: true })
-  );
+  const cache = React.useRef(new CellMeasurerCache({ defaultHeight: 60, fixedWidth: true }));
 
   // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect
   // but we need it to run /before/ the render not just after it completes.
@@ -271,12 +225,7 @@ const SolidList: React.FunctionComponent<{
       rowRenderer={({ parent, index, key, style }) => {
         const solid = props.items[index];
         return (
-          <CellMeasurer
-            cache={cache.current}
-            index={index}
-            parent={parent}
-            key={key}
-          >
+          <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
             <SolidListItem
               style={style}
               selected={solid === props.selected}

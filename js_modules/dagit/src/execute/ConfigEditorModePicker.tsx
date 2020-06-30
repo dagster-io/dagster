@@ -45,9 +45,7 @@ export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePic
       filterable={true}
       disabled={singleMode && valid}
       items={props.modes}
-      itemPredicate={(query, mode) =>
-        query.length === 0 || mode.name.includes(query)
-      }
+      itemPredicate={(query, mode) => query.length === 0 || mode.name.includes(query)}
       itemRenderer={(mode, props) => (
         <Menu.Item
           active={props.modifiers.active}

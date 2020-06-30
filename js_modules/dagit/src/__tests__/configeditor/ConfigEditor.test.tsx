@@ -29,9 +29,7 @@ it("renders a codemirror", () => {
         onConfigChange={() => null}
         onHelpContextChange={() => null}
         readOnly={true}
-        configCode={
-          "solids:\n  foo:\n    config:\n      baz:\n        ['s3://foo', 'bar']\n"
-        }
+        configCode={"solids:\n  foo:\n    config:\n      baz:\n        ['s3://foo', 'bar']\n"}
         showWhitespace={true}
       />
     </BrowserRouter>

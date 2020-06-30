@@ -11,11 +11,7 @@ const OverflowFade = styled.div`
   height: 40px;
   user-select: none;
   pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(245, 248, 250, 0) 0%,
-    rgba(245, 248, 250, 255) 100%
-  );
+  background: linear-gradient(to bottom, rgba(245, 248, 250, 0) 0%, rgba(245, 248, 250, 255) 100%);
 `;
 
 const OverflowBanner = styled.div`
@@ -45,9 +41,7 @@ export class CellTruncationProvider extends React.Component<
     isOverflowing: false
   };
 
-  private contentContainerRef: React.RefObject<
-    HTMLDivElement
-  > = React.createRef();
+  private contentContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   componentDidMount() {
     this.detectOverflow();
@@ -59,8 +53,7 @@ export class CellTruncationProvider extends React.Component<
 
   detectOverflow() {
     const child =
-      this.contentContainerRef.current &&
-      this.contentContainerRef.current.firstElementChild;
+      this.contentContainerRef.current && this.contentContainerRef.current.firstElementChild;
 
     if (!child) {
       return;
@@ -74,8 +67,7 @@ export class CellTruncationProvider extends React.Component<
 
   defaultExpand() {
     const message =
-      this.contentContainerRef.current &&
-      this.contentContainerRef.current.textContent;
+      this.contentContainerRef.current && this.contentContainerRef.current.textContent;
     message &&
       showCustomAlert({
         body: <div style={{ whiteSpace: "pre-wrap" }}>{message}</div>
@@ -96,9 +88,7 @@ export class CellTruncationProvider extends React.Component<
         {this.state.isOverflowing && (
           <>
             <OverflowFade />
-            <OverflowBanner onClick={this.onView}>
-              View Full Message
-            </OverflowBanner>
+            <OverflowBanner onClick={this.onView}>View Full Message</OverflowBanner>
           </>
         )}
       </div>

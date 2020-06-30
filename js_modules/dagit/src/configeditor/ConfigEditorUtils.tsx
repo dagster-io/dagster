@@ -76,9 +76,7 @@ export type StackEntry =
 
 export function errorStackToYamlPath(entries: StackEntry[]) {
   return entries.map(entry =>
-    entry.__typename === "EvaluationStackPathEntry"
-      ? entry.fieldName
-      : `${entry.listIndex}`
+    entry.__typename === "EvaluationStackPathEntry" ? entry.fieldName : `${entry.listIndex}`
   );
 }
 

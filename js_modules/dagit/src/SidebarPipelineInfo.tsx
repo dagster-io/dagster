@@ -22,9 +22,7 @@ interface ISidebarPipelineInfoProps {
   pipeline: SidebarPipelineInfoFragment;
 }
 
-export default class SidebarPipelineInfo extends React.Component<
-  ISidebarPipelineInfoProps
-> {
+export default class SidebarPipelineInfo extends React.Component<ISidebarPipelineInfoProps> {
   static fragments = {
     SidebarPipelineInfoFragment: gql`
       fragment SidebarPipelineInfoFragment on IPipelineSnapshot {
@@ -74,9 +72,7 @@ export default class SidebarPipelineInfo extends React.Component<
           <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
         </SectionInner>
         <SidebarSection title={"Description"}>
-          <Description
-            description={pipeline ? pipeline.description : NO_DESCRIPTION}
-          />
+          <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
         </SidebarSection>
         <SidebarSection title={"Modes"} collapsedByDefault={true}>
           {pipeline.modes.map(mode => (
@@ -85,24 +81,14 @@ export default class SidebarPipelineInfo extends React.Component<
               <Description description={mode.description || NO_DESCRIPTION} />
               {mode.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
-                  <Icon
-                    iconSize={14}
-                    icon={IconNames.LAYERS}
-                    color={Colors.DARK_GRAY2}
-                  />
+                  <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                   <div>
-                    <ContextResourceHeader>
-                      {resource.name}
-                    </ContextResourceHeader>
-                    <Description
-                      description={resource.description || NO_DESCRIPTION}
-                    />
+                    <ContextResourceHeader>{resource.name}</ContextResourceHeader>
+                    <Description description={resource.description || NO_DESCRIPTION} />
                     {resource.configField && (
                       <ConfigTypeSchema
                         type={resource.configField.configType}
-                        typesInScope={
-                          resource.configField.configType.recursiveConfigTypes
-                        }
+                        typesInScope={resource.configField.configType.recursiveConfigTypes}
                       />
                     )}
                   </div>
@@ -110,22 +96,14 @@ export default class SidebarPipelineInfo extends React.Component<
               ))}
               {mode.loggers.map(logger => (
                 <ContextLoggerContainer key={logger.name}>
-                  <Icon
-                    iconSize={14}
-                    icon={IconNames.LAYERS}
-                    color={Colors.DARK_GRAY2}
-                  />
+                  <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                   <div>
                     <ContextLoggerHeader>{logger.name}</ContextLoggerHeader>
-                    <Description
-                      description={logger.description || NO_DESCRIPTION}
-                    />
+                    <Description description={logger.description || NO_DESCRIPTION} />
                     {logger.configField && (
                       <ConfigTypeSchema
                         type={logger.configField.configType}
-                        typesInScope={
-                          logger.configField.configType.recursiveConfigTypes
-                        }
+                        typesInScope={logger.configField.configType.recursiveConfigTypes}
                       />
                     )}
                   </div>

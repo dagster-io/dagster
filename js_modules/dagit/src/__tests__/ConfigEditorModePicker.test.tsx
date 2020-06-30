@@ -20,11 +20,7 @@ const mode2 = {
 it("renders single mode pipelines", () => {
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        modes={[defaultMode]}
-        modeName={null}
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker modes={[defaultMode]} modeName={null} onModeChange={() => null} />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
@@ -44,22 +40,14 @@ it("renders single mode pipelines", () => {
 it("renders multi mode pipelines", () => {
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        modes={[mode1, mode2]}
-        modeName={null}
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker modes={[mode1, mode2]} modeName={null} onModeChange={() => null} />
     </BrowserRouter>
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 
   const componentMode1Selected = TestRenderer.create(
     <BrowserRouter>
-      <ConfigEditorModePicker
-        modes={[mode1, mode2]}
-        modeName="mode_1"
-        onModeChange={() => null}
-      />
+      <ConfigEditorModePicker modes={[mode1, mode2]} modeName="mode_1" onModeChange={() => null} />
     </BrowserRouter>
   );
   expect(componentMode1Selected.toJSON()).toMatchSnapshot();

@@ -22,8 +22,7 @@ export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
       // There are three conditions under which the tooltip is shown. The DOM
       // element must be overflowing, truncated manually via `...` or be entirely
       // empty.
-      const isOverflowing =
-        tooltipParentEl.offsetWidth < tooltipParentEl.scrollWidth;
+      const isOverflowing = tooltipParentEl.offsetWidth < tooltipParentEl.scrollWidth;
       const isManuallyOverflowed = tooltipParentEl.textContent?.includes("…");
       const isEmpty = !tooltipParentEl.hasChildNodes();
 

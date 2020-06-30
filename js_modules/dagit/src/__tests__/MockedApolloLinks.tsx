@@ -1,10 +1,4 @@
-import {
-  Operation,
-  GraphQLRequest,
-  ApolloLink,
-  FetchResult,
-  Observable
-} from "apollo-link";
+import { Operation, GraphQLRequest, ApolloLink, FetchResult, Observable } from "apollo-link";
 
 import { print } from "graphql/language/printer";
 import { addTypenameToDocument } from "apollo-utilities";
@@ -46,10 +40,7 @@ export class MockLink extends ApolloLink {
   public addTypename = true;
   private mockedResponsesByKey: { [key: string]: MockedResponse[] } = {};
 
-  constructor(
-    mockedResponses: ReadonlyArray<MockedResponse>,
-    addTypename = true
-  ) {
+  constructor(mockedResponses: ReadonlyArray<MockedResponse>, addTypename = true) {
     super();
     this.addTypename = addTypename;
     if (mockedResponses) {
@@ -72,17 +63,15 @@ export class MockLink extends ApolloLink {
   public request(operation: Operation) {
     const key = requestToKey(operation, this.addTypename);
     let responseIndex;
-    const response = (this.mockedResponsesByKey[key] || []).find(
-      (res, index) => {
-        const requestVariables = operation.variables || {};
-        const mockedResponseVariables = res.request.variables || {};
-        if (!isEqual(requestVariables, mockedResponseVariables)) {
-          return false;
-        }
-        responseIndex = index;
-        return true;
+    const response = (this.mockedResponsesByKey[key] || []).find((res, index) => {
+      const requestVariables = operation.variables || {};
+      const mockedResponseVariables = res.request.variables || {};
+      if (!isEqual(requestVariables, mockedResponseVariables)) {
+        return false;
       }
-    );
+      responseIndex = index;
+      return true;
+    });
 
     if (!response || typeof responseIndex === "undefined") {
       throw new Error(
@@ -172,8 +161,7 @@ export class MockSubscriptionLink extends ApolloLink {
 
 function requestToKey(request: GraphQLRequest, addTypename: boolean): string {
   const queryString =
-    request.query &&
-    print(addTypename ? addTypenameToDocument(request.query) : request.query);
+    request.query && print(addTypename ? addTypenameToDocument(request.query) : request.query);
 
   const requestKey = { query: queryString };
 

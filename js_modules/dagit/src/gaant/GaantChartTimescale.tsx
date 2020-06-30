@@ -82,8 +82,7 @@ export const GaantChartTimescale = ({
 
   const pxPerMs = scale;
   const { tickIntervalMs, tickLabels } =
-    TICK_CONFIG.find(t => t.tickIntervalMs * pxPerMs > 80) ||
-    TICK_CONFIG[TICK_CONFIG.length - 1];
+    TICK_CONFIG.find(t => t.tickIntervalMs * pxPerMs > 80) || TICK_CONFIG[TICK_CONFIG.length - 1];
 
   const pxPerTick = tickIntervalMs * pxPerMs;
   const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
@@ -95,9 +94,7 @@ export const GaantChartTimescale = ({
     const ms = x / pxPerMs;
     const key = `${ms.toFixed(2)}`;
     const label = tickLabels(ms);
-    lines.push(
-      <div className="line" key={key} style={{ left: x, transform }} />
-    );
+    lines.push(<div className="line" key={key} style={{ left: x, transform }} />);
     ticks.push(
       <div className="tick" key={key} style={{ left: x - 20, transform }}>
         {label}
@@ -125,9 +122,7 @@ export const GaantChartTimescale = ({
         {highlightedMs.map((ms, idx) => {
           const timeX = (ms - startMs) * pxPerMs;
           const labelOffset =
-            idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left
-              ? -(TICK_LABEL_WIDTH - 1)
-              : 0;
+            idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left ? -(TICK_LABEL_WIDTH - 1) : 0;
 
           return (
             <div
@@ -140,9 +135,7 @@ export const GaantChartTimescale = ({
           );
         })}
       </TimescaleTicksContainer>
-      <TimescaleLinesContainer
-        style={{ width: viewport.width, height: viewport.height }}
-      >
+      <TimescaleLinesContainer style={{ width: viewport.width, height: viewport.height }}>
         {lines}
         {highlightedMs.map((ms, idx) => (
           <div
@@ -156,10 +149,7 @@ export const GaantChartTimescale = ({
             className="fog-of-war"
             style={{
               left: (nowMs - startMs) * pxPerMs,
-              width:
-                Math.max(layoutSize.width, viewport.width) -
-                (nowMs - startMs) * pxPerMs +
-                100,
+              width: Math.max(layoutSize.width, viewport.width) - (nowMs - startMs) * pxPerMs + 100,
               transform
             }}
           ></div>

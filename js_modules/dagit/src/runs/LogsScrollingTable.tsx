@@ -4,12 +4,7 @@ import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { Colors, NonIdealState, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import {
-  CellMeasurer,
-  CellMeasurerCache,
-  ListRowProps,
-  List
-} from "react-virtualized";
+import { CellMeasurer, CellMeasurerCache, ListRowProps, List } from "react-virtualized";
 
 import * as LogsRow from "./LogsRow";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
@@ -34,9 +29,7 @@ interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
   height: number;
 }
 
-export default class LogsScrollingTable extends React.Component<
-  ILogsScrollingTableProps
-> {
+export default class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
   static fragments = {
     LogsScrollingTableMessageFragment: gql`
       fragment LogsScrollingTableMessageFragment on PipelineRunEvent {
@@ -55,9 +48,7 @@ export default class LogsScrollingTable extends React.Component<
   render() {
     return (
       <ColumnWidthsProvider
-        onWidthsChanged={() =>
-          this.table.current && this.table.current.didResize()
-        }
+        onWidthsChanged={() => this.table.current && this.table.current.didResize()}
       >
         <Headers />
         <div style={{ flex: 1, minHeight: 0 }}>
@@ -77,9 +68,7 @@ export default class LogsScrollingTable extends React.Component<
   }
 }
 
-class LogsScrollingTableSized extends React.Component<
-  ILogsScrollingTableSizedProps
-> {
+class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
   list = React.createRef<List>();
 
   get listEl() {
@@ -94,8 +83,7 @@ class LogsScrollingTableSized extends React.Component<
   cache = new CellMeasurerCache({
     defaultHeight: 30,
     fixedWidth: true,
-    keyMapper: rowIndex =>
-      this.props.nodes ? this.props.nodes[rowIndex].clientsideKey : ""
+    keyMapper: rowIndex => (this.props.nodes ? this.props.nodes[rowIndex].clientsideKey : "")
   });
 
   isAtBottomOrZero = true;
@@ -179,12 +167,7 @@ class LogsScrollingTableSized extends React.Component<
       : {};
 
     return (
-      <CellMeasurer
-        cache={this.cache}
-        index={index}
-        parent={parent}
-        key={node.clientsideKey}
-      >
+      <CellMeasurer cache={this.cache} index={index} parent={parent} key={node.clientsideKey}>
         {node.__typename === "LogMessageEvent" ? (
           <LogsRow.Unstructured
             node={node}
@@ -203,9 +186,7 @@ class LogsScrollingTableSized extends React.Component<
 
   noContentRenderer = () => {
     if (this.props.nodes) {
-      return (
-        <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />
-      );
+      return <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />;
     }
     return <span />;
   };
@@ -215,10 +196,7 @@ class LogsScrollingTableSized extends React.Component<
       <div onScroll={this.onScroll}>
         {this.props.loading && (
           <ListEmptyState>
-            <NonIdealState
-              icon={<Spinner size={24} />}
-              title="Fetching logs..."
-            />
+            <NonIdealState icon={<Spinner size={24} />} title="Fetching logs..." />
           </ListEmptyState>
         )}
         <List
@@ -279,20 +257,13 @@ class AutoSizer extends React.Component<{
     // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this);
     if (!el || !(el instanceof HTMLElement)) return;
-    if (
-      el.clientWidth !== this.state.width ||
-      el.clientHeight !== this.state.height
-    ) {
+    if (el.clientWidth !== this.state.width || el.clientHeight !== this.state.height) {
       this.setState({ width: el.clientWidth, height: el.clientHeight });
     }
   }
 
   render() {
-    return (
-      <div style={{ width: "100%", height: "100%" }}>
-        {this.props.children(this.state)}
-      </div>
-    );
+    return <div style={{ width: "100%", height: "100%" }}>{this.props.children(this.state)}</div>;
   }
 }
 

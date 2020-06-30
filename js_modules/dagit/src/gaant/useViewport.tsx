@@ -62,10 +62,7 @@ export const useViewport = () => {
     });
   };
 
-  const onMoveToViewport = (
-    targetOffset: { left: number; top: number },
-    animated: boolean
-  ) => {
+  const onMoveToViewport = (targetOffset: { left: number; top: number }, animated: boolean) => {
     if (animation.current) {
       animation.current.cancel();
       animation.current = null;

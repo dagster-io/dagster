@@ -2,19 +2,10 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors, Button, ButtonGroup } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import {
-  LogLevel,
-  LogFilterValue,
-  GetFilterProviders,
-  LogFilter
-} from "./LogsProvider";
+import { LogLevel, LogFilterValue, GetFilterProviders, LogFilter } from "./LogsProvider";
 import { ComputeLogLink } from "./ComputeLogModal";
 import { IStepState } from "../RunMetadataProvider";
-import {
-  TokenizingField,
-  TokenizingFieldValue,
-  SuggestionProvider
-} from "../TokenizingField";
+import { TokenizingField, TokenizingFieldValue, SuggestionProvider } from "../TokenizingField";
 import { IRunMetadataDict } from "../RunMetadataProvider";
 
 interface ILogsToolbarProps {
@@ -35,31 +26,24 @@ const suggestionProvidersFilter = (
   const singleUseTokens = ["step", "type"];
 
   return suggestionProviders.filter(
-    ({ token }) =>
-      !singleUseTokens.includes(token) || !usedTokens.includes(token)
+    ({ token }) => !singleUseTokens.includes(token) || !usedTokens.includes(token)
   );
 };
 
-export default class LogsToolbar extends React.PureComponent<
-  ILogsToolbarProps
-> {
+export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> {
   render() {
     const { steps, filter, metadata, onSetFilter } = this.props;
 
-    const selectedStep =
-      filter.values.find(v => v.token === "step")?.value || null;
+    const selectedStep = filter.values.find(v => v.token === "step")?.value || null;
     const selectedStepState =
-      (selectedStep && metadata.steps[selectedStep]?.state) ||
-      IStepState.PREPARING;
+      (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
 
     return (
       <LogsToolbarContainer>
         <FilterTokenizingField
           values={filter.values}
           onChangeBeforeCommit
-          onChange={(values: LogFilterValue[]) =>
-            onSetFilter({ ...filter, values })
-          }
+          onChange={(values: LogFilterValue[]) => onSetFilter({ ...filter, values })}
           suggestionProviders={GetFilterProviders(steps)}
           suggestionProvidersFilter={suggestionProvidersFilter}
           loading={false}

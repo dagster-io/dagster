@@ -9,10 +9,7 @@ import { SolidCard } from "./SolidCard";
 import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
 import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
 import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
-import {
-  DagsterRepositoryContext,
-  useRepositorySelector
-} from "../DagsterRepositoryContext";
+import { DagsterRepositoryContext, useRepositorySelector } from "../DagsterRepositoryContext";
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;
@@ -21,9 +18,7 @@ export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
     <UsedSolidDetails
       name={props.match.params.name}
       onClickInvocation={({ pipelineName, handleID }) =>
-        props.history.push(
-          `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
-        )
+        props.history.push(`/pipeline/${pipelineName}/${handleID.split(".").join("/")}`)
       }
     />
   </SolidDetailScrollContainer>
@@ -33,30 +28,20 @@ export const UsedSolidDetails: React.FunctionComponent<{
   name: string;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }> = ({ name, onClickInvocation }) => {
-  const { repositoryLocation, repository } = React.useContext(
-    DagsterRepositoryContext
-  );
+  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
-  const queryResult = useQuery<UsedSolidDetailsQuery>(
-    USED_SOLID_DETAILS_QUERY,
-    {
-      skip: !repository || !repositoryLocation,
-      variables: {
-        name,
-        repositorySelector
-      }
+  const queryResult = useQuery<UsedSolidDetailsQuery>(USED_SOLID_DETAILS_QUERY, {
+    skip: !repository || !repositoryLocation,
+    variables: {
+      name,
+      repositorySelector
     }
-  );
+  });
 
   return (
     <Loading queryResult={queryResult}>
       {({ repositoryOrError }) => {
-        if (
-          !(
-            repositoryOrError?.__typename === "Repository" &&
-            repositoryOrError.usedSolid
-          )
-        ) {
+        if (!(repositoryOrError?.__typename === "Repository" && repositoryOrError.usedSolid)) {
           return null;
         }
         const usedSolid = repositoryOrError.usedSolid;
@@ -82,10 +67,7 @@ export const UsedSolidDetails: React.FunctionComponent<{
 };
 
 export const USED_SOLID_DETAILS_QUERY = gql`
-  query UsedSolidDetailsQuery(
-    $name: String!
-    $repositorySelector: RepositorySelector!
-  ) {
+  query UsedSolidDetailsQuery($name: String!, $repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         id

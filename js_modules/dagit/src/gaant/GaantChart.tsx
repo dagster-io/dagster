@@ -9,11 +9,7 @@ import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlan
 import { GaantChartTimescale } from "./GaantChartTimescale";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
-import {
-  IRunMetadataDict,
-  EMPTY_RUN_METADATA,
-  IStepMetadata
-} from "../RunMetadataProvider";
+import { IRunMetadataDict, EMPTY_RUN_METADATA, IStepMetadata } from "../RunMetadataProvider";
 import {
   buildLayout,
   boxStyleFor,
@@ -58,21 +54,13 @@ let highlightTimer: NodeJS.Timeout;
  * Set or clear the highlighted time on the Gaant chart. Goal of this convenience
  * method is to make the implementation (via event dispatch) private to this file.
  */
-export function setHighlightedGaantChartTime(
-  timestamp: null | string,
-  debounced = true
-) {
+export function setHighlightedGaantChartTime(timestamp: null | string, debounced = true) {
   clearTimeout(highlightTimer);
 
   if (debounced) {
-    highlightTimer = setTimeout(
-      () => setHighlightedGaantChartTime(timestamp, false),
-      100
-    );
+    highlightTimer = setTimeout(() => setHighlightedGaantChartTime(timestamp, false), 100);
   } else {
-    document.dispatchEvent(
-      new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp })
-    );
+    document.dispatchEvent(new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp }));
   }
 }
 
@@ -81,47 +69,45 @@ export function setHighlightedGaantChartTime(
  * can be used as the input to the "solid query" filtering algorithm. The idea
  * is that this data structure is generic, but it's really a fake solid tree.
  */
-export const toGraphQueryItems = weakmapMemoize(
-  (plan: GaantChartExecutionPlanFragment) => {
-    const nodeTable: { [key: string]: IGaantNode } = {};
+export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFragment) => {
+  const nodeTable: { [key: string]: IGaantNode } = {};
 
-    for (const step of plan.steps) {
-      const node: IGaantNode = {
-        name: step.key,
-        inputs: [],
-        outputs: []
-      };
-      nodeTable[step.key] = node;
-    }
+  for (const step of plan.steps) {
+    const node: IGaantNode = {
+      name: step.key,
+      inputs: [],
+      outputs: []
+    };
+    nodeTable[step.key] = node;
+  }
 
-    for (const step of plan.steps) {
-      for (const input of step.inputs) {
-        nodeTable[step.key].inputs.push({
-          dependsOn: input.dependsOn.map(d => ({
-            solid: {
-              name: d.key
-            }
-          }))
-        });
-
-        for (const upstream of input.dependsOn) {
-          let output = nodeTable[upstream.key].outputs[0];
-          if (!output) {
-            output = {
-              dependedBy: []
-            };
-            nodeTable[upstream.key].outputs.push(output);
+  for (const step of plan.steps) {
+    for (const input of step.inputs) {
+      nodeTable[step.key].inputs.push({
+        dependsOn: input.dependsOn.map(d => ({
+          solid: {
+            name: d.key
           }
-          output.dependedBy.push({
-            solid: { name: step.key }
-          });
+        }))
+      });
+
+      for (const upstream of input.dependsOn) {
+        let output = nodeTable[upstream.key].outputs[0];
+        if (!output) {
+          output = {
+            dependedBy: []
+          };
+          nodeTable[upstream.key].outputs.push(output);
         }
+        output.dependedBy.push({
+          solid: { name: step.key }
+        });
       }
     }
-
-    return Object.values(nodeTable);
   }
-);
+
+  return Object.values(nodeTable);
+});
 
 interface GaantChartProps {
   selectedSteps: string[];
@@ -142,10 +128,7 @@ interface GaantChartState {
   options: GaantChartLayoutOptions;
 }
 
-export class GaantChart extends React.Component<
-  GaantChartProps,
-  GaantChartState
-> {
+export class GaantChart extends React.Component<GaantChartProps, GaantChartState> {
   static LoadingState: React.FunctionComponent<{ runId: string }>;
 
   static fragments = {
@@ -252,19 +235,14 @@ export class GaantChart extends React.Component<
             <>
               <div style={{ width: 15 }} />
               <div style={{ width: 200 }}>
-                <ZoomSlider
-                  value={options.zoom}
-                  onChange={v => this.updateOptions({ zoom: v })}
-                />
+                <ZoomSlider value={options.zoom} onChange={v => this.updateOptions({ zoom: v })} />
               </div>
               <div style={{ width: 15 }} />
               <Checkbox
                 style={{ marginBottom: 0 }}
                 label="Hide not started steps"
                 checked={options.hideWaiting}
-                onClick={() =>
-                  this.updateOptions({ hideWaiting: !options.hideWaiting })
-                }
+                onClick={() => this.updateOptions({ hideWaiting: !options.hideWaiting })}
               />
             </>
           )}
@@ -315,8 +293,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   }
 
   const scale = Math.exp(
-    Math.log(minScale) +
-      ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
+    Math.log(minScale) + ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
   );
 
   // When the pipeline is running we want the graph to be steadily moving, even if logs
@@ -339,10 +316,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     const renderInterval = Math.max(CSS_DURATION, 2 / scale);
 
     const timeUntilIntervalElasped = renderInterval - (Date.now() - nowMs);
-    const timeout = setTimeout(
-      () => setNowMs(Date.now()),
-      timeUntilIntervalElasped
-    );
+    const timeout = setTimeout(() => setNowMs(Date.now()), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
   }, [scale, setNowMs, metadata, nowMs]);
 
@@ -400,17 +374,16 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
 
   const content = (
     <>
-      {options.mode === GaantChartMode.WATERFALL_TIMED &&
-        measurementComplete && (
-          <GaantChartTimescale
-            scale={scale}
-            viewport={viewport}
-            layoutSize={layoutSize}
-            startMs={metadata?.firstLogAt || 0}
-            highlightedMs={highlightedMs}
-            nowMs={nowMs}
-          />
-        )}
+      {options.mode === GaantChartMode.WATERFALL_TIMED && measurementComplete && (
+        <GaantChartTimescale
+          scale={scale}
+          viewport={viewport}
+          layoutSize={layoutSize}
+          startMs={metadata?.firstLogAt || 0}
+          highlightedMs={highlightedMs}
+          nowMs={nowMs}
+        />
+      )}
       <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
         <div style={{ position: "relative", ...layoutSize }}>
           {measurementComplete && (
@@ -435,9 +408,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           value={props.query}
           placeholder="Type a Step Subset"
           onChange={props.onUpdateQuery}
-          presets={
-            metadata ? interestingQueriesFor(metadata, layout) : undefined
-          }
+          presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
           className={selectedSteps.length > 0 ? "has-step" : ""}
         />
         <Checkbox
@@ -484,14 +455,7 @@ interface GaantChartViewportContentsProps {
 }
 
 const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
-  const {
-    viewport,
-    layout,
-    hoveredStep,
-    focusedSteps,
-    metadata,
-    options
-  } = props;
+  const { viewport, layout, hoveredStep, focusedSteps, metadata, options } = props;
   const items: React.ReactChild[] = [];
 
   // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
@@ -515,9 +479,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
           return;
         }
         const childNotDrawn = !layout.boxes.includes(child);
-        const childWaiting = metadata
-          ? !metadata.steps[child.node.name]?.state
-          : false;
+        const childWaiting = metadata ? !metadata.steps[child.node.name]?.state : false;
 
         const overlapAtXCoord = verticalLinesAtXCoord[bounds.maxX] || 0;
         verticalLinesAtXCoord[bounds.maxX] = overlapAtXCoord + 1;
@@ -525,10 +487,8 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         items.push(
           <GaantLine
             darkened={
-              (focusedSteps?.includes(box.node.name) || hoveredStep) ===
-                box.node.name ||
-              (focusedSteps?.includes(child.node.name) || hoveredStep) ===
-                child.node.name
+              (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
+              (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
             }
             dotted={childNotDrawn || childWaiting}
             key={`${box.key}-${child.key}-${childIdx}`}
@@ -551,12 +511,8 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     items.push(
       <div
         key={box.key}
-        data-tooltip={
-          box.width < box.node.name.length * 5 ? box.node.name : undefined
-        }
-        onClick={(evt: React.MouseEvent<any>) =>
-          props.onClickStep(box.node.name, evt)
-        }
+        data-tooltip={box.width < box.node.name.length * 5 ? box.node.name : undefined}
+        onClick={(evt: React.MouseEvent<any>) => props.onClickStep(box.node.name, evt)}
         onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
         onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
         onMouseLeave={() => props.setHoveredNodeName(null)}
@@ -640,22 +596,16 @@ const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
   }
 
   const aIsDot = a.width === BOX_DOT_WIDTH_CUTOFF;
-  const aCenterY = aIsDot
-    ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2
-    : BOX_HEIGHT / 2;
+  const aCenterY = aIsDot ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2 : BOX_HEIGHT / 2;
 
   const bIsDot = b.width === BOX_DOT_WIDTH_CUTOFF;
-  const bCenterY = bIsDot
-    ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2
-    : BOX_HEIGHT / 2;
+  const bCenterY = bIsDot ? BOX_DOT_MARGIN_Y + BOX_DOT_SIZE / 2 : BOX_HEIGHT / 2;
 
   const straight = b.y === a.y;
 
   // Line comes out of the center of the right side of the box
   const minX = Math.min(a.x + a.width, b.x + b.width);
-  const minY = straight
-    ? a.y * BOX_HEIGHT + aCenterY
-    : a.y * BOX_HEIGHT + aCenterY;
+  const minY = straight ? a.y * BOX_HEIGHT + aCenterY : a.y * BOX_HEIGHT + aCenterY;
 
   // Line ends on the center left edge of the box if it is on the
   // same line, or drops into the top center of the box if it's below.

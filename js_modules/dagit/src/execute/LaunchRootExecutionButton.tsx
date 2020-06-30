@@ -2,10 +2,7 @@ import * as React from "react";
 import { useMutation } from "react-apollo";
 
 import { LaunchButton } from "./LaunchButton";
-import {
-  LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  handleExecutionResult
-} from "../runs/RunUtils";
+import { LAUNCH_PIPELINE_EXECUTION_MUTATION, handleExecutionResult } from "../runs/RunUtils";
 import { LaunchPipelineExecutionVariables } from "../runs/types/LaunchPipelineExecution";
 
 interface LaunchRootExecutionButtonProps {
@@ -15,9 +12,7 @@ interface LaunchRootExecutionButtonProps {
 }
 
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = props => {
-  const [launchPipelineExecution] = useMutation(
-    LAUNCH_PIPELINE_EXECUTION_MUTATION
-  );
+  const [launchPipelineExecution] = useMutation(LAUNCH_PIPELINE_EXECUTION_MUTATION);
 
   const onLaunch = async () => {
     const variables = props.getVariables();

@@ -19,11 +19,7 @@ interface IComputeLogLink {
   stepKey: string;
 }
 
-export const ComputeLogLink = ({
-  runState,
-  stepKey,
-  children
-}: IComputeLogLink) => {
+export const ComputeLogLink = ({ runState, stepKey, children }: IComputeLogLink) => {
   const [isOpen, setOpen] = React.useState(false);
   const run = React.useContext(RunContext);
 
@@ -82,11 +78,7 @@ export const ComputeLogModal = ({
   runState
 }: ComputeLogModalProps) => {
   return (
-    <ComputeLogsProvider
-      runId={runId}
-      stepKey={stepKey}
-      maxBytes={MAX_STREAMING_LOG_BYTES}
-    >
+    <ComputeLogsProvider runId={runId} stepKey={stepKey} maxBytes={MAX_STREAMING_LOG_BYTES}>
       {({ isLoading, stdout, stderr, maxBytes }) => {
         if (isLoading) {
           return (
@@ -159,10 +151,7 @@ export class ComputeLogsProvider extends React.Component<
   }
 
   componentDidUpdate(prevProps: IComputeLogsProviderProps) {
-    if (
-      prevProps.runId !== this.props.runId ||
-      prevProps.stepKey !== this.props.stepKey
-    ) {
+    if (prevProps.runId !== this.props.runId || prevProps.stepKey !== this.props.stepKey) {
       this.unsubscribe();
       this.subscribe();
     }
@@ -219,10 +208,7 @@ export class ComputeLogsProvider extends React.Component<
     this.setState({ isLoading: false });
   };
 
-  merge(
-    a: ComputeLogContentFileFragment | null,
-    b: ComputeLogContentFileFragment | null
-  ) {
+  merge(a: ComputeLogContentFileFragment | null, b: ComputeLogContentFileFragment | null) {
     if (!b) return a;
     let data = a?.data;
     if (a?.data && b?.data) {
@@ -260,12 +246,7 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
     $ioType: ComputeIOType!
     $cursor: String
   ) {
-    computeLogs(
-      runId: $runId
-      stepKey: $stepKey
-      ioType: $ioType
-      cursor: $cursor
-    ) {
+    computeLogs(runId: $runId, stepKey: $stepKey, ioType: $ioType, cursor: $cursor) {
       ...ComputeLogsSubscriptionFragment
     }
   }

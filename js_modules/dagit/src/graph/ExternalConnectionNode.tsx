@@ -48,10 +48,7 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
   };
 
   return (
-    <g
-      onMouseEnter={() => onHighlightEdges(edges)}
-      onMouseLeave={() => onHighlightEdges([])}
-    >
+    <g onMouseEnter={() => onHighlightEdges(edges)} onMouseLeave={() => onHighlightEdges([])}>
       <BackingRect
         {...textSize}
         {...textOrigin}

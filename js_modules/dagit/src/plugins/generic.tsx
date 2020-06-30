@@ -23,9 +23,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   };
 
   render() {
-    const metadata = this.props.definition.metadata.sort((a, b) =>
-      a.key.localeCompare(b.key)
-    );
+    const metadata = this.props.definition.metadata.sort((a, b) => a.key.localeCompare(b.key));
 
     if (metadata.length === 0) {
       return <span />;
@@ -52,10 +50,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
               overflow: "scroll"
             }}
           >
-            <table
-              className="bp3-html-table bp3-html-table-striped"
-              style={{ width: "100%" }}
-            >
+            <table className="bp3-html-table bp3-html-table-striped" style={{ width: "100%" }}>
               <thead>
                 <tr>
                   <th>Key</th>
@@ -76,9 +71,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({ open: false })}>
-                Close
-              </Button>
+              <Button onClick={() => this.setState({ open: false })}>Close</Button>
             </div>
           </div>
         </Dialog>

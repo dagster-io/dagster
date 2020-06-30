@@ -4,13 +4,9 @@ import { getIntrospectionQuery, buildClientSchema, printSchema } from "graphql";
 
 const pyVer = execSync("python --version").toString();
 const verMatch = pyVer.match(/Python ([\d.]*)/);
-if (
-  !(verMatch != null && verMatch.length >= 2 && parseFloat(verMatch[1]) >= 3.6)
-) {
+if (!(verMatch != null && verMatch.length >= 2 && parseFloat(verMatch[1]) >= 3.6)) {
   const errMsg =
-    pyVer !== ""
-      ? pyVer
-      : "nothing on stdout indicating no python or a version earlier than 3.4";
+    pyVer !== "" ? pyVer : "nothing on stdout indicating no python or a version earlier than 3.4";
   throw new Error(`Must use Python version >= 3.6 got ${errMsg}`);
 }
 

@@ -5,10 +5,7 @@ import { RowContainer } from "../ListComponents";
 
 import { createGlobalStyle } from "styled-components/macro";
 import { Line } from "react-chartjs-2";
-import {
-  RUN_STATUS_COLORS,
-  RUN_STATUS_HOVER_COLORS
-} from "../runs/RunStatusDots";
+import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunStatusDots";
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {
@@ -71,10 +68,7 @@ export const PartitionTable: React.FunctionComponent<{
     }
     const point = datasets[element._datasetIndex].data[element._index];
     if (point && point.runId) {
-      window.open(
-        `/pipeline/${point.pipelineName}/runs/${point.runId}`,
-        "_blank"
-      );
+      window.open(`/pipeline/${point.pipelineName}/runs/${point.runId}`, "_blank");
     }
   };
 
@@ -157,9 +151,7 @@ const buildCustomTooltip = (chart: any, datasets: any[]) => {
   // TODO: (prha) rewrite this to use a pre-constructed React component
 
   return (tooltipModel: any) => {
-    let tooltipEl: HTMLElement | null = document.getElementById(
-      "partition-table-tooltip"
-    );
+    let tooltipEl: HTMLElement | null = document.getElementById("partition-table-tooltip");
 
     // Create element
     if (!tooltipEl) {
@@ -196,18 +188,14 @@ const buildCustomTooltip = (chart: any, datasets: any[]) => {
 
     // Position and show
     const position = chart?.current?.chartInstance?.canvas?.getBoundingClientRect();
-    tooltipEl.style.left =
-      position.left + window.pageXOffset + tooltipModel.caretX + 20 + "px";
-    tooltipEl.style.top =
-      position.top + window.pageYOffset + tooltipModel.caretY - 18 + "px";
+    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 20 + "px";
+    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 18 + "px";
     tooltipEl.style.opacity = "1";
   };
 };
 
 const destroyCustomTooltip = () => {
-  const element: HTMLElement | null = document.getElementById(
-    "partition-table-tooltip"
-  );
+  const element: HTMLElement | null = document.getElementById("partition-table-tooltip");
   if (element) {
     element.parentNode?.removeChild(element);
   }

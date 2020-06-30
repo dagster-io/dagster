@@ -28,14 +28,10 @@ it(`builds mocks`, () => {
     // https://github.com/dagster-io/dagster/issues/2653
     const repo = `${dagsterRoot}/${mock.repo || "examples"}/repository.yaml`;
 
-    execSync(
-      `dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`
-    );
+    execSync(`dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`);
 
     if (JSON.parse(fs.readFileSync(mock.filepath).toString()).errors) {
-      throw new Error(
-        `Failed to generate ${mock.filepath}. See file for GraphQL error.`
-      );
+      throw new Error(`Failed to generate ${mock.filepath}. See file for GraphQL error.`);
     }
     console.log(`Saved ${mock.filepath}`);
   }

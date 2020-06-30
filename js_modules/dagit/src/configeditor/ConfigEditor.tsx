@@ -133,9 +133,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     const yamlDoc = yaml.parseDocument(this.props.configCode);
     const range = findRangeInDocumentFromPath(yamlDoc, path, "key");
     if (!range) return;
-    const from = codeMirrorDoc.posFromIndex(
-      range ? range.start : 0
-    ) as CodeMirror.Position;
+    const from = codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position;
     this.moveCursor(from.line, from.ch);
   };
 
@@ -147,9 +145,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
 
     // update the contextual help based on the runConfigSchema and content
     const { context } = expandAutocompletionContextAtCursor(this._editor);
-    this.props.onHelpContextChange(
-      context ? { type: context.closestCompositeType } : null
-    );
+    this.props.onHelpContextChange(context ? { type: context.closestCompositeType } : null);
   }
 
   render() {

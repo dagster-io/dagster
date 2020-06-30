@@ -34,11 +34,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
       rootHandleID: "",
       requestScopeHandleID: ""
     } as PipelineExplorerRootQueryVariables,
-    filepath: path.join(
-      __dirname,
-      "__data__",
-      "PIPELINE_EXPLORER_ROOT_QUERY.json"
-    )
+    filepath: path.join(__dirname, "__data__", "PIPELINE_EXPLORER_ROOT_QUERY.json")
   },
   {
     name: "TYPE_EXPLORER_CONTAINER_QUERY",
@@ -51,11 +47,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
       },
       dagsterTypeName: "PySparkDataFrame"
     } as TypeExplorerContainerQueryVariables,
-    filepath: path.join(
-      __dirname,
-      "__data__",
-      "TYPE_EXPLORER_CONTAINER_QUERY.json"
-    )
+    filepath: path.join(__dirname, "__data__", "TYPE_EXPLORER_CONTAINER_QUERY.json")
   },
   {
     name: "TYPE_LIST_CONTAINER_QUERY",
@@ -103,10 +95,6 @@ export const MOCKS: CachedGraphQLRequest[] = [
       },
       handleID: "download_q2_sfo_weather"
     } as SidebarTabbedContainerSolidQueryVariables,
-    filepath: path.join(
-      __dirname,
-      "__data__",
-      "SIDEBAR_TABBED_CONTAINER_SOLID_QUERY.json"
-    )
+    filepath: path.join(__dirname, "__data__", "SIDEBAR_TABBED_CONTAINER_SOLID_QUERY.json")
   }
 ];

@@ -54,14 +54,10 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
       <RunGroupPanel runId={runId} />
       <SectionHeader>Preparing</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
-      {preparing.length === 0 && (
-        <EmptyNotice>No steps are preparing to execute</EmptyNotice>
-      )}
+      {preparing.length === 0 && <EmptyNotice>No steps are preparing to execute</EmptyNotice>}
       <SectionHeader>Executing</SectionHeader>
       <Section>{executing.map(renderStepItem)}</Section>
-      {executing.length === 0 && (
-        <EmptyNotice>No steps are executing</EmptyNotice>
-      )}
+      {executing.length === 0 && <EmptyNotice>No steps are executing</EmptyNotice>}
       <SectionHeader>Errored</SectionHeader>
       <Section>{errored.map(renderStepItem)}</Section>
     </div>

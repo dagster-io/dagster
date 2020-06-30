@@ -10,9 +10,7 @@ interface ILoadingProps<TData> {
   allowStaleData?: boolean;
 }
 
-export default class Loading<TData> extends React.Component<
-  ILoadingProps<TData>
-> {
+export default class Loading<TData> extends React.Component<ILoadingProps<TData>> {
   public render() {
     const { children, allowStaleData = false } = this.props;
     const { error, data, loading } = this.props.queryResult;
@@ -22,19 +20,12 @@ export default class Loading<TData> extends React.Component<
       return (
         <LoadingContainer>
           <LoadingCentering>
-            <NonIdealState
-              icon={IconNames.ERROR}
-              title="GraphQL Error - see console for details"
-            />
+            <NonIdealState icon={IconNames.ERROR} title="GraphQL Error - see console for details" />
           </LoadingCentering>
         </LoadingContainer>
       );
     }
-    if (
-      !data ||
-      (loading && !allowStaleData) ||
-      Object.keys(data).length === 0
-    ) {
+    if (!data || (loading && !allowStaleData) || Object.keys(data).length === 0) {
       return (
         <LoadingContainer>
           <LoadingCentering>

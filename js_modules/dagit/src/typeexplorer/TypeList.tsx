@@ -4,12 +4,7 @@ import styled from "styled-components/macro";
 import { H3, UL } from "@blueprintjs/core";
 import TypeWithTooltip from "../TypeWithTooltip";
 import { TypeListFragment } from "./types/TypeListFragment";
-import {
-  SidebarSubhead,
-  SidebarSection,
-  SidebarTitle,
-  SectionInner
-} from "../SidebarComponents";
+import { SidebarSubhead, SidebarSection, SidebarTitle, SectionInner } from "../SidebarComponents";
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;
@@ -61,11 +56,7 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
           <SidebarTitle>Pipeline Types</SidebarTitle>
         </SectionInner>
         {Object.keys(groups).map((title, idx) => (
-          <SidebarSection
-            key={idx}
-            title={title}
-            collapsedByDefault={idx !== 0}
-          >
+          <SidebarSection key={idx} title={title} collapsedByDefault={idx !== 0}>
             <UL>{this.renderTypes(groups[title])}</UL>
           </SidebarSection>
         ))}
