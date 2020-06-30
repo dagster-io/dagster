@@ -14,13 +14,13 @@ import { useHistory } from "react-router";
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
 
-interface EnvironmentContentListProps {
+interface RepositoryContentListProps {
   selector?: string;
   tab?: string;
   repo: DagsterRepoOption;
 }
 
-export const EnvironmentContentList: React.FunctionComponent<EnvironmentContentListProps> = ({
+export const RepositoryContentList: React.FunctionComponent<RepositoryContentListProps> = ({
   tab,
   repo,
   selector

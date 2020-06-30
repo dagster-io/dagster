@@ -150,7 +150,7 @@ exports[`renders execution 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -172,7 +172,7 @@ exports[`renders execution 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -246,7 +246,7 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -334,10 +334,10 @@ exports[`renders execution 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/playground"
@@ -346,7 +346,7 @@ exports[`renders execution 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/playground"
@@ -785,7 +785,7 @@ exports[`renders pipeline page 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -807,7 +807,7 @@ exports[`renders pipeline page 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -881,7 +881,7 @@ exports[`renders pipeline page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -969,10 +969,10 @@ exports[`renders pipeline page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -981,7 +981,7 @@ exports[`renders pipeline page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -5370,7 +5370,7 @@ exports[`renders pipeline solid page 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -5392,7 +5392,7 @@ exports[`renders pipeline solid page 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -5466,7 +5466,7 @@ exports[`renders pipeline solid page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -5554,10 +5554,10 @@ exports[`renders pipeline solid page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -5566,7 +5566,7 @@ exports[`renders pipeline solid page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -9955,7 +9955,7 @@ exports[`renders solids explorer 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -9977,7 +9977,7 @@ exports[`renders solids explorer 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -10051,7 +10051,7 @@ exports[`renders solids explorer 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -10139,10 +10139,10 @@ exports[`renders solids explorer 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -10151,7 +10151,7 @@ exports[`renders solids explorer 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -11666,7 +11666,7 @@ exports[`renders type page 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -11688,7 +11688,7 @@ exports[`renders type page 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -11762,7 +11762,7 @@ exports[`renders type page 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -11850,10 +11850,10 @@ exports[`renders type page 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -11862,7 +11862,7 @@ exports[`renders type page 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -16251,7 +16251,7 @@ exports[`renders type page 2`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -16273,7 +16273,7 @@ exports[`renders type page 2`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -16347,7 +16347,7 @@ exports[`renders type page 2`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -16435,10 +16435,10 @@ exports[`renders type page 2`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -16447,7 +16447,7 @@ exports[`renders type page 2`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"
@@ -20836,7 +20836,7 @@ exports[`renders without error 1`] = `
           onClick={[Function]}
         >
           <div
-            className="EnvironmentPicker__EnvironmentPickerFlexContainer-sc-10rxtva-1 dMPuLi"
+            className="RepositoryPicker__RepositoryPickerFlexContainer-lrfok7-1 hkytLz"
           >
             <div
               style={
@@ -20858,7 +20858,7 @@ exports[`renders without error 1`] = `
                 REPOSITORY
               </div>
               <div
-                className="EnvironmentPicker__RepoTitle-sc-10rxtva-0 esesxo"
+                className="RepositoryPicker__RepoTitle-lrfok7-0 rHXJq"
               >
                 internal_dagit_repository
                 <span
@@ -20932,7 +20932,7 @@ exports[`renders without error 1`] = `
         }
       >
         <div
-          className="EnvironmentContentList__Header-sc-1lnac0i-0 cZrYfC"
+          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
         >
           <div
             className="bp3-input-group bp3-small"
@@ -21020,10 +21020,10 @@ exports[`renders without error 1`] = `
           </div>
         </div>
         <div
-          className="EnvironmentContentList__Items-sc-1lnac0i-1 frieFn"
+          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
         >
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb selected "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
             data-tooltip="airline_demo_ingest_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
             href="/pipeline/airline_demo_ingest_pipeline/"
@@ -21032,7 +21032,7 @@ exports[`renders without error 1`] = `
             airline_demo_ingest_pipeline
           </a>
           <a
-            className="EnvironmentContentList__Item-sc-1lnac0i-2 eAFwBb  "
+            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
             data-tooltip="airline_demo_warehouse_pipeline"
             data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
             href="/pipeline/airline_demo_warehouse_pipeline/"

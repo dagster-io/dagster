@@ -7,8 +7,8 @@ import { Colors, Icon } from "@blueprintjs/core";
 import { InstanceDetailsLink } from "./InstanceDetailsLink";
 import { WebsocketStatus } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
-import { EnvironmentPicker } from "./EnvironmentPicker";
-import { EnvironmentContentList } from "./EnvironmentContentList";
+import { RepositoryPicker } from "./RepositoryPicker";
+import { RepositoryContentList } from "./RepositoryContentList";
 import navBarImage from "../images/nav-logo-icon.png";
 import navTitleImage from "../images/nav-title.png";
 import { DagsterRepoOption } from "../DagsterRepositoryContext";
@@ -91,7 +91,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
           flex: 1
         }}
       >
-        <EnvironmentPicker options={options} repo={repo} setRepo={setRepo} />
+        <RepositoryPicker options={options} repo={repo} setRepo={setRepo} />
         {repo &&
           REPO_SCOPE_TABS.map(t => (
             <Tab to={t.to} key={t.tab} className={match?.params.tab === t.tab ? "selected" : ""}>
@@ -99,7 +99,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
               <TabLabel>{t.label}</TabLabel>
             </Tab>
           ))}
-        {repo && <EnvironmentContentList {...match?.params} repo={repo} />}
+        {repo && <RepositoryContentList {...match?.params} repo={repo} />}
         <div style={{ flex: 1 }} />
       </div>
     </LeftNavContainer>

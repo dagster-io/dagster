@@ -5,13 +5,13 @@ import styled from "styled-components/macro";
 import { useHistory } from "react-router";
 import { ReloadRepositoryLocationButton } from "./ReloadRepositoryLocationButton";
 
-interface EnvironmentPickerProps {
+interface RepositoryPickerProps {
   options: DagsterRepoOption[];
   repo: DagsterRepoOption | null;
   setRepo: (repo: DagsterRepoOption) => void;
 }
 
-export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> = ({
+export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = ({
   repo,
   setRepo,
   options
@@ -54,7 +54,7 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
         </Menu>
       }
     >
-      <EnvironmentPickerFlexContainer>
+      <RepositoryPickerFlexContainer>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}>REPOSITORY</div>
           <RepoTitle>
@@ -71,7 +71,7 @@ export const EnvironmentPicker: React.FunctionComponent<EnvironmentPickerProps> 
         {repo?.repositoryLocation.isReloadSupported && (
           <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
         )}
-      </EnvironmentPickerFlexContainer>
+      </RepositoryPickerFlexContainer>
     </Popover>
   );
 };
@@ -85,7 +85,7 @@ const RepoTitle = styled.div`
   height: 19px;
 `;
 
-const EnvironmentPickerFlexContainer = styled.div`
+const RepositoryPickerFlexContainer = styled.div`
   border-bottom: 1px solid ${Colors.DARK_GRAY4};
   padding: 10px 10px;
   display: flex;
