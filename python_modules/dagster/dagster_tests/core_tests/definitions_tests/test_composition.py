@@ -624,7 +624,7 @@ def test_uninvoked_aliased_solid_fails():
 
 def test_alias_on_invoked_solid_fails():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=r'.*Did you forget to move parentheses?'
+        DagsterInvariantViolationError, match=r'.*Consider checking the location of parentheses.'
     ):
 
         @pipeline

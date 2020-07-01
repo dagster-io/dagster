@@ -334,20 +334,18 @@ class InvokedSolidOutputHandle(object):
             )
         )
 
-    def __getattr__(self, attr_called):
-        if attr_called == 'alias':
-            raise DagsterInvalidDefinitionError(
-                'In {source} {name}, attempted to call {attr_name} method for {cls}. This object '
-                'represents the output "{out}" from the already invoked solid "{solid}". Did you '
-                'forget to move parentheses?'.format(
-                    source=current_context().source,
-                    name=current_context().name,
-                    cls=self.__class__.__name__,
-                    solid=self.solid_name,
-                    out=self.output_name,
-                    attr_name=attr_called,
-                )
+    def alias(self, _):
+        raise DagsterInvariantViolationError(
+            'In {source} {name}, attempted to call alias method for {cls}. This object '
+            'represents the output "{out}" from the already invoked solid "{solid}". Consider '
+            'checking the location of parentheses.'.format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                solid=self.solid_name,
+                out=self.output_name,
             )
+        )
 
 
 class InputMappingNode(object):
