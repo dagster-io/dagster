@@ -10,7 +10,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocation
 
 from .load import (
-    load_workspace_from_yaml_path,
+    load_workspace_from_yaml_paths,
     location_handle_from_module_name,
     location_handle_from_python_file,
 )
@@ -42,7 +42,7 @@ def are_all_keys_empty(kwargs, keys):
 WORKSPACE_CLI_ARGS = ('workspace', 'python_file', 'module_name', 'attribute', 'repository_yaml')
 
 
-WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'path')
+WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
 PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
 ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
 
@@ -58,13 +58,13 @@ def created_workspace_load_target(kwargs):
         if kwargs.get('empty_workspace'):
             return EmptyWorkspaceTarget()
         if os.path.exists('workspace.yaml'):
-            return WorkspaceFileTarget(path='workspace.yaml')
+            return WorkspaceFileTarget(paths=['workspace.yaml'])
         elif os.path.exists('repository.yaml'):
             warnings.warn(
                 'You are automatically loading a "repository.yaml", a deprecated '
                 'capability. This capability will be eliminated in 0.9.0.'
             )
-            return WorkspaceFileTarget(path='repository.yaml')
+            return WorkspaceFileTarget(paths=['repository.yaml'])
         raise click.UsageError('No arguments given and workspace.yaml not found.')
     if kwargs.get('repository_yaml'):
         warnings.warn(
@@ -72,10 +72,10 @@ def created_workspace_load_target(kwargs):
             'This is deprecated and will be eliminated in 0.9.0.'
         )
         _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'workspace')
-        return WorkspaceFileTarget(path=kwargs['repository_yaml'])
+        return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
         _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
-        return WorkspaceFileTarget(path=kwargs['workspace'])
+        return WorkspaceFileTarget(paths=[kwargs['workspace']])
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
         return PythonFileTarget(
@@ -92,7 +92,7 @@ def workspace_from_load_target(load_target):
     check.inst_param(load_target, 'load_target', WorkspaceLoadTarget)
 
     if isinstance(load_target, WorkspaceFileTarget):
-        return load_workspace_from_yaml_path(load_target.path)
+        return load_workspace_from_yaml_paths(load_target.paths)
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
             [location_handle_from_python_file(load_target.python_file, load_target.attribute, None)]

@@ -1,0 +1,4 @@
+load_from:
+  - python_file:
+      relative_path: extra_repository.py
+      location_name: extra_location

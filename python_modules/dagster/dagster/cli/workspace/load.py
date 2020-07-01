@@ -21,11 +21,25 @@ from .config_schema import ensure_workspace_config
 from .workspace import Workspace
 
 
-def load_workspace_from_yaml_path(yaml_path):
-    check.str_param(yaml_path, 'yaml_path')
+def load_workspace_from_yaml_paths(yaml_paths):
+    check.list_param(yaml_paths, 'yaml_paths', str)
 
-    workspace_config = load_yaml_from_path(yaml_path)
-    return load_workspace_from_config(workspace_config, yaml_path)
+    workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
+    workspaces = [
+        load_workspace_from_config(workspace_config, yaml_path)
+        for workspace_config, yaml_path in zip(workspace_configs, yaml_paths)
+    ]
+
+    repository_location_handles_dict = {}
+    for workspace in workspaces:
+        for repository_location_name in workspace.repository_location_names:
+            repository_location_handles_dict[
+                repository_location_name
+            ] = workspace.get_repository_location_handle(repository_location_name)
+
+    repository_location_handles = list(repository_location_handles_dict.values())
+    merged_workspace = Workspace(repository_location_handles)
+    return merged_workspace
 
 
 def load_workspace_from_config(workspace_config, yaml_path):
