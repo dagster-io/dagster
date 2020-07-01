@@ -22,7 +22,6 @@ from dagster import (
     solid,
 )
 from dagster.cli.pipeline import (
-    execute_backfill_command,
     execute_execute_command,
     execute_list_command,
     execute_print_command,
@@ -136,24 +135,6 @@ def stderr_pipeline():
     fail()
 
 
-def assert_correct_hello_cereal_output(result):
-    assert result.exit_code == 0
-    assert result.output == (
-        'Repository hello_cereal_repository\n'
-        '**********************************\n'
-        'Pipeline: complex_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    load_cereals\n'
-        '    sort_by_calories\n'
-        '    sort_by_protein\n'
-        '    display_results\n'
-        '*******************************\n'
-        'Pipeline: hello_cereal_pipeline\n'
-        'Solids: (Execution Order)\n'
-        '    hello_cereal\n'
-    )
-
-
 def assert_correct_bar_repository_output(result):
     assert result.exit_code == 0
     assert result.output == (
@@ -192,27 +173,20 @@ def test_list_command():
 
     assert_correct_bar_repository_output(result)
 
-    # https://github.com/dagster-io/dagster/issues/2623
     execute_list_command(
         {
             'repository_yaml': None,
             'python_file': None,
-            'module_name': 'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            'fn_name': 'hello_cereal_repository',
+            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'fn_name': 'bar',
         },
         no_print,
     )
 
     result = runner.invoke(
-        pipeline_list_command,
-        [
-            '-m',
-            'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            '-a',
-            'hello_cereal_repository',
-        ],
+        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
     )
-    assert_correct_hello_cereal_output(result)
+    assert_correct_bar_repository_output(result)
 
     execute_list_command(
         {
@@ -227,36 +201,29 @@ def test_list_command():
     result = runner.invoke(
         pipeline_list_command, ['-w', file_relative_path(__file__, 'repository_module.yaml')]
     )
-    assert_correct_hello_cereal_output(result)
+    assert_correct_bar_repository_output(result)
 
     with pytest.raises(UsageError):
         execute_list_command(
             {
                 'repository_yaml': None,
                 'python_file': 'foo.py',
-                'module_name': 'docs_snippets.intro_tutorial.advanced.repositories.repos',
-                'fn_name': 'hello_cereal_repository',
+                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'fn_name': 'bar',
             },
             no_print,
         )
 
     result = runner.invoke(
         pipeline_list_command,
-        [
-            '-f',
-            'foo.py',
-            '-m',
-            'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            '-a',
-            'hello_cereal_repository',
-        ],
+        ['-f', 'foo.py', '-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
     )
     assert result.exit_code == 2
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'docs_snippets.intro_tutorial.advanced.repositories.repos'],
+        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands'],
     )
-    assert_correct_hello_cereal_output(result)
+    assert_correct_bar_repository_output(result)
 
     result = runner.invoke(
         pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py')]
@@ -275,7 +242,7 @@ def valid_execute_args():
         },
         {
             'workspace': file_relative_path(__file__, 'repository_module.yaml'),
-            'pipeline': 'hello_cereal_pipeline',
+            'pipeline': 'foo',
             'python_file': None,
             'module_name': None,
             'attribute': None,
@@ -289,17 +256,17 @@ def valid_execute_args():
         },
         {
             'workspace': None,
-            'pipeline': 'hello_cereal_pipeline',
+            'pipeline': 'foo',
             'python_file': None,
-            'module_name': 'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            'attribute': 'hello_cereal_repository',
+            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'attribute': 'bar',
         },
         {
             'workspace': None,
             'pipeline': None,
             'python_file': None,
-            'module_name': 'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            'attribute': 'hello_cereal_pipeline',
+            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'attribute': 'foo_pipeline',
         },
         {
             'workspace': None,
@@ -321,27 +288,10 @@ def valid_execute_args():
 def valid_cli_args():
     return [
         ['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'],
-        [
-            '-w',
-            file_relative_path(__file__, 'repository_module.yaml'),
-            '-p',
-            'hello_cereal_pipeline',
-        ],
+        ['-w', file_relative_path(__file__, 'repository_module.yaml'), '-p', 'foo',],
         ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo',],
-        [
-            '-m',
-            'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            '-a',
-            'hello_cereal_repository',
-            '-p',
-            'hello_cereal_pipeline',
-        ],
-        [
-            '-m',
-            'docs_snippets.intro_tutorial.advanced.repositories.repos',
-            '-a',
-            'hello_cereal_pipeline',
-        ],
+        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo',],
+        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline',],
         ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'define_foo_pipeline'],
     ]
 
@@ -1106,7 +1056,7 @@ def test_tags_pipeline():
                 '--tags',
                 '{ "foo": "bar" }',
                 '-p',
-                'hello_cereal_pipeline',
+                'foo',
             ],
         )
         assert result.exit_code == 0

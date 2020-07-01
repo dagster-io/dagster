@@ -25,15 +25,10 @@ SMOKE_TEST_QUERY = '''
 }
 '''
 
-# https://github.com/dagster-io/dagster/issues/2623
+
 def test_smoke_app():
     flask_app = app.create_app_from_workspace(
-        get_workspace_from_kwargs(
-            dict(
-                module_name='docs_snippets.intro_tutorial.advanced.repositories.repos',
-                definition='hello_cereal_repository',
-            )
-        ),
+        get_workspace_from_kwargs(dict(module_name='dagit_tests.toy.bar_repo', definition='bar',)),
         DagsterInstance.ephemeral(),
     )
     client = flask_app.test_client()
@@ -45,7 +40,7 @@ def test_smoke_app():
     assert {
         node_data['name']
         for node_data in data['data']['repositoriesOrError']['nodes'][0]['pipelines']
-    } == set(['hello_cereal_pipeline', 'complex_pipeline'])
+    } == set(['foo', 'baz'])
 
     result = client.get('/graphql')
     assert result.status_code == 400

@@ -30,11 +30,9 @@ EXPECTED_KEYS = set(
     ]
 )
 
-# https://github.com/dagster-io/dagster/issues/2623
-def path_to_tutorial_file(path):
-    return script_relative_path(
-        os.path.join('../../../../examples/docs_snippets/docs_snippets/intro_tutorial/', path)
-    )
+
+def path_to_file(path):
+    return script_relative_path(os.path.join('./', path))
 
 
 @pytest.mark.skipif(
@@ -48,24 +46,17 @@ def test_dagster_telemetry_enabled(caplog):
 
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
-            with pushd(path_to_tutorial_file('')):
-                pipeline_name = 'hello_cereal_pipeline'
+            with pushd(path_to_file('')):
+                pipeline_name = 'foo_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    [
-                        '-f',
-                        path_to_tutorial_file('advanced/repositories/hello_cereal.py'),
-                        '-a',
-                        pipeline_name,
-                    ],
+                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_name,],
                 )
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get('action') == UPDATE_REPO_STATS:
-                        assert message.get('pipeline_name_hash') == hash_name(
-                            'hello_cereal_pipeline'
-                        )
+                        assert message.get('pipeline_name_hash') == hash_name('foo')
                         assert message.get('num_pipelines_in_repo') == str(1)
                         assert message.get('repo_hash') == hash_name(EPHEMERAL_NAME)
                     assert set(message.keys()) == EXPECTED_KEYS
@@ -85,16 +76,11 @@ def test_dagster_telemetry_disabled(caplog):
             DagsterInstance.local_temp(temp_dir)
 
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
-            with pushd(path_to_tutorial_file('')):
-                pipeline_name = 'hello_cereal_pipeline'
+            with pushd(path_to_file('')):
+                pipeline_name = 'foo_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    [
-                        '-f',
-                        path_to_tutorial_file('advanced/repositories/hello_cereal.py'),
-                        '-a',
-                        pipeline_name,
-                    ],
+                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_name,],
                 )
 
             assert not os.path.exists(os.path.join(get_dir_from_dagster_home('logs'), 'event.log'))
@@ -113,22 +99,17 @@ def test_dagster_telemetry_unset(caplog):
 
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
-            with pushd(path_to_tutorial_file('')):
-                pipeline_name = 'hello_cereal_pipeline'
+            with pushd(path_to_file('')):
+                pipeline_name = 'foo_pipeline'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    [
-                        '-f',
-                        path_to_tutorial_file('advanced/repositories/hello_cereal.py'),
-                        '-a',
-                        pipeline_name,
-                    ],
+                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_name,],
                 )
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get('action') == UPDATE_REPO_STATS:
-                        assert message.get('pipeline_name_hash') == hash_name(pipeline_name)
+                        assert message.get('pipeline_name_hash') == hash_name('foo')
                         assert message.get('num_pipelines_in_repo') == str(1)
                         assert message.get('repo_hash') == hash_name(EPHEMERAL_NAME)
                     assert set(message.keys()) == EXPECTED_KEYS
@@ -148,7 +129,7 @@ def test_repo_stats(caplog):
 
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
-            with pushd(path_to_tutorial_file('')):
+            with pushd(path_to_file('')):
                 pipeline_name = 'multi_mode_with_resources'
                 result = runner.invoke(
                     pipeline_execute_command,
