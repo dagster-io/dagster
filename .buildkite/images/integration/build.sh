@@ -1,6 +1,6 @@
 #! /bin/bash
 ROOT=$(git rev-parse --show-toplevel)
-cd $ROOT/.buildkite/images/docker/
+cd $ROOT/.buildkite/images/integration/
 set -eux
 
 
