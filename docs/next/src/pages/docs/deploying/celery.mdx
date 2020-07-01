@@ -136,7 +136,7 @@ Finally, you will need to make sure that the Dagster code you want the
 workers to execute is present in their environment, and that it is in
 sync with the code present on the node running Dagit. The easiest way to
 do this is typically to package your code into a Python module, and for
-the `repository.yaml` you use to run Dagit to refer to the module.
+the `workspace.yaml` you use to run Dagit to load from that module.
 
 In the quick start, we accomplished this by starting dagit with the `-f`
 and `-n` parameters, which told it which file to find our pipeline in
