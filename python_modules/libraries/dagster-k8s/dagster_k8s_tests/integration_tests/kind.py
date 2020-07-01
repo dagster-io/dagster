@@ -13,7 +13,7 @@ from dagster import check
 from dagster.utils import safe_tempfile_path
 
 from .cluster import ClusterConfig
-from .utils import check_output, which_, within_docker
+from .integration_utils import check_output, which_, within_docker
 
 
 def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):

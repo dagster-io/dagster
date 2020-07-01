@@ -5,7 +5,7 @@ import os
 import sys
 
 import pytest
-from dagster_k8s_tests.utils import wait_for_job_and_get_logs
+from dagster_k8s.test import wait_for_job_and_get_logs
 from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,
@@ -17,7 +17,7 @@ from dagster.utils import git_repository_root, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
 sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
-from dagster_k8s_tests.cluster import (  # isort:skip, pylint:disable=unused-import
+from dagster_k8s_tests.integration_tests.cluster import (  # isort:skip, pylint:disable=unused-import
     dagster_instance,
     run_launcher,
 )

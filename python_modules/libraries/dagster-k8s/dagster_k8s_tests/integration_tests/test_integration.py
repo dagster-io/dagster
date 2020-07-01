@@ -2,6 +2,7 @@ import os
 
 import pytest
 from dagster_celery_k8s.config import get_celery_engine_config
+from dagster_k8s.test import wait_for_job_and_get_logs
 from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,
@@ -10,8 +11,6 @@ from dagster_test.test_project import (
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
-
-from .utils import wait_for_job_and_get_logs
 
 
 @pytest.mark.integration

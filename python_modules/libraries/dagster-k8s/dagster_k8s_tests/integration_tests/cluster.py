@@ -18,7 +18,7 @@ from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.utils import find_free_port
 
-from .utils import IS_BUILDKITE, check_output, image_pull_policy
+from .integration_utils import IS_BUILDKITE, check_output, image_pull_policy
 
 # How long to wait before giving up on trying to establish postgres port forwarding
 PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute

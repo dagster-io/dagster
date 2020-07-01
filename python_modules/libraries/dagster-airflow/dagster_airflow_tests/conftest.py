@@ -21,7 +21,9 @@ try:
     sys.path.append(
         os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
     )
-    from dagster_k8s_tests.cluster import define_cluster_provider_fixture  # isort:skip
+    from dagster_k8s_tests.integration_tests.cluster import (
+        define_cluster_provider_fixture,
+    )  # isort:skip
 
 except ImportError as import_exc:
     six.raise_from(

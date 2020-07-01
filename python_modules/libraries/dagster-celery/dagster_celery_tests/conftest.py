@@ -15,8 +15,9 @@ try:
     sys.path.append(
         os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
     )
-    from dagster_k8s_tests.cluster import define_cluster_provider_fixture
-    from dagster_k8s_tests.helm import helm_namespace  # pylint: disable=unused-import
+    # pylint: disable=unused-import
+    from dagster_k8s_tests.integration_tests.cluster import define_cluster_provider_fixture
+    from dagster_k8s_tests.integration_tests.helm import helm_namespace
 except ImportError as import_exc:
     six.raise_from(
         Exception(

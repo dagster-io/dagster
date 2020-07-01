@@ -3,10 +3,6 @@ import random
 import subprocess
 
 import six
-from dagster_graphql.client.util import parse_raw_log_lines
-from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_job_success
-
-from dagster import check
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -20,6 +16,22 @@ def image_pull_policy():
         return 'Always'
     else:
         return 'IfNotPresent'
+
+
+def check_output(*args, **kwargs):
+    try:
+        return subprocess.check_output(*args, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        output = exc.output.decode()
+        six.raise_from(Exception(output), exc)
+
+
+def which_(exe):
+    '''Uses distutils to look for an executable, mimicking unix which'''
+    from distutils import spawn  # pylint: disable=no-name-in-module
+
+    # https://github.com/PyCQA/pylint/issues/73
+    return spawn.find_executable(exe)
 
 
 def get_test_namespace():
@@ -40,22 +52,6 @@ def within_docker():
     )
 
 
-def which_(exe):
-    '''Uses distutils to look for an executable, mimicking unix which'''
-    from distutils import spawn  # pylint: disable=no-name-in-module
-
-    # https://github.com/PyCQA/pylint/issues/73
-    return spawn.find_executable(exe)
-
-
-def check_output(*args, **kwargs):
-    try:
-        return subprocess.check_output(*args, **kwargs)
-    except subprocess.CalledProcessError as exc:
-        output = exc.output.decode()
-        six.raise_from(Exception(output), exc)
-
-
 def remove_none_recursively(obj):
     '''Remove none values from a dict. This is used here to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
@@ -71,22 +67,3 @@ def remove_none_recursively(obj):
         )
     else:
         return obj
-
-
-def wait_for_job_and_get_logs(job_name, namespace):
-    '''Wait for a dagster-k8s job to complete, ensure it launched only one pod,
-    and then grab the logs from the pod it launched.
-    '''
-    check.str_param(job_name, 'job_name')
-    check.str_param(namespace, 'namespace')
-
-    wait_for_job_success(job_name, namespace=namespace)
-
-    pod_names = get_pod_names_in_job(job_name, namespace)
-
-    assert len(pod_names) == 1
-
-    pod_name = pod_names[0]
-
-    raw_logs = retrieve_pod_logs(pod_name, namespace=namespace)
-    return parse_raw_log_lines(raw_logs.split('\n'))

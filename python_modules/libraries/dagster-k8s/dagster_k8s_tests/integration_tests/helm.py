@@ -14,7 +14,7 @@ from dagster_test.test_project import test_project_docker_image
 from dagster import check
 from dagster.utils import git_repository_root
 
-from .utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
+from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
 TEST_CONFIGMAP_NAME = 'test-env-configmap'
 TEST_SECRET_NAME = 'test-env-secret'
