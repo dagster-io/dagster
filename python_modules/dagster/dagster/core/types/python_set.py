@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.config_type import Array
 from dagster.core.types.dagster_type import DagsterTypeKind
 
-from .config_schema import InputHydrationConfig
+from .config_schema import DagsterTypeLoader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 PythonSet = PythonObjectDagsterType(
@@ -10,7 +10,7 @@ PythonSet = PythonObjectDagsterType(
 )
 
 
-class TypedSetInputHydrationConfig(InputHydrationConfig):
+class TypedSetLoader(DagsterTypeLoader):
     def __init__(self, item_dagster_type):
         self._item_dagster_type = check.inst_param(
             item_dagster_type, 'item_dagster_type', DagsterType
@@ -18,15 +18,13 @@ class TypedSetInputHydrationConfig(InputHydrationConfig):
 
     @property
     def schema_type(self):
-        return Array(self._item_dagster_type.input_hydration_config.schema_type)
+        return Array(self._item_dagster_type.loader.schema_type)
 
     def construct_from_config_value(self, context, config_value):
         runtime_value = set()
         for item in config_value:
             runtime_value.add(
-                self._item_dagster_type.input_hydration_config.construct_from_config_value(
-                    context, item
-                )
+                self._item_dagster_type.loader.construct_from_config_value(context, item)
             )
         return runtime_value
 
@@ -37,11 +35,7 @@ class _TypedPythonSet(DagsterType):
         super(_TypedPythonSet, self).__init__(
             key='TypedPythonSet.{}'.format(item_dagster_type.key),
             name=None,
-            input_hydration_config=(
-                TypedSetInputHydrationConfig(item_dagster_type)
-                if item_dagster_type.input_hydration_config
-                else None
-            ),
+            loader=(TypedSetLoader(item_dagster_type) if item_dagster_type.loader else None),
             type_check_fn=self.type_check_method,
         )
 

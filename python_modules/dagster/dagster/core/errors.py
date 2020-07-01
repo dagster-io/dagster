@@ -256,19 +256,18 @@ class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
-class DagsterInputHydrationConfigError(DagsterUserCodeExecutionError):
+class DagsterTypeLoadingError(DagsterUserCodeExecutionError):
     '''
-    Indicates that an unexpected error occurred while executing the body of an input hydration
-    config function defined in a :py:class:`~dagster.InputHydrationConfig` during input hydration of
-    a custom type.
+    Indicates that an unexpected error occurred while executing the body of an type load
+    function defined in a :py:class:`~dagster.DagsterTypeLoader` during loading of a custom type.
     '''
 
 
-class DagsterOutputMaterializationError(DagsterUserCodeExecutionError):
+class DagsterTypeMaterializationError(DagsterUserCodeExecutionError):
     '''
     Indicates that an unexpected error occurred while executing the body of an output
-    materialization function defined in a :py:class:`~dagster.OutputMaterializationConfig` during
-    output materialization of a custom type.
+    materialization function defined in a :py:class:`~dagster.DagsterTypeMaterializer` during
+    materialization of a custom type.
     '''
 
 

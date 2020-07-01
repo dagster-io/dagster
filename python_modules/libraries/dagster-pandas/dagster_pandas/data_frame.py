@@ -171,11 +171,11 @@ def create_dagster_pandas_dataframe_type(
             which allow you to express things like summary statistics during runtime.
         dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
             :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`~dagster.InputHydrationConfig`. If None, we will default
+        input_hydration_config (Optional[DagsterTypeLoader]): An instance of a class that
+            inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
             to using the `dataframe_input_schema` input_hydration_config.
-        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`~dagster.OutputMaterializationConfig`. If None, we will
+        output_materialization_config (Optional[DagsterTypeMaterializer]): An instance of a class
+            that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
             default to using the `dataframe_output_schema` output_materialization_config.
     """
     # We allow for the plugging in of input_hydration_config/output_materialization_configs so that
@@ -252,11 +252,11 @@ def create_structured_dataframe_type(
         dataframe_validator (Optional[Union[ConstraintWithMetadata, MultiConstraintWithMetadata]]):
                     what dataframe-wide validation you want to have applied.
                     Leave empty for no dataframe-wide validation.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`~dagster.InputHydrationConfig`. If None, we will default
+        input_hydration_config (Optional[DagsterTypeLoader]): An instance of a class that
+            inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
             to using the `dataframe_input_schema` input_hydration_config.
-        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`~dagster.OutputMaterializationConfig`. If None, we will
+        output_materialization_config (Optional[DagsterTypeMaterializer]): An instance of a class
+            that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
             default to using the `dataframe_output_schema` output_materialization_config.
 
     Returns:

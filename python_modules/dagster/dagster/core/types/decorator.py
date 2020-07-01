@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 
@@ -6,31 +7,33 @@ from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_da
 def usable_as_dagster_type(
     name=None,
     description=None,
-    input_hydration_config=None,
-    output_materialization_config=None,
+    loader=None,
+    materializer=None,
     serialization_strategy=None,
     auto_plugins=None,
+    input_hydration_config=None,
+    output_materialization_config=None,
 ):
     '''Decorate a Python class to make it usable as a Dagster Type.
-    
+
     This is intended to make it straightforward to annotate existing business logic classes to
-    make them dagster types whose typecheck is an isinstance check against that python class. 
+    make them dagster types whose typecheck is an isinstance check against that python class.
 
     Args:
         python_type (cls): The python type to make usable as python type.
         name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
             the ``python_type`` will be used.
         description (Optional[str]): A user-readable description of the type.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+        loader (Optional[DagsterTypeLoader]): An instance of a class that
+            inherits from :py:class:`DagsterTypeLoader` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
-            :py:func:`@input_hydration_config <dagster.input_hydration_config>` decorator to construct
+            :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+        materializer (Optiona[DagsterTypeMaterializer]): An instance of a class
+            that inherits from :py:class:`DagsterTypeMaterializer` and can persist values of
             this type. As a rule, you should use the
-            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
             decorator to construct these arguments.
         serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
             inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
@@ -81,8 +84,16 @@ def usable_as_dagster_type(
                 name=new_name,
                 description=description,
                 python_type=bare_cls,
-                input_hydration_config=input_hydration_config,
-                output_materialization_config=output_materialization_config,
+                loader=canonicalize_backcompat_args(
+                    loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+                ),
+                materializer=canonicalize_backcompat_args(
+                    materializer,
+                    'materializer',
+                    output_materialization_config,
+                    'output_materialization_config',
+                    '0.10.0',
+                ),
                 serialization_strategy=serialization_strategy,
                 auto_plugins=auto_plugins,
             ),

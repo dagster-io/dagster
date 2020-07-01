@@ -9,12 +9,12 @@ from dagster.core.definitions import (
 )
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
-    DagsterInputHydrationConfigError,
     DagsterInvariantViolationError,
-    DagsterOutputMaterializationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
+    DagsterTypeLoadingError,
+    DagsterTypeMaterializationError,
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
@@ -337,7 +337,7 @@ def _create_output_materializations(step_context, output_name, value):
             if config_output_name == output_name:
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
-                    DagsterOutputMaterializationError,
+                    DagsterTypeMaterializationError,
                     msg_fn=lambda: '''Error occurred during output materialization:
                     output name: "{output_name}"
                     step key: "{key}"
@@ -350,7 +350,7 @@ def _create_output_materializations(step_context, output_name, value):
                         solid=step_context.solid.name,
                     ),
                 ):
-                    materializations = step_output.dagster_type.output_materialization_config.materialize_runtime_values(
+                    materializations = step_output.dagster_type.materializer.materialize_runtime_values(
                         step_context, output_spec, value
                     )
 
@@ -451,10 +451,10 @@ def _input_values_from_intermediates_manager(step_context):
 
         elif step_input.is_from_config:
             with user_code_error_boundary(
-                DagsterInputHydrationConfigError,
+                DagsterTypeLoadingError,
                 msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
             ):
-                input_value = step_input.dagster_type.input_hydration_config.construct_from_config_value(
+                input_value = step_input.dagster_type.loader.construct_from_config_value(
                     step_context, step_input.config_data
                 )
 

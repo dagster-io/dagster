@@ -102,7 +102,7 @@ def dagster_type_loader(config_cls, required_resource_keys=None):
     .. code-block:: python
 
         @dagster_type_loader(Permissive())
-        def dict_loader(_context, value):
+        def load_dict(_context, value):
             return value
     '''
     from dagster.config.field import resolve_to_config_type
@@ -202,7 +202,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
         # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
         value, and writes
         @dagster_type_materializer(Path)
-        def df_materializer(_context, path, value):
+        def materialize_df(_context, path, value):
             with open(path, 'w') as fd:
                 writer = csv.DictWriter(fd, fieldnames=value[0].keys())
                 writer.writeheader()
