@@ -34,9 +34,9 @@ def publish_test_images():
             StepBuilder("test images {version}".format(version=version), key=key)
             .run(
                 # credentials
-                "aws ecr get-login --no-include-email --region us-west-1 | sh",
+                "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
                 "export GOOGLE_APPLICATION_CREDENTIALS=\"/tmp/gcp-key-elementl-dev.json\"",
-                "aws s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
+                "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
                 #
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
@@ -50,7 +50,7 @@ def publish_test_images():
                 "docker push $${TEST_IMAGE}",
             )
             .on_python_image(
-                'test-image-builder',
+                'test-image-builder:v2',
                 [
                     'AIRFLOW_HOME',
                     'AWS_ACCOUNT_ID',
