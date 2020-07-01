@@ -58,6 +58,7 @@ from dagster.core.definitions import (
     system_storage,
     weekly_schedule,
 )
+from dagster.core.definitions.config_mappable import configured
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -232,6 +233,7 @@ __all__ = [
     'execute_solid',
     'execute_solids_within_pipeline',
     'file_relative_path',
+    'configured',
     # types
     'Any',
     'Bool',

@@ -87,6 +87,22 @@ class EnvironmentConfig(
 
         config_value = config_evr.value
 
+        mode_def = pipeline_def.get_mode_definition(mode)
+        resource_configs = config_value.get('resources', {})
+        processed_resource_configs = {}
+        for resource_key, resource_def in mode_def.resource_defs.items():
+            resource_config = resource_configs.get(resource_key, {})
+            resource_config_evr = resource_def.process_config(resource_config)
+            if not resource_config_evr.success:
+                raise DagsterInvalidConfigError(
+                    'Error in config for resource {}'.format(resource_key),
+                    resource_config_evr.errors,
+                    resource_config,
+                )
+            else:
+                processed_resource_configs[resource_key] = resource_config_evr.value
+
+        print(resource_configs)
         solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
 
         return EnvironmentConfig(
@@ -95,7 +111,7 @@ class EnvironmentConfig(
             storage=StorageConfig.from_dict(config_value.get('storage')),
             loggers=config_value.get('loggers'),
             original_config_dict=run_config,
-            resources=config_value.get('resources'),
+            resources=processed_resource_configs,
         )
 
 

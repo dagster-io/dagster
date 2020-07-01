@@ -3,12 +3,14 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.config.validate import process_config
 from dagster.core.definitions.config import is_callable_valid_config_arg
+from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterUnknownResourceError
 from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
-class ResourceDefinition(object):
+class ResourceDefinition(IConfigMappable):
     '''Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -31,8 +33,15 @@ class ResourceDefinition(object):
         description (Optional[str]): A human-readable description of the resource.
     '''
 
-    def __init__(self, resource_fn, config_schema=None, description=None, config=None):
-        self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
+    def __init__(
+        self,
+        resource_fn=None,
+        config_schema=None,
+        description=None,
+        config=None,
+        process_config_fn=None,
+    ):
+        self._resource_fn = check.opt_callable_param(resource_fn, 'resource_fn')
         self._config_schema = canonicalize_backcompat_args(
             check_user_facing_opt_config_param(config_schema, 'config_schema'),
             'config_schema',
@@ -41,6 +50,9 @@ class ResourceDefinition(object):
             '0.9.0',
         )
         self._description = check.opt_str_param(description, 'description')
+        self._process_config_fn = check.opt_callable_param(
+            process_config_fn, 'process_config_fn'
+        ) or (lambda conf: process_config({'config': self._config_schema or {}}, conf))
 
     @property
     def resource_fn(self):
@@ -73,6 +85,35 @@ class ResourceDefinition(object):
             resource_fn=lambda init_context: init_context.resource_config,
             config=str,
             description=description,
+        )
+
+    def process_config(self, config):
+        return self._process_config_fn(config)
+
+    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        if callable(config_or_config_fn):
+            config_fn = config_or_config_fn
+        else:
+            check.invariant(
+                config_schema is None,
+                'When non-callable config is given, config_schema must be None',
+            )
+
+            def config_fn(_):
+                return config_or_config_fn
+
+        def wrapped_process_config_fn(config):
+            config_evr = process_config({'config': config_schema or {}}, config)
+            if config_evr.success:
+                return self.process_config({'config': config_fn(config_evr.value['config'])})
+            else:
+                return config_evr
+
+        return ResourceDefinition(
+            config_schema=config_schema,
+            description=kwargs.get('description', self.description),
+            resource_fn=self.resource_fn,
+            process_config_fn=wrapped_process_config_fn,
         )
 
 

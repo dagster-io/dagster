@@ -37,3 +37,12 @@ class InitResourceContext(
     @property
     def log(self):
         return self.log_manager
+
+    def replace_config(self, config):
+        return InitResourceContext(
+            resource_config=config,
+            pipeline_def=self.pipeline_def,
+            resource_def=self.resource_def,
+            run_id=self.run_id,
+            log_manager=self.log_manager,
+        )

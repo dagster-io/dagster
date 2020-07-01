@@ -329,6 +329,7 @@ def validate_enum_config(context, config_value):
 
 
 def process_config(config_type, config_dict):
+    config_type = resolve_to_config_type(config_type)
     validate_evr = validate_config(config_type, config_dict)
     if not validate_evr.success:
         return validate_evr

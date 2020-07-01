@@ -9,6 +9,7 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
+    configured,
     execute_pipeline,
     execute_pipeline_iterator,
     reconstructable,
@@ -25,6 +26,30 @@ def define_string_resource():
     return ResourceDefinition(
         config_schema=String, resource_fn=lambda init_context: init_context.resource_config
     )
+
+
+def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
+    called = {}
+
+    @solid(required_resource_keys={'some_name'})
+    def a_solid(context):
+        called['yup'] = True
+        assert context.resources.some_name == expected_resource
+
+    pipeline_def = PipelineDefinition(
+        name='with_a_resource',
+        solid_defs=[a_solid],
+        mode_defs=[ModeDefinition(resource_defs={'some_name': resource_def})],
+    )
+
+    run_config = (
+        {'resources': {'some_name': {'config': resource_config}}} if resource_config else {}
+    )
+
+    result = execute_pipeline(pipeline_def, run_config)
+
+    assert result.success
+    assert called['yup']
 
 
 def test_basic_resource():
@@ -777,3 +802,25 @@ def test_single_step_resource_event_logs():
         iter([message for message in log_messages if message.user_message == USER_RESOURCE_MESSAGE])
     )
     assert resource_log_message.step_key == 'resource_solid.compute'
+
+
+def test_configured_with_config():
+    str_resource = define_string_resource()
+    configured_resource = str_resource.configured('foo')
+    assert_pipeline_runs_with_resource(configured_resource, {}, 'foo')
+
+
+def test_configured_with_fn():
+    str_resource = define_string_resource()
+    configured_resource = str_resource.configured(lambda num: str(num + 1), Int)
+    assert_pipeline_runs_with_resource(configured_resource, 2, '3')
+
+
+def test_configured_decorator_with_fn():
+    str_resource = define_string_resource()
+
+    @configured(str_resource, Int)
+    def configured_resource(num):
+        return str(num + 1)
+
+    assert_pipeline_runs_with_resource(configured_resource, 2, '3')
