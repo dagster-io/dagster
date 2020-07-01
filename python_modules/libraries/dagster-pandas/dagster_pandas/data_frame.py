@@ -17,9 +17,10 @@ from dagster import (
     StringSource,
     TypeCheck,
     check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
-from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 from dagster.utils.backcompat import canonicalize_backcompat_args
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
@@ -29,7 +30,7 @@ def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
-@output_selector_schema(
+@dagster_type_materializer(
     Selector(
         {
             'csv': {
@@ -41,10 +42,9 @@ def dict_without_keys(ddict, *keys):
         },
     )
 )
-def dataframe_output_schema(_context, file_type, file_options, pandas_df):
-    check.str_param(file_type, 'file_type')
-    check.dict_param(file_options, 'file_options')
+def dataframe_materializer(_context, config, pandas_df):
     check.inst_param(pandas_df, 'pandas_df', pd.DataFrame)
+    file_type, file_options = list(config.items())[0]
 
     if file_type == 'csv':
         path = file_options['path']
@@ -59,7 +59,7 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     return Materialization.file(file_options['path'])
 
 
-@input_selector_schema(
+@dagster_type_loader(
     Selector(
         {
             'csv': {
@@ -71,9 +71,8 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
         },
     )
 )
-def dataframe_input_schema(_context, file_type, file_options):
-    check.str_param(file_type, 'file_type')
-    check.dict_param(file_options, 'file_options')
+def dataframe_loader(_context, config):
+    file_type, file_options = list(config.items())[0]
 
     if file_type == 'csv':
         path = file_options['path']
@@ -106,8 +105,8 @@ DataFrame = DagsterType(
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
-    loader=dataframe_input_schema,
-    materializer=dataframe_output_schema,
+    loader=dataframe_loader,
+    materializer=dataframe_materializer,
     type_check_fn=df_type_check,
 )
 
@@ -174,15 +173,15 @@ def create_dagster_pandas_dataframe_type(
             which allow you to express things like summary statistics during runtime.
         dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
             :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
-        input_hydration_config (Optional[DagsterTypeLoader]): An instance of a class that
+        loader (Optional[DagsterTypeLoader]): An instance of a class that
             inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
-            to using the `dataframe_input_schema` input_hydration_config.
-        output_materialization_config (Optional[DagsterTypeMaterializer]): An instance of a class
+            to using `dataframe_loader`.
+        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
             that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
-            default to using the `dataframe_output_schema` output_materialization_config.
+            default to using `dataframe_materializer`.
     """
-    # We allow for the plugging in of input_hydration_config/output_materialization_configs so that
-    # Users can hydrate and persist their custom dataframes via configuration their own way if the default
+    # We allow for the plugging in of dagster_type_loaders/materializers so that
+    # Users can load and matrerialize their custom dataframes via configuration their own way if the default
     # configs don't suffice. This is purely optional.
     check.str_param(name, 'name')
     warnings.warn(
@@ -218,23 +217,22 @@ def create_dagster_pandas_dataframe_type(
             else None,
         )
 
+    loader_ = canonicalize_backcompat_args(
+        loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+    )
+    materializer_ = canonicalize_backcompat_args(
+        materializer,
+        'materializer',
+        output_materialization_config,
+        'output_materialization_config',
+        '0.10.0',
+    )
+
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
-        loader=canonicalize_backcompat_args(
-            loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
-        )
-        if loader or input_hydration_config
-        else dataframe_input_schema,
-        materializer=canonicalize_backcompat_args(
-            materializer,
-            'materializer',
-            output_materialization_config,
-            'output_materialization_config',
-            '0.10.0',
-        )
-        if materializer or output_materialization_config
-        else dataframe_output_schema,
+        loader=loader_ if loader_ else dataframe_loader,
+        materializer=materializer_ if materializer_ else dataframe_materializer,
         description=description,
     )
 
@@ -245,6 +243,8 @@ def create_structured_dataframe_type(
     columns_validator=None,
     columns_aggregate_validator=None,
     dataframe_validator=None,
+    loader=None,
+    materializer=None,
     input_hydration_config=None,
     output_materialization_config=None,
 ):
@@ -263,12 +263,12 @@ def create_structured_dataframe_type(
         dataframe_validator (Optional[Union[ConstraintWithMetadata, MultiConstraintWithMetadata]]):
                     what dataframe-wide validation you want to have applied.
                     Leave empty for no dataframe-wide validation.
-        input_hydration_config (Optional[DagsterTypeLoader]): An instance of a class that
+        loader (Optional[DagsterTypeLoader]): An instance of a class that
             inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
-            to using the `dataframe_input_schema` input_hydration_config.
-        output_materialization_config (Optional[DagsterTypeMaterializer]): An instance of a class
+            to using `dataframe_loader`.
+        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
             that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
-            default to using the `dataframe_output_schema` output_materialization_config.
+            default to using `dataframe_materializer`.
 
     Returns:
         a DagsterType with the corresponding name and packaged validation.
@@ -315,13 +315,21 @@ def create_structured_dataframe_type(
         )
 
     description = check.opt_str_param(description, 'description', default='')
+    loader_ = canonicalize_backcompat_args(
+        loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+    )
+    materializer_ = canonicalize_backcompat_args(
+        materializer,
+        'materializer',
+        output_materialization_config,
+        'output_materialization_config',
+        '0.10.0',
+    )
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
-        loader=input_hydration_config if input_hydration_config else dataframe_input_schema,
-        materializer=output_materialization_config
-        if output_materialization_config
-        else dataframe_output_schema,
+        loader=loader_ if loader_ else dataframe_loader,
+        materializer=materializer_ if materializer_ else dataframe_materializer,
         description=description,
     )
 

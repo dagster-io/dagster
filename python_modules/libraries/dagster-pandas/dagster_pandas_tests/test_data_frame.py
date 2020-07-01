@@ -19,12 +19,13 @@ from dagster import (
     OutputDefinition,
     Selector,
     check_dagster_type,
+    dagster_type_loader,
+    dagster_type_materializer,
     execute_pipeline,
     execute_solid,
     pipeline,
     solid,
 )
-from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 from dagster.utils import safe_tempfile_path
 
 
@@ -162,7 +163,7 @@ def test_execute_summary_stats_error():
         )
 
 
-def test_custom_dagster_dataframe_hydration_ok():
+def test_custom_dagster_dataframe_loading_ok():
     input_dataframe = DataFrame({'foo': [1, 2, 3]})
     with safe_tempfile_path() as input_csv_fp, safe_tempfile_path() as output_csv_fp:
         input_dataframe.to_csv(input_csv_fp)
@@ -196,10 +197,11 @@ def test_custom_dagster_dataframe_hydration_ok():
 
 
 def test_custom_dagster_dataframe_parametrizable_input():
-    @input_selector_schema(
+    @dagster_type_loader(
         Selector({'door_a': Field(str), 'door_b': Field(str), 'door_c': Field(str),})
     )
-    def silly_hydrator(_, which_door, _field):
+    def silly_loader(_, config):
+        which_door = list(config.keys())[0]
         if which_door == 'door_a':
             return DataFrame({'foo': ['goat']})
         elif which_door == 'door_b':
@@ -210,14 +212,14 @@ def test_custom_dagster_dataframe_parametrizable_input():
             'You did not pick a door. You chose: {which_door}'.format(which_door=which_door)
         )
 
-    @output_selector_schema(Selector({'devnull': Field(str), 'nothing': Field(str)}))
-    def silly_materializer(_, _location, _field, _value):
+    @dagster_type_materializer(Selector({'devnull': Field(str), 'nothing': Field(str)}))
+    def silly_materializer(_, _config, _value):
         return Materialization(label='did nothing', description='just one of those days')
 
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name='TestDataFrame',
         columns=[PandasColumn.exists('foo'),],
-        loader=silly_hydrator,
+        loader=silly_loader,
         materializer=silly_materializer,
     )
 
