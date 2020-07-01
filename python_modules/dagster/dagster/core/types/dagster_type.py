@@ -500,8 +500,8 @@ class NoneableInputSchema(DagsterTypeLoader):
         self._inner_dagster_type = check.inst_param(
             inner_dagster_type, 'inner_dagster_type', DagsterType
         )
-        check.param_invariant(inner_dagster_type.input_hydration_config, 'inner_dagster_type')
-        self._schema_type = ConfigNoneable(inner_dagster_type.input_hydration_config.schema_type)
+        check.param_invariant(inner_dagster_type.loader, 'inner_dagster_type')
+        self._schema_type = ConfigNoneable(inner_dagster_type.loader.schema_type)
 
     @property
     def schema_type(self):
@@ -510,13 +510,11 @@ class NoneableInputSchema(DagsterTypeLoader):
     def construct_from_config_value(self, context, config_value):
         if config_value is None:
             return None
-        return self._inner_dagster_type.input_hydration_config.construct_from_config_value(
-            context, config_value
-        )
+        return self._inner_dagster_type.loader.construct_from_config_value(context, config_value)
 
 
 def _create_nullable_input_schema(inner_type):
-    if not inner_type.input_hydration_config:
+    if not inner_type.loader:
         return None
 
     return NoneableInputSchema(inner_type)
@@ -538,7 +536,7 @@ class OptionalType(DagsterType):
             name=None,
             kind=DagsterTypeKind.NULLABLE,
             type_check_fn=self.type_check_method,
-            input_hydration_config=_create_nullable_input_schema(inner_type),
+            loader=_create_nullable_input_schema(inner_type),
         )
 
     @property
@@ -564,22 +562,20 @@ class ListInputSchema(DagsterTypeLoader):
         self._inner_dagster_type = check.inst_param(
             inner_dagster_type, 'inner_dagster_type', DagsterType
         )
-        check.param_invariant(inner_dagster_type.input_hydration_config, 'inner_dagster_type')
-        self._schema_type = Array(inner_dagster_type.input_hydration_config.schema_type)
+        check.param_invariant(inner_dagster_type.loader, 'inner_dagster_type')
+        self._schema_type = Array(inner_dagster_type.loader.schema_type)
 
     @property
     def schema_type(self):
         return self._schema_type
 
     def construct_from_config_value(self, context, config_value):
-        convert_item = partial(
-            self._inner_dagster_type.input_hydration_config.construct_from_config_value, context
-        )
+        convert_item = partial(self._inner_dagster_type.loader.construct_from_config_value, context)
         return list(map(convert_item, config_value))
 
 
 def _create_list_input_schema(inner_type):
-    if not inner_type.input_hydration_config:
+    if not inner_type.loader:
         return None
 
     return ListInputSchema(inner_type)
@@ -594,7 +590,7 @@ class ListType(DagsterType):
             name=None,
             kind=DagsterTypeKind.LIST,
             type_check_fn=self.type_check_method,
-            input_hydration_config=_create_list_input_schema(inner_type),
+            loader=_create_list_input_schema(inner_type),
         )
 
     @property

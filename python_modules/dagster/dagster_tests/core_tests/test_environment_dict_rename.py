@@ -18,12 +18,7 @@ def noop_pipeline():
 def assert_no_warnings():
     with mock.patch('warnings.warn') as warn_mock:
         yield
-        acceptable_warnings = [
-            'input_hydration_config',
-            'output_materialization_config',
-            'input_hydration_schema_key',
-            'output_materialization_schema_key',
-        ]
+        acceptable_warnings = []  # can add warnings here while doing renames
         for call in warn_mock.call_args_list:
             assert any(warning in call[0][0] for warning in acceptable_warnings), call
 

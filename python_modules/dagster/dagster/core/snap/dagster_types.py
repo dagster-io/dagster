@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 
 def build_dagster_type_namespace_snapshot(pipeline_def):
@@ -23,8 +24,8 @@ def build_dagster_type_snap(dagster_type):
         description=dagster_type.description,
         is_builtin=dagster_type.is_builtin,
         type_param_keys=dagster_type.type_param_keys,
-        input_hydration_schema_key=dagster_type.input_hydration_schema_key,
-        output_materialization_schema_key=dagster_type.output_materialization_schema_key,
+        loader_schema_key=dagster_type.loader_schema_key,
+        materializer_schema_key=dagster_type.materializer_schema_key,
     )
 
 
@@ -53,7 +54,7 @@ class DagsterTypeSnap(
     namedtuple(
         '_DagsterTypeSnap',
         'kind key name description display_name is_builtin type_param_keys '
-        'input_hydration_schema_key output_materialization_schema_key ',
+        'loader_schema_key materializer_schema_key ',
     )
 ):
     def __new__(
@@ -65,8 +66,10 @@ class DagsterTypeSnap(
         display_name,
         is_builtin,
         type_param_keys,
-        input_hydration_schema_key,
-        output_materialization_schema_key,
+        loader_schema_key=None,
+        materializer_schema_key=None,
+        input_hydration_schema_key=None,
+        output_materialization_schema_key=None,
     ):
         return super(DagsterTypeSnap, cls).__new__(
             cls,
@@ -77,10 +80,20 @@ class DagsterTypeSnap(
             description=check.opt_str_param(description, 'description'),
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
             type_param_keys=check.list_param(type_param_keys, 'type_param_keys', of_type=str),
-            input_hydration_schema_key=check.opt_str_param(
-                input_hydration_schema_key, 'input_hydration_schema_key'
+            loader_schema_key=canonicalize_backcompat_args(
+                check.opt_str_param(loader_schema_key, 'loader_schema_key'),
+                'loader_schema_key',
+                check.opt_str_param(input_hydration_schema_key, 'input_hydration_schema_key'),
+                'input_hydration_schema_key',
+                '0.10.0',
             ),
-            output_materialization_schema_key=check.opt_str_param(
-                output_materialization_schema_key, 'output_materialization_schema_key'
+            materializer_schema_key=canonicalize_backcompat_args(
+                check.opt_str_param(materializer_schema_key, 'materializer_schema_key'),
+                'materializer_schema_key',
+                check.opt_str_param(
+                    output_materialization_schema_key, 'output_materialization_schema_key'
+                ),
+                'output_materialization_schema_key',
+                '0.10.0',
             ),
         )

@@ -1,11 +1,11 @@
 from dagster import check
 from dagster.config.field_utils import Permissive
 
-from .config_schema import input_hydration_config
+from .config_schema import dagster_type_loader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 
-@input_hydration_config(Permissive())
+@dagster_type_loader(Permissive())
 def _dict_input(_context, value):
     return value
 
@@ -13,7 +13,7 @@ def _dict_input(_context, value):
 PythonDict = PythonObjectDagsterType(
     dict,
     'PythonDict',
-    input_hydration_config=_dict_input,
+    loader=_dict_input,
     description='''Represents a python dictionary to pass between solids''',
 )
 

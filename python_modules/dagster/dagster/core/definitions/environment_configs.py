@@ -153,7 +153,7 @@ def get_inputs_field(solid, handle, dependency_structure):
 
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        if inp.dagster_type.input_hydration_config:
+        if inp.dagster_type.loader:
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
@@ -162,7 +162,7 @@ def get_inputs_field(solid, handle, dependency_structure):
             ):
 
                 inputs_field_fields[name] = Field(
-                    inp.dagster_type.input_hydration_config.schema_type,
+                    inp.dagster_type.loader.schema_type,
                     is_required=(not solid.definition.input_has_default(name)),
                 )
 
@@ -183,9 +183,9 @@ def get_outputs_field(solid, handle):
 
     output_dict_fields = {}
     for name, out in solid_def.output_dict.items():
-        if out.dagster_type.output_materialization_config:
+        if out.dagster_type.materializer:
             output_dict_fields[name] = Field(
-                out.dagster_type.output_materialization_config.schema_type, is_required=False
+                out.dagster_type.materializer.schema_type, is_required=False
             )
 
     output_entry_dict = Shape(output_dict_fields)
@@ -281,11 +281,11 @@ def iterate_solid_def_config_types(solid_def):
 def _gather_all_schemas(solid_defs):
     dagster_types = construct_dagster_type_dictionary(solid_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
-        if dagster_type.input_hydration_config:
-            for ct in iterate_config_types(dagster_type.input_hydration_config.schema_type):
+        if dagster_type.loader:
+            for ct in iterate_config_types(dagster_type.loader.schema_type):
                 yield ct
-        if dagster_type.output_materialization_config:
-            for ct in iterate_config_types(dagster_type.output_materialization_config.schema_type):
+        if dagster_type.materializer:
+            for ct in iterate_config_types(dagster_type.materializer.schema_type):
                 yield ct
 
 

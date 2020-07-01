@@ -14,7 +14,7 @@ from dagster.config.config_type import (
 from dagster.config.field import Field
 from dagster.config.field_utils import Selector
 
-from .config_schema import input_hydration_config, output_selector_schema
+from .config_schema import dagster_type_loader, dagster_type_materializer
 
 
 def define_typed_input_schema_dict(value_config_type):
@@ -44,7 +44,7 @@ def load_type_input_schema_dict(value):
 
 
 def define_any_input_schema():
-    @input_hydration_config(define_typed_input_schema_dict(ConfigAnyInstance))
+    @dagster_type_loader(define_typed_input_schema_dict(ConfigAnyInstance))
     def _any_input_schema(_, config_value):
         return load_type_input_schema_dict(config_value)
 
@@ -56,7 +56,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     check.inst_param(config_scalar_type, 'config_scalar_type', ConfigType)
     check.param_invariant(config_scalar_type.kind == ConfigTypeKind.SCALAR, 'config_scalar_type')
 
-    @input_hydration_config(
+    @dagster_type_loader(
         ScalarUnion(
             scalar_type=config_scalar_type,
             non_scalar_schema=define_typed_input_schema_dict(config_scalar_type),
@@ -77,9 +77,11 @@ def define_builtin_scalar_output_schema(scalar_name):
 
     schema_cls = Selector({'json': define_path_dict_field(), 'pickle': define_path_dict_field()})
 
-    @output_selector_schema(schema_cls)
-    def _builtin_output_schema(_context, file_type, file_options, runtime_value):
+    @dagster_type_materializer(schema_cls)
+    def _buildint_materializer(_context, config_value, runtime_value):
         from dagster.core.events import Materialization
+
+        file_type, file_options = list(config_value.items())[0]
 
         if file_type == 'json':
             json_file_path = file_options['path']
@@ -95,7 +97,7 @@ def define_builtin_scalar_output_schema(scalar_name):
         else:
             check.failed('Unsupported file type: {file_type}'.format(file_type=file_type))
 
-    return _builtin_output_schema
+    return _buildint_materializer
 
 
 class BuiltinSchemas(object):
