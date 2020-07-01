@@ -6,8 +6,8 @@ from dagster import (
     Field,
     Selector,
     String,
+    dagster_type_loader,
     execute_pipeline,
-    input_hydration_config,
     pipeline,
     solid,
 )
@@ -29,8 +29,8 @@ def less_simple_data_frame_type_check(_, value):
     return True
 
 
-@input_hydration_config(Selector({'csv': Field(String)}))
-def less_simple_data_frame_input_hydration_config(context, selector):
+@dagster_type_loader(Selector({'csv': Field(String)}))
+def less_simple_data_frame_loader(context, selector):
     csv_path = os.path.join(os.path.dirname(__file__), selector['csv'])
     with open(csv_path, 'r') as fd:
         lines = [row for row in csv.DictReader(fd)]
@@ -43,7 +43,7 @@ LessSimpleDataFrame = DagsterType(
     name='LessSimpleDataFrame',
     description='A more sophisticated data frame that type checks its structure.',
     type_check_fn=less_simple_data_frame_type_check,
-    input_hydration_config=less_simple_data_frame_input_hydration_config,
+    loader=less_simple_data_frame_loader,
 )
 
 

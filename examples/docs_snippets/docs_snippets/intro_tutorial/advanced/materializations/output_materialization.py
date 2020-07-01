@@ -7,9 +7,9 @@ from dagster import (
     Materialization,
     Selector,
     String,
+    dagster_type_loader,
+    dagster_type_materializer,
     execute_pipeline,
-    input_hydration_config,
-    output_materialization_config,
     pipeline,
     seven,
     solid,
@@ -17,8 +17,8 @@ from dagster import (
 )
 
 
-@input_hydration_config(Selector({'csv': Field(String)}))
-def less_simple_data_frame_input_hydration_config(context, selector):
+@dagster_type_loader(Selector({'csv': Field(String)}))
+def less_simple_data_frame_loader(context, selector):
     csv_path = os.path.join(os.path.dirname(__file__), selector['csv'])
 
     with open(csv_path, 'r') as fd:
@@ -28,7 +28,7 @@ def less_simple_data_frame_input_hydration_config(context, selector):
     return LessSimpleDataFrame(lines)
 
 
-@output_materialization_config(
+@dagster_type_materializer(
     {
         'csv': Field(
             {
@@ -40,9 +40,7 @@ def less_simple_data_frame_input_hydration_config(context, selector):
         'json': Field({'path': String,}, is_required=False,),
     }
 )
-def less_simple_data_frame_output_materialization_config(
-    context, config, value
-):
+def less_simple_data_frame_materializer(context, config, value):
     # Materialize LessSimpleDataFrame into a csv file
     csv_path = os.path.join(
         os.path.dirname(__file__), os.path.abspath(config['csv']['path'])
@@ -95,8 +93,8 @@ def less_simple_data_frame_output_materialization_config(
 @usable_as_dagster_type(
     name='LessSimpleDataFrame',
     description='A more sophisticated data frame that type checks its structure.',
-    input_hydration_config=less_simple_data_frame_input_hydration_config,
-    output_materialization_config=less_simple_data_frame_output_materialization_config,
+    loader=less_simple_data_frame_loader,
+    materializer=less_simple_data_frame_materializer,
 )
 class LessSimpleDataFrame(list):
     pass

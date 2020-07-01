@@ -123,7 +123,7 @@ Environment Dict Schema
             # configurably specify input values, keyed by input name
             inputs: {
               __input_name__: {
-                # if an input_hydration_config is specified, that schema must be satisfied here;
+                # if an dagster_type_loader is specified, that schema must be satisfied here;
                 # scalar, built-in types will generally allow their values to be specified directly:
                 value: ...
               }
@@ -132,7 +132,7 @@ Environment Dict Schema
             # configurably materialize output values
             outputs: {
               __output_name__: {
-                # if an output_materialization_config is specified, that schema must be satisfied
+                # if an dagster_type_materializer is specified, that schema must be satisfied
                 # here; pickleable types will generally allow output as follows:
                 pickle: {
                   path: String

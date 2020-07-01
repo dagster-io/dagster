@@ -93,7 +93,7 @@ The type system truly shines once the
 type check expresses richer behavior, such as column-level schema on a
 dataframe. The dagster-pandas library offers that capability through <PyObject module="dagster_pandas" object="create_dagster_pandas_dataframe_type" />.
 
-## Hydrating from Config
+## Loading from Config
 
 When executing a pipeline or
 solid whose data are not produced by a dependency - e.g. for a
@@ -103,9 +103,9 @@ needs to come from somewhere. This can be specified by config.
 The type must declare its interaction with the config system. This means
 declaring the input schema and a function which the validated config
 value and produces a valid in-memory value to be passed to the schema.
-This process is referred to as hydration.
+This process is referred to as loading.
 
-```python literalinclude caption=input_hydration_config.py
+```python literalinclude
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
 lines:86-99
@@ -113,7 +113,7 @@ lines:86-99
 
 With this the input can be specified via config as below:
 
-```python literalinclude caption=execute_with_yaml.py
+```python literalinclude
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
 lines:101-108

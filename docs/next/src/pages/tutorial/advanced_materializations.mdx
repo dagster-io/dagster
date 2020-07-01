@@ -57,7 +57,7 @@ Now, if we run this pipeline in Dagit:
 
 Data types can also be configured so that outputs materialize themselves,
 obviating the need to explicitly yield a <PyObject module="dagster" object="Materialization" /> from solid logic.
-Dagster calls this facility the <PyObject module="dagster" object="output_materialization_config" displayText="@output_materialization_config" />.
+Dagster calls this facility the <PyObject module="dagster" object="dagster_type_materializer" displayText="@dagster_type_materializer" />.
 
 Suppose we would like to be able to configure outputs of our toy custom type,
 the `SimpleDataFrame`, to be automatically materialized to disk as

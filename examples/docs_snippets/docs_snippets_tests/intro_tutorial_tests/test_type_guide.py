@@ -12,11 +12,11 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PythonObjectDagsterType,
+    dagster_type_loader,
+    dagster_type_materializer,
     execute_pipeline,
     execute_solid,
-    input_hydration_config,
     make_python_type_usable_as_dagster_type,
-    output_materialization_config,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -82,17 +82,17 @@ def test_python_object_dagster_type():
         execute_solid(double_even, input_values={'even_num': EvenType(3)})
 
 
-def test_even_type_hydration_config():
+def test_even_type_loader():
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
             self.num = num
 
-    @input_hydration_config(int)
-    def hydrate_even_type(_, cfg):
+    @dagster_type_loader(int)
+    def load_even_type(_, cfg):
         return EvenType(cfg)
 
-    EvenDagsterType = PythonObjectDagsterType(EvenType, input_hydration_config=hydrate_even_type)
+    EvenDagsterType = PythonObjectDagsterType(EvenType, loader=load_even_type)
 
     @solid
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
@@ -124,7 +124,7 @@ def test_even_type_materialization_config():
             assert num % 2 is 0
             self.num = num
 
-    @output_materialization_config({'path': str})
+    @dagster_type_materializer({'path': str})
     def save_to_file_materialization(_, cfg, value):
         with open(cfg['path'], 'w') as ff:
             ff.write(str(value))
@@ -134,9 +134,7 @@ def test_even_type_materialization_config():
                 metadata_entries=[EventMetadataEntry.text('path', path)],
             )
 
-    EvenDagsterType = PythonObjectDagsterType(
-        EvenType, output_materialization_config=save_to_file_materialization
-    )
+    EvenDagsterType = PythonObjectDagsterType(EvenType, materializer=save_to_file_materialization)
 
     @solid
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:

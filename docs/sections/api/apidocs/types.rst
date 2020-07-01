@@ -7,7 +7,7 @@ Dagster includes facilities for typing the input and output values of solids ("r
 
 .. _builtin:
 
-Built-in primitive types 
+Built-in primitive types
 -------------------------
 
 .. attribute:: Any
@@ -380,9 +380,9 @@ Making New Types
 
 .. autofunction:: PythonObjectDagsterType
 
-.. autofunction:: input_hydration_config
+.. autofunction:: dagster_type_loader
 
-.. autofunction:: output_materialization_config
+.. autofunction:: dagster_type_materializer
 
 .. autofunction:: usable_as_dagster_type
 

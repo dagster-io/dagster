@@ -150,22 +150,21 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_type_
 
 In order for the Dagster machinery to be able to decode the config value
 `{'csv': 'cereal.csv'}` into an input of the correct
-`LessSimpleDataFrame` value, we need to write what we call an input
-hydration config.
+`LessSimpleDataFrame` value, we need to write what we call a dagster type loader.
 
 ```python literalinclude showLines startLine=32 caption=custom_types_3.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_3.py
 lines:32-39
 ```
 
-A function decorated with <PyObject module="dagster" object="input_hydration_config" displayText="@input_hydration_config" /> should
+A function decorated with <PyObject module="dagster" object="dagster_type_loader" displayText="@dagster_type_loader" /> should
 take the context object, as usual, and a parameter
 representing the parsed config field. The schema for this field is
-defined by the argument to the <PyObject module="dagster" object="input_hydration_config" displayText="@input_hydration_config" /> decorator.
+defined by the argument to the <PyObject module="dagster" object="dagster_type_loader" displayText="@dagster_type_loader" /> decorator.
 
 Here, we introduce the <PyObject module="dagster" object="Selector" /> type, which lets you specify
 mutually exclusive options in config schemas. Here, there's only one option, `csv`, but you can
-imagine a more sophisticated data frame type that might also know how to hydrate its inputs from
+imagine a more sophisticated data frame type that might also know how to load its inputs from
 other formats and sources, and might have a selector with fields like `parquet`, `xlsx`, `sql`, etc.
 
 Then insert this into the original declaration:
@@ -300,7 +299,7 @@ cereal is Corn Flakes (100 calories per serving) and the most caloric cereal Str
 
 ![custom_types_bad_data.png](/assets/images/tutorial/custom_types_bad_data.png)
 
-To fix this, we can cast `calories` to `int` during the hydration process:
+To fix this, we can cast `calories` to `int` during the loading process:
 
 ```python literalinclude showLines startLine=75 emphasize-lines=7 caption=custom_types_5.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_5.py
