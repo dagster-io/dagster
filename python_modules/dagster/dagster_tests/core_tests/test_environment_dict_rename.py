@@ -18,7 +18,14 @@ def noop_pipeline():
 def assert_no_warnings():
     with mock.patch('warnings.warn') as warn_mock:
         yield
-        assert warn_mock.call_count == 0
+        acceptable_warnings = [
+            'input_hydration_config',
+            'output_materialization_config',
+            'input_hydration_schema_key',
+            'output_materialization_schema_key',
+        ]
+        for call in warn_mock.call_args_list:
+            assert any(warning in call[0][0] for warning in acceptable_warnings), call
 
 
 def test_warnings_execute_pipeline():
@@ -60,7 +67,7 @@ def test_warnings_execute_pipeline_iterator():
 
     with mock.patch('warnings.warn') as warn_mock:
         list(execute_pipeline_iterator(noop_pipeline, environment_dict={}))
-        warn_mock.assert_called_with(
+        warn_mock.assert_any_call(
             '"environment_dict" is deprecated and will be removed in 0.9.0, '
             'use "run_config" instead.',
             stacklevel=5,

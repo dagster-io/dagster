@@ -6,6 +6,7 @@
 
 - The `dagster-celery` module has been broken apart to manage dependencies more coherently. There are now three modules: `dagster-celery`, `dagster-celery-k8s`, and `dagster-celery-docker`.
 - Related to above, the `dagster-celery worker start` command now takes a required `-A` parameter which must point to the `app.py` file within the appropriate module. E.g if you are using the `celery_k8s_job_executor` then you must use the `-A dagster_celery_k8s.app` option when using the `celery` or `dagster-celery` cli tools. Similar for the `celery_docker_executor`: `-A dagster_celery_docker.app` must be used.
+- Renamed the `input_hydration_config` and `output_materialization_config` decorators to `dagster_type_hydrator` and `dagster_type_materializer` respectively.  Renamed DagsterType's `input_hydration_config` and `output_materialization_config` arguments to `loader` and `materializer` respectively.
 
 ## 0.8.5
 

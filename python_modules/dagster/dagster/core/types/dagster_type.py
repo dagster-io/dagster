@@ -12,9 +12,10 @@ from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .builtin_config_schemas import BuiltinSchemas
-from .config_schema import InputHydrationConfig, OutputMaterializationConfig
+from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
@@ -53,16 +54,16 @@ class DagsterType(object):
             becomes this value. Name is not given in a case where the user does
             not specify a unique name for this type, such as a generic class.
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`~dagster.InputHydrationConfig` and can map config data to a value of
+        loader (Optional[DagsterTypeLoader]): An instance of a class that
+            inherits from :py:class:`~dagster.DagsterTypeLoader` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
-            :py:func:`@input_hydration_config <dagster.input_hydration_config>` decorator to construct
+            :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`~dagster.OutputMaterializationConfig` and can persist values of
+        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
+            that inherits from :py:class:`~dagster.DagsterTypeMaterializer` and can persist values of
             this type. As a rule, you should use the
-            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
             decorator to construct these arguments.
         serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
             inherits from :py:class:`~dagster.SerializationStrategy`. The default strategy for serializing
@@ -89,12 +90,14 @@ class DagsterType(object):
         name=None,
         is_builtin=False,
         description=None,
-        input_hydration_config=None,
-        output_materialization_config=None,
+        loader=None,
+        materializer=None,
         serialization_strategy=None,
         auto_plugins=None,
         required_resource_keys=None,
         kind=DagsterTypeKind.REGULAR,
+        input_hydration_config=None,
+        output_materialization_config=None,
     ):
         check.opt_str_param(key, 'key')
         check.opt_str_param(name, 'name')
@@ -116,13 +119,25 @@ class DagsterType(object):
             self.key, self.name = key, name
 
         self.description = check.opt_str_param(description, 'description')
-        self.input_hydration_config = check.opt_inst_param(
-            input_hydration_config, 'input_hydration_config', InputHydrationConfig
+        self.loader = canonicalize_backcompat_args(
+            check.opt_inst_param(loader, 'loader', DagsterTypeLoader),
+            'loader',
+            check.opt_inst_param(
+                input_hydration_config, 'input_hydration_config', DagsterTypeLoader
+            ),
+            'input_hydration_config',
+            '0.10.0',
         )
-        self.output_materialization_config = check.opt_inst_param(
-            output_materialization_config,
+        self.materializer = canonicalize_backcompat_args(
+            check.opt_inst_param(materializer, 'materializer', DagsterTypeMaterializer),
+            'materializer',
+            check.opt_inst_param(
+                output_materialization_config,
+                'output_materialization_config',
+                DagsterTypeMaterializer,
+            ),
             'output_materialization_config',
-            OutputMaterializationConfig,
+            '0.10.0',
         )
         self.serialization_strategy = check.opt_inst_param(
             serialization_strategy,
@@ -190,16 +205,32 @@ class DagsterType(object):
         return []
 
     @property
+    def input_hydration_config(self):
+        rename_warning('loader', 'input_hydration_config', '0.10.0')
+        return self.loader
+
+    @property
+    def output_materialization_config(self):
+        rename_warning('materializer', 'output_materialization_config', '0.10.0')
+        return self.materializer
+
+    @property
     def input_hydration_schema_key(self):
-        return self.input_hydration_config.schema_type.key if self.input_hydration_config else None
+        rename_warning('loader_schema_key', 'input_hydration_schema_key', '0.10.0')
+        return self.loader_schema_key
+
+    @property
+    def loader_schema_key(self):
+        return self.loader.schema_type.key if self.loader else None
 
     @property
     def output_materialization_schema_key(self):
-        return (
-            self.output_materialization_config.schema_type.key
-            if self.output_materialization_config
-            else None
-        )
+        rename_warning('materializer_schema_key', 'output_materialization_schema_key', '0.10.0')
+        return self.materializer_schema_key
+
+    @property
+    def materializer_schema_key(self):
+        return self.materializer.schema_type.key if self.materializer else None
 
     @property
     def type_param_keys(self):
@@ -263,8 +294,8 @@ class _Int(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Int, self).__init__(
             name='Int',
-            input_hydration_config=BuiltinSchemas.INT_INPUT,
-            output_materialization_config=BuiltinSchemas.INT_OUTPUT,
+            loader=BuiltinSchemas.INT_INPUT,
+            materializer=BuiltinSchemas.INT_OUTPUT,
             type_check_fn=self.type_check_fn,
         )
 
@@ -290,8 +321,8 @@ class _String(BuiltinScalarDagsterType):
     def __init__(self):
         super(_String, self).__init__(
             name='String',
-            input_hydration_config=BuiltinSchemas.STRING_INPUT,
-            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
+            loader=BuiltinSchemas.STRING_INPUT,
+            materializer=BuiltinSchemas.STRING_OUTPUT,
             type_check_fn=self.type_check_fn,
         )
 
@@ -303,8 +334,8 @@ class _Float(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Float, self).__init__(
             name='Float',
-            input_hydration_config=BuiltinSchemas.FLOAT_INPUT,
-            output_materialization_config=BuiltinSchemas.FLOAT_OUTPUT,
+            loader=BuiltinSchemas.FLOAT_INPUT,
+            materializer=BuiltinSchemas.FLOAT_OUTPUT,
             type_check_fn=self.type_check_fn,
         )
 
@@ -316,8 +347,8 @@ class _Bool(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Bool, self).__init__(
             name='Bool',
-            input_hydration_config=BuiltinSchemas.BOOL_INPUT,
-            output_materialization_config=BuiltinSchemas.BOOL_OUTPUT,
+            loader=BuiltinSchemas.BOOL_INPUT,
+            materializer=BuiltinSchemas.BOOL_OUTPUT,
             type_check_fn=self.type_check_fn,
         )
 
@@ -330,8 +361,8 @@ class Anyish(DagsterType):
         self,
         key,
         name,
-        input_hydration_config=None,
-        output_materialization_config=None,
+        loader=None,
+        materializer=None,
         serialization_strategy=None,
         is_builtin=False,
         description=None,
@@ -341,8 +372,8 @@ class Anyish(DagsterType):
             key=key,
             name=name,
             kind=DagsterTypeKind.ANY,
-            input_hydration_config=input_hydration_config,
-            output_materialization_config=output_materialization_config,
+            loader=loader,
+            materializer=materializer,
             serialization_strategy=serialization_strategy,
             is_builtin=is_builtin,
             type_check_fn=self.type_check_method,
@@ -359,16 +390,16 @@ class _Any(Anyish):
         super(_Any, self).__init__(
             key='Any',
             name='Any',
-            input_hydration_config=BuiltinSchemas.ANY_INPUT,
-            output_materialization_config=BuiltinSchemas.ANY_OUTPUT,
+            loader=BuiltinSchemas.ANY_INPUT,
+            materializer=BuiltinSchemas.ANY_OUTPUT,
             is_builtin=True,
         )
 
 
 def create_any_type(
     name,
-    input_hydration_config=None,
-    output_materialization_config=None,
+    loader=None,
+    materializer=None,
     serialization_strategy=None,
     description=None,
     auto_plugins=None,
@@ -377,8 +408,8 @@ def create_any_type(
         key=name,
         name=name,
         description=description,
-        input_hydration_config=input_hydration_config,
-        output_materialization_config=output_materialization_config,
+        loader=loader,
+        materializer=materializer,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
     )
@@ -390,8 +421,8 @@ class _Nothing(DagsterType):
             key='Nothing',
             name='Nothing',
             kind=DagsterTypeKind.NOTHING,
-            input_hydration_config=None,
-            output_materialization_config=None,
+            loader=None,
+            materializer=None,
             type_check_fn=self.type_check_method,
             is_builtin=True,
         )
@@ -415,16 +446,16 @@ class PythonObjectDagsterType(DagsterType):
         name (Optional[str]): Name the type. Defaults to the name of ``python_type``.
         key (Optional[str]): Key of the type. Defaults to name.
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`~dagster.InputHydrationConfig` and can map config data to a value of
+        loader (Optional[DagsterTypeLoader]): An instance of a class that
+            inherits from :py:class:`~dagster.DagsterTypeLoader` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
-            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`~dagster.OutputMaterializationConfig` and can persist values of
+        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
+            that inherits from :py:class:`~dagster.DagsterTypeMaterializer` and can persist values of
             this type. As a rule, you should use the
-            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            :py:func:`@dagster_type_mate <dagster.dagster_type_mate>`
             decorator to construct these arguments.
         serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
             inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
@@ -464,7 +495,7 @@ class PythonObjectDagsterType(DagsterType):
         return TypeCheck(success=True)
 
 
-class NoneableInputSchema(InputHydrationConfig):
+class NoneableInputSchema(DagsterTypeLoader):
     def __init__(self, inner_dagster_type):
         self._inner_dagster_type = check.inst_param(
             inner_dagster_type, 'inner_dagster_type', DagsterType
@@ -528,7 +559,7 @@ class OptionalType(DagsterType):
         return [self.inner_type.key]
 
 
-class ListInputSchema(InputHydrationConfig):
+class ListInputSchema(DagsterTypeLoader):
     def __init__(self, inner_dagster_type):
         self._inner_dagster_type = check.inst_param(
             inner_dagster_type, 'inner_dagster_type', DagsterType
@@ -620,8 +651,8 @@ class Stringish(DagsterType):
             name=name,
             kind=DagsterTypeKind.SCALAR,
             type_check_fn=self.type_check_method,
-            input_hydration_config=BuiltinSchemas.STRING_INPUT,
-            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
+            loader=BuiltinSchemas.STRING_INPUT,
+            materializer=BuiltinSchemas.STRING_OUTPUT,
             **kwargs
         )
 

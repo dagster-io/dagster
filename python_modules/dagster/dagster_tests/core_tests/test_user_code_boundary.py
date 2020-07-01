@@ -65,9 +65,7 @@ def test_user_error_boundary_output_materialization():
     def materialize(context, *_args, **_kwargs):
         raise UserError()
 
-    CustomDagsterType = create_any_type(
-        name='CustomType', output_materialization_config=materialize
-    )
+    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):

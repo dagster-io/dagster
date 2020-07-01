@@ -335,9 +335,7 @@ def yield_two_materializations(*_args, **_kwargs):
 
 
 def test_basic_yield_multiple_materializations():
-    SomeDagsterType = create_any_type(
-        name='SomeType', output_materialization_config=yield_two_materializations
-    )
+    SomeDagsterType = create_any_type(name='SomeType', materializer=yield_two_materializations)
 
     @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
     def return_one():
@@ -367,7 +365,7 @@ def return_int(*_args, **_kwargs):
 
 
 def test_basic_bad_output_materialization():
-    SomeDagsterType = create_any_type(name='SomeType', output_materialization_config=return_int)
+    SomeDagsterType = create_any_type(name='SomeType', materializer=return_int)
 
     @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
     def return_one():

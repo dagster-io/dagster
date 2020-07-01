@@ -464,9 +464,7 @@ def define_materialization_pipeline(should_require_resources=True, resources_ini
         assert context.resources.a == 'A'
         return Materialization('hello')
 
-    CustomDagsterType = create_any_type(
-        name='CustomType', output_materialization_config=materialize
-    )
+    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
@@ -524,9 +522,7 @@ def define_composite_materialization_pipeline(
         assert context.resources.a == 'A'
         return Materialization('hello')
 
-    CustomDagsterType = create_any_type(
-        name='CustomType', output_materialization_config=materialize
-    )
+    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):

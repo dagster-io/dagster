@@ -6,9 +6,10 @@ from dagster.core.decorator_utils import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen, ensure_single_item
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 
-class InputHydrationConfig(object):
+class DagsterTypeLoader(object):
     @property
     def schema_type(self):
         check.not_implemented(
@@ -25,23 +26,13 @@ class InputHydrationConfig(object):
         return frozenset()
 
 
-class BareInputSchema(InputHydrationConfig):
-    def __init__(self, config_type):
-        self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
-
-    @property
-    def schema_type(self):
-        return self.config_type
+class InputHydrationConfig(DagsterTypeLoader):
+    def __init__(self):
+        rename_warning('DagsterTypeLoader', 'InputHydrationConfig', '0.10.0')
+        super(InputHydrationConfig, self).__init__()
 
 
-def make_bare_input_schema(config_cls):
-    from dagster.config.field import resolve_to_config_type
-
-    config_type = resolve_to_config_type(config_cls)
-    return BareInputSchema(config_type)
-
-
-class OutputMaterializationConfig(object):
+class DagsterTypeMaterializer(object):
     @property
     def schema_type(self):
         check.not_implemented(
@@ -58,7 +49,13 @@ class OutputMaterializationConfig(object):
         return frozenset()
 
 
-class InputSchemaFromDecorator(InputHydrationConfig):
+class OutputMaterializationConfig(DagsterTypeMaterializer):
+    def __init__(self):
+        rename_warning('DagsterTypeMaterializer', 'OutputMaterializationConfig', '0.10.0')
+        super(OutputMaterializationConfig, self).__init__()
+
+
+class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
     def __init__(self, config_type, func, required_resource_keys):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
         self._func = check.callable_param(func, 'func')
@@ -77,27 +74,35 @@ class InputSchemaFromDecorator(InputHydrationConfig):
         return frozenset(self._required_resource_keys)
 
 
-def _create_input_schema_for_decorator(config_type, func, required_resource_keys):
-    return InputSchemaFromDecorator(config_type, func, required_resource_keys)
+def _create_type_loader_for_decorator(config_type, func, required_resource_keys):
+    return DagsterTypeLoaderFromDecorator(config_type, func, required_resource_keys)
 
 
-def input_hydration_config(config_cls, required_resource_keys=None):
-    '''Create an input hydration config that maps config data to a runtime value.
+def input_hydration_config(config_schema, required_resource_keys=None, config_cls=None):
+    '''Deprecated in favor of dagster_type_loader'''
+    rename_warning('dagster_type_loader', 'input_hydration_config', '0.10.0')
+    config_schema = canonicalize_backcompat_args(
+        config_schema, 'config_schema', config_cls, 'config_cls', '0.10.0',
+    )
+    return dagster_type_loader(config_schema, required_resource_keys)
+
+
+def dagster_type_loader(config_cls, required_resource_keys=None):
+    '''Create an dagster type loader that maps config data to a runtime value.
 
     The decorated function should take the execution context and parsed config value and return the
     appropriate runtime value.
 
     Args:
-        config_cls (Any): The type of the config data expected by the decorated function. Users
-            should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
-            using :py:func:`Selector` or :py:func:`Permissive`.
+        config_schema (ConfigSchema): The schema for the config that's passed to the decorated
+            function.
 
     Examples:
 
     .. code-block:: python
 
-        @input_hydration_config(Permissive())
-        def _dict_input(_context, value):
+        @dagster_type_loader(Permissive())
+        def dict_loader(_context, value):
             return value
     '''
     from dagster.config.field import resolve_to_config_type
@@ -110,25 +115,28 @@ def input_hydration_config(config_cls, required_resource_keys=None):
         missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                "@input_hydration_config '{solid_name}' decorated function does not have required positional "
+                "@dagster_type_loader '{solid_name}' decorated function does not have required positional "
                 "parameter '{missing_param}'. Solid functions should only have keyword arguments "
                 "that match input names and a first positional parameter named 'context'.".format(
                     solid_name=func.__name__, missing_param=missing_positional
                 )
             )
-        return _create_input_schema_for_decorator(config_type, func, required_resource_keys)
+        return _create_type_loader_for_decorator(config_type, func, required_resource_keys)
 
     return wrapper
 
 
 def input_selector_schema(config_cls, required_resource_keys=None):
     '''
+    Deprecated in favor of dagster_type_loader.
+
     A decorator for annotating a function that can take the selected properties
     from a ``config_value`` in to an instance of a custom type.
 
     Args:
         config_cls (Selector)
     '''
+    rename_warning('dagster_type_loader', 'input_selector_schema', '0.10.0')
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
@@ -139,12 +147,12 @@ def input_selector_schema(config_cls, required_resource_keys=None):
             selector_key, selector_value = ensure_single_item(config_value)
             return func(context, selector_key, selector_value)
 
-        return _create_input_schema_for_decorator(config_type, _selector, required_resource_keys)
+        return _create_type_loader_for_decorator(config_type, _selector, required_resource_keys)
 
     return _wrap
 
 
-class OutputSchemaForDecorator(OutputMaterializationConfig):
+class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
     def __init__(self, config_type, func, required_resource_keys):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
         self._func = check.callable_param(func, 'func')
@@ -163,11 +171,20 @@ class OutputSchemaForDecorator(OutputMaterializationConfig):
         return frozenset(self._required_resource_keys)
 
 
-def _create_output_schema(config_type, func, required_resource_keys):
-    return OutputSchemaForDecorator(config_type, func, required_resource_keys)
+def _create_output_materializer_for_decorator(config_type, func, required_resource_keys):
+    return DagsterTypeMaterializerForDecorator(config_type, func, required_resource_keys)
 
 
-def output_materialization_config(config_cls, required_resource_keys=None):
+def output_materialization_config(config_schema, required_resource_keys=None, config_cls=None):
+    '''Deprecated in favor of dagster_type_materializer'''
+    rename_warning('dagster_type_materializer', 'output_materialization_config', '0.10.0')
+    config_schema = canonicalize_backcompat_args(
+        config_schema, 'config_schema', config_cls, 'config_cls', '0.10.0',
+    )
+    return dagster_type_materializer(config_schema, required_resource_keys)
+
+
+def dagster_type_materializer(config_schema, required_resource_keys=None):
     '''Create an output materialization hydration config that configurably materializes a runtime
     value.
 
@@ -176,9 +193,7 @@ def output_materialization_config(config_cls, required_resource_keys=None):
     return an appropriate :py:class:`Materialization`.
 
     Args:
-        config_cls (Any): The type of the config data expected by the decorated function. Users
-            should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
-            using :py:func:`Selector` or :py:func:`Permissive`.
+        config_schema (Any): The type of the config data expected by the decorated function.
 
     Examples:
 
@@ -186,8 +201,8 @@ def output_materialization_config(config_cls, required_resource_keys=None):
 
         # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
         value, and writes
-        @output_materialization_config(Path)
-        def df_output_schema(_context, path, value):
+        @dagster_type_materializer(Path)
+        def df_materializer(_context, path, value):
             with open(path, 'w') as fd:
                 writer = csv.DictWriter(fd, fieldnames=value[0].keys())
                 writer.writeheader()
@@ -198,18 +213,23 @@ def output_materialization_config(config_cls, required_resource_keys=None):
     '''
     from dagster.config.field import resolve_to_config_type
 
-    config_type = resolve_to_config_type(config_cls)
-    return lambda func: _create_output_schema(config_type, func, required_resource_keys)
+    config_type = resolve_to_config_type(config_schema)
+    return lambda func: _create_output_materializer_for_decorator(
+        config_type, func, required_resource_keys
+    )
 
 
 def output_selector_schema(config_cls, required_resource_keys=None):
     '''
+    Deprecated in favor of dagster_type_materializer.
+
     A decorator for a annotating a function that can take the selected properties
     of a ``config_value`` and an instance of a custom type and materialize it.
 
     Args:
         config_cls (Selector):
     '''
+    rename_warning('dagster_type_materializer', 'output_selector_schema', '0.10.0')
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
@@ -220,6 +240,8 @@ def output_selector_schema(config_cls, required_resource_keys=None):
             selector_key, selector_value = ensure_single_item(config_value)
             return func(context, selector_key, selector_value, runtime_value)
 
-        return _create_output_schema(config_type, _selector, required_resource_keys)
+        return _create_output_materializer_for_decorator(
+            config_type, _selector, required_resource_keys
+        )
 
     return _wrap
