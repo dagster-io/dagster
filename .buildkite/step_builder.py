@@ -70,6 +70,21 @@ class StepBuilder(object):
     def _base_docker_settings(self):
         return {"shell": ["/bin/bash", "-xeuc"], "always-pull": True, "mount-ssh-agent": True}
 
+    def on_python_image(self, image, env=None):
+        settings = self._base_docker_settings()
+        settings["image"] = "{account_id}.dkr.ecr.us-west-1.amazonaws.com/{image}".format(
+            account_id=AWS_ACCOUNT_ID, image=image
+        )
+        settings["environment"] = ["BUILDKITE"] + (env or [])
+        ecr_settings = {
+            'login': True,
+            'no-include-email': True,
+            'account-ids': AWS_ACCOUNT_ID,
+            'region': AWS_ECR_REGION,
+        }
+        self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}]
+        return self
+
     def on_integration_image(self, ver, env=None):
         if ver not in SupportedPythons:
             raise Exception(

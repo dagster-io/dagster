@@ -49,8 +49,8 @@ def publish_test_images():
                 "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
                 "docker push $${TEST_IMAGE}",
             )
-            .on_integration_image(
-                version,
+            .on_python_image(
+                'test-image-builder',
                 [
                     'AIRFLOW_HOME',
                     'AWS_ACCOUNT_ID',
@@ -287,8 +287,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         retries=2,
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-ge',
-        supported_pythons=SupportedPython3sNo38,
+        'python_modules/libraries/dagster-ge', supported_pythons=SupportedPython3sNo38,
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-k8s',
