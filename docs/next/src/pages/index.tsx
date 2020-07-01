@@ -20,16 +20,16 @@ const Index: NextPage<{ userAgent: string }> = () => (
         </p>
         <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
           <div className="rounded-md shadow">
-            <VersionedLink href="/docs/tutorial">
+            <VersionedLink href="/tutorial">
               <a className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:shadow-outline-blue transition duration-150 ease-in-out md:py-4 md:text-lg md:px-10">
                 Tutorial
               </a>
             </VersionedLink>
           </div>
           <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
-            <VersionedLink href="/docs/install">
+            <VersionedLink href="/install">
               <a className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-blue-600 bg-white hover:text-blue-500 focus:outline-none focus:shadow-outline-blue transition duration-150 ease-in-out md:py-4 md:text-lg md:px-10">
-                Documentation
+                Install
               </a>
             </VersionedLink>
           </div>

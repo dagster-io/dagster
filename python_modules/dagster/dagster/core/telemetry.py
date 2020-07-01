@@ -1,5 +1,5 @@
 '''As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/docs/install/telemetry/'
+For more information, check out the docs at https://docs.dagster.io/install/telemetry/'
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -48,7 +48,7 @@ START_DAGIT_WEBSERVER = 'start_dagit_webserver'
 TELEMETRY_VERSION = '0.2'
 
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
-# docs/next/src/pages/docs/install/telemetry.mdx
+# docs/next/src/pages/install/telemetry.mdx
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     'pipeline_execute_command',
     'pipeline_launch_command',
@@ -349,7 +349,7 @@ TELEMETRY_TEXT = '''
   %(telemetry)s
 
   As an open source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/docs/install/telemetry.
+  information, read https://docs.dagster.io/install/telemetry.
 
   We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
   any data that is processed within solids and pipelines.

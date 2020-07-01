@@ -16,7 +16,7 @@ The site should be live at https://localhost:3000
 
 # Editing Docs
 
-All documentation pages live under `src/pages/docs`. The path on the filesystem for an MDX file corresponds to the URL path. For example, the file `/pages/docs/deploying/aws.mdx` can be viewed at `localhost:3000/docs/deploying/aws`
+All documentation pages live under `src/pages`. The path on the filesystem for an MDX file corresponds to the URL path. For example, the file `/pages/deploying/aws.mdx` can be viewed at `localhost:3000/deploying/aws`
 
 The API documentation is still authored in the Sphinx project.
 

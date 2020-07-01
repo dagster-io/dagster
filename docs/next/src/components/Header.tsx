@@ -64,14 +64,12 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
               </div>
             </div>
             <div className="ml-6 flex">
-              <VersionedLink href="/docs/install">
+              <VersionedLink href="/install">
                 <a
                   className={cx(
                     'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
                     {
-                      'border-indigo-500':
-                        router.pathname.startsWith('/docs') ||
-                        router.pathname.startsWith('/_modules'),
+                      'border-indigo-500': true,
                     },
                   )}
                 >

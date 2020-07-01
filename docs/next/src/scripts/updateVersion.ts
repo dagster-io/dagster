@@ -18,13 +18,13 @@ const MDX_FILE_PATH = path.resolve(__dirname, '..', 'pages/versions/index.mdx');
 const JSON_CONTENT = {
   currentVersion: {
     version: '<version>',
-    documentation: '/docs/install',
+    documentation: '/install',
     releaseNotes:
       'https://github.com/dagster-io/dagster/releases/tag/<version>',
   },
   allVersion: {
     version: '<version>',
-    documentation: '/<version>/docs/install',
+    documentation: '/<version>/install',
     releaseNotes:
       'https://github.com/dagster-io/dagster/releases/tag/<version>',
   },

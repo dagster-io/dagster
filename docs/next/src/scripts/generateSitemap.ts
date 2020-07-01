@@ -7,7 +7,7 @@ import parser from 'fast-xml-parser';
   // Ignore Next.js specific files (e.g., _app.js) and API routes.
   const pages = await globby([
     'src/pages/**/*.mdx',
-    '!src/pages/docs/apidocs/[...page]', // <- Exclude dynamic route
+    '!src/pages/apidocs/[...page]', // <- Exclude dynamic route
     '!src/pages/_modules/[...page]', // <- Exclude dynamic route
   ]);
 
@@ -16,7 +16,7 @@ import parser from 'fast-xml-parser';
   const apiDocsPages = paths
     .map(({ params }) => params.page)
     .map((parts) => {
-      return `/docs/apidocs/${parts.join('/')}`;
+      return `/apidocs/${parts.join('/')}`;
     });
 
   // Combine them into the pages you care about

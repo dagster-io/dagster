@@ -10,7 +10,7 @@ EXPECTED_LIBRARY_README_CONTENTS = '''
 # {library}
 
 The docs for `{library}` can be found
-[here](https://docs.dagster.io/docs/apidocs/libraries/{library_underscore}).
+[here](https://docs.dagster.io/apidocs/libraries/{library_underscore}).
 '''.strip()
 
 

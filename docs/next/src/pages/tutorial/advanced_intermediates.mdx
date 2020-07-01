@@ -1,0 +1,154 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import { CodeReferenceLink } from 'components/CodeReference';
+
+<DynamicMetaTags
+  title="Advanced: Intermediates | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
+import AnchorHeading from 'components/AnchorHeading';
+import PyObject from 'components/PyObject';
+
+# Advanced: Intermediates
+
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/" />
+
+We've already seen how solids can describe their persistent artifacts to the
+system using [materializations](/tutorial/advanced_materializations).
+
+Dagster also has a facility for automatically materializing the intermediate
+values that actually pass between solids.
+
+This can be very useful for debugging, when you want to inspect the value
+output by a solid and ensure that it is as you expect; for audit, when you
+want to understand how a particular downstream output was created; and for
+re-executing downstream solids with cached results from expensive upstream
+computations.
+
+To turn intermediate storage on, just set another key in the pipeline config:
+
+```YAML literalinclude caption=intermediates.yaml emphasize-lines=6-7
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/intermediates.yaml
+```
+
+When you execute the pipeline using this config, you'll see new structured
+entries in the Dagit log viewer indicating that intermediates have been stored
+on the filesystem.
+
+![intermediates.png](/assets/images/tutorial/intermediates.png)
+
+## Re-execution
+
+Once intermediates are being stored, you would be able to individually re-execute
+steps whose outputs are satisfied by previously store intermediates through
+Dagit or API.
+
+### Re-execute a pipeline in Dagit
+
+Click on the `sort_by_calories.compute` execution step, and you'll see the
+option appear to reexecute the selected step subset, using the automatically
+materialized intermediate output of the previous solid.
+
+![reexecution.png](/assets/images/tutorial/reexecution.png)
+
+Reexcuting the selected subset, `sort_by_calories.compute` in this case, will
+skip the `read_csv.compute` step and used the previously stored intermediate
+instead. You may also notice there is a re-execution section present on the
+right hand side. This section allows you to view and switch between related
+pipeline runs created from re-execution.
+
+![reexecution_results.png](/assets/images/tutorial/reexecution_results.png)
+
+Reexecuting step subsets can be very helpful while you're writing solids, or
+while you're actively debugging only part of a pipeline.
+
+You can also manually specify intermediates from previous runs as inputs to
+solids. Recall the syntax we used to set input values using the config system:
+
+```YAML literalinclude caption=inputs_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
+```
+
+Instead of setting the key `value` (i.e., providing a ), we can
+also set `pickle`, as follows:
+
+```YAML literalinclude caption=reexecution_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution_env.yaml
+```
+
+(Of course, you'll need to use the path to an intermediate that is actually
+present on your filesystem.)
+
+If you directly substitute this config into Dagit, you'll see an error,
+because the system still expects the input to `sort_by_calories` to
+be satisfied by the output from `read_csv`.
+
+![reexecution_errors.png](/assets/images/tutorial/reexecution_errors.png)
+
+To make this config valid, we'll need to tell Dagit to execute only a subset
+of the pipeline --just the `sort_by_calories` solid. Click on the
+subset-selector button in the top left of the playground, to the left of the
+Mode selector (which, when no subset has been specified, will read "\*"):
+
+![subset_selection.png](/assets/images/tutorial/subset_selection.png)
+
+Now this config will now pass validation, and the individual solid can be
+re-executed.
+
+This facility is especially valuable during test, since it allows you to
+validate newly written solids against values generated during previous runs of
+a known good pipeline.
+
+### Re-execute a pipeline through Python API
+
+Similar to the <PyObject module="dagster" object="execute_pipeline"
+displayText="execute_pipeline()" /> function, we've also introduced a Python API
+for re-executing pipelines from code: <PyObject module="dagster" object="reexecute_pipeline"
+displayText="reexecute_pipeline()" />, where you will need to pass the run id of
+the original pipeline through the `parent_run_id` argument, and optionally use
+`step_keys_to_execute` to specify a list of step keys that you would like to
+re-execute.
+
+```python literalinclude showLines startLine=35 caption=reexecution.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution.py
+lines:35-52
+```
+
+When you specify `step_keys_to_execute` as above, you will find that in compute
+log, the `read_csv.compute` step is coping "intermediate object for input result from" the
+preivously stored `storage_location/intermediates/read_csv.compute/result`. It
+indicates you have skipped this step and use the previously computed result
+instead during this re-execution.
+
+```bash
+2020-06-15 22:29:55 - dagster - DEBUG - reexecution_pipeline - 75561568-1f1f-49ab-ab70-30460cc257ad - OBJECT_STORE_OPERATION - Copied intermediate object for input result from /var/folders/fz/klcrnttj13v_8cv3m6_4hlsh0000gn/T/tmpyx2oin8v/storage/9b6d2373-5570-4525-a8b5-257860ec2a6f/intermediates/read_csv.compute/result to /var/folders/fz/klcrnttj13v_8cv3m6_4hlsh0000gn/T/tmpyx2oin8v/storage/75561568-1f1f-49ab-ab70-30460cc257ad/intermediates/read_csv.compute/result
+ event_specific_data = {"metadata_entries": [["key", null, ["/var/folders/fz/klcrnttj13v_8cv3m6_4hlsh0000gn/T/tmpyx2oin8v/storage/9b6d2373-5570-4525-a8b5-257860ec2a6f/intermediates/read_csv.compute/result"]]], "op": "CP_OBJECT", "value_name": "result"}
+               solid = "read_csv"
+    solid_definition = "read_csv"
+            step_key = "read_csv.compute"
+```
+
+## Intermediate Storage for Custom Data Types
+
+By default, Dagster will try to pickle intermediate values to store them on
+the filesystem. Some custom data types cannot be pickled (for instance, a
+Spark RDD), so you will need to tell Dagster how to serialize them.
+
+Our toy `LessSimpleDataFrame` is, of course, pickleable, but
+supposing it was not, let's set a custom **`SerializationStrategy`** on
+it to tell Dagster how to store intermediates of this type.
+
+```python literalinclude showLines startLine=15 caption=serialization_strategy.py
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/serialization_strategy.py
+lines:15-39
+```
+
+Now, when we set the `storage` key in pipeline config and run this
+pipeline, we'll see that our intermediate is automatically persisted as a
+human-readable .csv:
+
+![serialization_strategy.png](/assets/images/tutorial/serialization_strategy.png)
+
+<br />
+
+<br />

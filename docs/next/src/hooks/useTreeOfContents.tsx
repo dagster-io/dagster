@@ -13,7 +13,7 @@ const createTreeOfContents = () => {
     if (doc.includes('api/apidocs')) {
       API_DOCS_PAGES.push({
         name: title,
-        path: doc.replace('sections/api/apidocs/', '/docs/apidocs/'),
+        path: doc.replace('sections/api/apidocs/', '/apidocs/'),
       });
     }
   }
@@ -30,14 +30,14 @@ const createTreeOfContents = () => {
     for (const example of exampleNames) {
       EXAMPLES_PAGES.push({
         name: example,
-        path: '/docs/examples/' + example,
+        path: '/examples/' + example,
       });
     }
 
     return Object.assign({}, treeOfContents, {
       Examples: {
         name: 'Examples',
-        path: '/docs/examples',
+        path: '/examples',
         children: EXAMPLES_PAGES,
       },
     });

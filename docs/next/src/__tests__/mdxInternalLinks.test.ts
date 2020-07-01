@@ -6,10 +6,12 @@ import { createCompiler } from '@mdx-js/mdx';
 
 const { parse: parseMdxContent } = createCompiler();
 
-const DOCS_ROOT = path.resolve(__dirname, '..', 'pages', 'docs');
+const DOCS_ROOT = path.resolve(__dirname, '..', 'pages');
 
 test('no dead links', async () => {
-  const allMdxFilePaths = await findAllMdxFileRelativePaths();
+  const allMdxFilePaths = (await findAllMdxFileRelativePaths()).filter(
+    (i) => !i.endsWith('versions/index.mdx'),
+  );
 
   const allInternalLinksStore: { [filePath: string]: Array<string> } = {};
 
@@ -118,8 +120,8 @@ function collectInternalLinks(rootAstNode: any): Array<string> {
           // TODO: handle self # heading links
         } else if (url.startsWith('/assets/')) {
           // TODO: handle assets
-        } else if (url.startsWith('/docs/')) {
-          result.push(url.replace('/docs/', ''));
+        } else if (url.startsWith('/')) {
+          result.push(url.substr(1));
         } else {
           // disallow relative references
           result.push(

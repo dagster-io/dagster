@@ -1,6 +1,6 @@
 Dask (dagster_dask)
 -------------------
-See also the `Dask deployment guide <https://docs.dagster.io/docs/deploying/dask/>`_.
+See also the `Dask deployment guide <https://docs.dagster.io/deploying/dask/>`_.
 
 Python version support
 ^^^^^^^^^^^^^^^^^^^^^^

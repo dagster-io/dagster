@@ -122,7 +122,7 @@ docs/gatsby/**/public
 # Next stuff
 docs/next/.mdx-data
 docs/next/public/sitemap.xml
-docs/next/src/pages/docs/examples/
+docs/next/src/pages/examples/
 # Data
 data
 # Don't ignore data folders in examples
