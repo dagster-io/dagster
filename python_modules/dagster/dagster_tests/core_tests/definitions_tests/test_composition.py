@@ -620,3 +620,15 @@ def test_uninvoked_aliased_solid_fails():
             add_one(return_one.alias('something'))
 
         execute_pipeline(uninvoked_aliased_solid_pipeline)
+
+
+def test_alias_on_invoked_solid_fails():
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=r'.*Did you forget to move parentheses?'
+    ):
+
+        @pipeline
+        def alias_on_invoked_solid_pipeline():
+            return_one().alias('something')
+
+        execute_pipeline(alias_on_invoked_solid_pipeline)
