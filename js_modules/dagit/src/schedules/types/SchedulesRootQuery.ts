@@ -9,6 +9,38 @@ import { RepositorySelector, ScheduleTickStatus, PipelineRunStatus, ScheduleStat
 // GraphQL query operation: SchedulesRootQuery
 // ====================================================
 
+export interface SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError {
+  __typename: "RepositoryNotFoundError";
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin {
+  __typename: "RepositoryOrigin";
+  executablePath: string;
+  codePointerDescription: string;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository {
+  __typename: "Repository";
+  name: string;
+  id: string;
+  origin: SchedulesRootQuery_repositoryOrError_Repository_origin;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_repositoryOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SchedulesRootQuery_repositoryOrError_PythonError_cause | null;
+}
+
+export type SchedulesRootQuery_repositoryOrError = SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError | SchedulesRootQuery_repositoryOrError_Repository | SchedulesRootQuery_repositoryOrError_PythonError;
+
 export interface SchedulesRootQuery_scheduler_Scheduler {
   __typename: "Scheduler";
 }
@@ -234,6 +266,7 @@ export interface SchedulesRootQuery_scheduleStatesOrError_PythonError {
 export type SchedulesRootQuery_scheduleStatesOrError = SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates | SchedulesRootQuery_scheduleStatesOrError_PythonError;
 
 export interface SchedulesRootQuery {
+  repositoryOrError: SchedulesRootQuery_repositoryOrError;
   scheduler: SchedulesRootQuery_scheduler;
   scheduleDefinitionsOrError: SchedulesRootQuery_scheduleDefinitionsOrError;
   scheduleStatesOrError: SchedulesRootQuery_scheduleStatesOrError;

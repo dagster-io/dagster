@@ -9,6 +9,7 @@ from dagster.core.host_representation import (
     PythonEnvRepositoryLocationHandle,
     RepositoryLocation,
 )
+from dagster.core.origin import RepositoryPythonOrigin
 
 
 class DauphinRepository(dauphin.ObjectType):
@@ -28,9 +29,13 @@ class DauphinRepository(dauphin.ObjectType):
     pipelines = dauphin.non_null_list('Pipeline')
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
     usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
+    origin = dauphin.NonNull('RepositoryOrigin')
 
     def resolve_id(self, _graphene_info):
         return self._repository.get_origin_id()
+
+    def resolve_origin(self, graphene_info):
+        return graphene_info.schema.type_named('RepositoryOrigin')(self._repository.get_origin())
 
     def resolve_location(self, graphene_info):
         return graphene_info.schema.type_named('RepositoryLocation')(self._repository_location)
@@ -49,6 +54,23 @@ class DauphinRepository(dauphin.ObjectType):
 
     def resolve_usedSolids(self, _graphene_info):
         return get_solids(self._repository)
+
+
+class DauphinRepositoryOrigin(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RepositoryOrigin'
+
+    executable_path = dauphin.NonNull(dauphin.String)
+    code_pointer_description = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, origin):
+        self._origin = check.inst_param(origin, 'origin', RepositoryPythonOrigin)
+
+    def resolve_executable_path(self, _graphene_info):
+        return self._origin.executable_path
+
+    def resolve_code_pointer_description(self, _graphene_info):
+        return self._origin.code_pointer.describe()
 
 
 class DauphinRepositoryLocation(dauphin.ObjectType):

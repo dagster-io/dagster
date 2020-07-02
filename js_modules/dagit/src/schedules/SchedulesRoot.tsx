@@ -1,11 +1,20 @@
 import * as React from "react";
 
-import { Callout, Intent, Code, Card, Colors } from "@blueprintjs/core";
+import {
+  Callout,
+  Intent,
+  Code,
+  Card,
+  Colors,
+  Tooltip,
+  PopoverInteractionKind
+} from "@blueprintjs/core";
 import { Header, Legend, LegendColumn, ScrollContainer } from "../ListComponents";
 import { useQuery } from "react-apollo";
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_scheduler,
+  SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
 } from "./types/SchedulesRootQuery";
@@ -90,12 +99,6 @@ const GetStaleReconcileSection: React.FunctionComponent<{
   );
 };
 
-const getScheduleDefinitionsSection = (
-  scheduleDefinitions: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[]
-) => {
-  return <ScheduleTable schedules={scheduleDefinitions} />;
-};
-
 const SchedulesRoot: React.FunctionComponent = () => {
   const repositorySelector = useRepositorySelector();
 
@@ -113,6 +116,7 @@ const SchedulesRoot: React.FunctionComponent = () => {
       {result => {
         const {
           scheduler,
+          repositoryOrError,
           scheduleDefinitionsOrError,
           scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError
         } = result;
@@ -122,12 +126,21 @@ const SchedulesRoot: React.FunctionComponent = () => {
 
         if (scheduleDefinitionsOrError.__typename === "PythonError") {
           scheduleDefinitionsSection = <PythonErrorInfo error={scheduleDefinitionsOrError} />;
+        } else if (repositoryOrError.__typename === "PythonError") {
+          scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
+        } else if (repositoryOrError.__typename === "RepositoryNotFoundError") {
+          // Should not be possible, the schedule definitions call will error out
         } else if (scheduleDefinitionsOrError.__typename === "ScheduleDefinitions") {
           const scheduleDefinitions = scheduleDefinitionsOrError.results;
           const scheduleDefinitionsWithState = scheduleDefinitions.filter(s => s.scheduleState);
           const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(s => !s.scheduleState);
 
-          scheduleDefinitionsSection = getScheduleDefinitionsSection(scheduleDefinitionsWithState);
+          scheduleDefinitionsSection = (
+            <ScheduleTable
+              schedules={scheduleDefinitionsWithState}
+              repository={repositoryOrError}
+            />
+          );
 
           if (scheduleStatesWithoutDefinitionsOrError.__typename === "ScheduleStates") {
             const scheduleStatesWithoutDefinitions =
@@ -153,18 +166,35 @@ const SchedulesRoot: React.FunctionComponent = () => {
   );
 };
 
-interface ScheduleTableProps {
+const ScheduleTable: React.FunctionComponent<{
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
-}
-
-const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
+  repository: SchedulesRootQuery_repositoryOrError_Repository;
+}> = props => {
   if (props.schedules.length === 0) {
     return null;
   }
 
   return (
     <div style={{ marginTop: 30 }}>
-      <Header>{`Schedules (${props.schedules.length})`}</Header>
+      <Header>{`Schedules`}</Header>
+      <div>
+        {`${props.schedules.length} loaded from `}
+        <Tooltip
+          interactionKind={PopoverInteractionKind.HOVER}
+          content={
+            <pre>
+              python: <Code>{props.repository.origin.executablePath}</Code>
+              {"\n"}
+              code: <Code>{props.repository.origin.codePointerDescription}</Code>
+              {"\n"}
+              id: <Code>{props.repository.id}</Code>
+            </pre>
+          }
+        >
+          <Code>{props.repository.name}</Code>
+        </Tooltip>
+      </div>
+
       {props.schedules.length > 0 && (
         <Legend>
           <LegendColumn style={{ maxWidth: 60, paddingRight: 2 }}></LegendColumn>
@@ -183,7 +213,9 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
   );
 };
 
-const ScheduleWithoutStateTable: React.FunctionComponent<ScheduleTableProps> = props => {
+const ScheduleWithoutStateTable: React.FunctionComponent<{
+  schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
+}> = props => {
   if (props.schedules.length === 0) {
     return null;
   }
@@ -244,6 +276,18 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
 
 export const SCHEDULES_ROOT_QUERY = gql`
   query SchedulesRootQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      __typename
+      ... on Repository {
+        name
+        id
+        origin {
+          executablePath
+          codePointerDescription
+        }
+      }
+      ...PythonErrorFragment
+    }
     scheduler {
       __typename
       ... on SchedulerNotDefinedError {

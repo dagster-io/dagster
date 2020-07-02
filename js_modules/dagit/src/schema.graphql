@@ -1012,6 +1012,7 @@ type Repository {
   pipelines: [Pipeline!]!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
+  origin: RepositoryOrigin!
 }
 
 type RepositoryConnection {
@@ -1036,6 +1037,11 @@ type RepositoryNotFoundError implements Error {
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+type RepositoryOrigin {
+  executablePath: String!
+  codePointerDescription: String!
+}
 
 input RepositorySelector {
   repositoryName: String!
