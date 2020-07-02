@@ -21,11 +21,10 @@ const createTreeOfContents = () => {
   delete treeOfContents['Learn'];
 
   const EXAMPLES_PAGES = [];
-  const exampleNames = Object.keys(examples);
-  for (const example of exampleNames) {
+  for (const example of examples) {
     EXAMPLES_PAGES.push({
-      name: example,
-      path: '/examples/' + example,
+      name: example.title,
+      path: '/examples/' + example.name,
     });
   }
 
