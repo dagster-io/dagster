@@ -13,7 +13,7 @@ import sys
 
 import click
 
-EXAMPLES_JSON_PATH = 'docs/next/src/data/examples.json'
+EXAMPLES_JSON_PATH = 'docs/next/src/pages/examples/examples.json'
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, BASE_PATH)
 
@@ -53,7 +53,7 @@ def add_to_examples_json(name):
 def main(name):
     template_library_path = os.path.abspath('bin/assets/dagster-example-tmpl')
     new_template_library_path = os.path.abspath('examples/{name}'.format(name=name))
-    doc_path = os.path.abspath('./docs/next/src/pages/docs/examples/{name}.mdx'.format(name=name))
+    doc_path = os.path.abspath('./docs/next/src/pages/examples/{name}.mdx'.format(name=name))
 
     if os.path.exists(new_template_library_path):
         raise click.UsageError('Example with name {name} already exists'.format(name=name))
