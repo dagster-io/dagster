@@ -318,7 +318,7 @@ def make_airflow_dag_for_operator(
 ):
     '''Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
-    `Custom operator template <https://github.com/dagster-io/dagster/blob/master/examples/legacy_examples/dagster_examples/dagster_airflow/custom_operator.py>`_
+    `Custom operator template <https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-test/dagster_test/dagster_airflow/custom_operator.py>`_
 
     Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
     Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you

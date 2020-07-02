@@ -17,7 +17,7 @@ def test_repo_path():
 
 
 def test_project_environments_path():
-    return os.path.join(test_repo_path(), 'test_pipelines', 'environments')
+    return os.path.join(test_repo_path(), 'environments')
 
 
 def build_and_tag_test_image(tag):
@@ -35,7 +35,7 @@ def get_test_project_external_pipeline(pipeline_name):
     return (
         InProcessRepositoryLocation(
             ReconstructableRepository.for_file(
-                file_relative_path(__file__, 'test_project/test_pipelines/test_pipelines/repo.py'),
+                file_relative_path(__file__, 'test_pipelines/repo.py'),
                 'define_demo_execution_repo',
             )
         )

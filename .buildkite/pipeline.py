@@ -41,9 +41,7 @@ def publish_test_images():
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
                 + version,
-                "./python_modules/dagster-test/dagster_test/test_project/build.sh "
-                + version
-                + " $${TEST_IMAGE}",
+                "./python_modules/dagster-test/build.sh " + version + " $${TEST_IMAGE}",
                 #
                 # push the built image
                 "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",

@@ -3,7 +3,7 @@ ARG PYTHON_VERSION
 FROM python:"${PYTHON_VERSION}"
 
 ADD build_cache/ /
-ADD test_pipelines test_pipelines
+ADD . .
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
@@ -22,8 +22,8 @@ RUN apt-get update -yqq && \
     -e dagster-k8s \
     -e dagster-celery-k8s \
     -e dagster-airflow \
-    -e test_pipelines
+    -e .
 
-WORKDIR /test_pipelines/
+WORKDIR /dagster_test/test_project/
 
 EXPOSE 80

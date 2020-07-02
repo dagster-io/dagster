@@ -5,19 +5,16 @@ import os
 from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
 from dagster_airflow_tests.marks import requires_airflow_db
 from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
-from dagster_examples.dagster_airflow.custom_operator import CustomOperator
+from dagster_test.dagster_airflow.custom_operator import CustomOperator
 from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.utils import git_repository_root
 
 
 @requires_airflow_db
 def test_my_custom_operator(
     dagster_airflow_custom_operator_pipeline, caplog,
 ):  # pylint: disable=redefined-outer-name
-    # TODO: remove dependency on legacy_examples
-    # https://github.com/dagster-io/dagster/issues/2653
     caplog.set_level(logging.INFO, logger='CustomOperatorLogger')
     pipeline_name = 'demo_pipeline'
     operator = CustomOperator
@@ -26,7 +23,9 @@ def test_my_custom_operator(
 
     results = dagster_airflow_custom_operator_pipeline(
         pipeline_name=pipeline_name,
-        recon_repo=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
+        recon_repo=ReconstructableRepository.for_module(
+            'dagster_test.test_project.test_pipelines.repo', pipeline_name
+        ),
         operator=operator,
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),

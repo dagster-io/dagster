@@ -40,8 +40,6 @@ MOCKS.push({
   filepath: path.join(dataDir, `airline_demo_ingest_pipeline_composite.json`)
 });
 
-// TODO: remove dependency on legacy_examples
-// https://github.com/dagster-io/dagster/issues/2653
 MOCKS.push(
   ...["composition", "log_spew", "many_events", "fan_in_fan_out_pipeline"].map(name => ({
     name: name,
@@ -56,6 +54,6 @@ MOCKS.push(
       requestScopeHandleID: ""
     } as PipelineExplorerRootQueryVariables,
     filepath: path.join(dataDir, `${name}.json`),
-    repo: "examples/legacy_examples/dagster_examples/toys"
+    repo: "python_modules/dagster-test/dagster_test/toys"
   }))
 );

@@ -31,7 +31,7 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
-            'test_pipelines.repo', 'define_demo_execution_repo'
+            'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo',
         ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
@@ -62,7 +62,7 @@ def test_gcs_storage(
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
-            'test_pipelines.repo', 'define_demo_execution_repo'
+            'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo',
         ),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
@@ -81,7 +81,7 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
 
     pipeline_name = 'demo_error_pipeline'
     recon_repo = ReconstructableRepository.for_module(
-        'test_pipelines.repo', 'define_demo_execution_repo'
+        'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo'
     )
     environments_path = test_project_environments_path()
     environment_yaml = [

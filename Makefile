@@ -105,6 +105,4 @@ dev_install: install_dev_python_modules_verbose rebuild_dagit
 dev_install_quiet: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
-# TODO: remove dependency on legacy_examples
-# https://github.com/dagster-io/dagster/issues/2653
-	pytest examples/legacy_examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
+	pytest python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv

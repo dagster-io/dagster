@@ -18,26 +18,19 @@ def test_build_dags(clean_airflow_home):
     and that Airflow is able to successfully parse our DAGs.
     '''
     runner = CliRunner()
-    # TODO: remove dependency on legacy_examples
-    # https://github.com/dagster-io/dagster/issues/2653
     cli_args_to_test = [
-        ['--module-name', 'dagster_examples.toys.log_spew', '--pipeline-name', 'log_spew'],
-        ['--module-name', 'dagster_examples.toys.many_events', '--pipeline-name', 'many_events'],
+        ['--module-name', 'dagster_test.toys.log_spew', '--pipeline-name', 'log_spew'],
+        ['--module-name', 'dagster_test.toys.many_events', '--pipeline-name', 'many_events'],
         [
             '--module-name',
-            'dagster_examples.toys.error_monster',
+            'dagster_test.toys.error_monster',
             '--pipeline-name',
             'error_monster',
             '--preset',
             'passing',
         ],
-        [
-            '--module-name',
-            'dagster_examples.toys.resources',
-            '--pipeline-name',
-            'resource_pipeline',
-        ],
-        ['--module-name', 'dagster_examples.toys.sleepy', '--pipeline-name', 'sleepy_pipeline'],
+        ['--module-name', 'dagster_test.toys.resources', '--pipeline-name', 'resource_pipeline',],
+        ['--module-name', 'dagster_test.toys.sleepy', '--pipeline-name', 'sleepy_pipeline'],
     ]
 
     for args in cli_args_to_test:

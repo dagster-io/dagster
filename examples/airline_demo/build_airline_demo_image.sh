@@ -3,7 +3,7 @@
 set -eux
 
 ROOT=$(git rev-parse --show-toplevel)
-pushd $ROOT/examples/legacy_examples
+pushd $ROOT/examples/airline_demo
 
 pip install --upgrade pip
 

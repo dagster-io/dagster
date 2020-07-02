@@ -17,7 +17,6 @@ function cleanup {
     rm -rf dagster-dask
     rm -rf dagster-aws
     rm -rf dagster-cron
-    rm -rf legacy_examples
 }
 # ensure cleanup happens on error or normal exit
 trap cleanup EXIT
@@ -27,7 +26,6 @@ cp -R ../../../../dagster-graphql .
 rsync -av --progress ../../../dagster-dask . --exclude dagster_dask_tests
 cp -R ../../../dagster-aws .
 cp -R ../../../dagster-cron .
-cp -R ../../../../../examples/legacy_examples .
 
 
 rm -rf \

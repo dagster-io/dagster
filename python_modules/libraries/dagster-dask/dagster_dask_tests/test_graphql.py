@@ -12,12 +12,8 @@ from dagster.utils import file_relative_path
 
 
 def test_execute_hammer_through_dagit():
-    # TODO: remove dependency on legacy_examples
-    # https://github.com/dagster-io/dagster/issues/2653
     recon_repo = ReconstructableRepository.for_file(
-        file_relative_path(
-            __file__, '../../../../examples/legacy_examples/dagster_examples/toys/hammer.py'
-        ),
+        file_relative_path(__file__, '../../../dagster-test/dagster_test/toys/hammer.py'),
         'hammer_pipeline',
     )
     instance = DagsterInstance.local_temp()
