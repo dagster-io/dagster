@@ -34,7 +34,8 @@ resource_requirements` tag on pipeline definitions:
   def foo_bar_pipeline():
   ```
 - Added better error messaging in dagit for partition set and schedule configuration errors
-- An initial version of the CeleryDockerExecutor was added (thanks @mrdrprofuroboros!). This executor launches tasks in docker containers, enabling Docker in Docker (DinD).
+- An initial version of the CeleryDockerExecutor was added (thanks @mrdrprofuroboros!). The celery
+workers will launch tasks in docker containers.
 - **Experimental:**  Great Expectations integration is currently under development in the new library
 dagster-ge.  Example usage can be found [here](
 https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-ge/dagster_ge/examples/ge_demo.py)
