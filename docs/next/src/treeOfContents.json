@@ -195,6 +195,14 @@
           {
             "name": "Libraries",
             "path": "/overview/packages/libraries"
+          },
+          {
+            "name": "Dagster Pandas Guide",
+            "path": "/overview/packages/dagster_pandas"
+          },
+          {
+            "name": "Dagstermill Guide ",
+            "path": "/overview/packages/dagstermill"
           }
         ]
       }
