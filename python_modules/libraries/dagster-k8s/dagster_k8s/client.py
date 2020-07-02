@@ -22,14 +22,16 @@ class DagsterK8sError(Exception):
 
 
 class DagsterKubernetesClient:
-    def __init__(self, batch_api, core_api):
+    def __init__(self, batch_api, core_api, logger, sleeper):
         self.batch_api = batch_api
         self.core_api = core_api
+        self.logger = logger
+        self.sleeper = sleeper
 
     @staticmethod
     def production_client():
         return DagsterKubernetesClient(
-            kubernetes.client.BatchV1Api(), kubernetes.client.CoreV1Api()
+            kubernetes.client.BatchV1Api(), kubernetes.client.CoreV1Api(), logging.info, time.sleep
         )
 
     def wait_for_job_success(
@@ -72,8 +74,9 @@ class DagsterKubernetesClient:
             jobs = self.batch_api.list_namespaced_job(namespace=namespace)
             job = next((j for j in jobs.items if j.metadata.name == job_name), None)
 
-            logging.info('Job "%s" not yet launched, waiting' % job_name)
-            time.sleep(wait_time_between_attempts)
+            if not job:
+                self.logger('Job "{job_name}" not yet launched, waiting'.format(job_name=job_name))
+                self.sleeper(wait_time_between_attempts)
 
         # Wait for job completed status
         while True:
@@ -90,7 +93,7 @@ class DagsterKubernetesClient:
             if status.succeeded == num_pods_to_wait_for:
                 break
 
-            time.sleep(wait_time_between_attempts)
+            self.sleeper(wait_time_between_attempts)
 
     def retrieve_pod_logs(self, pod_name, namespace):
         '''Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
@@ -145,7 +148,7 @@ class DagsterKubernetesClient:
         check.numeric_param(wait_timeout, 'wait_timeout')
         check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
 
-        logging.info('Waiting for pod %s' % pod_name)
+        self.logger('Waiting for pod %s' % pod_name)
 
         start = time.time()
 
@@ -161,13 +164,13 @@ class DagsterKubernetesClient:
                 )
 
             if pod is None:
-                logging.info('Waiting for pod "%s" to launch...' % pod_name)
-                time.sleep(wait_time_between_attempts)
+                self.logger('Waiting for pod "%s" to launch...' % pod_name)
+                self.sleeper(wait_time_between_attempts)
                 continue
 
             if not pod.status.container_statuses:
-                logging.info('Waiting for pod container status to be set by kubernetes...')
-                time.sleep(wait_time_between_attempts)
+                self.logger('Waiting for pod container status to be set by kubernetes...')
+                self.sleeper(wait_time_between_attempts)
                 continue
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatus-v1-core
@@ -182,14 +185,14 @@ class DagsterKubernetesClient:
                     # ready is boolean field of container status
                     ready = container_status.ready
                     if not ready:
-                        logging.info('Waiting for pod "%s" to become ready...' % pod_name)
-                        time.sleep(wait_time_between_attempts)
+                        self.logger('Waiting for pod "%s" to become ready...' % pod_name)
+                        self.sleeper(wait_time_between_attempts)
                         continue
                     else:
-                        logging.info('Pod "%s" is ready, done waiting' % pod_name)
+                        self.logger('Pod "%s" is ready, done waiting' % pod_name)
                         break
                 elif wait_for_state == WaitForPodState.Terminated:
-                    time.sleep(wait_time_between_attempts)
+                    self.sleeper(wait_time_between_attempts)
                     continue
                 else:
                     raise DagsterK8sError('Unknown wait for state %s' % str(wait_for_state.value))
@@ -198,12 +201,12 @@ class DagsterKubernetesClient:
             elif state.waiting is not None:
                 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatewaiting-v1-core
                 if state.waiting.reason == 'PodInitializing':
-                    logging.info('Waiting for pod "%s" to initialize...' % pod_name)
-                    time.sleep(wait_time_between_attempts)
+                    self.logger('Waiting for pod "%s" to initialize...' % pod_name)
+                    self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason == 'ContainerCreating':
-                    logging.info('Waiting for container creation...')
-                    time.sleep(wait_time_between_attempts)
+                    self.logger('Waiting for container creation...')
+                    self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason in [
                     'ErrImagePull',
