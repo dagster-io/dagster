@@ -1,12 +1,43 @@
 # Changelog
 
-## 0.8.6 (Upcoming)
+## 0.8.6
 
 **Breaking Changes**
 
-- The `dagster-celery` module has been broken apart to manage dependencies more coherently. There are now three modules: `dagster-celery`, `dagster-celery-k8s`, and `dagster-celery-docker`.
-- Related to above, the `dagster-celery worker start` command now takes a required `-A` parameter which must point to the `app.py` file within the appropriate module. E.g if you are using the `celery_k8s_job_executor` then you must use the `-A dagster_celery_k8s.app` option when using the `celery` or `dagster-celery` cli tools. Similar for the `celery_docker_executor`: `-A dagster_celery_docker.app` must be used.
-- Renamed the `input_hydration_config` and `output_materialization_config` decorators to `dagster_type_hydrator` and `dagster_type_materializer` respectively.  Renamed DagsterType's `input_hydration_config` and `output_materialization_config` arguments to `loader` and `materializer` respectively.
+- The `dagster-celery` module has been broken apart to manage dependencies more coherently. There
+are now three modules: `dagster-celery`, `dagster-celery-k8s`, and `dagster-celery-docker`.
+- Related to above, the `dagster-celery worker start` command now takes a required `-A` parameter
+which must point to the `app.py` file within the appropriate module. E.g if you are using the
+`celery_k8s_job_executor` then you must use the `-A dagster_celery_k8s.app` option when using the
+`celery` or `dagster-celery` cli tools. Similar for the `celery_docker_executor`:
+`-A dagster_celery_docker.app` must be used.
+- Renamed the `input_hydration_config` and `output_materialization_config` decorators to
+`dagster_type_` and `dagster_type_materializer` respectively.  Renamed DagsterType's
+`input_hydration_config` and `output_materialization_config` arguments to `loader` and `materializer` respectively.
+
+**New**
+
+- New pipeline scoped runs tab in Dagit
+- Add the following Dask Job Queue clusters: moab, sge, lsf, slurm, oar (thanks @DavidKatz-il!)
+- K8s resource-requirements for run coordinator pods can be specified using the `dagster-k8s/
+resource_requirements` tag on pipeline definitions:
+
+  ```python
+  @pipeline(
+      tags={
+          'dagster-k8s/resource_requirements': {
+              'requests': {'cpu': '250m', 'memory': '64Mi'},
+              'limits': {'cpu': '500m', 'memory': '2560Mi'},
+          }
+      },
+  )
+  def foo_bar_pipeline():
+  ```
+- Added better error messaging in dagit for partition set and schedule configuration errors
+- An initial version of the CeleryDockerExecutor was added (thanks @mrdrprofuroboros!). This executor launches tasks in docker containers, enabling Docker in Docker (DinD).
+- **Experimental:**  Great Expectations integration is currently under development in the new library
+dagster-ge.  Example usage can be found [here](
+https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-ge/dagster_ge/examples/ge_demo.py)
 
 ## 0.8.5
 
