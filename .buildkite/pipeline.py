@@ -447,6 +447,7 @@ def pylint_steps():
             """pip install \
                 -e python_modules/dagster \
                 -e python_modules/dagit \
+                -e python_modules/automation \
                 -e python_modules/libraries/dagstermill \
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
