@@ -32,7 +32,11 @@ As you can see, most of the configuration remains unchanged for `solid_a` and `s
 can get really tedious if you have hundreds of copies.
 
 With config mapping, you can create a `@composite_solid` to wrap your complicated solid(s), pin the
-shared config, and only expose `name` and `args` to users.
+shared config, and only expose `name` to users of the composite solid:
+
+```python literalinclude caption=repo.py
+file:/config_mapping/repo.py
+```
 
 In this example, the `hello` solid has a complicated cluster config. With `hello_external`, we've
 pre-configured the cluster config, and expose only a simplified config which we pass through to the
