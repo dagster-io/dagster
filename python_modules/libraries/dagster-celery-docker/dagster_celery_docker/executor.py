@@ -31,27 +31,36 @@ CELERY_DOCKER_CONFIG_KEY = 'celery-docker'
 
 def celery_docker_config():
     additional_config = {
-        'docker_image': Field(
-            StringSource,
+        'docker': Field(
+            {
+                'image': Field(
+                    StringSource,
+                    is_required=True,
+                    description='The docker image to be used for step execution.',
+                ),
+                'registry': Field(
+                    {
+                        'url': Field(StringSource),
+                        'username': Field(StringSource),
+                        'password': Field(StringSource),
+                    },
+                    is_required=False,
+                    description='Information for using a non local/public docker registry',
+                ),
+                'env_vars': Field(
+                    [str],
+                    is_required=False,
+                    description='The list of environment variables names to forward from the celery worker in to the docker container',
+                ),
+            },
             is_required=True,
-            description='The docker image used for pipeline execution.',
-        ),
-        'docker_registry': Field(
-            StringSource,
-            is_required=False,
-            description='The docker registry to pull images from. Empty for local or public',
-        ),
-        'docker_username': Field(
-            StringSource, is_required=False, description='Registry username.',
-        ),
-        'docker_password': Field(
-            StringSource, is_required=False, description='Registry password.',
+            description='The configuration for interacting with docker in the celery worker.',
         ),
         'repo_location_name': Field(
             StringSource,
             is_required=False,
             default_value=IN_PROCESS_NAME,
-            description='The repository location name to use for execution.',
+            description='[temporary workaround] The repository location name to use for execution.',
         ),
     }
 
@@ -100,10 +109,15 @@ def celery_docker_executor(init_context):
         execution:
           celery-docker:
             config:
-              docker_image: 'my_repo.com/image_name:latest'
-              docker_registry: 'my_repo.com'
-              docker_username: 'my_user'
-              docker_password: {env: 'DOCKER_PASSWORD'}
+
+              docker:
+                image: 'my_repo.com/image_name:latest'
+                registry:
+                  url: 'my_repo.com'
+                  username: 'my_user'
+                  password: {env: 'DOCKER_PASSWORD'}
+                env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
+
               broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
               backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
               include: ['my_module'] # Optional[List[str]]: Modules every worker should import
@@ -129,10 +143,7 @@ def celery_docker_executor(init_context):
         config_source=exc_cfg.get('config_source'),
         include=exc_cfg.get('include'),
         retries=Retries.from_config(exc_cfg.get('retries')),
-        docker_image=exc_cfg.get('docker_image'),
-        docker_registry=exc_cfg.get('docker_registry'),
-        docker_username=exc_cfg.get('docker_username'),
-        docker_password=exc_cfg.get('docker_password'),
+        docker_config=exc_cfg.get('docker'),
         repo_location_name=exc_cfg.get('repo_location_name'),
     )
 
@@ -141,14 +152,11 @@ class CeleryDockerExecutor(Executor):
     def __init__(
         self,
         retries,
+        docker_config,
         broker=None,
         backend=None,
         include=None,
         config_source=None,
-        docker_image=None,
-        docker_registry=None,
-        docker_username=None,
-        docker_password=None,
         repo_location_name=None,
     ):
         self.retries = check.inst_param(retries, 'retries', Retries)
@@ -158,10 +166,7 @@ class CeleryDockerExecutor(Executor):
         self.config_source = dict_wrapper(
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
         )
-        self.docker_image = check.str_param(docker_image, 'docker_image')
-        self.docker_registry = check.opt_str_param(docker_registry, 'docker_registry')
-        self.docker_username = check.opt_str_param(docker_username, 'docker_username')
-        self.docker_password = check.opt_str_param(docker_password, 'docker_password')
+        self.docker_config = check.dict_param(docker_config, 'docker_config')
         self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
 
     def execute(self, pipeline_context, execution_plan):
@@ -193,10 +198,7 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
         repo_name=recon_repo.get_definition().name,
         repo_location_name=pipeline_context.executor.repo_location_name,
         run_id=pipeline_context.pipeline_run.run_id,
-        docker_image=pipeline_context.executor.docker_image,
-        docker_registry=pipeline_context.executor.docker_registry,
-        docker_username=pipeline_context.executor.docker_username,
-        docker_password=pipeline_context.executor.docker_password,
+        docker_config=pipeline_context.executor.docker_config,
     )
     return task_signature.apply_async(
         priority=priority,
@@ -216,14 +218,10 @@ def create_docker_task(celery_app, **task_kwargs):
         repo_name,
         repo_location_name,
         run_id,
-        docker_image,
-        docker_registry,
-        docker_username,
-        docker_password,
+        docker_config,
     ):
         '''Run step execution in a Docker container.
         '''
-
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
         pipeline_run = instance.get_run_by_id(run_id)
@@ -248,12 +246,14 @@ def create_docker_task(celery_app, **task_kwargs):
         command = 'dagster-graphql -v \'{variables}\' -p executePlan'.format(
             variables=seven.json.dumps(variables)
         )
-
+        docker_image = docker_config['image']
         client = docker.client.from_env()
 
-        if docker_username:
+        if docker_config.get('registry'):
             client.login(
-                registry=docker_registry, username=docker_username, password=docker_password,
+                registry=docker_config['registry']['url'],
+                username=docker_config['registry']['username'],
+                password=docker_config['registry']['password'],
             )
 
         # Post event for starting execution
@@ -263,7 +263,7 @@ def create_docker_task(celery_app, **task_kwargs):
             EngineEventData(
                 [
                     EventMetadataEntry.text(step_keys_str, 'Step keys'),
-                    EventMetadataEntry.text(docker_image, 'Job image'),
+                    EventMetadataEntry.text(docker_image, 'Image'),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -273,35 +273,52 @@ def create_docker_task(celery_app, **task_kwargs):
 
         events = [engine_event]
 
-        docker_response = client.containers.run(
-            docker_image,
-            command=command,
-            detach=False,
-            auto_remove=True,
-            # pass through this worker's environment for things like AWS creds etc.
-            environment=dict(os.environ),
-        )
+        docker_env = {}
+        if docker_config.get('env_vars'):
+            docker_env = {env_name: os.getenv(env_name) for env_name in docker_config['env_vars']}
 
         try:
+            docker_response = client.containers.run(
+                docker_image,
+                command=command,
+                detach=False,
+                auto_remove=True,
+                # pass through this worker's environment for things like AWS creds etc.
+                environment=docker_env,
+            )
             res = seven.json.loads(docker_response)
 
-        except JSONDecodeError:
-            fail_event = instance.report_engine_event(
+        except docker.errors.ContainerError as err:
+            instance.report_engine_event(
                 'Failed to run steps {} in Docker container {}'.format(step_keys_str, docker_image),
                 pipeline_run,
                 EngineEventData(
                     [
-                        EventMetadataEntry.text(step_keys_str, 'Step keys'),
                         EventMetadataEntry.text(docker_image, 'Job image'),
-                        EventMetadataEntry.text(docker_response, 'Docker Response'),
+                        EventMetadataEntry.text(err.stderr, 'Docker stderr'),
                     ],
-                    marker_end=DELEGATE_MARKER,
                 ),
                 CeleryDockerExecutor,
                 step_key=step_keys[0],
             )
+            raise
 
-            events.append(fail_event)
+        except JSONDecodeError:
+            instance.report_engine_event(
+                'Failed to parse response for steps {} from Docker container {}'.format(
+                    step_keys_str, docker_image
+                ),
+                pipeline_run,
+                EngineEventData(
+                    [
+                        EventMetadataEntry.text(docker_image, 'Job image'),
+                        EventMetadataEntry.text(docker_response, 'Docker Response'),
+                    ],
+                ),
+                CeleryDockerExecutor,
+                step_key=step_keys[0],
+            )
+            raise
 
         else:
             handle_execution_errors(res, 'executePlan')
