@@ -22,16 +22,21 @@ class DagsterK8sError(Exception):
 
 
 class DagsterKubernetesClient:
-    def __init__(self, batch_api, core_api, logger, sleeper):
+    def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
         self.core_api = core_api
         self.logger = logger
         self.sleeper = sleeper
+        self.timer = timer
 
     @staticmethod
     def production_client():
         return DagsterKubernetesClient(
-            kubernetes.client.BatchV1Api(), kubernetes.client.CoreV1Api(), logging.info, time.sleep
+            kubernetes.client.BatchV1Api(),
+            kubernetes.client.CoreV1Api(),
+            logging.info,
+            time.sleep,
+            time.time,
         )
 
     def wait_for_job_success(
@@ -63,11 +68,11 @@ class DagsterKubernetesClient:
 
         job = None
 
-        start = time.time()
+        start = self.timer()
 
         # Ensure we found the job that we launched
         while not job:
-            if time.time() - start > wait_timeout:
+            if self.timer() - start > wait_timeout:
 
                 raise DagsterK8sError('Timed out while waiting for job to launch')
 
@@ -80,7 +85,7 @@ class DagsterKubernetesClient:
 
         # Wait for job completed status
         while True:
-            if time.time() - start > wait_timeout:
+            if self.timer() - start > wait_timeout:
                 raise DagsterK8sError('Timed out while waiting for job to complete')
 
             # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#jobstatus-v1-batch
@@ -150,7 +155,7 @@ class DagsterKubernetesClient:
 
         self.logger('Waiting for pod %s' % pod_name)
 
-        start = time.time()
+        start = self.timer()
 
         while True:
             pods = self.core_api.list_namespaced_pod(
@@ -158,7 +163,7 @@ class DagsterKubernetesClient:
             ).items
             pod = pods[0] if pods else None
 
-            if time.time() - start > wait_timeout:
+            if self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
                     'Timed out while waiting for pod to become ready with pod info: %s' % str(pod)
                 )
