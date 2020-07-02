@@ -1,10 +1,15 @@
 {
   "currentVersion": {
-    "version": "0.8.4",
+    "version": "0.8.5",
     "documentation": "/docs/install",
-    "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.8.4"
+    "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.8.5"
   },
   "allVersions": [
+    {
+      "version": "0.8.5",
+      "documentation": "/0.8.5/docs/install",
+      "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.8.5"
+    },
     {
       "version": "0.8.4",
       "documentation": "/0.8.4/docs/install",
@@ -37,37 +42,37 @@
     },
     {
       "version": "0.7.15",
-      "documentation": "/0.7.15/install",
+      "documentation": "/0.7.15/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.15"
     },
     {
       "version": "0.7.14",
-      "documentation": "/0.7.14/install",
+      "documentation": "/0.7.14/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.14"
     },
     {
       "version": "0.7.13",
-      "documentation": "/0.7.13/install",
+      "documentation": "/0.7.13/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.13"
     },
     {
       "version": "0.7.12",
-      "documentation": "/0.7.12/install",
+      "documentation": "/0.7.12/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.12"
     },
     {
       "version": "0.7.11",
-      "documentation": "/0.7.11/install",
+      "documentation": "/0.7.11/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.11"
     },
     {
       "version": "0.7.10",
-      "documentation": "/0.7.10/install",
+      "documentation": "/0.7.10/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.10"
     },
     {
       "version": "0.7.9",
-      "documentation": "/0.7.9/install",
+      "documentation": "/0.7.9/docs/install",
       "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.7.9"
     },
     {

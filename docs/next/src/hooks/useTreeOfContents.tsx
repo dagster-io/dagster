@@ -18,31 +18,24 @@ const createTreeOfContents = () => {
     }
   }
 
-  const { NEXT_PUBLIC_DEV_MODE } = process.env;
-  if (!NEXT_PUBLIC_DEV_MODE || NEXT_PUBLIC_DEV_MODE !== 'true') {
-    console.log('Not in dev mode, deleting overviews');
-    delete treeOfContents['Overviews'];
-  }
+  delete treeOfContents['Learn'];
 
-  if (NEXT_PUBLIC_DEV_MODE == 'true') {
-    const EXAMPLES_PAGES = [];
-    for (const example of examples) {
-      EXAMPLES_PAGES.push({
-        name: example.title,
-        path: '/examples/' + example.name,
-      });
-    }
-
-    return Object.assign({}, treeOfContents, {
-      Examples: {
-        name: 'Examples',
-        path: '/examples',
-        children: EXAMPLES_PAGES,
-      },
+  const EXAMPLES_PAGES = [];
+  const exampleNames = Object.keys(examples);
+  for (const example of exampleNames) {
+    EXAMPLES_PAGES.push({
+      name: example,
+      path: '/examples/' + example,
     });
   }
 
-  return treeOfContents;
+  return Object.assign({}, treeOfContents, {
+    Examples: {
+      name: 'Examples',
+      path: '/examples',
+      children: EXAMPLES_PAGES,
+    },
+  });
 };
 
 export const useTreeOfContents = () =>

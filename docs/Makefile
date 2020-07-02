@@ -145,8 +145,8 @@ buildnext:
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
 root_build:
-	NODE_ENV=production make build_next_default version=0.8.4
-	NODE_ENV=production make build_next_version version=0.8.4
+	NODE_ENV=production make build_next_default version=0.8.5
+	NODE_ENV=production make build_next_version version=0.8.5
 
 build_next_master:
 	yarn --cwd next --production=false
