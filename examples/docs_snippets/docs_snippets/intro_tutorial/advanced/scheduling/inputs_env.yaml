@@ -1,0 +1,5 @@
+solids:
+  hello_cereal:
+    inputs:
+      date:
+        value: "Date"

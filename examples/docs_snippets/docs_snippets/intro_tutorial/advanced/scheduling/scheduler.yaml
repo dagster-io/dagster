@@ -1,6 +1,0 @@
-repository:
-  file: scheduler.py
-  fn: cereal_repository
-scheduler:
-  file: scheduler.py
-  fn: cereal_schedules
