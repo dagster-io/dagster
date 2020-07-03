@@ -42,20 +42,20 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-celery \
-				-e python_modules/libraries/dagster-celery-k8s \
 				-e python_modules/libraries/dagster-cron \
-				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-gcp \
 				-e python_modules/libraries/dagster-ge \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \
+				-e python_modules/libraries/dagster-celery-k8s \
 				-e python_modules/libraries/dagster-pagerduty \
 				-e python_modules/libraries/dagster-papertrail \
 				-e python_modules/libraries/dagster-postgres \
 				-e python_modules/libraries/dagster-prometheus \
 				-e python_modules/libraries/dagster-spark \
 				-e python_modules/libraries/dagster-pyspark \
+				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-shell \
 				-e python_modules/libraries/dagster-slack \
 				-e python_modules/libraries/dagster-snowflake \
