@@ -33,7 +33,7 @@ const Hit: React.FunctionComponent<{ hit: any }> = ({ hit }) => {
   return (
     <li className="border-b border-gray-100">
       <a
-        href={'/apidocs/' + hit.path}
+        href={'/_apidocs/' + hit.path}
         className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
       >
         <div className="px-4 py-4 sm:px-6">

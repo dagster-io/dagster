@@ -29,7 +29,7 @@ const Layout: React.FunctionComponent = (props) => {
           'h-screen flex overflow-hidden bg-white pt-16',
 
           {
-            'bg-gray-100': router.pathname.indexOf('/apidocs') > 0,
+            'bg-gray-100': router.pathname.indexOf('/_apidocs') > 0,
           },
         )}
       >

@@ -54,7 +54,7 @@ test('no dead links', async () => {
 });
 
 function isLinkLegit(rawTarget: string, allMdxFileSet: Set<string>): boolean {
-  if (rawTarget.startsWith('apidocs/')) {
+  if (rawTarget.startsWith('_apidocs/')) {
     // TODO: handle dynamic routes (which can also have "#" headings)
     return true;
   }

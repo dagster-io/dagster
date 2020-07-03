@@ -36,7 +36,7 @@ const PyObject: React.FunctionComponent<{
   // TODO: Make sure to use the hashOverride when it's defined
   // const hashOverride = objectData[3];
   const doc = data.docnames[fileIndex];
-  const link = doc.replace('sections/api/apidocs/', '/apidocs/');
+  const link = doc.replace('sections/api/apidocs/', '/_apidocs/');
   return (
     <VersionedLink href={link + '#' + module + '.' + object}>
       <a>

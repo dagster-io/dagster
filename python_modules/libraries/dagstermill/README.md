@@ -1,4 +1,4 @@
 # dagstermill
 
 The docs for `dagstermill` can be found
-[here](https://docs.dagster.io/apidocs/libraries/dagstermill).
+[here](https://docs.dagster.io/_apidocs/libraries/dagstermill).

@@ -13,7 +13,7 @@ const createTreeOfContents = () => {
     if (doc.includes('api/apidocs')) {
       API_DOCS_PAGES.push({
         name: title,
-        path: doc.replace('sections/api/apidocs/', '/apidocs/'),
+        path: doc.replace('sections/api/apidocs/', '/_apidocs/'),
       });
     }
   }

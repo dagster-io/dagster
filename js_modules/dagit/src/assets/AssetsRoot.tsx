@@ -64,7 +64,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({ match
                     materialized assets with {urlPathString ? "the " : "a "}
                     specified asset key. Any asset keys that have been specified with a{" "}
                     <code>Materialization</code> during a pipeline run will appear here. See the{" "}
-                    <a href="https://docs.dagster.io/apidocs/solids#dagster.Materialization">
+                    <a href="https://docs.dagster.io/_apidocs/solids#dagster.Materialization">
                       Materialization documentation
                     </a>{" "}
                     for more information.

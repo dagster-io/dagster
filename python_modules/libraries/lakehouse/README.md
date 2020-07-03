@@ -1,4 +1,4 @@
 # lakehouse
 
 The docs for `lakehouse` can be found
-[here](https://docs.dagster.io/apidocs/libraries/lakehouse).
+[here](https://docs.dagster.io/_apidocs/libraries/lakehouse).

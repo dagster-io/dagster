@@ -67,7 +67,7 @@ The demo defines a single repository with two pipelines, in
   notebooks.
 
 Default configuration is provided for both of these pipelines using
-[Presets](/apidocs/pipeline#presets), and the
+[Presets](/_apidocs/pipeline#presets), and the
 corresponding YAML files can be found under the `environments/` folder.
 
 ## The Ingest Pipeline
@@ -139,7 +139,7 @@ an "Expand" button:
 ![](https://user-images.githubusercontent.com/609349/62329597-442fe280-b46b-11e9-9b56-39401bbae50e.png)
 
 That's because these are actually [Composite
-Solids](/apidocs/pipeline#presets): solids that
+Solids](/_apidocs/pipeline#presets): solids that
 contain other solids. Dagster supports arbitrarily nested, composed
 solid hierarchies, which can be really useful for encapsulating
 functionality as we've done here. Click Expand and you'll see the
@@ -203,7 +203,7 @@ Ideally, we want this to be a matter of flipping a config switch.
 Dagster decouples the instantiation of external resources like these
 from the business logic of your data pipelines. In Dagster, a set of
 resources configured for a particular environment is called a
-[Mode](/apidocs/pipeline#modes).
+[Mode](/_apidocs/pipeline#modes).
 
 Let's look at how we make configurable resources available to our
 pipelines with modes. In `airline_demo/pipelines.py`, you'll find that
