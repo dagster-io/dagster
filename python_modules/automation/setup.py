@@ -21,7 +21,7 @@ setup(
         'boto3==1.9.*',
         'click>=6.7',
         'pandas',
-        'pytablereader',
+        'pytablereader; python_version >="3"',
         'requests',
     ],
 )

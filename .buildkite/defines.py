@@ -37,3 +37,12 @@ TOX_MAP = {
     SupportedPython.V3_6: "py36",
     SupportedPython.V2_7: "py27",
 }
+
+# Update this when releasing a new version of our integration image
+# Per README.md, run the integration build image pipeline
+# and then find the tag of the created images. A string
+# like the following will be in that tag.
+INTEGRATION_IMAGE_VERSION = '2020-07-07T212346'
+
+# Keep this fixed. Do not update when updating snapshots
+INTEGRATION_BASE_VERSION = '2020-07-03T094007'

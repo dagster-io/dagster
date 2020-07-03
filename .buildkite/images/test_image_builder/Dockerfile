@@ -1,3 +1,6 @@
+# This image is used to bootstrap the test image building process
+# We do not have sophisticated machinery to update this
+# because we do not anticipate having to update it.
 FROM python:3.7.4-slim-stretch
 
 # Next two commands lifted from https://github.com/jpetazzo/dind/blob/master/Dockerfile

@@ -32,6 +32,8 @@ def publish_test_images():
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
         tests.append(
             StepBuilder("test images {version}".format(version=version), key=key)
+            # these run commands are coupled to the way the test-image-builder is built
+            # see .buildkite/images/test_image_builder/Dockerfile
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",

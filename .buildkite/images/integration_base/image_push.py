@@ -2,10 +2,10 @@ import os
 
 import click
 from automation.images import (
-    aws_integration_image,
+    aws_integration_base_image,
     execute_docker_push,
     get_aws_account_id,
-    local_integration_image,
+    local_integration_base_image,
 )
 
 from dagster import check
@@ -26,12 +26,12 @@ def execute_image_push(python_version, image_version):
     # always set cwd to the directory where the file lives
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    aws_image = aws_integration_image(
+    aws_image = aws_integration_base_image(
         aws_account_id=get_aws_account_id(),
         python_version=python_version,
         image_version=image_version,
     )
-    local_image = local_integration_image(python_version, image_version)
+    local_image = local_integration_base_image(python_version, image_version)
 
     execute_docker_push(local_image=local_image, remote_image=aws_image)
 

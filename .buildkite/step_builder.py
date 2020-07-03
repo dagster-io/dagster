@@ -2,7 +2,7 @@ import os
 import sys
 from enum import Enum
 
-from defines import SupportedPythons
+from defines import INTEGRATION_IMAGE_VERSION, SupportedPythons
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,8 +14,6 @@ TIMEOUT_IN_MIN = 20
 DOCKER_PLUGIN = "docker#v3.2.0"
 ECR_PLUGIN = "ecr#v2.0.0"
 
-# Update this when releasing a new version of our integration image
-INTEGRATION_IMAGE_VERSION = "2020-06-17T005248"
 
 AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
 AWS_ECR_REGION = 'us-west-1'

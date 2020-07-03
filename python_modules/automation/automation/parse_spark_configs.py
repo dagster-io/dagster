@@ -11,7 +11,6 @@ from collections import namedtuple
 from enum import Enum
 
 import click
-import pytablereader as ptr
 import requests
 
 from .printer import IndentingBufferPrinter
@@ -218,6 +217,8 @@ class SparkConfigNode(object):
 
 
 def extract(spark_docs_markdown_text):
+    import pytablereader as ptr
+
     tables = re.findall(TABLE_REGEX, spark_docs_markdown_text, re.DOTALL | re.MULTILINE)
 
     spark_configs = []
