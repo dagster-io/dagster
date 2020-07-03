@@ -1,20 +1,22 @@
 from dagster import check
-from dagster.config import Field, ScalarUnion, Selector, validate_config
+from dagster.config import Field, ScalarUnion, Selector
+from dagster.config.source import StringSource
+from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import merge_dicts
 
 
-def validate_workspace_config(workspace_config):
+def process_workspace_config(workspace_config):
     check.dict_param(workspace_config, 'workspace_config')
 
-    return validate_config(WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY, workspace_config)
+    return process_config(WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY, workspace_config)
 
 
 def ensure_workspace_config(workspace_config, yaml_path):
     check.dict_param(workspace_config, 'workspace_config')
     check.str_param(yaml_path, 'yaml_path')
 
-    validation_result = validate_workspace_config(workspace_config)
+    validation_result = process_workspace_config(workspace_config)
     if not validation_result.success:
         raise DagsterInvalidConfigError(
             'Errors while loading workspace config at {}.'.format(yaml_path),
@@ -61,7 +63,7 @@ WORKSPACE_CONFIG_SCHEMA = {
                 _get_target_config(),
                 {
                     'python_environment': {
-                        'executable_path': str,
+                        'executable_path': StringSource,
                         'target': Selector(_get_target_config()),
                     },
                 },

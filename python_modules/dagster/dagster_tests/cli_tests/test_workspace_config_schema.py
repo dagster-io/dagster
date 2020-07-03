@@ -1,10 +1,11 @@
 import yaml
 
-from dagster.cli.workspace.config_schema import validate_workspace_config
+from dagster.cli.workspace.config_schema import process_workspace_config
+from dagster.core.test_utils import environ
 
 
 def _validate_yaml_contents(yaml_contents):
-    return validate_workspace_config(yaml.safe_load(yaml_contents))
+    return process_workspace_config(yaml.safe_load(yaml_contents))
 
 
 def test_repository_yaml_parsing():
@@ -34,7 +35,7 @@ load_from:
 
     nested_workspace_yaml = '''
 load_from:
-    - python_file: 
+    - python_file:
         relative_path: a_file.py
 '''
 
@@ -42,7 +43,7 @@ load_from:
 
     nested_workspace_yaml_with_def_name = '''
 load_from:
-    - python_file: 
+    - python_file:
         relative_path: a_file.py
         attribute: repo_symbol
 '''
@@ -50,7 +51,7 @@ load_from:
 
     nested_workspace_yaml_with_def_name_and_location = '''
 load_from:
-    - python_file: 
+    - python_file:
         relative_path: a_file.py
         attribute: repo_symbol
         location_name: some_location
@@ -61,15 +62,15 @@ load_from:
 def test_python_module():
     terse_workspace_yaml = '''
 load_from:
-    - python_module: a_module 
+    - python_module: a_module
 '''
 
     assert _validate_yaml_contents(terse_workspace_yaml).success
 
     nested_workspace_yaml = '''
 load_from:
-    - python_module: 
-        module_name: a_module 
+    - python_module:
+        module_name: a_module
 '''
 
     assert _validate_yaml_contents(nested_workspace_yaml).success
@@ -77,15 +78,15 @@ load_from:
     nested_workspace_yaml_with_def_name = '''
 load_from:
     - python_module:
-        module_name: a_module 
+        module_name: a_module
         attribute: repo_symbol
 '''
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name).success
 
     nested_workspace_yaml_with_def_name_and_location = '''
 load_from:
-    - python_module: 
-        module_name: a_module 
+    - python_module:
+        module_name: a_module
         attribute: repo_symbol
         location_name: some_location
 '''
@@ -95,7 +96,7 @@ load_from:
 def test_cannot_do_both():
     both_yaml = '''
 load_from:
-    - python_module: a_module 
+    - python_module: a_module
       python_file: a_file.py
 '''
     assert not _validate_yaml_contents(both_yaml).success
@@ -104,7 +105,7 @@ load_from:
 def test_load_both():
     both_yaml = '''
 load_from:
-    - python_module: a_module 
+    - python_module: a_module
     - python_file: a_file.py
 '''
 
@@ -137,3 +138,19 @@ load_from:
     validation_result = _validate_yaml_contents(python_environment_yaml_with_module)
 
     assert validation_result.success
+
+
+def test_load_python_environment_with_env_var():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        python_environment_yaml_with_file = '''
+    load_from:
+        - python_environment:
+            executable_path:
+                env: TEST_EXECUTABLE_PATH
+            target:
+                python_file: file_valid_in_that_env.py
+    '''
+
+        validation_result = _validate_yaml_contents(python_environment_yaml_with_file)
+
+        assert validation_result.success
