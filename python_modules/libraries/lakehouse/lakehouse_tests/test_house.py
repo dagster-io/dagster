@@ -1,5 +1,5 @@
 import pytest
-from lakehouse import SourceAsset, computed_asset
+from lakehouse import computed_asset, source_asset
 
 from dagster import execute_pipeline
 from dagster.check import CheckError
@@ -40,8 +40,8 @@ def test_get_computed_asset_solid_def_no_deps(basic_lakehouse):
 
 
 def test_get_computed_asset_solid_def_with_source_deps(basic_lakehouse):
-    source_asset1 = SourceAsset(storage_key='storage1', path=('a', 'b'))
-    source_asset2 = SourceAsset(storage_key='storage1', path=('a', 'c'))
+    source_asset1 = source_asset(storage_key='storage1', path=('a', 'b'))
+    source_asset2 = source_asset(storage_key='storage1', path=('a', 'c'))
 
     @computed_asset(storage_key='storage1', input_assets=[source_asset1, source_asset2])
     def some_asset(source1: int, source2: int) -> int:
@@ -54,8 +54,8 @@ def test_get_computed_asset_solid_def_with_source_deps(basic_lakehouse):
 
 
 def test_get_computed_asset_solid_def_with_source_deps_multiple_storages(basic_lakehouse):
-    source_asset1 = SourceAsset(storage_key='storage1', path=('a', 'b'))
-    source_asset2 = SourceAsset(storage_key='storage2', path=('a', 'c'))
+    source_asset1 = source_asset(storage_key='storage1', path=('a', 'b'))
+    source_asset2 = source_asset(storage_key='storage2', path=('a', 'c'))
 
     @computed_asset(storage_key='storage1', input_assets=[source_asset1, source_asset2])
     def some_asset(source1: int, source2: int) -> int:
@@ -108,9 +108,9 @@ def test_build_pipeline_definition_missing_output_policy(basic_lakehouse):
 
 
 def test_build_pipeline_definition_missing_input_policy(basic_lakehouse):
-    source_asset = SourceAsset(storage_key='storage1', path=('a', 'b'))
+    source_asset1 = source_asset(storage_key='storage1', path=('a', 'b'))
 
-    @computed_asset(storage_key='storage1', input_assets=[source_asset])
+    @computed_asset(storage_key='storage1', input_assets=[source_asset1])
     def some_asset(source: str) -> int:
         return int(source)
 

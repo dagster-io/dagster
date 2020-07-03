@@ -1,12 +1,12 @@
 '''Asset definitions for the simple_lakehouse example.'''
 import pandas as pd
-from lakehouse import SourceAsset, computed_asset
+from lakehouse import computed_asset, source_asset
 from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Window
 from pyspark.sql import functions as f
 
-sfo_q2_weather_sample_asset = SourceAsset(
+sfo_q2_weather_sample_asset = source_asset(
     storage_key='filesystem', path=('dagster_examples', 'simple_lakehouse', 'sfo_q2_weather_sample')
 )
 

@@ -3,11 +3,12 @@ from collections import OrderedDict
 from dagster import check
 from dagster.seven import funcsigs
 
-from .asset import AssetDependency, ComputedAsset
+from .asset import Asset
+from .computation import AssetDependency, Computation
 
 
 def computed_asset(storage_key, path=None, input_assets=None):
-    '''Create a ComputedAsset with the decorated function as its compute_fn.
+    '''Create an Asset with its computation built from the decorated function.
 
     The type annotations on the arguments and return value of the decorated functioon are use to
     determine which TypeStoragePolicy will be used to load and save its outputs and inputs.
@@ -83,12 +84,12 @@ def computed_asset(storage_key, path=None, input_assets=None):
         else:
             check.failed('input_assets must be a list or a dict')
 
-        return ComputedAsset(
+        return Asset(
             storage_key=storage_key,
             path=_path,
-            compute_fn=fn,
-            deps=kwarg_deps,
-            output_in_memory_type=_infer_output_type(fn),
+            computation=Computation(
+                compute_fn=fn, deps=kwarg_deps, output_in_memory_type=_infer_output_type(fn),
+            ),
         )
 
     return _computed_asset

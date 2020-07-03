@@ -13,7 +13,7 @@ from dagster import (
     check,
 )
 
-from .asset import ComputedAsset
+from .asset import Asset
 
 
 class Lakehouse:
@@ -101,28 +101,30 @@ class Lakehouse:
     def build_pipeline_definition(self, name, assets_to_update):
         solid_defs = {}
         for asset in assets_to_update:
-            if isinstance(asset, ComputedAsset):
+            if asset.computation:
                 for mode in self._modes_by_name.values():
-                    self.check_has_policy(mode, asset.output_in_memory_type, asset.storage_key)
+                    self.check_has_policy(
+                        mode, asset.computation.output_in_memory_type, asset.storage_key
+                    )
 
                 for mode in self._modes_by_name.values():
-                    for dep in asset.deps.values():
+                    for dep in asset.computation.deps.values():
                         self.check_has_policy(mode, dep.in_memory_type, dep.asset.storage_key)
 
                 solid_defs[asset.path] = self.get_computed_asset_solid_def(asset, assets_to_update)
             else:
-                check.failed('All elements of assets_to_update must be ComputedAssets')
+                check.failed('All elements of assets_to_update must have computations')
 
         solid_deps = {
             solid_defs[asset.path].name: {
                 solid_defs[dep.asset.path].name: DependencyDefinition(
                     solid_defs[dep.asset.path].name
                 )
-                for dep in asset.deps.values()
+                for dep in asset.computation.deps.values()
                 if dep.asset in assets_to_update
             }
             for asset in assets_to_update
-            if isinstance(asset, ComputedAsset)
+            if asset.computation
         }
 
         return PipelineDefinition(
@@ -137,7 +139,8 @@ class Lakehouse:
         output_dagster_type = computed_asset.dagster_type
         output_def = OutputDefinition(output_dagster_type)
         input_defs = []
-        for dep in computed_asset.deps.values():
+        deps = computed_asset.computation.deps
+        for dep in deps.values():
             if dep.asset in assets_in_pipeline:
                 input_dagster_type = dep.asset.dagster_type
                 input_def = InputDefinition(
@@ -148,12 +151,12 @@ class Lakehouse:
         required_resource_keys = set(
             [
                 resource_key
-                for in_memory_type in [dep.in_memory_type for dep in computed_asset.deps.values()]
-                + [computed_asset.output_in_memory_type]
+                for in_memory_type in [dep.in_memory_type for dep in deps.values()]
+                + [computed_asset.computation.output_in_memory_type]
                 for resource_key in self._in_memory_type_resource_keys.get(in_memory_type, [])
             ]
             + [computed_asset.storage_key]
-            + [dep.asset.storage_key for dep in computed_asset.deps.values()]
+            + [dep.asset.storage_key for dep in deps.values()]
         )
 
         return SolidDefinition(
@@ -169,24 +172,24 @@ class Lakehouse:
         )
 
     def _create_asset_solid_compute_wrapper(self, asset, input_defs, output_def):
-        check.inst_param(asset, 'asset', ComputedAsset)
+        check.inst_param(asset, 'asset', Asset)
         check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
         check.inst_param(output_def, 'output_def', OutputDefinition)
 
-        @wraps(asset.compute_fn)
+        @wraps(asset.computation.compute_fn)
         def compute(context, _input_defs):
             kwargs = {}
             mode = self._modes_by_name[context.mode_def.name]
 
-            for arg_name, dep in asset.deps.items():
+            for arg_name, dep in asset.computation.deps.items():
                 storage_key = dep.asset.storage_key
                 policy = self.policy_for_type_storage(mode, dep.in_memory_type, storage_key)
                 storage = getattr(context.resources, storage_key)
                 kwargs[arg_name] = policy.load(storage, dep.asset.path, context.resources)
+            result = asset.computation.compute_fn(**kwargs)
 
-            result = asset.compute_fn(**kwargs)
             output_policy = self.policy_for_type_storage(
-                mode, asset.output_in_memory_type, asset.storage_key
+                mode, asset.computation.output_in_memory_type, asset.storage_key
             )
             storage = getattr(context.resources, asset.storage_key)
             output_policy.save(result, storage, asset.path, context.resources)
