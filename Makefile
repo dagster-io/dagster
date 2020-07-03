@@ -45,7 +45,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-gcp \
-				-e python_modules/libraries/dagster-ge \
 				-e python_modules/libraries/dagster-github \
 				-e python_modules/libraries/dagster-k8s \
 				-e python_modules/libraries/dagster-celery-k8s \
@@ -63,7 +62,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-twilio \
 				-e python_modules/libraries/dagstermill \
 				-e python_modules/libraries/lakehouse \
-				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
 				-e examples/legacy_examples[full] \
@@ -82,9 +80,13 @@ install_dev_python_modules:
 
 	pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
+# python 3 only below
+# minus prefix ignores non-zero exit code
+	-pip install -e python_modules/libraries/dagster-ge $(QUIET)
 	-pip install -e python_modules/libraries/dagster-flyte $(QUIET)
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
-	-pip install -r docs-requirements.txt
+	-pip install -r docs-requirements.txt $(QUIET)
+	-pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules
