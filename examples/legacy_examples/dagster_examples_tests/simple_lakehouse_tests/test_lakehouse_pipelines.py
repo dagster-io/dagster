@@ -1,0 +1,8 @@
+from dagster_examples.simple_lakehouse.pipelines import simple_lakehouse_pipeline
+
+from dagster import execute_pipeline
+
+
+def test_simple_lakehouse_pipeline():
+    pipeline_result = execute_pipeline(simple_lakehouse_pipeline, preset='dev')
+    assert pipeline_result.success

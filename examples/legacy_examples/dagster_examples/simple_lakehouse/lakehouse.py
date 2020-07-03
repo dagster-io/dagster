@@ -88,7 +88,11 @@ class PandasDFLocalFileSystemPolicy(TypeStoragePolicy):
 
         then the produced dataframe will contain the concatenated contents of the two CSV files.
         '''
-        paths = glob.glob(os.path.join(storage.get_fs_path(path), '*.csv'))
+        fs_path = os.path.abspath(storage.get_fs_path(path))
+        paths = glob.glob(os.path.join(fs_path, '*.csv'))
+        if not paths:
+            raise FileNotFoundError('No csv files at path {fs_path}'.format(fs_path=fs_path))
+
         return pd.concat(map(pd.read_csv, paths))
 
 
