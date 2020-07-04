@@ -13,15 +13,10 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_InvalidStep
   __typename: "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict" | "PresetNotFoundError" | "ConflictingExecutionParamsError";
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run_pipeline {
-  __typename: "PipelineSnapshot" | "UnknownPipeline";
-  name: string;
-}
-
 export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run_pipeline;
+  pipelineName: string;
   rootRunId: string | null;
   parentRunId: string | null;
 }

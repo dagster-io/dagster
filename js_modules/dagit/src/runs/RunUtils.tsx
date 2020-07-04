@@ -14,6 +14,7 @@ import PythonErrorInfo from "../PythonErrorInfo";
 
 import { Popover, Icon } from "@blueprintjs/core";
 import { formatElapsedTime } from "../Util";
+import { APP_PATH_PREFIX } from "../DomUtils";
 
 export function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
   const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
@@ -28,27 +29,25 @@ export const RunsQueryRefetchContext = React.createContext<{
   refetch: () => void;
 }>({ refetch: () => {} });
 
-export function handleExecutionResult(
+export function handleLaunchResult(
   pipelineName: string,
-  result: void | {
-    data?: LaunchPipelineExecution;
-  },
+  result: void | { data?: LaunchPipelineExecution | LaunchPipelineReexecution },
   opts: { openInNewWindow: boolean }
 ) {
-  if (!result || !result.data) {
+  const obj =
+    result && result.data && "launchPipelineExecution" in result.data
+      ? result.data.launchPipelineExecution
+      : result && result.data && "launchPipelineReexecution" in result.data
+      ? result.data.launchPipelineReexecution
+      : null;
+
+  if (!obj) {
     showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
     return;
   }
 
-  const obj = (result.data as LaunchPipelineExecution).launchPipelineExecution;
-
   if (obj.__typename === "LaunchPipelineRunSuccess") {
-    const url = `/pipeline/${obj.run.pipelineName}/runs/${obj.run.runId}`;
-    if (opts.openInNewWindow) {
-      window.open(url, "_blank");
-    } else {
-      window.location.href = url;
-    }
+    openRunInBrowser(obj.run, opts);
   } else if (obj.__typename === "PythonError") {
     showCustomAlert({
       title: "Error",
@@ -67,42 +66,15 @@ export function handleExecutionResult(
   }
 }
 
-export function handleReexecutionResult(
-  pipelineName: string,
-  result: void | {
-    data?: LaunchPipelineReexecution;
-  },
+export function openRunInBrowser(
+  run: { runId: string; pipelineName: string },
   opts: { openInNewWindow: boolean }
 ) {
-  if (!result || !result.data) {
-    showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
-    return;
-  }
-
-  const obj = (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
-
-  if (obj.__typename === "LaunchPipelineRunSuccess") {
-    const url = `/pipeline/${obj.run.pipeline.name}/runs/${obj.run.runId}`;
-    if (opts.openInNewWindow) {
-      window.open(url, "_blank");
-    } else {
-      window.location.href = url;
-    }
-  } else if (obj.__typename === "PythonError") {
-    showCustomAlert({
-      title: "Error",
-      body: <PythonErrorInfo error={obj} />
-    });
+  const url = `${APP_PATH_PREFIX}/pipeline/${run.pipelineName}/runs/${run.runId}`;
+  if (opts.openInNewWindow) {
+    window.open(url, "_blank");
   } else {
-    let message = `${pipelineName} cannot be executed with the provided config.`;
-
-    if ("errors" in obj) {
-      message += ` Please fix the following errors:\n\n${obj.errors
-        .map(error => error.message)
-        .join("\n\n")}`;
-    }
-
-    showCustomAlert({ body: message });
+    window.location.href = url;
   }
 }
 
@@ -296,9 +268,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ... on LaunchPipelineRunSuccess {
         run {
           runId
-          pipeline {
-            name
-          }
+          pipelineName
           rootRunId
           parentRunId
         }

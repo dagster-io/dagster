@@ -11,7 +11,7 @@ import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import {
-  handleReexecutionResult,
+  handleLaunchResult,
   getReexecutionVariables,
   LAUNCH_PIPELINE_REEXECUTION_MUTATION
 } from "./RunUtils";
@@ -245,9 +245,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       repositoryName: repository?.name
     });
     const result = await launchPipelineReexecution({ variables });
-    handleReexecutionResult(run.pipeline.name, result, {
-      openInNewWindow: false
-    });
+    handleLaunchResult(run.pipeline.name, result, { openInNewWindow: false });
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {

@@ -63,13 +63,20 @@ DEFAULT_DAGIT_PORT = 3000
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
 )
 @click.option(
+    '--path-prefix',
+    '-l',
+    type=click.STRING,
+    default='',
+    help="The path prefix where Dagit will be hosted (eg: /dagit), default is ''",
+)
+@click.option(
     '--storage-fallback',
     help="Base directory for dagster storage if $DAGSTER_HOME is not set",
     default=None,
     type=click.Path(),
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, storage_fallback, **kwargs):
+def ui(host, port, path_prefix, storage_fallback, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -81,20 +88,24 @@ def ui(host, port, storage_fallback, **kwargs):
 
     if storage_fallback is None:
         with seven.TemporaryDirectory() as storage_fallback:
-            host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
+            host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup, **kwargs)
     else:
-        host_dagit_ui(host, port, storage_fallback, port_lookup, **kwargs)
+        host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup, **kwargs)
 
 
-def host_dagit_ui(host, port, storage_fallback, port_lookup=True, **kwargs):
+def host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup=True, **kwargs):
     workspace = get_workspace_from_kwargs(kwargs)
     if not workspace:
         raise Exception('Unable to load workspace with cli_args: {}'.format(kwargs))
 
-    return host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup)
+    return host_dagit_ui_with_workspace(
+        workspace, host, port, path_prefix, storage_fallback, port_lookup
+    )
 
 
-def host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_lookup=True):
+def host_dagit_ui_with_workspace(
+    workspace, host, port, path_prefix, storage_fallback, port_lookup=True
+):
     check.inst_param(workspace, 'workspace', Workspace)
 
     instance = DagsterInstance.get(storage_fallback)
@@ -110,9 +121,9 @@ def host_dagit_ui_with_workspace(workspace, host, port, storage_fallback, port_l
 
             log_repo_stats(instance=instance, repo=recon_repo, source='dagit')
 
-    app = create_app_from_workspace(workspace, instance)
+    app = create_app_from_workspace(workspace, instance, path_prefix)
 
-    start_server(host, port, app, port_lookup)
+    start_server(host, port, path_prefix, app, port_lookup)
 
 
 @contextmanager
@@ -127,12 +138,12 @@ def uploading_logging_thread():
         logging_thread.join()
 
 
-def start_server(host, port, app, port_lookup, port_lookup_attempts=0):
+def start_server(host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
     print(
-        'Serving on http://{host}:{port} in process {pid}'.format(
-            host=host, port=port, pid=os.getpid()
+        'Serving on http://{host}:{port}{path_prefix} in process {pid}'.format(
+            host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )
     )
 
@@ -152,7 +163,14 @@ def start_server(host, port, app, port_lookup, port_lookup_attempts=0):
                     )
                 ):
                     port_lookup_attempts += 1
-                    start_server(host, port + port_lookup_attempts, app, True, port_lookup_attempts)
+                    start_server(
+                        host,
+                        port + port_lookup_attempts,
+                        path_prefix,
+                        app,
+                        True,
+                        port_lookup_attempts,
+                    )
                 else:
                     six.raise_from(
                         Exception(

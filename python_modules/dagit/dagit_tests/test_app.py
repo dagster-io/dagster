@@ -58,12 +58,44 @@ def test_index_view():
     assert b'You need to enable JavaScript to run this app' in res.data
 
 
+def test_index_view_at_path_prefix():
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    with create_app_from_workspace(
+        workspace, DagsterInstance.ephemeral(), '/dagster-path'
+    ).test_client() as client:
+        # / redirects to prefixed path
+        res = client.get('/')
+        assert res.status_code == 301
+
+        # index contains the path meta tag
+        res = client.get('/dagster-path')
+        assert res.status_code == 200
+        assert b'You need to enable JavaScript to run this app' in res.data
+        assert b'<meta name="dagit-path-prefix" content="/dagster-path"' in res.data
+
+
+def test_graphql_view():
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    with create_app_from_workspace(workspace, DagsterInstance.ephemeral(),).test_client() as client:
+        res = client.get('/graphql')
+    assert b'Must provide query string' in res.data
+
+
+def test_graphql_view_at_path_prefix():
+    workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+    with create_app_from_workspace(
+        workspace, DagsterInstance.ephemeral(), '/dagster-path'
+    ).test_client() as client:
+        res = client.get('/dagster-path/graphql')
+        assert b'Must provide query string' in res.data
+
+
 def test_successful_host_dagit_ui_from_workspace():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
         workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
 
         host_dagit_ui_with_workspace(
-            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
+            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343, path_prefix=''
         )
 
 
@@ -71,7 +103,7 @@ def test_successful_host_dagit_ui_from_legacy_repository():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
         workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
         host_dagit_ui_with_workspace(
-            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
+            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343, path_prefix=''
         )
 
 
@@ -99,7 +131,7 @@ def test_unknown_error():
         workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
         with pytest.raises(AnException):
             host_dagit_ui_with_workspace(
-                storage_fallback=temp_dir, workspace=workspace, host=None, port=2343
+                storage_fallback=temp_dir, workspace=workspace, host=None, port=2343, path_prefix=''
             )
 
 
@@ -118,9 +150,50 @@ def test_port_collision():
                 host=None,
                 port=2343,
                 port_lookup=False,
+                path_prefix='',
             )
 
         assert 'another instance of dagit ' in str(exc_info.value)
+
+
+def test_invalid_path_prefix():
+    with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+
+        with pytest.raises(Exception) as exc_info:
+            host_dagit_ui_with_workspace(
+                storage_fallback=temp_dir,
+                workspace=workspace,
+                host=None,
+                port=2343,
+                port_lookup=False,
+                path_prefix='no-leading-slash',
+            )
+        assert 'path prefix should begin with a leading' in str(exc_info.value)
+
+        with pytest.raises(Exception) as exc_info:
+            host_dagit_ui_with_workspace(
+                storage_fallback=temp_dir,
+                workspace=workspace,
+                host=None,
+                port=2343,
+                port_lookup=False,
+                path_prefix='/extra-trailing-slash/',
+            )
+        assert 'path prefix should not include a trailing' in str(exc_info.value)
+
+
+def test_valid_path_prefix():
+    with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
+        workspace = load_workspace_from_yaml_path(file_relative_path(__file__, './workspace.yaml'))
+        host_dagit_ui_with_workspace(
+            storage_fallback=temp_dir,
+            workspace=workspace,
+            host=None,
+            port=2343,
+            port_lookup=False,
+            path_prefix='/dagster-path',
+        )
 
 
 @pytest.mark.skipif(

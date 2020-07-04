@@ -1,11 +1,11 @@
 import * as React from "react";
+import { createGlobalStyle } from "styled-components/macro";
+import { Line } from "react-chartjs-2";
 
 import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs } from "./types/PartitionLongitudinalQuery";
 import { RowContainer } from "../ListComponents";
-
-import { createGlobalStyle } from "styled-components/macro";
-import { Line } from "react-chartjs-2";
 import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunStatusDots";
+import { openRunInBrowser } from "../runs/RunUtils";
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {
@@ -68,7 +68,7 @@ export const PartitionTable: React.FunctionComponent<{
     }
     const point = datasets[element._datasetIndex].data[element._index];
     if (point && point.runId) {
-      window.open(`/pipeline/${point.pipelineName}/runs/${point.runId}`, "_blank");
+      openRunInBrowser(point, { openInNewWindow: true });
     }
   };
 

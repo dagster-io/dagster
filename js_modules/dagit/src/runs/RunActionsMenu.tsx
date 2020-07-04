@@ -25,7 +25,7 @@ import {
   CANCEL_MUTATION,
   DELETE_MUTATION,
   getReexecutionVariables,
-  handleReexecutionResult,
+  handleLaunchResult,
   RunsQueryRefetchContext
 } from "./RunUtils";
 
@@ -98,9 +98,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                     repositoryName: repository?.name
                   })
                 });
-                handleReexecutionResult(run.pipelineName, result, {
-                  openInNewWindow: false
-                });
+                handleLaunchResult(run.pipelineName, result, { openInNewWindow: false });
               }}
             />
           </Tooltip>

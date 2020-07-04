@@ -8,7 +8,7 @@ import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Flask, jsonify, redirect, request, send_file
+from flask import Blueprint, Flask, jsonify, redirect, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -74,19 +74,6 @@ def info_view():
     )
 
 
-def index_view(_path):
-    try:
-        return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
-    except seven.FileNotFoundError:
-        text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
-        dagit, then probably it's a corrupted installation or a bug. However, if you are
-        developing dagit locally, your problem can be fixed as follows:</p>
-
-<pre>cd ./python_modules/
-make rebuild_dagit</pre>'''
-        return text, 500
-
-
 def notebook_view(request_args):
     check.dict_param(request_args, 'request_args')
 
@@ -134,37 +121,42 @@ def download_view(context):
     return view
 
 
-def instantiate_app_with_views(context):
+def instantiate_app_with_views(context, app_path_prefix):
     app = Flask(
         'dagster-ui',
-        static_url_path='',
+        static_url_path=app_path_prefix,
         static_folder=os.path.join(os.path.dirname(__file__), './webapp/build'),
     )
-    sockets = Sockets(app)
-    app.app_protocol = lambda environ_path_info: 'graphql-ws'
-
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
-    app.add_url_rule(
+    # Websocket routes
+    sockets = Sockets(app)
+    sockets.add_url_rule(
+        '{}/graphql'.format(app_path_prefix),
+        'graphql',
+        dagster_graphql_subscription_view(subscription_server, context),
+    )
+
+    # HTTP routes
+    bp = Blueprint('routes', __name__, url_prefix=app_path_prefix)
+    bp.add_url_rule(
+        '/graphiql', 'graphiql', lambda: redirect('{}/graphql'.format(app_path_prefix), 301)
+    )
+    bp.add_url_rule(
         '/graphql',
         'graphql',
         DagsterGraphQLView.as_view(
             'graphql',
             schema=schema,
             graphiql=True,
-            # XXX(freiksenet): Pass proper ws url
-            graphiql_template=PLAYGROUND_TEMPLATE,
+            graphiql_template=PLAYGROUND_TEMPLATE.replace('APP_PATH_PREFIX', app_path_prefix),
             executor=Executor(),
             context=context,
         ),
     )
-    app.add_url_rule('/graphiql', 'graphiql', lambda: redirect('/graphql', 301))
-    sockets.add_url_rule(
-        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
-    )
 
-    app.add_url_rule(
+    bp.add_url_rule(
         # should match the `build_local_download_url`
         '/download/<string:run_id>/<string:step_key>/<string:file_type>',
         'download_view',
@@ -174,17 +166,56 @@ def instantiate_app_with_views(context):
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     # Also grabbing the magic global request args dict so that notebook_view is testable
-    app.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
+    bp.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
+    bp.add_url_rule('/dagit_info', 'sanity_view', info_view)
 
-    app.add_url_rule('/dagit_info', 'sanity_view', info_view)
+    index_path = os.path.join(os.path.dirname(__file__), './webapp/build/index.html')
+
+    def index_view(_path):
+        try:
+            with open(index_path) as f:
+                return (
+                    f.read()
+                    .replace('href="/', 'href="{}/'.format(app_path_prefix))
+                    .replace('src="/', 'src="{}/'.format(app_path_prefix))
+                    .replace(
+                        '<meta name="dagit-path-prefix"',
+                        '<meta name="dagit-path-prefix" content="{}"'.format(app_path_prefix),
+                    )
+                )
+        except seven.FileNotFoundError:
+            raise Exception(
+                '''Can't find webapp files. Probably webapp isn't built. If you are using
+                dagit, then probably it's a corrupted installation or a bug. However, if you are
+                developing dagit locally, your problem can be fixed as follows:
+
+                cd ./python_modules/
+                make rebuild_dagit'''
+            )
+
+    app.app_protocol = lambda environ_path_info: 'graphql-ws'
+    app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
+
+    # if the user asked for a path prefix, handle the naked domain just in case they are not
+    # filtering inbound traffic elsewhere and redirect to the path prefix.
+    if app_path_prefix:
+        app.add_url_rule('/', 'force-path-prefix', lambda: redirect(app_path_prefix, 301))
+
     CORS(app)
     return app
 
 
-def create_app_from_workspace(workspace, instance):
+def create_app_from_workspace(workspace, instance, path_prefix=''):
     check.inst_param(workspace, 'workspace', Workspace)
     check.inst_param(instance, 'instance', DagsterInstance)
+    check.str_param(path_prefix, 'path_prefix')
+
+    if path_prefix:
+        if not path_prefix.startswith('/'):
+            raise Exception('The path prefix should begin with a leading "/".')
+        if path_prefix.endswith('/'):
+            raise Exception('The path prefix should not include a trailing "/".')
 
     warn_if_compute_logs_disabled()
 
@@ -205,4 +236,4 @@ def create_app_from_workspace(workspace, instance):
 
     context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
 
-    return instantiate_app_with_views(context)
+    return instantiate_app_with_views(context, path_prefix)

@@ -28,6 +28,7 @@ import {
   DagsterRepoOption
 } from "./DagsterRepositoryContext";
 import { CustomTooltipProvider } from "./CustomTooltipProvider";
+import { APP_PATH_PREFIX } from "./DomUtils";
 
 const AppRoutes = () => (
   <Switch>
@@ -95,7 +96,7 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <div style={{ display: "flex", height: "100%" }}>
-      <BrowserRouter>
+      <BrowserRouter basename={APP_PATH_PREFIX}>
         <LeftNav options={options} repo={repo} setRepo={setRepo} />
         {error ? (
           <PythonErrorInfo
