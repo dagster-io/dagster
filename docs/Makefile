@@ -144,30 +144,31 @@ buildnext:
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next process
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
-root_build:
-	NODE_ENV=production make build_next_default version=0.8.5
-	NODE_ENV=production make build_next_version version=0.8.5
+update_next_version:
+	yarn --cwd next update-version $(VERSION)
 
-build_next_master:
-	yarn --cwd next --production=false
-	rm -rf next/out
-	BASE_PATH=/master yarn --cwd next build
-	BASE_PATH=/master yarn --cwd next export
-	mkdir -p out/master
-	cp -a next/out/. out/master
+# Use make VERSION=0.8.7 full_docs_build
+full_docs_build: buildnext update_next_version build_next_version
 
+# Use make VERSION=master build_next_version
+# or, make VERSION=0.8.7 build_next_version for a specific version
 build_next_version:
 	yarn --cwd next --production=false
+	rm -rf out
+	mkdir -p out
+	VERSION=$(VERSION) yarn --cwd next build
+	yarn --cwd next export
+	cp -a next/out/. out
 	rm -rf next/out
-	BASE_PATH=/$(version) yarn --cwd next build
-	BASE_PATH=/$(version) yarn --cwd next export
-	mkdir -p out/$(version)
-	cp -a next/out/. out/$(version)
+	BASE_PATH=/$(VERSION) yarn --cwd next build
+	BASE_PATH=/$(VERSION) yarn --cwd next export
+	mkdir -p out/$(VERSION)
+	cp -a next/out/. out/$(VERSION)
 
 build_next_default:
 	yarn --cwd next --production=false
-	VERSION=$(version) rm -rf next/out
-	VERSION=$(version) yarn --cwd next build
+	rm -rf next/out out
+	VERSION=$(VERSION) yarn --cwd next build
 	yarn --cwd next export
 	mkdir -p out
 	cp -a next/out/. out

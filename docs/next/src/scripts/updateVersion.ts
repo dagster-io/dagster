@@ -54,6 +54,14 @@ export function updateVersionsJson(
 } {
   const jsonContent: Versions = JSON.parse(jsonString);
   const oldVersion = jsonContent.currentVersion.version;
+
+  if (oldVersion === newVersion) {
+    return {
+      oldVersion,
+      newJsonContent: jsonString,
+    };
+  }
+
   jsonContent.currentVersion = JSON.parse(
     JSON.stringify(JSON_CONTENT.currentVersion).replace(
       /<version>/g,
@@ -66,7 +74,7 @@ export function updateVersionsJson(
     ),
   );
   return {
-    oldVersion: oldVersion,
+    oldVersion,
     newJsonContent: JSON.stringify(jsonContent, null, 4),
   };
 }

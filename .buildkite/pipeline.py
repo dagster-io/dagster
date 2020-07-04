@@ -471,8 +471,7 @@ def next_docs_build_tests():
                 "pip install -r docs-requirements.txt -qqq",
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs",
-                "make buildnext",
-                "make root_build",
+                "make NODE_ENV=production VERSION=master full_docs_build",
             )
             .on_integration_image(version)
             .build()
