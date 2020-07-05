@@ -21,6 +21,15 @@ class DagsterK8sError(Exception):
     pass
 
 
+class KubernetesWaitingReasons:
+    PodInitializing = 'PodInitializing'
+    ContainerCreating = 'ContainerCreating'
+    ErrImagePull = 'ErrImagePull'
+    ImagePullBackOff = 'ImagePullBackOff'
+    CrashLoopBackOff = 'CrashLoopBackOff'
+    RunContainerError = 'RunContainerError'
+
+
 class DagsterKubernetesClient:
     def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
@@ -153,11 +162,12 @@ class DagsterKubernetesClient:
         check.numeric_param(wait_timeout, 'wait_timeout')
         check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
 
-        self.logger('Waiting for pod %s' % pod_name)
+        self.logger('Waiting for pod "%s"' % pod_name)
 
         start = self.timer()
 
         while True:
+
             pods = self.core_api.list_namespaced_pod(
                 namespace=namespace, field_selector='metadata.name=%s' % pod_name
             ).items
@@ -196,30 +206,34 @@ class DagsterKubernetesClient:
                     else:
                         self.logger('Pod "%s" is ready, done waiting' % pod_name)
                         break
-                elif wait_for_state == WaitForPodState.Terminated:
+                else:
+                    check.invariant(
+                        wait_for_state == WaitForPodState.Terminated, 'New invalid WaitForPodState'
+                    )
                     self.sleeper(wait_time_between_attempts)
                     continue
-                else:
-                    raise DagsterK8sError('Unknown wait for state %s' % str(wait_for_state.value))
-                break
 
             elif state.waiting is not None:
                 # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatewaiting-v1-core
-                if state.waiting.reason == 'PodInitializing':
+                if state.waiting.reason == KubernetesWaitingReasons.PodInitializing:
                     self.logger('Waiting for pod "%s" to initialize...' % pod_name)
                     self.sleeper(wait_time_between_attempts)
                     continue
-                elif state.waiting.reason == 'ContainerCreating':
+                elif state.waiting.reason == KubernetesWaitingReasons.ContainerCreating:
                     self.logger('Waiting for container creation...')
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason in [
-                    'ErrImagePull',
-                    'ImagePullBackOff',
-                    'CrashLoopBackOff',
-                    'RunContainerError',
+                    KubernetesWaitingReasons.ErrImagePull,
+                    KubernetesWaitingReasons.ImagePullBackOff,
+                    KubernetesWaitingReasons.CrashLoopBackOff,
+                    KubernetesWaitingReasons.RunContainerError,
                 ]:
-                    raise DagsterK8sError('Failed: %s' % state.waiting.message)
+                    raise DagsterK8sError(
+                        'Failed: Reason="{reason}" Message="{message}"'.format(
+                            reason=state.waiting.reason, message=state.waiting.message
+                        )
+                    )
                 else:
                     raise DagsterK8sError('Unknown issue: %s' % state.waiting)
 
@@ -228,9 +242,11 @@ class DagsterKubernetesClient:
                 if not state.terminated.exit_code == 0:
                     raw_logs = self.retrieve_pod_logs(pod_name, namespace)
                     raise DagsterK8sError(
-                        'Pod did not exit successfully. Failed with message: %s and pod logs: %s'
+                        'Pod did not exit successfully. Failed with message: "%s" and pod logs: "%s"'
                         % (state.terminated.message, str(raw_logs))
                     )
+                else:
+                    self.logger('Pod {pod_name} exitted successfully'.format(pod_name=pod_name))
                 break
 
             else:

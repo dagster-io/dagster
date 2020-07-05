@@ -68,15 +68,15 @@ def test_wait_for_pod(cluster_provider):  # pylint: disable=unused-argument
                 )
                 wait_for_pod('sayhi3', namespace=namespace, wait_timeout=1)
 
-            with pytest.raises(
-                DagsterK8sError,
-                match='Pod did not exit successfully. Failed with message: None and pod logs: whoops!',
-            ):
+            with pytest.raises(DagsterK8sError) as exc_info:
                 api.create_namespaced_pod(
                     body=construct_pod_manifest('fail', 'echo "whoops!"; exit 1'),
                     namespace=namespace,
                 )
                 wait_for_pod('fail', namespace=namespace, wait_for_state=WaitForPodState.Terminated)
+
+            # not doing total match because integration test. unit tests test full log message
+            assert 'Pod did not exit successfully.' in str(exc_info.value)
 
         finally:
             for pod_name in ['sayhi1', 'sayhi2', 'sayhi3', 'fail']:
