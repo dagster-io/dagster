@@ -10,7 +10,12 @@ from dagster.core.code_pointer import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelineOrigin, RepositoryOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    PipelineOrigin,
+    PipelinePythonOrigin,
+    RepositoryOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -115,6 +120,39 @@ class ExecuteRunArgs(namedtuple('_ExecuteRunArgs', 'pipeline_origin pipeline_run
             pipeline_origin=check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin),
             pipeline_run_id=check.str_param(pipeline_run_id, 'pipeline_run_id'),
             instance_ref=check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef),
+        )
+
+
+@whitelist_for_serdes
+class ExecuteStepArgs(
+    namedtuple(
+        '_ExecuteStepArgs',
+        'pipeline_origin pipeline_run_id instance_ref mode step_keys_to_execute run_config retries_dict',
+    )
+):
+    def __new__(
+        cls,
+        pipeline_origin,
+        pipeline_run_id,
+        instance_ref=None,
+        mode=None,
+        step_keys_to_execute=None,
+        run_config=None,
+        retries_dict=None,
+    ):
+        return super(ExecuteStepArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
+            ),
+            pipeline_run_id=check.str_param(pipeline_run_id, 'pipeline_run_id'),
+            instance_ref=check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef),
+            mode=check.opt_str_param(mode, 'mode'),
+            step_keys_to_execute=check.opt_list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            ),
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+            retries_dict=check.opt_dict_param(retries_dict, 'retries_dict'),
         )
 
 

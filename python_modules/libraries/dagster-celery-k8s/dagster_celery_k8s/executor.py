@@ -2,25 +2,26 @@ import kubernetes
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
-from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
-from dagster_graphql.client.util import parse_raw_log_lines
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import DagsterK8sPipelineStatusException
 from dagster_k8s.job import get_k8s_job_name, get_k8s_resource_requirements
 from dagster_k8s.utils import (
     delete_job,
+    filter_dagster_events_from_pod_logs,
     get_pod_names_in_job,
     retrieve_pod_logs,
     wait_for_job_success,
 )
 
-from dagster import DagsterInstance, EventMetadataEntry, Executor, check, executor, seven
+from dagster import DagsterInstance, EventMetadataEntry, Executor, check, executor
+from dagster.cli.api import ExecuteStepArgs
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import InstanceRef
+from dagster.core.origin import PipelineOrigin
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 from .launcher import CeleryK8sRunLauncher
@@ -209,6 +210,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         job_namespace=pipeline_context.executor.job_namespace,
         resources=resources,
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_origin()),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
         kubeconfig_file=pipeline_context.executor.kubeconfig_file,
     )
@@ -235,6 +237,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_namespace,
         load_incluster_config,
         retries_dict,
+        pipeline_origin_packed,
         resources=None,
         kubeconfig_file=None,
     ):
@@ -260,6 +263,13 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.bool_param(load_incluster_config, 'load_incluster_config')
         check.dict_param(retries_dict, 'retries_dict')
 
+        pipeline_origin = unpack_value(
+            check.dict_param(
+                pipeline_origin_packed, 'pipeline_origin_packed'
+            )  # TODO: make part of args
+        )
+        check.inst(pipeline_origin, PipelineOrigin)
+
         check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
@@ -272,6 +282,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
         pipeline_run = instance.get_run_by_id(run_id)
+
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
         step_key = step_keys[0]
@@ -298,25 +309,19 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             job_name = 'dagster-job-%s' % (k8s_name_key)
             pod_name = 'dagster-job-%s' % (k8s_name_key)
 
-        variables = {
-            'executionParams': {
-                'runConfigData': run_config,
-                'mode': mode,
-                'selector': {
-                    'repositoryLocationName': repo_location_name,
-                    'repositoryName': repo_name,
-                    'pipelineName': pipeline_run.pipeline_name,
-                    'solidSelection': list(pipeline_run.solids_to_execute)
-                    if pipeline_run.solids_to_execute
-                    else None,
-                },
-                'executionMetadata': {'runId': run_id},
-                'stepKeys': step_keys,
-            },
-            'retries': retries.to_graphql_input(),
-        }
-        command = ['dagster-graphql']
-        args = ['-p', 'executePlan', '-v', seven.json.dumps(variables), '--remap-sigterm']
+        input_json = serialize_dagster_namedtuple(
+            ExecuteStepArgs(
+                pipeline_origin=pipeline_origin,
+                pipeline_run_id=run_id,
+                instance_ref=None,
+                mode=mode,
+                step_keys_to_execute=step_keys,
+                run_config=run_config,
+                retries_dict=retries_dict,
+            )
+        )
+        command = ['dagster']
+        args = ['api', 'execute_step_with_structured_logs', input_json]
 
         job = construct_dagster_k8s_job(job_config, command, args, job_name, resources, pod_name)
 
@@ -425,12 +430,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             raw_logs = retrieve_pod_logs(pod_name, namespace=job_namespace)
             logs += raw_logs.split('\n')
 
-        res = parse_raw_log_lines(logs)
-        handle_execution_errors(res, 'executePlan')
-        step_events = handle_execute_plan_result(res)
-
-        events += step_events
-
+        events += filter_dagster_events_from_pod_logs(logs)
         serialized_events = [serialize_dagster_namedtuple(event) for event in events]
         return serialized_events
 

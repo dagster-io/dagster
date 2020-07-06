@@ -25,7 +25,12 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import create_execution_plan, execute_run_iterator
+from dagster.core.execution.api import (
+    create_execution_plan,
+    execute_plan_iterator,
+    execute_run_iterator,
+)
+from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
     external_repository_data_from_def,
@@ -64,6 +69,7 @@ from dagster.grpc.impl import (
 )
 from dagster.grpc.types import (
     ExecuteRunArgs,
+    ExecuteStepArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     ListRepositoriesInput,
@@ -75,9 +81,12 @@ from dagster.grpc.types import (
     PipelineSubsetSnapshotArgs,
 )
 from dagster.grpc.utils import get_loadable_targets
-from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
-from dagster.serdes.ipc import (
+from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    whitelist_for_serdes,
+)
+from dagster.serdes.ipc import (
     ipc_write_stream,
     ipc_write_unary_response,
     read_unary_input,
@@ -363,6 +372,44 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
         )
 
 
+@click.command(
+    name='execute_step_with_structured_logs',
+    help=(
+        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
+        'interactively.'
+    ),
+)
+@click.argument('input_json', type=click.STRING)
+def execute_step_with_structured_logs_command(input_json):
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
+    args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
+
+    instance = (
+        DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
+    )
+    pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+
+    execution_plan = create_execution_plan(
+        recon_pipeline,
+        run_config=args.run_config,
+        step_keys_to_execute=args.step_keys_to_execute,
+        mode=args.mode,
+    )
+
+    retries = Retries.from_config(args.retries_dict)
+
+    buff = []
+    for event in execute_plan_iterator(
+        execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
+    ):
+        buff.append(serialize_dagster_namedtuple(event))
+
+    for line in buff:
+        click.echo(line)
+
+
 class _ScheduleTickHolder:
     def __init__(self, tick, instance):
         self._tick = tick
@@ -626,6 +673,7 @@ def create_api_cli_group():
 
     group.add_command(execute_run_command)
     group.add_command(execute_run_with_structured_logs_command)
+    group.add_command(execute_step_with_structured_logs_command)
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
     group.add_command(execution_plan_snapshot_command)
