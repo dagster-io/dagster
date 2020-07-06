@@ -26,7 +26,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax='proto3',
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"D\n\x17ListRepositoriesRequest\x12)\n!serialized_list_repositories_args\x18\x01 \x01(\t\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t\"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t\"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t2\x87\x05\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply\"\x00\x62\x06proto3',
+    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"D\n\x17ListRepositoriesRequest\x12)\n!serialized_list_repositories_args\x18\x01 \x01(\t\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t\"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t\"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t\"H\n\x19\x45xternalRepositoryRequest\x12+\n#serialized_repository_python_origin\x18\x01 \x01(\t\"F\n\x17\x45xternalRepositoryReply\x12+\n#serialized_external_repository_data\x18\x01 \x01(\t2\xdd\x05\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply\"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply\"\x00\x62\x06proto3',
 )
 
 
@@ -603,6 +603,88 @@ _EXTERNALPIPELINESUBSETSNAPSHOTREPLY = _descriptor.Descriptor(
     serialized_end=1103,
 )
 
+
+_EXTERNALREPOSITORYREQUEST = _descriptor.Descriptor(
+    name='ExternalRepositoryRequest',
+    full_name='api.ExternalRepositoryRequest',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_repository_python_origin',
+            full_name='api.ExternalRepositoryRequest.serialized_repository_python_origin',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=1105,
+    serialized_end=1177,
+)
+
+
+_EXTERNALREPOSITORYREPLY = _descriptor.Descriptor(
+    name='ExternalRepositoryReply',
+    full_name='api.ExternalRepositoryReply',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_external_repository_data',
+            full_name='api.ExternalRepositoryReply.serialized_external_repository_data',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=1179,
+    serialized_end=1249,
+)
+
 DESCRIPTOR.message_types_by_name['PingRequest'] = _PINGREQUEST
 DESCRIPTOR.message_types_by_name['PingReply'] = _PINGREPLY
 DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotRequest'] = _EXECUTIONPLANSNAPSHOTREQUEST
@@ -621,6 +703,8 @@ DESCRIPTOR.message_types_by_name[
 DESCRIPTOR.message_types_by_name[
     'ExternalPipelineSubsetSnapshotReply'
 ] = _EXTERNALPIPELINESUBSETSNAPSHOTREPLY
+DESCRIPTOR.message_types_by_name['ExternalRepositoryRequest'] = _EXTERNALREPOSITORYREQUEST
+DESCRIPTOR.message_types_by_name['ExternalRepositoryReply'] = _EXTERNALREPOSITORYREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 PingRequest = _reflection.GeneratedProtocolMessageType(
@@ -777,6 +861,28 @@ ExternalPipelineSubsetSnapshotReply = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(ExternalPipelineSubsetSnapshotReply)
 
+ExternalRepositoryRequest = _reflection.GeneratedProtocolMessageType(
+    'ExternalRepositoryRequest',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALREPOSITORYREQUEST,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalRepositoryRequest)
+    },
+)
+_sym_db.RegisterMessage(ExternalRepositoryRequest)
+
+ExternalRepositoryReply = _reflection.GeneratedProtocolMessageType(
+    'ExternalRepositoryReply',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALREPOSITORYREPLY,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalRepositoryReply)
+    },
+)
+_sym_db.RegisterMessage(ExternalRepositoryReply)
+
 
 _DAGSTERAPI = _descriptor.ServiceDescriptor(
     name='DagsterApi',
@@ -785,8 +891,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     index=0,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_start=1106,
-    serialized_end=1753,
+    serialized_start=1252,
+    serialized_end=1985,
     methods=[
         _descriptor.MethodDescriptor(
             name='Ping',
@@ -855,6 +961,16 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             containing_service=None,
             input_type=_EXTERNALPIPELINESUBSETSNAPSHOTREQUEST,
             output_type=_EXTERNALPIPELINESUBSETSNAPSHOTREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name='ExternalRepository',
+            full_name='api.DagsterApi.ExternalRepository',
+            index=7,
+            containing_service=None,
+            input_type=_EXTERNALREPOSITORYREQUEST,
+            output_type=_EXTERNALREPOSITORYREPLY,
             serialized_options=None,
             create_key=_descriptor._internal_create_key,
         ),

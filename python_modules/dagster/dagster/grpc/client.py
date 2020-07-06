@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import grpc
 
 from dagster import check, seven
+from dagster.core.origin import RepositoryPythonOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
@@ -169,6 +170,21 @@ class DagsterGrpcClient(object):
         return deserialize_json_to_dagster_namedtuple(
             res.serialized_external_pipeline_subset_result
         )
+
+    def external_repository(self, repository_python_origin):
+        check.inst_param(
+            repository_python_origin, 'repository_python_origin', RepositoryPythonOrigin
+        )
+
+        res = self._query(
+            'ExternalRepository',
+            api_pb2.ExternalRepositoryRequest,
+            serialized_repository_python_origin=serialize_dagster_namedtuple(
+                repository_python_origin
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(res.serialized_external_repository_data)
 
 
 def _wait_for_grpc_server(server_process, timeout=3):

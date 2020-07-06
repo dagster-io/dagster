@@ -12,7 +12,9 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
     ExternalPartitionTagsData,
+    external_repository_data_from_def,
 )
+from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import setup_interrupt_support
@@ -215,6 +217,22 @@ class DagsterApiServer(DagsterApiServicer):
                     recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
                     pipeline_subset_snapshot_args.solid_selection,
                 )
+            )
+        )
+
+    def ExternalRepository(self, request, _context):
+        repository_python_origin = deserialize_json_to_dagster_namedtuple(
+            request.serialized_repository_python_origin
+        )
+
+        check.inst_param(
+            repository_python_origin, 'repository_python_origin', RepositoryPythonOrigin
+        )
+
+        recon_repo = recon_repository_from_origin(repository_python_origin)
+        return api_pb2.ExternalRepositoryReply(
+            serialized_external_repository_data=serialize_dagster_namedtuple(
+                external_repository_data_from_def(recon_repo.get_definition())
             )
         )
 

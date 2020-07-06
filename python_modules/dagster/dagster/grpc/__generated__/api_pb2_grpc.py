@@ -57,6 +57,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPipelineSubsetSnapshotReply.FromString,
         )
+        self.ExternalRepository = channel.unary_unary(
+            '/api.DagsterApi/ExternalRepository',
+            request_serializer=api__pb2.ExternalRepositoryRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalRepositoryReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -104,6 +109,12 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExternalRepository(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -141,6 +152,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalPipelineSubsetSnapshot,
             request_deserializer=api__pb2.ExternalPipelineSubsetSnapshotRequest.FromString,
             response_serializer=api__pb2.ExternalPipelineSubsetSnapshotReply.SerializeToString,
+        ),
+        'ExternalRepository': grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalRepository,
+            request_deserializer=api__pb2.ExternalRepositoryRequest.FromString,
+            response_serializer=api__pb2.ExternalRepositoryReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
@@ -331,6 +347,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExternalPipelineSubsetSnapshot',
             api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
             api__pb2.ExternalPipelineSubsetSnapshotReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalRepository(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExternalRepository',
+            api__pb2.ExternalRepositoryRequest.SerializeToString,
+            api__pb2.ExternalRepositoryReply.FromString,
             options,
             channel_credentials,
             call_credentials,
