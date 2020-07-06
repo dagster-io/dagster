@@ -39,6 +39,7 @@ It's also prudent to release from a fresh virtualenv.
   maintainer on the projects.
 - You must export `SLACK_RELEASE_BOT_TOKEN` with an appropriate value.
 - You should also export `PYTHONDONTWRITEBYTECODE=1` to avoid writing any extraneous .pyc files.
+- You should have set your git config name and email (used for the Slack post).
 
 ### Release checklist
 
