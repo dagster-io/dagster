@@ -14,10 +14,8 @@ from dagster.cli.workspace.cli_target import (
     origin_target_argument,
 )
 from dagster.core.definitions import ScheduleExecutionContext
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
-    DagsterInvalidSubsetError,
     DagsterLaunchFailedError,
     DagsterSubprocessError,
     DagsterUserCodeExecutionError,
@@ -29,7 +27,6 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
-    external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
 from dagster.core.host_representation.external_data import (
@@ -43,7 +40,7 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.scheduler import (
     ScheduleTickData,
     ScheduleTickStatus,
@@ -57,6 +54,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
+from dagster.grpc.impl import get_external_pipeline_subset_result
 from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
@@ -65,6 +63,7 @@ from dagster.grpc.types import (
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
+    PipelineSubsetSnapshotArgs,
 )
 from dagster.grpc.utils import get_loadable_targets
 from dagster.serdes import whitelist_for_serdes
@@ -82,24 +81,6 @@ from dagster.utils.hosted_user_process import (
 from dagster.utils.merger import merge_dicts
 
 # Helpers
-
-
-def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
-    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
-
-    if solid_selection:
-        try:
-            sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
-            definition = sub_pipeline.get_definition()
-        except DagsterInvalidSubsetError:
-            return ExternalPipelineSubsetResult(
-                success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
-            )
-    else:
-        definition = recon_pipeline.get_definition()
-
-    external_pipeline_data = external_pipeline_data_from_def(definition)
-    return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
 def unary_api_cli_command(name, help_str, input_cls, output_cls):
@@ -163,22 +144,6 @@ def repository_snapshot_command(repository_python_origin):
 
     recon_repo = recon_repository_from_origin(repository_python_origin)
     return external_repository_data_from_def(recon_repo.get_definition())
-
-
-@whitelist_for_serdes
-class PipelineSubsetSnapshotArgs(
-    namedtuple('_PipelineSubsetSnapshotArgs', 'pipeline_origin solid_selection')
-):
-    def __new__(cls, pipeline_origin, solid_selection):
-        return super(PipelineSubsetSnapshotArgs, cls).__new__(
-            cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
-            solid_selection=check.list_param(solid_selection, 'solid_selection', of_type=str)
-            if solid_selection
-            else None,
-        )
 
 
 @unary_api_cli_command(

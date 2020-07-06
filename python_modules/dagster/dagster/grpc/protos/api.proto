@@ -9,6 +9,7 @@ service DagsterApi {
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
+  rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
 }
 
 message PingRequest {
@@ -58,3 +59,12 @@ message ListRepositoriesRequest {
 message ListRepositoriesReply {
   string serialized_list_repositories_response = 1;
 }
+
+message ExternalPipelineSubsetSnapshotRequest {
+  string serialized_pipeline_subset_snapshot_args = 1;
+}
+
+message ExternalPipelineSubsetSnapshotReply {
+  string serialized_external_pipeline_subset_result = 1;
+}
+

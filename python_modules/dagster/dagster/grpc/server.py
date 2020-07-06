@@ -24,6 +24,7 @@ from dagster.utils.hosted_user_process import (
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
+from .impl import get_external_pipeline_subset_result
 from .types import (
     ExecutionPlanSnapshotArgs,
     ListRepositoriesArgs,
@@ -31,6 +32,7 @@ from .types import (
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
+    PipelineSubsetSnapshotArgs,
 )
 from .utils import get_loadable_targets
 
@@ -195,6 +197,26 @@ class DagsterApiServer(DagsterApiServicer):
                     )
                 )
             )
+
+    def ExternalPipelineSubsetSnapshot(self, request, _context):
+        pipeline_subset_snapshot_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_pipeline_subset_snapshot_args
+        )
+
+        check.inst_param(
+            pipeline_subset_snapshot_args,
+            'pipeline_subset_snapshot_args',
+            PipelineSubsetSnapshotArgs,
+        )
+
+        return api_pb2.ExternalPipelineSubsetSnapshotReply(
+            serialized_external_pipeline_subset_result=serialize_dagster_namedtuple(
+                get_external_pipeline_subset_result(
+                    recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
+                    pipeline_subset_snapshot_args.solid_selection,
+                )
+            )
+        )
 
 
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom

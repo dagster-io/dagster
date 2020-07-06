@@ -22,6 +22,7 @@ from .types import (
     ListRepositoriesArgs,
     PartitionArgs,
     PartitionNamesArgs,
+    PipelineSubsetSnapshotArgs,
 )
 
 
@@ -148,6 +149,25 @@ class DagsterGrpcClient(object):
 
         return deserialize_json_to_dagster_namedtuple(
             res.serialized_external_partition_tags_or_external_partition_execution_error
+        )
+
+    def external_pipeline_subset(self, pipeline_subset_snapshot_args):
+        check.inst_param(
+            pipeline_subset_snapshot_args,
+            'pipeline_subset_snapshot_args',
+            PipelineSubsetSnapshotArgs,
+        )
+
+        res = self._query(
+            'ExternalPipelineSubsetSnapshot',
+            api_pb2.ExternalPipelineSubsetSnapshotRequest,
+            serialized_pipeline_subset_snapshot_args=serialize_dagster_namedtuple(
+                pipeline_subset_snapshot_args
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_pipeline_subset_result
         )
 
 

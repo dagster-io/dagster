@@ -122,3 +122,19 @@ class PartitionNamesArgs(namedtuple('_PartitionNamesArgs', 'repository_origin pa
             ),
             partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
         )
+
+
+@whitelist_for_serdes
+class PipelineSubsetSnapshotArgs(
+    namedtuple('_PipelineSubsetSnapshotArgs', 'pipeline_origin solid_selection')
+):
+    def __new__(cls, pipeline_origin, solid_selection):
+        return super(PipelineSubsetSnapshotArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
+            ),
+            solid_selection=check.list_param(solid_selection, 'solid_selection', of_type=str)
+            if solid_selection
+            else None,
+        )
