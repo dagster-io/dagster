@@ -60,9 +60,12 @@ DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
 def dask_executor(init_context):
     '''Dask-based executor.
 
+    The 'cluster' can be one of the following:
+    ('local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
+
     If the Dask executor is used without providing executor-specific config, a local Dask cluster
     will be created (as when calling :py:class:`dask.distributed.Client() <dask:distributed.Client>`
-    without specifying the scheduler address).
+    with :py:class:`dask.distributed.LocalCluster() <dask:distributed.LocalCluster>`).
 
     The Dask executor optionally takes the following config:
 
@@ -70,15 +73,11 @@ def dask_executor(init_context):
 
         cluster:
             {
-                local?:  # The cluster type, one of the following ('local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
+                local?: # takes distributed.LocalCluster parameters
                     {
-                        address?: '127.0.0.1:8786',  # The address of a Dask scheduler
                         timeout?: 5,  # Timeout duration for initial connection to the scheduler
-                        scheduler_file?: '/path/to/file'  # Path to a file with scheduler information
-                        # Whether to connect directly to the workers, or ask the scheduler to serve as
-                        # intermediary
-                        direct_to_workers?: False,
-                        heartbeat_interval?: 1000,  # Time in milliseconds between heartbeats to scheduler
+                        n_workers?: 4  # Number of workers to start
+                        threads_per_worker?: 1 # Number of threads per each worker
                     }
             }
 
