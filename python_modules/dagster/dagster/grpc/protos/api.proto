@@ -11,6 +11,7 @@ service DagsterApi {
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
+  rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
 }
 
 message PingRequest {
@@ -75,4 +76,12 @@ message ExternalRepositoryRequest {
 
 message ExternalRepositoryReply {
   string serialized_external_repository_data = 1;
+}
+
+message ExternalScheduleExecutionRequest {
+  string serialized_external_schedule_execution_args = 1;
+}
+
+message ExternalScheduleExecutionReply {
+  string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
 }

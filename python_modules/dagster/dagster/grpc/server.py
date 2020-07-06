@@ -26,9 +26,10 @@ from dagster.utils.hosted_user_process import (
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
-from .impl import get_external_pipeline_subset_result
+from .impl import get_external_pipeline_subset_result, get_external_schedule_execution
 from .types import (
     ExecutionPlanSnapshotArgs,
+    ExternalScheduleExecutionArgs,
     ListRepositoriesArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -233,6 +234,23 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialize_dagster_namedtuple(
                 external_repository_data_from_def(recon_repo.get_definition())
+            )
+        )
+
+    def ExternalScheduleExecution(self, request, _context):
+        external_schedule_execution_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_external_schedule_execution_args
+        )
+
+        check.inst_param(
+            external_schedule_execution_args,
+            'external_schedule_execution_args',
+            ExternalScheduleExecutionArgs,
+        )
+
+        return api_pb2.ExternalScheduleExecutionReply(
+            serialized_external_schedule_execution_data_or_external_schedule_execution_error=serialize_dagster_namedtuple(
+                get_external_schedule_execution(external_schedule_execution_args)
             )
         )
 

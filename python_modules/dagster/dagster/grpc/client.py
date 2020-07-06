@@ -20,6 +20,7 @@ from .server import (
 )
 from .types import (
     ExecutionPlanSnapshotArgs,
+    ExternalScheduleExecutionArgs,
     ListRepositoriesArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -185,6 +186,25 @@ class DagsterGrpcClient(object):
         )
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_external_repository_data)
+
+    def external_schedule_execution(self, external_schedule_execution_args):
+        check.inst_param(
+            external_schedule_execution_args,
+            'external_schedule_execution_args',
+            ExternalScheduleExecutionArgs,
+        )
+
+        res = self._query(
+            'ExternalScheduleExecution',
+            api_pb2.ExternalScheduleExecutionRequest,
+            serialized_external_schedule_execution_args=serialize_dagster_namedtuple(
+                external_schedule_execution_args
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
+        )
 
 
 def _wait_for_grpc_server(server_process, timeout=3):

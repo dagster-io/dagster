@@ -54,10 +54,11 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
-from dagster.grpc.impl import get_external_pipeline_subset_result
+from dagster.grpc.impl import get_external_pipeline_subset_result, get_external_schedule_execution
 from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalScheduleExecutionArgs,
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -280,40 +281,17 @@ def partition_names_command(args):
         )
 
 
-@whitelist_for_serdes
-class ScheduleExecutionDataCommandArgs(
-    namedtuple('_ScheduleExecutionDataCommandArgs', 'repository_origin instance_ref schedule_name')
-):
-    pass
-
-
 @unary_api_cli_command(
     name='schedule_config',
     help_str=(
         '[INTERNAL] Return the config for a schedule. This is an internal utility. Users should '
         'generally not invoke this command interactively.'
     ),
-    input_cls=ScheduleExecutionDataCommandArgs,
+    input_cls=ExternalScheduleExecutionArgs,
     output_cls=(ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
 )
 def schedule_execution_data_command(args):
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    definition = recon_repo.get_definition()
-    schedule_def = definition.get_schedule_def(args.schedule_name)
-    instance = DagsterInstance.from_ref(args.instance_ref)
-    schedule_context = ScheduleExecutionContext(instance)
-    try:
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of run_config_fn for schedule '
-            '{schedule_name}'.format(schedule_name=schedule_def.name),
-        ):
-            run_config = schedule_def.get_run_config(schedule_context)
-            return ExternalScheduleExecutionData(run_config=run_config)
-    except ScheduleExecutionError:
-        return ExternalScheduleExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return get_external_schedule_execution(args)
 
 
 # Execution CLI

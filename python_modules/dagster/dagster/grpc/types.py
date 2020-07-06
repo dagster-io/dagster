@@ -138,3 +138,18 @@ class PipelineSubsetSnapshotArgs(
             if solid_selection
             else None,
         )
+
+
+@whitelist_for_serdes
+class ExternalScheduleExecutionArgs(
+    namedtuple('_ExternalScheduleExecutionArgs', 'repository_origin instance_ref schedule_name')
+):
+    def __new__(cls, repository_origin, instance_ref, schedule_name):
+        return super(ExternalScheduleExecutionArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, 'repository_origin', RepositoryPythonOrigin
+            ),
+            instance_ref=check.inst_param(instance_ref, 'instance_ref', InstanceRef),
+            schedule_name=check.str_param(schedule_name, 'schedule_name'),
+        )
