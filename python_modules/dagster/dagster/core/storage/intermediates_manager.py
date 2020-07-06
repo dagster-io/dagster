@@ -41,9 +41,22 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         check.inst_param(step, 'step', ExecutionStep)
         uncovered_inputs = []
         for step_input in step.step_inputs:
-            for source_handle in step_input.source_handles:
-                if not self.has_intermediate(context, source_handle):
-                    uncovered_inputs.append(source_handle)
+
+            if step_input.is_from_single_output:
+                for source_handle in step_input.source_handles:
+                    if not self.has_intermediate(context, source_handle):
+                        uncovered_inputs.append(source_handle)
+
+            elif step_input.is_from_multiple_outputs:
+                missing_source_handles = [
+                    source_handle
+                    for source_handle in step_input.source_handles
+                    if not self.has_intermediate(context, source_handle)
+                ]
+                # only report as uncovered if all are missing from a multi-dep input
+                if len(missing_source_handles) == len(step_input.source_handles):
+                    uncovered_inputs = uncovered_inputs + missing_source_handles
+
         return uncovered_inputs
 
 

@@ -428,6 +428,7 @@ def _input_values_from_intermediates_manager(step_context):
                 dagster_type = step_input.dagster_type.inner_type
             else:  # This is the case where the fan-in is typed Any
                 dagster_type = step_input.dagster_type
+
             input_value = [
                 step_context.intermediates_manager.get_intermediate(
                     context=step_context,
@@ -435,7 +436,10 @@ def _input_values_from_intermediates_manager(step_context):
                     dagster_type=dagster_type,
                 )
                 for source_handle in step_input.source_handles
+                # Filter out missing intermediates from skipped upstream outputs
+                if step_context.intermediates_manager.has_intermediate(step_context, source_handle)
             ]
+
             # When we're using an object store-backed intermediate store, we wrap the
             # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
             # so we can yield the relevant object store events and unpack the values in the caller

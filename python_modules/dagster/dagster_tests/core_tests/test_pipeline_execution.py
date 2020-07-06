@@ -963,3 +963,34 @@ def test_pipeline_tags():
     result = execute_pipeline(pipeline_def_with_override_tags, tags={'foo': 'bar'})
     assert result.success
     assert called['yup']
+
+
+def test_multi_dep_optional():
+    @lambda_solid
+    def ret_one():
+        return 1
+
+    @solid(output_defs=[OutputDefinition(name='skip', is_required=False)])
+    def skip(_):
+        return
+        yield  # pylint: disable=unreachable
+
+    @solid
+    def collect(_, items):
+        return items
+
+    @pipeline
+    def test_remaining():
+        collect([ret_one(), skip()])
+
+    result = execute_pipeline(test_remaining)
+    assert result.success
+    assert result.result_for_solid('collect').output_value() == [1]
+
+    @pipeline
+    def test_all_skip():
+        collect([skip(), skip(), skip()])
+
+    result = execute_pipeline(test_all_skip)
+    assert result.success
+    assert result.result_for_solid('collect').skipped
