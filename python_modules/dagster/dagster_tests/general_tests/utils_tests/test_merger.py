@@ -14,6 +14,7 @@ def test_nested_merge():
 
     assert deep_merge_dicts(onto_dict, from_dict) == {'key': {'nested_one': 1, 'nested_two': 2}}
 
+
 def test_nested_override_merge():
     from_dict = {'key': {'nested_one': 1}}
 

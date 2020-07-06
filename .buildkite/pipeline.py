@@ -217,7 +217,10 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
     ),
-    ModuleBuildSpec('python_modules/dagster'),
+    ModuleBuildSpec(
+        'python_modules/dagster',
+        tox_env_suffixes=['-api_tests', '-cli_tests', '-core_tests', '-general_tests'],
+    ),
     ModuleBuildSpec(
         'python_modules/dagster-graphql',
         tox_env_suffixes=[
