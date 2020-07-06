@@ -9,7 +9,7 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import delete_job
 
-from dagster import EventMetadataEntry, Field, Noneable, check, seven
+from dagster import EventMetadataEntry, Field, Noneable, check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
@@ -17,7 +17,7 @@ from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
@@ -175,22 +175,22 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
 
+        from dagster.cli.api import ExecuteRunArgs
+
+        input_json = serialize_dagster_namedtuple(
+            # depends on DagsterInstance.get() returning the same instance
+            # https://github.com/dagster-io/dagster/issues/2757
+            ExecuteRunArgs(
+                pipeline_origin=external_pipeline.get_origin(),
+                pipeline_run_id=run.run_id,
+                instance_ref=None,
+            )
+        )
+
         job = construct_dagster_k8s_job(
-            job_config=job_config,
-            command=['dagster-graphql'],
-            args=[
-                '-p',
-                'executeRunInProcess',
-                '-v',
-                seven.json.dumps(
-                    {
-                        'runId': run.run_id,
-                        'repositoryName': external_pipeline.handle.repository_name,
-                        'repositoryLocationName': external_pipeline.handle.location_name,
-                    }
-                ),
-                '--remap-sigterm',
-            ],
+            job_config,
+            command=['dagster'],
+            args=['api', 'execute_run_with_structured_logs', input_json],
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',

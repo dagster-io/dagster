@@ -315,16 +315,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             },
             'retries': retries.to_graphql_input(),
         }
+        command = ['dagster-graphql']
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables), '--remap-sigterm']
 
-        job = construct_dagster_k8s_job(
-            job_config=job_config,
-            command=['dagster-graphql'],
-            args=args,
-            job_name=job_name,
-            resources=resources,
-            pod_name=pod_name,
-        )
+        job = construct_dagster_k8s_job(job_config, command, args, job_name, resources, pod_name)
 
         # Running list of events generated from this task execution
         events = []

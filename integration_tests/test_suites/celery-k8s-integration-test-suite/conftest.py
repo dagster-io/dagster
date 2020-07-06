@@ -6,6 +6,7 @@ import pytest
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s_test_infra.cluster import define_cluster_provider_fixture
 from dagster_k8s_test_infra.helm import helm_namespace
+from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
 from dagster_k8s_test_infra.cluster import dagster_instance  # isort:skip

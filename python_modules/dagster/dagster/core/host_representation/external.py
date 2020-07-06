@@ -119,6 +119,8 @@ class ExternalPipeline(RepresentedPipeline):
                 external_pipeline_data.parent_pipeline_snapshot,
             )
         )
+        self._external_pipeline_data = external_pipeline_data
+        self._repository_handle = repository_handle
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
         self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
 
@@ -133,6 +135,14 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_names_in_topological_order(self):
         return self._pipeline_index.pipeline_snapshot.solid_names_in_topological_order
+
+    @property
+    def external_pipeline_data(self):
+        return self._external_pipeline_data
+
+    @property
+    def repository_handle(self):
+        return self._repository_handle
 
     @property
     def solid_selection(self):

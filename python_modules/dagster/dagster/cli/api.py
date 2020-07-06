@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import signal
 import sys
 import time
 from collections import namedtuple
@@ -74,8 +75,9 @@ from dagster.grpc.types import (
     PipelineSubsetSnapshotArgs,
 )
 from dagster.grpc.utils import get_loadable_targets
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.serdes.ipc import (
+    deserialize_json_to_dagster_namedtuple,
     ipc_write_stream,
     ipc_write_unary_response,
     read_unary_input,
@@ -275,62 +277,90 @@ class ExecuteRunArgsLoadComplete(namedtuple('_ExecuteRunArgsLoadComplete', '')):
 def execute_run_command(input_file, output_file):
     args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+    instance = DagsterInstance.from_ref(args.instance_ref)
 
-    return _execute_run_command_body(
-        output_file, recon_pipeline, args.pipeline_run_id, args.instance_ref,
-    )
+    with ipc_write_stream(output_file) as ipc_stream:
 
+        def send_to_stream(event):
+            ipc_stream.send(event)
 
-def _execute_run_command_body(output_file, recon_pipeline, pipeline_run_id, instance_ref):
-    with ipc_write_stream(output_file) as stream:
-
-        # we need to send but the fact that we have loaded the args so the calling
-        # process knows it is safe to clean up the temp input file
-        stream.send(ExecuteRunArgsLoadComplete())
-
-        instance = DagsterInstance.from_ref(instance_ref)
-        pipeline_run = instance.get_run_by_id(pipeline_run_id)
-
-        pid = os.getpid()
-        instance.report_engine_event(
-            'Started process for pipeline (pid: {pid}).'.format(pid=pid),
-            pipeline_run,
-            EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+        return _execute_run_command_body(
+            recon_pipeline, args.pipeline_run_id, instance, send_to_stream
         )
 
-        # Perform setup so that termination of the execution will unwind and report to the
-        # instance correctly
-        setup_interrupt_support()
 
-        try:
-            for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
-                stream.send(event)
-        except DagsterSubprocessError as err:
-            if not all(
-                [
-                    err_info.cls_name == 'KeyboardInterrupt'
-                    for err_info in err.subprocess_error_infos
-                ]
-            ):
-                instance.report_engine_event(
-                    'An exception was thrown during execution that is likely a framework error, '
-                    'rather than an error in user code.',
-                    pipeline_run,
-                    EngineEventData.engine_error(
-                        serializable_error_info_from_exc_info(sys.exc_info())
-                    ),
-                )
-        except Exception:  # pylint: disable=broad-except
+@click.command(
+    name='execute_run_with_structured_logs',
+    help=(
+        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
+        'interactively.'
+    ),
+)
+@click.argument('input_json', type=click.STRING)
+def execute_run_with_structured_logs_command(input_json):
+    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+
+    args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
+    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+
+    instance = (
+        DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
+    )
+
+    buffer = []
+
+    def send_to_buffer(event):
+        buffer.append(serialize_dagster_namedtuple(event))
+
+    _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
+
+    for line in buffer:
+        click.echo(line)
+
+
+def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+
+    # we need to send but the fact that we have loaded the args so the calling
+    # process knows it is safe to clean up the temp input file
+    write_stream_fn(ExecuteRunArgsLoadComplete())
+
+    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+
+    pid = os.getpid()
+    instance.report_engine_event(
+        'Started process for pipeline (pid: {pid}).'.format(pid=pid),
+        pipeline_run,
+        EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+    )
+
+    # Perform setup so that termination of the execution will unwind and report to the
+    # instance correctly
+    setup_interrupt_support()
+
+    try:
+        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
+            write_stream_fn(event)
+    except DagsterSubprocessError as err:
+        if not all(
+            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
+        ):
             instance.report_engine_event(
                 'An exception was thrown during execution that is likely a framework error, '
                 'rather than an error in user code.',
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
-        finally:
-            instance.report_engine_event(
-                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
-            )
+    except Exception:  # pylint: disable=broad-except
+        instance.report_engine_event(
+            'An exception was thrown during execution that is likely a framework error, '
+            'rather than an error in user code.',
+            pipeline_run,
+            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+        )
+    finally:
+        instance.report_engine_event(
+            'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+        )
 
 
 class _ScheduleTickHolder:
@@ -595,6 +625,7 @@ def create_api_cli_group():
     )
 
     group.add_command(execute_run_command)
+    group.add_command(execute_run_with_structured_logs_command)
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)
     group.add_command(execution_plan_snapshot_command)

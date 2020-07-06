@@ -114,7 +114,7 @@ class ExecuteRunArgs(namedtuple('_ExecuteRunArgs', 'pipeline_origin pipeline_run
             cls,
             pipeline_origin=check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin),
             pipeline_run_id=check.str_param(pipeline_run_id, 'pipeline_run_id'),
-            instance_ref=check.inst_param(instance_ref, 'instance_ref', InstanceRef),
+            instance_ref=check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef),
         )
 
 
