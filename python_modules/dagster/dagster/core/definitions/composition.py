@@ -334,6 +334,19 @@ class InvokedSolidOutputHandle(object):
             )
         )
 
+    def alias(self, _):
+        raise DagsterInvariantViolationError(
+            'In {source} {name}, attempted to call alias method for {cls}. This object '
+            'represents the output "{out}" from the already invoked solid "{solid}". Consider '
+            'checking the location of parentheses.'.format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                solid=self.solid_name,
+                out=self.output_name,
+            )
+        )
+
 
 class InputMappingNode(object):
     def __init__(self, input_def):
