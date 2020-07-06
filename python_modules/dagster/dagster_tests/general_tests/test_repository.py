@@ -80,7 +80,7 @@ def define_multi_mode_with_resources_pipeline():
                 mode='add_mode',
                 config_files=[
                     file_relative_path(
-                        __file__, './environments/multi_mode_with_resources/add_mode.yaml'
+                        __file__, '../environments/multi_mode_with_resources/add_mode.yaml'
                     )
                 ],
             ),

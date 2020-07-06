@@ -1,3 +1,3 @@
 repository:
-  file: ../../dagster/dagster_tests/test_repository.py
+  file: ../../dagster/dagster_tests/general_tests/test_repository.py
   fn: dagster_test_repository
