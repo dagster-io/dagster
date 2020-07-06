@@ -17,11 +17,21 @@ up a local development environment.
     2.7, 3.5, 3.6, and 3.7. Note that dagster is a 2/3 compatible
     project: tests must pass against Python 2.7.
 2.  Create and activate a virtualenv, using the tool of your choice.
-    E.g., on macOS you may use install and use `pyenv` as follows with
-    Homebrew:
+    On macOS you can install `pyenv` with Homebrew:
 
 ```bash
 brew install pyenv pyenv-virtualenv
+```
+
+&nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspThen add the following commands to your shell profile:
+
+```bash
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+```
+
+&nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspand finally create and activate the virtualenev:
+```
 pyenv install 3.7.4
 pyenv virtualenv 3.7.4 dagster37
 pyenv activate dagster37
