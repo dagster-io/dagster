@@ -14,7 +14,7 @@ def _deep_merge_dicts(onto_dict, from_dict):
             onto_value = onto_dict[from_key]
 
             if isinstance(from_value, dict) and isinstance(onto_value, dict):
-                onto_dict[from_key] = _deep_merge_dicts(from_value, onto_value)
+                onto_dict[from_key] = _deep_merge_dicts(onto_value, from_value)
             else:
                 onto_dict[from_key] = from_value  # smash
 
