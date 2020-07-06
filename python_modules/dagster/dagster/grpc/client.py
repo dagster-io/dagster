@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 
@@ -15,8 +16,8 @@ from .server import (
     SERVER_FAILED_TO_BIND_TOKEN_BYTES,
     SERVER_STARTED_TOKEN_BYTES,
     CouldNotBindGrpcServerToAddress,
-    ExecutionPlanSnapshotArgs,
 )
+from .types import ExecutionPlanSnapshotArgs, ListRepositoriesArgs
 
 
 class CouldNotStartServerProcess(Exception):
@@ -94,6 +95,17 @@ class DagsterGrpcClient(object):
         )
         return deserialize_json_to_dagster_namedtuple(res.serialized_execution_plan_snapshot)
 
+    def list_repositories(self, list_repositories_args):
+        check.inst_param(list_repositories_args, 'list_repositories_args', ListRepositoriesArgs)
+
+        res = self._query(
+            'ListRepositories',
+            api_pb2.ListRepositoriesRequest,
+            serialized_list_repositories_args=serialize_dagster_namedtuple(list_repositories_args),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(res.serialized_list_repositories_response)
+
 
 def _wait_for_grpc_server(server_process, timeout=3):
     total_time = 0
@@ -112,11 +124,14 @@ def _wait_for_grpc_server(server_process, timeout=3):
             return True
 
 
-def open_server_process(port, socket):
+def open_server_process(port, socket, python_executable_path=None):
     check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
+    python_executable_path = check.opt_str_param(
+        python_executable_path, 'python_executable_path', default=sys.executable
+    )
 
     server_process = open_ipc_subprocess(
-        ['dagster', 'api', 'grpc']
+        [python_executable_path, '-m', 'dagster.grpc']
         + (['-p', str(port)] if port else [])
         + (['-f', socket] if socket else []),
         stdout=subprocess.PIPE,
@@ -131,13 +146,15 @@ def open_server_process(port, socket):
         return None
 
 
-def open_server_process_on_dynamic_port(max_retries=10):
+def open_server_process_on_dynamic_port(max_retries=10, python_executable_path=None):
     server_process = None
     retries = 0
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
-            server_process = open_server_process(port=port, socket=None)
+            server_process = open_server_process(
+                port=port, socket=None, python_executable_path=python_executable_path
+            )
         except CouldNotBindGrpcServerToAddress:
             pass
 
@@ -147,10 +164,11 @@ def open_server_process_on_dynamic_port(max_retries=10):
 
 
 @contextmanager
-def ephemeral_grpc_api_client(force_port=False):
+def ephemeral_grpc_api_client(python_executable_path=None, force_port=False, max_retries=10):
     if seven.IS_WINDOWS or force_port:
-        port = find_free_port()
-        server_process = open_server_process(port=port, socket=None)
+        server_process, port = open_server_process_on_dynamic_port(
+            max_retries=max_retries, python_executable_path=python_executable_path
+        )
 
         if server_process is None:
             raise CouldNotStartServerProcess(port=port, socket=None)
@@ -164,7 +182,9 @@ def ephemeral_grpc_api_client(force_port=False):
 
     else:
         with safe_tempfile_path() as socket:
-            server_process = open_server_process(port=None, socket=socket)
+            server_process = open_server_process(
+                port=None, socket=socket, python_executable_path=python_executable_path
+            )
 
             if server_process is None:
                 raise CouldNotStartServerProcess(port=None, socket=socket)

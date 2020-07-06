@@ -9,10 +9,6 @@ from contextlib import contextmanager
 import click
 
 from dagster import check, seven
-from dagster.cli.workspace.autodiscovery import (
-    loadable_targets_from_python_file,
-    loadable_targets_from_python_module,
-)
 from dagster.cli.workspace.cli_target import (
     get_reconstructable_repository_from_origin_kwargs,
     origin_target_argument,
@@ -61,7 +57,14 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
-from dagster.grpc.server import ExecutionPlanSnapshotArgs
+from dagster.grpc.types import (
+    ExecuteRunArgs,
+    ExecutionPlanSnapshotArgs,
+    ListRepositoriesInput,
+    ListRepositoriesResponse,
+    LoadableRepositorySymbol,
+)
+from dagster.grpc.utils import get_loadable_targets
 from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
@@ -95,41 +98,6 @@ def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
 
     external_pipeline_data = external_pipeline_data_from_def(definition)
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
-
-
-@whitelist_for_serdes
-class ListRepositoriesResponse(namedtuple('_ListRepositoriesResponse', 'repository_symbols')):
-    def __new__(cls, repository_symbols):
-        return super(ListRepositoriesResponse, cls).__new__(
-            cls,
-            repository_symbols=check.list_param(
-                repository_symbols, 'repository_symbols', of_type=LoadableRepositorySymbol
-            ),
-        )
-
-
-@whitelist_for_serdes
-class LoadableRepositorySymbol(
-    namedtuple('_LoadableRepositorySymbol', 'repository_name attribute')
-):
-    def __new__(cls, repository_name, attribute):
-        return super(LoadableRepositorySymbol, cls).__new__(
-            cls,
-            repository_name=check.str_param(repository_name, 'repository_name'),
-            attribute=check.str_param(attribute, 'attribute'),
-        )
-
-
-@whitelist_for_serdes
-class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name python_file')):
-    def __new__(cls, module_name, python_file):
-        check.invariant(not (module_name and python_file), 'Must set only one')
-        check.invariant(module_name or python_file, 'Must set at least one')
-        return super(ListRepositoriesInput, cls).__new__(
-            cls,
-            module_name=check.opt_str_param(module_name, 'module_name'),
-            python_file=check.opt_str_param(python_file, 'python_file'),
-        )
 
 
 def unary_api_cli_command(name, help_str, input_cls, output_cls):
@@ -168,7 +136,7 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
 def list_repositories_command(args):
     check.inst_param(args, 'args', ListRepositoriesInput)
     python_file, module_name = args.python_file, args.module_name
-    loadable_targets = _get_loadable_targets(python_file, module_name)
+    loadable_targets = get_loadable_targets(python_file, module_name)
     return ListRepositoriesResponse(
         [
             LoadableRepositorySymbol(
@@ -177,16 +145,6 @@ def list_repositories_command(args):
             for lt in loadable_targets
         ]
     )
-
-
-def _get_loadable_targets(python_file, module_name):
-    if python_file:
-        return loadable_targets_from_python_file(python_file)
-    elif module_name:
-        return loadable_targets_from_python_module(module_name)
-    else:
-        check.failed('invalid')
-    # Snapshot CLI
 
 
 @unary_api_cli_command(
@@ -406,11 +364,6 @@ def schedule_execution_data_command(args):
 
 
 # Execution CLI
-
-
-@whitelist_for_serdes
-class ExecuteRunArgs(namedtuple('_ExecuteRunArgs', 'pipeline_origin pipeline_run_id instance_ref')):
-    pass
 
 
 @whitelist_for_serdes

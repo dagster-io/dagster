@@ -26,7 +26,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax='proto3',
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t2\x97\x01\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x62\x06proto3',
+    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"D\n\x17ListRepositoriesRequest\x12)\n!serialized_list_repositories_args\x18\x01 \x01(\t\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t2\xe7\x01\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x62\x06proto3',
 )
 
 
@@ -193,10 +193,94 @@ _EXECUTIONPLANSNAPSHOTREPLY = _descriptor.Descriptor(
     serialized_end=227,
 )
 
+
+_LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
+    name='ListRepositoriesRequest',
+    full_name='api.ListRepositoriesRequest',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_list_repositories_args',
+            full_name='api.ListRepositoriesRequest.serialized_list_repositories_args',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=229,
+    serialized_end=297,
+)
+
+
+_LISTREPOSITORIESREPLY = _descriptor.Descriptor(
+    name='ListRepositoriesReply',
+    full_name='api.ListRepositoriesReply',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_list_repositories_response',
+            full_name='api.ListRepositoriesReply.serialized_list_repositories_response',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=299,
+    serialized_end=369,
+)
+
 DESCRIPTOR.message_types_by_name['PingRequest'] = _PINGREQUEST
 DESCRIPTOR.message_types_by_name['PingReply'] = _PINGREPLY
 DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotRequest'] = _EXECUTIONPLANSNAPSHOTREQUEST
 DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotReply'] = _EXECUTIONPLANSNAPSHOTREPLY
+DESCRIPTOR.message_types_by_name['ListRepositoriesRequest'] = _LISTREPOSITORIESREQUEST
+DESCRIPTOR.message_types_by_name['ListRepositoriesReply'] = _LISTREPOSITORIESREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 PingRequest = _reflection.GeneratedProtocolMessageType(
@@ -243,6 +327,28 @@ ExecutionPlanSnapshotReply = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(ExecutionPlanSnapshotReply)
 
+ListRepositoriesRequest = _reflection.GeneratedProtocolMessageType(
+    'ListRepositoriesRequest',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _LISTREPOSITORIESREQUEST,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ListRepositoriesRequest)
+    },
+)
+_sym_db.RegisterMessage(ListRepositoriesRequest)
+
+ListRepositoriesReply = _reflection.GeneratedProtocolMessageType(
+    'ListRepositoriesReply',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _LISTREPOSITORIESREPLY,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ListRepositoriesReply)
+    },
+)
+_sym_db.RegisterMessage(ListRepositoriesReply)
+
 
 _DAGSTERAPI = _descriptor.ServiceDescriptor(
     name='DagsterApi',
@@ -251,8 +357,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     index=0,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_start=230,
-    serialized_end=381,
+    serialized_start=372,
+    serialized_end=603,
     methods=[
         _descriptor.MethodDescriptor(
             name='Ping',
@@ -271,6 +377,16 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             containing_service=None,
             input_type=_EXECUTIONPLANSNAPSHOTREQUEST,
             output_type=_EXECUTIONPLANSNAPSHOTREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name='ListRepositories',
+            full_name='api.DagsterApi.ListRepositories',
+            index=2,
+            containing_service=None,
+            input_type=_LISTREPOSITORIESREQUEST,
+            output_type=_LISTREPOSITORIESREPLY,
             serialized_options=None,
             create_key=_descriptor._internal_create_key,
         ),

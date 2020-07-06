@@ -5,6 +5,7 @@ package api;
 service DagsterApi {
   rpc Ping (PingRequest) returns (PingReply) {}
   rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
+  rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}
 }
 
 message PingRequest {
@@ -21,4 +22,12 @@ message ExecutionPlanSnapshotRequest {
 
 message ExecutionPlanSnapshotReply {
   string serialized_execution_plan_snapshot = 1;
+}
+
+message ListRepositoriesRequest {
+  string serialized_list_repositories_args = 1;
+}
+
+message ListRepositoriesReply {
+  string serialized_list_repositories_response = 1;
 }

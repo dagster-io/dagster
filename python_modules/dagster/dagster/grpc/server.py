@@ -1,55 +1,25 @@
 import os
 import sys
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 
 from dagster import check, seven
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-    whitelist_for_serdes,
-)
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import setup_interrupt_support
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
-
-
-@whitelist_for_serdes
-class ExecutionPlanSnapshotArgs(
-    namedtuple(
-        '_ExecutionPlanSnapshotArgs',
-        'pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id',
-    )
-):
-    def __new__(
-        cls,
-        pipeline_origin,
-        solid_selection,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        pipeline_snapshot_id,
-    ):
-        return super(ExecutionPlanSnapshotArgs, cls).__new__(
-            cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
-            solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
-            run_config=check.dict_param(run_config, 'run_config'),
-            mode=check.str_param(mode, 'mode'),
-            step_keys_to_execute=check.opt_list_param(
-                step_keys_to_execute, 'step_keys_to_execute', of_type=str
-            ),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
-        )
+from .types import (
+    ExecutionPlanSnapshotArgs,
+    ListRepositoriesArgs,
+    ListRepositoriesResponse,
+    LoadableRepositorySymbol,
+)
+from .utils import get_loadable_targets
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -87,6 +57,30 @@ class DagsterApiServer(DagsterApiServicer):
         )
         return api_pb2.ExecutionPlanSnapshotReply(
             serialized_execution_plan_snapshot=serialize_dagster_namedtuple(execution_plan_snapshot)
+        )
+
+    def ListRepositories(self, request, _context):
+        list_repositories_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_list_repositories_args
+        )
+
+        check.inst_param(list_repositories_args, 'list_repositories_args', ListRepositoriesArgs)
+
+        loadable_targets = get_loadable_targets(
+            list_repositories_args.python_file, list_repositories_args.module_name
+        )
+        return api_pb2.ListRepositoriesReply(
+            serialized_list_repositories_response=serialize_dagster_namedtuple(
+                ListRepositoriesResponse(
+                    [
+                        LoadableRepositorySymbol(
+                            attribute=loadable_target.attribute,
+                            repository_name=loadable_target.target_definition.name,
+                        )
+                        for loadable_target in loadable_targets
+                    ]
+                )
+            )
         )
 
 

@@ -32,6 +32,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
             response_deserializer=api__pb2.ExecutionPlanSnapshotReply.FromString,
         )
+        self.ListRepositories = channel.unary_unary(
+            '/api.DagsterApi/ListRepositories',
+            request_serializer=api__pb2.ListRepositoriesRequest.SerializeToString,
+            response_deserializer=api__pb2.ListRepositoriesReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -49,6 +54,12 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListRepositories(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -61,6 +72,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExecutionPlanSnapshot,
             request_deserializer=api__pb2.ExecutionPlanSnapshotRequest.FromString,
             response_serializer=api__pb2.ExecutionPlanSnapshotReply.SerializeToString,
+        ),
+        'ListRepositories': grpc.unary_unary_rpc_method_handler(
+            servicer.ListRepositories,
+            request_deserializer=api__pb2.ListRepositoriesRequest.FromString,
+            response_serializer=api__pb2.ListRepositoriesReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
@@ -116,6 +132,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExecutionPlanSnapshot',
             api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
             api__pb2.ExecutionPlanSnapshotReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ListRepositories(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ListRepositories',
+            api__pb2.ListRepositoriesRequest.SerializeToString,
+            api__pb2.ListRepositoriesReply.FromString,
             options,
             channel_credentials,
             call_credentials,
