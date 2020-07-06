@@ -34,6 +34,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   nextCursorForResult: (result: T) => string | undefined;
   variables: Omit<Omit<TVars, "cusor">, "limit">;
   pageSize: number;
+  getResultArray: (result: T | undefined) => any[];
 }) {
   const { history, location } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
@@ -58,10 +59,10 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
     variables: queryVars
   });
 
+  const resultArray = options.getResultArray(queryResult.data);
   const paginationProps: CursorPaginationProps = {
     hasPrevPage: !!cursor,
-    hasNextPage:
-      queryResult.data instanceof Array && queryResult.data.length === options.pageSize + 1,
+    hasNextPage: resultArray.length === options.pageSize + 1,
     onPrevPage: () => {
       const nextStack = [...cursorStack];
       setCursor(nextStack.pop());

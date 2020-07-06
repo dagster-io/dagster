@@ -27,6 +27,10 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
       if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
     },
+    getResultArray: data => {
+      if (!data || data.pipelineRunsOrError.__typename !== "PipelineRuns") return [];
+      return data.pipelineRunsOrError.results;
+    },
     variables: { filter: runsFilterForSearchTokens(filterTokens) },
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE

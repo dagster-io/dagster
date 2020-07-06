@@ -44,6 +44,10 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
     nextCursorForResult: runs => {
       if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
+    },
+    getResultArray: data => {
+      if (!data || data.pipelineRunsOrError.__typename !== "PipelineRuns") return [];
+      return data.pipelineRunsOrError.results;
     }
   });
 
