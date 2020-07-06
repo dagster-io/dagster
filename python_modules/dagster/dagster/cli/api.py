@@ -63,6 +63,8 @@ from dagster.grpc.types import (
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
+    PartitionArgs,
+    PartitionNamesArgs,
 )
 from dagster.grpc.utils import get_loadable_targets
 from dagster.serdes import whitelist_for_serdes
@@ -224,24 +226,17 @@ def execution_plan_snapshot_command(args):
     )
 
 
-@whitelist_for_serdes
-class PartitionApiCommandArgs(
-    namedtuple('_PartitionApiCommandArgs', 'repository_origin partition_set_name partition_name')
-):
-    pass
-
-
 @unary_api_cli_command(
     name='partition_config',
     help_str=(
         '[INTERNAL] Return the config for a partition. This is an internal utility. Users should '
         'generally not invoke this command interactively.'
     ),
-    input_cls=PartitionApiCommandArgs,
+    input_cls=PartitionArgs,
     output_cls=(ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
 )
 def partition_config_command(args):
-    check.inst_param(args, 'args', PartitionApiCommandArgs)
+    check.inst_param(args, 'args', PartitionArgs)
     recon_repo = recon_repository_from_origin(args.repository_origin)
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(args.partition_set_name)
@@ -268,11 +263,11 @@ def partition_config_command(args):
         '[INTERNAL] Return the tags for a partition. This is an internal utility. Users should '
         'generally not invoke this command interactively.'
     ),
-    input_cls=PartitionApiCommandArgs,
+    input_cls=PartitionArgs,
     output_cls=(ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
 )
 def partition_tags_command(args):
-    check.inst_param(args, 'args', PartitionApiCommandArgs)
+    check.inst_param(args, 'args', PartitionArgs)
     recon_repo = recon_repository_from_origin(args.repository_origin)
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(args.partition_set_name)
@@ -291,24 +286,17 @@ def partition_tags_command(args):
         )
 
 
-@whitelist_for_serdes
-class PartitionNamesApiCommandArgs(
-    namedtuple('_PartitionNamesApiCommandArgs', 'repository_origin partition_set_name')
-):
-    pass
-
-
 @unary_api_cli_command(
     name='partition_names',
     help_str=(
         '[INTERNAL] Return the partition names for a partition set . This is an internal utility. '
         'Users should generally not invoke this command interactively.'
     ),
-    input_cls=PartitionNamesApiCommandArgs,
+    input_cls=PartitionNamesArgs,
     output_cls=(ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
 )
 def partition_names_command(args):
-    check.inst_param(args, 'args', PartitionNamesApiCommandArgs)
+    check.inst_param(args, 'args', PartitionNamesArgs)
     recon_repo = recon_repository_from_origin(args.repository_origin)
     definition = recon_repo.get_definition()
     partition_set_def = definition.get_partition_set_def(args.partition_set_name)

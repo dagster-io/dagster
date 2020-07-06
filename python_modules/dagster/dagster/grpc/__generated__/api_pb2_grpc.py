@@ -37,6 +37,21 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ListRepositoriesRequest.SerializeToString,
             response_deserializer=api__pb2.ListRepositoriesReply.FromString,
         )
+        self.ExternalPartitionNames = channel.unary_unary(
+            '/api.DagsterApi/ExternalPartitionNames',
+            request_serializer=api__pb2.ExternalPartitionNamesRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalPartitionNamesReply.FromString,
+        )
+        self.ExternalPartitionConfig = channel.unary_unary(
+            '/api.DagsterApi/ExternalPartitionConfig',
+            request_serializer=api__pb2.ExternalPartitionConfigRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalPartitionConfigReply.FromString,
+        )
+        self.ExternalPartitionTags = channel.unary_unary(
+            '/api.DagsterApi/ExternalPartitionTags',
+            request_serializer=api__pb2.ExternalPartitionTagsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalPartitionTagsReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -60,6 +75,24 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExternalPartitionNames(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExternalPartitionConfig(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExternalPartitionTags(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -77,6 +110,21 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ListRepositories,
             request_deserializer=api__pb2.ListRepositoriesRequest.FromString,
             response_serializer=api__pb2.ListRepositoriesReply.SerializeToString,
+        ),
+        'ExternalPartitionNames': grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalPartitionNames,
+            request_deserializer=api__pb2.ExternalPartitionNamesRequest.FromString,
+            response_serializer=api__pb2.ExternalPartitionNamesReply.SerializeToString,
+        ),
+        'ExternalPartitionConfig': grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalPartitionConfig,
+            request_deserializer=api__pb2.ExternalPartitionConfigRequest.FromString,
+            response_serializer=api__pb2.ExternalPartitionConfigReply.SerializeToString,
+        ),
+        'ExternalPartitionTags': grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalPartitionTags,
+            request_deserializer=api__pb2.ExternalPartitionTagsRequest.FromString,
+            response_serializer=api__pb2.ExternalPartitionTagsReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
@@ -159,6 +207,87 @@ class DagsterApi(object):
             '/api.DagsterApi/ListRepositories',
             api__pb2.ListRepositoriesRequest.SerializeToString,
             api__pb2.ListRepositoriesReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalPartitionNames(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExternalPartitionNames',
+            api__pb2.ExternalPartitionNamesRequest.SerializeToString,
+            api__pb2.ExternalPartitionNamesReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalPartitionConfig(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExternalPartitionConfig',
+            api__pb2.ExternalPartitionConfigRequest.SerializeToString,
+            api__pb2.ExternalPartitionConfigReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalPartitionTags(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExternalPartitionTags',
+            api__pb2.ExternalPartitionTagsRequest.SerializeToString,
+            api__pb2.ExternalPartitionTagsReply.FromString,
             options,
             channel_credentials,
             call_credentials,

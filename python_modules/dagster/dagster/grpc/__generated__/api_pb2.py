@@ -26,7 +26,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax='proto3',
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"D\n\x17ListRepositoriesRequest\x12)\n!serialized_list_repositories_args\x18\x01 \x01(\t\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t2\xe7\x01\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x62\x06proto3',
+    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"D\n\x17ListRepositoriesRequest\x12)\n!serialized_list_repositories_args\x18\x01 \x01(\t\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t2\x8d\x04\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x62\x06proto3',
 )
 
 
@@ -194,6 +194,252 @@ _EXECUTIONPLANSNAPSHOTREPLY = _descriptor.Descriptor(
 )
 
 
+_EXTERNALPARTITIONNAMESREQUEST = _descriptor.Descriptor(
+    name='ExternalPartitionNamesRequest',
+    full_name='api.ExternalPartitionNamesRequest',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_partition_names_args',
+            full_name='api.ExternalPartitionNamesRequest.serialized_partition_names_args',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=229,
+    serialized_end=301,
+)
+
+
+_EXTERNALPARTITIONNAMESREPLY = _descriptor.Descriptor(
+    name='ExternalPartitionNamesReply',
+    full_name='api.ExternalPartitionNamesReply',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_external_partition_names_or_external_partition_execution_error',
+            full_name='api.ExternalPartitionNamesReply.serialized_external_partition_names_or_external_partition_execution_error',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=303,
+    serialized_end=415,
+)
+
+
+_EXTERNALPARTITIONCONFIGREQUEST = _descriptor.Descriptor(
+    name='ExternalPartitionConfigRequest',
+    full_name='api.ExternalPartitionConfigRequest',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_partition_args',
+            full_name='api.ExternalPartitionConfigRequest.serialized_partition_args',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=417,
+    serialized_end=484,
+)
+
+
+_EXTERNALPARTITIONCONFIGREPLY = _descriptor.Descriptor(
+    name='ExternalPartitionConfigReply',
+    full_name='api.ExternalPartitionConfigReply',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_external_partition_config_or_external_partition_execution_error',
+            full_name='api.ExternalPartitionConfigReply.serialized_external_partition_config_or_external_partition_execution_error',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=486,
+    serialized_end=600,
+)
+
+
+_EXTERNALPARTITIONTAGSREQUEST = _descriptor.Descriptor(
+    name='ExternalPartitionTagsRequest',
+    full_name='api.ExternalPartitionTagsRequest',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_partition_args',
+            full_name='api.ExternalPartitionTagsRequest.serialized_partition_args',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=602,
+    serialized_end=667,
+)
+
+
+_EXTERNALPARTITIONTAGSREPLY = _descriptor.Descriptor(
+    name='ExternalPartitionTagsReply',
+    full_name='api.ExternalPartitionTagsReply',
+    filename=None,
+    file=DESCRIPTOR,
+    containing_type=None,
+    create_key=_descriptor._internal_create_key,
+    fields=[
+        _descriptor.FieldDescriptor(
+            name='serialized_external_partition_tags_or_external_partition_execution_error',
+            full_name='api.ExternalPartitionTagsReply.serialized_external_partition_tags_or_external_partition_execution_error',
+            index=0,
+            number=1,
+            type=9,
+            cpp_type=9,
+            label=1,
+            has_default_value=False,
+            default_value=b"".decode('utf-8'),
+            message_type=None,
+            enum_type=None,
+            containing_type=None,
+            is_extension=False,
+            extension_scope=None,
+            serialized_options=None,
+            file=DESCRIPTOR,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+    extensions=[],
+    nested_types=[],
+    enum_types=[],
+    serialized_options=None,
+    is_extendable=False,
+    syntax='proto3',
+    extension_ranges=[],
+    oneofs=[],
+    serialized_start=669,
+    serialized_end=779,
+)
+
+
 _LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
     name='ListRepositoriesRequest',
     full_name='api.ListRepositoriesRequest',
@@ -230,8 +476,8 @@ _LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
     syntax='proto3',
     extension_ranges=[],
     oneofs=[],
-    serialized_start=229,
-    serialized_end=297,
+    serialized_start=781,
+    serialized_end=849,
 )
 
 
@@ -271,14 +517,20 @@ _LISTREPOSITORIESREPLY = _descriptor.Descriptor(
     syntax='proto3',
     extension_ranges=[],
     oneofs=[],
-    serialized_start=299,
-    serialized_end=369,
+    serialized_start=851,
+    serialized_end=921,
 )
 
 DESCRIPTOR.message_types_by_name['PingRequest'] = _PINGREQUEST
 DESCRIPTOR.message_types_by_name['PingReply'] = _PINGREPLY
 DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotRequest'] = _EXECUTIONPLANSNAPSHOTREQUEST
 DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotReply'] = _EXECUTIONPLANSNAPSHOTREPLY
+DESCRIPTOR.message_types_by_name['ExternalPartitionNamesRequest'] = _EXTERNALPARTITIONNAMESREQUEST
+DESCRIPTOR.message_types_by_name['ExternalPartitionNamesReply'] = _EXTERNALPARTITIONNAMESREPLY
+DESCRIPTOR.message_types_by_name['ExternalPartitionConfigRequest'] = _EXTERNALPARTITIONCONFIGREQUEST
+DESCRIPTOR.message_types_by_name['ExternalPartitionConfigReply'] = _EXTERNALPARTITIONCONFIGREPLY
+DESCRIPTOR.message_types_by_name['ExternalPartitionTagsRequest'] = _EXTERNALPARTITIONTAGSREQUEST
+DESCRIPTOR.message_types_by_name['ExternalPartitionTagsReply'] = _EXTERNALPARTITIONTAGSREPLY
 DESCRIPTOR.message_types_by_name['ListRepositoriesRequest'] = _LISTREPOSITORIESREQUEST
 DESCRIPTOR.message_types_by_name['ListRepositoriesReply'] = _LISTREPOSITORIESREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -327,6 +579,72 @@ ExecutionPlanSnapshotReply = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(ExecutionPlanSnapshotReply)
 
+ExternalPartitionNamesRequest = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionNamesRequest',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONNAMESREQUEST,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionNamesRequest)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionNamesRequest)
+
+ExternalPartitionNamesReply = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionNamesReply',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONNAMESREPLY,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionNamesReply)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionNamesReply)
+
+ExternalPartitionConfigRequest = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionConfigRequest',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONCONFIGREQUEST,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionConfigRequest)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionConfigRequest)
+
+ExternalPartitionConfigReply = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionConfigReply',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONCONFIGREPLY,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionConfigReply)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionConfigReply)
+
+ExternalPartitionTagsRequest = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionTagsRequest',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONTAGSREQUEST,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionTagsRequest)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionTagsRequest)
+
+ExternalPartitionTagsReply = _reflection.GeneratedProtocolMessageType(
+    'ExternalPartitionTagsReply',
+    (_message.Message,),
+    {
+        'DESCRIPTOR': _EXTERNALPARTITIONTAGSREPLY,
+        '__module__': 'api_pb2'
+        # @@protoc_insertion_point(class_scope:api.ExternalPartitionTagsReply)
+    },
+)
+_sym_db.RegisterMessage(ExternalPartitionTagsReply)
+
 ListRepositoriesRequest = _reflection.GeneratedProtocolMessageType(
     'ListRepositoriesRequest',
     (_message.Message,),
@@ -357,8 +675,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     index=0,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_start=372,
-    serialized_end=603,
+    serialized_start=924,
+    serialized_end=1449,
     methods=[
         _descriptor.MethodDescriptor(
             name='Ping',
@@ -387,6 +705,36 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             containing_service=None,
             input_type=_LISTREPOSITORIESREQUEST,
             output_type=_LISTREPOSITORIESREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name='ExternalPartitionNames',
+            full_name='api.DagsterApi.ExternalPartitionNames',
+            index=3,
+            containing_service=None,
+            input_type=_EXTERNALPARTITIONNAMESREQUEST,
+            output_type=_EXTERNALPARTITIONNAMESREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name='ExternalPartitionConfig',
+            full_name='api.DagsterApi.ExternalPartitionConfig',
+            index=4,
+            containing_service=None,
+            input_type=_EXTERNALPARTITIONCONFIGREQUEST,
+            output_type=_EXTERNALPARTITIONCONFIGREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name='ExternalPartitionTags',
+            full_name='api.DagsterApi.ExternalPartitionTags',
+            index=5,
+            containing_service=None,
+            input_type=_EXTERNALPARTITIONTAGSREQUEST,
+            output_type=_EXTERNALPARTITIONTAGSREPLY,
             serialized_options=None,
             create_key=_descriptor._internal_create_key,
         ),

@@ -17,7 +17,12 @@ from .server import (
     SERVER_STARTED_TOKEN_BYTES,
     CouldNotBindGrpcServerToAddress,
 )
-from .types import ExecutionPlanSnapshotArgs, ListRepositoriesArgs
+from .types import (
+    ExecutionPlanSnapshotArgs,
+    ListRepositoriesArgs,
+    PartitionArgs,
+    PartitionNamesArgs,
+)
 
 
 class CouldNotStartServerProcess(Exception):
@@ -105,6 +110,45 @@ class DagsterGrpcClient(object):
         )
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_list_repositories_response)
+
+    def external_partition_names(self, partition_names_args):
+        check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
+
+        res = self._query(
+            'ExternalPartitionNames',
+            api_pb2.ExternalPartitionNamesRequest,
+            serialized_partition_names_args=serialize_dagster_namedtuple(partition_names_args),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_partition_names_or_external_partition_execution_error
+        )
+
+    def external_partition_config(self, partition_args):
+        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+
+        res = self._query(
+            'ExternalPartitionConfig',
+            api_pb2.ExternalPartitionConfigRequest,
+            serialized_partition_args=serialize_dagster_namedtuple(partition_args),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_partition_config_or_external_partition_execution_error
+        )
+
+    def external_partition_tags(self, partition_args):
+        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+
+        res = self._query(
+            'ExternalPartitionTags',
+            api_pb2.ExternalPartitionTagsRequest,
+            serialized_partition_args=serialize_dagster_namedtuple(partition_args),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_partition_tags_or_external_partition_execution_error
+        )
 
 
 def _wait_for_grpc_server(server_process, timeout=3):

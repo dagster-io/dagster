@@ -5,11 +5,22 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 
 from dagster import check, seven
+from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.host_representation.external_data import (
+    ExternalPartitionConfigData,
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionNamesData,
+    ExternalPartitionTagsData,
+)
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import setup_interrupt_support
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    recon_repository_from_origin,
+)
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -18,6 +29,8 @@ from .types import (
     ListRepositoriesArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
+    PartitionArgs,
+    PartitionNamesArgs,
 )
 from .utils import get_loadable_targets
 
@@ -82,6 +95,106 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
+
+    def ExternalPartitionNames(self, request, _context):
+        partition_names_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_partition_names_args
+        )
+
+        check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
+
+        recon_repo = recon_repository_from_origin(partition_names_args.repository_origin)
+        definition = recon_repo.get_definition()
+        partition_set_def = definition.get_partition_set_def(
+            partition_names_args.partition_set_name
+        )
+        try:
+            with user_code_error_boundary(
+                PartitionExecutionError,
+                lambda: 'Error occurred during the execution of the partition generation function for '
+                'partition set {partition_set_name}'.format(
+                    partition_set_name=partition_set_def.name
+                ),
+            ):
+                return api_pb2.ExternalPartitionNamesReply(
+                    serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                        ExternalPartitionNamesData(
+                            partition_names=partition_set_def.get_partition_names()
+                        )
+                    )
+                )
+        except PartitionExecutionError:
+            return api_pb2.ExternalPartitionNamesReply(
+                serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                    ExternalPartitionExecutionErrorData(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    )
+                )
+            )
+
+    def ExternalPartitionConfig(self, request, _context):
+        partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
+
+        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+
+        recon_repo = recon_repository_from_origin(partition_args.repository_origin)
+        definition = recon_repo.get_definition()
+        partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
+        partition = partition_set_def.get_partition(partition_args.partition_name)
+        try:
+            with user_code_error_boundary(
+                PartitionExecutionError,
+                lambda: 'Error occurred during the evaluation of the `run_config_for_partition` '
+                'function for partition set {partition_set_name}'.format(
+                    partition_set_name=partition_set_def.name
+                ),
+            ):
+                run_config = partition_set_def.run_config_for_partition(partition)
+                return api_pb2.ExternalPartitionConfigReply(
+                    serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                        ExternalPartitionConfigData(name=partition.name, run_config=run_config)
+                    )
+                )
+        except PartitionExecutionError:
+            return api_pb2.ExternalPartitionConfigReply(
+                serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                    ExternalPartitionExecutionErrorData(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    )
+                )
+            )
+
+    def ExternalPartitionTags(self, request, _context):
+        partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
+
+        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+
+        recon_repo = recon_repository_from_origin(partition_args.repository_origin)
+        definition = recon_repo.get_definition()
+        partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
+        partition = partition_set_def.get_partition(partition_args.partition_name)
+        try:
+            with user_code_error_boundary(
+                PartitionExecutionError,
+                lambda: 'Error occurred during the evaluation of the `tags_for_partition` function for '
+                'partition set {partition_set_name}'.format(
+                    partition_set_name=partition_set_def.name
+                ),
+            ):
+                tags = partition_set_def.tags_for_partition(partition)
+                return api_pb2.ExternalPartitionTagsReply(
+                    serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                        ExternalPartitionTagsData(name=partition.name, tags=tags)
+                    )
+                )
+        except PartitionExecutionError:
+            return api_pb2.ExternalPartitionTagsReply(
+                serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                    ExternalPartitionExecutionErrorData(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    )
+                )
+            )
 
 
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom

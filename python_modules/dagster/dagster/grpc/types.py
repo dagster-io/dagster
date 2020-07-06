@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 
 
@@ -94,4 +94,31 @@ class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name py
             cls,
             module_name=check.opt_str_param(module_name, 'module_name'),
             python_file=check.opt_str_param(python_file, 'python_file'),
+        )
+
+
+@whitelist_for_serdes
+class PartitionArgs(
+    namedtuple('_PartitionArgs', 'repository_origin partition_set_name partition_name')
+):
+    def __new__(cls, repository_origin, partition_set_name, partition_name):
+        return super(PartitionArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, 'repository_origin', RepositoryPythonOrigin
+            ),
+            partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
+            partition_name=check.str_param(partition_name, 'partition_name'),
+        )
+
+
+@whitelist_for_serdes
+class PartitionNamesArgs(namedtuple('_PartitionNamesArgs', 'repository_origin partition_set_name')):
+    def __new__(cls, repository_origin, partition_set_name):
+        return super(PartitionNamesArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, 'repository_origin', RepositoryPythonOrigin
+            ),
+            partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
         )
