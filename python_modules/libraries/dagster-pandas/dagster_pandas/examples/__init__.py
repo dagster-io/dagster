@@ -37,7 +37,7 @@ def define_papermill_pandas_hello_world_solid():
     preset_defs=[
         PresetDefinition.from_files(
             'test',
-            environment_files=[
+            config_files=[
                 file_relative_path(
                     __file__,
                     'pandas_hello_world/environments/papermill_pandas_hello_world_test.yaml',
@@ -46,7 +46,7 @@ def define_papermill_pandas_hello_world_solid():
         ),
         PresetDefinition.from_files(
             'prod',
-            environment_files=[
+            config_files=[
                 file_relative_path(
                     __file__,
                     'pandas_hello_world/environments/papermill_pandas_hello_world_prod.yaml',

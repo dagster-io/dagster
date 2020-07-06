@@ -159,7 +159,7 @@ def normalize_calories(context, cereals):
         ),
         PresetDefinition.from_files(
             'dev',
-            environment_files=[
+            config_files=[
                 file_relative_path(__file__, 'presets_dev_warehouse.yaml'),
                 file_relative_path(__file__, 'presets_csv.yaml'),
             ],

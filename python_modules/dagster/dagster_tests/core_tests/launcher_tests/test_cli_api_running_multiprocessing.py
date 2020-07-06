@@ -50,8 +50,8 @@ def df_output_schema(_context, path, value):
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name='PoorMansDataFrame',
-    input_hydration_config=df_input_schema,
-    output_materialization_config=df_output_schema,
+    loader=df_input_schema,
+    materializer=df_output_schema,
 )
 
 

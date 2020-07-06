@@ -323,7 +323,7 @@ def test_custom_type_with_resource_dependent_hydration():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        @usable_as_dagster_type(input_hydration_config=InputHydration)
+        @usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 
@@ -363,7 +363,7 @@ def test_resource_dependent_hydration_with_selective_init():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        @usable_as_dagster_type(input_hydration_config=InputHydration)
+        @usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 

@@ -107,11 +107,11 @@ class PresetDefinition(
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
         filenames = []
-        for file_glob in environment_files or []:
+        for file_glob in config_files or []:
             globbed_files = glob(file_glob)
             if not globbed_files:
                 raise DagsterInvalidDefinitionError(
-                    'File or glob pattern "{file_glob}" for "environment_files" in preset '
+                    'File or glob pattern "{file_glob}" for "config_files" in preset '
                     '"{name}" produced no results.'.format(name=name, file_glob=file_glob)
                 )
 
@@ -124,7 +124,7 @@ class PresetDefinition(
                 DagsterInvariantViolationError(
                     'Encountered error attempting to parse yaml. Parsing files {file_set} '
                     'loaded by file/patterns {files} on preset "{name}".'.format(
-                        file_set=filenames, files=environment_files, name=name
+                        file_set=filenames, files=config_files, name=name
                     )
                 ),
                 err,

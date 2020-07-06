@@ -36,12 +36,12 @@ def test_presets():
         preset_defs=[
             PresetDefinition.from_files(
                 'passing',
-                environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
+                config_files=[file_relative_path(__file__, 'pass_env.yaml')],
                 solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
                 'passing_overide_to_fail',
-                environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
+                config_files=[file_relative_path(__file__, 'pass_env.yaml')],
                 solid_selection=['can_fail'],
             ).with_additional_config({'solids': {'can_fail': {'config': {'error': True}}}}),
             PresetDefinition(
@@ -51,11 +51,11 @@ def test_presets():
             ),
             PresetDefinition.from_files(
                 'failing_1',
-                environment_files=[file_relative_path(__file__, 'fail_env.yaml')],
+                config_files=[file_relative_path(__file__, 'fail_env.yaml')],
                 solid_selection=['can_fail'],
             ),
             PresetDefinition.from_files(
-                'failing_2', environment_files=[file_relative_path(__file__, 'pass_env.yaml')]
+                'failing_2', config_files=[file_relative_path(__file__, 'pass_env.yaml')]
             ),
             PresetDefinition('subset', solid_selection=['can_fail'],),
         ],
@@ -63,13 +63,13 @@ def test_presets():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         PresetDefinition.from_files(
-            'invalid_1', environment_files=[file_relative_path(__file__, 'not_a_file.yaml')]
+            'invalid_1', config_files=[file_relative_path(__file__, 'not_a_file.yaml')]
         )
 
     with pytest.raises(DagsterInvariantViolationError):
         PresetDefinition.from_files(
             'invalid_2',
-            environment_files=[file_relative_path(__file__, 'test_repository_definition.py')],
+            config_files=[file_relative_path(__file__, 'test_repository_definition.py')],
         )
 
     assert execute_pipeline(pipe, preset='passing').success

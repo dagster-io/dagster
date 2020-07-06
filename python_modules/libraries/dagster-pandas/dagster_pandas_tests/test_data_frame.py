@@ -217,8 +217,8 @@ def test_custom_dagster_dataframe_parametrizable_input():
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name='TestDataFrame',
         columns=[PandasColumn.exists('foo'),],
-        input_hydration_config=silly_hydrator,
-        output_materialization_config=silly_materializer,
+        loader=silly_hydrator,
+        materializer=silly_materializer,
     )
 
     @solid(

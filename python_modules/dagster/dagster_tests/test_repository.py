@@ -78,7 +78,7 @@ def define_multi_mode_with_resources_pipeline():
             PresetDefinition.from_files(
                 'add',
                 mode='add_mode',
-                environment_files=[
+                config_files=[
                     file_relative_path(
                         __file__, './environments/multi_mode_with_resources/add_mode.yaml'
                     )

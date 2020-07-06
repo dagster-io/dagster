@@ -47,13 +47,13 @@ def pandas_hello_world_fails():
     preset_defs=[
         PresetDefinition.from_files(
             'test',
-            environment_files=[
+            config_files=[
                 file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
             ],
         ),
         PresetDefinition.from_files(
             'prod',
-            environment_files=[
+            config_files=[
                 file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
             ],
         ),

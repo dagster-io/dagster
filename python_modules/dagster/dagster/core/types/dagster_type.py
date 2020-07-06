@@ -96,6 +96,7 @@ class DagsterType(object):
         auto_plugins=None,
         required_resource_keys=None,
         kind=DagsterTypeKind.REGULAR,
+        # Graveyard is below
         input_hydration_config=None,
         output_materialization_config=None,
     ):

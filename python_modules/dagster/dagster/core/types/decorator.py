@@ -11,6 +11,7 @@ def usable_as_dagster_type(
     materializer=None,
     serialization_strategy=None,
     auto_plugins=None,
+    # Graveyard is below
     input_hydration_config=None,
     output_materialization_config=None,
 ):
@@ -30,7 +31,7 @@ def usable_as_dagster_type(
             config machinery. As a rule, you should use the
             :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        materializer (Optiona[DagsterTypeMaterializer]): An instance of a class
+        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
             that inherits from :py:class:`DagsterTypeMaterializer` and can persist values of
             this type. As a rule, you should use the
             :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`

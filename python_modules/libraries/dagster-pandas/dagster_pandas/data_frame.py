@@ -20,6 +20,7 @@ from dagster import (
 )
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 
@@ -105,8 +106,8 @@ DataFrame = DagsterType(
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
-    input_hydration_config=dataframe_input_schema,
-    output_materialization_config=dataframe_output_schema,
+    loader=dataframe_input_schema,
+    materializer=dataframe_output_schema,
     type_check_fn=df_type_check,
 )
 
@@ -156,6 +157,8 @@ def create_dagster_pandas_dataframe_type(
     columns=None,
     event_metadata_fn=None,
     dataframe_constraints=None,
+    loader=None,
+    materializer=None,
     input_hydration_config=None,
     output_materialization_config=None,
 ):
@@ -218,11 +221,19 @@ def create_dagster_pandas_dataframe_type(
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
-        input_hydration_config=input_hydration_config
-        if input_hydration_config
+        loader=canonicalize_backcompat_args(
+            loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+        )
+        if loader or input_hydration_config
         else dataframe_input_schema,
-        output_materialization_config=output_materialization_config
-        if output_materialization_config
+        materializer=canonicalize_backcompat_args(
+            materializer,
+            'materializer',
+            output_materialization_config,
+            'output_materialization_config',
+            '0.10.0',
+        )
+        if materializer or output_materialization_config
         else dataframe_output_schema,
         description=description,
     )
@@ -307,10 +318,8 @@ def create_structured_dataframe_type(
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
-        input_hydration_config=input_hydration_config
-        if input_hydration_config
-        else dataframe_input_schema,
-        output_materialization_config=output_materialization_config
+        loader=input_hydration_config if input_hydration_config else dataframe_input_schema,
+        materializer=output_materialization_config
         if output_materialization_config
         else dataframe_output_schema,
         description=description,

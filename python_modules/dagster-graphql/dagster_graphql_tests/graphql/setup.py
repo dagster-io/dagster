@@ -78,7 +78,7 @@ def df_output_schema(_context, path, value):
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name='PoorMansDataFrame',
-    input_hydration_config=df_input_schema,
+    loader=df_input_schema,
     output_materialization_config=df_output_schema,
 )
 
@@ -294,13 +294,13 @@ def more_complicated_nested_config():
     preset_defs=[
         PresetDefinition.from_files(
             name='prod',
-            environment_files=[
+            config_files=[
                 file_relative_path(__file__, '../environments/csv_hello_world_prod.yaml')
             ],
         ),
         PresetDefinition.from_files(
             name='test',
-            environment_files=[
+            config_files=[
                 file_relative_path(__file__, '../environments/csv_hello_world_test.yaml')
             ],
         ),

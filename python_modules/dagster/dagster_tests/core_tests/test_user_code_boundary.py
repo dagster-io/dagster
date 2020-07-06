@@ -40,7 +40,7 @@ def test_user_error_boundary_input_hydration():
     def InputHydration(context, hello):
         raise UserError()
 
-    @usable_as_dagster_type(input_hydration_config=InputHydration)
+    @usable_as_dagster_type(loader=InputHydration)
     class CustomType(str):
         pass
 

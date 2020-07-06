@@ -29,9 +29,7 @@ def dict_with_fields(name, fields):
 
     class _DictWithSchema(PythonObjectDagsterType):
         def __init__(self):
-            super(_DictWithSchema, self).__init__(
-                python_type=dict, name=name, input_hydration_config=_input_schema
-            )
+            super(_DictWithSchema, self).__init__(python_type=dict, name=name, loader=_input_schema)
 
     return _DictWithSchema()
 
