@@ -25,13 +25,9 @@ const Layout: React.FunctionComponent = (props) => {
       />
 
       <div
-        className={cx(
-          'h-screen flex overflow-hidden bg-white pt-16',
-
-          {
-            'bg-gray-100': router.pathname.indexOf('/_apidocs') > 0,
-          },
-        )}
+        className={cx('h-screen flex overflow-hidden bg-white pt-16', {
+          'bg-gray-100': router.pathname.indexOf('_apidocs') > 0,
+        })}
       >
         <SidebarMobile
           isNavigationVisible={isNavigationVisible}
