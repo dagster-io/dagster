@@ -6,6 +6,7 @@ from dagster_postgres.run_storage import PostgresRunStorage
 
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
@@ -37,6 +38,7 @@ def test_postgres_instance(multi_postgres):
             run_storage=run_storage,
             event_storage=event_storage,
             compute_log_manager=LocalComputeLogManager(temp_dir),
+            run_launcher=SyncInMemoryRunLauncher(),
         )
 
         result = execute_pipeline(simple, instance=instance)

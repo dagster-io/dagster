@@ -7,6 +7,7 @@ from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleS
 from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 from dagster.utils import file_relative_path, pushd
+from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 BUILDKITE = bool(os.getenv('BUILDKITE'))
 
@@ -28,22 +29,10 @@ def is_postgres_running():
 
 @pytest.fixture(scope='function')
 def postgres():
-    if BUILDKITE:
+    with TestPostgresInstance.docker_service_up(
+        file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db'
+    ):
         yield
-        return
-
-    if not is_postgres_running():
-        with pushd(file_relative_path(__file__, '.')):
-            try:
-                subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
-                subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
-            except Exception:  # pylint: disable=broad-except
-                pass
-            subprocess.check_output(['docker-compose', 'up', '-d', 'test-postgres-db'])
-
-    wait_for_connection(_conn_string())
-
-    yield
 
 
 @pytest.fixture(scope='module')

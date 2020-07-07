@@ -113,15 +113,18 @@ class InstanceManagers:
         @contextmanager
         def _readonly_postgres_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                yield DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=TestPostgresInstance.clean_run_storage(),
-                    event_storage=TestPostgresInstance.clean_event_log_storage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=ExplodingRunLauncher(),
-                    schedule_storage=TestPostgresInstance.clean_schedule_storage(),
-                )
+                with TestPostgresInstance.docker_service_up(
+                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
+                ):
+                    yield DagsterInstance(
+                        instance_type=InstanceType.EPHEMERAL,
+                        local_artifact_storage=LocalArtifactStorage(temp_dir),
+                        run_storage=TestPostgresInstance.clean_run_storage(),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        compute_log_manager=LocalComputeLogManager(temp_dir),
+                        run_launcher=ExplodingRunLauncher(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                    )
 
         return MarkedManager(
             _readonly_postgres_instance, [Marks.postgres_instance, Marks.readonly],
@@ -184,15 +187,18 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                yield DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=TestPostgresInstance.clean_run_storage(),
-                    event_storage=TestPostgresInstance.clean_event_log_storage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=SyncInMemoryRunLauncher(),
-                    schedule_storage=TestPostgresInstance.clean_schedule_storage(),
-                )
+                with TestPostgresInstance.docker_service_up(
+                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
+                ):
+                    yield DagsterInstance(
+                        instance_type=InstanceType.EPHEMERAL,
+                        local_artifact_storage=LocalArtifactStorage(temp_dir),
+                        run_storage=TestPostgresInstance.clean_run_storage(),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        compute_log_manager=LocalComputeLogManager(temp_dir),
+                        run_launcher=SyncInMemoryRunLauncher(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                    )
 
         return MarkedManager(
             _postgres_instance, [Marks.postgres_instance, Marks.sync_run_launcher],
@@ -203,19 +209,22 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance_with_cli_api_hijack():
             with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance(
-                    instance_type=InstanceType.EPHEMERAL,
-                    local_artifact_storage=LocalArtifactStorage(temp_dir),
-                    run_storage=TestPostgresInstance.clean_run_storage(),
-                    event_storage=TestPostgresInstance.clean_event_log_storage(),
-                    compute_log_manager=LocalComputeLogManager(temp_dir),
-                    run_launcher=CliApiRunLauncher(),
-                    schedule_storage=TestPostgresInstance.clean_schedule_storage(),
-                )
-                try:
-                    yield instance
-                finally:
-                    instance.run_launcher.join()
+                with TestPostgresInstance.docker_service_up(
+                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
+                ):
+                    instance = DagsterInstance(
+                        instance_type=InstanceType.EPHEMERAL,
+                        local_artifact_storage=LocalArtifactStorage(temp_dir),
+                        run_storage=TestPostgresInstance.clean_run_storage(),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        compute_log_manager=LocalComputeLogManager(temp_dir),
+                        run_launcher=CliApiRunLauncher(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                    )
+                    try:
+                        yield instance
+                    finally:
+                        instance.run_launcher.join()
 
         return MarkedManager(
             _postgres_instance_with_cli_api_hijack,

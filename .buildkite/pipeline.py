@@ -180,6 +180,20 @@ def postgres_extra_cmds_fn(_):
     ]
 
 
+def graphql_pg_extra_cmds_fn(_):
+    return [
+        "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container('postgres'),
+        connect_sibling_docker_container(
+            'postgres', 'test-postgres-db-graphql', 'POSTGRES_TEST_DB_HOST'
+        ),
+        "popd",
+    ]
+
+
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
@@ -234,7 +248,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         'python_modules/dagster-graphql',
-        extra_cmds_fn=postgres_extra_cmds_fn,
+        extra_cmds_fn=graphql_pg_extra_cmds_fn,
         tox_file='tox_postgres.ini',
         buildkite_label='dagster-graphql-postgres',
         tox_env_suffixes=[
