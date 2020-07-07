@@ -153,6 +153,17 @@ def assert_correct_bar_repository_output(result):
     )
 
 
+def assert_correct_extra_repository_output(result):
+    assert result.exit_code == 0
+    assert result.output == (
+        'Repository extra\n'
+        '****************\n'
+        'Pipeline: extra\n'
+        'Solids: (Execution Order)\n'
+        '    do_something\n'
+    )
+
+
 def test_list_command():
     runner = CliRunner()
 
@@ -203,6 +214,22 @@ def test_list_command():
     )
     assert_correct_bar_repository_output(result)
 
+    result = runner.invoke(
+        pipeline_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
+    )
+    assert_correct_bar_repository_output(result)
+
+    result = runner.invoke(
+        pipeline_list_command,
+        [
+            '-w',
+            file_relative_path(__file__, 'workspace.yaml'),
+            '-w',
+            file_relative_path(__file__, 'override.yaml'),
+        ],
+    )
+    assert_correct_extra_repository_output(result)
+
     with pytest.raises(UsageError):
         execute_list_command(
             {
@@ -234,14 +261,14 @@ def test_list_command():
 def valid_execute_args():
     return [
         {
-            'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+            'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
             'pipeline': 'foo',
             'python_file': None,
             'module_name': None,
             'attribute': None,
         },
         {
-            'workspace': file_relative_path(__file__, 'repository_module.yaml'),
+            'workspace': (file_relative_path(__file__, 'repository_module.yaml'),),
             'pipeline': 'foo',
             'python_file': None,
             'module_name': None,
@@ -289,6 +316,15 @@ def valid_cli_args():
     return [
         ['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'],
         ['-w', file_relative_path(__file__, 'repository_module.yaml'), '-p', 'foo',],
+        ['-w', file_relative_path(__file__, 'workspace.yaml'), '-p', 'foo',],
+        [
+            '-w',
+            file_relative_path(__file__, 'override.yaml'),
+            '-w',
+            file_relative_path(__file__, 'workspace.yaml'),
+            '-p',
+            'foo',
+        ],
         ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo',],
         ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo',],
         ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline',],
@@ -578,7 +614,7 @@ def test_scaffold_command():
 
 def test_default_memory_run_storage():
     cli_args = {
-        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
         'pipeline': 'foo',
         'python_file': None,
         'module_name': None,
@@ -590,7 +626,7 @@ def test_default_memory_run_storage():
 
 def test_override_with_in_memory_storage():
     cli_args = {
-        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
         'pipeline': 'foo',
         'python_file': None,
         'module_name': None,
@@ -604,7 +640,7 @@ def test_override_with_in_memory_storage():
 
 def test_override_with_filesystem_storage():
     cli_args = {
-        'workspace': file_relative_path(__file__, 'repository_file.yaml'),
+        'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
         'pipeline': 'foo',
         'python_file': None,
         'module_name': None,

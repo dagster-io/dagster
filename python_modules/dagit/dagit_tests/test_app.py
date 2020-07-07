@@ -21,6 +21,16 @@ def test_create_app_with_workspace():
     assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
 
 
+def test_create_app_with_multiple_workspace_files():
+    workspace = load_workspace_from_yaml_paths(
+        [
+            file_relative_path(__file__, './workspace.yaml'),
+            file_relative_path(__file__, './override.yaml'),
+        ]
+    )
+    assert create_app_from_workspace(workspace, DagsterInstance.ephemeral())
+
+
 def test_create_app_with_workspace_and_scheduler():
     workspace = load_workspace_from_yaml_paths([file_relative_path(__file__, './workspace.yaml')])
     with seven.TemporaryDirectory() as temp_dir:
@@ -94,6 +104,20 @@ def test_successful_host_dagit_ui_from_workspace():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
         workspace = load_workspace_from_yaml_paths(
             [file_relative_path(__file__, './workspace.yaml')]
+        )
+
+        host_dagit_ui_with_workspace(
+            storage_fallback=temp_dir, workspace=workspace, host=None, port=2343, path_prefix=''
+        )
+
+
+def test_successful_host_dagit_ui_from_multiple_workspace_files():
+    with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
+        workspace = load_workspace_from_yaml_paths(
+            [
+                file_relative_path(__file__, './workspace.yaml'),
+                file_relative_path(__file__, './override.yaml'),
+            ]
         )
 
         host_dagit_ui_with_workspace(

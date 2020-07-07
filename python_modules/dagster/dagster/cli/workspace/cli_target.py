@@ -75,7 +75,7 @@ def created_workspace_load_target(kwargs):
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
         _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
-        return WorkspaceFileTarget(paths=[kwargs['workspace']])
+        return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
         return PythonFileTarget(
@@ -142,7 +142,11 @@ def workspace_target_click_options():
         [
             click.option('--empty-workspace', is_flag=True, help='Allow an empty workspace'),
             click.option(
-                '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
+                '--workspace',
+                '-w',
+                multiple=True,
+                type=click.Path(exists=True),
+                help=('Path to workspace file. Argument can be provided multiple times.'),
             ),
             click.option(
                 '--repository-yaml',
