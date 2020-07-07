@@ -2,6 +2,14 @@
 
 ## 0.8.7 (Upcoming)
 
+**Breaking Changes**
+
+- Loading python modules reliant on the working directory being on the PYTHONPATH is no longer
+  supported. The `dagster` and `dagit` CLI commands no longer add the working directory to the
+  PYTHONPATH when resolving modules, which may break some imports. Explicitly installed python
+  packages can be specified in workspaces using the `python_package` workspace yaml config option.
+  The `python_module` config option is deprecated and will be removed in a future release.
+
 **New**
 
 - Dagit can be hosted on a sub-path by passing `--path-prefix` to the dagit CLI. #2073

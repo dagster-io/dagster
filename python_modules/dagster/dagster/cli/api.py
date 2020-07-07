@@ -119,8 +119,12 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
 )
 def list_repositories_command(args):
     check.inst_param(args, 'args', ListRepositoriesInput)
-    python_file, module_name = args.python_file, args.module_name
-    loadable_targets = get_loadable_targets(python_file, module_name)
+    python_file, module_name, working_directory = (
+        args.python_file,
+        args.module_name,
+        args.working_directory,
+    )
+    loadable_targets = get_loadable_targets(python_file, module_name, working_directory)
     return ListRepositoriesResponse(
         [
             LoadableRepositorySymbol(

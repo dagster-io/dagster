@@ -32,12 +32,21 @@ def _get_target_config():
                 'relative_path': str,
                 'attribute': Field(str, is_required=False),
                 'location_name': Field(str, is_required=False),
+                'working_directory': Field(str, is_required=False),
             },
         ),
         'python_module': ScalarUnion(
             scalar_type=str,
             non_scalar_schema={
                 'module_name': str,
+                'attribute': Field(str, is_required=False),
+                'location_name': Field(str, is_required=False),
+            },
+        ),
+        'python_package': ScalarUnion(
+            scalar_type=str,
+            non_scalar_schema={
+                'package_name': str,
                 'attribute': Field(str, is_required=False),
                 'location_name': Field(str, is_required=False),
             },

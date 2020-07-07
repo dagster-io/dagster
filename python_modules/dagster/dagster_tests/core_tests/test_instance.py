@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid

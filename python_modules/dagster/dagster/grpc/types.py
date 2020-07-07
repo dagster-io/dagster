@@ -63,14 +63,17 @@ class LoadableRepositorySymbol(
 
 
 @whitelist_for_serdes
-class ListRepositoriesArgs(namedtuple('_ListRepositoriesArgs', 'module_name python_file')):
-    def __new__(cls, module_name, python_file):
+class ListRepositoriesArgs(
+    namedtuple('_ListRepositoriesArgs', 'module_name python_file working_directory')
+):
+    def __new__(cls, module_name, python_file, working_directory):
         check.invariant(not (module_name and python_file), 'Must set only one')
         check.invariant(module_name or python_file, 'Must set at least one')
         return super(ListRepositoriesArgs, cls).__new__(
             cls,
             module_name=check.opt_str_param(module_name, 'module_name'),
             python_file=check.opt_str_param(python_file, 'python_file'),
+            working_directory=check.opt_str_param(working_directory, 'working_directory'),
         )
 
 
@@ -86,14 +89,17 @@ class ListRepositoriesResponse(namedtuple('_ListRepositoriesResponse', 'reposito
 
 
 @whitelist_for_serdes
-class ListRepositoriesInput(namedtuple('_ListRepositoriesInput', 'module_name python_file')):
-    def __new__(cls, module_name, python_file):
+class ListRepositoriesInput(
+    namedtuple('_ListRepositoriesInput', 'module_name python_file working_directory')
+):
+    def __new__(cls, module_name, python_file, working_directory):
         check.invariant(not (module_name and python_file), 'Must set only one')
         check.invariant(module_name or python_file, 'Must set at least one')
         return super(ListRepositoriesInput, cls).__new__(
             cls,
             module_name=check.opt_str_param(module_name, 'module_name'),
             python_file=check.opt_str_param(python_file, 'python_file'),
+            working_directory=check.opt_str_param(working_directory, 'working_directory'),
         )
 
 

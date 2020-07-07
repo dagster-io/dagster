@@ -1,0 +1,3 @@
+load_from:
+  - python_module:
+      module_name: hello_world_in_module

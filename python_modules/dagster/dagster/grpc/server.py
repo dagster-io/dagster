@@ -85,7 +85,9 @@ class DagsterApiServer(DagsterApiServicer):
         check.inst_param(list_repositories_args, 'list_repositories_args', ListRepositoriesArgs)
 
         loadable_targets = get_loadable_targets(
-            list_repositories_args.python_file, list_repositories_args.module_name
+            list_repositories_args.python_file,
+            list_repositories_args.module_name,
+            list_repositories_args.working_directory,
         )
         return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response=serialize_dagster_namedtuple(

@@ -192,3 +192,33 @@ def test_legacy_repository_module_yaml_dash_y():
             successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
             == 'hello_world_repository'
         )
+
+
+def test_local_directory_module():
+    cli_args = [
+        '-w',
+        file_relative_path(__file__, 'hello_world_in_module/local_directory_module_workspace.yaml'),
+    ]
+    result, _ = load_repository_via_cli_runner(cli_args)
+
+    # repository loading should fail even though pytest is being run from the current directory
+    # because we removed module resolution from the working directory
+    assert result.exit_code != 0
+
+
+def test_local_directory_file():
+    assert successfully_load_repository_via_cli(
+        [
+            '-w',
+            file_relative_path(
+                __file__, 'hello_world_file_in_directory/working_directory_workspace.yaml'
+            ),
+        ]
+    )
+
+    bad_args = [
+        '-w',
+        file_relative_path(__file__, 'hello_world_file_in_directory/broken_workspace.yaml'),
+    ]
+    result, _ = load_repository_via_cli_runner(bad_args)
+    assert result.exit_code != 0

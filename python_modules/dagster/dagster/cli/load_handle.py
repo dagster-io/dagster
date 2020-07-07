@@ -50,7 +50,9 @@ def recon_repo_for_cli_args(kwargs):
         _cli_load_invariant(kwargs.get('repository_yaml') is None)
         _cli_load_invariant(kwargs.get('module_name') is None)
         return ReconstructableRepository.for_file(
-            os.path.abspath(kwargs['python_file']), kwargs['fn_name']
+            os.path.abspath(kwargs['python_file']),
+            kwargs['fn_name'],
+            kwargs.get('working_directory'),
         )
     else:
         _cli_load_invariant(False)

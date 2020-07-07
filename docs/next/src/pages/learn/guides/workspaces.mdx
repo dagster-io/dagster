@@ -15,18 +15,17 @@ other location types (e.g containers) as the system develops.
 The structure of a workspace is encoded in a yaml document. By convention is it named `workspace.yaml`.
 
 The goal of the workspace.yaml is to provide enough information to load all the repositories that the tool
-wants to have access to. We support two use cases: 
+wants to have access to. We support two use cases:
 
 - Loading in the current python environment.
 - Loading in a different python environment.
 
 ### Loading in the current environment ###
 
-The user needs to provide the system either a path to the file or the name of installed python module
-where a repository is defined. (We will refer to both of these cases as a "module" as files
-are considered "modules" in python.)
+The user needs to provide the system either a path to the file or the name of an installed python
+package where a repository is defined.
 
-If there is only one repository defined in the target module it is automatically loaded.
+If there is only one repository defined in the target package or file it is automatically loaded.
 
 Example yaml for loading a single repository in a file:
 
@@ -65,31 +64,31 @@ load_from:
       attribute: hello_world_repository
 ```
 
-You can also load from installed module. 
+You can also load from an installed package.
 
 ```yaml caption=workspace.yaml
 load_from:
-  # works if hello_world_repository is installed by pipe
-  - python_module: hello_world_repository
+  # works if hello_world_repository is installed by pip
+  - python_package: hello_world_repository
 ```
 
 Similarly you can also specify an attribute:
 
 ```yaml caption=workspace.yaml
 load_from:
-  - python_module:
-      module_name: yourproject.hello_world_repository
+  - python_package:
+      package_name: yourproject.hello_world_repository
       attribute: hello_world_repository
 ```
 
-And lastly you can load multiple repositories from multiple modules:
+And lastly you can load multiple repositories from multiple packages:
 
 
 ```yaml caption=workspace.yaml
 load_from:
-  - python_module: team_one 
-  - python_module: team_two 
-  - python_file: path/to/team_that_refuses_to_install_modules/repo.py
+  - python_package: team_one
+  - python_package: team_two
+  - python_file: path/to/team_that_refuses_to_install_packages/repo.py
 ```
 
 ### Loading from an external environment
@@ -104,12 +103,12 @@ your workspace to load the correct repository in the correct virtual environment
 ```yaml caption=workspace.yaml
 load_from:
   - python_environment:
-      executable_path: venvs/path/to/dataengineering_spark_team/bin/python 
+      executable_path: venvs/path/to/dataengineering_spark_team/bin/python
       target:
-        python_module:  dataengineering_spark_repository
+        python_package:  dataengineering_spark_repository
         location_name: dataengineering_spark_team_py_38_virtual_env
   - python_environment:
-      executable_path: venvs/path/to/ml_tensorflow/bin/python 
+      executable_path: venvs/path/to/ml_tensorflow/bin/python
       target:
         python_file: path/to/team_repos.py
         location_name: ml_team_py_36_virtual_env

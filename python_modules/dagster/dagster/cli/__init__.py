@@ -28,8 +28,6 @@ def create_dagster_cli():
     def group():
         'CLI tools for working with dagster.'
 
-    # add the path for the cwd so imports in dynamically loaded code work correctly
-    sys.path.append(os.getcwd())
     return group
 
 

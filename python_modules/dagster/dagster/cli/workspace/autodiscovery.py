@@ -1,20 +1,27 @@
-import importlib
 import inspect
 from collections import namedtuple
 
 from dagster import DagsterInvariantViolationError, PipelineDefinition, RepositoryDefinition
-from dagster.core.code_pointer import load_python_file
+from dagster.core.code_pointer import load_python_file, load_python_module
 
 LoadableTarget = namedtuple('LoadableTarget', 'attribute target_definition')
 
 
-def loadable_targets_from_python_file(python_file):
-    loaded_module = load_python_file(python_file)
+def loadable_targets_from_python_file(python_file, working_directory=None):
+    loaded_module = load_python_file(python_file, working_directory)
     return loadable_targets_from_loaded_module(loaded_module)
 
 
-def loadable_targets_from_python_module(module_name):
-    return loadable_targets_from_loaded_module(importlib.import_module(module_name))
+def loadable_targets_from_python_module(module_name, remove_from_path_fn=None):
+    module = load_python_module(
+        module_name, warn_only=True, remove_from_path_fn=remove_from_path_fn
+    )
+    return loadable_targets_from_loaded_module(module)
+
+
+def loadable_targets_from_python_package(package_name, remove_from_path_fn=None):
+    module = load_python_module(package_name, remove_from_path_fn=remove_from_path_fn)
+    return loadable_targets_from_loaded_module(module)
 
 
 def loadable_targets_from_loaded_module(module):

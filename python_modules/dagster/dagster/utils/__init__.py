@@ -435,3 +435,31 @@ def find_free_port():
         s.bind(('', 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+@contextlib.contextmanager
+def alter_sys_path(to_add, to_remove):
+    to_restore = [path for path in sys.path]
+
+    # remove paths
+    for path in to_remove:
+        if path in sys.path:
+            sys.path.remove(path)
+
+    # add paths
+    for path in to_add:
+        sys.path.insert(0, path)
+
+    try:
+        yield
+    finally:
+        sys.path = to_restore
+
+
+@contextlib.contextmanager
+def restore_sys_modules():
+    sys_modules = {k: v for k, v in sys.modules.items()}
+    try:
+        yield
+    finally:
+        sys.modules = sys_modules

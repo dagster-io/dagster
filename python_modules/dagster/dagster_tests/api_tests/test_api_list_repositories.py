@@ -8,7 +8,7 @@ from dagster.utils import file_relative_path
 def test_sync_list_python_file():
     python_file = file_relative_path(__file__, 'api_tests_repo.py')
     loadable_repo_symbols = sync_list_repositories(
-        sys.executable, python_file=python_file, module_name=None
+        sys.executable, python_file=python_file, module_name=None, working_directory=None
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)
@@ -24,7 +24,7 @@ def test_sync_list_python_file():
 def test_sync_list_python_file_multi_repo():
     python_file = file_relative_path(__file__, 'multiple_repos.py')
     loadable_repo_symbols = sync_list_repositories(
-        sys.executable, python_file=python_file, module_name=None
+        sys.executable, python_file=python_file, module_name=None, working_directory=None
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)
@@ -40,7 +40,10 @@ def test_sync_list_python_file_multi_repo():
 
 def test_sync_list_python_module():
     loadable_repo_symbols = sync_list_repositories(
-        sys.executable, python_file=None, module_name='dagster.utils.test.hello_world_repository',
+        sys.executable,
+        python_file=None,
+        module_name='dagster.utils.test.hello_world_repository',
+        working_directory=None,
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)
@@ -56,7 +59,7 @@ def test_sync_list_python_module():
 def test_sync_list_python_file_grpc():
     python_file = file_relative_path(__file__, 'api_tests_repo.py')
     loadable_repo_symbols = sync_list_repositories_grpc(
-        sys.executable, python_file=python_file, module_name=None
+        sys.executable, python_file=python_file, module_name=None, working_directory=None
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)
@@ -72,7 +75,7 @@ def test_sync_list_python_file_grpc():
 def test_sync_list_python_file_multi_repo_grpc():
     python_file = file_relative_path(__file__, 'multiple_repos.py')
     loadable_repo_symbols = sync_list_repositories_grpc(
-        sys.executable, python_file=python_file, module_name=None
+        sys.executable, python_file=python_file, module_name=None, working_directory=None
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)
@@ -88,7 +91,10 @@ def test_sync_list_python_file_multi_repo_grpc():
 
 def test_sync_list_python_module_grpc():
     loadable_repo_symbols = sync_list_repositories_grpc(
-        sys.executable, python_file=None, module_name='dagster.utils.test.hello_world_repository',
+        sys.executable,
+        python_file=None,
+        module_name='dagster.utils.test.hello_world_repository',
+        working_directory=None,
     ).repository_symbols
 
     assert isinstance(loadable_repo_symbols, list)

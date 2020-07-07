@@ -46,12 +46,17 @@ WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'path')
 PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
 ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
 
-WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget)
+#  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
+EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
+
+WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget, EmptyWorkspaceTarget)
 
 
 def created_workspace_load_target(kwargs):
     check.dict_param(kwargs, 'kwargs')
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
+        if kwargs.get('empty_workspace'):
+            return EmptyWorkspaceTarget()
         if os.path.exists('workspace.yaml'):
             return WorkspaceFileTarget(path='workspace.yaml')
         elif os.path.exists('repository.yaml'):
@@ -90,12 +95,14 @@ def workspace_from_load_target(load_target):
         return load_workspace_from_yaml_path(load_target.path)
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
-            [location_handle_from_python_file(load_target.python_file, load_target.attribute)]
+            [location_handle_from_python_file(load_target.python_file, load_target.attribute, None)]
         )
     elif isinstance(load_target, ModuleTarget):
         return Workspace(
             [location_handle_from_module_name(load_target.module_name, load_target.attribute)]
         )
+    elif isinstance(load_target, EmptyWorkspaceTarget):
+        return Workspace([])
     else:
         check.not_implemented('Unsupported: {}'.format(load_target))
 
@@ -115,6 +122,7 @@ def python_target_click_options():
         click.option(
             '--module-name', '-m', help='Specify module where repository or pipeline function lives'
         ),
+        click.option('--working-directory', '-d', help='Specify working directory',),
     ]
 
 
@@ -132,6 +140,7 @@ def attribute_option():
 def workspace_target_click_options():
     return (
         [
+            click.option('--empty-workspace', is_flag=True, help='Allow an empty workspace'),
             click.option(
                 '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
             ),
@@ -207,7 +216,7 @@ def get_reconstructable_repository_from_origin_kwargs(kwargs):
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'module_name')
         return ReconstructableRepository.for_file(
-            kwargs.get('python_file'), kwargs.get('attribute')
+            kwargs.get('python_file'), kwargs.get('attribute'), kwargs.get('working_directory')
         )
     if kwargs.get('module_name'):
         return ReconstructableRepository.for_module(
