@@ -591,39 +591,3 @@ snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sql
         'pipelineName': 'csv_hello_world'
     }
 }
-
-snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_postgres_instance_in_process_env] 1'] = {
-    'executionPlanOrError': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
-            }
-        ],
-        'pipelineName': 'csv_hello_world'
-    }
-}
-
-snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_postgres_instance_out_of_process_env] 1'] = {
-    'executionPlanOrError': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
-            }
-        ],
-        'pipelineName': 'csv_hello_world'
-    }
-}
-
-snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_postgres_instance_multi_location] 1'] = {
-    'executionPlanOrError': {
-        '__typename': 'PipelineConfigValidationInvalid',
-        'errors': [
-            {
-                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
-            }
-        ],
-        'pipelineName': 'csv_hello_world'
-    }
-}

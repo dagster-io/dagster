@@ -92,7 +92,7 @@ def test_launch_scheduled_execution():
             assert isinstance(result, ScheduledExecutionSuccess)
 
             run = instance.get_run_by_id(result.run_id)
-            assert run.is_success
+            assert run is not None
 
             ticks = instance.get_schedule_ticks(simple.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.SUCCESS

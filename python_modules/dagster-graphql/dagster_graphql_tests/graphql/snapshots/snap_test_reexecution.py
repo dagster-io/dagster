@@ -107,3 +107,37 @@ snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqli
         }
     }
 }
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_fs_storage[sqlite_with_grpc_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
+        'run': {
+            'mode': 'default',
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
+        }
+    }
+}
+
+snapshots['TestReexecution.test_full_pipeline_reexecution_in_memory_storage[sqlite_with_grpc_run_launcher_in_process_env] 1'] = {
+    'launchPipelineExecution': {
+        '__typename': 'LaunchPipelineRunSuccess',
+        'run': {
+            'mode': 'default',
+            'pipeline': {
+                'name': 'csv_hello_world'
+            },
+            'runConfigYaml': '<runConfigYaml dummy value>',
+            'runId': '<runId dummy value>',
+            'status': 'NOT_STARTED',
+            'tags': [
+            ]
+        }
+    }
+}

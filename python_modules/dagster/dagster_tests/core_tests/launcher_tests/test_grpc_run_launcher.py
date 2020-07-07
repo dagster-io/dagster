@@ -6,7 +6,7 @@ from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 from dagster.core.instance import DagsterInstance
-from dagster.core.launcher import CliApiRunLauncher
+from dagster.core.launcher.grpc_run_launcher import EphemeralGrpcRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 
@@ -75,7 +75,15 @@ def nope():
 @contextmanager
 def temp_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = DagsterInstance.local_temp(
+            temp_dir,
+            overrides={
+                'run_launcher': {
+                    'module': 'dagster.core.launcher.grpc_run_launcher',
+                    'class': 'EphemeralGrpcRunLauncher',
+                }
+            },
+        )
         try:
             yield instance
         finally:
@@ -177,7 +185,7 @@ def test_crashy_run():
 
         event_records = instance.all_logs(run_id)
 
-        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+        message = 'User process: GRPC server for {run_id} terminated unexpectedly'.format(
             run_id=run_id
         )
 
@@ -212,15 +220,16 @@ def test_terminated_run():
 
         events = [event.dagster_event.event_type_value for event in instance.all_logs(run_id)]
 
+        # This test tracks the termination behavior of the GRPC ExecuteRun handler. Currently this
+        # is "hard" rather than "soft" -- no STEP_FAILURE event is created.
         assert events == [
             'ENGINE_EVENT',
             'ENGINE_EVENT',
             'PIPELINE_START',
             'ENGINE_EVENT',
             'STEP_START',
-            'STEP_FAILURE',
-            'PIPELINE_FAILURE',
             'ENGINE_EVENT',
+            'PIPELINE_FAILURE',
         ]
 
 
@@ -343,7 +352,7 @@ def test_engine_events():
 
 
 def test_not_initialized():
-    run_launcher = CliApiRunLauncher()
+    run_launcher = EphemeralGrpcRunLauncher()
     run_id = 'dummy'
 
     assert run_launcher.join() is None

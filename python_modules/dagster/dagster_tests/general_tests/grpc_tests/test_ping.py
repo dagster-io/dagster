@@ -6,7 +6,7 @@ import pytest
 from dagster import check, seven
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster.grpc.client import open_server_process
-from dagster.serdes.ipc import interrupt_ipc_subprocess
+from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port, safe_tempfile_path
 
 
@@ -41,7 +41,7 @@ def test_server_socket():
         try:
             assert DagsterGrpcClient(socket=skt).ping('foobar') == 'foobar'
         finally:
-            interrupt_ipc_subprocess(server_process)
+            interrupt_ipc_subprocess_pid(server_process.pid)
 
 
 def test_server_port():
@@ -53,7 +53,7 @@ def test_server_port():
         assert DagsterGrpcClient(port=port).ping('foobar') == 'foobar'
     finally:
         if server_process is not None:
-            interrupt_ipc_subprocess(server_process)
+            interrupt_ipc_subprocess_pid(server_process.pid)
 
 
 def test_client_bad_port():
@@ -106,3 +106,12 @@ def test_client_port_and_socket():
 def test_ephemeral_client():
     with ephemeral_grpc_api_client() as api_client:
         assert api_client.ping('foo') == 'foo'
+
+
+def test_streaming():
+    with ephemeral_grpc_api_client() as api_client:
+        results = [result for result in api_client.streaming_ping(sequence_length=10, echo='foo')]
+        assert len(results) == 10
+        for sequence_number, result in enumerate(results):
+            assert result['sequence_number'] == sequence_number
+            assert result['echo'] == 'foo'

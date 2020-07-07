@@ -5,8 +5,13 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 
 from dagster import check, seven
-from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
-from dagster.core.execution.api import create_execution_plan
+from dagster.core.errors import (
+    DagsterSubprocessError,
+    PartitionExecutionError,
+    user_code_error_boundary,
+)
+from dagster.core.events import EngineEventData
+from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -14,10 +19,11 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import setup_interrupt_support
+from dagster.serdes.ipc import IPCErrorMessage, setup_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -28,6 +34,7 @@ from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
 from .impl import get_external_pipeline_subset_result, get_external_schedule_execution
 from .types import (
+    ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     ListRepositoriesArgs,
@@ -44,10 +51,78 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
+def _execute_run(request):
+    try:
+        execute_run_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_execute_run_args
+        )
+        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+
+        recon_pipeline = recon_pipeline_from_origin(execute_run_args.pipeline_origin)
+
+        instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
+        pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+
+        pid = os.getpid()
+
+    except:  # pylint: disable=bare-except
+        yield IPCErrorMessage(
+            serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+            message='Error during RPC setup for ExecuteRun',
+        )
+        return
+
+    yield instance.report_engine_event(
+        'Started process for pipeline (pid: {pid}).'.format(pid=pid),
+        pipeline_run,
+        EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+    )
+
+    # This is so nasty but seemingly unavoidable
+    # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
+    closed = False
+    try:
+        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
+            yield event
+    except DagsterSubprocessError as err:
+        if not all(
+            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
+        ):
+            yield instance.report_engine_event(
+                'An exception was thrown during execution that is likely a framework error, '
+                'rather than an error in user code.',
+                pipeline_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+            instance.report_run_failed(pipeline_run)
+    except GeneratorExit:
+        closed = True
+        raise
+    except Exception:  # pylint: disable=broad-except
+        yield instance.report_engine_event(
+            'An exception was thrown during execution that is likely a framework error, '
+            'rather than an error in user code.',
+            pipeline_run,
+            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+        )
+        instance.report_run_failed(pipeline_run)
+    finally:
+        if not closed:
+            yield instance.report_engine_event(
+                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+            )
+
+
 class DagsterApiServer(DagsterApiServicer):
     def Ping(self, request, _context):
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
+
+    def StreamingPing(self, request, _context):
+        sequence_length = request.sequence_length
+        echo = request.echo
+        for sequence_number in range(sequence_length):
+            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
     def ExecutionPlanSnapshot(self, request, _context):
         execution_plan_args = deserialize_json_to_dagster_namedtuple(
@@ -255,6 +330,14 @@ class DagsterApiServer(DagsterApiServicer):
                 get_external_schedule_execution(external_schedule_execution_args)
             )
         )
+
+    def ExecuteRun(self, request, _context):
+        for dagster_event_or_ipc_error_message in _execute_run(request):
+            yield api_pb2.ExecuteRunEvent(
+                serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
+                    dagster_event_or_ipc_error_message
+                )
+            )
 
 
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom

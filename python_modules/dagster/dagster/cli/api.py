@@ -298,9 +298,6 @@ def schedule_execution_data_command(args):
     return get_external_schedule_execution(args)
 
 
-# Execution CLI
-
-
 @whitelist_for_serdes
 class ExecuteRunArgsLoadComplete(namedtuple('_ExecuteRunArgsLoadComplete', '')):
     pass
@@ -591,6 +588,7 @@ def create_api_cli_group():
             'generally not invoke these commands interactively.'
         ),
     )
+
     group.add_command(execute_run_command)
     group.add_command(repository_snapshot_command)
     group.add_command(pipeline_subset_snapshot_command)

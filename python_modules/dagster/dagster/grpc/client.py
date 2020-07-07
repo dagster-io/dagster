@@ -7,10 +7,13 @@ from contextlib import contextmanager
 import grpc
 
 from dagster import check, seven
+from dagster.core.events import EngineEventData
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster.serdes.ipc import interrupt_ipc_subprocess_pid, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import (
@@ -19,6 +22,7 @@ from .server import (
     CouldNotBindGrpcServerToAddress,
 )
 from .types import (
+    ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     ListRepositoriesArgs,
@@ -82,13 +86,28 @@ class DagsterGrpcClient(object):
 
     def terminate_server_process(self):
         if self._server_process is not None:
-            interrupt_ipc_subprocess(self._server_process)
+            interrupt_ipc_subprocess_pid(self._server_process.pid)
             self._server_process = None
 
     def ping(self, echo):
         check.str_param(echo, 'echo')
         res = self._query('Ping', api_pb2.PingRequest, echo=echo)
         return res.echo
+
+    def streaming_ping(self, sequence_length, echo):
+        check.int_param(sequence_length, 'sequence_length')
+        check.str_param(echo, 'echo')
+
+        for res in self._streaming_query(
+            'StreamingPing',
+            api_pb2.StreamingPingRequest,
+            sequence_length=sequence_length,
+            echo=echo,
+        ):
+            yield {
+                'sequence_number': res.sequence_number,
+                'echo': res.echo,
+            }
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args):
         check.inst_param(
@@ -206,6 +225,59 @@ class DagsterGrpcClient(object):
             res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
         )
 
+    def execute_run(self, execute_run_args):
+        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+
+        try:
+            instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
+            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+
+            for event in self._streaming_query(
+                'ExecuteRun',
+                api_pb2.ExecuteRunRequest,
+                serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
+            ):
+                yield deserialize_json_to_dagster_namedtuple(
+                    event.serialized_dagster_event_or_ipc_error_message
+                )
+        except KeyboardInterrupt as interrupt:
+            self.terminate_server_process()
+            yield instance.report_engine_event(
+                message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
+            )
+            yield instance.report_run_failed(pipeline_run)
+            raise interrupt
+        except grpc.RpcError as rpc_error:
+            if 'Socket closed' in rpc_error.debug_error_string():  # pylint: disable=no-member
+                yield instance.report_engine_event(
+                    message='User process: GRPC server for {run_id} terminated unexpectedly'.format(
+                        run_id=pipeline_run.run_id
+                    ),
+                    pipeline_run=pipeline_run,
+                    engine_event_data=EngineEventData.engine_error(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    ),
+                )
+                yield instance.report_run_failed(pipeline_run)
+            else:
+                yield instance.report_engine_event(
+                    message='Unexpected error in IPC client',
+                    pipeline_run=pipeline_run,
+                    engine_event_data=EngineEventData.engine_error(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    ),
+                )
+            raise rpc_error
+        except Exception as exc:  # pylint: disable=bare-except
+            yield instance.report_engine_event(
+                message='Unexpected error in IPC client',
+                pipeline_run=pipeline_run,
+                engine_event_data=EngineEventData.engine_error(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
+            raise exc
+
 
 def _wait_for_grpc_server(server_process, timeout=3):
     total_time = 0
@@ -242,7 +314,7 @@ def open_server_process(port, socket, python_executable_path=None):
         return server_process
     else:
         if server_process.poll() is None:
-            interrupt_ipc_subprocess(server_process)
+            interrupt_ipc_subprocess_pid(server_process.pid)
         return None
 
 

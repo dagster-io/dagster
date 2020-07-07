@@ -27,6 +27,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.PingRequest.SerializeToString,
             response_deserializer=api__pb2.PingReply.FromString,
         )
+        self.StreamingPing = channel.unary_stream(
+            '/api.DagsterApi/StreamingPing',
+            request_serializer=api__pb2.StreamingPingRequest.SerializeToString,
+            response_deserializer=api__pb2.StreamingPingEvent.FromString,
+        )
         self.ExecutionPlanSnapshot = channel.unary_unary(
             '/api.DagsterApi/ExecutionPlanSnapshot',
             request_serializer=api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
@@ -67,12 +72,23 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
         )
+        self.ExecuteRun = channel.unary_stream(
+            '/api.DagsterApi/ExecuteRun',
+            request_serializer=api__pb2.ExecuteRunRequest.SerializeToString,
+            response_deserializer=api__pb2.ExecuteRunEvent.FromString,
+        )
 
 
 class DagsterApiServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Ping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StreamingPing(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -126,6 +142,12 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExecuteRun(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -133,6 +155,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.Ping,
             request_deserializer=api__pb2.PingRequest.FromString,
             response_serializer=api__pb2.PingReply.SerializeToString,
+        ),
+        'StreamingPing': grpc.unary_stream_rpc_method_handler(
+            servicer.StreamingPing,
+            request_deserializer=api__pb2.StreamingPingRequest.FromString,
+            response_serializer=api__pb2.StreamingPingEvent.SerializeToString,
         ),
         'ExecutionPlanSnapshot': grpc.unary_unary_rpc_method_handler(
             servicer.ExecutionPlanSnapshot,
@@ -174,6 +201,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
         ),
+        'ExecuteRun': grpc.unary_stream_rpc_method_handler(
+            servicer.ExecuteRun,
+            request_deserializer=api__pb2.ExecuteRunRequest.FromString,
+            response_serializer=api__pb2.ExecuteRunEvent.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
@@ -201,6 +233,33 @@ class DagsterApi(object):
             '/api.DagsterApi/Ping',
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def StreamingPing(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/api.DagsterApi/StreamingPing',
+            api__pb2.StreamingPingRequest.SerializeToString,
+            api__pb2.StreamingPingEvent.FromString,
             options,
             channel_credentials,
             call_credentials,
@@ -417,6 +476,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExternalScheduleExecution',
             api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             api__pb2.ExternalScheduleExecutionReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExecuteRun(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/api.DagsterApi/ExecuteRun',
+            api__pb2.ExecuteRunRequest.SerializeToString,
+            api__pb2.ExecuteRunEvent.FromString,
             options,
             channel_credentials,
             call_credentials,

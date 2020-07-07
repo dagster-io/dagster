@@ -32,3 +32,12 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_cli_api_run_la
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
+
+snapshots['TestMaterializations.test_materializations[sqlite_with_grpc_run_launcher_in_process_env] 1'] = [
+    'PipelineStartEvent',
+    'ExecutionStepStartEvent',
+    'StepMaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'ExecutionStepSuccessEvent',
+    'PipelineSuccessEvent'
+]

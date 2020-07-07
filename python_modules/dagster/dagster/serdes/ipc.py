@@ -188,3 +188,13 @@ def interrupt_ipc_subprocess(proc):
         proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
     else:
         proc.send_signal(signal.SIGINT)
+
+
+def interrupt_ipc_subprocess_pid(pid):
+    ''' Send CTRL_BREAK on Windows, SIGINT on other platforms '''
+    check.int_param(pid, 'pid')
+
+    if sys.platform == 'win32':
+        os.kill(pid, signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+    else:
+        os.kill(pid, signal.SIGINT)
