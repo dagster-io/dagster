@@ -29,28 +29,18 @@ def resource_initialization_manager(
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
 
-def resource_initialization_event_generator(
-    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
+def _core_resource_initialization_event_generator(
+    execution_plan,
+    environment_config,
+    pipeline_run,
+    resource_keys_to_init,
+    resource_log_manager,
+    resource_managers,
 ):
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
-    check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
-
-    if execution_plan.step_key_for_single_step_plans():
-        step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
-        resource_log_manager = log_manager.with_tags(**step.logging_tags)
-    else:
-        resource_log_manager = log_manager
-
-    resource_instances = {}
     pipeline_def = execution_plan.pipeline_def
+    resource_instances = {}
     mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
-    resource_managers = deque()
-    generator_closed = False
     resource_init_times = {}
-
     try:
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
@@ -88,11 +78,6 @@ def resource_initialization_event_generator(
                 execution_plan, resource_log_manager, resource_instances, resource_init_times
             )
         yield ScopedResourcesBuilder(resource_instances)
-    except GeneratorExit:
-        # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
-        # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
-        generator_closed = True
-        raise
     except DagsterUserCodeExecutionError as dagster_user_error:
         yield DagsterEvent.resource_init_failure(
             execution_plan,
@@ -101,6 +86,41 @@ def resource_initialization_event_generator(
             serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
         )
         raise dagster_user_error
+
+
+def resource_initialization_event_generator(
+    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
+):
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
+    check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
+
+    if execution_plan.step_key_for_single_step_plans():
+        step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
+        resource_log_manager = log_manager.with_tags(**step.logging_tags)
+    else:
+        resource_log_manager = log_manager
+
+    generator_closed = False
+    resource_managers = deque()
+
+    try:
+        for event in _core_resource_initialization_event_generator(
+            execution_plan=execution_plan,
+            environment_config=environment_config,
+            pipeline_run=pipeline_run,
+            resource_keys_to_init=resource_keys_to_init,
+            resource_log_manager=resource_log_manager,
+            resource_managers=resource_managers,
+        ):
+            yield event
+    except GeneratorExit:
+        # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
+        # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
+        generator_closed = True
+        raise
     finally:
         if not generator_closed:
             error = None
