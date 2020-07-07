@@ -39,7 +39,7 @@ class SystemStorageDefinition(
         config_schema (Optional[ConfigSchema]): The schema for the storage's configuration schema.
             Configuration data passed in this schema will be made available to the
             ``system_storage_creation_fn`` under ``init_context.system_storage_config``.
-        system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
+        system_storage_creation_fn: (Callable[[InitSystemStorageContext], SystemStorageData])
             Called to construct the storage. This function should consume the init context and emit
             a :py:class:`SystemStorageData`.
         required_resource_keys(Set[str]): The resources that this storage needs at runtime to function.
