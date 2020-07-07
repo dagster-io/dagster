@@ -5,21 +5,6 @@ import examples from 'pages/examples/examples.json';
 import treeOfContents from 'treeOfContents.json';
 
 const createTreeOfContents = () => {
-  const API_DOCS_PAGES = [];
-  const docnames = data.docnames;
-  for (const i in docnames) {
-    const doc = docnames[i];
-    const title = data.titles[i];
-    if (doc.includes('api/apidocs')) {
-      API_DOCS_PAGES.push({
-        name: title,
-        path: doc.replace('sections/api/apidocs/', '/_apidocs/'),
-      });
-    }
-  }
-
-  delete treeOfContents['Learn'];
-
   const EXAMPLES_PAGES = [];
   for (const example of examples) {
     EXAMPLES_PAGES.push({
@@ -27,14 +12,28 @@ const createTreeOfContents = () => {
       path: '/examples/' + example.name,
     });
   }
-
-  return Object.assign({}, treeOfContents, {
-    Examples: {
+  const examplesEntry = {
       name: 'Examples',
       path: '/examples',
       children: EXAMPLES_PAGES,
-    },
-  });
+  };
+
+  const entriesByName = Object.assign(
+    {Examples: examplesEntry},
+    ...treeOfContents.map((entry) => ({[entry.name]: entry}))
+  );
+
+  const ORDERING = [
+    'Install',
+    'Tutorial',
+    'Examples',
+    'Overviews',
+    'API Docs',
+    'Deploy',
+    'Community'
+  ];
+  const result = ORDERING.map(name => entriesByName[name]);
+  return result;
 };
 
 export const useTreeOfContents = () =>

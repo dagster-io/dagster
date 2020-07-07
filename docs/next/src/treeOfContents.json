@@ -1,10 +1,10 @@
-{
-  "Install": {
+[
+  {
     "name": "Install",
     "path": "/install",
     "ignore": true
   },
-  "Tutorial": {
+  {
     "name": "Tutorial",
     "path": "/tutorial",
     "ignore": true,
@@ -67,7 +67,7 @@
       }
     ]
   },
-  "Overviews": {
+  {
     "name": "Overviews",
     "path": "/overview",
     "ignore": true,
@@ -208,7 +208,7 @@
       }
     ]
   },
-  "Learn": {
+  {
     "name": "Learn",
     "path": "/learn",
     "children": [
@@ -238,7 +238,7 @@
       }
     ]
   },
-  "API Docs": {
+  {
     "name": "API Docs",
     "path": "/_apidocs",
     "children": [
@@ -384,8 +384,7 @@
       }
     ]
   },
-
-  "Deploy": {
+  {
     "name": "Deploy",
     "path": "/deploying",
     "children": [
@@ -419,7 +418,7 @@
       }
     ]
   },
-  "Community": {
+  {
     "name": "Community",
     "path": "/community",
     "ignore": true,
@@ -456,4 +455,4 @@
       }
     ]
   }
-}
+]

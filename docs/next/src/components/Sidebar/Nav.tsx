@@ -53,17 +53,17 @@ type NavProps = {
 const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
   const treeOfContents = useTreeOfContents();
   const router = useRouter();
-  const allLinks = flatten(Object.values(treeOfContents), true);
+  const allLinks = flatten(treeOfContents, true);
   const selectedSection = allLinks.find((l) => router.asPath.includes(l.path));
-  const selectedSectionChildren = (treeOfContents as Record<string, any>)[
-    selectedSection?.name || ''
-  ]?.children;
+  const selectedSectionChildren = treeOfContents.find(
+    entry => entry.name === selectedSection?.name
+  )?.children
 
   return (
     <nav className={className}>
       {isMobile && <CommunityLinks className="mb-5" />}
       <div className="border-b border-gray-200 pb-2">
-        {Object.values(treeOfContents).map((element) => (
+        {treeOfContents.map((element) => (
           <MainItem
             key={element.name}
             name={element.name}

@@ -7,7 +7,7 @@ export const PrevNext = () => {
   const treeOfContents = useTreeOfContents();
   const router = useRouter();
 
-  const allLinks = Object.values(treeOfContents)
+  const allLinks = treeOfContents
     // Flatten links within each section
     .map((val) =>
       flatten([val], true)
