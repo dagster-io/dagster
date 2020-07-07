@@ -1,3 +1,0 @@
-repository:
-  file: general_tests/test_repository.py
-  fn: dagster_test_repository

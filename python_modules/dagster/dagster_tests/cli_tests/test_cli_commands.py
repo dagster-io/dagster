@@ -335,7 +335,7 @@ def test_execute_mode_command():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--config',
             file_relative_path(__file__, '../environments/multi_mode_with_resources/add_mode.yaml'),
             '-d',
@@ -351,7 +351,7 @@ def test_execute_mode_command():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/mult_mode.yaml'
@@ -369,7 +369,7 @@ def test_execute_mode_command():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--config',
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
@@ -390,7 +390,7 @@ def test_execute_preset_command():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--preset',
             'add',
             '-p',
@@ -405,7 +405,7 @@ def test_execute_preset_command():
         pipeline_execute_command,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--preset',
             'add',
             '--config',
@@ -874,7 +874,7 @@ def test_multiproc():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../repository.yaml'),
+                file_relative_path(__file__, '../workspace.yaml'),
                 '--preset',
                 'multiproc',
                 '-p',
@@ -891,7 +891,7 @@ def test_multiproc_invalid():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../repository.yaml'),
+            file_relative_path(__file__, '../workspace.yaml'),
             '--preset',
             'multiproc',
             '-p',
@@ -1071,7 +1071,7 @@ def test_tags_pipeline():
             pipeline_execute_command,
             [
                 '-w',
-                file_relative_path(__file__, '../repository.yaml'),
+                file_relative_path(__file__, '../workspace.yaml'),
                 '--preset',
                 'add',
                 '--tags',

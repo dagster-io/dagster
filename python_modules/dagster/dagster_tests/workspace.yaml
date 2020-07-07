@@ -1,0 +1,5 @@
+load_from:
+  - python_file:
+      relative_path: general_tests/test_repository.py
+      attribute: dagster_test_repository
+      location_name: test_location
