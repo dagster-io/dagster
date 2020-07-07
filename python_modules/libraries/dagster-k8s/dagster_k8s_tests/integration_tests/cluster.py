@@ -55,7 +55,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             # This is to allow users to reuse an existing cluster in local test by running
             # `pytest --kind-cluster my-cluster --no-cleanup` -- this avoids the per-test run
             # overhead of cluster setup and teardown
-            should_cleanup = not request.config.getoption('--no-cleanup')
+            should_cleanup = True if IS_BUILDKITE else not request.config.getoption('--no-cleanup')
 
             existing_cluster = kind_cluster_exists(cluster_name)
 
