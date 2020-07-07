@@ -50,7 +50,7 @@ def get_worker_name(name=None):
 
 def get_config_dir(config_yaml=None):
     instance = DagsterInstance.get()
-    config_type = celery_executor.config_field.config_type
+    config_type = celery_executor.config_schema.config_type
     config_value = get_config_value_from_yaml(config_yaml)
 
     config_module_name = 'dagster_celery_config'

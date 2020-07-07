@@ -75,7 +75,7 @@ def test_builtin_dict():
         executed['yup'] = True
         return context.solid_config
 
-    assert isinstance(builtin_dict_solid.config_field.config_type, Permissive)
+    assert isinstance(builtin_dict_solid.config_schema.config_type, Permissive)
 
     assert execute_solid(
         builtin_dict_solid, run_config={'solids': {'builtin_dict_solid': {'config': {'a': 'b'}}}}

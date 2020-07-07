@@ -6,10 +6,10 @@ def test_dagster_type_logger_decorator_config():
     def dagster_type_logger_config(_):
         raise Exception('not called')
 
-    assert dagster_type_logger_config.config_field.config_type.given_name == 'Int'
+    assert dagster_type_logger_config.config_schema.config_type.given_name == 'Int'
 
     @logger(int)
     def python_type_logger_config(_):
         raise Exception('not called')
 
-    assert python_type_logger_config.config_field.config_type.given_name == 'Int'
+    assert python_type_logger_config.config_schema.config_type.given_name == 'Int'

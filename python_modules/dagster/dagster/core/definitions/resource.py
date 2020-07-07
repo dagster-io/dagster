@@ -83,7 +83,7 @@ class ResourceDefinition(IConfigMappable):
     def string_resource(description=None):
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
-            config=str,
+            config_schema=str,
             description=description,
         )
 
