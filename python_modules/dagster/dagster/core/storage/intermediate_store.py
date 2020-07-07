@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.types.dagster_type import DagsterType
 
-from .object_store import FilesystemObjectStore, ObjectStore
+from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry
 
 
@@ -104,6 +104,17 @@ def build_fs_intermediate_store(root_for_run_id, run_id, type_storage_plugin_reg
     return IntermediateStore(
         FilesystemObjectStore(),
         root_for_run_id,
+        run_id,
+        type_storage_plugin_registry
+        if type_storage_plugin_registry
+        else TypeStoragePluginRegistry(types_to_register=[]),
+    )
+
+
+def build_mem_intermediate_store(run_id, type_storage_plugin_registry=None):
+    return IntermediateStore(
+        InMemoryObjectStore(),
+        lambda _: '',
         run_id,
         type_storage_plugin_registry
         if type_storage_plugin_registry

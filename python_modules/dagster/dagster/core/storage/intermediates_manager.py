@@ -7,7 +7,8 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
-from .intermediate_store import IntermediateStore
+from .intermediate_store import IntermediateStore, build_mem_intermediate_store
+from .object_store import InMemoryObjectStore
 
 
 class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
@@ -143,4 +144,10 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
 
     @property
     def is_persistent(self):
+        if isinstance(self._intermediate_store.object_store, InMemoryObjectStore):
+            return False
         return True
+
+
+def build_in_mem_intermediates_manager(*args, **kwargs):
+    return IntermediateStoreIntermediatesManager(build_mem_intermediate_store(*args, **kwargs))

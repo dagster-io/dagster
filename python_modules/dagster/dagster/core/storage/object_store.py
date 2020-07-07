@@ -12,16 +12,16 @@ from dagster.utils import mkdir_p
 
 
 class ObjectStore(six.with_metaclass(ABCMeta)):
-    def __init__(self, name, sep):
+    def __init__(self, name, sep='/'):
         '''Create an ObjectStore.
         
         Args:
             name (str) -- The user-visible name of the object store.
-            sep (str) -- The path separator specific to the object store. On S3, this should be
+            sep (Optional[str]) -- The path separator specific to the object store. On S3, this should be
                 '/'; on the filesystem, `os.sep`.
         '''
         self.name = check.str_param(name, 'name')
-        self.sep = check.str_param(sep, 'sep')
+        self.sep = check.opt_str_param(sep, 'sep')
 
     @abstractmethod
     def set_object(self, key, obj, serialization_strategy=None):
@@ -69,6 +69,43 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
 
 
 DEFAULT_SERIALIZATION_STRATEGY = PickleSerializationStrategy()
+
+
+class InMemoryObjectStore(ObjectStore):
+    def __init__(self):
+        self.values = {}
+        super(InMemoryObjectStore, self).__init__(name='memory')
+
+    def set_object(self, key, obj, serialization_strategy=None):
+        check.str_param(key, 'key')
+        self.values[key] = obj
+
+    def get_object(self, key, serialization_strategy=DEFAULT_SERIALIZATION_STRATEGY):
+        check.str_param(key, 'key')
+        check.param_invariant(len(key) > 0, 'key')
+        obj = self.values[key]
+        return obj
+
+    def has_object(self, key):
+        check.str_param(key, 'key')
+        check.param_invariant(len(key) > 0, 'key')
+        return key in self.values
+
+    def rm_object(self, key):
+        check.str_param(key, 'key')
+        check.param_invariant(len(key) > 0, 'key')
+
+        if self.has_object(key):
+            self.values.pop(key)
+
+    def cp_object(self, src, dst):
+        check.invariant(not dst in self.values, 'key {} already in use'.format(dst))
+        check.invariant(src in self.values, 'key {} not present'.format(src))
+        self.values[dst] = self.values[src]
+
+    def uri_for_key(self, key, protocol=None):
+        check.str_param(key, 'key')
+        return key
 
 
 class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init

@@ -4,14 +4,17 @@ from dagster.core.definitions.system_storage import SystemStorageData, system_st
 from .file_manager import LocalFileManager
 from .intermediate_store import build_fs_intermediate_store
 from .intermediates_manager import (
-    InMemoryIntermediatesManager,
     IntermediateStoreIntermediatesManager,
+    build_in_mem_intermediates_manager,
 )
 
 
 def create_mem_system_storage_data(init_context):
     return SystemStorageData(
-        intermediates_manager=InMemoryIntermediatesManager(),
+        intermediates_manager=build_in_mem_intermediates_manager(
+            init_context.pipeline_run.run_id,
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
+        ),
         file_manager=LocalFileManager.for_instance(
             init_context.instance, init_context.pipeline_run.run_id
         ),
