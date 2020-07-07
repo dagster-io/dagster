@@ -78,7 +78,7 @@ def _create_type_loader_for_decorator(config_type, func, required_resource_keys)
     return DagsterTypeLoaderFromDecorator(config_type, func, required_resource_keys)
 
 
-def input_hydration_config(config_schema, required_resource_keys=None, config_cls=None):
+def input_hydration_config(config_schema=None, required_resource_keys=None, config_cls=None):
     '''Deprecated in favor of dagster_type_loader'''
     rename_warning('dagster_type_loader', 'input_hydration_config', '0.10.0')
     config_schema = canonicalize_backcompat_args(
@@ -87,7 +87,7 @@ def input_hydration_config(config_schema, required_resource_keys=None, config_cl
     return dagster_type_loader(config_schema, required_resource_keys)
 
 
-def dagster_type_loader(config_cls, required_resource_keys=None):
+def dagster_type_loader(config_schema, required_resource_keys=None):
     '''Create an dagster type loader that maps config data to a runtime value.
 
     The decorated function should take the execution context and parsed config value and return the
@@ -107,7 +107,7 @@ def dagster_type_loader(config_cls, required_resource_keys=None):
     '''
     from dagster.config.field import resolve_to_config_type
 
-    config_type = resolve_to_config_type(config_cls)
+    config_type = resolve_to_config_type(config_schema)
     EXPECTED_POSITIONALS = ['context', '*']
 
     def wrapper(func):
@@ -175,7 +175,7 @@ def _create_output_materializer_for_decorator(config_type, func, required_resour
     return DagsterTypeMaterializerForDecorator(config_type, func, required_resource_keys)
 
 
-def output_materialization_config(config_schema, required_resource_keys=None, config_cls=None):
+def output_materialization_config(config_schema=None, required_resource_keys=None, config_cls=None):
     '''Deprecated in favor of dagster_type_materializer'''
     rename_warning('dagster_type_materializer', 'output_materialization_config', '0.10.0')
     config_schema = canonicalize_backcompat_args(
