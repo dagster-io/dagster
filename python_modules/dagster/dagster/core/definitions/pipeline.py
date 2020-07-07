@@ -541,7 +541,7 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
         return sub_pipeline_def
     except DagsterInvalidDefinitionError as exc:
         # This handles the case when you construct a subset such that an unsatisfied
-        # input cannot be hydrate from config. Instead of throwing a DagsterInvalidDefinitionError,
+        # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         six.raise_from(
             DagsterInvalidSubsetError(
@@ -596,15 +596,15 @@ def _validate_inputs(dependency_structure, solid_dict):
         for handle in solid.input_handles():
             if not dependency_structure.has_deps(handle):
                 if (
-                    not handle.input_def.dagster_type.input_hydration_config
+                    not handle.input_def.dagster_type.loader
                     and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
-                        'the output of a previous solid and can not be hydrated from configuration, '
+                        'the output of a previous solid and can not be loaded from configuration, '
                         'creating an impossible to execute pipeline. '
                         'Possible solutions are:\n'
-                        '  * add a input_hydration_config for the type "{dagster_type}"\n'
+                        '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
                             input_name=handle.input_def.name,

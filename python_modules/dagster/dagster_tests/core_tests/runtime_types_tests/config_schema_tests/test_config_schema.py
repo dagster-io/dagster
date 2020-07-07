@@ -2,29 +2,33 @@ import pytest
 
 from dagster import String
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config_schema import input_hydration_config, output_materialization_config
+from dagster.core.types.config_schema import (
+    dagster_type_loader,
+    input_hydration_config,
+    output_materialization_config,
+)
 
 
-def test_input_hydration_config_one():
-    @input_hydration_config(String)
+def test_dagster_type_loader_one():
+    @dagster_type_loader(String)
     def _foo(_, hello):
         return hello
 
 
-def test_input_hydration_config_missing_context():
+def test_dagster_type_loader_missing_context():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @input_hydration_config(String)
+        @dagster_type_loader(String)
         def _foo(hello):
             return hello
 
 
-def test_input_hydration_config_missing_variable():
+def test_dagster_type_loader_missing_variable():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @input_hydration_config(String)
+        @dagster_type_loader(String)
         def _foo(_):
             return 1
 

@@ -68,7 +68,7 @@ def test_pipeline_with_invalid_definition_snapshot_api():
     assert re.match(
         (
             r'.*DagsterInvalidDefinitionError[\s\S]*'
-            r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
+            r'add a dagster_type_loader for the type "InputTypeWithoutHydration"'
         ),
         external_pipeline_subset_result.error.cause.message,
     )
@@ -129,7 +129,7 @@ def test_pipeline_with_invalid_definition_snapshot_api_grpc():
     assert re.match(
         (
             r'.*DagsterInvalidDefinitionError[\s\S]*'
-            r'add a input_hydration_config for the type "InputTypeWithoutHydration"'
+            r'add a dagster_type_loader for the type "InputTypeWithoutHydration"'
         ),
         external_pipeline_subset_result.error.cause.message,
     )

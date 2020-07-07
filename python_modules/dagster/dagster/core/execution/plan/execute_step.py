@@ -400,7 +400,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
 
 
 def _generate_error_boundary_msg_for_step_input(context, input_):
-    return lambda: '''Error occurred during input hydration:
+    return lambda: '''Error occurred during input loading:
     input name: "{input_}"
     step key: "{key}"
     solid invocation: "{solid}"

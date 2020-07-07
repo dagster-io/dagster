@@ -11,21 +11,21 @@ from dagster import (
     PipelineDefinition,
     PythonObjectDagsterType,
     SolidDefinition,
-    input_hydration_config,
-    output_materialization_config,
+    dagster_type_loader,
+    dagster_type_materializer,
     repository,
 )
 
 from .production_query import PRODUCTION_QUERY
 
 
-@input_hydration_config(str)
+@dagster_type_loader(str)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@output_materialization_config(str)
+@dagster_type_materializer(str)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())

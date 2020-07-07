@@ -5,9 +5,9 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     String,
+    dagster_type_loader,
+    dagster_type_materializer,
     execute_pipeline,
-    input_hydration_config,
-    output_materialization_config,
     pipeline,
     resource,
     solid,
@@ -36,7 +36,7 @@ def test_user_error_boundary_solid_compute():
 
 
 def test_user_error_boundary_input_hydration():
-    @input_hydration_config(String)
+    @dagster_type_loader(String)
     def InputHydration(context, hello):
         raise UserError()
 
@@ -61,7 +61,7 @@ def test_user_error_boundary_input_hydration():
 
 
 def test_user_error_boundary_output_materialization():
-    @output_materialization_config(String)
+    @dagster_type_materializer(String)
     def materialize(context, *_args, **_kwargs):
         raise UserError()
 

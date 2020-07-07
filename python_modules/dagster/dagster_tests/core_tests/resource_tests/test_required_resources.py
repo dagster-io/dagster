@@ -12,9 +12,9 @@ from dagster import (
     ResourceDefinition,
     String,
     composite_solid,
+    dagster_type_loader,
+    dagster_type_materializer,
     execute_pipeline,
-    input_hydration_config,
-    output_materialization_config,
     pipeline,
     resource,
     solid,
@@ -316,7 +316,7 @@ def test_custom_type_with_resource_dependent_hydration():
         def resource_a(_):
             yield 'A'
 
-        @input_hydration_config(
+        @dagster_type_loader(
             String, required_resource_keys={'a'} if should_require_resources else set()
         )
         def InputHydration(context, hello):
@@ -358,7 +358,7 @@ def test_resource_dependent_hydration_with_selective_init():
             resources_initted['a'] = True
             yield 'A'
 
-        @input_hydration_config(String, required_resource_keys={'a'})
+        @dagster_type_loader(String, required_resource_keys={'a'})
         def InputHydration(context, hello):
             assert context.resources.a == 'A'
             return CustomType(hello)
@@ -457,7 +457,7 @@ def define_materialization_pipeline(should_require_resources=True, resources_ini
         resources_initted['a'] = True
         yield 'A'
 
-    @output_materialization_config(
+    @dagster_type_materializer(
         String, required_resource_keys={'a'} if should_require_resources else set()
     )
     def materialize(context, *_args, **_kwargs):
@@ -515,7 +515,7 @@ def define_composite_materialization_pipeline(
         resources_initted['a'] = True
         yield 'A'
 
-    @output_materialization_config(
+    @dagster_type_materializer(
         String, required_resource_keys={'a'} if should_require_resources else set()
     )
     def materialize(context, *_args, **_kwargs):

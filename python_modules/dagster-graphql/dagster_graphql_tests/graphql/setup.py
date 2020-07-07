@@ -37,13 +37,13 @@ from dagster import (
     String,
     check,
     composite_solid,
+    dagster_type_loader,
+    dagster_type_materializer,
     daily_schedule,
     hourly_schedule,
-    input_hydration_config,
     lambda_solid,
     logger,
     monthly_schedule,
-    output_materialization_config,
     pipeline,
     repository,
     resource,
@@ -59,13 +59,13 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path, segfault
 
 
-@input_hydration_config(String)
+@dagster_type_loader(String)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@output_materialization_config(String)
+@dagster_type_materializer(String)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -79,7 +79,7 @@ PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name='PoorMansDataFrame',
     loader=df_input_schema,
-    output_materialization_config=df_output_schema,
+    materializer=df_output_schema,
 )
 
 

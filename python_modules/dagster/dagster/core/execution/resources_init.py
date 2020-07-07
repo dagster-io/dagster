@@ -196,23 +196,17 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
     # add input type and input hydration config resource keys
     for step_input in execution_step.step_inputs:
         resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
-        if (
-            step_input.source_type == StepInputSourceType.CONFIG
-            and step_input.dagster_type.input_hydration_config
-        ):
+        if step_input.source_type == StepInputSourceType.CONFIG and step_input.dagster_type.loader:
             resource_keys = resource_keys.union(
-                step_input.dagster_type.input_hydration_config.required_resource_keys()
+                step_input.dagster_type.loader.required_resource_keys()
             )
 
     # add output type and output materialization config resource keys
     for step_output in execution_step.step_outputs:
         resource_keys = resource_keys.union(step_output.dagster_type.required_resource_keys)
-        if (
-            step_output.should_materialize
-            and step_output.dagster_type.output_materialization_config
-        ):
+        if step_output.should_materialize and step_output.dagster_type.materializer:
             resource_keys = resource_keys.union(
-                step_output.dagster_type.output_materialization_config.required_resource_keys()
+                step_output.dagster_type.materializer.required_resource_keys()
             )
 
     # add all the storage-compatible plugin resource keys

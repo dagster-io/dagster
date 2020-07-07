@@ -12,11 +12,11 @@ from dagster import (
     PythonObjectDagsterType,
     String,
     check,
+    dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
-from dagster.core.types.config_schema import output_selector_schema
 
 WriteModeOptions = Enum(
     'WriteMode',
@@ -71,7 +71,7 @@ WriteCompressionParquetOptions = Enum(
 )
 
 
-@output_selector_schema(
+@dagster_type_materializer(
     Selector(
         {
             'csv': Permissive(
@@ -312,7 +312,9 @@ WriteCompressionParquetOptions = Enum(
         }
     )
 )
-def spark_df_output_schema(_context, file_type, file_options, spark_df):
+def spark_df_materializer(_context, config, spark_df):
+    file_type, file_options = list(config.items())[0]
+
     if file_type == 'csv':
         spark_df.write.csv(**file_options)
         return Materialization.file(file_options['path'])
@@ -404,5 +406,5 @@ DataFrame = PythonObjectDagsterType(
     name='PySparkDataFrame',
     description='A PySpark data frame.',
     auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
-    output_materialization_config=spark_df_output_schema,
+    materializer=spark_df_materializer,
 )

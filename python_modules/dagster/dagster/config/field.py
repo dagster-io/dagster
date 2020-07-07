@@ -149,9 +149,9 @@ class Field(object):
     a default value, or to mark it as not required.
 
     Config fields are parsed according to their schemas in order to yield values available at
-    pipeline execution time through the config system. Config fields can be set on solids, on custom
-    data types (as the :py:func:`@input_hydration_schema <dagster.input_hydration_schema>`), and on
-    other pluggable components of the system, such as resources, loggers, and executors.
+    pipeline execution time through the config system. Config fields can be set on solids, on
+    loaders and materializers for custom, and on other pluggable components of the system, such as
+    resources, loggers, and executors.
 
 
     Args:

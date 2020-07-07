@@ -12,9 +12,9 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     String,
+    dagster_type_materializer,
     execute_pipeline,
     lambda_solid,
-    output_materialization_config,
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
@@ -328,7 +328,7 @@ def test_basic_int_json_multiple_materializations():
             assert value == {'value': 1}
 
 
-@output_materialization_config(Int)
+@dagster_type_materializer(Int)
 def yield_two_materializations(*_args, **_kwargs):
     yield Materialization('1st hello')
     yield Materialization('2nd hello')
@@ -359,7 +359,7 @@ def test_basic_yield_multiple_materializations():
     )
 
 
-@output_materialization_config(Int)
+@dagster_type_materializer(Int)
 def return_int(*_args, **_kwargs):
     return 1
 

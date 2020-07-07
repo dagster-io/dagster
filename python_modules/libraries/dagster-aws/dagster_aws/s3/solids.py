@@ -8,7 +8,7 @@ from dagster import (
     OutputDefinition,
     StringSource,
     check,
-    input_hydration_config,
+    dagster_type_loader,
     solid,
 )
 from dagster.core.types.dagster_type import PythonObjectDagsterType
@@ -21,7 +21,7 @@ def dict_with_fields(name, fields):
     check.dict_param(fields, 'fields', key_type=str)
     field_names = set(fields.keys())
 
-    @input_hydration_config(fields)
+    @dagster_type_loader(fields)
     def _input_schema(_context, value):
         check.dict_param(value, 'value')
         check.param_invariant(set(value.keys()) == field_names, 'value')
