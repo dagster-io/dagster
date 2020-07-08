@@ -16,3 +16,12 @@ class Executor(six.with_metaclass(abc.ABCMeta)):  # pylint: disable=no-init
         Returns:
             A stream of dagster events.
         '''
+
+    @abc.abstractproperty
+    def retries(self):
+        '''
+        The Retries state / policy for this instance of the Executor. Executors should allow this to be
+        controlled via configuration if possible.
+
+        Returns: Retries
+        '''

@@ -73,50 +73,17 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             yield step_event
 
 
-def execute_step_out_of_process(step_context, step, errors, term_events):
-    executor = check.inst(step_context.executor, MultiprocessExecutor)
-    command = InProcessExecutorChildProcessCommand(
-        run_config=step_context.run_config,
-        pipeline_run=step_context.pipeline_run,
-        step_key=step.key,
-        instance_ref=step_context.instance.get_ref(),
-        term_event=term_events[step.key],
-        recon_pipeline=executor.pipeline,
-        retries=executor.retries,
-    )
-
-    yield DagsterEvent.engine_event(
-        step_context,
-        'Launching subprocess for {}'.format(step.key),
-        EngineEventData(marker_start=DELEGATE_MARKER),
-        step_key=step.key,
-    )
-
-    for ret in execute_child_process_command(command):
-        if ret is None or isinstance(ret, DagsterEvent):
-            yield ret
-        elif isinstance(ret, ChildProcessEvent):
-            if isinstance(ret, ChildProcessSystemErrorEvent):
-                errors[ret.pid] = ret.error_info
-        elif isinstance(ret, KeyboardInterrupt):
-            yield DagsterEvent.engine_event(
-                step_context,
-                'Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes',
-                EngineEventData.interrupted(list(term_events.keys())),
-            )
-            for term_event in term_events.values():
-                term_event.set()
-        else:
-            check.failed('Unexpected return value from child process {}'.format(type(ret)))
-
-
 class MultiprocessExecutor(Executor):
     def __init__(self, pipeline, retries, max_concurrent=None):
 
         self.pipeline = check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
-        self.retries = check.inst_param(retries, 'retries', Retries)
+        self._retries = check.inst_param(retries, 'retries', Retries)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
+
+    @property
+    def retries(self):
+        return self._retries
 
     def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
@@ -159,7 +126,7 @@ class MultiprocessExecutor(Executor):
                         for step in steps:
                             step_context = pipeline_context.for_step(step)
                             term_events[step.key] = get_multiprocessing_context().Event()
-                            active_iters[step.key] = execute_step_out_of_process(
+                            active_iters[step.key] = self.execute_step_out_of_process(
                                 step_context, step, errors, term_events
                             )
 
@@ -222,3 +189,38 @@ class MultiprocessExecutor(Executor):
             ),
             event_specific_data=EngineEventData.multiprocess(os.getpid()),
         )
+
+    def execute_step_out_of_process(self, step_context, step, errors, term_events):
+        command = InProcessExecutorChildProcessCommand(
+            run_config=step_context.run_config,
+            pipeline_run=step_context.pipeline_run,
+            step_key=step.key,
+            instance_ref=step_context.instance.get_ref(),
+            term_event=term_events[step.key],
+            recon_pipeline=self.pipeline,
+            retries=self.retries,
+        )
+
+        yield DagsterEvent.engine_event(
+            step_context,
+            'Launching subprocess for {}'.format(step.key),
+            EngineEventData(marker_start=DELEGATE_MARKER),
+            step_key=step.key,
+        )
+
+        for ret in execute_child_process_command(command):
+            if ret is None or isinstance(ret, DagsterEvent):
+                yield ret
+            elif isinstance(ret, ChildProcessEvent):
+                if isinstance(ret, ChildProcessSystemErrorEvent):
+                    errors[ret.pid] = ret.error_info
+            elif isinstance(ret, KeyboardInterrupt):
+                yield DagsterEvent.engine_event(
+                    step_context,
+                    'Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes',
+                    EngineEventData.interrupted(list(term_events.keys())),
+                )
+                for term_event in term_events.values():
+                    term_event.set()
+            else:
+                check.failed('Unexpected return value from child process {}'.format(type(ret)))

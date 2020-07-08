@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
@@ -55,14 +55,14 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     # Note:
     # For the in-memory manager context and runtime are currently optional
     # because they are not strictly required. So we allow one to access
-    # these values in places where those are not immediately avaiable
+    # these values in places where those are not immediately available
     # but one wants to inspect intermediates. This is useful in test contexts
     # especially
 
     def get_intermediate(
         self, context, dagster_type=None, step_output_handle=None,
     ):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
@@ -70,13 +70,13 @@ class InMemoryIntermediatesManager(IntermediatesManager):
     def set_intermediate(
         self, context, dagster_type=None, step_output_handle=None, value=None,
     ):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
     def has_intermediate(self, context, step_output_handle):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return step_output_handle in self.values
 
@@ -101,7 +101,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         self, context, dagster_type=None, step_output_handle=None,
     ):
         dagster_type = resolve_dagster_type(dagster_type)
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
@@ -114,7 +114,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         self, context, dagster_type=None, step_output_handle=None, value=None,
     ):
 
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
@@ -132,7 +132,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         )
 
     def has_intermediate(self, context, step_output_handle):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
         return self._intermediate_store.has_object(context, self._get_paths(step_output_handle))

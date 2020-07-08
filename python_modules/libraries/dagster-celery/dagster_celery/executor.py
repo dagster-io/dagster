@@ -122,7 +122,11 @@ class CeleryExecutor(Executor):
         self.config_source = dict_wrapper(
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
         )
-        self.retries = check.inst_param(retries, 'retries', Retries)
+        self._retries = check.inst_param(retries, 'retries', Retries)
+
+    @property
+    def retries(self):
+        return self._retries
 
     def execute(self, pipeline_context, execution_plan):
         from .core_execution_loop import core_celery_execution_loop

@@ -11,7 +11,7 @@ The inheritance structure of contexts is currently as follows:
  construct_pipeline_execution_context()
  |
  V
-SystemPipelineExecutionContext                  (contains SystemPipelineExecutionContextData)
+SystemPipelineExecutionContext                  (contains SystemExecutionContextData)
  |
  |--> SystemStepExecutionContext                (produced by .for_step() on pipeline context)
        |

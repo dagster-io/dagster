@@ -12,10 +12,7 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.events import ObjectStoreOperationType
-from dagster.core.execution.context.system import (
-    SystemPipelineExecutionContext,
-    SystemStepExecutionContext,
-)
+from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
@@ -187,7 +184,7 @@ class DagsterEvent(
     def from_pipeline(
         event_type, pipeline_context, message=None, event_specific_data=None, step_key=None
     ):
-        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+        check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
 
         pipeline_name = pipeline_context.pipeline_def.name
 

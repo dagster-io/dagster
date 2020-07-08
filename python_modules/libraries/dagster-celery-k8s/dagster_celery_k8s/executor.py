@@ -149,7 +149,7 @@ class CeleryK8sJobExecutor(Executor):
         else:
             check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
-        self.retries = check.inst_param(retries, 'retries', Retries)
+        self._retries = check.inst_param(retries, 'retries', Retries)
         self.broker = check.opt_str_param(broker, 'broker', default=broker_url)
         self.backend = check.opt_str_param(backend, 'backend', default=result_backend)
         self.include = check.opt_list_param(include, 'include', of_type=str)
@@ -165,6 +165,10 @@ class CeleryK8sJobExecutor(Executor):
 
         self.kubeconfig_file = check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
         self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
+
+    @property
+    def retries(self):
+        return self._retries
 
     def execute(self, pipeline_context, execution_plan):
         from dagster_celery.core_execution_loop import core_celery_execution_loop

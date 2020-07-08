@@ -27,7 +27,7 @@ from dagster.utils import EventGenerationManager, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
-from .context.system import SystemPipelineExecutionContext, SystemPipelineExecutionContextData
+from .context.system import SystemExecutionContextData, SystemPipelineExecutionContext
 
 
 def construct_system_storage_data(storage_init_context):
@@ -296,7 +296,7 @@ def construct_pipeline_execution_context(
     check.inst_param(executor, 'executor', Executor)
 
     return SystemPipelineExecutionContext(
-        SystemPipelineExecutionContextData(
+        SystemExecutionContextData(
             pipeline=context_creation_data.pipeline,
             mode_def=context_creation_data.mode_def,
             system_storage_def=context_creation_data.system_storage_def,
@@ -306,9 +306,10 @@ def construct_pipeline_execution_context(
             instance=context_creation_data.instance,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
-            executor=executor,
             raise_on_error=raise_on_error,
+            retries=executor.retries,
         ),
+        executor=executor,
         log_manager=log_manager,
     )
 

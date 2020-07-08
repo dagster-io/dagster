@@ -13,8 +13,12 @@ from .base import Executor
 
 class InProcessExecutor(Executor):
     def __init__(self, retries, marker_to_close):
-        self.retries = check.inst_param(retries, 'retries', Retries)
+        self._retries = check.inst_param(retries, 'retries', Retries)
         self.marker_to_close = check.opt_str_param(marker_to_close, 'marker_to_close')
+
+    @property
+    def retries(self):
+        return self._retries
 
     def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

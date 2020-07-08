@@ -8,6 +8,7 @@ from dagster.core.definitions.executor import check_cross_process_constraints, e
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.retries import Retries
 from dagster.utils import frozentags
 from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
@@ -124,6 +125,10 @@ class DaskExecutor(Executor):
         self.cluster_configuration = check.opt_dict_param(
             cluster_configuration, 'cluster_configuration'
         )
+
+    @property
+    def retries(self):
+        return Retries.disabled_mode()
 
     def execute(self, pipeline_context, execution_plan):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)

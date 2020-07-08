@@ -3,7 +3,7 @@ from abc import ABCMeta
 import six
 
 from dagster import check
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.types.dagster_type import DagsterType
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
@@ -33,7 +33,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         return self.object_store.key_for_paths([self.root] + paths)
 
     def set_object(self, obj, context, dagster_type, paths):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
@@ -43,7 +43,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         )
 
     def get_object(self, context, dagster_type, paths):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         check.inst_param(dagster_type, 'dagster_type', DagsterType)
@@ -53,14 +53,14 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         )
 
     def has_object(self, context, paths):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         key = self.object_store.key_for_paths([self.root] + paths)
         return self.object_store.has_object(key)
 
     def rm_object(self, context, paths):
-        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemExecutionContext)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         key = self.object_store.key_for_paths([self.root] + paths)
