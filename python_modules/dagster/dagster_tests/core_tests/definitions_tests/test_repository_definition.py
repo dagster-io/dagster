@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 
 import pytest
@@ -6,6 +7,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     PipelineDefinition,
     SolidDefinition,
+    daily_schedule,
     lambda_solid,
     repository,
 )
@@ -141,3 +143,22 @@ def test_non_pipeline_in_pipelines():
         @repository
         def _some_repo():
             return ['not-a-pipeline']
+
+
+def test_schedule_partitions():
+    @daily_schedule(
+        pipeline_name='foo', start_date=datetime.datetime(2020, 1, 1),
+    )
+    def daily_foo(_date):
+        return {}
+
+    @repository
+    def some_repo():
+        return {
+            'pipelines': {'foo': lambda: create_single_node_pipeline('foo', {})},
+            'schedules': {'daily_foo': lambda: daily_foo},
+        }
+
+    assert len(some_repo.schedule_defs) == 1
+    assert len(some_repo.partition_set_defs) == 1
+    assert some_repo.get_partition_set_def('daily_foo_partitions')

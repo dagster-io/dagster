@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils import merge_dicts
 
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
@@ -146,11 +147,22 @@ class RepositoryData(object):
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition, 'PipelineDefinition', 'pipeline', pipelines
         )
-        self._partition_sets = _CacheingDefinitionIndex(
-            PartitionSetDefinition, 'PartitionSetDefinition', 'partition set', partition_sets
-        )
         self._schedules = _CacheingDefinitionIndex(
             ScheduleDefinition, 'ScheduleDefinition', 'schedule', schedules
+        )
+        schedule_partition_sets = [
+            schedule.get_partition_set()
+            for schedule in self._schedules.get_all_definitions()
+            if isinstance(schedule, PartitionScheduleDefinition)
+        ]
+        self._partition_sets = _CacheingDefinitionIndex(
+            PartitionSetDefinition,
+            'PartitionSetDefinition',
+            'partition set',
+            merge_dicts(
+                {partition_set.name: partition_set for partition_set in schedule_partition_sets},
+                partition_sets,
+            ),
         )
 
         self._all_pipelines = None
