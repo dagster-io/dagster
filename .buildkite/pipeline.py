@@ -436,10 +436,6 @@ def coverage_step():
     return (
         StepBuilder("coverage")
         .run(
-            "apt-get update",
-            "apt-get -qq -y install lcov ruby-full",
-            "pip install coverage coveralls coveralls-merge",
-            "gem install coveralls-lcov",
             "mkdir -p tmp",
             'buildkite-agent artifact download ".coverage*" tmp/',
             'buildkite-agent artifact download "lcov.*" tmp/',
@@ -448,8 +444,8 @@ def coverage_step():
             "coveralls-lcov -v -n lcov.* > coverage.js.json",
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
-        .on_integration_image(
-            SupportedPython.V3_7,
+        .on_python_image(
+            'coverage-image:v1',
             [
                 'COVERALLS_REPO_TOKEN',  # exported by /env in ManagedSecretsBucket
                 'CI_NAME',

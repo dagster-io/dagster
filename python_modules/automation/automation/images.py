@@ -130,3 +130,14 @@ def execute_docker_push(local_image, remote_image):
         os.system('docker push {remote_image}'.format(remote_image=remote_image)) == 0,
         'docker push must succeed',
     )
+
+
+def local_coverage_image():
+    return 'dagster/coverage-image:v1'
+
+
+def aws_coverage_image(aws_account_id):
+    check.str_param(aws_account_id, 'aws_account_id')
+    return "{aws_account_id}.dkr.ecr.us-west-1.amazonaws.com/coverage-image:v1".format(
+        aws_account_id=aws_account_id
+    )
