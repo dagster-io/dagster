@@ -16,11 +16,17 @@ from .output import OutputDefinition
 def infer_output_definitions(decorator_name, solid_name, fn):
     signature = funcsigs.signature(fn)
     try:
-        return [
+        defs = [
             OutputDefinition()
             if signature.return_annotation is funcsigs.Signature.empty
             else OutputDefinition(signature.return_annotation)
         ]
+
+        if not defs:
+            # try to infer from docstring
+            defs = _infer_output_definitions_from_docstring(solid_name, fn)
+
+        return defs
     except CheckError as type_error:
         six.raise_from(
             DagsterInvalidDefinitionError(
@@ -156,6 +162,7 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
     defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
 
     if not defs:
+        # try to infer from docstrings
         defs = _infer_input_definitions_from_docstring(solid_name, fn)
 
     return defs

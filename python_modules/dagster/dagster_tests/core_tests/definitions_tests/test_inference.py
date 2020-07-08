@@ -272,3 +272,73 @@ def test_infer_outputs_from_docstring_invalid_type():
         'Error inferring Dagster type for return type "typedontexist" from @solid "numpy"'
     )
     assert expected_err in err_message
+
+
+def test_infer_outputs_from_docstring_google():
+    @solid
+    def google(context):
+        """
+        Returns:
+            int: a number
+        """
+        pass
+
+    defs = inference._infer_output_definitions_from_docstring(google.name, google.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
+
+
+def test_infer_outputs_from_docstring_numpy():
+    @solid
+    def numpy(context):
+        """
+
+        Returns
+        -------
+        int
+            a number
+        """
+        pass
+
+    defs = inference._infer_output_definitions_from_docstring(numpy.name, numpy.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].name == "result"
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
+
+
+def test_infer_outputs_from_docstring_rest():
+    @solid
+    def rest(context):
+        """
+        :return int: a number
+        """
+        pass
+
+    defs = inference._infer_output_definitions_from_docstring(rest.name, rest.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
+
+
+def test_infer_inputs_from_docstring_rest():
+    @solid
+    def rest(context, hello, optional=5):
+        """
+        :param str hello: hello world param
+        :param int optional: optional param, defaults to 5
+        """
+        pass
+
+    defs = inference._infer_input_definitions_from_docstring(rest.name, rest.compute_fn)
+    assert len(defs) == 2
+
+    hello_param = defs[0]
+    assert hello_param.name == "hello"
+    assert hello_param.dagster_type.name == "String"
+
+    optional_param = defs[1]
+    assert optional_param.name == "optional"
+    assert optional_param.dagster_type.name == "Int"
+    assert optional_param.default_value == 5
