@@ -2,6 +2,7 @@ from functools import wraps
 from typing import List, Optional
 
 from dagster import (
+    AssetMaterialization,
     DependencyDefinition,
     InputDefinition,
     Output,
@@ -177,6 +178,7 @@ class Lakehouse:
 
             output_storage = getattr(context.resources, asset.storage_key)
             output_storage.save(result, asset.path, context.resources)
+            yield AssetMaterialization(asset_key=asset.key,)
             yield Output(value=asset.path, output_name=output_def.name)
 
         return compute

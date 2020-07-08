@@ -1,5 +1,5 @@
 import pytest
-from lakehouse import AssetStorage, Lakehouse, asset_storage
+from lakehouse import AssetStorage, Lakehouse, asset_storage, computed_asset
 
 from dagster import ModeDefinition, PresetDefinition
 
@@ -44,3 +44,12 @@ def basic_lakehouse_and_storages():
 def basic_lakehouse(basic_lakehouse_and_storages):  # pylint: disable=redefined-outer-name
     lakehouse, _, _ = basic_lakehouse_and_storages
     return lakehouse
+
+
+@pytest.fixture
+def basic_lakehouse_single_asset_pipeline(basic_lakehouse):  # pylint: disable=redefined-outer-name
+    @computed_asset(storage_key="storage1", path=("apple", "banana"))
+    def return_one_asset() -> int:
+        return 1
+
+    return basic_lakehouse.build_pipeline_definition("some_pipeline", [return_one_asset])

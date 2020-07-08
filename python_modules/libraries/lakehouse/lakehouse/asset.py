@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 
 import six
 
-from dagster import DagsterType, check
+from dagster import AssetKey, DagsterType, check
 
 from .computation import Computation
 
@@ -22,6 +22,10 @@ class Asset(six.with_metaclass(ABCMeta)):
     @property
     def path(self):
         return self._path
+
+    @property
+    def key(self):
+        return AssetKey(list(self.path))
 
     @property
     def computation(self):
