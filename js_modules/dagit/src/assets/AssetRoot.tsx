@@ -70,7 +70,7 @@ const AssetLastMaterialization = ({
   const metadataEntries = materialization.metadataEntries;
   return (
     <Section>
-      <Header>Last Materialized Event</Header>
+      <Header>Last Materialization Event</Header>
       <div>
         <Legend>
           <LegendColumn style={{ maxWidth: 30 }}></LegendColumn>
