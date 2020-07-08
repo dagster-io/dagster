@@ -1,13 +1,12 @@
 import inspect
 import sys
 
-from docstring_parser import parse
 import six
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.seven import funcsigs
+from dagster.seven import funcsigs, is_module_available
 
 from .input import InputDefinition, _NoValueSentinel
 from .output import OutputDefinition
@@ -61,6 +60,11 @@ def infer_input_definitions_for_lambda_solid(solid_name, fn):
 
 
 def _infer_output_definitions_from_docstring(solid_name, fn):
+    if not is_module_available("docstring_parser"):
+        return []
+
+    from docstring_parser import parse
+
     docstring = parse(fn.__doc__)
 
     if docstring.returns is None:
@@ -90,6 +94,11 @@ def _infer_output_definitions_from_docstring(solid_name, fn):
 
 
 def _infer_input_definitions_from_docstring(solid_name, fn):
+    if not is_module_available("docstring_parser"):
+        return []
+
+    from docstring_parser import parse
+
     docstring = parse(fn.__doc__)
 
     params = {}

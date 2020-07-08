@@ -1,3 +1,6 @@
+import sys
+import unittest
+
 import pytest
 
 from dagster import lambda_solid, solid
@@ -72,273 +75,269 @@ def test_one_arg_lambda_solid():
     assert len(one_arg.output_defs) == 1
 
 
-def test_infer_inputs_from_docstring_numpy_good():
-    @solid
-    def good_numpy(context, hello, optional=5):
-        """
-        Test
+@pytest.mark.skipif(sys.version_info < (3, 6), reason='docstring_parser requires python >= 3.6')
+class DefinitionsFromDocstringTestCase(unittest.TestCase):
+    """Class style to avoid having same decorator in all these functions"""
 
-        Parameters
-        ----------
-        hello: str
-            hello world param
-        optional: int, optional
-            optional param, default 5
-        """
-        pass
-
-    defs = inference._infer_input_definitions_from_docstring(good_numpy.name, good_numpy.compute_fn)
-    assert len(defs) == 2
-
-    hello_param = defs[0]
-    assert hello_param.name == "hello"
-    assert hello_param.dagster_type.name == "String"
-
-    optional_param = defs[1]
-    assert optional_param.name == "optional"
-    assert optional_param.dagster_type.name == "Int"
-    assert optional_param.default_value == 5
-
-    @solid
-    def nodoc(context):
-        pass
-
-    defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
-    assert len(defs2) == 0
-
-
-def test_infer_inputs_from_docstring_numpy_type_dont_exist():
-    @solid
-    def numpybad(context, hello, invalid, optional=5):
-        """
-        Test
-
-        Parameters
-        ----------
-        hello: str
-            hello world param
-        optional: int, optional
-            optional param, default 5
-        invalid: DontExist
-            tuuti fruitty
-        """
-        pass
-
-    with pytest.raises(DagsterInvalidDefinitionError) as err:
-        inference._infer_input_definitions_from_docstring(numpybad.name, numpybad.compute_fn)
-
-    err_message = str(err.value)
-    expected_err = 'Error infering dagster type from docstring param invalid typed as DontExist '
-    assert expected_err in err_message
-
-
-def test_infer_inputs_from_docstring_numpy_invalid_default():
-    with pytest.raises(DagsterInvalidDefinitionError) as err:
-
+    def test_infer_inputs_from_docstring_numpy_good(self):
         @solid
-        def numpybad2(context):
+        def good_numpy(context, hello, optional=5):
             """
             Test
 
             Parameters
             ----------
-            baddefault: int, optional
-                optional param, default gfhfg
+            hello: str
+                hello world param
+            optional: int, optional
+                optional param, default 5
             """
             pass
 
-        inference._infer_input_definitions_from_docstring(numpybad2.name, numpybad2.compute_fn)
+        defs = inference._infer_input_definitions_from_docstring(
+            good_numpy.name, good_numpy.compute_fn
+        )
+        assert len(defs) == 2
 
-    err_message = str(err.value)
-    expected_err = 'Error infering dagster type from docstring param baddefault typed as int '
-    assert expected_err in err_message
+        hello_param = defs[0]
+        assert hello_param.name == "hello"
+        assert hello_param.dagster_type.name == "String"
 
+        optional_param = defs[1]
+        assert optional_param.name == "optional"
+        assert optional_param.dagster_type.name == "Int"
+        assert optional_param.default_value == 5
 
-def test_infer_inputs_from_docstring_google_good():
-    @solid
-    def good_google(context, hello, optional=5):
-        """
-        Test
+        @solid
+        def nodoc(context):
+            pass
 
-        Args:
-            hello       (str): hello world param
-            optional    (int, optional): optional param. Defaults to 5.
-            optional2   (int, optional): optional param. Defaults to None.
-        """
-        pass
+        defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
+        assert len(defs2) == 0
 
-    defs = inference._infer_input_definitions_from_docstring(
-        good_google.name, good_google.compute_fn
-    )
-    assert len(defs) == 3
+    def test_infer_inputs_from_docstring_numpy_type_dont_exist(self):
+        with pytest.raises(DagsterInvalidDefinitionError) as err:
 
-    hello_param = defs[0]
-    assert hello_param.name == "hello"
-    assert hello_param.dagster_type.name == "String"
+            @solid
+            def numpybad(context, hello, invalid, optional=5):
+                """
+                Test
 
-    optional_param = defs[1]
-    assert optional_param.name == "optional"
-    assert optional_param.dagster_type.name == "Int"
-    assert optional_param.default_value == 5
+                Parameters
+                ----------
+                hello: str
+                    hello world param
+                optional: int, optional
+                    optional param, default 5
+                invalid: DontExist
+                    tuuti fruitty
+                """
+                pass
 
-    optional_param2 = defs[2]
-    assert optional_param2.name == "optional2"
-    assert optional_param2.dagster_type.name == "Int"
+        err_message = str(err.value)
+        expected_err = (
+            'Error infering dagster type from docstring param invalid typed as DontExist '
+        )
+        assert expected_err in err_message
 
-    @solid
-    def nodoc(context):
-        pass
+    def test_infer_inputs_from_docstring_numpy_invalid_default(self):
+        with pytest.raises(DagsterInvalidDefinitionError) as err:
 
-    defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
-    assert len(defs2) == 0
+            @solid
+            def numpybad2(context):
+                """
+                Test
 
+                Parameters
+                ----------
+                baddefault: int, optional
+                    optional param, default gfhfg
+                """
+                pass
 
-def test_infer_inputs_from_docstring_google_invalid_type():
-    @solid
-    def bad_google(context, hello, optional=5):
-        """
-        Test
+            inference._infer_input_definitions_from_docstring(numpybad2.name, numpybad2.compute_fn)
 
-        Args:
-            optional    (int, optional): optional param. Defaults to sdffdsf.
-        """
-        pass
+        err_message = str(err.value)
+        expected_err = 'Error infering dagster type from docstring param baddefault typed as int '
+        assert expected_err in err_message
 
-    with pytest.raises(DagsterInvalidDefinitionError) as err:
-        inference._infer_input_definitions_from_docstring(bad_google.name, bad_google.compute_fn)
+    def test_infer_inputs_from_docstring_google_good(self):
+        @solid
+        def good_google(context, hello, optional=5, optional2=None):
+            """
+            Test
 
-    err_message = str(err.value)
-    expected_err = 'Error infering dagster type from docstring param optional typed as int'
-    assert expected_err in err_message
+            Args:
+                hello       (str): hello world param
+                optional    (int, optional): optional param. Defaults to 5.
+                optional2   (int, optional): optional param. Defaults to None.
+            """
+            pass
 
+        defs = inference._infer_input_definitions_from_docstring(
+            good_google.name, good_google.compute_fn
+        )
+        assert len(defs) == 3
 
-def test_infer_inputs_from_docstring_google_invalid_type():
-    @solid
-    def bad_google(context, hello, optional=5):
-        """
-        Test
+        hello_param = defs[0]
+        assert hello_param.name == "hello"
+        assert hello_param.dagster_type.name == "String"
 
-        Args:
-            optional    (typedontexist, optional): optional param. Defaults to 5.
-        """
-        pass
+        optional_param = defs[1]
+        assert optional_param.name == "optional"
+        assert optional_param.dagster_type.name == "Int"
+        assert optional_param.default_value == 5
 
-    with pytest.raises(DagsterInvalidDefinitionError) as err:
-        inference._infer_input_definitions_from_docstring(bad_google.name, bad_google.compute_fn)
+        optional_param2 = defs[2]
+        assert optional_param2.name == "optional2"
+        assert optional_param2.dagster_type.name == "Int"
 
-    err_message = str(err.value)
-    expected_err = (
-        'Error infering dagster type from docstring param optional typed as typedontexist'
-    )
-    assert expected_err in err_message
+        @solid
+        def nodoc(context):
+            pass
 
+        defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
+        assert len(defs2) == 0
 
-def test_infer_outputs_from_docstring_numpy():
-    @solid
-    def numpy(context):
-        """
+    def test_infer_inputs_from_docstring_google_invalid_type(self):
+        @solid
+        def bad_google(context, hello, optional=5):
+            """
+            Test
 
-        Returns
-        -------
-        int
-            a number
-        """
-        pass
+            Args:
+                optional    (int, optional): optional param. Defaults to sdffdsf.
+            """
+            pass
 
-    defs = inference._infer_output_definitions_from_docstring(numpy.name, numpy.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].name == "result"
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.name == "Int"
+        with pytest.raises(DagsterInvalidDefinitionError) as err:
+            inference._infer_input_definitions_from_docstring(
+                bad_google.name, bad_google.compute_fn
+            )
 
+        err_message = str(err.value)
+        expected_err = 'Error infering dagster type from docstring param optional typed as int'
+        assert expected_err in err_message
 
-def test_infer_outputs_from_docstring_invalid_type():
-    @solid
-    def numpy(context):
-        """
+    def test_infer_inputs_from_docstring_google_invalid_type(self):
+        with pytest.raises(DagsterInvalidDefinitionError) as err:
 
-        Returns
-        -------
-        typedontexist
-            a number
-        """
-        pass
+            @solid
+            def bad_google(context, hello, optional=5):
+                """
+                Test
 
-    with pytest.raises(DagsterInvalidDefinitionError) as err:
+                Args:
+                    optional    (typedontexist, optional): optional param. Defaults to 5.
+                """
+                pass
+
+        err_message = str(err.value)
+        expected_err = (
+            'Error infering dagster type from docstring param optional typed as typedontexist'
+        )
+        assert expected_err in err_message
+
+    def test_infer_outputs_from_docstring_numpy(self):
+        @solid
+        def numpy(context):
+            """
+
+            Returns
+            -------
+            int
+                a number
+            """
+            pass
+
         defs = inference._infer_output_definitions_from_docstring(numpy.name, numpy.compute_fn)
+        assert len(defs) == 1
+        assert defs[0].name == "result"
+        assert defs[0].description == "a number"
+        assert defs[0].dagster_type.name == "Int"
 
-    err_message = str(err.value)
-    expected_err = (
-        'Error inferring Dagster type for return type "typedontexist" from @solid "numpy"'
-    )
-    assert expected_err in err_message
+    def test_infer_outputs_from_docstring_invalid_type(self):
+        with pytest.raises(DagsterInvalidDefinitionError) as err:
 
+            @solid
+            def numpy(context):
+                """
 
-def test_infer_outputs_from_docstring_google():
-    @solid
-    def google(context):
-        """
-        Returns:
-            int: a number
-        """
-        pass
+                Returns
+                -------
+                typedontexist
+                    a number
+                """
+                pass
 
-    defs = inference._infer_output_definitions_from_docstring(google.name, google.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.name == "Int"
+        err_message = str(err.value)
+        expected_err = (
+            'Error inferring Dagster type for return type "typedontexist" from @solid "numpy"'
+        )
+        assert expected_err in err_message
 
+    def test_infer_outputs_from_docstring_google(self):
+        @solid
+        def google(context):
+            """
+            Returns:
+                int: a number
+            """
+            pass
 
-def test_infer_outputs_from_docstring_numpy():
-    @solid
-    def numpy(context):
-        """
+        defs = inference._infer_output_definitions_from_docstring(google.name, google.compute_fn)
+        assert len(defs) == 1
+        assert defs[0].description == "a number"
+        assert defs[0].dagster_type.name == "Int"
 
-        Returns
-        -------
-        int
-            a number
-        """
-        pass
+    def test_infer_outputs_from_docstring_numpy(self):
+        @solid
+        def numpy(context):
+            """
 
-    defs = inference._infer_output_definitions_from_docstring(numpy.name, numpy.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].name == "result"
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.name == "Int"
+            Returns
+            -------
+            int
+                a number
+            """
+            pass
 
+        defs = inference._infer_output_definitions_from_docstring(numpy.name, numpy.compute_fn)
+        assert len(defs) == 1
+        assert defs[0].name == "result"
+        assert defs[0].description == "a number"
+        assert defs[0].dagster_type.name == "Int"
 
-def test_infer_outputs_from_docstring_rest():
-    @solid
-    def rest(context):
-        """
-        :return int: a number
-        """
-        pass
+    def test_infer_outputs_from_docstring_rest(self):
+        @solid
+        def rest(context):
+            """
+            :return int: a number
+            """
+            pass
 
-    defs = inference._infer_output_definitions_from_docstring(rest.name, rest.compute_fn)
-    assert len(defs) == 1
-    assert defs[0].description == "a number"
-    assert defs[0].dagster_type.name == "Int"
+        defs = inference._infer_output_definitions_from_docstring(rest.name, rest.compute_fn)
+        assert len(defs) == 1
+        assert defs[0].description == "a number"
+        assert defs[0].dagster_type.name == "Int"
 
+    def test_infer_inputs_from_docstring_rest(self):
+        @solid
+        def rest(context, hello, optional=5):
+            """
+            :param str hello: hello world param
+            :param int optional: optional param, defaults to 5
+            """
+            pass
 
-def test_infer_inputs_from_docstring_rest():
-    @solid
-    def rest(context, hello, optional=5):
-        """
-        :param str hello: hello world param
-        :param int optional: optional param, defaults to 5
-        """
-        pass
+        defs = inference._infer_input_definitions_from_docstring(rest.name, rest.compute_fn)
+        assert len(defs) == 2
 
-    defs = inference._infer_input_definitions_from_docstring(rest.name, rest.compute_fn)
-    assert len(defs) == 2
+        hello_param = defs[0]
+        assert hello_param.name == "hello"
+        assert hello_param.dagster_type.name == "String"
 
-    hello_param = defs[0]
-    assert hello_param.name == "hello"
-    assert hello_param.dagster_type.name == "String"
-
-    optional_param = defs[1]
-    assert optional_param.name == "optional"
-    assert optional_param.dagster_type.name == "Int"
-    assert optional_param.default_value == 5
+        optional_param = defs[1]
+        assert optional_param.name == "optional"
+        assert optional_param.dagster_type.name == "Int"
+        assert optional_param.default_value == 5
