@@ -1,18 +1,27 @@
+parameters:
+- name: py_versions
+  type: object
+  default:
+    - "2.7"
+    - "3.6"
+    - "3.7"
+- name: env_suffixes
+  type: object
+  default:
+    - api_tests
+    - cli_tests
+    - core_tests
 jobs:
   - job: "dagster"
     pool:
       vmImage: "vs2017-win2016"
     strategy:
       matrix:
-        py27:
-          TOXENV: "py27-windows"
-          python.version: "2.7"
-        py36:
-          TOXENV: "py36-windows"
-          python.version: "3.6"
-        py37:
-          TOXENV: "py37-windows"
-          python.version: "3.7"
+        ${{ each py_version in parameters.py_versions }}:
+          ${{ each env_suffix in parameters.env_suffixes }}:
+            ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
+              TOXENV: "py${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}"
+              python.version: "${{ py_version }}"
     variables:
       PYTHONLEGACYWINDOWSSTDIO: "1"
     steps:
