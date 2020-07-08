@@ -16,15 +16,15 @@ from .output import OutputDefinition
 def infer_output_definitions(decorator_name, solid_name, fn):
     signature = funcsigs.signature(fn)
     try:
-        defs = [
-            OutputDefinition()
-            if signature.return_annotation is funcsigs.Signature.empty
-            else OutputDefinition(signature.return_annotation)
-        ]
+        # try to infer from docstring
+        defs = _infer_output_definitions_from_docstring(solid_name, fn)
 
         if not defs:
-            # try to infer from docstring
-            defs = _infer_output_definitions_from_docstring(solid_name, fn)
+            defs = [
+                OutputDefinition()
+                if signature.return_annotation is funcsigs.Signature.empty
+                else OutputDefinition(signature.return_annotation)
+            ]
 
         return defs
     except CheckError as type_error:
@@ -171,10 +171,11 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
 def infer_input_definitions_for_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
-    defs = _infer_inputs_from_params(params[1:], '@solid', solid_name)
+
+    # try to infer from docstrings
+    defs = _infer_input_definitions_from_docstring(solid_name, fn)
 
     if not defs:
-        # try to infer from docstrings
-        defs = _infer_input_definitions_from_docstring(solid_name, fn)
+        defs = _infer_inputs_from_params(params[1:], '@solid', solid_name)
 
     return defs
