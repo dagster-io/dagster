@@ -1,5 +1,7 @@
 import os
 
+from packaging import version
+
 from dagster import check
 
 
@@ -23,11 +25,43 @@ def aws_integration_image(aws_account_id, python_version, image_version):
     return aws_image(aws_account_id, integration_image(python_version, image_version))
 
 
+def aws_unit_image(aws_account_id, python_version, image_version):
+    check.str_param(aws_account_id, 'aws_account_id')
+    check.str_param(python_version, 'python_version')
+    check.str_param(image_version, 'image_version')
+    return aws_image(aws_account_id, unit_image(python_version, image_version))
+
+
+def aws_unit_base_image(aws_account_id, python_version):
+    check.str_param(aws_account_id, 'aws_account_id')
+    check.str_param(python_version, 'python_version')
+    return aws_image(aws_account_id, unit_base_image(python_version))
+
+
+def unit_base_image(python_version):
+    ver = version.parse(python_version)
+    major, minor, _dot = ver.release
+
+    debian_version = 'buster' if major == 3 and minor == 8 else 'stretch'
+
+    return 'python:{python_version}-slim-{debian_version}'.format(
+        python_version=python_version, debian_version=debian_version
+    )
+
+
 def aws_integration_base_image(aws_account_id, python_version, image_version):
     check.str_param(aws_account_id, 'aws_account_id')
     check.str_param(python_version, 'python_version')
     check.str_param(image_version, 'image_version')
     return aws_image(aws_account_id, integration_base_image(python_version, image_version))
+
+
+def unit_image(python_version, image_version):
+    check.str_param(python_version, 'python_version')
+    check.str_param(image_version, 'image_version')
+    return 'buildkite-unit:py{python_version}-{image_version}'.format(
+        python_version=python_version, image_version=image_version
+    )
 
 
 def integration_image(python_version, image_version):
@@ -54,10 +88,24 @@ def integration_snapshot_builder_image(python_version, image_version):
     )
 
 
+def unit_snapshot_builder_image(python_version, image_version):
+    check.str_param(python_version, 'python_version')
+    check.str_param(image_version, 'image_version')
+    return 'buildkite-unit-snapshot-builder:py{python_version}-{image_version}'.format(
+        python_version=python_version, image_version=image_version
+    )
+
+
 def local_integration_image(python_version, image_version):
     check.str_param(python_version, 'python_version')
     check.str_param(image_version, 'image_version')
     return 'dagster/{image}'.format(image=integration_image(python_version, image_version))
+
+
+def local_unit_image(python_version, image_version):
+    check.str_param(python_version, 'python_version')
+    check.str_param(image_version, 'image_version')
+    return 'dagster/{image}'.format(image=unit_image(python_version, image_version))
 
 
 def local_integration_base_image(python_version, image_version):
@@ -71,6 +119,14 @@ def local_integration_snapshot_builder_image(python_version, image_version):
     check.str_param(image_version, 'image_version')
     return 'dagster/{image}'.format(
         image=integration_snapshot_builder_image(python_version, image_version)
+    )
+
+
+def local_unit_snapshot_builder_image(python_version, image_version):
+    check.str_param(python_version, 'python_version')
+    check.str_param(image_version, 'image_version')
+    return 'dagster/{image}'.format(
+        image=unit_snapshot_builder_image(python_version, image_version)
     )
 
 

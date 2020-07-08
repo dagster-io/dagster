@@ -45,4 +45,10 @@ TOX_MAP = {
 INTEGRATION_IMAGE_VERSION = '2020-07-07T212346'
 
 # Keep this fixed. Do not update when updating snapshots
+# Only update when updating the base integration image
+# which should be less frequent
 INTEGRATION_BASE_VERSION = '2020-07-03T094007'
+
+# generated with:
+# datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S")
+UNIT_IMAGE_VERSION = '2020-07-08T231944'

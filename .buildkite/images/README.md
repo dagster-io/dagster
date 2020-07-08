@@ -13,7 +13,7 @@ The time T is in .buildkite/defines.py in the INTEGRATION_IMAGE_VERSION variable
 ## Publishing new integration images
 
 1. Update the git hash in .buildkite/images/integration_snapshot_builder/Dockerfile.
-2. Run the python script build_all_snapshots.py in .buildkite/images/build_all_snapshots.py.
+2. Run the python script build_all_integration_snapshots.py in .buildkite/images/build_all_integration_snapshots.py.
    This will take awhile. The purpose of the scripts is to update the four files
    .buildkite/images/integration/snapshot-reqs-{python_version}.txt
 3. Put up a diff with these planned changes.
@@ -27,3 +27,20 @@ The time T is in .buildkite/defines.py in the INTEGRATION_IMAGE_VERSION variable
 5. After the images successfully publish to ECR, update the diff to set `INTEGRATION_IMAGE_VERSION`
    to the new version (check ECR for the version string, which is the YYYY-mm-ddTHHMMSS when the
    image was created.)
+
+## Publishing new unit images
+
+Similarly we have a similar system for the unit test images. These are more
+modest and require less build times so we have not pushed the process
+to a pipeline in buildkite.
+
+1. Update the git hash in ./buildkite/images/unit_snapshot_builder/Dockerfile
+2. Run ./buildkite/images/build_all_unit_snapshots.py. This updates snapshot
+   reqs files in ./buildkite
+3. Manually update UNIT_IMAGE_VERSION.
+   Run `python -c "import datetime; print(datetime.datetime.utcnow().strftime('%Y-%m-%dT%H%M%S'))"`
+   and copy and paste output
+4. Then run build_all_unit_images.py
+5. Then run push_all_unit_images.py
+6. Next you have to update the Dockerfile in dagster-test manually with value in UNIT_IMAGE_VERSION in the `FROM` directive.
+7. Push the diff up and ensure it passes.
