@@ -84,9 +84,6 @@ def airflow_extra_cmds_fn(version):
 def airline_demo_extra_cmds_fn(_):
     return [
         'pushd examples/airline_demo',
-        # Build the image we use for airflow in the demo tests
-        './build_airline_demo_image.sh',
-        'mkdir -p /home/circleci/airflow',
         # Run the postgres db. We are in docker running docker
         # so this will be a sibling container.
         'docker-compose up -d --remove-orphans',  # clean up in hooks/pre-exit

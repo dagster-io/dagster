@@ -77,38 +77,3 @@ def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
         instance=DagsterInstance.local_temp(),
     )
     assert result_warehouse.success
-
-
-####################################################################################################
-# These tests are provided to help distinguish issues using the S3 object store from issues using
-# Airflow, but add too much overhead (~30m) to run on each push
-@pytest.mark.skip
-def test_airline_pipeline_s3_0_ingest(postgres, pg_hostname):
-    ingest_config_dict = load_yaml_from_globs(
-        config_path('test_base.yaml'),
-        config_path('s3_storage.yaml'),
-        config_path('local_fast_ingest.yaml'),
-    )
-
-    result_ingest = execute_pipeline(
-        ingest_pipeline, ingest_config_dict, instance=DagsterInstance.local_temp()
-    )
-
-    assert result_ingest.success
-
-
-@pytest.mark.skip
-def test_airline_pipeline_s3_1_warehouse(postgres, pg_hostname):
-    warehouse_config_object = load_yaml_from_globs(
-        config_path('test_base.yaml'),
-        config_path('s3_storage.yaml'),
-        config_path('local_warehouse.yaml'),
-    )
-
-    result_warehouse = execute_pipeline(
-        warehouse_pipeline, warehouse_config_object, instance=DagsterInstance.local_temp()
-    )
-    assert result_warehouse.success
-
-
-####################################################################################################

@@ -1,5 +1,5 @@
+from airline_demo.resources import DbInfo
 from airline_demo.solids import load_data_to_database_from_spark
-from common.resources import DbInfo
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame
 
