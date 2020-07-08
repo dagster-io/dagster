@@ -16,7 +16,12 @@ from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import canonicalize_run_config
 
-from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
+from .context_creation_pipeline import (
+    ExecutionContextManager,
+    PipelineExecutionContextManager,
+    PlanExecutionContextManager,
+    scoped_pipeline_context,
+)
 from .results import PipelineExecutionResult
 
 ## Brief guide to the execution APIs
@@ -73,12 +78,14 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     return iter(
         _ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
-            instance=instance,
             iterator=_pipeline_execution_iterator,
-            run_config=pipeline_run.run_config,
-            retries=None,
-            raise_on_error=False,
+            execution_context_manager=PipelineExecutionContextManager(
+                execution_plan=execution_plan,
+                pipeline_run=pipeline_run,
+                instance=instance,
+                run_config=pipeline_run.run_config,
+                raise_on_error=False,
+            ),
         )
     )
 
@@ -139,12 +146,14 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
     _execute_run_iterable = _ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
-        pipeline_run=pipeline_run,
-        instance=instance,
         iterator=_pipeline_execution_iterator,
-        run_config=pipeline_run.run_config,
-        retries=None,
-        raise_on_error=raise_on_error,
+        execution_context_manager=PipelineExecutionContextManager(
+            execution_plan=execution_plan,
+            pipeline_run=pipeline_run,
+            instance=instance,
+            run_config=pipeline_run.run_config,
+            raise_on_error=raise_on_error,
+        ),
     )
     event_list = list(_execute_run_iterable)
     pipeline_context = _execute_run_iterable.pipeline_context
@@ -508,12 +517,15 @@ def execute_plan_iterator(
     return iter(
         _ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-            instance=instance,
-            retries=retries,
             iterator=inner_plan_execution_iterator,
-            raise_on_error=False,
+            execution_context_manager=PlanExecutionContextManager(
+                retries=retries,
+                execution_plan=execution_plan,
+                run_config=run_config,
+                pipeline_run=pipeline_run,
+                instance=instance,
+                raise_on_error=False,
+            ),
         )
     )
 
@@ -589,24 +601,17 @@ def _core_execution_iterator(pipeline_context, execution_plan, steps_started, pi
         raise  # finally block will run before this is re-raised
 
 
-def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None):
+def _pipeline_execution_iterator(pipeline_context, execution_plan):
     '''A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
 
     Args:
         pipeline_context (SystemPipelineExecutionContext):
         execution_plan (ExecutionPlan):
-        retries (None): Must be None. This is to align the signature of
-            `_pipeline_execution_iterator` with that of
-            `dagster.core.execution.plan.execute_plan.inner_plan_execution_iterator` so the same
-            machinery in _ExecuteRunWithPlanIterable can call them without unpleasant workarounds.
-            (Default: None)
     '''
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.invariant(
-        retries is None, 'Programming error: Retries not supported in _pipeline_execution_iterator'
-    )
+
     yield DagsterEvent.pipeline_start(pipeline_context)
 
     steps_started = set([])
@@ -643,38 +648,25 @@ class _ExecuteRunWithPlanIterable(object):
     cf. `dagster.utils.EventGenerationManager`.
     '''
 
-    def __init__(
-        self, execution_plan, pipeline_run, instance, iterator, run_config, retries, raise_on_error,
-    ):
+    def __init__(self, execution_plan, iterator, execution_context_manager):
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        self.pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        self.instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.iterator = check.callable_param(iterator, 'iterator')
-        self.run_config = (
-            check.opt_dict_param(run_config, 'run_config') or self.pipeline_run.run_config
+        self.execution_context_manager = check.inst_param(
+            execution_context_manager, 'execution_context_manager', ExecutionContextManager
         )
-        self.retries = check.opt_inst_param(retries, 'retries', Retries)
-        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
+
         self.pipeline_context = None
 
     def __iter__(self):
-        initialization_manager = pipeline_initialization_manager(
-            self.execution_plan,
-            self.run_config,
-            self.pipeline_run,
-            self.instance,
-            raise_on_error=self.raise_on_error,
-        )
-        for event in initialization_manager.generate_setup_events():
+
+        for event in self.execution_context_manager.prepare_context():
             yield event
-        self.pipeline_context = initialization_manager.get_object()
+        self.pipeline_context = self.execution_context_manager.get_context()
         generator_closed = False
         try:
             if self.pipeline_context:  # False if we had a pipeline init failure
                 for event in self.iterator(
-                    execution_plan=self.execution_plan,
-                    pipeline_context=self.pipeline_context,
-                    retries=self.retries,
+                    execution_plan=self.execution_plan, pipeline_context=self.pipeline_context,
                 ):
                     yield event
         except GeneratorExit:
@@ -683,7 +675,7 @@ class _ExecuteRunWithPlanIterable(object):
             generator_closed = True
             raise
         finally:
-            for event in initialization_manager.generate_teardown_events():
+            for event in self.execution_context_manager.shutdown_context():
                 if not generator_closed:
                     yield event
 

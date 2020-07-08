@@ -4,14 +4,14 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventRecord
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.object_store import ObjectStoreOperation, ObjectStoreOperationType
 
 
 def validate_reexecution_memoization(pipeline_context, execution_plan):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     parent_run_id = pipeline_context.pipeline_run.parent_run_id
@@ -43,7 +43,7 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
     Uses the intermediates manager to copy intermediates from the previous run that apply to the
     current execution plan, and yields the corresponding events
     '''
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     parent_run_id = pipeline_context.pipeline_run.parent_run_id
 

@@ -2,7 +2,7 @@ import pytest
 
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import pipeline_initialization_event_generator
+from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
 from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
@@ -93,8 +93,8 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    generator = pipeline_initialization_event_generator(
+    generator = PipelineExecutionContextManager(  # pylint: disable=protected-access
         execution_plan, {}, pipeline_run, instance, resource_initialization_manager,
-    )
+    ).get_generator()
     next(generator)
     generator.close()

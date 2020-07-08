@@ -1,8 +1,8 @@
 import pytest
 
-from dagster import check, pipeline, solid
+from dagster import DagsterInstance, check, pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import Retries, RetryMode
 
 from ..engine_tests.test_multiprocessing import define_diamond_pipeline
@@ -286,3 +286,16 @@ def test_priorities():
     assert steps[3].key == 'pri_2.compute'
     assert steps[4].key == 'pri_none.compute'
     assert steps[5].key == 'pri_neg_1.compute'
+
+
+def test_executor_not_created_for_execute_plan():
+    instance = DagsterInstance.ephemeral()
+    pipe = define_diamond_pipeline()
+    plan = create_execution_plan(pipe)
+    pipeline_run = instance.create_run_for_pipeline(pipe, plan)
+
+    results = execute_plan(
+        plan, instance, pipeline_run, run_config={'execution': {'multiprocess': {}}}
+    )
+    for result in results:
+        assert not result.is_failure

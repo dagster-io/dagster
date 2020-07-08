@@ -13,12 +13,13 @@ from flytekit.sdk.workflow import Input, Output
 import dagster.core.types.dagster_type as types
 from dagster import DagsterEventType, PipelineDefinition, check
 from dagster.core.execution.api import (
+    PlanExecutionContextManager,
     create_execution_plan,
     execute_plan,
-    pipeline_initialization_manager,
 )
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import ExecutionStep, StepOutputHandle
+from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
@@ -108,15 +109,16 @@ class DagsterFlyteCompiler:
             parent_pipeline_snapshot=self.execution_plan.pipeline_def.get_parent_pipeline_snapshot(),
         )
 
-        initialization_manager = pipeline_initialization_manager(
+        initialization_manager = PlanExecutionContextManager(
+            Retries.disabled_mode(),
             self.execution_plan,
             self.run_config,
             instance.get_run_by_id(self.execution_plan.pipeline_def.display_name),
             instance,
         )
 
-        list(initialization_manager.generate_setup_events())
-        pipeline_context = initialization_manager.get_object()
+        list(initialization_manager.prepare_context())
+        pipeline_context = initialization_manager.get_context()
 
         for step_key in ordered_step_dict:
             solid_name = self.execution_plan.get_step_by_key(step_key).solid_name
@@ -215,7 +217,7 @@ class DagsterFlyteCompiler:
         return task
 
     def inject_intermediates(self, context, execution_step, key, value):
-        check.inst(context, SystemPipelineExecutionContext)
+        check.inst(context, SystemExecutionContext)
         check.inst(execution_step, ExecutionStep)
 
         if (

@@ -16,7 +16,7 @@ from dagster import (
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import pipeline_initialization_manager
+from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager
 from dagster.core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -115,12 +115,12 @@ def initialize_step_context(scratch_dir):
         reconstructable(define_basic_pipeline), pipeline_run.run_config, mode='external'
     )
 
-    initialization_manager = pipeline_initialization_manager(
+    initialization_manager = PipelineExecutionContextManager(
         plan, pipeline_run.run_config, pipeline_run, DagsterInstance.ephemeral(),
     )
-    for _ in initialization_manager.generate_setup_events():
+    for _ in initialization_manager.prepare_context():
         pass
-    pipeline_context = initialization_manager.get_object()
+    pipeline_context = initialization_manager.get_context()
 
     active_execution = plan.start(retries=Retries(RetryMode.DISABLED))
     step = active_execution.get_next_step()

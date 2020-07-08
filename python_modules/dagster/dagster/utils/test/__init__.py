@@ -26,7 +26,8 @@ from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import ISolidDefinition
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
-    construct_pipeline_execution_context,
+    SystemPipelineExecutionContext,
+    construct_execution_context_data,
     create_context_creation_data,
     create_executor,
     create_log_manager,
@@ -74,17 +75,22 @@ def create_test_pipeline_execution_context(logger_defs=None):
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
     executor = create_executor(creation_data)
-    return construct_pipeline_execution_context(
-        context_creation_data=creation_data,
-        scoped_resources_builder=scoped_resources_builder,
-        system_storage_data=SystemStorageData(
-            intermediates_manager=InMemoryIntermediatesManager(),
-            file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
+
+    return SystemPipelineExecutionContext(
+        construct_execution_context_data(
+            context_creation_data=creation_data,
+            scoped_resources_builder=scoped_resources_builder,
+            intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
+            system_storage_data=SystemStorageData(
+                intermediates_manager=InMemoryIntermediatesManager(),
+                file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
+            ),
+            log_manager=log_manager,
+            retries=executor.retries,
+            raise_on_error=True,
         ),
-        intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
-        log_manager=log_manager,
         executor=executor,
-        raise_on_error=True,
+        log_manager=log_manager,
     )
 
 
@@ -400,7 +406,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     '''This class is used in dagster core and dagster_graphql to test the scheduler's interactions
     with schedule storage, which are implemented in the methods defined on the base Scheduler class.
     Therefore, the following methods used to actually schedule jobs (e.g. create and remove cron jobs
-    on a cron tab) are left unimimplemented.
+    on a cron tab) are left unimplemented.
     '''
 
     def __init__(self, artifacts_dir, inst_data=None):

@@ -12,7 +12,7 @@ from dagster.core.definitions.reconstructable import (
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import SystemStepExecutionContext
-from dagster.core.execution.context_creation_pipeline import pipeline_initialization_manager
+from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
@@ -141,23 +141,23 @@ def step_run_ref_to_step_context(step_run_ref):
     execution_plan = create_execution_plan(
         pipeline, step_run_ref.run_config, mode=step_run_ref.pipeline_run.mode
     ).build_subset_plan([step_run_ref.step_key])
+    retries = step_run_ref.retries.for_inner_plan()
 
-    initialization_manager = pipeline_initialization_manager(
+    initialization_manager = PlanExecutionContextManager(
+        retries,
         execution_plan,
         step_run_ref.run_config,
         step_run_ref.pipeline_run,
         DagsterInstance.ephemeral(),
     )
-    for _ in initialization_manager.generate_setup_events():
+    for _ in initialization_manager.prepare_context():
         pass
-    pipeline_context = initialization_manager.get_object()
+    execution_context = initialization_manager.get_context()
 
-    retries = step_run_ref.retries.for_inner_plan()
     active_execution = execution_plan.start(retries=retries)
     step = active_execution.get_next_step()
 
-    pipeline_context = initialization_manager.get_object()
-    return pipeline_context.for_step(step)
+    return execution_context.for_step(step)
 
 
 def run_step_from_ref(step_run_ref):
