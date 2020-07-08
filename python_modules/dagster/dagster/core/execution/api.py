@@ -541,6 +541,29 @@ def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_exe
     )
 
 
+class BoolRef:
+    def __init__(self, value):
+        self.value = value
+
+
+def _core_execution_iterator(pipeline_context, execution_plan, steps_started, pipeline_success_ref):
+    try:
+        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
+            if event.is_step_start:
+                steps_started.add(event.step_key)
+            if event.is_step_success:
+                if event.step_key not in steps_started:
+                    pipeline_success_ref.value = False
+                else:
+                    steps_started.remove(event.step_key)
+            if event.is_step_failure:
+                pipeline_success_ref.value = False
+            yield event
+    except (Exception, KeyboardInterrupt):
+        pipeline_success_ref.value = False
+        raise  # finally block will run before this is re-raised
+
+
 def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None):
     '''A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
@@ -562,33 +585,23 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None)
     yield DagsterEvent.pipeline_start(pipeline_context)
 
     steps_started = set([])
-    pipeline_success = True
+    pipeline_success_ref = BoolRef(True)
     generator_closed = False
     try:
-        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
-            if event.is_step_start:
-                steps_started.add(event.step_key)
-            if event.is_step_success:
-                if event.step_key not in steps_started:
-                    pipeline_success = False
-                else:
-                    steps_started.remove(event.step_key)
-            if event.is_step_failure:
-                pipeline_success = False
+        for event in _core_execution_iterator(
+            pipeline_context, execution_plan, steps_started, pipeline_success_ref
+        ):
             yield event
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
-        pipeline_success = False
+        pipeline_success_ref.value = False
         raise
-    except (Exception, KeyboardInterrupt):
-        pipeline_success = False
-        raise  # finally block will run before this is re-raised
     finally:
         if steps_started:
-            pipeline_success = False
-        if pipeline_success:
+            pipeline_success_ref.value = False
+        if pipeline_success_ref.value:
             event = DagsterEvent.pipeline_success(pipeline_context)
         else:
             event = DagsterEvent.pipeline_failure(pipeline_context)
