@@ -13,7 +13,17 @@
 **New**
 
 - Dagit can be hosted on a sub-path by passing `--path-prefix` to the dagit CLI. #2073
-- The `date_partition_range` util function now accepts an optional `inclusive` boolean argument. By default, the function does not return include the partition for which the end time of the date range is greater than the current time. If `inclusive=True`, then the list of partitions returned will include the extra partition. 
+- The `date_partition_range` util function now accepts an optional `inclusive` boolean argument. By default, the function does not return include the partition for which the end time of the date range is greater than the current time. If `inclusive=True`, then the list of partitions returned will include the extra partition.
+- `MultiDependency` or fan-in inputs will now only cause the solid step to skip if all of the
+  fanned-in inputs upstream outputs were skipped
+
+**Bugfixes**
+
+- Fixed accidental breaking change with `input_hydration_config` arguments
+- Fixed an issue with yaml merging (thanks @shasha79!)
+- Invoking `alias` on a solid output will produce a useful error message (thanks @iKintosh!)
+- Restored missing run pagination controls
+- Fixed error resolving partition-based schedules created via dagster schedule decorators (e.g. `daily_schedule`) for certain workspace.yaml formats
 
 ## 0.8.6
 
