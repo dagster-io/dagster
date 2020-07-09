@@ -7,11 +7,9 @@ Please follow the checklist in RELEASING.md at the root of this repository.
 For detailed usage instructions, please consult the command line help,
 available by running `python publish.py --help`.
 """
-# distutils issue: https://github.com/PyCQA/pylint/issues/73
 
 import os
 import subprocess
-import sys
 import tempfile
 import urllib
 
@@ -29,13 +27,9 @@ from automation.git import (
 )
 from automation.utils import which_
 
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, BASE_PATH)
-
-from dagster_module_publisher import DagsterModulePublisher  # isort:skip
-from publish_utils import format_module_versions  # isort:skip
-from pypirc import ConfigFileError, RCParser  # isort:skip
-
+from .dagster_module_publisher import DagsterModulePublisher
+from .pypirc import ConfigFileError, RCParser
+from .utils import format_module_versions
 
 CLI_HELP = '''Tools to help tag and publish releases of the Dagster projects.
 
@@ -234,6 +228,10 @@ def after_install(options, home_dir):
             click.echo(subprocess.check_output(args).decode('utf-8'))
 
 
-if __name__ == '__main__':
+def main():
     click_cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
     click_cli()
+
+
+if __name__ == '__main__':
+    main()

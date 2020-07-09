@@ -9,12 +9,8 @@ import packaging.version
 from automation.git import get_git_tag, git_repo_root
 from automation.utils import all_equal, check_output
 
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, BASE_PATH)
-
-from dagster_module import DagsterModule  # isort:skip
-from publish_utils import format_module_versions  # isort:skip
-
+from .dagster_module import DagsterModule
+from .utils import format_module_versions
 
 # The root modules managed by this script
 CORE_MODULE_NAMES = ['dagster', 'dagit', 'dagster-graphql']
@@ -25,7 +21,7 @@ class DagsterModulePublisher:
         # Removed hard-coded list in favor of automatic scan of libraries folder
         # List of subdirectories in directory: https://stackoverflow.com/a/973488
         self.library_module_names = set(
-            next(os.walk(os.path.join(BASE_PATH, '..', 'python_modules', 'libraries')))[1]
+            next(os.walk(os.path.join(git_repo_root(), 'python_modules', 'libraries')))[1]
         )
 
         # Construct list of core modules

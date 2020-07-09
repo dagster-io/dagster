@@ -2,9 +2,8 @@ import os
 import re
 
 import pytest
-
-from ..dagster_module import DagsterModule
-from ..dagster_module_publisher import (
+from automation.release.dagster_module import DagsterModule
+from automation.release.dagster_module_publisher import (
     DagsterModulePublisher,
     get_core_module_directories,
     get_library_module_directories,

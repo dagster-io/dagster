@@ -481,53 +481,29 @@ def pylint_steps():
 
 
 def next_docs_build_tests():
-    tests = []
-    for version in [SupportedPython.V3_7]:
-        tests.append(
-            StepBuilder("next docs build tests")
-            .run(
-                "pip install -r bin/requirements.txt -qqq",
-                "pip install -r bin/dev-requirements.txt -qqq",
-                "pip install -r docs-requirements.txt -qqq",
-                "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
-                "cd docs",
-                "make NODE_ENV=production VERSION=master full_docs_build",
-            )
-            .on_integration_image(version)
-            .build()
-        )
-
-        tests.append(
-            StepBuilder("next docs tests")
-            .run(
-                "pip install -r bin/requirements.txt -qqq",
-                "pip install -r bin/dev-requirements.txt -qqq",
-                "pip install -r docs-requirements.txt -qqq",
-                "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
-                "cd docs",
-                "make buildnext",
-                "cd next",
-                "yarn test",
-            )
-            .on_integration_image(version)
-            .build()
-        )
-
-    return tests
-
-
-def releasability_tests(version=SupportedPython.V3_7):
     return [
-        StepBuilder("releasibility test")
+        StepBuilder("next docs build tests")
         .run(
             "pip install -e python_modules/automation",
-            "pip install -r bin/requirements.txt",
-            "pip install -r bin/dev-requirements.txt",
-            "cd bin",
-            "SLACK_RELEASE_BOT_TOKEN='dummy' pytest",
+            "pip install -r docs-requirements.txt -qqq",
+            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+            "cd docs",
+            "make NODE_ENV=production VERSION=master full_docs_build",
         )
-        .on_integration_image(version)
-        .build()
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+        StepBuilder("next docs tests")
+        .run(
+            "pip install -e python_modules/automation",
+            "pip install -r docs-requirements.txt -qqq",
+            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+            "cd docs",
+            "make buildnext",
+            "cd next",
+            "yarn test",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
 
 
@@ -535,11 +511,7 @@ def version_equality_checks(version=SupportedPython.V3_7):
     return [
         StepBuilder("version equality checks for libraries")
         .on_integration_image(version)
-        .run(
-            "pip install -e python_modules/automation",
-            "pip install -r bin/requirements.txt",
-            "python bin/version_check.py",
-        )
+        .run("pip install -e python_modules/automation", "dagster-release version")
         .build()
     ]
 
@@ -621,7 +593,6 @@ if __name__ == "__main__":
 
     steps += pipenv_smoke_tests()
     steps += version_equality_checks()
-    steps += releasability_tests()
     steps += next_docs_build_tests()
     steps += examples_tests()
 

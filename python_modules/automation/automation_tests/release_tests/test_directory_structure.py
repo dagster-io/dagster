@@ -1,4 +1,4 @@
-from ..dagster_module_publisher import DagsterModulePublisher
+from automation.release.dagster_module_publisher import DagsterModulePublisher
 
 
 def test_directory_structure():

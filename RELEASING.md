@@ -13,17 +13,17 @@ You must have wheel and twine installed.
 
 ## Releasing a new version
 
-Our release automation tools are contained in `bin/publish.py`. These tools are smart enough to
-guard against some kinds of mistakes, but could and should be smarter. Generally speaking, it's
-preferable to invest in these tools rather than to complicate the release process.
+Our release automation tools are contained in `python_modules/automation`. These tools are smart
+enough to guard against some kinds of mistakes, but could and should be smarter. Generally speaking,
+it's preferable to invest in these tools rather than to complicate the release process.
 
 **Run a pre-release before releasing a new version**: it's good practice to run the release process
 for a pre-release version before releasing a new version, i.e., first for version 0.3.0.pre0, and
 then for version 0.3.0 only when you know that the process is going to succeed without issues.
 This ensures a clean release history.
 
-_WARNING_: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use to
-release software.
+_WARNING_: Keep in mind that there is no undo in some of the third-party systems (e.g., PyPI) we use
+to release software.
 
 You should also run releases from a clean clone of the repository.
 
@@ -47,19 +47,19 @@ It's also prudent to release from a fresh virtualenv.
     that you are at the root of the repository.
 
 2.  Make sure that you have installed the release requirements by running
-    `pip install -r bin/requirements.txt`.
+    `pip install -e python_modules/automation`.
 
 3.  Check that the current version of the projects is consistent and what you expect by running:
 
-        python bin/publish.py version
+        dagster-release version
 
 4.  Create a new release by running (e.g., for version `0.4.3.pre0`):
 
-        python bin/publish.py release 0.4.3.pre0
+        dagster-release release 0.4.3.pre0
 
 5.  Check that the new version has been created successfully by again running:
 
-        python bin/publish.py version
+        dagster-release version
 
 6.  Push the new version to the remote. If something goes wrong at this stage, don't panic! See
     "recovering from drift against remote" below.
@@ -69,12 +69,12 @@ It's also prudent to release from a fresh virtualenv.
 7.  Publish the new version to PyPI. If something goes wrong during this stage, you will probably
     have to roll forwards to a new release, since there is no way to delete files from PyPI.
 
-        python bin/publish.py publish
+        dagster-release publish
 
 8.  Check that the PyPI versions are as you expect. Note that PYPI automatically changes pre0 to
     rc0.
 
-        python bin/publish.py audit 0.4.3rc0
+        dagster-release audit 0.4.3rc0
 
 9.  Post release notes in Dagster Slack in #general, and copy the same release notes to the
     [Github releases page](https://github.com/dagster-io/dagster/releases).

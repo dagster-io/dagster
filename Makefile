@@ -63,7 +63,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagstermill \
 				-e python_modules/libraries/lakehouse \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
-				-r bin/requirements.txt \
 				-e examples/legacy_examples[full] \
 				-e examples/airline_demo[full] \
 				-r scala_modules/scripts/requirements.txt $(QUIET)

@@ -3,8 +3,7 @@ import shutil
 
 import pytest
 from automation.git import git_repo_root
-
-from ..dagster_module import DagsterModule
+from automation.release.dagster_module import DagsterModule
 
 
 @pytest.fixture(scope='session')
