@@ -105,12 +105,3 @@ local_artifact_storage:
   class: LocalArtifactStorage
   config:
     base_dir: "/var/shared/dagster"
-
-# ==================================================================================================
-# Dagit
-# ==================================================================================================
-# Provides the ability to configure how Dagit behaves when launched.
-dagit:
-  execution_manager:
-    disabled: false # whether dagit can run pipelines in a sub process
-    max_concurrent_runs: 10 # how many at a time

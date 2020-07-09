@@ -10,7 +10,6 @@ def test_yaml_schema():
 
     assert sorted(list(res.keys())) == [
         'compute_logs',
-        'dagit',
         'event_log_storage',
         'local_artifact_storage',
         'run_launcher',
