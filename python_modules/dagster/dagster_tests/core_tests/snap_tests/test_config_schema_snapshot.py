@@ -178,7 +178,7 @@ def test_check_solid_config_correct():
     def single_solid_pipeline():
         solid_with_config()
 
-    solid_config_key = solid_with_config.config_field.config_type.key
+    solid_config_key = solid_with_config.config_schema.config_type.key
 
     config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
@@ -204,7 +204,7 @@ def test_check_solid_list_list_config_correct():
     def single_solid_pipeline():
         solid_with_config()
 
-    solid_config_key = solid_with_config.config_field.config_type.key
+    solid_config_key = solid_with_config.config_schema.config_type.key
 
     config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
     assert solid_config_key in config_snaps
@@ -250,7 +250,7 @@ def test_kitchen_sink_break_out():
 
     config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
-    solid_config_key = solid_with_kitchen_sink_config.config_field.config_type.key
+    solid_config_key = solid_with_kitchen_sink_config.config_schema.config_type.key
     assert solid_config_key in config_snaps
     solid_config_snap = config_snaps[solid_config_key]
 
@@ -298,11 +298,11 @@ def test_multiple_modes():
 
     config_snaps = build_config_schema_snapshot(modez).all_config_snaps_by_key
 
-    assert a_resource.config_field.config_type.key in config_snaps
-    assert b_resource.config_field.config_type.key in config_snaps
+    assert a_resource.config_schema.config_type.key in config_snaps
+    assert b_resource.config_schema.config_type.key in config_snaps
 
-    assert get_config_snap(modez, a_resource.config_field.config_type.key)
-    assert get_config_snap(modez, b_resource.config_field.config_type.key)
+    assert get_config_snap(modez, a_resource.config_schema.config_type.key)
+    assert get_config_snap(modez, b_resource.config_schema.config_type.key)
 
 
 def get_config_snap(pipeline_def, key):
@@ -323,7 +323,7 @@ def test_scalar_union():
 
     config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
-    scalar_union_key = solid_with_config.config_field.config_type.key
+    scalar_union_key = solid_with_config.config_schema.config_type.key
 
     assert scalar_union_key in config_snaps
 
