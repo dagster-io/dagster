@@ -8,7 +8,7 @@ const API: NextPage<{ body: string; title: string }> = (props) => {
   return (
     <>
       <DynamicMetaTags title={`API Docs - ${props.title} | Dagster`} />
-      <div dangerouslySetInnerHTML={markup} />)
+      <div dangerouslySetInnerHTML={markup} />
     </>
   );
 };
