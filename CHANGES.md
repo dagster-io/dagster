@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.7 (Upcoming)
+## 0.8.7
 
 **Breaking Changes**
 
