@@ -49,13 +49,11 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def start(self, handle, instance):
+    def start(self, handle):
         self._handle = handle
-        self._instance = instance
 
     def stop(self):
         self._handle = None
-        self._instance = None
 
     def validate(self):
         if self._validated:
@@ -75,7 +73,10 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             )
 
-    def launch_run(self, instance, run, external_pipeline):
+    def initialize(self, instance):
+        self._instance = instance
+
+    def launch_run(self, run, external_pipeline):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         self.validate()
 
@@ -96,7 +97,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         result = response.json()['data']['executeRunInProcess']
 
         if result['__typename'] in ['LaunchPipelineRunSuccess', 'PipelineConfigValidationInvalid']:
-            return instance.get_run_by_id(run.run_id)
+            return self._instance.get_run_by_id(run.run_id)
 
         raise DagsterLaunchFailedError(
             'Failed to launch run with {cls} targeting {address}:\n{result}'.format(

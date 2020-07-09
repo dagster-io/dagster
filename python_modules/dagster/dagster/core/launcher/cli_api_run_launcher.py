@@ -118,16 +118,11 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         finally:
             del self._output_files_by_run_id[run_id]
 
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         '''Subclasses must implement this method.'''
 
-        check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-
-        # initialize when the first run happens
-        if not self._instance:
-            self.initialize(instance)
 
         output_file = os.path.join(
             get_system_temp_directory(), 'cli-api-execute-run-{}'.format(run.run_id)

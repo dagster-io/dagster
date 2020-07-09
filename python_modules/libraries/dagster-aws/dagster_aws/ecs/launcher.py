@@ -1,5 +1,4 @@
 from dagster import Array, Bool, Field, Noneable, StringSource, check
-from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -151,11 +150,10 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline=None):
+    def launch_run(self, run, external_pipeline=None):
         # currently ignoring external pipeline
         if external_pipeline is None:
             pass
-        check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(run, 'run', PipelineRun)
 
         # this maps run configuration to task overrides

@@ -215,6 +215,8 @@ class DagsterInstance:
         )
         self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
         self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
+        self._run_launcher.initialize(self)
+
         self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
         self._telemetry_settings = check.opt_dict_param(telemetry_settings, 'telemetry_settings')
 
@@ -967,7 +969,7 @@ class DagsterInstance:
             run_id (str): The id of the run the launch.
         '''
         run = self.get_run_by_id(run_id)
-        return self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
+        return self._run_launcher.launch_run(run, external_pipeline=external_pipeline)
 
     # Scheduler
 

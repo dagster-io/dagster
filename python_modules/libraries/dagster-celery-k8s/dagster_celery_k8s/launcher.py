@@ -113,6 +113,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         retries = check.opt_dict_param(retries, 'retries') or {'enabled': {}}
         self.retries = Retries.from_config(retries)
+        self._instance = None
 
     @classmethod
     def config_type(cls):
@@ -139,8 +140,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline):
+    def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
+        self._instance = instance
+
+    def launch_run(self, run, external_pipeline):
         check.inst_param(run, 'run', PipelineRun)
 
         job_name = 'dagster-run-{}'.format(run.run_id)
@@ -187,7 +191,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         api = kubernetes.client.BatchV1Api()
         api.create_namespaced_job(body=job, namespace=job_namespace)
 
-        instance.report_engine_event(
+        self._instance.report_engine_event(
             'Kubernetes runmaster job launched',
             run,
             EngineEventData(

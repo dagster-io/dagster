@@ -4,8 +4,16 @@ import six
 
 
 class RunLauncher(six.with_metaclass(ABCMeta)):
+    def initialize(self, instance):
+        '''
+        Perform any initialization that depends on the surrounding DagsterInstance.
+
+        Args:
+            instance (DagsterInstance): The instance in which the run has been created.
+        '''
+
     @abstractmethod
-    def launch_run(self, instance, run, external_pipeline):
+    def launch_run(self, run, external_pipeline):
         '''Launch a run.
 
         This method should begin the execution of the specified run, and may emit engine events.

@@ -148,9 +148,7 @@ def test_successful_run():
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         launcher = instance.run_launcher
-        launcher.launch_run(
-            instance=instance, run=pipeline_run, external_pipeline=external_pipeline
-        )
+        launcher.launch_run(run=pipeline_run, external_pipeline=external_pipeline)
 
         pipeline_run = instance.get_run_by_id(run_id)
         assert pipeline_run
@@ -173,7 +171,7 @@ def test_crashy_run():
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
         launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.launch_run(pipeline_run, external_pipeline)
 
         failed_pipeline_run = instance.get_run_by_id(run_id)
 
@@ -204,7 +202,7 @@ def test_terminated_run():
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
         launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.launch_run(pipeline_run, external_pipeline)
 
         poll_for_step_start(instance, run_id)
 
@@ -272,7 +270,7 @@ def test_single_solid_selection_execution():
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
         launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.launch_run(pipeline_run, external_pipeline)
         launcher.join()
         finished_pipeline_run = instance.get_run_by_id(run_id)
 
@@ -301,7 +299,7 @@ def test_multi_solid_selection_execution():
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
 
         launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.launch_run(pipeline_run, external_pipeline)
         launcher.join()
 
         finished_pipeline_run = instance.get_run_by_id(run_id)
@@ -330,7 +328,7 @@ def test_engine_events():
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
         launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        launcher.launch_run(pipeline_run, external_pipeline)
         launcher.join()
 
         finished_pipeline_run = instance.get_run_by_id(run_id)
