@@ -27,7 +27,7 @@ class ModeDefinition(
         resource_defs (Optional[Dict[str, ResourceDefinition]]): A dictionary of string resource
             keys to their implementations. Individual solids may require resources to be present by
             these keys.
-        logger_defs (Optional[Dict[str, LoggerDefinition]]): A ditionary of string logger
+        logger_defs (Optional[Dict[str, LoggerDefinition]]): A dictionary of string logger
             identifiers to their implementations.
         system_storage_defs (Optional[List[SystemStorageDefinition]]): The set of system storage
             options available when executing in this mode. By default, this will be the 'in_memory'
