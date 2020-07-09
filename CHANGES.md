@@ -13,6 +13,7 @@
 **New**
 
 - Dagit can be hosted on a sub-path by passing `--path-prefix` to the dagit CLI. #2073
+- The `date_partition_range` util function now accepts an optional `inclusive` boolean argument. By default, the function does not return include the partition for which the end time of the date range is greater than the current time. If `inclusive=True`, then the list of partitions returned will include the extra partition. 
 
 ## 0.8.6
 

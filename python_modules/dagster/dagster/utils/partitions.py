@@ -8,7 +8,9 @@ from dagster.core.errors import DagsterInvariantViolationError
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 
 
-def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=None):
+def date_partition_range(
+    start, end=None, delta=datetime.timedelta(days=1), fmt=None, inclusive=False
+):
     ''' Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
 
@@ -19,6 +21,12 @@ def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=
                                    value.
         delta (Optional(timedelta)): Timedelta representing the time duration of each partition.
         fmt (Optional(str)): Format string to represent each partition by its start time
+        inclusive (Optional(bool)): By default, the partition set only contains date interval
+            partitions for which the end time of the interval is less than current time. In other
+            words, the partition set contains date interval partitions that are completely in the
+            past. If inclusive is set to True, then the partition set will include all date
+            interval partitions for which the start time of the interval is less than the
+            current time.
 
     Returns:
         Callable[[], List[Partition]]
@@ -48,9 +56,12 @@ def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=
             date_names.append(Partition(value=current, name=current.strftime(fmt)))
             current = current + delta
 
-        # We don't include the last element here since we only want
+        # We don't include the last element here by default since we only want
         # fully completed intervals, and the _end time is in the middle of the interval
         # represented by the last element of date_names
+        if inclusive:
+            return date_names
+
         return date_names[:-1]
 
     return get_date_range_partitions
