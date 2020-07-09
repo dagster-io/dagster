@@ -155,7 +155,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(instance, 'instance', DagsterInstance)
         self._instance = instance
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 

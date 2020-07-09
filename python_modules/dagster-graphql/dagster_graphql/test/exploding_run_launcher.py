@@ -19,7 +19,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return ExplodingRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, instance, run, external_pipeline):
         raise NotImplementedError('The entire purpose of this is to throw on launch')
 
     def join(self):

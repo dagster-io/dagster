@@ -907,7 +907,7 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
         self._queue = []
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, instance, run, external_pipeline):
         self._queue.append(run)
         return run
 

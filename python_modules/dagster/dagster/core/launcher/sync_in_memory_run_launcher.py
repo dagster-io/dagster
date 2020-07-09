@@ -29,7 +29,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(instance, 'instance', DagsterInstance)
         self._instance = instance
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         recon_pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
         execute_run(recon_pipeline, run, self._instance)

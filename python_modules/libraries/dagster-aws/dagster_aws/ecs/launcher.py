@@ -150,7 +150,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, run, external_pipeline=None):
+    def launch_run(self, instance, run, external_pipeline=None):
         # currently ignoring external pipeline
         if external_pipeline is None:
             pass

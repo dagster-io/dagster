@@ -76,7 +76,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def initialize(self, instance):
         self._instance = instance
 
-    def launch_run(self, run, external_pipeline):
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         self.validate()
 
