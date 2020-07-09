@@ -520,6 +520,7 @@ def releasability_tests(version=SupportedPython.V3_7):
     return [
         StepBuilder("releasibility test")
         .run(
+            "pip install -e python_modules/automation",
             "pip install -r bin/requirements.txt",
             "pip install -r bin/dev-requirements.txt",
             "cd bin",
@@ -534,7 +535,11 @@ def version_equality_checks(version=SupportedPython.V3_7):
     return [
         StepBuilder("version equality checks for libraries")
         .on_integration_image(version)
-        .run("pip install -r bin/requirements.txt", "python bin/version_check.py")
+        .run(
+            "pip install -e python_modules/automation",
+            "pip install -r bin/requirements.txt",
+            "python bin/version_check.py",
+        )
         .build()
     ]
 

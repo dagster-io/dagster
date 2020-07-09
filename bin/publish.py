@@ -20,20 +20,20 @@ import packaging.version
 import requests
 import slackclient
 import virtualenv
-from dagster_module_publisher import DagsterModulePublisher
-
-from git_utils import (  # isort:skip
+from automation.git import (
     get_most_recent_git_tag,
     git_check_status,
     git_push,
     git_user,
     set_git_tag,
 )
+from automation.utils import which_
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, BASE_PATH)
 
-from publish_utils import format_module_versions, which_  # isort:skip
+from dagster_module_publisher import DagsterModulePublisher  # isort:skip
+from publish_utils import format_module_versions  # isort:skip
 from pypirc import ConfigFileError, RCParser  # isort:skip
 
 

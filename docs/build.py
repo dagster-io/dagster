@@ -8,12 +8,9 @@ import sys
 
 import click
 import six
+from automation.git import git_repo_root
 
 DEFAULT_DOCS_DIR = '/tmp/dagster-docs'
-
-
-def git_repo_root():
-    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
 
 
 def git_commit_updates(repo_dir, message):

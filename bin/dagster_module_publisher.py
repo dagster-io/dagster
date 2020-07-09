@@ -6,18 +6,15 @@ import sys
 
 import click
 import packaging.version
-
-from publish_utils import (  # isort:skip
-    all_equal,
-    check_output,
-    format_module_versions,
-)
+from automation.git import get_git_tag, git_repo_root
+from automation.utils import all_equal, check_output
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, BASE_PATH)
 
 from dagster_module import DagsterModule  # isort:skip
-from git_utils import get_git_tag, git_repo_root  # isort:skip
+from publish_utils import format_module_versions  # isort:skip
+
 
 # The root modules managed by this script
 CORE_MODULE_NAMES = ['dagster', 'dagit', 'dagster-graphql']

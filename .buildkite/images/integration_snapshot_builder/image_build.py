@@ -1,7 +1,7 @@
 import os
 
 import click
-from automation.git import get_root_git_dir
+from automation.git import git_repo_root
 from automation.images import (
     aws_integration_base_image,
     ensure_aws_login,
@@ -39,7 +39,7 @@ def execute_build_image(python_version, base_image_version):
 
     execute_docker_build(image=builder_image, docker_args=docker_args)
 
-    root = get_root_git_dir()
+    root = git_repo_root()
 
     target_reqs_path = os.path.join(
         root,

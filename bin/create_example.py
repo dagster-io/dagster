@@ -9,15 +9,11 @@ from __future__ import absolute_import
 import json
 import os
 import shutil
-import sys
 
 import click
+from automation.git import get_most_recent_git_tag
 
 EXAMPLES_JSON_PATH = 'docs/next/src/pages/examples/examples.json'
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, BASE_PATH)
-
-from git_utils import get_most_recent_git_tag  # isort:skip
 
 
 def copy_directory(src, dest):

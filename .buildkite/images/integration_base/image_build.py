@@ -3,7 +3,7 @@ import shutil
 from subprocess import check_output
 
 import click
-from automation.git import get_root_git_dir
+from automation.git import git_repo_root
 from automation.images import execute_docker_build, local_integration_base_image
 from packaging import version
 
@@ -41,7 +41,7 @@ def image_build(python_version, image_version):
 
 
 def execute_image_build(python_version, image_version):
-    root = get_root_git_dir()
+    root = git_repo_root()
 
     # always set cwd to the directory where the file lives
     os.chdir(os.path.dirname(os.path.abspath(__file__)))

@@ -2,9 +2,9 @@ import os
 import shutil
 
 import pytest
+from automation.git import git_repo_root
 
 from ..dagster_module import DagsterModule
-from ..git_utils import git_repo_root
 
 
 @pytest.fixture(scope='session')

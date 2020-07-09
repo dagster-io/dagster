@@ -1,7 +1,8 @@
 import os
 
+from automation.git import git_repo_root
+
 from ..dagster_module import DagsterModule, construct_publish_comands
-from ..git_utils import git_repo_root
 
 
 def test_dagster_module(dagster_modules):

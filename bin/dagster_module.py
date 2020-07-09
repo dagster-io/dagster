@@ -2,16 +2,11 @@ import contextlib
 import fnmatch
 import os
 import subprocess
-import sys
 from collections import namedtuple
 
 import click
 import six
-
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, BASE_PATH)
-
-from git_utils import git_repo_root  # isort:skip
+from automation.git import git_repo_root
 
 # We don't want to accidentally publish cruft in these directories
 CRUFTY_DIRECTORIES = ['.tox', 'build', 'dist', '*.egg-info', '__pycache__', '.pytest_cache']
