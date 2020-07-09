@@ -29,5 +29,10 @@ setup(
         'virtualenv==16.5.0',
         'wheel==0.33.6',
     ],
-    entry_points={'console_scripts': ['dagster-release = automation.release.cli:main']},
+    entry_points={
+        'console_scripts': [
+            'dagster-release = automation.release.cli:main',
+            'dagster-scaffold = automation.scaffold.cli:main',
+        ]
+    },
 )
