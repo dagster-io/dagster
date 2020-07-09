@@ -82,6 +82,20 @@ def _execute_run(request):
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
     try:
+        for event in _core_execute_run(recon_pipeline, pipeline_run, instance):
+            yield event
+    except GeneratorExit:
+        closed = True
+        raise
+    finally:
+        if not closed:
+            yield instance.report_engine_event(
+                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+            )
+
+
+def _core_execute_run(recon_pipeline, pipeline_run, instance):
+    try:
         for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
             yield event
     except DagsterSubprocessError as err:
@@ -95,9 +109,6 @@ def _execute_run(request):
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
             instance.report_run_failed(pipeline_run)
-    except GeneratorExit:
-        closed = True
-        raise
     except Exception:  # pylint: disable=broad-except
         yield instance.report_engine_event(
             'An exception was thrown during execution that is likely a framework error, '
@@ -106,11 +117,6 @@ def _execute_run(request):
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
         instance.report_run_failed(pipeline_run)
-    finally:
-        if not closed:
-            yield instance.report_engine_event(
-                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
-            )
 
 
 class DagsterApiServer(DagsterApiServicer):
