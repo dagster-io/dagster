@@ -7,32 +7,13 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 # pylint: disable=redefined-outer-name, unused-argument
 import os
 import shutil
-import sys
 import tempfile
 
 import docker
 import pytest
-import six
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
-from dagster.utils import git_repository_root, load_yaml_from_path, mkdir_p
-
-try:
-    sys.path.append(
-        os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
-    )
-    from dagster_k8s_tests.integration_tests.cluster import (
-        define_cluster_provider_fixture,
-    )  # isort:skip
-
-except ImportError as import_exc:
-    six.raise_from(
-        Exception(
-            'Expected to find dagster-k8s in python_modules/libraries/dagster-k8s, please run these'
-            ' tests from a clean checkout of the dagster repository'
-        ),
-        import_exc,
-    )
+from dagster.utils import load_yaml_from_path, mkdir_p
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -129,6 +110,3 @@ def s3_bucket():
 @pytest.fixture(scope='session')
 def gcs_bucket():
     yield 'dagster-scratch-ccdfe1e'
-
-
-cluster_provider = define_cluster_provider_fixture()

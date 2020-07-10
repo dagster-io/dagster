@@ -13,14 +13,8 @@ from dagster_test.test_project import (
 
 from dagster import DagsterEventType
 from dagster.core.test_utils import create_run_for_test
-from dagster.utils import git_repository_root, merge_dicts
+from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
-
-sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
-from dagster_k8s_tests.integration_tests.cluster import (  # isort:skip, pylint:disable=unused-import
-    dagster_instance,
-    run_launcher,
-)
 
 
 @pytest.mark.integration

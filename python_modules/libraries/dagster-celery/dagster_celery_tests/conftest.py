@@ -1,31 +1,11 @@
 import os
-import sys
 
 import docker
 import pytest
-import six
 from celery.contrib.testing import worker
 from celery.contrib.testing.app import setup_default_app
 from dagster_celery.make_app import make_app
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
-
-from dagster.utils import git_repository_root
-
-try:
-    sys.path.append(
-        os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
-    )
-    # pylint: disable=unused-import
-    from dagster_k8s_tests.integration_tests.cluster import define_cluster_provider_fixture
-    from dagster_k8s_tests.integration_tests.helm import helm_namespace
-except ImportError as import_exc:
-    six.raise_from(
-        Exception(
-            'Expected to find dagster-k8s in python_modules/libraries/dagster-k8s, please run these'
-            ' tests from a clean checkout of the dagster repository'
-        ),
-        import_exc,
-    )
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -60,6 +40,3 @@ def dagster_docker_image():
             build_and_tag_test_image(docker_image)
 
     return docker_image
-
-
-cluster_provider = define_cluster_provider_fixture()

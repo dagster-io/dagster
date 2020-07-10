@@ -4,6 +4,7 @@ import yaml
 from dagster_k8s import construct_dagster_graphql_k8s_job
 from dagster_k8s.job import K8S_RESOURCE_REQUIREMENTS_KEY, get_k8s_resource_requirements
 from dagster_k8s.test import wait_for_job_and_get_logs
+from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
 from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_docker_image,
@@ -16,8 +17,6 @@ from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path
-
-from .integration_utils import image_pull_policy, remove_none_recursively
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
