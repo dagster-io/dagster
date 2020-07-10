@@ -1,4 +1,5 @@
 import os
+import re
 from contextlib import contextmanager
 
 import click
@@ -66,7 +67,16 @@ LEGACY_REPOSITORY = file_relative_path(__file__, 'hello_world_in_file/legacy_rep
     ),
 )
 def test_valid_repository_target_combos_with_single_repo_single_location(cli_args):
-    external_repository = successfully_load_repository_via_cli(cli_args)
+    if cli_args[1] == LEGACY_REPOSITORY:
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                'You are using the legacy repository yaml format. Please update your file '
+            ),
+        ):
+            external_repository = successfully_load_repository_via_cli(cli_args)
+    else:
+        external_repository = successfully_load_repository_via_cli(cli_args)
     assert isinstance(external_repository, ExternalRepository)
     assert external_repository.name == 'hello_world_repository'
 
@@ -169,29 +179,55 @@ def new_cwd(path):
 
 
 def test_legacy_repository_yaml_autoload():
-    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
-        assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
+            assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
 
 
 def test_legacy_repository_yaml_dash_y():
-    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
-        assert (
-            successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
-            == 'hello_world_repository'
-        )
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You have used -y or --repository-yaml to load a workspace. This is deprecated and '
+            'will be eliminated in 0.9.0.'
+        ),
+    ):
+        with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml')):
+            assert (
+                successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
+                == 'hello_world_repository'
+            )
 
 
 def test_legacy_repository_yaml_module_autoload():
-    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
-        assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
+            assert successfully_load_repository_via_cli([]).name == 'hello_world_repository'
 
 
 def test_legacy_repository_module_yaml_dash_y():
-    with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
-        assert (
-            successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
-            == 'hello_world_repository'
-        )
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You have used -y or --repository-yaml to load a workspace. This is deprecated and '
+            'will be eliminated in 0.9.0.'
+        ),
+    ):
+        with new_cwd(file_relative_path(__file__, 'legacy_repository_yaml_module')):
+            assert (
+                successfully_load_repository_via_cli(['-y', 'repository.yaml']).name
+                == 'hello_world_repository'
+            )
 
 
 def test_local_directory_module():

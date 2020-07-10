@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import pytest
@@ -128,15 +129,17 @@ def test_local_directory_module():
             'complete_bogus_module', remove_from_path_fn=_current_test_directory_paths
         )
 
-    with mock.patch('warnings.warn') as warn_mock:
-        loadable_targets = loadable_targets_from_python_module(
-            'autodiscover_in_module', remove_from_path_fn=_current_test_directory_paths
-        )
-        warn_mock.assert_called_once_with(
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
             'Module autodiscover_in_module was resolved using the working directory. The ability '
             'to load uninstalled modules from the working directory is deprecated and will be '
             'removed in a future release.  Please use the python-file based load arguments or '
             'install autodiscover_in_module to your python environment.'
+        ),
+    ):
+        loadable_targets = loadable_targets_from_python_module(
+            'autodiscover_in_module', remove_from_path_fn=_current_test_directory_paths
         )
     assert len(loadable_targets) == 1
 
@@ -181,15 +184,16 @@ def test_local_directory_file():
             'No module named autodiscover_src.pipelines',  # py27
         ]
 
-    with mock.patch('warnings.warn') as warn_mock:
-        with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
-            loadable_targets_from_python_file(path)
-
-        warn_mock.assert_called_once_with(
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
             (
                 'Module `{module}` was resolved using the working directory. The ability to '
                 'implicitly load modules from the working directory is deprecated and will be removed '
                 'in a future release. Please explicitly specify the `working_directory` config option '
                 'in your workspace.yaml or install `{module}` to your python environment.'
             ).format(module='repository' if is_py27 else 'autodiscover_src')
-        )
+        ),
+    ):
+        with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
+            loadable_targets_from_python_file(path)

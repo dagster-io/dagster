@@ -199,20 +199,33 @@ def test_list_command():
     )
     assert_correct_bar_repository_output(result)
 
-    execute_list_command(
-        {
-            'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
-            'python_file': None,
-            'module_name': None,
-            'fn_name': None,
-        },
-        no_print,
-    )
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You have used -y or --repository-yaml to load a workspace. This is deprecated and '
+            'will be eliminated in 0.9.0.'
+        ),
+    ):
+        execute_list_command(
+            {
+                'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
+                'python_file': None,
+                'module_name': None,
+                'fn_name': None,
+            },
+            no_print,
+        )
 
-    result = runner.invoke(
-        pipeline_list_command, ['-w', file_relative_path(__file__, 'repository_module.yaml')]
-    )
-    assert_correct_bar_repository_output(result)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        result = runner.invoke(
+            pipeline_list_command, ['-w', file_relative_path(__file__, 'repository_module.yaml')]
+        )
+        assert_correct_bar_repository_output(result)
 
     result = runner.invoke(
         pipeline_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml')]
@@ -258,96 +271,163 @@ def test_list_command():
     assert_correct_bar_repository_output(result)
 
 
+# [(cli_args, uses_legacy_repository_yaml_format)]
 def valid_execute_args():
     return [
-        {
-            'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
-            'pipeline': 'foo',
-            'python_file': None,
-            'module_name': None,
-            'attribute': None,
-        },
-        {
-            'workspace': (file_relative_path(__file__, 'repository_module.yaml'),),
-            'pipeline': 'foo',
-            'python_file': None,
-            'module_name': None,
-            'attribute': None,
-        },
-        {
-            'workspace': None,
-            'pipeline': 'foo',
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'bar',
-        },
-        {
-            'workspace': None,
-            'pipeline': 'foo',
-            'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
-            'attribute': 'bar',
-        },
-        {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
-            'attribute': 'foo_pipeline',
-        },
-        {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'define_foo_pipeline',
-        },
-        {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'foo_pipeline',
-        },
+        (
+            {
+                'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
+                'pipeline': 'foo',
+                'python_file': None,
+                'module_name': None,
+                'attribute': None,
+            },
+            True,
+        ),
+        (
+            {
+                'workspace': (file_relative_path(__file__, 'repository_module.yaml'),),
+                'pipeline': 'foo',
+                'python_file': None,
+                'module_name': None,
+                'attribute': None,
+            },
+            True,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': 'foo',
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'bar',
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': 'foo',
+                'python_file': None,
+                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'attribute': 'bar',
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': None,
+                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'attribute': 'foo_pipeline',
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'define_foo_pipeline',
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'foo_pipeline',
+            },
+            False,
+        ),
     ]
 
 
+# [(cli_args, uses_legacy_repository_yaml_format)]
 def valid_cli_args():
     return [
-        ['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'],
-        ['-w', file_relative_path(__file__, 'repository_module.yaml'), '-p', 'foo',],
-        ['-w', file_relative_path(__file__, 'workspace.yaml'), '-p', 'foo',],
-        [
-            '-w',
-            file_relative_path(__file__, 'override.yaml'),
-            '-w',
-            file_relative_path(__file__, 'workspace.yaml'),
-            '-p',
-            'foo',
-        ],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo',],
-        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo',],
-        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline',],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'define_foo_pipeline'],
+        (['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'], True),
+        (['-w', file_relative_path(__file__, 'repository_module.yaml'), '-p', 'foo'], True),
+        (['-w', file_relative_path(__file__, 'workspace.yaml'), '-p', 'foo'], False),
+        (
+            [
+                '-w',
+                file_relative_path(__file__, 'override.yaml'),
+                '-w',
+                file_relative_path(__file__, 'workspace.yaml'),
+                '-p',
+                'foo',
+            ],
+            False,
+        ),
+        (
+            ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo'],
+            False,
+        ),
+        (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo'], False),
+        (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline'], False),
+        (
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-a',
+                'define_foo_pipeline',
+            ],
+            False,
+        ),
     ]
 
 
 def test_print_command():
-    for cli_args in valid_execute_args():
-        execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
+    for cli_args, uses_legacy_repository_yaml_format in valid_execute_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
+        else:
+            execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
 
-    for cli_args in valid_execute_args():
-        execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
+    for cli_args, uses_legacy_repository_yaml_format in valid_execute_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
+        else:
+            execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
 
     runner = CliRunner()
 
-    for cli_args in valid_cli_args():
+    for cli_args, uses_legacy_repository_yaml_format in valid_cli_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                result = runner.invoke(pipeline_print_command, cli_args)
+                assert result.exit_code == 0, result.stdout
 
-        result = runner.invoke(pipeline_print_command, cli_args)
-        assert result.exit_code == 0, result.stdout
+                result = runner.invoke(pipeline_print_command, ['--verbose'] + cli_args)
+                assert result.exit_code == 0, result.stdout
+        else:
+            result = runner.invoke(pipeline_print_command, cli_args)
+            assert result.exit_code == 0, result.stdout
 
-        result = runner.invoke(pipeline_print_command, ['--verbose'] + cli_args)
-        assert result.exit_code == 0, result.stdout
+            result = runner.invoke(pipeline_print_command, ['--verbose'] + cli_args)
+            assert result.exit_code == 0, result.stdout
 
     res = runner.invoke(
         pipeline_print_command,
@@ -456,23 +536,59 @@ def test_execute_preset_command():
 
 
 def test_execute_command():
-    for cli_args in valid_execute_args():
-        execute_execute_command(env=None, cli_args=cli_args)
+    for cli_args, uses_legacy_repository_yaml_format in valid_execute_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                execute_execute_command(env=None, cli_args=cli_args)
+        else:
+            execute_execute_command(env=None, cli_args=cli_args)
 
-    for cli_args in valid_execute_args():
-        execute_execute_command(
-            env=[file_relative_path(__file__, 'default_log_error_env.yaml')], cli_args=cli_args
-        )
+    for cli_args, uses_legacy_repository_yaml_format in valid_execute_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                execute_execute_command(
+                    env=[file_relative_path(__file__, 'default_log_error_env.yaml')],
+                    cli_args=cli_args,
+                )
+        else:
+            execute_execute_command(
+                env=[file_relative_path(__file__, 'default_log_error_env.yaml')], cli_args=cli_args
+            )
 
     runner = CliRunner()
 
-    for cli_args in valid_cli_args():
-        runner_pipeline_execute(runner, cli_args)
+    for cli_args, uses_legacy_repository_yaml_format in valid_cli_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                runner_pipeline_execute(runner, cli_args)
 
-        runner_pipeline_execute(
-            runner,
-            ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
-        )
+                runner_pipeline_execute(
+                    runner,
+                    ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')]
+                    + cli_args,
+                )
+        else:
+            runner_pipeline_execute(runner, cli_args)
+
+            runner_pipeline_execute(
+                runner,
+                ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
+            )
 
 
 def test_stdout_execute_command():
@@ -595,21 +711,49 @@ def runner_pipeline_execute(runner, cli_args):
 
 
 def test_scaffold_command():
-    for cli_args in valid_execute_args():
-        cli_args['print_only_required'] = True
-        execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
+    for cli_args, uses_legacy_repository_yaml_format in valid_execute_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                cli_args['print_only_required'] = True
+                execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
-        cli_args['print_only_required'] = False
-        execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
+                cli_args['print_only_required'] = False
+                execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
+        else:
+            cli_args['print_only_required'] = True
+            execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
+
+            cli_args['print_only_required'] = False
+            execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
     runner = CliRunner()
 
-    for cli_args in valid_cli_args():
-        result = runner.invoke(pipeline_scaffold_command, cli_args)
-        assert result.exit_code == 0
+    for cli_args, uses_legacy_repository_yaml_format in valid_cli_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                result = runner.invoke(pipeline_scaffold_command, cli_args)
+                assert result.exit_code == 0
 
-        result = runner.invoke(pipeline_scaffold_command, ['--print-only-required'] + cli_args)
-        assert result.exit_code == 0
+                result = runner.invoke(
+                    pipeline_scaffold_command, ['--print-only-required'] + cli_args
+                )
+                assert result.exit_code == 0
+        else:
+            result = runner.invoke(pipeline_scaffold_command, cli_args)
+            assert result.exit_code == 0
+
+            result = runner.invoke(pipeline_scaffold_command, ['--print-only-required'] + cli_args)
+            assert result.exit_code == 0
 
 
 def test_default_memory_run_storage():
@@ -620,7 +764,13 @@ def test_default_memory_run_storage():
         'module_name': None,
         'attribute': None,
     }
-    result = execute_execute_command(env=None, cli_args=cli_args)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        result = execute_execute_command(env=None, cli_args=cli_args)
     assert result.success
 
 
@@ -632,9 +782,15 @@ def test_override_with_in_memory_storage():
         'module_name': None,
         'attribute': None,
     }
-    result = execute_execute_command(
-        env=[file_relative_path(__file__, 'in_memory_env.yaml')], cli_args=cli_args
-    )
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        result = execute_execute_command(
+            env=[file_relative_path(__file__, 'in_memory_env.yaml')], cli_args=cli_args
+        )
     assert result.success
 
 
@@ -646,9 +802,15 @@ def test_override_with_filesystem_storage():
         'module_name': None,
         'attribute': None,
     }
-    result = execute_execute_command(
-        env=[file_relative_path(__file__, 'filesystem_env.yaml')], cli_args=cli_args
-    )
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        result = execute_execute_command(
+            env=[file_relative_path(__file__, 'filesystem_env.yaml')], cli_args=cli_args
+        )
     assert result.success
 
 
@@ -1005,38 +1167,86 @@ def run_test_backfill(execution_args, expected_count=None, error_message=None):
 
 def test_backfill_no_pipeline():
     args = ['--pipeline', 'nonexistent']
-    run_test_backfill(args, error_message='No pipeline found')
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, error_message='No pipeline found')
 
 
 def test_backfill_no_partition_sets():
     args = ['--pipeline', 'foo']
-    run_test_backfill(args, error_message='No partition sets found')
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, error_message='No partition sets found')
 
 
 def test_backfill_no_named_partition_set():
     args = ['--pipeline', 'baz', '--partition-set', 'nonexistent']
-    run_test_backfill(args, error_message='No partition set found')
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, error_message='No partition set found')
 
 
 def test_backfill_launch():
     args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions']
-    run_test_backfill(args, expected_count=len(string.ascii_lowercase))
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, expected_count=len(string.ascii_lowercase))
 
 
 def test_backfill_partition_range():
     args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'x']
-    run_test_backfill(args, expected_count=3)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, expected_count=3)
 
     args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--to', 'c']
-    run_test_backfill(args, expected_count=3)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, expected_count=3)
 
     args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--from', 'c', '--to', 'f']
-    run_test_backfill(args, expected_count=4)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, expected_count=4)
 
 
 def test_backfill_partition_enum():
     args = ['--pipeline', 'baz', '--partition-set', 'baz_partitions', '--partitions', 'c,x,z']
-    run_test_backfill(args, expected_count=3)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'You are using the legacy repository yaml format. Please update your file '
+        ),
+    ):
+        run_test_backfill(args, expected_count=3)
 
 
 def run_launch(execution_args, expected_count=None):
@@ -1061,8 +1271,17 @@ def run_launch(execution_args, expected_count=None):
 
 
 def test_launch_pipeline():
-    for cli_args in valid_cli_args():
-        run_launch(cli_args, expected_count=1)
+    for cli_args, uses_legacy_repository_yaml_format in valid_cli_args():
+        if uses_legacy_repository_yaml_format:
+            with pytest.warns(
+                UserWarning,
+                match=re.escape(
+                    'You are using the legacy repository yaml format. Please update your file '
+                ),
+            ):
+                run_launch(cli_args, expected_count=1)
+        else:
+            run_launch(cli_args, expected_count=1)
 
 
 @contextmanager
@@ -1084,17 +1303,23 @@ def mocked_instance():
 def test_tags_pipeline():
     runner = CliRunner()
     with mocked_instance() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                '-w',
-                file_relative_path(__file__, 'repository_module.yaml'),
-                '--tags',
-                '{ "foo": "bar" }',
-                '-p',
-                'foo',
-            ],
-        )
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                'You are using the legacy repository yaml format. Please update your file '
+            ),
+        ):
+            result = runner.invoke(
+                pipeline_execute_command,
+                [
+                    '-w',
+                    file_relative_path(__file__, 'repository_module.yaml'),
+                    '--tags',
+                    '{ "foo": "bar" }',
+                    '-p',
+                    'foo',
+                ],
+            )
         assert result.exit_code == 0
         runs = instance.get_runs()
         assert len(runs) == 1
@@ -1124,22 +1349,28 @@ def test_tags_pipeline():
         assert run.tags.get('foo') == 'bar'
 
     with mocked_instance() as instance:
-        result = runner.invoke(
-            pipeline_backfill_command,
-            [
-                '-w',
-                file_relative_path(__file__, 'repository_file.yaml'),
-                '--noprompt',
-                '--partition-set',
-                'baz_partitions',
-                '--partitions',
-                'c',
-                '--tags',
-                '{ "foo": "bar" }',
-                '-p',
-                'baz',
-            ],
-        )
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                'You are using the legacy repository yaml format. Please update your file '
+            ),
+        ):
+            result = runner.invoke(
+                pipeline_backfill_command,
+                [
+                    '-w',
+                    file_relative_path(__file__, 'repository_file.yaml'),
+                    '--noprompt',
+                    '--partition-set',
+                    'baz_partitions',
+                    '--partitions',
+                    'c',
+                    '--tags',
+                    '{ "foo": "bar" }',
+                    '-p',
+                    'baz',
+                ],
+            )
         assert result.exit_code == 0, result.stdout
         runs = instance.run_launcher.queue()
         assert len(runs) == 1

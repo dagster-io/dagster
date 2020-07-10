@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import String
@@ -34,12 +36,28 @@ def test_dagster_type_loader_missing_variable():
 
 
 def test_input_hydration_config_backcompat_args():
-    @input_hydration_config(config_cls=String)
-    def _foo(_, hello):
-        return hello
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            '"input_hydration_config" is deprecated and will be removed in 0.10.0, use '
+            '"dagster_type_loader" instead.'
+        ),
+    ):
+
+        @input_hydration_config(config_cls=String)
+        def _foo(_, hello):
+            return hello
 
 
 def test_output_materialization_config_backcompat_args():
-    @output_materialization_config(config_cls=String)
-    def _foo(_, _a, _b):
-        pass
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            '"output_materialization_config" is deprecated and will be removed in 0.10.0, use '
+            '"dagster_type_materializer" instead.'
+        ),
+    ):
+
+        @output_materialization_config(config_cls=String)
+        def _foo(_, _a, _b):
+            pass
