@@ -2,6 +2,8 @@ import os
 import time
 from contextlib import contextmanager
 
+import pytest
+
 from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
@@ -192,6 +194,10 @@ def test_crashy_run():
         assert _message_exists(event_records, message)
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_terminated_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
