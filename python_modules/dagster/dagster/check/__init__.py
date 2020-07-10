@@ -220,10 +220,10 @@ def int_value_param(obj, value, param_name):
     return obj
 
 
-def opt_int_param(obj, param_name):
+def opt_int_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, integer_types):
         raise_with_traceback(_param_type_mismatch_exception(obj, int, param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def float_param(obj, param_name):

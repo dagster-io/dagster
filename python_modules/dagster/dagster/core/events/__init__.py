@@ -1,5 +1,6 @@
 '''Structured representations of system events.'''
 import logging
+import os
 from collections import namedtuple
 from enum import Enum
 
@@ -153,7 +154,7 @@ class DagsterEvent(
     namedtuple(
         '_DagsterEvent',
         'event_type_value pipeline_name step_key solid_handle step_kind_value '
-        'logging_tags event_specific_data message',
+        'logging_tags event_specific_data message pid',
     )
 ):
     '''Events yielded by solid and pipeline execution.
@@ -174,6 +175,7 @@ class DagsterEvent(
             step_context.logging_tags,
             _validate_event_specific_data(event_type, event_specific_data),
             check.opt_str_param(message, 'message'),
+            pid=os.getpid(),
         )
 
         log_step_event(step_context, event)
@@ -194,6 +196,7 @@ class DagsterEvent(
             message=check.opt_str_param(message, 'message'),
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
             step_key=step_key,
+            pid=os.getpid(),
         )
 
         log_pipeline_event(pipeline_context, event, step_key)
@@ -214,6 +217,7 @@ class DagsterEvent(
                 DagsterEventType.ENGINE_EVENT, event_specific_data
             ),
             step_key=execution_plan.step_key_for_single_step_plans(),
+            pid=os.getpid(),
         )
         log_resource_event(log_manager, pipeline_name, event)
         return event
@@ -228,6 +232,7 @@ class DagsterEvent(
         logging_tags=None,
         event_specific_data=None,
         message=None,
+        pid=None,
     ):
         event_type_value, event_specific_data = _handle_back_compat(
             event_type_value, event_specific_data
@@ -243,6 +248,7 @@ class DagsterEvent(
             check.opt_dict_param(logging_tags, 'logging_tags'),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
             check.opt_str_param(message, 'message'),
+            check.opt_int_param(pid, 'pid'),
         )
 
     @property
@@ -623,6 +629,7 @@ class DagsterEvent(
                 'Pipeline failure during initialization of pipeline "{pipeline_name}". '
                 'This may be due to a failure in initializing a resource or logger.'
             ).format(pipeline_name=pipeline_name),
+            pid=os.getpid(),
         )
         log_manager.error(
             event.message
