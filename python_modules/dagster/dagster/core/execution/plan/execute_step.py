@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.definitions import (
+    AssetMaterialization,
     ExpectationResult,
     Failure,
     Materialization,
@@ -271,7 +272,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
             if isinstance(user_event, Output):
                 for evt in _create_step_events_for_output(step_context, user_event):
                     yield evt
-            elif isinstance(user_event, Materialization):
+            elif isinstance(user_event, (AssetMaterialization, Materialization)):
                 yield DagsterEvent.step_materialization(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
@@ -355,7 +356,7 @@ def _create_output_materializations(step_context, output_name, value):
                     )
 
                 for materialization in materializations:
-                    if not isinstance(materialization, Materialization):
+                    if not isinstance(materialization, (AssetMaterialization, Materialization)):
                         raise DagsterInvariantViolationError(
                             (
                                 'materialize_runtime_values on type {type_name} has returned '

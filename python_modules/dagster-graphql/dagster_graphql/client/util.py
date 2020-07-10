@@ -1,5 +1,10 @@
 from dagster import EventMetadataEntry, check, seven
-from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
+from dagster.core.definitions import (
+    AssetMaterialization,
+    ExpectationResult,
+    Materialization,
+    SolidHandle,
+)
 from dagster.core.definitions.events import PythonArtifactMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.events import (
@@ -47,6 +52,12 @@ def expectation_result_from_data(data):
 
 
 def materialization_from_data(data):
+    if data.get('asset_key'):
+        return AssetMaterialization(
+            asset_key=data['asset_key'],
+            description=data.get('description'),
+            metadata_entries=list(event_metadata_entries(data.get('metadataEntries')) or []),
+        )
     return Materialization(
         label=data['label'],
         description=data.get('description'),  # enforce?

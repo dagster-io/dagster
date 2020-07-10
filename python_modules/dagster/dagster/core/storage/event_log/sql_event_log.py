@@ -6,7 +6,7 @@ import six
 import sqlalchemy as db
 
 from dagster import check, seven
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, Materialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
@@ -430,7 +430,13 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                 dagster_event = event_record.dagster_event
                 event_specific_data = dagster_event.event_specific_data
                 materialization = event_specific_data.materialization
-                updated_materialization = materialization._replace(asset_key=None)
+                updated_materialization = Materialization(
+                    label=materialization.label,
+                    description=materialization.description,
+                    metadata_entries=materialization.metadata_entries,
+                    asset_key=None,
+                    skip_deprecation_warning=True,
+                )
                 updated_event_specific_data = event_specific_data._replace(
                     materialization=updated_materialization
                 )

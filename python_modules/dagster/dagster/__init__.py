@@ -4,6 +4,7 @@ from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AssetKey,
+    AssetMaterialization,
     CompositeSolidDefinition,
     ConfigMapping,
     DependencyDefinition,
@@ -142,6 +143,7 @@ from dagster.config.source import StringSource, IntSource  # isort:skip
 __all__ = [
     # Definition
     'AssetKey',
+    'AssetMaterialization',
     'CompositeSolidDefinition',
     'ConfigMapping',
     'DependencyDefinition',

@@ -4,7 +4,7 @@ from enum import Enum
 import six
 
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization
+from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
 from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
@@ -136,7 +136,7 @@ class RunStepKeyStatsSnapshot(
             start_time=check.opt_float_param(start_time, 'start_time'),
             end_time=check.opt_float_param(end_time, 'end_time'),
             materializations=check.opt_list_param(
-                materializations, 'materializations', Materialization
+                materializations, 'materializations', (AssetMaterialization, Materialization)
             ),
             expectation_results=check.opt_list_param(
                 expectation_results, 'expectation_results', ExpectationResult

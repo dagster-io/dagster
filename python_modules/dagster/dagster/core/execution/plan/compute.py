@@ -1,5 +1,12 @@
 from dagster import check
-from dagster.core.definitions import ExpectationResult, Materialization, Output, Solid, SolidHandle
+from dagster.core.definitions import (
+    AssetMaterialization,
+    ExpectationResult,
+    Materialization,
+    Output,
+    Solid,
+    SolidHandle,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
@@ -63,7 +70,7 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
         return
 
     for event in user_event_sequence:
-        if isinstance(event, (Output, Materialization, ExpectationResult)):
+        if isinstance(event, (Output, AssetMaterialization, Materialization, ExpectationResult)):
             yield event
         else:
             raise DagsterInvariantViolationError(

@@ -22,6 +22,7 @@ from .dependency import (
 )
 from .events import (
     AssetKey,
+    AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
     Failure,

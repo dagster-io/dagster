@@ -1,11 +1,12 @@
 import os
 import re
+import warnings
 from collections import namedtuple
 from enum import Enum
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import Persistable, whitelist_for_persistence
 
 from .utils import DEFAULT_OUTPUT
 
@@ -40,8 +41,8 @@ def validate_structured_asset_key(l):
     return l
 
 
-@whitelist_for_serdes
-class AssetKey(namedtuple('_AssetKey', 'path')):
+@whitelist_for_persistence
+class AssetKey(namedtuple('_AssetKey', 'path'), Persistable):
     ''' Object representing the structure of an asset key.  Takes in a sanitized string or list of
     strings.
 
@@ -98,8 +99,10 @@ class AssetKey(namedtuple('_AssetKey', 'path')):
         return None
 
 
-@whitelist_for_serdes
-class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description entry_data')):
+@whitelist_for_persistence
+class EventMetadataEntry(
+    namedtuple('_EventMetadataEntry', 'label description entry_data'), Persistable
+):
     '''The standard structure for describing metadata for Dagster events.
 
     Lists of objects of this type can be passed as arguments to Dagster events and will be displayed
@@ -210,8 +213,8 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
         return EventMetadataEntry(label, description, FloatMetadataEntryData(value),)
 
 
-@whitelist_for_serdes
-class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
+@whitelist_for_persistence
+class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text'), Persistable):
     '''Container class for text metadata entry data.
 
     Args:
@@ -222,8 +225,8 @@ class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
         return super(TextMetadataEntryData, cls).__new__(cls, check.str_param(text, 'text'))
 
 
-@whitelist_for_serdes
-class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
+@whitelist_for_persistence
+class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url'), Persistable):
     '''Container class for URL metadata entry data.
 
     Args:
@@ -234,8 +237,8 @@ class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
         return super(UrlMetadataEntryData, cls).__new__(cls, check.str_param(url, 'url'))
 
 
-@whitelist_for_serdes
-class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
+@whitelist_for_persistence
+class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path'), Persistable):
     '''Container class for path metadata entry data.
 
     Args:
@@ -246,8 +249,8 @@ class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
         return super(PathMetadataEntryData, cls).__new__(cls, check.str_param(path, 'path'))
 
 
-@whitelist_for_serdes
-class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
+@whitelist_for_persistence
+class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data'), Persistable):
     '''Container class for JSON metadata entry data.
 
     Args:
@@ -260,8 +263,8 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
         )
 
 
-@whitelist_for_serdes
-class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str')):
+@whitelist_for_persistence
+class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str'), Persistable):
     '''Container class for markdown metadata entry data.
 
     Args:
@@ -272,9 +275,9 @@ class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str
         return super(MarkdownMetadataEntryData, cls).__new__(cls, check.str_param(md_str, 'md_str'))
 
 
-@whitelist_for_serdes
+@whitelist_for_persistence
 class PythonArtifactMetadataEntryData(
-    namedtuple('_PythonArtifactMetadataEntryData', 'module name')
+    namedtuple('_PythonArtifactMetadataEntryData', 'module name'), Persistable
 ):
     def __new__(cls, module, name):
         return super(PythonArtifactMetadataEntryData, cls).__new__(
@@ -282,8 +285,8 @@ class PythonArtifactMetadataEntryData(
         )
 
 
-@whitelist_for_serdes
-class FloatMetadataEntryData(namedtuple('_FloatMetadataEntryData', 'value')):
+@whitelist_for_persistence
+class FloatMetadataEntryData(namedtuple('_FloatMetadataEntryData', 'value'), Persistable):
     def __new__(cls, value):
         check.float_param(value, 'value')
         return super(FloatMetadataEntryData, cls).__new__(cls, check.float_param(value, 'value'))
@@ -321,9 +324,72 @@ class Output(namedtuple('_Output', 'value output_name')):
         return super(Output, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
 
 
-@whitelist_for_serdes
+@whitelist_for_persistence
+class AssetMaterialization(
+    namedtuple('_AssetMaterialization', 'asset_key description metadata_entries'), Persistable
+):
+    '''Event indicating that a solid has materialized an asset.
+
+    Solid compute functions may yield events of this type whenever they wish to indicate to the
+    Dagster framework (and the end user) that they have produced a materialized value as a
+    side effect of computation. Unlike outputs, asset materializations can not be passed to other
+    solids, and their persistence is controlled by solid logic, rather than by the Dagster
+    framework.
+
+    Solid authors should use these events to organize metadata about the side effects of their
+    computations, enabling tooling like the Assets dashboard in `dagit`.
+
+    Args:
+        asset_key (str|List[str]|AssetKey): A key to identify the materialized asset across pipeline
+            runs
+        description (Optional[str]): A longer human-radable description of the materialized value.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+            materialized value.
+    '''
+
+    def __new__(cls, asset_key, description=None, metadata_entries=None):
+        if check.is_str(asset_key):
+            asset_key = AssetKey(parse_asset_key_string(asset_key))
+        elif isinstance(asset_key, list):
+            check.is_list(asset_key, of_type=str)
+            asset_key = AssetKey(asset_key)
+        else:
+            check.inst_param(asset_key, 'asset_key', AssetKey)
+
+        return super(AssetMaterialization, cls).__new__(
+            cls,
+            asset_key=asset_key,
+            description=check.opt_str_param(description, 'description'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
+        )
+
+    @property
+    def label(self):
+        return self.asset_key.to_string()
+
+    @staticmethod
+    def file(path, description=None, asset_key=None):
+        '''Static constructor for standard materializations corresponding to files on disk.
+
+        Args:
+            path (str): The path to the file.
+            description (Optional[str]): A human-readable description of the materialization.
+        '''
+        if not asset_key:
+            asset_key = path
+
+        return AssetMaterialization(
+            asset_key=asset_key,
+            description=description,
+            metadata_entries=[EventMetadataEntry.fspath(path)],
+        )
+
+
+@whitelist_for_persistence
 class Materialization(
-    namedtuple('_Materialization', 'label description metadata_entries asset_key')
+    namedtuple('_Materialization', 'label description metadata_entries asset_key'), Persistable
 ):
     '''Event indicating that a solid has materialized a value.
 
@@ -344,6 +410,40 @@ class Materialization(
             across pipeline runs
     '''
 
+    def __new__(
+        cls,
+        label=None,
+        description=None,
+        metadata_entries=None,
+        asset_key=None,
+        skip_deprecation_warning=False,
+    ):
+        if asset_key and check.is_str(asset_key):
+            asset_key = AssetKey(parse_asset_key_string(asset_key))
+        else:
+            check.opt_inst_param(asset_key, 'asset_key', AssetKey)
+
+        if not label:
+            check.param_invariant(
+                asset_key and asset_key.path,
+                'label',
+                'Either label or asset_key with a path must be provided',
+            )
+            label = asset_key.to_string()
+
+        if not skip_deprecation_warning:
+            warnings.warn('`Materialization` is deprecated; use `AssetMaterialization` instead.')
+
+        return super(Materialization, cls).__new__(
+            cls,
+            label=check.str_param(label, 'label'),
+            description=check.opt_str_param(description, 'description'),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+            ),
+            asset_key=asset_key,
+        )
+
     @staticmethod
     def file(path, description=None, asset_key=None):
         '''Static constructor for standard materializations corresponding to files on disk.
@@ -359,34 +459,16 @@ class Materialization(
             asset_key=asset_key,
         )
 
-    def __new__(cls, label=None, description=None, metadata_entries=None, asset_key=None):
-        if asset_key and check.is_str(asset_key):
-            asset_key = AssetKey(parse_asset_key_string(asset_key))
-        else:
-            check.opt_inst_param(asset_key, 'asset_key', AssetKey)
-
-        if not label:
-            check.param_invariant(
-                asset_key and asset_key.path,
-                'label',
-                'Either label or asset_key with a path must be provided',
-            )
-            label = asset_key.to_string()
-
-        return super(Materialization, cls).__new__(
-            cls,
-            label=check.str_param(label, 'label'),
-            description=check.opt_str_param(description, 'description'),
-            metadata_entries=check.opt_list_param(
-                metadata_entries, metadata_entries, of_type=EventMetadataEntry
-            ),
-            asset_key=asset_key,
-        )
+    @classmethod
+    def from_storage_dict(cls, storage_dict):
+        # override the default `from_storage_dict` implementation in order to skip the deprecation
+        # warning for historical Materialization events, loaded from event_log storage
+        return Materialization.__new__(cls, skip_deprecation_warning=True, **storage_dict)
 
 
-@whitelist_for_serdes
+@whitelist_for_persistence
 class ExpectationResult(
-    namedtuple('_ExpectationResult', 'success label description metadata_entries')
+    namedtuple('_ExpectationResult', 'success label description metadata_entries'), Persistable
 ):
     '''Event corresponding to a data quality test.
 
@@ -414,8 +496,8 @@ class ExpectationResult(
         )
 
 
-@whitelist_for_serdes
-class TypeCheck(namedtuple('_TypeCheck', 'success description metadata_entries')):
+@whitelist_for_persistence
+class TypeCheck(namedtuple('_TypeCheck', 'success description metadata_entries'), Persistable):
     '''Event corresponding to a successful typecheck.
 
     Events of this type should be returned by user-defined type checks when they need to encapsulate

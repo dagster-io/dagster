@@ -2,7 +2,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import Materialization, SolidHandle
+from dagster.core.definitions import AssetMaterialization, Materialization, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.types.dagster_type import DagsterType
 from dagster.serdes import whitelist_for_serdes
@@ -74,7 +74,9 @@ class StepOutputData(
                 step_output_handle, 'step_output_handle', StepOutputHandle
             ),
             intermediate_materialization=check.opt_inst_param(
-                intermediate_materialization, 'intermediate_materialization', Materialization
+                intermediate_materialization,
+                'intermediate_materialization',
+                (AssetMaterialization, Materialization),
             ),
             type_check_data=check.opt_inst_param(type_check_data, 'type_check_data', TypeCheckData),
         )

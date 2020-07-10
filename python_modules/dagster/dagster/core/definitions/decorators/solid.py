@@ -13,7 +13,7 @@ from ...decorator_utils import (
     validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
-from ..events import ExpectationResult, Materialization, Output
+from ..events import AssetMaterialization, ExpectationResult, Materialization, Output
 from ..inference import infer_input_definitions_for_solid, infer_output_definitions
 from ..input import InputDefinition
 from ..output import OutputDefinition
@@ -228,7 +228,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
             for item in result:
                 yield item
         else:
-            if isinstance(result, (Materialization, ExpectationResult)):
+            if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
                 raise DagsterInvariantViolationError(
                     (
                         'Error in solid {solid_name}: If you are returning a Materialization '

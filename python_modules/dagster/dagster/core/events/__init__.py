@@ -6,6 +6,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions import (
+    AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
     Materialization,
@@ -489,7 +490,9 @@ class DagsterEvent(
 
     @staticmethod
     def step_materialization(step_context, materialization):
-        check.inst_param(materialization, 'materialization', Materialization)
+        check.inst_param(
+            materialization, 'materialization', (AssetMaterialization, Materialization)
+        )
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_MATERIALIZATION,
             step_context=step_context,

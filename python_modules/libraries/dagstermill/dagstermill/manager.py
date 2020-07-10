@@ -5,6 +5,7 @@ import uuid
 import six
 
 from dagster import (
+    AssetMaterialization,
     ExpectationResult,
     Failure,
     Materialization,
@@ -279,7 +280,9 @@ class Manager(object):
                 An event to yield back to Dagster.
         '''
         check.inst_param(
-            dagster_event, 'dagster_event', (Materialization, ExpectationResult, TypeCheck, Failure)
+            dagster_event,
+            'dagster_event',
+            (AssetMaterialization, Materialization, ExpectationResult, TypeCheck, Failure),
         )
 
         if not self.in_pipeline:
