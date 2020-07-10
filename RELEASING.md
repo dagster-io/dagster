@@ -78,6 +78,8 @@ It's also prudent to release from a fresh virtualenv.
 
 9.  Post release notes in Dagster Slack in #general, and copy the same release notes to the
     [Github releases page](https://github.com/dagster-io/dagster/releases).
+    
+10. Publish a new version of the docs by following the instructions at `/docs/README.md`
 
 ### PyPI credentials
 
