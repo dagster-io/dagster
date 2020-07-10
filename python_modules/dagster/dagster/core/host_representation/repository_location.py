@@ -218,7 +218,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_pipeline(external_pipeline.name),
+            pipeline=self.get_reconstructable_pipeline(
+                external_pipeline.name
+            ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
             run_config=run_config,
             mode=pipeline_run.mode,
             step_keys_to_execute=step_keys_to_execute,
