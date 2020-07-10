@@ -39,27 +39,27 @@ on the filesystem.
 
 ## Re-execution
 
-Once intermediates are being stored, you would be able to individually re-execute
-steps whose outputs are satisfied by previously store intermediates through
-Dagit or API.
+Once intermediates are being stored, you can individually re-execute
+steps whose outputs are satisfied by previously stored intermediates through
+Dagit or the Python API.
 
 ### Re-execute a pipeline in Dagit
 
 Click on the `sort_by_calories.compute` execution step, and you'll see the
-option appear to reexecute the selected step subset, using the automatically
+option appear to re-execute the selected step subset, using the automatically
 materialized intermediate output of the previous solid.
 
 ![reexecution.png](/assets/images/tutorial/reexecution.png)
 
-Reexcuting the selected subset, `sort_by_calories.compute` in this case, will
-skip the `read_csv.compute` step and used the previously stored intermediate
+Re-executing the selected subset, `sort_by_calories.compute` in this case, will
+skip the `read_csv.compute` step and use the previously stored intermediate
 instead. You may also notice there is a re-execution section present on the
 right hand side. This section allows you to view and switch between related
 pipeline runs created from re-execution.
 
 ![reexecution_results.png](/assets/images/tutorial/reexecution_results.png)
 
-Reexecuting step subsets can be very helpful while you're writing solids, or
+Re-executing step subsets can be very helpful while you're writing solids, or
 while you're actively debugging only part of a pipeline.
 
 You can also manually specify intermediates from previous runs as inputs to
@@ -69,7 +69,7 @@ solids. Recall the syntax we used to set input values using the config system:
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.yaml
 ```
 
-Instead of setting the key `value` (i.e., providing a ), we can
+Instead of setting the `value` key (i.e., providing a CSV file), we can
 also set `pickle`, as follows:
 
 ```YAML literalinclude caption=reexecution_env.yaml
@@ -92,10 +92,10 @@ Mode selector (which, when no subset has been specified, will read "\*"):
 
 ![subset_selection.png](/assets/images/tutorial/subset_selection.png)
 
-Now this config will now pass validation, and the individual solid can be
+Now this config will pass validation, and the individual solid can be
 re-executed.
 
-This facility is especially valuable during test, since it allows you to
+This facility is especially valuable during testing, since it allows you to
 validate newly written solids against values generated during previous runs of
 a known good pipeline.
 
@@ -104,20 +104,20 @@ a known good pipeline.
 Similar to the <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" /> function, we've also introduced a Python API
 for re-executing pipelines from code: <PyObject module="dagster" object="reexecute_pipeline"
-displayText="reexecute_pipeline()" />, where you will need to pass the run id of
-the original pipeline through the `parent_run_id` argument, and optionally use
+displayText="reexecute_pipeline()" />, where you will need to pass the run ID of
+the run being re-executed as the `parent_run_id` argument, and optionally use
 `step_keys_to_execute` to specify a list of step keys that you would like to
 re-execute.
 
-```python literalinclude showLines startLine=35 caption=reexecution.py
+```python literalinclude showLines startLine=39 caption=reexecution.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution.py
-lines:35-57
+lines:39-67
 ```
 
-When you specify `step_keys_to_execute` as above, you will find that in compute
-log, the `read_csv.compute` step is coping "intermediate object for input result from" the
-preivously stored `storage_location/intermediates/read_csv.compute/result`. It
-indicates you have skipped this step and use the previously computed result
+When you specify `step_keys_to_execute` as above, you will find that in the logs,
+the `read_csv.compute` step says "Copying intermediate object for input result from" the
+previously stored `storage_location/intermediates/read_csv.compute/result`. This
+indicates that you have skipped this step and are using the previously computed result
 instead during this re-execution.
 
 ```bash
@@ -143,7 +143,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/serializ
 lines:15-50
 ```
 
-Now, when we set the `storage` key in pipeline config and run this
+Now, when we set the `storage` key in the pipeline config and run this
 pipeline, we'll see that our intermediate is automatically persisted as a
 human-readable .csv:
 

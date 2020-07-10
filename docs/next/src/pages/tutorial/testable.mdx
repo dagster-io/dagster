@@ -13,10 +13,9 @@ import PyObject from 'components/PyObject';
 
 <CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/" />
 
-The reality of building data applications is that they are notoriously difficult to test and are
-therefore typically un- or under-tested. Besides, pipeline authors generally do not have control
-over their input data, which led to an even more unfortunate reality&mdash;even if data pipelines are
-covered by sophisticated tests, pipeline breakage could still happen.
+Data applications are notoriously difficult to test and are therefore typically un- or under-tested.
+Besides, pipeline authors generally do not have control over their input data, which means that even
+if data pipelines are covered by sophisticated tests, pipeline breakage could still happen.
 
 Creating testable and verifiable data applications is one of the focuses of Dagster. We believe
 ensuring data quality is critical for managing the complexity of data systems. This section will
@@ -24,13 +23,12 @@ talk about how you can build maintainable and testable data applications with Da
 
 ## Testing solids and pipelines
 
-Let's go back to our first solid and pipeline [`hello_cereal.py`](#execute-our-first-pipeline).
-
-It wouldn't be complete without some tests to ensure they're working as expected. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />
+Let's go back to our first solid and pipeline in [`hello_cereal.py`](#execute-our-first-pipeline)
+and ensure they're working as expected by writing some tests. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />
 to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" />
 to test our solid in isolation.
 
-These functions synchronously execute a pipeline or solid and return results objects (the <PyObject
+These functions synchronously execute a pipeline or solid and return results objects (<PyObject
 module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster"
 object="PipelineExecutionResult" />) whose methods let us investigate, in detail, the success or
 failure of execution, the outputs produced by solids, and (as we'll see later) other events
@@ -80,7 +78,7 @@ For example, when we execute our pipeline with this config, it'll fail at runtim
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
 ```
 
-When we enter this mistyped config in Dagit and execute our pipeline, you'll see that an error
+When we enter this mistyped config in Dagit and execute our pipeline, we'll see that an error
 appears in the structured log viewer:
 
 ![inputs_figure_five.png](/assets/images/tutorial/inputs_figure_five.png)
@@ -101,8 +99,8 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_typed
 lines:7-15
 ```
 
-By using typed input instead we can catch this error prior to execution, and reduce the surface area
-we need to test and guard against in user code.
+By using typed input, we can catch this error prior to execution, and reduce the surface area
+we need to test.
 
 ![inputs_figure_seven.png](/assets/images/tutorial/inputs_figure_seven.png)
 

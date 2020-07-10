@@ -23,8 +23,8 @@ lines:7-20
 ```
 
 In general, though, rather than relying on hardcoded values like `dataset_path`, we'd like to be
-able to parametrize our solid logic. Appropriately parameterized solids are more testable, and also
-more reusable. Consider the following more generic solid:
+able to parametrize our solid logic. Appropriately parameterized solids are more testable and
+reusable. Consider the following more generic solid:
 
 ```python literalinclude showLines startLine=7 caption=inputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
@@ -251,10 +251,10 @@ against semantic issues like this, which won't be caught by the type system.
 
 ## Multiple and Conditional Outputs
 
-Solids can have arbitrarily many outputs, and downstream solids can depends on any number of these.
+Solids can have arbitrarily many outputs, and downstream solids can depend on any number of these.
 
-What's more, outputs don't necessarily have to be yielded by solids, which lets us write pipelines
-where some solids conditionally execute based on the presence of an upstream output.
+What's more, solids can have outputs that are optional and don't have to be yielded, which lets us
+write pipelines where some solids conditionally execute based on the presence of an upstream output.
 
 Suppose we're interested in splitting hot and cold cereals into separate datasets and processing
 them separately, based on config.
@@ -281,8 +281,8 @@ As usual, we can visualize this in Dagit:
 ![multiple_outputs.png](/assets/images/tutorial/multiple_outputs.png)
 
 Notice that the logical DAG corresponding to the pipeline definition includes both dependencies --
-we won't know about the conditionality in the pipeline until runtime, when one of the outputs is not
-yielded by `split_cereal`.
+we won't know about the conditionality in the pipeline until runtime, when `split_cereal` might not
+yield both of the outputs.
 
 ![multiple_outputs_zoom.png](/assets/images/tutorial/multiple_outputs_zoom.png)
 

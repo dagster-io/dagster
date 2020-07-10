@@ -18,7 +18,8 @@ Now that you’re set up, let’s get an overview of Dagster!
 
 In the `hello_pipeline` example, you may find that there are some new concepts that you are not
 familiar with, such as solids and pipelines. The **pipeline** can be visualized as above, in which
-**solid** `get_name` returns a name of `'dagster'` and passes that **output** to solid `hello`.
+the **solid** `get_name` returns a name of `'dagster'` and passes that **output** to the solid
+`hello`.
 
 <p align="center">
   <img src="/assets/images/tutorial/overview_w_concepts.png" width="500px" />
@@ -27,7 +28,7 @@ familiar with, such as solids and pipelines. The **pipeline** can be visualized 
 With these basic Dagster concepts, we'll give more concrete definitions of these terms:
 
 - **[Solid](/learn/concepts#solid):** a solid is a functional unit of computation with defined
-  inputs and outputs
+  inputs and outputs.
 
 - **[Pipeline](/learn/concepts#pipelines-dags):** in Dagster, pipelines are directed acyclic
   graphs (DAGs) of solids – that is, they are made up of a

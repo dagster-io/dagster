@@ -150,7 +150,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_type_
 
 In order for the Dagster machinery to be able to decode the config value
 `{'csv': 'cereal.csv'}` into an input of the correct
-`LessSimpleDataFrame` value, we need to write what we call a dagster type loader.
+`LessSimpleDataFrame` value, we need to write what we call a **type loader**.
 
 ```python literalinclude showLines startLine=32 caption=custom_types_3.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types_3.py
@@ -209,7 +209,7 @@ applications.
 In cases where DagsterTypes are created that do not have corresponding usable Python types, and the
 user wishes to remain mypy compliant, there are two options.
 
-One is using `InputDefinition` and `OutputDefinition` exclusively for dagster types, and reserving
+One is using `InputDefinition` and `OutputDefinition` exclusively for Dagster types, and reserving
 type annotations for naked Python types _only_. This is verbose, but is explicit and clear.
 
 ```python literalinclude showLines startLine=21 emphasize-lines=1-5,14-15 caption=custom_types_mypy_verbose.py
@@ -217,11 +217,11 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types
 lines:21-47
 ```
 
-If one wishes to use type annotations exclusively but still use dagster types without a 1:1 python
+If one wishes to use type annotations exclusively but still use Dagster types without a 1:1 Python
 type counterpart, the typechecking behavior must be modified. For this we recommend using the
-`typing.TYPE_CHECKING` property in the python typing module.
+`typing.TYPE_CHECKING` property in the Python typing module.
 
-While inelegant, this centralizes boilerplate to the type instantiation, rather than have it on all
+While inelegant, this centralizes boilerplate to the type instantiation, rather than having it on all
 places where the type is referenced.
 
 ```python literalinclude showLines startLine=7 emphasize-lines=1-8 caption=custom_types_mypy_typing_trick.py
@@ -268,13 +268,12 @@ directly.
 
 For one, they will usually vary substantially between instantiations&mdash;for example, we don't
 expect all data frames to have the same number of columns, and over-specifying data types (e.g.,
-`SixColumnedDataFrame`) makes it difficult for generic logic to work generically (e.g., over all
-data frames).
+`SixColumnedDataFrame`) makes it difficult to write logic that works generically (e.g., over all data frames).
 
 What's more, these additional, deeper semantic assertions are often non-stationary. Typically,
 you'll start running a pipeline with certain expectations about the data that you'll see; but over
-time, you'll learn more about your data (making your expectations more precise), and the process in
-the world that generates your data will shift (making some of your expectations invalid.)
+time, you'll learn more about your data (making your expectations more precise), and the process
+that generates your data will shift (making some of your expectations invalid).
 
 We've already encountered the <PyObject module="dagster" object="TypeCheck" /> event, which is
 typically yielded by the type machinery (but can also be yielded manually from the body of a solid's

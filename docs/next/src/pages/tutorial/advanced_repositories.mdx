@@ -33,12 +33,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/repos.py
 lines:14-16
 ```
 
-One can return a list of items, each one of which can be a pipeline, a schedule, or a partition set.
-If you save this file as `repos.py`, you can then run the command line tools on it. Try running:
-
-```bash
-dagit -f repos.py
-```
+This method returns a list of items, each one of which can be a pipeline, a schedule, or a partition set.
 
 ## Lazy Construction
 
@@ -58,6 +53,12 @@ you'll see a helpful error message.
 
 ## Repositories in Dagit
 
+If you save this file as `repos.py`, you can then run the command line tools on it. Try running:
+
+```bash
+dagit -f repos.py
+```
+
 Now you can see the list of all pipelines in the repo via the dropdown at the top:
 
 ![repos.png](/assets/images/tutorial/repos.png)
@@ -66,7 +67,7 @@ Now you can see the list of all pipelines in the repo via the dropdown at the to
 
 Loading repositories via the `-f` or `-m` options is actually just a convenience function. The
 underlying abstraction is the "workspace", which determines all of the available repositories
-available to dagit.
+available to Dagit.
 
 We have a file format for building workspaces called `workspace.yaml`. It is a convenience: it
 prevents you from having to type the same `-f` or `-m` flag repeatedly. But as you'll see below it
@@ -98,7 +99,7 @@ Load it:
 dagit -w multi_repo_workspace.yaml
 ```
 
-And now you can switch between repositories in dagit.
+And now you can switch between repositories in Dagit.
 
 ### Multi-environment repositories
 
@@ -106,14 +107,14 @@ Sometimes teams desire different Python versions or virtual environments. To sup
 allows repositories to live in completely separate processes from each other, and tools like Dagit
 communicate with those repositories using a cross-process RPC protocol.
 
-Via the workspace, you can configure where to launch repositories. See example:
+Via the workspace, you can configure where to launch repositories. For example:
 
 ```YAML literalinclude caption=multi_python_env_workspace_example.yaml
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_python_env_workspace_example.yaml
 ```
 
 For this example to work, you need to change the executable path to point a virtual environment
-available in your system, and point to a python module or file that is available and loadable by
+available in your system, and point to a Python module or file that is available and loadable by
 that executable.
 
 <br />

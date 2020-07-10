@@ -11,7 +11,7 @@ import PyObject from 'components/PyObject';
 # Building Pipelines with Dagster
 
 We now have the basic building blocks for our cereal pipeline. To construct and execute a data
-pipeline using Dagster, we will need solids as our computational units to contain business logics,
+pipeline using Dagster, we will need solids as our computational units containing business logic,
 a pipeline to connect solids, and a way to execute the pipeline.
 
 If you haven't already, grab the dataset for this tutorial from Github:
@@ -40,7 +40,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e01_first_pipeline/hello
 lines:1-20
 ```
 
-In this simplest case, our solid takes no inputs except for the <PyObject module="dagster"
+In this simple case, our solid takes no inputs except for the <PyObject module="dagster"
 object="SystemComputeExecutionContext" displayText="context" /> in which it executes (provided by
 the Dagster framework as the first argument to every solid), and also returns no outputs. Don't
 worry, we'll soon encounter solids that are much more dynamic.
@@ -50,7 +50,7 @@ worry, we'll soon encounter solids that are much more dynamic.
 ## Hello, Pipeline!
 
 To execute our solid, we'll embed it in an equally simple pipeline. A pipeline is a set of solids
-arranged into a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph)) of computation. You'll
+arranged into a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation. You'll
 typically define pipelines by annotating ordinary Python functions with the <PyObject
 module="dagster" object="pipeline" displayText="@pipeline" /> decorator.
 

@@ -15,13 +15,13 @@ import PyObject from 'components/PyObject';
 
 Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like
 Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with
-such systems, so that your business logic can remain the same across local/test, dev, prod, etc.
-environments. Resources represent these external systems, and modes/presets support swapping
+such systems, so that your business logic can remain the same across different environments
+(local/test, dev, prod, etc.) Resources represent these external systems, and modes/presets support swapping
 resource implementations across different environments.
 
 ## Parametrizing Pipelines with Resources
 
-Dagster models interactions with features of the external environment like these as resources.
+Dagster models interactions with features of the external environment as **resources**.
 Dagster's library modules such as [`dagster_aws`](/_apidocs/libraries/dagster_aws),
 [`dagster_gcp`](/_apidocs/libraries/dagster_gcp), and
 [`dagster_slack`](/_apidocs/libraries/dagster_slack) provide out-of-the-box implementations for
@@ -110,7 +110,7 @@ present on its mode definitions, and will complain if that resource is not prese
 ## Pipeline Modes
 
 By attaching different sets of resources with the same APIs to different modes, we can support
-running pipelines&mdash;with unchanged business logic&mdash;in different environments. So you might
+running pipelines&mdash;with unchanged business logic&mdash;in different environments. You might
 have a "unittest" mode that runs against an in-memory SQLite database, a "dev" mode that runs
 against Postgres, and a "prod" mode that runs against Snowflake.
 
@@ -173,7 +173,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/presets.py
 lines:131-172
 ```
 
-We illustrate two ways of defining a preset.
+The config above illustrates two ways of defining a preset.
 
 The first is to pass an `run_config` literal to the constructor. Because this dict is defined in
 Python, you can do arbitrary computation to construct it&mdash;for instance, picking up environment
