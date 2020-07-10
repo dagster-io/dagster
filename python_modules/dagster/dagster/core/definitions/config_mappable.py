@@ -23,11 +23,11 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
         object.
 
         Args:
-            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either:
-                - Run configuration that fully satisfies this object's config schema.
-                - A function that accepts run configuration and returns run configuration that fully
-                  satisfies this object's config schema.  In this case, config_schema must be
-                  specified.  When passing a function, it's easiest to use :py:func:`configured`.
+            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
+                that fully satisfies this object's config schema or (2) A function that accepts run
+                configuration and returns run configuration that fully satisfies this object's
+                config schema.  In the latter case, config_schema must be specified.  When
+                passing a function, it's easiest to use :py:func:`configured`.
             config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
                 that its input must satisfy.
             **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the
@@ -51,7 +51,7 @@ def configured(configurable, config_schema=None, **kwargs):
 
     Returns (Callable[[Union[Any, Callable[[Any], Any]]], IConfigMappable])
 
-    Example:
+    Examples:
 
         .. code-block:: python
 

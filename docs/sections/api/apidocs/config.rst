@@ -3,6 +3,9 @@ Config
 
 .. currentmodule:: dagster
 
+Config Types
+------------
+
 The following types are used to describe the schema of configuration
 data via ``config``. They are used in conjunction with the
 builtin types above.
@@ -81,3 +84,7 @@ builtin types above.
             }
         )
 
+Config Utilities
+----------------
+
+.. autodecorator:: configured

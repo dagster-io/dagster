@@ -1,5 +1,12 @@
 # Changelog
 
+
+## 0.8.9 (Upcoming)
+
+**New**
+
+- The new `configured` API makes it easy to create configured versions of resources.
+
 ## 0.8.8
 
 **Bugfixes**
