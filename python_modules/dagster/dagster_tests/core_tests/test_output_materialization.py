@@ -3,11 +3,11 @@ import json
 import pytest
 
 from dagster import (
+    AssetMaterialization,
     DagsterEventType,
     DagsterInvalidConfigError,
     InputDefinition,
     Int,
-    Materialization,
     Output,
     OutputDefinition,
     PipelineDefinition,
@@ -330,8 +330,8 @@ def test_basic_int_json_multiple_materializations():
 
 @dagster_type_materializer(Int)
 def yield_two_materializations(*_args, **_kwargs):
-    yield Materialization('1st hello')
-    yield Materialization('2nd hello')
+    yield AssetMaterialization('first')
+    yield AssetMaterialization('second')
 
 
 def test_basic_yield_multiple_materializations():

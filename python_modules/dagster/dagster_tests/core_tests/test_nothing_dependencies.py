@@ -3,13 +3,13 @@ from collections import defaultdict
 import pytest
 
 from dagster import (
+    AssetMaterialization,
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
     InputDefinition,
     Int,
     List,
-    Materialization,
     MultiDependencyDefinition,
     Nothing,
     Optional,
@@ -238,7 +238,7 @@ def test_valid_nothing_fns():
 
     @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
-        yield Materialization.file('/path/to/nowhere')
+        yield AssetMaterialization.file('/path/to/nowhere')
 
     pipeline = PipelineDefinition(
         name='fn_test', solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
@@ -292,7 +292,7 @@ def test_wrapping_nothing():
 def test_execution_plan():
     @solid(output_defs=[OutputDefinition(Nothing)])
     def emit_nothing(_context):
-        yield Materialization.file(path='/path/')
+        yield AssetMaterialization.file(path='/path/')
 
     @lambda_solid(input_defs=[InputDefinition('ready', Nothing)])
     def consume_nothing():

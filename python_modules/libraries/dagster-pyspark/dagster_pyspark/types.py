@@ -3,11 +3,11 @@ import os
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 from dagster import (
+    AssetMaterialization,
     Bool,
     Enum,
     EnumValue,
     Field,
-    Materialization,
     Permissive,
     PythonObjectDagsterType,
     String,
@@ -317,25 +317,25 @@ def spark_df_materializer(_context, config, spark_df):
 
     if file_type == 'csv':
         spark_df.write.csv(**file_options)
-        return Materialization.file(file_options['path'])
+        return AssetMaterialization.file(file_options['path'])
     elif file_type == 'parquet':
         spark_df.write.parquet(**file_options)
-        return Materialization.file(file_options['path'])
+        return AssetMaterialization.file(file_options['path'])
     elif file_type == 'json':
         spark_df.write.json(**file_options)
-        return Materialization.file(file_options['path'])
+        return AssetMaterialization.file(file_options['path'])
     elif file_type == 'jdbc':
         spark_df.write.jdbc(**file_options)
-        return Materialization.file(file_options['url'])
+        return AssetMaterialization.file(file_options['url'])
     elif file_type == 'orc':
         spark_df.write.orc(**file_options)
-        return Materialization.file(file_options['path'])
+        return AssetMaterialization.file(file_options['path'])
     elif file_type == 'saveAsTable':
         spark_df.write.saveAsTable(**file_options)
-        return Materialization.file(file_options['name'])
+        return AssetMaterialization.file(file_options['name'])
     elif file_type == 'text':
         spark_df.write.text(**file_options)
-        return Materialization.file(file_options['path'])
+        return AssetMaterialization.file(file_options['path'])
     else:
         check.failed('Unsupported file type: {}'.format(file_type))
 

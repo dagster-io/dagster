@@ -11,7 +11,7 @@ import pytest
 from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 
-from dagster import Materialization, ModeDefinition, ResourceDefinition, check
+from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
@@ -136,7 +136,7 @@ def test_in_pipeline_manager_bad_yield_result():
 
 def test_out_of_pipeline_yield_event():
     manager = Manager()
-    assert manager.yield_event(Materialization('foo')) == Materialization('foo')
+    assert manager.yield_event(AssetMaterialization('foo')) == AssetMaterialization('foo')
 
 
 def test_in_pipeline_manager_resources():

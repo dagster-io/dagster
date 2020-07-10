@@ -9,12 +9,12 @@ from dagster_pandas.validation import PandasColumn
 from pandas import DataFrame, read_csv
 
 from dagster import (
+    AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
     EventMetadataEntry,
     Field,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     Selector,
@@ -214,7 +214,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
 
     @dagster_type_materializer(Selector({'devnull': Field(str), 'nothing': Field(str)}))
     def silly_materializer(_, _config, _value):
-        return Materialization(label='did nothing', description='just one of those days')
+        return AssetMaterialization(asset_key='nothing', description='just one of those days')
 
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name='TestDataFrame',
@@ -247,4 +247,4 @@ def test_custom_dagster_dataframe_parametrizable_input():
     assert output_df['foo'].tolist() == ['goat']
     materialization_events = solid_result.materialization_events_during_compute
     assert len(materialization_events) == 1
-    assert materialization_events[0].event_specific_data.materialization.label == 'did nothing'
+    assert materialization_events[0].event_specific_data.materialization.label == 'nothing'

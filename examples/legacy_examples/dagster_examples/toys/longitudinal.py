@@ -6,9 +6,9 @@ from random import random
 from dagster import (
     Array,
     AssetKey,
+    AssetMaterialization,
     EventMetadataEntry,
     Field,
-    Materialization,
     Output,
     Permissive,
     pipeline,
@@ -38,7 +38,6 @@ def _base_compute(context):
         raise Exception('blah')
 
     asset_key = None
-
     if context.solid_config.get('materialization_key_list') is not None:
         asset_key = AssetKey(context.solid_config.get('materialization_key_list'))
     elif context.solid_config.get('materialization_key') is not None:
@@ -84,8 +83,8 @@ def _base_compute(context):
         if len(metadata_entries) == 0:
             metadata_entries = None
 
-        yield Materialization(
-            label=context.solid.name, asset_key=asset_key, metadata_entries=metadata_entries,
+        yield AssetMaterialization(
+            asset_key=asset_key, metadata_entries=metadata_entries,
         )
 
     yield Output(1)

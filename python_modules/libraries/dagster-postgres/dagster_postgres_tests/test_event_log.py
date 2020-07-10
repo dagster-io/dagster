@@ -9,8 +9,8 @@ from dagster_postgres.utils import get_conn
 
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     EventMetadataEntry,
-    Materialization,
     ModeDefinition,
     Output,
     pipeline,
@@ -510,8 +510,7 @@ def test_asset_materialization(conn_string):
 
     @solid
     def materialize_one(_):
-        yield Materialization(
-            label='one',
+        yield AssetMaterialization(
             asset_key=asset_key,
             metadata_entries=[
                 EventMetadataEntry.text('hello', 'text'),
@@ -547,7 +546,7 @@ def test_asset_events_error_parsing(conn_string):
 
     @solid
     def materialize_one(_):
-        yield Materialization(label='one', asset_key=asset_key)
+        yield AssetMaterialization(asset_key=asset_key)
         yield Output(1)
 
     def _solids():

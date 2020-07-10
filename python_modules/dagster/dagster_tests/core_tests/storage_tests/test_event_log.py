@@ -9,7 +9,7 @@ import pytest
 import sqlalchemy
 
 from dagster import seven
-from dagster.core.definitions import ExpectationResult, Materialization
+from dagster.core.definitions import AssetMaterialization, ExpectationResult
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import (
     DagsterEvent,
@@ -377,7 +377,7 @@ def _stats_records(run_id):
             'D',
             now - 125,
             DagsterEventType.STEP_MATERIALIZATION,
-            StepMaterializationData(Materialization(label='mat 1')),
+            StepMaterializationData(AssetMaterialization(asset_key='mat_1')),
         ),
         _event_record(
             run_id,
@@ -391,7 +391,7 @@ def _stats_records(run_id):
             'D',
             now - 75,
             DagsterEventType.STEP_MATERIALIZATION,
-            StepMaterializationData(Materialization(label='mat 2')),
+            StepMaterializationData(AssetMaterialization(asset_key='mat_2')),
         ),
         _event_record(
             run_id,
@@ -405,7 +405,7 @@ def _stats_records(run_id):
             'D',
             now - 25,
             DagsterEventType.STEP_MATERIALIZATION,
-            StepMaterializationData(Materialization(label='mat 3')),
+            StepMaterializationData(AssetMaterialization(asset_key='mat_3')),
         ),
         _event_record(
             run_id, 'D', now, DagsterEventType.STEP_SUCCESS, StepSuccessData(duration_ms=150000.0)

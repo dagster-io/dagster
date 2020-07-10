@@ -16,7 +16,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.core.definitions import Materialization, Solid, create_run_config_schema
+from dagster.core.definitions import AssetMaterialization, Solid, create_run_config_schema
 from dagster.core.definitions.dependency import SolidHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -162,11 +162,11 @@ def test_mapper_errors():
 
 
 def test_materialization():
-    assert isinstance(Materialization('foo', 'foo.txt'), Materialization)
+    assert isinstance(AssetMaterialization('foo', 'foo.txt'), AssetMaterialization)
 
 
 def test_materialization_assign_label_from_asset_key():
-    mat = Materialization(asset_key=AssetKey(['foo', 'bar']))
+    mat = AssetMaterialization(asset_key=AssetKey(['foo', 'bar']))
     assert mat.label == 'foo.bar'
 
 

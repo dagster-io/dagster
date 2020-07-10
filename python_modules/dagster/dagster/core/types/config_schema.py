@@ -190,7 +190,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
     The decorated function should take the execution context, the parsed config value, and the
     runtime value and the parsed config data, should materialize the runtime value, and should
-    return an appropriate :py:class:`Materialization`.
+    return an appropriate :py:class:`AssetMaterialization`.
 
     Args:
         config_schema (Any): The type of the config data expected by the decorated function.
@@ -208,7 +208,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
                 writer.writeheader()
                 writer.writerows(rowdicts=value)
 
-            return Materialization.file(path)
+            return AssetMaterialization.file(path)
 
     '''
     from dagster.config.field import resolve_to_config_type

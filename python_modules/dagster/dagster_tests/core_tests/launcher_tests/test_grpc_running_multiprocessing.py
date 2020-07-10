@@ -8,10 +8,10 @@ from copy import deepcopy
 import pytest
 
 from dagster import (
+    AssetMaterialization,
     Field,
     InputDefinition,
     Int,
-    Materialization,
     OutputDefinition,
     PythonObjectDagsterType,
     String,
@@ -46,7 +46,7 @@ def df_output_schema(_context, path, value):
         writer.writeheader()
         writer.writerows(rowdicts=value)
 
-    return Materialization.file(path)
+    return AssetMaterialization.file(path)
 
 
 PoorMansDataFrame = PythonObjectDagsterType(

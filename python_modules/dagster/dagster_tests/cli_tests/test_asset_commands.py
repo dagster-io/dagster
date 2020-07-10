@@ -1,7 +1,7 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster import AssetKey, Materialization, Output, execute_pipeline, pipeline, solid
+from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
 from dagster.cli.asset import asset_wipe_command
 from dagster.core.instance import DagsterInstance
 
@@ -18,20 +18,20 @@ def mock_asset_instance(mocker):
 
 @solid
 def solid_one(_):
-    yield Materialization(label='one', asset_key=AssetKey('asset_1'))
+    yield AssetMaterialization(asset_key=AssetKey('asset_1'))
     yield Output(1)
 
 
 @solid
 def solid_two(_):
-    yield Materialization(label='two', asset_key=AssetKey('asset_2'))
-    yield Materialization(label='three', asset_key=AssetKey(['path', 'to', 'asset_3']))
+    yield AssetMaterialization(asset_key=AssetKey('asset_2'))
+    yield AssetMaterialization(asset_key=AssetKey(['path', 'to', 'asset_3']))
     yield Output(1)
 
 
 @solid
 def solid_normalization(_):
-    yield Materialization(label='normalization', asset_key='path/to-asset_4')
+    yield AssetMaterialization(asset_key='path/to-asset_4')
     yield Output(1)
 
 

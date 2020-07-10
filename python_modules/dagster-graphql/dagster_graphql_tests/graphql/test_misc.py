@@ -4,9 +4,9 @@ from collections import OrderedDict
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import (
+    AssetMaterialization,
     DependencyDefinition,
     InputDefinition,
-    Materialization,
     OutputDefinition,
     PipelineDefinition,
     PythonObjectDagsterType,
@@ -32,7 +32,7 @@ def df_output_schema(_context, path, value):
         writer.writeheader()
         writer.writerows(rowdicts=value)
 
-    return Materialization.file(path)
+    return AssetMaterialization.file(path)
 
 
 PoorMansDataFrame = PythonObjectDagsterType(

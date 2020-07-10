@@ -9,11 +9,11 @@ from dagster_pandas.constraints import (
 from dagster_pandas.validation import PandasColumn, validate_constraints
 
 from dagster import (
+    AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
     EventMetadataEntry,
     Field,
-    Materialization,
     StringSource,
     TypeCheck,
     check,
@@ -56,7 +56,7 @@ def dataframe_materializer(_context, config, pandas_df):
     else:
         check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
-    return Materialization.file(file_options['path'])
+    return AssetMaterialization.file(file_options['path'])
 
 
 @dagster_type_loader(

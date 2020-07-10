@@ -5,12 +5,12 @@ from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict, parse_raw_log_lines
 
 from dagster import (
+    AssetMaterialization,
     Bool,
     DependencyDefinition,
     EventMetadataEntry,
     ExpectationResult,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     PipelineDefinition,
@@ -38,8 +38,8 @@ def test_can_handle_all_step_events():
 def define_test_events_pipeline():
     @solid(output_defs=[OutputDefinition(Bool)])
     def materialization_and_expectation(_context):
-        yield Materialization(
-            label='all_types',
+        yield AssetMaterialization(
+            asset_key='all_types',
             description='a materialization with all metadata types',
             metadata_entries=[
                 EventMetadataEntry.text('text is cool', 'text'),

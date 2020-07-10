@@ -14,6 +14,7 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
+    AssetMaterialization,
     Bool,
     DagsterInstance,
     Enum,
@@ -23,7 +24,6 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
-    Materialization,
     ModeDefinition,
     Noneable,
     Nothing,
@@ -72,7 +72,7 @@ def df_output_schema(_context, path, value):
         writer.writeheader()
         writer.writerows(rowdicts=value)
 
-    return Materialization.file(path)
+    return AssetMaterialization.file(path)
 
 
 PoorMansDataFrame = PythonObjectDagsterType(
@@ -195,15 +195,15 @@ def noop_pipeline():
 
 @solid
 def solid_asset_a(_):
-    yield Materialization(asset_key='a', label='a')
+    yield AssetMaterialization(asset_key='a')
     yield Output(1)
 
 
 @solid
 def solid_asset_b(_, num):
-    yield Materialization(asset_key='b', label='b')
+    yield AssetMaterialization(asset_key='b')
     time.sleep(0.1)
-    yield Materialization(asset_key='c', label='c')
+    yield AssetMaterialization(asset_key='c')
     yield Output(num)
 
 
@@ -586,8 +586,8 @@ def composites_pipeline():
 def materialization_pipeline():
     @solid
     def materialize(_):
-        yield Materialization(
-            label='all_types',
+        yield AssetMaterialization(
+            asset_key='all_types',
             description='a materialization with all metadata types',
             metadata_entries=[
                 EventMetadataEntry.text('text is cool', 'text'),

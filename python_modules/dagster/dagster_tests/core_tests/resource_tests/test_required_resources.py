@@ -1,12 +1,12 @@
 import pytest
 
 from dagster import (
+    AssetMaterialization,
     CompositeSolidDefinition,
     DagsterInstance,
     DagsterType,
     DagsterUnknownResourceError,
     InputDefinition,
-    Materialization,
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
@@ -462,7 +462,7 @@ def define_materialization_pipeline(should_require_resources=True, resources_ini
     )
     def materialize(context, *_args, **_kwargs):
         assert context.resources.a == 'A'
-        return Materialization('hello')
+        return AssetMaterialization('hello')
 
     CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
 
@@ -520,7 +520,7 @@ def define_composite_materialization_pipeline(
     )
     def materialize(context, *_args, **_kwargs):
         assert context.resources.a == 'A'
-        return Materialization('hello')
+        return AssetMaterialization('hello')
 
     CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
 

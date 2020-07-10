@@ -4,8 +4,8 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     DagsterEventType,
-    Materialization,
     Output,
     execute_pipeline,
     pipeline,
@@ -59,20 +59,20 @@ asset_test = pytest.mark.parametrize(
 
 @solid
 def solid_one(_):
-    yield Materialization(label='one', asset_key=AssetKey('asset_1'))
+    yield AssetMaterialization(asset_key=AssetKey('asset_1'))
     yield Output(1)
 
 
 @solid
 def solid_two(_):
-    yield Materialization(label='two', asset_key=AssetKey('asset_2'))
-    yield Materialization(label='three', asset_key=AssetKey(['path', 'to', 'asset_3']))
+    yield AssetMaterialization(asset_key=AssetKey('asset_2'))
+    yield AssetMaterialization(asset_key=AssetKey(['path', 'to', 'asset_3']))
     yield Output(1)
 
 
 @solid
 def solid_normalization(_):
-    yield Materialization(label='normalization', asset_key='path/to-asset_4')
+    yield AssetMaterialization(asset_key='path/to-asset_4')
     yield Output(1)
 
 
