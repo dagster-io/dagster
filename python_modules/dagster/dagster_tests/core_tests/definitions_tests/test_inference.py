@@ -75,6 +75,41 @@ def test_one_arg_lambda_solid():
     assert len(one_arg.output_defs) == 1
 
 
+@pytest.mark.skipif(sys.version_info > (2,), reason='py2 only test')
+def test_py2_infer_from_docstrings_return_empty_list():
+    @solid
+    def good_numpy(context, hello, optional=5):
+        """
+        Test
+
+        Parameters
+        ----------
+        hello: str
+            hello world param
+        optional: int, optional
+            optional param, default 5
+
+        Returns
+        -------
+        int
+            a number
+        """
+        pass
+
+
+    inputs = inference._infer_input_definitions_from_docstring(
+        good_numpy.name, good_numpy.compute_fn
+    )
+
+    assert inputs == []
+
+    outputs = inference._infer_output_definitions_from_docstring(
+        good_numpy.name, good_numpy.compute_fn
+    )
+
+    assert outputs == []
+
+
 @pytest.mark.skipif(sys.version_info < (3, 6), reason='docstring_parser requires python >= 3.6')
 class DefinitionsFromDocstringTestCase(unittest.TestCase):
     """Class style to avoid having same decorator in all these functions"""

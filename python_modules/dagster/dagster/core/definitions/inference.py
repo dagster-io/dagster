@@ -168,11 +168,12 @@ def _infer_inputs_from_params(params, decorator_name, solid_name):
 def infer_input_definitions_for_composite_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
-    defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
+
+    # try to infer from docstrings
+    defs = _infer_input_definitions_from_docstring(solid_name, fn)
 
     if not defs:
-        # try to infer from docstrings
-        defs = _infer_input_definitions_from_docstring(solid_name, fn)
+        defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
 
     return defs
 
