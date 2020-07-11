@@ -1,9 +1,9 @@
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
     Field,
     FileHandle,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     StringSource,
@@ -72,8 +72,8 @@ def file_handle_to_s3(context, file_handle):
         context.resources.s3.upload_fileobj(fileobj, bucket, key)
         s3_file_handle = S3FileHandle(bucket, key)
 
-        yield Materialization(
-            label='file_to_s3',
+        yield AssetMaterialization(
+            asset_key=s3_file_handle.s3_path,
             metadata_entries=[EventMetadataEntry.path(s3_file_handle.s3_path, label=last_key(key))],
         )
 
