@@ -459,29 +459,26 @@ def examples_tests():
 
 
 def pipenv_smoke_tests():
-    tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
-    # See: https://github.com/dagster-io/dagster/issues/2079
-    for version in SupportedPython3s:
-        is_release = check_for_release()
-        smoke_test_steps = (
-            [
-                "mkdir /tmp/pipenv_smoke_tests",
-                "pushd /tmp/pipenv_smoke_tests",
-                "pipenv install -e /workdir/python_modules/dagster",
-                "pipenv install -e /workdir/python_modules/dagit",
-            ]
-            if not is_release
-            else []
-        )
-        tests.append(
-            StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
-            .run(*smoke_test_steps)
-            .on_integration_image(version)
-            .build()
-        )
+    is_release = check_for_release()
+    if is_release:
+        return []
 
-    return tests
+    smoke_test_steps = [
+        "mkdir /tmp/pipenv_smoke_tests",
+        "pushd /tmp/pipenv_smoke_tests",
+        "pip install pipenv",
+        "pipenv install -e /workdir/python_modules/dagster",
+        "pipenv install -e /workdir/python_modules/dagit",
+    ]
+
+    # See: https://github.com/dagster-io/dagster/issues/2079
+    return [
+        StepBuilder("pipenv smoke tests ({ver})".format(ver=TOX_MAP[version]))
+        .run(*smoke_test_steps)
+        .on_unit_image(version)
+        .build()
+        for version in SupportedPython3s
+    ]
 
 
 def coverage_step():

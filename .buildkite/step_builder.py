@@ -2,7 +2,7 @@ import os
 import sys
 from enum import Enum
 
-from defines import INTEGRATION_IMAGE_VERSION, SupportedPythons
+from defines import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION, SupportedPythons
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -88,6 +88,17 @@ class StepBuilder(object):
         }
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
+
+    def on_unit_image(self, ver, env=None):
+        if ver not in SupportedPythons:
+            raise Exception('Unsupported python version for unit image {ver}'.format(ver=ver))
+
+        return self.on_python_image(
+            image='buildkite-unit:py{python_version}-{image_version}'.format(
+                python_version=ver, image_version=UNIT_IMAGE_VERSION
+            ),
+            env=env,
+        )
 
     def on_integration_image(self, ver, env=None):
         if ver not in SupportedPythons:

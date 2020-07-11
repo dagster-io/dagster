@@ -20,6 +20,7 @@ setup(
         'autoflake',
         'boto3==1.9.*',
         'click>=6.7',
+        'dagster',
         'packaging==18.0',
         'pandas',
         'pytablereader; python_version >="3"',
@@ -31,6 +32,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            'dagster-image = automation.docker.cli:main',
             'dagster-release = automation.release.cli:main',
             'dagster-scaffold = automation.scaffold.cli:main',
         ]

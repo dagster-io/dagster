@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION
 
 # The tag value here must stay in sync with UNIT_IMAGE_VERSION in defines.py
-FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-07-08T231944
+FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-07-12T162825
 ADD build_cache/ /
 ADD . .
 
