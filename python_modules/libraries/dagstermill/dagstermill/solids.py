@@ -11,9 +11,9 @@ from papermill.iorw import load_notebook_node, write_ipynb
 from papermill.parameterize import _find_first_tagged_cell_index
 
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     SolidDefinition,
@@ -209,8 +209,8 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                             )
                             executed_notebook_materialization_path = executed_notebook_path
 
-                        yield Materialization(
-                            label='output_notebook',
+                        yield AssetMaterialization(
+                            asset_key=executed_notebook_materialization_path,
                             description='Location of output notebook in file manager',
                             metadata_entries=[
                                 EventMetadataEntry.fspath(executed_notebook_materialization_path)
@@ -238,8 +238,8 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                 )
                 executed_notebook_materialization_path = executed_notebook_path
 
-            yield Materialization(
-                label='output_notebook',
+            yield AssetMaterialization(
+                asset_key=executed_notebook_materialization_path,
                 description='Location of output notebook in file manager',
                 metadata_entries=[
                     EventMetadataEntry.fspath(executed_notebook_materialization_path)
@@ -290,7 +290,7 @@ def define_dagstermill_solid(
         required_resource_keys (Optional[Set[str]]): The string names of any required resources.
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
-            addition to the :py:class:`~dagster.Materialization` that is always created). This
+            addition to the :py:class:`~dagster.AssetMaterialization` that is always created). This
             respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
             the pipeline system storage, so, e.g., if :py:class:`~dagster_aws.s3.s3_system_storage`
             is configured, the output will be a :py:class:`~dagster_aws.s3.S3FileHandle`.
