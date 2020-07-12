@@ -33,7 +33,8 @@ if __name__ == "__main__":
             '.buildkite/scripts/pypi.sh',
             # Publish
             'export PYTHONDONTWRITEBYTECODE=1',
-            'python bin/publish.py publish --nightly --autoclean',
+            'pip install -e python_modules/automation',
+            'dagster-release publish --nightly --autoclean',
         )
         .build(),
     ]
