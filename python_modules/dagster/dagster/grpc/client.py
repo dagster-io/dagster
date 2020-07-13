@@ -288,7 +288,6 @@ def _wait_for_grpc_server(server_process, timeout=3):
     total_time = 0
     backoff = 0.01
     for line in iter(server_process.stdout.readline, ''):
-        print(line)
         if line.rstrip() == SERVER_FAILED_TO_BIND_TOKEN_BYTES:
             raise CouldNotBindGrpcServerToAddress()
         elif line.rstrip() != SERVER_STARTED_TOKEN_BYTES:
