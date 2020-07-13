@@ -308,22 +308,29 @@ const positionAndSplitBoxes = (
 /** Traverse the graph from the root and place boxes that still have x=0 locations.
 (Unstarted or skipped boxes) so that they appear downstream of running boxes
 we have position / time data for. */
-const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedMs: number) => {
+const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedX: number) => {
+  const unstarted = boxes.filter(box => box.x === 0);
+
   const visit = (box: GaantChartBox, parentX: number) => {
-    if (box.x >= parentX) {
-      return;
-    }
     if (box.x === 0) {
-      box.x = Math.max(parentX, box.x, earliestAllowedMs);
+      // If we are visiting the box for the first time (by traversing the tree from
+      // another starting box), starting another pass using it as the root is unnecessary.
+      const idx = unstarted.indexOf(box);
+      if (idx !== -1) unstarted.splice(idx, 1);
     }
+
+    box.x = Math.max(box.x, earliestAllowedX, parentX);
 
     const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
     for (const child of box.children) {
-      visit(child, minXForUnstartedChildren);
+      if (child.x < minXForUnstartedChildren) {
+        visit(child, minXForUnstartedChildren);
+      }
     }
   };
 
-  boxes.filter(box => box.root).forEach(box => visit(box, LEFT_INSET));
+  let box: GaantChartBox | undefined;
+  while ((box = unstarted.shift())) visit(box, earliestAllowedX);
 };
 
 export const adjustLayoutWithRunMetadata = (

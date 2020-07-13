@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.8
+
+**Bugfixes**
+
+- Fixed rendering bug in the Dagit run reviewer where yet-to-be executed execution steps were rendered on left-hand side instead of the right.
+
 ## 0.8.7
 
 **Breaking Changes**
