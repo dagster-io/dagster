@@ -13,6 +13,7 @@ from dagster.core.definitions import (
     Failure,
     InputDefinition,
     InputMapping,
+    IntermediateStorageDefinition,
     JsonMetadataEntryData,
     LoggerDefinition,
     MarkdownMetadataEntryData,
@@ -45,6 +46,7 @@ from dagster.core.definitions import (
     executor,
     hourly_schedule,
     in_process_executor,
+    intermediate_storage,
     lambda_solid,
     logger,
     monthly_schedule,
@@ -103,6 +105,8 @@ from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local
 from dagster.core.storage.init import InitSystemStorageContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
+    build_intermediate_storage_from_object_store,
+    default_intermediate_storage_defs,
     default_system_storage_defs,
     fs_system_storage,
     mem_system_storage,
@@ -148,6 +152,7 @@ __all__ = [
     'Field',
     'InputDefinition',
     'InputMapping',
+    'IntermediateStorageDefinition',
     'JsonMetadataEntryData',
     'LoggerDefinition',
     'MarkdownMetadataEntryData',
@@ -170,6 +175,7 @@ __all__ = [
     # Decorators
     'composite_solid',
     'executor',
+    'intermediate_storage',
     'lambda_solid',
     'logger',
     'pipeline',
@@ -229,6 +235,7 @@ __all__ = [
     # Logging
     'DagsterLogManager',
     # Utilities
+    'build_intermediate_storage_from_object_store',
     'check_dagster_type',
     'execute_solid',
     'execute_solids_within_pipeline',

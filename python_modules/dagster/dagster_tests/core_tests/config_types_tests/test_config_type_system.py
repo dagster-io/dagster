@@ -599,7 +599,7 @@ def test_no_env_missing_required_error_handling():
 
     assert pe.errors[0].message == (
         '''Missing required field "solids" at the root. '''
-        '''Available Fields: "['execution', 'loggers', '''
+        '''Available Fields: "['execution', 'intermediate_storage', 'loggers', '''
         ''''resources', 'solids', 'storage']".'''
     )
 

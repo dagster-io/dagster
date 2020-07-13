@@ -207,7 +207,9 @@ def check_cross_process_constraints(init_context):
 
     _check_intra_process_pipeline(init_context.pipeline)
     _check_non_ephemeral_instance(init_context.instance)
-    _check_persistent_storage_requirement(init_context.system_storage_def)
+    _check_persistent_storage_requirement(
+        init_context.intermediate_storage_def, init_context.system_storage_def
+    )
 
 
 def _check_intra_process_pipeline(pipeline):
@@ -223,8 +225,19 @@ def _check_intra_process_pipeline(pipeline):
         )
 
 
-def _check_persistent_storage_requirement(system_storage_def):
-    if not system_storage_def.is_persistent:
+def _check_persistent_storage_requirement(intermediate_storage_def, system_storage_def):
+    if intermediate_storage_def:
+        if not intermediate_storage_def.is_persistent:
+            raise DagsterUnmetExecutorRequirementsError(
+                (
+                    'You have attempted to use an executor that uses multiple processes while using '
+                    'intermediate storage {storage_name} which does not persist intermediates. '
+                    'This means there would be no way to move data between different '
+                    'processes. Please configure your pipeline in the storage config '
+                    'section to use persistent system storage such as the filesystem.'
+                ).format(storage_name=intermediate_storage_def.name)
+            )
+    elif not system_storage_def.is_persistent:
         raise DagsterUnmetExecutorRequirementsError(
             (
                 'You have attempted to use an executor that uses multiple processes while using system '

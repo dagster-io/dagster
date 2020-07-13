@@ -11,7 +11,7 @@ from .intermediate_store import IntermediateStore, build_mem_intermediate_store
 from .object_store import InMemoryObjectStore
 
 
-class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
+class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def get_intermediate(self, context, dagster_type=None, step_output_handle=None):
         pass
@@ -60,7 +60,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         return uncovered_inputs
 
 
-class InMemoryIntermediatesManager(IntermediatesManager):
+class InMemoryIntermediatesManager(IntermediateStorage):
     def __init__(self):
 
         self.values = {}
@@ -101,7 +101,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         return False
 
 
-class IntermediateStoreIntermediatesManager(IntermediatesManager):
+class IntermediateStoreIntermediatesManager(IntermediateStorage):
     def __init__(self, intermediate_store):
         self._intermediate_store = check.inst_param(
             intermediate_store, 'intermediate_store', IntermediateStore
@@ -162,5 +162,5 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         return True
 
 
-def build_in_mem_intermediates_manager(*args, **kwargs):
+def build_in_mem_intermediates_storage(*args, **kwargs):
     return IntermediateStoreIntermediatesManager(build_mem_intermediate_store(*args, **kwargs))

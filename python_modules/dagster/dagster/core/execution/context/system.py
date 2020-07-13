@@ -51,7 +51,7 @@ class SystemExecutionContextData(
         retries,
     ):
         from dagster.core.definitions.system_storage import SystemStorageDefinition
-        from dagster.core.storage.intermediates_manager import IntermediatesManager
+        from dagster.core.storage.intermediates_manager import IntermediateStorage
         from dagster.core.instance import DagsterInstance
 
         return super(SystemExecutionContextData, cls).__new__(
@@ -70,7 +70,7 @@ class SystemExecutionContextData(
             ),
             instance=check.inst_param(instance, 'instance', DagsterInstance),
             intermediates_manager=check.inst_param(
-                intermediates_manager, 'intermediates_manager', IntermediatesManager
+                intermediates_manager, 'intermediates_manager', IntermediateStorage
             ),
             file_manager=check.inst_param(file_manager, 'file_manager', FileManager),
             raise_on_error=check.bool_param(raise_on_error, 'raise_on_error'),

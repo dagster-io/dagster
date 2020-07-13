@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 
 from dagster import check
@@ -13,7 +14,7 @@ DEFAULT_MODE_NAME = 'default'
 class ModeDefinition(
     namedtuple(
         '_ModeDefinition',
-        'name resource_defs loggers system_storage_defs executor_defs description',
+        'name resource_defs loggers system_storage_defs executor_defs description intermediate_storage_defs',
     )
 ):
     '''Define a mode in which a pipeline can operate.
@@ -36,6 +37,9 @@ class ModeDefinition(
             executing in this mode. By default, this will be the 'in_process' and 'multiprocess'
             executors (:py:data:`~dagster.default_executors`).
         description (Optional[str]): A human-readable description of the mode.
+        intermediate_storage_defs (Optional[List[IntermediateStorageDefinition]]): The set of intermediate storage
+            options available when executing in this mode. By default, this will be the 'in_memory'
+            and 'filesystem' system storages.
     '''
 
     def __new__(
@@ -46,10 +50,22 @@ class ModeDefinition(
         system_storage_defs=None,
         executor_defs=None,
         description=None,
+        intermediate_storage_defs=None,
     ):
-        from dagster.core.storage.system_storage import default_system_storage_defs
+        from dagster.core.storage.system_storage import (
+            default_system_storage_defs,
+            default_intermediate_storage_defs,
+        )
 
         from .system_storage import SystemStorageDefinition
+        from .intermediate_storage import IntermediateStorageDefinition
+
+        if system_storage_defs is not None and intermediate_storage_defs is None:
+            warnings.warn(
+                'system_storage_defs are deprecated and will be removed in 0.10.0 '
+                'and should be replaced with '
+                'intermediate_storage_defs for intermediates and resource_defs for files'
+            )
 
         return super(ModeDefinition, cls).__new__(
             cls,
@@ -68,6 +84,13 @@ class ModeDefinition(
                 'system_storage_defs',
                 of_type=SystemStorageDefinition,
             ),
+            intermediate_storage_defs=check.list_param(
+                intermediate_storage_defs
+                if intermediate_storage_defs
+                else default_intermediate_storage_defs,
+                'intermediate_storage_defs',
+                of_type=IntermediateStorageDefinition,
+            ),
             executor_defs=check.list_param(
                 executor_defs if executor_defs else default_executors,
                 'executor_defs',
@@ -85,6 +108,14 @@ class ModeDefinition(
         for system_storage_def in self.system_storage_defs:
             if system_storage_def.name == name:
                 return system_storage_def
+
+        check.failed('{} storage definition not found'.format(name))
+
+    def get_intermediate_storage_def(self, name):
+        check.str_param(name, 'name')
+        for intermediate_storage_def in self.intermediate_storage_defs:
+            if intermediate_storage_def.name == name:
+                return intermediate_storage_def
 
         check.failed('{} storage definition not found'.format(name))
 

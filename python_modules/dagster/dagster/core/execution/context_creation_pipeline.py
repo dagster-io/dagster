@@ -18,10 +18,14 @@ from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.init import InitIntermediateStorageContext, InitSystemStorageContext
+from dagster.core.storage.intermediates_manager import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import (
+    EmptyIntermediateStoreBackcompatConfig,
+    EnvironmentConfig,
+)
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import EventGenerationManager, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -42,6 +46,32 @@ def system_storage_def_from_config(mode_definition, environment_config):
     check.failed(
         'Could not find storage mode {}. Should have be caught by config system'.format(
             environment_config.storage.system_storage_name
+        )
+    )
+
+
+def construct_intermediate_storage_data(storage_init_context):
+    return storage_init_context.intermediate_storage_def.intermediate_storage_creation_fn(
+        storage_init_context
+    )
+
+
+def intermediate_storage_def_from_config(mode_definition, environment_config):
+    if isinstance(
+        environment_config.intermediate_storage.intermediate_storage_name,
+        EmptyIntermediateStoreBackcompatConfig,
+    ):
+        return None
+    for intermediate_storage_def in mode_definition.intermediate_storage_defs:
+        if (
+            intermediate_storage_def.name
+            == environment_config.intermediate_storage.intermediate_storage_name
+        ):
+            return intermediate_storage_def
+
+    check.failed(
+        'Could not find storage mode {}. Should have be caught by config system'.format(
+            environment_config.intermediate_storage.intermediate_storage_name
         )
     )
 
@@ -68,7 +98,7 @@ class ContextCreationData(
     namedtuple(
         '_ContextCreationData',
         'pipeline environment_config pipeline_run mode_def system_storage_def '
-        'executor_def instance resource_keys_to_init',
+        'intermediate_storage_def executor_def instance resource_keys_to_init',
     )
 ):
     @property
@@ -84,6 +114,7 @@ def create_context_creation_data(
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)
+    intermediate_storage_def = intermediate_storage_def_from_config(mode_def, environment_config)
     executor_def = executor_def_from_config(mode_def, environment_config)
 
     return ContextCreationData(
@@ -92,6 +123,7 @@ def create_context_creation_data(
         pipeline_run=pipeline_run,
         mode_def=mode_def,
         system_storage_def=system_storage_def,
+        intermediate_storage_def=intermediate_storage_def,
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
@@ -107,6 +139,7 @@ def pipeline_initialization_manager(
     instance,
     scoped_resources_builder_cm=None,
     system_storage_data=None,
+    intermediate_storage=None,
     raise_on_error=False,
 ):
     scoped_resources_builder_cm = check.opt_callable_param(
@@ -121,6 +154,7 @@ def pipeline_initialization_manager(
         instance,
         scoped_resources_builder_cm,
         system_storage_data,
+        intermediate_storage,
         raise_on_error,
     )
     return EventGenerationManager(generator, SystemPipelineExecutionContext, raise_on_error)
@@ -133,6 +167,7 @@ def pipeline_initialization_event_generator(
     instance,
     scoped_resources_builder_cm,
     system_storage_data=None,
+    intermediate_storage=None,
     raise_on_error=False,
 ):
     execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -147,6 +182,9 @@ def pipeline_initialization_event_generator(
     )
     system_storage_data = check.opt_inst_param(
         system_storage_data, 'system_storage_data', SystemStorageData
+    )
+    intermediate_storage = check.opt_inst_param(
+        intermediate_storage, 'intermediate_storage_data', IntermediateStorage
     )
     raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
 
@@ -178,10 +216,18 @@ def pipeline_initialization_event_generator(
         system_storage_data = create_system_storage_data(
             context_creation_data, system_storage_data, scoped_resources_builder
         )
+        if intermediate_storage or context_creation_data.intermediate_storage_def:
+            intermediate_storage = create_intermediate_storage(
+                context_creation_data, intermediate_storage, scoped_resources_builder,
+            )
+        else:
+            # remove this as part of https://github.com/dagster-io/dagster/issues/2705
+            intermediate_storage = system_storage_data.intermediates_manager
         pipeline_context = construct_pipeline_execution_context(
             context_creation_data=context_creation_data,
             scoped_resources_builder=scoped_resources_builder,
             system_storage_data=system_storage_data,
+            intermediate_storage=intermediate_storage,
             log_manager=log_manager,
             executor=executor,
             raise_on_error=raise_on_error,
@@ -261,6 +307,43 @@ def create_system_storage_data(
     return system_storage_data
 
 
+def create_intermediate_storage(
+    context_creation_data, intermediate_storage_data, scoped_resources_builder,
+):
+    check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
+
+    environment_config, pipeline_def, intermediate_storage_def, pipeline_run = (
+        context_creation_data.environment_config,
+        context_creation_data.pipeline_def,
+        context_creation_data.intermediate_storage_def,
+        context_creation_data.pipeline_run,
+    )
+    intermediate_storage_data = (
+        intermediate_storage_data
+        if intermediate_storage_data
+        else construct_intermediate_storage_data(
+            InitIntermediateStorageContext(
+                pipeline_def=pipeline_def,
+                mode_def=context_creation_data.mode_def,
+                intermediate_storage_def=intermediate_storage_def,
+                intermediate_storage_config=environment_config.intermediate_storage.intermediate_storage_config,
+                pipeline_run=pipeline_run,
+                instance=context_creation_data.instance,
+                environment_config=environment_config,
+                # TODO: Fix
+                type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                    pipeline_def, context_creation_data.system_storage_def
+                ),
+                resources=scoped_resources_builder.build(
+                    context_creation_data.intermediate_storage_def.required_resource_keys,
+                ),
+            )
+        )
+    )
+
+    return intermediate_storage_data
+
+
 def create_executor(context_creation_data):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
     return context_creation_data.executor_def.executor_creation_fn(
@@ -272,6 +355,7 @@ def create_executor(context_creation_data):
             environment_config=context_creation_data.environment_config,
             executor_config=context_creation_data.environment_config.execution.execution_engine_config,
             system_storage_def=context_creation_data.system_storage_def,
+            intermediate_storage_def=context_creation_data.intermediate_storage_def,
             instance=context_creation_data.instance,
         )
     )
@@ -284,6 +368,7 @@ def construct_pipeline_execution_context(
     log_manager,
     executor,
     raise_on_error,
+    intermediate_storage,
 ):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
     scoped_resources_builder = check.inst_param(
@@ -292,6 +377,7 @@ def construct_pipeline_execution_context(
         ScopedResourcesBuilder,
     )
     check.inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
+    check.inst_param(intermediate_storage, 'intermediate_storage_data', IntermediateStorage)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
     check.inst_param(executor, 'executor', Executor)
 
@@ -304,7 +390,7 @@ def construct_pipeline_execution_context(
             scoped_resources_builder=scoped_resources_builder,
             environment_config=context_creation_data.environment_config,
             instance=context_creation_data.instance,
-            intermediates_manager=system_storage_data.intermediates_manager,
+            intermediates_manager=intermediate_storage,
             file_manager=system_storage_data.file_manager,
             raise_on_error=raise_on_error,
             retries=executor.retries,
@@ -321,6 +407,7 @@ def scoped_pipeline_context(
     pipeline_run,
     instance,
     scoped_resources_builder_cm=resource_initialization_manager,
+    intermediate_storage=None,
     system_storage_data=None,
     raise_on_error=False,
 ):
@@ -337,6 +424,7 @@ def scoped_pipeline_context(
     check.inst_param(instance, 'instance', DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, 'scoped_resources_builder_cm')
     check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
+    check.opt_inst_param(intermediate_storage, 'intermediate_storage', IntermediateStorage)
 
     initialization_manager = pipeline_initialization_manager(
         execution_plan,
@@ -345,6 +433,7 @@ def scoped_pipeline_context(
         instance,
         scoped_resources_builder_cm=scoped_resources_builder_cm,
         system_storage_data=system_storage_data,
+        intermediate_storage=intermediate_storage,
         raise_on_error=raise_on_error,
     )
     for _ in initialization_manager.generate_setup_events():

@@ -28,9 +28,17 @@ class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
         )
 
 
+class EmptyIntermediateStoreBackcompatConfig(object):
+    '''
+    This class is a sentinel object indicating that no intermediate stores have been passed in
+    and that the pipeline should instead use system storage to define an intermediate store.
+    '''
+
+
 class EnvironmentConfig(
     namedtuple(
-        '_EnvironmentConfig', 'solids execution storage resources loggers original_config_dict'
+        '_EnvironmentConfig',
+        'solids execution storage intermediate_storage resources loggers original_config_dict',
     )
 ):
     def __new__(
@@ -38,12 +46,16 @@ class EnvironmentConfig(
         solids=None,
         execution=None,
         storage=None,
+        intermediate_storage=None,
         resources=None,
         loggers=None,
         original_config_dict=None,
     ):
         check.opt_inst_param(execution, 'execution', ExecutionConfig)
         check.opt_inst_param(storage, 'storage', StorageConfig)
+        check.opt_inst_param(
+            intermediate_storage, 'intermediate_storage', IntermediateStorageConfig
+        )
         check.opt_dict_param(original_config_dict, 'original_config_dict')
         check.opt_dict_param(resources, 'resources', key_type=str)
 
@@ -55,6 +67,7 @@ class EnvironmentConfig(
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=SolidConfig),
             execution=execution,
             storage=storage,
+            intermediate_storage=intermediate_storage,
             resources=resources,
             loggers=check.opt_dict_param(loggers, 'loggers', key_type=str, value_type=dict),
             original_config_dict=original_config_dict,
@@ -103,11 +116,17 @@ class EnvironmentConfig(
                 processed_resource_configs[resource_key] = resource_config_evr.value
 
         solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
+        # TODO:  replace this with a simple call to from_dict of the config.get when ready to fully deprecate
+        temp_intermed = config_value.get('intermediate_storage')
+        if config_value.get('storage'):
+            if temp_intermed is None:
+                temp_intermed = {EmptyIntermediateStoreBackcompatConfig(): {}}
 
         return EnvironmentConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_value.get('execution')),
             storage=StorageConfig.from_dict(config_value.get('storage')),
+            intermediate_storage=IntermediateStorageConfig.from_dict(temp_intermed),
             loggers=config_value.get('loggers'),
             original_config_dict=run_config,
             resources=processed_resource_configs,
@@ -156,3 +175,33 @@ class StorageConfig(namedtuple('_FilesConfig', 'system_storage_name system_stora
             system_storage_name, system_storage_config = ensure_single_item(config)
             return StorageConfig(system_storage_name, system_storage_config.get('config'))
         return StorageConfig(None, None)
+
+
+class IntermediateStorageConfig(
+    namedtuple('_FilesConfig', 'intermediate_storage_name intermediate_storage_config')
+):
+    def __new__(cls, intermediate_storage_name, intermediate_storage_config):
+        return super(IntermediateStorageConfig, cls).__new__(
+            cls,
+            intermediate_storage_name=check.opt_inst_param(
+                intermediate_storage_name,
+                'intermediate_storage_name',
+                (str, EmptyIntermediateStoreBackcompatConfig),
+                'in_memory',
+            ),
+            intermediate_storage_config=check.opt_dict_param(
+                intermediate_storage_config, 'intermediate_storage_config', key_type=str
+            ),
+        )
+
+    @staticmethod
+    def from_dict(config=None):
+        check.opt_dict_param(
+            config, 'config', key_type=(str, EmptyIntermediateStoreBackcompatConfig)
+        )
+        if config:
+            intermediate_storage_name, intermediate_storage_config = ensure_single_item(config)
+            return IntermediateStorageConfig(
+                intermediate_storage_name, intermediate_storage_config.get('config')
+            )
+        return IntermediateStorageConfig(None, None)

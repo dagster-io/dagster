@@ -101,6 +101,10 @@ def define_environment_cls(creation_data):
                 'storage': Field(
                     define_storage_config_cls(creation_data.mode_definition), is_required=False,
                 ),
+                'intermediate_storage': Field(
+                    define_intermediate_storage_config_cls(creation_data.mode_definition),
+                    is_required=False,
+                ),
                 'execution': Field(
                     define_executor_config_cls(creation_data.mode_definition), is_required=False,
                 ),
@@ -122,6 +126,23 @@ def define_storage_config_cls(mode_definition):
         fields[storage_def.name] = Field(
             Shape(
                 fields={'config': storage_def.config_schema} if storage_def.config_schema else {},
+            )
+        )
+
+    return Selector(fields)
+
+
+def define_intermediate_storage_config_cls(mode_definition):
+    check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+
+    fields = {}
+
+    for intermediate_storage_def in mode_definition.intermediate_storage_defs:
+        fields[intermediate_storage_def.name] = Field(
+            Shape(
+                fields={'config': intermediate_storage_def.config_schema}
+                if intermediate_storage_def.config_schema
+                else {},
             )
         )
 

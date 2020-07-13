@@ -44,6 +44,7 @@ from .executor import (
     multiprocess_executor,
 )
 from .input import InputDefinition, InputMapping
+from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping

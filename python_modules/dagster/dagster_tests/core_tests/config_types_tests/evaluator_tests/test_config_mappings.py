@@ -90,7 +90,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
         'Missing required field "solids" at the root. Available Fields: '
-        '''"['execution', 'loggers', 'resources', 'solids', 'storage']".'''
+        '''"['execution', 'intermediate_storage', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -99,7 +99,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
         'Missing required field "solids" at the root. Available Fields: '
-        '''"['execution', 'loggers', 'resources', 'solids', 'storage']".'''
+        '''"['execution', 'intermediate_storage', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
