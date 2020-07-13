@@ -340,16 +340,15 @@ class DagsterInstance:
         telemetry_settings = self._telemetry_settings if self._telemetry_settings else None
 
         return (
-            'DagsterInstance components:\n\n'
-            '  Local Artifacts Storage:\n{artifact}\n'
-            '  Run Storage:\n{run}\n'
-            '  Event Log Storage:\n{event}\n'
-            '  Compute Log Manager:\n{compute}\n'
-            '  Schedule Storage:\n{schedule_storage}\n'
-            '  Scheduler:\n{scheduler}\n'
-            '  Run Launcher:\n{run_launcher}\n'
-            '  Dagit:\n{dagit}\n'
-            '  Telemetry:\n{telemetry}\n'
+            'local_artifact_storage:\n{artifact}\n'
+            'run_storage:\n{run}\n'
+            'event_log_storage:\n{event}\n'
+            'compute_logs:\n{compute}\n'
+            'schedule_storage:\n{schedule_storage}\n'
+            'scheduler:\n{scheduler}\n'
+            'run_launcher:\n{run_launcher}\n'
+            'dagit_settings:\n{dagit}\n'
+            'telemetry_settings:\n{telemetry}\n'
             ''.format(
                 artifact=self._info(self._local_artifact_storage),
                 run=self._info(self._run_storage),
