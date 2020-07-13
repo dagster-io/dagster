@@ -243,7 +243,6 @@ def execute_pipeline_iterator(
     return execute_run_iterator(pipeline, pipeline_run, instance)
 
 
-@telemetry_wrapper
 def execute_pipeline(
     pipeline,
     run_config=None,
@@ -291,8 +290,34 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
-    # stack level is to punch through helper function and telemetry wrapper
-    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=5)
+    instance = instance or DagsterInstance.ephemeral()
+    return _logged_execute_pipeline(
+        pipeline,
+        run_config=run_config,
+        mode=mode,
+        preset=preset,
+        tags=tags,
+        solid_selection=solid_selection,
+        instance=instance,
+        raise_on_error=raise_on_error,
+        environment_dict=environment_dict,
+    )
+
+
+@telemetry_wrapper
+def _logged_execute_pipeline(
+    pipeline,
+    run_config=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    solid_selection=None,
+    instance=None,
+    raise_on_error=True,
+    environment_dict=None,
+):
+    # stack level is to punch through helper functions and telemetry wrapper
+    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=7)
 
     (
         pipeline,

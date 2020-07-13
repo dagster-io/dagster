@@ -50,9 +50,9 @@ TELEMETRY_VERSION = '0.2'
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
 # docs/next/src/pages/install/telemetry.mdx
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    'pipeline_execute_command',
-    'pipeline_launch_command',
-    'execute_pipeline',
+    '_logged_pipeline_execute_command',
+    '_logged_pipeline_launch_command',
+    '_logged_execute_pipeline',
 }
 
 
@@ -60,6 +60,9 @@ def telemetry_wrapper(f):
     '''
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
+
+    Wrapped function must be in the list of whitelisted function, and must have a DagsterInstance
+    parameter named 'instance' in the signature.
     '''
     if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
         raise DagsterInvariantViolationError(
@@ -69,13 +72,24 @@ def telemetry_wrapper(f):
             )
         )
 
+    var_names = f.__code__.co_varnames
+    try:
+        instance_index = var_names.index('instance')
+    except ValueError:
+        raise DagsterInvariantViolationError(
+            'Attempted to log telemetry for function {name} that does not take a DagsterInstance '
+            'in a parameter called \'instance\''
+        )
+
     @wraps(f)
     def wrap(*args, **kwargs):
+        instance = _check_telemetry_instance_param(args, kwargs, instance_index)
         start_time = datetime.datetime.now()
-        log_action(action=f.__name__ + '_started', client_time=start_time)
+        log_action(instance=instance, action=f.__name__ + '_started', client_time=start_time)
         result = f(*args, **kwargs)
         end_time = datetime.datetime.now()
         log_action(
+            instance=instance,
             action=f.__name__ + '_ended',
             client_time=end_time,
             elapsed_time=end_time - start_time,
@@ -216,6 +230,26 @@ def get_log_queue_dir():
     return dagster_home_logs_queue_path
 
 
+def _check_telemetry_instance_param(args, kwargs, instance_index):
+    if 'instance' in kwargs:
+        return check.inst_param(
+            kwargs['instance'],
+            'instance',
+            DagsterInstance,
+            '\'instance\' parameter passed as keyword argument must be a DagsterInstance',
+        )
+    else:
+        check.invariant(len(args) > instance_index)
+        return check.inst_param(
+            args[instance_index],
+            'instance',
+            DagsterInstance,
+            '\'instance\' argument at position {position} must be a DagsterInstance'.format(
+                position=instance_index
+            ),
+        )
+
+
 def _get_telemetry_logger():
     logger = logging.getLogger('dagster_telemetry_logger')
 
@@ -236,8 +270,9 @@ def write_telemetry_log_line(log_line):
     logger.info(json.dumps(log_line))
 
 
-def _get_instance_telemetry_info():
-    dagster_telemetry_enabled = _get_instance_telemetry_enabled(DagsterInstance.get())
+def _get_instance_telemetry_info(instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
     if dagster_telemetry_enabled:
         instance_id = _get_or_set_instance_id()
@@ -328,8 +363,12 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
         )
 
 
-def log_action(action, client_time=datetime.datetime.now(), elapsed_time=None, metadata=None):
-    (dagster_telemetry_enabled, instance_id) = _get_instance_telemetry_info()
+def log_action(instance, action, client_time=None, elapsed_time=None, metadata=None):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    if client_time is None:
+        client_time = datetime.datetime.now()
+
+    (dagster_telemetry_enabled, instance_id) = _get_instance_telemetry_info(instance)
 
     if dagster_telemetry_enabled:
         # Log general statistics

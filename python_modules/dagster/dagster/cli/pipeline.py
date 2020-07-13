@@ -294,8 +294,13 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         '-e, --env is deprecated and will be removed in 0.9.0.'
     ),
 )
-@telemetry_wrapper
 def pipeline_execute_command(config, preset, mode, **kwargs):
+    return _logged_pipeline_execute_command(config, preset, mode, DagsterInstance.get(), kwargs)
+
+
+@telemetry_wrapper
+def _logged_pipeline_execute_command(config, preset, mode, instance, kwargs):
+    check.inst_param(instance, 'instance', DagsterInstance)
     env = (
         canonicalize_backcompat_args(
             (config if config else None),
@@ -430,8 +435,13 @@ def do_execute_command(pipeline, env_file_list, mode=None, tags=None, solid_sele
         '-e, --env is deprecated and will be removed in 0.9.0.'
     ),
 )
-@telemetry_wrapper
 def pipeline_launch_command(config, preset_name, mode, **kwargs):
+    return _logged_pipeline_launch_command(config, preset_name, mode, DagsterInstance.get(), kwargs)
+
+
+@telemetry_wrapper
+def _logged_pipeline_launch_command(config, preset_name, mode, instance, kwargs):
+    check.inst_param(instance, 'instance', DagsterInstance)
     env = (
         canonicalize_backcompat_args(
             (config if config else None),

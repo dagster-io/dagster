@@ -123,7 +123,7 @@ def host_dagit_ui_with_workspace(
 
     app = create_app_from_workspace(workspace, instance, path_prefix)
 
-    start_server(host, port, path_prefix, app, port_lookup)
+    start_server(instance, host, port, path_prefix, app, port_lookup)
 
 
 @contextmanager
@@ -138,7 +138,7 @@ def uploading_logging_thread():
         logging_thread.join()
 
 
-def start_server(host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
+def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
     print(
@@ -147,7 +147,7 @@ def start_server(host, port, path_prefix, app, port_lookup, port_lookup_attempts
         )
     )
 
-    log_action(START_DAGIT_WEBSERVER)
+    log_action(instance, START_DAGIT_WEBSERVER)
     with uploading_logging_thread():
         try:
             server.serve_forever()
@@ -164,6 +164,7 @@ def start_server(host, port, path_prefix, app, port_lookup, port_lookup_attempts
                 ):
                     port_lookup_attempts += 1
                     start_server(
+                        instance,
                         host,
                         port + port_lookup_attempts,
                         path_prefix,
