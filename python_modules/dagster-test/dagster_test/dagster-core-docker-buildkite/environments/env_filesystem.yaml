@@ -1,0 +1,4 @@
+storage:
+  filesystem:
+    config:
+      base_dir: /tmp

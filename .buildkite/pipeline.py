@@ -61,6 +61,35 @@ def publish_test_images():
             )
             .build()
         )
+
+        key = "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
+        tests.append(
+            StepBuilder("core test images {version}".format(version=version), key=key)
+            # these run commands are coupled to the way the test-image-builder is built
+            # see .buildkite/images/test_image_builder/Dockerfile
+            .run(
+                # credentials
+                "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
+                # build and tag test image
+                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-core-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
+                + version,
+                "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_IMAGE}",
+                #
+                # push the built image
+                "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
+                "docker push $${TEST_IMAGE}",
+            )
+            .on_python_image(
+                'test-image-builder:v2',
+                [
+                    'AWS_ACCOUNT_ID',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'BUILDKITE_SECRETS_BUCKET',
+                ],
+            )
+            .build()
+        )
     return tests
 
 
