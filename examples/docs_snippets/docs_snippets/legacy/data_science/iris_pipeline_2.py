@@ -1,5 +1,5 @@
 import dagstermill as dm
-from dagster_examples.util import download_file
+from docs_snippets.legacy.data_science.download_file import download_file
 
 from dagster import InputDefinition, pipeline
 from dagster.utils import script_relative_path

@@ -140,6 +140,7 @@ dask-worker-space
 # Examples outputs
 examples/legacy_examples/dagster_examples/*/output/
 examples/docs_snippets/docs_snippets/**/**/output/
+examples/**/**/example.db
 
 # Telemetry instance id
 .telemetry

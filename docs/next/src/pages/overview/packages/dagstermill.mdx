@@ -1,5 +1,6 @@
 import PyObject from 'components/PyObject';
 import { DynamicMetaTags } from 'components/MetaTags';
+import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <DynamicMetaTags
   title="Data Science with Dagstermill | Dagster"
@@ -44,6 +45,8 @@ notebooks as solids directly, with minimal, incremental metadata
 declarations to integrate them into pipelines that may also contain
 arbitrary heterogeneous solids.
 
+<ExampleReferenceLink filePath="examples/docs_snippets/docs_snippets/legacy/data_science/" />
+
 ## Notebooks as solids
 
 Let's consider the classic Iris dataset (1, 2), collected in 1936
@@ -61,10 +64,10 @@ are then locked away in the .ipynb format, can only be reproduced using
 a complex Jupyter setup, and are only programmatically accessible within
 the notebook context.
 
-Once we turn our notebook into a solid, we can start to make its outputs
-more accessible.
+We can simply turn a notebook into a solid using <PyObject module="dagstermill" object="define_dagstermill_solid" />.
+Once we create a solid, we can start to make its outputs more accessible.
 
-```python literalinclude caption=iris_pipeline.py
+```python literalinclude showLines emphasize-lines=6-8 caption=iris_pipeline.py
 file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline.py
 ```
 
@@ -115,13 +118,19 @@ notebook solids are more likely to rely on upstream jobs whose outputs
 might be handles to tables in the data warehouse or to files on S3, and
 your notebook will likely handle the task of fetching the data.
 
-```python literalinclude emphasize-lines=3,5,11,18-19 caption=iris_pipeline_2.py
+```python literalinclude showLines emphasize-lines=2,10,16 caption=iris_pipeline_2.py
 file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline_2.py
 ```
 
 We'll configure the `download_file` solid with the URL to download the
 file from, and the local path at which to save it. This solid has one
-output, the path to the downloaded file. We'll want to use this path in
+output&mdash;the path to the downloaded file.
+
+```python literalinclude showLines emphasize-lines=10-11,14-16,27 caption=download_file.py
+file:/docs_snippets/docs_snippets/legacy/data_science/download_file.py
+```
+
+We'll want to use this path in
 place of the hardcoded string when we read the csv in to our notebook:
 
 ```python
@@ -142,7 +151,9 @@ which it should inject parameters at runtime. You will need to be
 running Jupyter 5.0 or later and may need to turn the display of cell
 tags on (select _View \> Cell Toolbar \> Tags_ from the Jupyter menu).
 
-![tags.png](/assets/images/learn/guides/data_science/tags.png)
+<p align="center">
+  <img atl="tags.png" src="/assets/images/learn/guides/data_science/tags.png" />
+</p>
 
 Tag the cell you want Dagstermill to replace at runtime with the tag
 `parameters`.
@@ -196,16 +207,16 @@ injected by dagstermill, none of your other code needs to change.
 For instance, suppose we want to make the number of clusters (the \_k\_ in k-means)
 configurable. We'll change our solid definition to include a config field:
 
-```python literalinclude emphasize-lines=5-7 caption=iris_pipeline_3.py
+```python literalinclude showLines emphasize-lines=10-12 caption=iris_pipeline_3.py
 file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline_3.py
-lines:8-15
 ```
 
 In our notebook, we'll stub the context as follows (in the `parameters` cell):
 
+<!-- do not hardcode code snippets https://github.com/dagster-io/dagster/issues/2706 -->
+
 ```python
 import dagstermill
-
 from dagster import Field, Int, SolidDefinition
 
 context = dagstermill.get_context(solid_config=3)

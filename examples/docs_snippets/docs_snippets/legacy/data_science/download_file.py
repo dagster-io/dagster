@@ -1,8 +1,7 @@
-import os
-
 from six.moves.urllib.request import urlretrieve
 
 from dagster import Field, OutputDefinition, String, solid
+from dagster.utils import script_relative_path
 
 
 @solid(
@@ -22,5 +21,6 @@ from dagster import Field, OutputDefinition, String, solid
     ),
 )
 def download_file(context):
-    urlretrieve(context.solid_config['url'], context.solid_config['path'])
-    return os.path.abspath(context.solid_config['path'])
+    output_path = script_relative_path(context.solid_config['path'])
+    urlretrieve(context.solid_config['url'], output_path)
+    return output_path

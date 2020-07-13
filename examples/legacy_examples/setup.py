@@ -43,7 +43,6 @@ setup(
             'pandas>=1.0.0',
             'pytest-mock',
             'pyspark>=2.0.2',
-            'seaborn',
             'sqlalchemy-redshift>=0.7.2',
             'SQLAlchemy-Utils==0.33.8',
             'tensorflow',
