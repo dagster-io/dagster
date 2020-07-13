@@ -415,12 +415,8 @@ def _validate_schedule_tick_args(status, run_id=None, error=None):
             error is None, desc="Schedule tick status is SUCCESS, but error was provided"
         )
     elif status == ScheduleTickStatus.FAILURE:
-        check.invariant(run_id is None, "Schedule tick status is FAILURE but run_id was provided")
         check.inst_param(error, 'error', SerializableErrorInfo)
     else:
-        check.invariant(
-            run_id is None, "Schedule tick status was not SUCCESS, but run_id was provided"
-        )
         check.invariant(
             error is None, "Schedule tick status was not FAILURE but error was provided"
         )
@@ -457,8 +453,7 @@ class ScheduleTickData(
             status (ScheduleTickStatus): The status of the tick, which can be updated
 
         Keyword Arguments:
-            run_id (str): The run created by the tick. This is set only when the status is
-                ``ScheduleTickStatus.SUCCESS``
+            run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during schedule execution. This is set
                 only when the status is ``ScheduleTickStatus.Failure``
         '''
