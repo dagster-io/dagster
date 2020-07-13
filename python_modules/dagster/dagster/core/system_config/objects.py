@@ -102,7 +102,6 @@ class EnvironmentConfig(
             else:
                 processed_resource_configs[resource_key] = resource_config_evr.value
 
-        print(resource_configs)
         solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
 
         return EnvironmentConfig(
