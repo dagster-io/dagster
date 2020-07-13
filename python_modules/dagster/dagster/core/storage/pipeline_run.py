@@ -1,10 +1,11 @@
+import warnings
 from collections import namedtuple
 from enum import Enum
 
 from dagster import check
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -56,7 +57,7 @@ class PipelineRunStatsSnapshot(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_persistence
 class PipelineRun(
     namedtuple(
         '_PipelineRun',
@@ -66,24 +67,12 @@ class PipelineRun(
             'pipeline_snapshot_id execution_plan_snapshot_id'
         ),
     ),
+    Persistable,
 ):
     '''Serializable internal representation of a pipeline run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.
     '''
 
-    # serdes log
-    # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
-    # * added pipeline_snapshot_id
-    # * renamed previous_run_id -> parent_run_id, added root_run_id
-    #   serdes will set parent_run_id = root_run_id = previous_run_id when __new__ is called with
-    #   a record that has previous_run_id set but neither of the new fields, i.e., when
-    #   deserializing an old record; the old field will then be dropped when serialized back to
-    #   storage
-    # * added execution_plan_snapshot_id
-    # * removed selector
-    # * added solid_subset
-    # * renamed solid_subset -> solid_selection, added solids_to_execute
-    # * renamed environment_dict -> run_config
     def __new__(
         cls,
         pipeline_name=None,
@@ -99,24 +88,7 @@ class PipelineRun(
         parent_run_id=None,
         pipeline_snapshot_id=None,
         execution_plan_snapshot_id=None,
-        ## GRAVEYARD BELOW
-        # see https://github.com/dagster-io/dagster/issues/2372 for explanation
-        previous_run_id=None,
-        selector=None,
-        solid_subset=None,
-        environment_dict=None,
     ):
-        # a frozenset which contains the names of the solids to execute
-        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
-        # a list of solid queries provided by the user
-        # possible to be None when only solids_to_execute is set by the user directly
-        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
-
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-        check.opt_str_param(root_run_id, 'root_run_id')
-        check.opt_str_param(parent_run_id, 'parent_run_id')
-
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
@@ -125,22 +97,89 @@ class PipelineRun(
                 'belongs to a run group'
             ),
         )
+        # a frozenset which contains the names of the solids to execute
+        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        # a list of solid queries provided by the user
+        # possible to be None when only solids_to_execute is set by the user directly
+        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        # Compatibility
-        # ----------------------------------------------------------------------------------------
-        check.invariant(
-            not (run_config is not None and environment_dict is not None),
-            'Cannot set both run_config and environment_dict. Use run_config parameter.',
+        return super(PipelineRun, cls).__new__(
+            cls,
+            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
+            run_id=check.opt_str_param(run_id, 'run_id', default=make_new_run_id()),
+            run_config=check.opt_dict_param(run_config, 'run_config', key_type=str),
+            mode=check.opt_str_param(mode, 'mode'),
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
+            status=check.opt_inst_param(
+                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
+            ),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
+            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
+            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
+            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+            execution_plan_snapshot_id=check.opt_str_param(
+                execution_plan_snapshot_id, 'execution_plan_snapshot_id'
+            ),
         )
-        run_config = run_config or environment_dict
-        # Historical runs may have previous_run_id set, in which case
-        # that previous ID becomes both the root and the parent
-        if previous_run_id:
-            if not (parent_run_id and root_run_id):
-                parent_run_id = previous_run_id
-                root_run_id = previous_run_id
 
-        check.opt_inst_param(selector, 'selector', ExecutionSelector)
+    @classmethod
+    def from_storage_dict(cls, storage_dict):
+        # called by the serdes layer, delegates to helper method with expanded kwargs
+        return cls._from_storage(**storage_dict)
+
+    @classmethod
+    def _from_storage(
+        cls,
+        pipeline_name=None,
+        run_id=None,
+        run_config=None,
+        mode=None,
+        solid_selection=None,
+        solids_to_execute=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot_id=None,
+        execution_plan_snapshot_id=None,
+        # backcompat
+        environment_dict=None,
+        previous_run_id=None,
+        selector=None,
+        solid_subset=None,
+        reexecution_config=None,  # pylint: disable=unused-argument
+        **kwargs
+    ):
+
+        # serdes log
+        # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
+        # * added pipeline_snapshot_id
+        # * renamed previous_run_id -> parent_run_id, added root_run_id
+        # * added execution_plan_snapshot_id
+        # * removed selector
+        # * added solid_subset
+        # * renamed solid_subset -> solid_selection, added solids_to_execute
+        # * renamed environment_dict -> run_config
+
+        # back compat for environment dict => run_config
+        if environment_dict:
+            check.invariant(
+                not run_config,
+                'Cannot set both run_config and environment_dict. Use run_config parameter.',
+            )
+            run_config = environment_dict
+
+        # back compat for previous_run_id => parent_run_id, root_run_id
+        if previous_run_id and not (parent_run_id and root_run_id):
+            parent_run_id = previous_run_id
+            root_run_id = previous_run_id
+
+        # back compat for selector => pipeline_name, solids_to_execute
+        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
         if selector:
             check.invariant(
                 pipeline_name is None or selector.name == pipeline_name,
@@ -169,31 +208,34 @@ class PipelineRun(
                     frozenset(selector.solid_subset) if selector.solid_subset else None
                 )
 
-        # for old runs that specified list-type solid_subset
+        # back compat for solid_subset => solids_to_execute
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         if solid_subset:
             solids_to_execute = frozenset(solid_subset)
-        # ----------------------------------------------------------------------------------------
 
-        return super(PipelineRun, cls).__new__(
+        # warn about unused arguments
+        if len(kwargs):
+            warnings.warn(
+                'Found unhandled arguments from stored PipelineRun: {args}'.format(
+                    args=kwargs.keys()
+                )
+            )
+
+        return cls.__new__(  # pylint: disable=redundant-keyword-arg
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
-            run_id=check.opt_str_param(run_id, 'run_id', default=make_new_run_id()),
-            run_config=check.opt_dict_param(run_config, 'run_config', key_type=str),
-            mode=check.opt_str_param(mode, 'mode'),
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            run_config=run_config,
+            mode=mode,
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
-            status=check.opt_inst_param(
-                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
-            ),
-            tags=check.opt_dict_param(tags, 'tags', key_type=str),
+            status=status,
+            tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
-            execution_plan_snapshot_id=check.opt_str_param(
-                execution_plan_snapshot_id, 'execution_plan_snapshot_id'
-            ),
+            pipeline_snapshot_id=pipeline_snapshot_id,
+            execution_plan_snapshot_id=execution_plan_snapshot_id,
         )
 
     def with_status(self, status):

@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import errno
+import functools
 import inspect
 import multiprocessing
 import os
@@ -487,3 +488,12 @@ def process_is_alive(pid):
             assert exc.returncode == 1
             return False
         return True
+
+
+def compose(*args):
+    '''
+    Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
+    '''
+    # reduce using functional composition over all the arguments, with the identity function as
+    # initializer
+    return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)

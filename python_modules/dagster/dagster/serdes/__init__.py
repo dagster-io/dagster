@@ -24,9 +24,12 @@ import six
 import yaml
 
 from dagster import check, seven
+from dagster.utils import compose
 
-_WHITELISTED_TUPLE_MAP = {}
-_WHITELISTED_ENUM_MAP = {}
+_WHITELIST_MAP = {
+    'types': {'tuple': {}, 'enum': {}},
+    'persistence': {},
+}
 
 
 def create_snapshot_id(snapshot):
@@ -42,7 +45,7 @@ def serialize_pp(value):
 
 def register_serdes_tuple_fallbacks(fallback_map):
     for class_name, klass in fallback_map.items():
-        _WHITELISTED_TUPLE_MAP[class_name] = klass
+        _WHITELIST_MAP['types']['tuple'][class_name] = klass
 
 
 def _get_dunder_new_params_dict(klass):
@@ -60,6 +63,15 @@ def _get_dunder_new_params(klass):
 
 class SerdesClassUsageError(Exception):
     pass
+
+
+class Persistable(six.with_metaclass(ABCMeta)):
+    def to_storage_value(self):
+        return default_to_storage_value(self, _WHITELIST_MAP)
+
+    @classmethod
+    def from_storage_dict(cls, storage_dict):
+        return default_from_storage_dict(cls, storage_dict)
 
 
 def _check_serdes_tuple_class_invariants(klass):
@@ -122,18 +134,26 @@ def _check_serdes_tuple_class_invariants(klass):
                 raise SerdesClassUsageError(_with_header(error_msg))
 
 
-def _whitelist_for_serdes(enum_map, tuple_map):
-    def __whitelist_for_serdes(klass):
+def _whitelist_for_persistence(whitelist_map):
+    def __whitelist_for_persistence(klass):
+        check.subclass_param(klass, 'klass', Persistable)
+        whitelist_map['persistence'][klass.__name__] = klass
+        return klass
 
+    return __whitelist_for_persistence
+
+
+def _whitelist_for_serdes(whitelist_map):
+    def __whitelist_for_serdes(klass):
         if issubclass(klass, Enum):
-            enum_map[klass.__name__] = klass
+            whitelist_map['types']['enum'][klass.__name__] = klass
         elif issubclass(klass, tuple):
             # only catch this in python 3 dev environments
             # no need to do backwards compat since this is
             # only for development time
             if sys.version_info.major >= 3:
                 _check_serdes_tuple_class_invariants(klass)
-            tuple_map[klass.__name__] = klass
+            whitelist_map['types']['tuple'][klass.__name__] = klass
         else:
             check.failed('Can not whitelist class {klass} for serdes'.format(klass=klass))
 
@@ -143,96 +163,97 @@ def _whitelist_for_serdes(enum_map, tuple_map):
 
 
 def whitelist_for_serdes(klass):
-    return _whitelist_for_serdes(enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)(
-        klass
-    )
+    check.class_param(klass, 'klass')
+    return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP)(klass)
+
+
+def whitelist_for_persistence(klass):
+    check.class_param(klass, 'klass')
+    return compose(
+        _whitelist_for_persistence(whitelist_map=_WHITELIST_MAP),
+        _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP),
+    )(klass)
 
 
 def pack_value(val):
-    return _pack_value(val, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
+    return _pack_value(val, whitelist_map=_WHITELIST_MAP)
 
 
-def _pack_value(val, enum_map, tuple_map):
+def _pack_value(val, whitelist_map):
     if isinstance(val, list):
-        return [_pack_value(i, enum_map, tuple_map) for i in val]
+        return [_pack_value(i, whitelist_map) for i in val]
     if isinstance(val, tuple):
         klass_name = val.__class__.__name__
         check.invariant(
-            klass_name in tuple_map,
+            klass_name in whitelist_map['types']['tuple'],
             'Can only serialize whitelisted namedtuples, received tuple {}'.format(val),
         )
-        base_dict = {
-            key: _pack_value(value, enum_map, tuple_map) for key, value in val._asdict().items()
-        }
+        if klass_name in whitelist_map['persistence']:
+            return val.to_storage_value()
+        base_dict = {key: _pack_value(value, whitelist_map) for key, value in val._asdict().items()}
         base_dict['__class__'] = klass_name
         return base_dict
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
         check.invariant(
-            klass_name in enum_map,
+            klass_name in whitelist_map['types']['enum'],
             'Can only serialize whitelisted Enums, received {}'.format(klass_name),
         )
         return {'__enum__': str(val)}
     if isinstance(val, set):
-        return {'__set__': [_pack_value(item, enum_map, tuple_map) for item in val]}
+        return {'__set__': [_pack_value(item, whitelist_map) for item in val]}
     if isinstance(val, frozenset):
-        return {'__frozenset__': [_pack_value(item, enum_map, tuple_map) for item in val]}
+        return {'__frozenset__': [_pack_value(item, whitelist_map) for item in val]}
     if isinstance(val, dict):
-        return {key: _pack_value(value, enum_map, tuple_map) for key, value in val.items()}
+        return {key: _pack_value(value, whitelist_map) for key, value in val.items()}
 
     return val
 
 
-def _serialize_dagster_namedtuple(nt, enum_map, tuple_map, **json_kwargs):
-    return seven.json.dumps(_pack_value(nt, enum_map, tuple_map), **json_kwargs)
+def _serialize_dagster_namedtuple(nt, whitelist_map, **json_kwargs):
+    return seven.json.dumps(_pack_value(nt, whitelist_map), **json_kwargs)
 
 
 def serialize_value(val):
-    return seven.json.dumps(
-        _pack_value(val, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
-    )
+    return seven.json.dumps(_pack_value(val, whitelist_map=_WHITELIST_MAP))
 
 
 def deserialize_value(val):
     return _unpack_value(
-        seven.json.loads(check.str_param(val, 'val')),
-        enum_map=_WHITELISTED_ENUM_MAP,
-        tuple_map=_WHITELISTED_TUPLE_MAP,
+        seven.json.loads(check.str_param(val, 'val')), whitelist_map=_WHITELIST_MAP,
     )
 
 
 def serialize_dagster_namedtuple(nt, **json_kwargs):
     return _serialize_dagster_namedtuple(
-        check.tuple_param(nt, 'nt'),
-        enum_map=_WHITELISTED_ENUM_MAP,
-        tuple_map=_WHITELISTED_TUPLE_MAP,
-        **json_kwargs
+        check.tuple_param(nt, 'nt'), whitelist_map=_WHITELIST_MAP, **json_kwargs
     )
 
 
 def unpack_value(val):
-    return _unpack_value(val, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
+    return _unpack_value(val, whitelist_map=_WHITELIST_MAP,)
 
 
-def _unpack_value(val, enum_map, tuple_map):
+def _unpack_value(val, whitelist_map):
     if isinstance(val, list):
-        return [_unpack_value(i, enum_map, tuple_map) for i in val]
+        return [_unpack_value(i, whitelist_map) for i in val]
     if isinstance(val, dict) and val.get('__class__'):
         klass_name = val.pop('__class__')
-        if klass_name not in tuple_map:
+        if klass_name not in whitelist_map['types']['tuple']:
             check.failed(
                 'Attempted to deserialize class "{}" which is not in the serdes whitelist.'.format(
                     klass_name
                 )
             )
 
-        klass = tuple_map[klass_name]
+        klass = whitelist_map['types']['tuple'][klass_name]
         if klass is None:
             return None
 
-        unpacked_val = {
-            key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()
-        }
+        unpacked_val = {key: _unpack_value(value, whitelist_map) for key, value in val.items()}
+
+        if klass_name in whitelist_map['persistence']:
+            return klass.from_storage_dict(unpacked_val)
 
         # Naively implements backwards compatibility by filtering arguments that aren't present in
         # the constructor. If a property is present in the serialized object, but doesn't exist in
@@ -244,24 +265,20 @@ def _unpack_value(val, enum_map, tuple_map):
         return klass(**filtered_val)
     if isinstance(val, dict) and val.get('__enum__'):
         name, member = val['__enum__'].split('.')
-        return getattr(enum_map[name], member)
+        return getattr(whitelist_map['types']['enum'][name], member)
     if isinstance(val, dict) and val.get('__set__'):
-        return set([_unpack_value(item, enum_map, tuple_map) for item in val['__set__']])
+        return set([_unpack_value(item, whitelist_map) for item in val['__set__']])
     if isinstance(val, dict) and val.get('__frozenset__'):
-        return frozenset(
-            [_unpack_value(item, enum_map, tuple_map) for item in val['__frozenset__']]
-        )
+        return frozenset([_unpack_value(item, whitelist_map) for item in val['__frozenset__']])
     if isinstance(val, dict):
-        return {key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()}
+        return {key: _unpack_value(value, whitelist_map) for key, value in val.items()}
 
     return val
 
 
 def deserialize_json_to_dagster_namedtuple(json_str):
     dagster_namedtuple = _deserialize_json_to_dagster_namedtuple(
-        check.str_param(json_str, 'json_str'),
-        enum_map=_WHITELISTED_ENUM_MAP,
-        tuple_map=_WHITELISTED_TUPLE_MAP,
+        check.str_param(json_str, 'json_str'), whitelist_map=_WHITELIST_MAP
     )
     check.invariant(
         isinstance(dagster_namedtuple, tuple),
@@ -272,8 +289,18 @@ def deserialize_json_to_dagster_namedtuple(json_str):
     return dagster_namedtuple
 
 
-def _deserialize_json_to_dagster_namedtuple(json_str, enum_map, tuple_map):
-    return _unpack_value(seven.json.loads(json_str), enum_map=enum_map, tuple_map=tuple_map)
+def _deserialize_json_to_dagster_namedtuple(json_str, whitelist_map):
+    return _unpack_value(seven.json.loads(json_str), whitelist_map=whitelist_map)
+
+
+def default_to_storage_value(value, whitelist_map):
+    base_dict = {key: _pack_value(value, whitelist_map) for key, value in value._asdict().items()}
+    base_dict['__class__'] = value.__class__.__name__
+    return base_dict
+
+
+def default_from_storage_dict(cls, storage_dict):
+    return cls.__new__(cls, **storage_dict)
 
 
 @whitelist_for_serdes
