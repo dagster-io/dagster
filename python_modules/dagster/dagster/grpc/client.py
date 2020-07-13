@@ -248,7 +248,12 @@ class DagsterGrpcClient(object):
             yield instance.report_run_failed(pipeline_run)
             raise interrupt
         except grpc.RpcError as rpc_error:
-            if 'Socket closed' in rpc_error.debug_error_string():  # pylint: disable=no-member
+            if (
+                # posix
+                'Socket closed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+                # windows
+                or 'Stream removed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+            ):
                 yield instance.report_engine_event(
                     message='User process: GRPC server for {run_id} terminated unexpectedly'.format(
                         run_id=pipeline_run.run_id
