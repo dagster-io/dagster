@@ -33,6 +33,14 @@ def get_main_recon_repo():
     )
 
 
+@contextmanager
+def graphql_postgres_instance():
+    with TestPostgresInstance.docker_service_up_or_skip(
+        file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql',
+    ) as pg_conn_string:
+        yield pg_conn_string
+
+
 class MarkedManager:
     '''
     MarkedManagers are passed to GraphQLContextVariants. They contain
@@ -115,17 +123,17 @@ class InstanceManagers:
         @contextmanager
         def _readonly_postgres_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                with TestPostgresInstance.docker_service_up(
-                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
-                ):
+                with graphql_postgres_instance() as pg_conn_string:
                     yield DagsterInstance(
                         instance_type=InstanceType.EPHEMERAL,
                         local_artifact_storage=LocalArtifactStorage(temp_dir),
-                        run_storage=TestPostgresInstance.clean_run_storage(),
-                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
                         compute_log_manager=LocalComputeLogManager(temp_dir),
                         run_launcher=ExplodingRunLauncher(),
-                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(
+                            pg_conn_string
+                        ),
                     )
 
         return MarkedManager(
@@ -189,17 +197,17 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                with TestPostgresInstance.docker_service_up(
-                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
-                ):
+                with graphql_postgres_instance() as pg_conn_string:
                     yield DagsterInstance(
                         instance_type=InstanceType.EPHEMERAL,
                         local_artifact_storage=LocalArtifactStorage(temp_dir),
-                        run_storage=TestPostgresInstance.clean_run_storage(),
-                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
                         compute_log_manager=LocalComputeLogManager(temp_dir),
                         run_launcher=SyncInMemoryRunLauncher(),
-                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(
+                            pg_conn_string
+                        ),
                     )
 
         return MarkedManager(
@@ -211,17 +219,17 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance_with_cli_api_hijack():
             with seven.TemporaryDirectory() as temp_dir:
-                with TestPostgresInstance.docker_service_up(
-                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
-                ):
+                with graphql_postgres_instance() as pg_conn_string:
                     instance = DagsterInstance(
                         instance_type=InstanceType.EPHEMERAL,
                         local_artifact_storage=LocalArtifactStorage(temp_dir),
-                        run_storage=TestPostgresInstance.clean_run_storage(),
-                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
                         compute_log_manager=LocalComputeLogManager(temp_dir),
                         run_launcher=CliApiRunLauncher(),
-                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(
+                            pg_conn_string
+                        ),
                     )
                     try:
                         yield instance
@@ -238,17 +246,17 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance_with_grpc_api_hijack():
             with seven.TemporaryDirectory() as temp_dir:
-                with TestPostgresInstance.docker_service_up(
-                    file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql'
-                ):
+                with graphql_postgres_instance() as pg_conn_string:
                     instance = DagsterInstance(
                         instance_type=InstanceType.EPHEMERAL,
                         local_artifact_storage=LocalArtifactStorage(temp_dir),
-                        run_storage=TestPostgresInstance.clean_run_storage(),
-                        event_storage=TestPostgresInstance.clean_event_log_storage(),
+                        run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
+                        event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
                         compute_log_manager=LocalComputeLogManager(temp_dir),
                         run_launcher=EphemeralGrpcRunLauncher(),
-                        schedule_storage=TestPostgresInstance.clean_schedule_storage(),
+                        schedule_storage=TestPostgresInstance.clean_schedule_storage(
+                            pg_conn_string
+                        ),
                     )
                     try:
                         yield instance

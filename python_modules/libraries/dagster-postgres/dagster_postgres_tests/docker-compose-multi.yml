@@ -25,18 +25,6 @@ services:
     networks:
       - postgres_multi
 
-  test-schedule-storage-db:
-    image: postgres:11
-    container_name: test-schedule-storage-db
-    ports:
-      - "5435:5432"
-    environment:
-      POSTGRES_PASSWORD: "test"
-      POSTGRES_USER: "test"
-      POSTGRES_DB: "test"
-    networks:
-      - postgres_multi
-
 networks:
   postgres_multi:
     driver: bridge

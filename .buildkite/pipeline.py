@@ -229,9 +229,6 @@ def postgres_extra_cmds_fn(_):
             'test-event-log-storage-db',
             'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
         ),
-        connect_sibling_docker_container(
-            'postgres_multi', 'test-schedule-storage-db', 'POSTGRES_TEST_SCHEDULE_STORAGE_DB_HOST',
-        ),
         "popd",
     ]
 
