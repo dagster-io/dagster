@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import click
 
 from dagster import check, seven
+from dagster.api.execute_run import cli_api_execute_run_grpc
 from dagster.cli.workspace.cli_target import (
     get_reconstructable_repository_from_origin_kwargs,
     origin_target_argument,
@@ -67,7 +68,7 @@ from dagster.grpc.types import (
     PipelineSubsetSnapshotArgs,
 )
 from dagster.grpc.utils import get_loadable_targets
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 from dagster.serdes.ipc import (
     ipc_write_stream,
     ipc_write_unary_response,
@@ -373,6 +374,29 @@ def _execute_run_command_body(output_file, recon_pipeline, pipeline_run_id, inst
             )
 
 
+@click.command(
+    name='execute_run_grpc',
+    help=(
+        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
+        'interactively.'
+    ),
+)
+@click.option('--execute-run-args', type=click.STRING)
+def execute_run_grpc_command(execute_run_args):
+    setup_interrupt_support()
+    print('dagster api execute_run_grpc running in process: {pid}'.format(pid=str(os.getpid())))
+    # try:
+    return [
+        evt
+        for evt in cli_api_execute_run_grpc(
+            check.inst(deserialize_json_to_dagster_namedtuple(execute_run_args), ExecuteRunArgs)
+        )
+    ]
+    # except KeyboardInterrupt:
+    #     print('dagster api execute_run_grpc caught KeyboardInterrupt')
+    #     return
+
+
 class _ScheduleTickHolder:
     def __init__(self, tick, instance):
         self._tick = tick
@@ -590,16 +614,17 @@ def create_api_cli_group():
     )
 
     group.add_command(execute_run_command)
-    group.add_command(repository_snapshot_command)
-    group.add_command(pipeline_subset_snapshot_command)
+    group.add_command(execute_run_grpc_command)
     group.add_command(execution_plan_snapshot_command)
+    group.add_command(grpc_command)
+    group.add_command(launch_scheduled_execution)
     group.add_command(list_repositories_command)
     group.add_command(partition_config_command)
-    group.add_command(partition_tags_command)
     group.add_command(partition_names_command)
+    group.add_command(partition_tags_command)
+    group.add_command(pipeline_subset_snapshot_command)
+    group.add_command(repository_snapshot_command)
     group.add_command(schedule_execution_data_command)
-    group.add_command(launch_scheduled_execution)
-    group.add_command(grpc_command)
     return group
 
 

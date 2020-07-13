@@ -11,7 +11,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import interrupt_ipc_subprocess_pid, open_ipc_subprocess
+from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -86,7 +86,25 @@ class DagsterGrpcClient(object):
 
     def terminate_server_process(self):
         if self._server_process is not None:
-            interrupt_ipc_subprocess_pid(self._server_process.pid)
+            server_process_pid = self._server_process.pid
+            import psutil
+
+            print(
+                'DagsterGrpcClient.terminate_server_process running in process {pid}: process hierarchy for server {server_pid}: children: {children}'.format(
+                    pid=os.getpid(),
+                    server_pid=server_process_pid,
+                    children=' '.join(
+                        [
+                            str(child_process.pid)
+                            for child_process in psutil.Process(server_process_pid).children(
+                                recursive=True
+                            )
+                        ]
+                    ),
+                )
+            )
+
+            interrupt_ipc_subprocess(self._server_process)
             self._server_process = None
 
     def ping(self, echo):
@@ -248,7 +266,13 @@ class DagsterGrpcClient(object):
             yield instance.report_run_failed(pipeline_run)
             raise interrupt
         except grpc.RpcError as rpc_error:
-            if 'Socket closed' in rpc_error.debug_error_string():  # pylint: disable=no-member
+            if (
+                # posix
+                'Socket closed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+                # windows
+                or 'Stream removed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+            ):
+                print('here')
                 yield instance.report_engine_event(
                     message='User process: GRPC server for {run_id} terminated unexpectedly'.format(
                         run_id=pipeline_run.run_id
@@ -314,7 +338,7 @@ def open_server_process(port, socket, python_executable_path=None):
         return server_process
     else:
         if server_process.poll() is None:
-            interrupt_ipc_subprocess_pid(server_process.pid)
+            interrupt_ipc_subprocess(server_process)
         return None
 
 
@@ -345,6 +369,9 @@ def ephemeral_grpc_api_client(python_executable_path=None, force_port=False, max
         if server_process is None:
             raise CouldNotStartServerProcess(port=port, socket=None)
 
+        print(
+            'ephemeral_grpc_api_client: opened server process {pid}'.format(pid=server_process.pid)
+        )
         client = DagsterGrpcClient(port=port, server_process=server_process)
 
         try:
@@ -360,6 +387,12 @@ def ephemeral_grpc_api_client(python_executable_path=None, force_port=False, max
 
             if server_process is None:
                 raise CouldNotStartServerProcess(port=None, socket=socket)
+
+            print(
+                'ephemeral_grpc_api_client: opened server process {pid}'.format(
+                    pid=server_process.pid
+                )
+            )
 
             client = DagsterGrpcClient(socket=socket, server_process=server_process)
 

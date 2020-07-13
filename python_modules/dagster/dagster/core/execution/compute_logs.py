@@ -83,6 +83,7 @@ def tail_to_stream(path, stream):
 
 @contextmanager
 def execute_windows_tail(path, stream):
+    print('execute_windows_tail: {pid}'.format(pid=str(os.getpid())))
     # Cannot use multiprocessing here because we already may be in a daemonized process
     # Instead, invoke a thin script to poll a file and dump output to stdout.  We pass the current
     # pid so that the poll process kills itself if it becomes orphaned
@@ -91,6 +92,8 @@ def execute_windows_tail(path, stream):
     tail_process = subprocess.Popen(
         [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
     )
+
+    print('execute_windows_tail: opened tail process {pid}'.format(pid=str(tail_process.pid)))
 
     try:
         yield

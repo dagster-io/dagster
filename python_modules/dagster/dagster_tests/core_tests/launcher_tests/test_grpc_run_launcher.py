@@ -90,6 +90,7 @@ def temp_instance():
             yield instance
         finally:
             instance.run_launcher.join()
+            time.sleep(0.1)
 
 
 def test_repo_construction():
@@ -106,12 +107,14 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     )
 
 
-def poll_for_run(instance, run_id, timeout=5):
+def poll_for_run(instance, run_id, timeout=10):
     total_time = 0
     backoff = 0.01
 
     while True:
         run = instance.get_run_by_id(run_id)
+        print('----->')
+        print(instance.all_logs(run_id))
         if run.is_finished:
             return run
         else:
@@ -122,7 +125,7 @@ def poll_for_run(instance, run_id, timeout=5):
                 raise Exception('Timed out')
 
 
-def poll_for_step_start(instance, run_id, timeout=5):
+def poll_for_step_start(instance, run_id, timeout=30):
     total_time = 0
     backoff = 0.01
 
@@ -158,7 +161,7 @@ def test_successful_run():
         assert pipeline_run
         assert pipeline_run.run_id == run_id
 
-        pipeline_run = poll_for_run(instance, run_id, timeout=5)
+        pipeline_run = poll_for_run(instance, run_id)
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
@@ -194,11 +197,8 @@ def test_crashy_run():
         assert _message_exists(event_records, message)
 
 
-# https://github.com/dagster-io/dagster/issues/2709
-@pytest.mark.skipif(
-    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
-)
 def test_terminated_run():
+    print('test_terminated_run: running in {pid}'.format(pid=str(os.getpid())))
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
@@ -212,8 +212,10 @@ def test_terminated_run():
         launcher = instance.run_launcher
         launcher.launch_run(instance, pipeline_run, external_pipeline)
 
+        print('test_terminated_run: polling for step start')
         poll_for_step_start(instance, run_id)
 
+        print('test_terminated_run: step started')
         assert launcher.can_terminate(run_id)
         assert launcher.terminate(run_id)
 

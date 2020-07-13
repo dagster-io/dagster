@@ -332,6 +332,9 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ExecuteRun(self, request, _context):
+        print(
+            'DagsterApiServer.ExecuteRun: servicing request in {pid}'.format(pid=str(os.getpid()))
+        )
         for dagster_event_or_ipc_error_message in _execute_run(request):
             yield api_pb2.ExecuteRunEvent(
                 serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
@@ -355,6 +358,7 @@ SERVER_FAILED_TO_BIND_TOKEN_BYTES = b'dagster_grpc_server_failed_to_bind'
 class DagsterGrpcServer(object):
     def __init__(self, host='localhost', port=None, socket=None, max_workers=1):
         setup_interrupt_support()
+        print('DagsterGrpcServer.__init__: {pid}'.format(pid=os.getpid()))
 
         check.opt_str_param(host, 'host')
         check.opt_int_param(port, 'port')

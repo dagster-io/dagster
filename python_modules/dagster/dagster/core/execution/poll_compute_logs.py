@@ -35,6 +35,17 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
             else:
                 if parent_pid and current_process_is_orphaned(parent_pid):
                     sys.exit()
+                print(
+                    'tail_polling {pid}: parents: {parents}'.format(
+                        pid=os.getpid(),
+                        parents=' '.join(
+                            [
+                                str((str(parent_process.pid), str(parent_process.status())))
+                                for parent_process in psutil.Process().parents()
+                            ]
+                        ),
+                    )
+                )
                 time.sleep(POLLING_INTERVAL)
 
 
@@ -45,8 +56,20 @@ def execute_polling(args):
     filepath = args[0]
     parent_pid = int(args[1])
 
+    print('poll_compute_logs.py got parent process id {pid}'.format(pid=parent_pid))
+
     tail_polling(filepath, sys.stdout, parent_pid)
 
 
 if __name__ == '__main__':
+    import psutil
+
+    print(
+        'poll_compute_logs.py: running in {pid}: parents: {parents}'.format(
+            pid=str(os.getpid()),
+            parents=' '.join(
+                [str(parent_process.pid) for parent_process in psutil.Process().parents()]
+            ),
+        )
+    )
     execute_polling(sys.argv[1:])

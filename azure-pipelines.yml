@@ -1,16 +1,16 @@
 parameters:
-- name: py_versions
-  type: object
-  default:
-    - "2.7"
-    - "3.6"
-    - "3.7"
-- name: env_suffixes
-  type: object
-  default:
-    - api_tests
-    - cli_tests
-    - core_tests
+  - name: py_versions
+    type: object
+    default:
+      - "2.7"
+      - "3.6"
+      - "3.7"
+  - name: env_suffixes
+    type: object
+    default:
+      - api_tests
+      - cli_tests
+      - core_tests
 jobs:
   - job: "dagster"
     pool:

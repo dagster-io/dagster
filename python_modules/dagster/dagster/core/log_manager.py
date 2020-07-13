@@ -95,6 +95,7 @@ def construct_log_string(synth_props, logging_tags, message_props):
             (
                 log_source_prefix,
                 synth_props.get('run_id'),
+                str(log_props.get('pid') or '') or None,
                 log_props.get('event_type_value'),
                 synth_props.get('orig_message'),
             ),
