@@ -11,7 +11,7 @@ ARG PYTHON_VERSION
 FROM "${BASE_IMAGE}"
 
 RUN apt-get update -y \
-    && apt-get install -y cron \
+    && apt-get install -y cron gcc \
     && apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
