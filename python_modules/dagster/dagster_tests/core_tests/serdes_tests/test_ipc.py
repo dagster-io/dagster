@@ -42,6 +42,7 @@ def wait_for_file(path, timeout=5):
         raise Exception('wait_for_file: timeout')
     time.sleep(interval)
 
+
 def wait_for_process(pid, timeout=5):
     interval = 0.1
     total_time = 0
@@ -50,6 +51,9 @@ def wait_for_process(pid, timeout=5):
         total_time += interval
     if total_time >= timeout:
         raise Exception('wait_for_process: timeout')
+    # The following line can be removed to reliably provoke failures on Windows -- hypothesis
+    # is that there's a race in psutil.Process which tells us a process is gone before it stops
+    # contending for files
     time.sleep(interval)
 
 
@@ -165,7 +169,6 @@ def test_interrupt_compute_log_tail_child(
                     [x.strip('(),') for x in stdout_pids_str.split(' ')[2:]],
                 )
             )
-            print(stdout_pids)
 
         with open(stderr_pids_file, 'r') as stderr_pids_fd:
             stderr_pids_str = stderr_pids_fd.read()
@@ -176,7 +179,6 @@ def test_interrupt_compute_log_tail_child(
                     [x.strip('(),') for x in stderr_pids_str.split(' ')[2:]],
                 )
             )
-            print(stderr_pids)
 
         interrupt_ipc_subprocess(child_process)
 
@@ -187,6 +189,8 @@ def test_interrupt_compute_log_tail_child(
         for stderr_pid in stderr_pids:
             if stderr_pid is not None:
                 wait_for_process(stderr_pid)
+
+        wait_for_file(interrupt_sentinel)
 
         with open(interrupt_sentinel, 'r') as fd:
             assert fd.read().startswith('compute_log_subprocess_interrupt')
