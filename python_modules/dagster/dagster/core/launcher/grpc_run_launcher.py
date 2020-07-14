@@ -15,6 +15,10 @@ from .base import RunLauncher
 SUBPROCESS_TICK = 0.5
 
 
+def _sync_cli_api_execute_run(**kwargs):
+    return [evt for evt in cli_api_execute_run_grpc(**kwargs)]
+
+
 class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
     '''Launches runs in local processes, using GRPC for IPC.
 
@@ -118,9 +122,6 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-
-        def _sync_cli_api_execute_run(**kwargs):
-            return [evt for evt in cli_api_execute_run_grpc(**kwargs)]
 
         # multiprocessing's default fork behavior on Unix is fine for user code process isolation
         # here because the GRPC server will be run in an isolated grandchild process started with
