@@ -202,6 +202,7 @@ __all__ = [
     'TypeCheckContext',
     'PipelineRun',
     'default_executors',
+    'default_intermediate_storage_defs',
     'default_system_storage_defs',
     'execute_pipeline_iterator',
     'execute_pipeline',
