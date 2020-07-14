@@ -27,6 +27,20 @@ def wait_for_job_success(
     )
 
 
+def wait_for_job(
+    job_name,
+    namespace,
+    wait_timeout=DEFAULT_WAIT_TIMEOUT,
+    wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+):
+    return DagsterKubernetesClient.production_client().wait_for_job(
+        job_name=job_name,
+        namespace=namespace,
+        wait_timeout=wait_timeout,
+        wait_time_between_attempts=wait_time_between_attempts,
+    )
+
+
 def wait_for_pod(
     pod_name,
     namespace,

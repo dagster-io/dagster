@@ -2,6 +2,8 @@ from future.standard_library import install_aliases  # isort:skip
 
 install_aliases()  # isort:skip
 
+import signal
+
 import click
 import requests
 from graphql import graphql
@@ -189,7 +191,10 @@ PREDEFINED_QUERIES = {
     help='A file path to store the GraphQL response to. This flag is useful when making pipeline '
     'execution queries, since pipeline execution causes logs to print to stdout and stderr.',
 )
-def ui(text, file, predefined, variables, remote, output, **kwargs):
+@click.option(
+    '--remap-sigterm', is_flag=True, default=False, help='Remap SIGTERM signal to SIGINT handler',
+)
+def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
         query = text.strip('\'" \n\t')
@@ -202,6 +207,9 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
             'Must select one and only one of text (-t), file (-f), or predefined (-p) '
             'to select GraphQL document to execute.'
         )
+
+    if remap_sigterm:
+        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     if remote:
         res = execute_query_against_remote(remote, query, variables)

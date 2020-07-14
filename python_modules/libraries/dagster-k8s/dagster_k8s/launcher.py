@@ -1,11 +1,19 @@
 import kubernetes
 
-from dagster import EventMetadataEntry, Field, Noneable, StringSource, check, seven
+from dagster import (
+    DagsterInvariantViolationError,
+    EventMetadataEntry,
+    Field,
+    Noneable,
+    StringSource,
+    check,
+    seven,
+)
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 
@@ -112,6 +120,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
             kubernetes.config.load_kube_config(kubeconfig_file)
 
+        self._batch_api = kubernetes.client.BatchV1Api()
+        self._core_api = kubernetes.client.CoreV1Api()
+
         self.job_config = DagsterK8sJobConfig(
             job_image=check.str_param(job_image, 'job_image'),
             dagster_home=check.str_param(dagster_home, 'dagster_home'),
@@ -177,6 +188,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                         'repositoryLocationName': external_pipeline.handle.location_name,
                     }
                 ),
+                '--remap-sigterm',
             ],
             job_name=job_name,
             pod_name=pod_name,
@@ -184,9 +196,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             resources=resources,
         )
 
-        api = kubernetes.client.BatchV1Api()
-        api.create_namespaced_job(body=job, namespace=self.job_namespace)
-
+        self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
             'Kubernetes runmaster job launched',
             run,
@@ -204,8 +214,44 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        return False
+        if not isinstance(self._instance, DagsterInstance):
+            raise DagsterInvariantViolationError(
+                'DagsterInstance is required for termination, but was not found.'
+            )
+        pipeline_run = self._instance.get_run_by_id(run_id)
+        if not pipeline_run:
+            return False
+        if pipeline_run.status != PipelineRunStatus.STARTED:
+            return False
+        return True
 
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        check.not_implemented('Termination not yet implemented')
+        if not isinstance(self._instance, DagsterInstance):
+            raise DagsterInvariantViolationError(
+                'DagsterInstance is required for termination, but was not found.'
+            )
+        if not self.can_terminate(run_id):
+            return False
+
+        job_name = 'dagster-run-{}'.format(run_id)
+
+        # Need to find and delete the Pod in addition to deleting the job
+        # https://github.com/kubernetes-client/python/issues/234
+        pod = self._core_api.list_namespaced_pod(
+            label_selector='job-name=={}'.format(job_name), namespace=self.job_namespace
+        )
+        if len(pod.items) > 1:
+            raise DagsterInvariantViolationError(
+                'Multiple pods found with the same job-name label. Unable to terminate.'
+            )
+        pod_name = pod.items[0].metadata.name
+
+        try:
+            self._batch_api.delete_namespaced_job(name=job_name, namespace=self.job_namespace)
+            self._core_api.delete_namespaced_pod(name=pod_name, namespace=self.job_namespace)
+            return True
+        except kubernetes.client.rest.ApiException as e:
+            if e.reason == 'Not Found':
+                return False
+            raise e

@@ -1,13 +1,17 @@
+import datetime
 import os
+import time
 
 import pytest
 from dagster_celery_k8s.config import get_celery_engine_config
 from dagster_k8s.test import wait_for_job_and_get_logs
+from dagster_k8s.utils import wait_for_job
 from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,
 )
 
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
@@ -96,3 +100,39 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
         'FIELD_NOT_DEFINED',
         'MISSING_REQUIRED_FIELD',
     }
+
+
+@pytest.mark.integration
+def test_k8s_run_launcher_terminate(dagster_instance, helm_namespace):
+    pipeline_name = 'slow_pipeline'
+
+    tags = {'key': 'value'}
+    run = create_run_for_test(
+        dagster_instance, pipeline_name=pipeline_name, run_config=None, tags=tags, mode='default',
+    )
+
+    dagster_instance.launch_run(run.run_id, get_test_project_external_pipeline(pipeline_name))
+
+    wait_for_job(job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace)
+
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while datetime.datetime.now() < start_time + timeout:
+        if dagster_instance.run_launcher.can_terminate(run_id=run.run_id):
+            break
+        time.sleep(5)
+
+    assert dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
+    assert dagster_instance.run_launcher.terminate(run_id=run.run_id)
+
+    start_time = datetime.datetime.now()
+    pipeline_run = None
+    while datetime.datetime.now() < start_time + timeout:
+        pipeline_run = dagster_instance.get_run_by_id(run.run_id)
+        if pipeline_run.status == PipelineRunStatus.FAILURE:
+            break
+        time.sleep(5)
+
+    assert pipeline_run.status == PipelineRunStatus.FAILURE
+
+    assert not dagster_instance.run_launcher.terminate(run_id=run.run_id)

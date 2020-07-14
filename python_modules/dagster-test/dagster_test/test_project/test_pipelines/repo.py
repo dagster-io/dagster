@@ -251,6 +251,18 @@ def define_step_retry_pipeline():
     return retry_pipeline
 
 
+def define_slow_pipeline():
+    @solid
+    def slow_solid(_):
+        time.sleep(100)
+
+    @pipeline(mode_defs=celery_mode_defs())
+    def slow_pipeline():
+        slow_solid()
+
+    return slow_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -265,6 +277,7 @@ def define_demo_execution_repo():
                 'demo_error_pipeline': demo_error_pipeline,
                 'resources_limit_pipeline_celery': define_resources_limit_pipeline_celery,
                 'retry_pipeline': define_step_retry_pipeline,
+                'slow_pipeline': define_slow_pipeline,
             },
             'schedules': define_schedules(),
         }

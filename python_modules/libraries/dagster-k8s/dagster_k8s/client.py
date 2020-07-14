@@ -133,6 +133,46 @@ class DagsterKubernetesClient:
             ).data
         )
 
+    def wait_for_job(
+        self,
+        job_name,
+        namespace,
+        wait_timeout=DEFAULT_WAIT_TIMEOUT,
+        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    ):
+        ''' Wait for a job to launch and be running.
+
+        Args:
+            job_name (str): Name of the job to wait for.
+            namespace (str): Namespace in which the job is located.
+            wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
+                Defaults to DEFAULT_WAIT_TIMEOUT.
+            wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
+                to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
+
+        Raises:
+            DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered.
+        '''
+        check.str_param(job_name, 'job_name')
+        check.str_param(namespace, 'namespace')
+        check.numeric_param(wait_timeout, 'wait_timeout')
+        check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
+
+        job = None
+
+        start = self.timer()
+        # Ensure we found the job that we launched
+        while not job:
+            if self.timer() - start > wait_timeout:
+                raise DagsterK8sError('Timed out while waiting for job to launch')
+
+            jobs = self.batch_api.list_namespaced_job(namespace=namespace)
+            job = next((j for j in jobs.items if j.metadata.name == job_name), None)
+
+            if not job:
+                self.logger('Job "{job_name}" not yet launched, waiting'.format(job_name=job_name))
+                self.sleeper(wait_time_between_attempts)
+
     def wait_for_pod(
         self,
         pod_name,
