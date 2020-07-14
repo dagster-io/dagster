@@ -333,7 +333,6 @@ def test_multi_solid_selection_execution():
 
 
 def test_engine_events():
-
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 

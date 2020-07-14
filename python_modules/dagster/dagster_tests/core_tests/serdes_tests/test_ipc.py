@@ -40,7 +40,7 @@ def wait_for_file(path, timeout=5):
         total_time += interval
     if total_time >= timeout:
         raise Exception('wait_for_file: timeout')
-
+    time.sleep(interval)
 
 def wait_for_process(pid, timeout=5):
     interval = 0.1
