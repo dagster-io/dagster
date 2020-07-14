@@ -25,13 +25,14 @@ def redirect_to_file(stream, filepath):
 @contextmanager
 def mirror_stream_to_file(stream, filepath):
     ensure_file(filepath)
-    with tail_to_stream(filepath, stream):
+    with tail_to_stream(filepath, stream) as pids:
         with redirect_to_file(stream, filepath):
-            yield
+            yield pids
 
 
 def should_disable_io_stream_redirect():
     # See https://stackoverflow.com/a/52377087
+    # https://www.python.org/dev/peps/pep-0528/
     return (
         os.name == 'nt'
         and sys.version_info.major == 3
@@ -74,11 +75,11 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
 @contextmanager
 def tail_to_stream(path, stream):
     if IS_WINDOWS:
-        with execute_windows_tail(path, stream):
-            yield
+        with execute_windows_tail(path, stream) as pids:
+            yield pids
     else:
-        with execute_posix_tail(path, stream):
-            yield
+        with execute_posix_tail(path, stream) as pids:
+            yield pids
 
 
 @contextmanager
@@ -93,7 +94,7 @@ def execute_windows_tail(path, stream):
     )
 
     try:
-        yield
+        yield (tail_process.pid, None)
     finally:
         if tail_process:
             time.sleep(2 * poll_compute_logs.POLLING_INTERVAL)
@@ -115,7 +116,7 @@ def execute_posix_tail(path, stream):
     )
 
     try:
-        yield
+        yield (tail_process.pid, watcher_process.pid)
     finally:
         _clean_up_subprocess(tail_process)
         _clean_up_subprocess(watcher_process)
