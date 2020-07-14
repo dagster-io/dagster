@@ -108,16 +108,15 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
 
 def poll_for_run(instance, run_id, timeout=10):
     total_time = 0
-    backoff = 0.01
+    interval = 0.01
 
     while True:
         run = instance.get_run_by_id(run_id)
         if run.is_finished:
             return run
         else:
-            time.sleep(backoff)
-            total_time += backoff
-            backoff = backoff * 2
+            time.sleep(interval)
+            total_time += interval
             if total_time > timeout:
                 raise Exception('Timed out')
 
@@ -138,10 +137,6 @@ def poll_for_step_start(instance, run_id, timeout=10):
                 raise Exception('Timed out')
 
 
-# https://github.com/dagster-io/dagster/issues/2709
-@pytest.mark.skipif(
-    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
-)
 def test_successful_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
@@ -166,10 +161,6 @@ def test_successful_run():
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
-# https://github.com/dagster-io/dagster/issues/2709
-@pytest.mark.skipif(
-    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
-)
 def test_crashy_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
@@ -201,11 +192,12 @@ def test_crashy_run():
 
         assert _message_exists(event_records, message)
 
+        # psutil.Process appears to think processes are gone before their contention for files
+        # is complete
+        if os.name == 'nt':
+            time.sleep(0.1)
 
-# https://github.com/dagster-io/dagster/issues/2709
-@pytest.mark.skipif(
-    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
-)
+
 def test_terminated_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
@@ -245,6 +237,11 @@ def test_terminated_run():
             'ENGINE_EVENT',
             'PIPELINE_FAILURE',
         ]
+
+        # psutil.Process appears to think processes are gone before their contention for files
+        # is complete
+        if os.name == 'nt':
+            time.sleep(0.1)
 
 
 def _get_engine_events(event_records):

@@ -360,8 +360,6 @@ SERVER_FAILED_TO_BIND_TOKEN_BYTES = b'dagster_grpc_server_failed_to_bind'
 
 class DagsterGrpcServer(object):
     def __init__(self, host='localhost', port=None, socket=None, max_workers=1):
-        setup_interrupt_support()
-
         check.opt_str_param(host, 'host')
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')

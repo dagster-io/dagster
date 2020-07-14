@@ -11,7 +11,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import interrupt_ipc_subprocess_pid, open_ipc_subprocess
+from dagster.serdes.ipc import open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -86,7 +86,11 @@ class DagsterGrpcClient(object):
 
     def terminate_server_process(self):
         if self._server_process is not None:
-            interrupt_ipc_subprocess_pid(self._server_process.pid)
+            # We hard terminate here because the interrupt machinery doesn't work with the grpc
+            # server machinery. We will eventually implement both terminate_run and shutdown_server
+            # calls over the GRPC API.
+            self._server_process.terminate()
+            self._server_process.wait()
             self._server_process = None
 
     def ping(self, echo):
@@ -240,13 +244,13 @@ class DagsterGrpcClient(object):
                 yield deserialize_json_to_dagster_namedtuple(
                     event.serialized_dagster_event_or_ipc_error_message
                 )
-        except KeyboardInterrupt as interrupt:
+        except KeyboardInterrupt:
             self.terminate_server_process()
             yield instance.report_engine_event(
                 message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
             )
             yield instance.report_run_failed(pipeline_run)
-            raise interrupt
+            return
         except grpc.RpcError as rpc_error:
             if (
                 # posix
@@ -318,7 +322,7 @@ def open_server_process(port, socket, python_executable_path=None):
         return server_process
     else:
         if server_process.poll() is None:
-            interrupt_ipc_subprocess_pid(server_process.pid)
+            server_process.terminate()
         return None
 
 
