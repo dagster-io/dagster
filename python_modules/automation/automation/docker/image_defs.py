@@ -35,8 +35,23 @@ def buildkite_integration_cm(cwd):
         shutil.rmtree(os.path.join(cwd, 'scala_modules'))
 
 
+@contextlib.contextmanager
+def k8s_example_cm(cwd):
+    example_project_dir = os.path.join(git_repo_root(), 'examples', 'deploy_k8s', 'example_project')
+    try:
+        print('Syncing {} to build dir {}...'.format(example_project_dir, cwd))
+        shutil.copytree(example_project_dir, os.path.join(cwd, 'example_project'))
+        yield
+
+    finally:
+        shutil.rmtree(os.path.join(cwd, 'example_project'))
+
+
 # Some images have custom build context manager functions, listed here
-CUSTOM_BUILD_CONTEXTMANAGERS = {'buildkite-integration-base': buildkite_integration_cm}
+CUSTOM_BUILD_CONTEXTMANAGERS = {
+    'buildkite-integration-base': buildkite_integration_cm,
+    'k8s-example': k8s_example_cm,
+}
 
 
 def list_images():

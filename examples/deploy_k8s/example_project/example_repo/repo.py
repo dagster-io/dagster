@@ -1,9 +1,19 @@
+import os
 from collections import Counter
 
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 
-from dagster import InputDefinition, ModeDefinition, default_executors, pipeline, repository, solid
+from dagster import (
+    InputDefinition,
+    ModeDefinition,
+    PresetDefinition,
+    default_executors,
+    file_relative_path,
+    pipeline,
+    repository,
+    solid,
+)
 
 
 @solid(input_defs=[InputDefinition('word', str)], config_schema={'factor': int})
@@ -23,7 +33,17 @@ def count_letters(_context, word):
             resource_defs={'s3': s3_resource},
             executor_defs=default_executors + [celery_k8s_job_executor],
         )
-    ]
+    ],
+    preset_defs=[
+        PresetDefinition.from_files(
+            'example',
+            config_files=[
+                file_relative_path(__file__, os.path.join('..', 'run_config', 'celery_k8s.yaml')),
+                file_relative_path(__file__, os.path.join('..', 'run_config', 'pipeline.yaml')),
+            ],
+            mode='default',
+        ),
+    ],
 )
 def example_pipe():
     count_letters(multiply_the_word())

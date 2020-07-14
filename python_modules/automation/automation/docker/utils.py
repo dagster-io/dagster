@@ -18,6 +18,8 @@ def execute_docker_build(image, docker_args=None, cwd=None):
 
     args += ['-t', image]
 
+    print(' '.join(args))
+
     retval = subprocess.call(args, stderr=sys.stderr, stdout=sys.stdout, cwd=cwd)
     check.invariant(retval == 0, 'Process must exit successfully')
 

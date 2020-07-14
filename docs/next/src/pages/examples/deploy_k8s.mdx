@@ -4,90 +4,13 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <ExampleReferenceLink filePath="examples/deploy_k8s" />
 
-**NOTE**: The Dagster Kubernetes deployment and Helm chart is still in the early stages of
-development and is actively being improved. You can expect this process to change substantially over
-time.
-
-To get a Dagster deployment running on Kubernetes, you'll need 2 Docker images. One for Celery
-workers, which will not need user code and will not need to be updated on pipeline code changes, and
-one for your pipelines, which is used for Dagit and pipeline execution, and must be redeployed on
-pipeline code changes.
-
-## Celery Image
-
-The celery image should look like:
-
-```Dockerfile literalinclude caption=Dockerfile
-file:/deploy_k8s/Dockerfile
-```
-
-Build and push this to whatever registry you're using:
-
-```
-export DOCKER_IMAGE="$YOUR_REGISTRY_URI/dagster-k8s-demo:dagster-celery-example"
-docker build . -t $DOCKER_IMAGE
-docker push $DOCKER_IMAGE
-```
-
-## User Code Image
-
-First, you'll need a Dagster repository with the following structure:
-
-```tree
-example_project
-├── Dockerfile
-├── example_repo
-│   ├── __init__.py
-│   └── repo.py
-├── run_config
-│   └── example-k8s.yaml
-└── workspace.yaml
-```
-
-The `workspace.yaml` file should contain:
-
-```yaml literalinclude caption=workspace.yaml
-file:/deploy_k8s/example_project/workspace.yaml
-```
-
-**NOTE:** Make sure you don't forget to include `location_name` here, as you'll need to reference
-that later in your pipeline run config to execute the pipeline.
-
-A minimal repo/pipeline that this points to might look like:
-
-```python literalinclude caption=repo.py
-file:/deploy_k8s/example_project/example_repo/repo.py
-```
-
-And you'll need a second Dockerfile which, per the directory structure above, `ADD`s your pipelines
-and `workspace.yaml`:
-
-```Dockerfile literalinclude caption=Dockerfile
-file:/deploy_k8s/example_project/Dockerfile
-```
-
-Now, build and push this second Docker image to your registry:
-
-```
-export DOCKER_IMAGE="$YOUR_REGISTRY_URI/dagster-k8s-demo:dagster-pipe-example"
-docker build . -t $DOCKER_IMAGE
-docker push $DOCKER_IMAGE
-```
-
-Now, you can use the Dagster Helm chart to install Dagster on your Kubernetes cluster. First, you'll
-need to create a `values.yaml` to configure the images:
-
-```yaml literalinclude caption=values.yaml
-file:/deploy_k8s/values.yaml
-```
-
-Then, you can clone the Dagster repo and install the Helm chart (we do not yet host our Helm chart,
-but will soon!):
+To install Dagster on your Kubernetes cluster, you can clone the Dagster repo and install the Helm
+chart (we do not yet host our Helm chart, but will soon!):
 
 ```shell
 git clone https://github.com/dagster-io/dagster.git
-cd dagster/python_modules/libraries/dagster_k8s/
-helm install dagster helm/dagster -f /path/to/your/values.yaml
+cd dagster/python_modules/libraries/dagster-k8s/
+helm install dagster helm/dagster
 ```
 
 Helm will launch several pods including PostgreSQL and RabbitMQ; you can check the status of the
@@ -95,7 +18,7 @@ installation with `kubectl`. If everything worked correctly, you should see outp
 following:
 
 ```
-kubectl get pods
+$ kubectl get pods
 NAME                                                     READY   STATUS      RESTARTS   AGE
 dagster-celery-workers-76f9df6b76-8zgz7                  1/1     Running     0          25s
 dagster-celery-workers-76f9df6b76-995wx                  1/1     Running     0          25s
@@ -117,27 +40,13 @@ echo "Visit http://127.0.0.1:8080 to open Dagit"
 kubectl --namespace default port-forward $DAGIT_POD_NAME 8080:80
 ```
 
-Finally, you can visit the playground in Dagit to kick off execution. If you used the port fowarding
-above, this should be at http://127.0.0.1:8080/pipeline/example_pipe/playground.
+You can visit the playground in Dagit to kick off execution. If you used the port fowarding above,
+this should be at http://127.0.0.1:8080/pipeline/example_pipe/playground.
 
-To execute the pipeline, you'll need to include the following run configuration in the playground
-editor. First, the solid configuration:
+To execute the pipeline, click the "Preset" button at the top left of the editor and select
+"example". Finally, click "Launch Execution" and you should see the pipeline execute on Kubernetes!
 
-```yaml literalinclude caption=run_config_1.yaml
-file:/deploy_k8s/example_project/run_config/pipeline.yaml
-```
-
-Second, the configuration for `celery-k8s` and for intermediates storage:
-
-```yaml literalinclude caption=run_config_2.yaml
-file:/deploy_k8s/example_project/run_config/celery_k8s.yaml
-```
-
-Note that here we've referenced the repository location that we previously listed in our
-`workspace.yaml`.
-
-Finally, click "Launch Execution" and you should see the pipeline execute on Kubernetes! You can
-introspect the jobs that were launched with `kubectl`:
+You can introspect the jobs that were launched with `kubectl`:
 
 ```
 kubectl get jobs

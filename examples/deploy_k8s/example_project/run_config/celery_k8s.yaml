@@ -1,7 +1,7 @@
 execution:
   celery-k8s:
     config:
-      job_image: "YOUR_DOCKER_REPOSITORY/dagster-k8s-demo:dagster-pipe-example"
+      job_image: "dagster/k8s-example:latest"
       image_pull_policy: "Always"
       env_config_maps:
         - "dagster-pipeline-env"

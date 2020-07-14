@@ -5,12 +5,13 @@ import sys
 import click
 from automation.git import git_repo_root
 
+from dagster import __version__ as dagster_version
 from dagster import check
 
 from .dagster_docker import DagsterDockerImage
 from .ecr import ensure_ecr_login
 from .image_defs import get_image, list_images
-from .utils import current_time_str
+from .utils import current_time_str, execute_docker_push, execute_docker_tag
 
 CLI_HELP = '''This CLI is used for building the various Dagster images we use in test
 '''
@@ -60,7 +61,7 @@ def build_all(name, timestamp):
 
 
 @cli.command()
-@click.option('--name', required=True, help='Name of image to build')
+@click.option('--name', required=True, help='Name of image to push')
 @click.option('-v', '--python-version', type=click.STRING, required=True)
 def push(name, python_version):
     ensure_ecr_login()
@@ -68,12 +69,35 @@ def push(name, python_version):
 
 
 @cli.command()
-@click.option('--name', required=True, help='Name of image to build')
+@click.option('--name', required=True, help='Name of image to push')
 def push_all(name):
     ensure_ecr_login()
     image = get_image(name)
     for python_version in image.python_versions:
         image.push(python_version)
+
+
+@cli.command()
+@click.option('--name', required=True, help='Name of image to push')
+def push_dockerhub(name):
+    '''Used for pushing k8s images to Docker Hub. Must be logged in to Docker Hub for this to
+    succeed.
+    '''
+    image = DagsterDockerImage(name)
+
+    python_version = next(iter(image.python_versions))
+
+    local_image = image.local_image(python_version)
+
+    # Tag image as Dagster version (plan to release this image w/ Dagster releases)
+    image_with_dagster_version_tag = 'dagster/{image}:{tag}'.format(image=name, tag=dagster_version)
+    execute_docker_tag(local_image, image_with_dagster_version_tag)
+    execute_docker_push(image_with_dagster_version_tag)
+
+    # Also push latest tag
+    latest_tag = 'dagster/{}:latest'.format(name)
+    execute_docker_tag(local_image, latest_tag)
+    execute_docker_push(latest_tag)
 
 
 @cli.command()

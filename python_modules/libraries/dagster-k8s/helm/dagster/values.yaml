@@ -11,8 +11,8 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: ""
-    tag: ""
+    repository: "dagster/k8s-example"
+    tag: "latest"
     pullPolicy: Always
 
   service:
@@ -76,8 +76,8 @@ dagit:
 pipeline_run:
   # REQUIRED: The Dagster K8s run launchers will invoke job executions in containers from this image
   image:
-    repository: ""
-    tag: ""
+    repository: "dagster/k8s-example"
+    tag: "latest"
     # Change with caution! If you're using a fixed tag for pipeline run images, changing the image
     # pull policy to anything other than "Always" will use a cached/stale image, which is almost
     # certainly not what you want.
@@ -130,8 +130,8 @@ postgresql:
 celery:
   # The Celery workers can be deployed with a fixed image (no user code included)
   image:
-    repository: ""
-    tag: ""
+    repository: "dagster/k8s-celery-worker"
+    tag: "latest"
     pullPolicy: Always
 
   enabled: true

@@ -78,8 +78,18 @@ It's also prudent to release from a fresh virtualenv.
 
 9.  Post release notes in Dagster Slack in #general, and copy the same release notes to the
     [Github releases page](https://github.com/dagster-io/dagster/releases).
-    
+
 10. Publish a new version of the docs by following the instructions at `/docs/README.md`
+
+11. After packages are available on PyPI, publish new Docker images via the following (requires
+    Docker hub creds):
+
+```
+dagster-image build-all --name k8s-celery-worker
+dagster-image push-dockerhub --name k8s-celery-worker
+dagster-image build-all --name k8s-example
+dagster-image push-dockerhub --name k8s-example
+```
 
 ### PyPI credentials
 
