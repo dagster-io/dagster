@@ -8,14 +8,21 @@ from dagster_celery.defaults import broker_url, result_backend
 from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
 from dagster_graphql.client.util import parse_raw_log_lines
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
+from dagster_k8s.client import DagsterK8sPipelineStatusException
 from dagster_k8s.job import get_k8s_resource_requirements
-from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_job_success
+from dagster_k8s.utils import (
+    delete_job,
+    get_pod_names_in_job,
+    retrieve_pod_logs,
+    wait_for_job_success,
+)
 
 from dagster import DagsterInstance, EventMetadataEntry, Executor, check, executor, seven
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import InstanceRef
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
@@ -252,6 +259,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_config = DagsterK8sJobConfig.from_dict(job_config_dict)
         check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
         check.str_param(job_namespace, 'job_namespace')
+
         check.bool_param(load_incluster_config, 'load_incluster_config')
         check.dict_param(retries_dict, 'retries_dict')
 
@@ -269,15 +277,24 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
-        step_keys_str = ", ".join(step_keys)
+        step_key = step_keys[0]
+        if pipeline_run.status != PipelineRunStatus.STARTED:
+            instance.report_engine_event(
+                'Not scheduling step because pipeline run status is not STARTED',
+                pipeline_run,
+                EngineEventData([EventMetadataEntry.text(step_key, 'Step keys'),]),
+                CeleryK8sJobExecutor,
+                step_key=step_key,
+            )
+            return
 
         # Ensure we stay below k8s name length limits
         k8s_name_key = _get_k8s_name_key(run_id, step_keys)
 
         retries = Retries.from_config(retries_dict)
 
-        if retries.get_attempt_count(step_keys[0]):
-            attempt_number = retries.get_attempt_count(step_keys[0])
+        if retries.get_attempt_count(step_key):
+            attempt_number = retries.get_attempt_count(step_key)
             job_name = 'dagster-job-%s-%d' % (k8s_name_key, attempt_number)
             pod_name = 'dagster-job-%s-%d' % (k8s_name_key, attempt_number)
         else:
@@ -301,7 +318,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             },
             'retries': retries.to_graphql_input(),
         }
-        args = ['-p', 'executePlan', '-v', seven.json.dumps(variables)]
+        args = ['-p', 'executePlan', '-v', seven.json.dumps(variables), '--remap-sigterm']
 
         job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)
 
@@ -309,13 +326,14 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         events = []
 
         # Post event for starting execution
+        job_name = job.metadata.name
         engine_event = instance.report_engine_event(
-            'Executing steps {} in Kubernetes job {}'.format(step_keys_str, job.metadata.name),
+            'Executing step {} in Kubernetes job {}'.format(step_key, job_name),
             pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(step_keys_str, 'Step keys'),
-                    EventMetadataEntry.text(job.metadata.name, 'Kubernetes Job name'),
+                    EventMetadataEntry.text(step_key, 'Step keys'),
+                    EventMetadataEntry.text(job_name, 'Kubernetes Job name'),
                     EventMetadataEntry.text(pod_name, 'Kubernetes Pod name'),
                     EventMetadataEntry.text(job_config.job_image, 'Job image'),
                     EventMetadataEntry.text(job_config.image_pull_policy, 'Image pull policy'),
@@ -331,14 +349,34 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             CeleryK8sJobExecutor,
             # validated above that step_keys is length 1, and it is not possible to use ETH or
             # execution plan in this function (Celery K8s workers should not access to user code)
-            step_key=step_keys[0],
+            step_key=step_key,
         )
         events.append(engine_event)
 
         kubernetes.client.BatchV1Api().create_namespaced_job(body=job, namespace=job_namespace)
 
-        wait_for_job_success(job.metadata.name, namespace=job_namespace)
-        pod_names = get_pod_names_in_job(job.metadata.name, namespace=job_namespace)
+        try:
+            wait_for_job_success(
+                job_name=job_name, namespace=job_namespace, instance=instance, run_id=run_id,
+            )
+        except DagsterK8sPipelineStatusException:
+            instance.report_engine_event(
+                'Terminating Kubernetes Job because pipeline run status is not STARTED',
+                pipeline_run,
+                EngineEventData(
+                    [
+                        EventMetadataEntry.text(step_key, 'Step keys'),
+                        EventMetadataEntry.text(job_name, 'Kubernetes Job name'),
+                        EventMetadataEntry.text(job_namespace, 'Kubernetes Job namespace'),
+                    ]
+                ),
+                CeleryK8sJobExecutor,
+                step_key=step_key,
+            )
+            delete_job(job_name=job_name, namespace=job_namespace)
+            return
+
+        pod_names = get_pod_names_in_job(job_name, namespace=job_namespace)
 
         # Post engine event for log retrieval
         engine_event = instance.report_engine_event(
@@ -346,7 +384,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData([EventMetadataEntry.text('\n'.join(pod_names), 'Pod names')]),
             CeleryK8sJobExecutor,
-            step_key=step_keys[0],
+            step_key=step_key,
         )
         events.append(engine_event)
 

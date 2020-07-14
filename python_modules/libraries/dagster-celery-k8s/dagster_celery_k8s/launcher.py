@@ -4,8 +4,10 @@ import kubernetes
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
     construct_dagster_graphql_k8s_job,
+    get_job_name_from_run_id,
     get_k8s_resource_requirements,
 )
+from dagster_k8s.utils import delete_job
 
 from dagster import EventMetadataEntry, Field, Noneable, check, seven
 from dagster.config.field import resolve_to_config_type
@@ -14,7 +16,8 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.system_config.objects import ExecutionConfig
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 
@@ -154,7 +157,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(run, 'run', PipelineRun)
 
-        job_name = 'dagster-run-{}'.format(run.run_id)
+        job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
 
         exc_config = _get_validated_celery_k8s_executor_config(run.run_config)
@@ -186,6 +189,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                         'repositoryLocationName': external_pipeline.handle.location_name,
                     }
                 ),
+                '--remap-sigterm',
             ],
             job_name=job_name,
             pod_name=pod_name,
@@ -213,13 +217,41 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         return run
 
+    # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        return False
+
+        pipeline_run = self._instance.get_run_by_id(run_id)
+        if not pipeline_run:
+            return False
+
+        if pipeline_run.status != PipelineRunStatus.STARTED:
+            return False
+
+        return True
 
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        check.not_implemented('Termination not yet implemented')
+
+        if not self.can_terminate(run_id):
+            return False
+
+        job_name = get_job_name_from_run_id(run_id)
+
+        job_namespace = self.get_namespace_from_run_config(run_id)
+
+        return delete_job(job_name=job_name, namespace=job_namespace)
+
+    def get_namespace_from_run_config(self, run_id):
+        check.str_param(run_id, 'run_id')
+
+        pipeline_run = self._instance.get_run_by_id(run_id)
+        run_config = pipeline_run.run_config
+        execution_engine_config = ExecutionConfig.from_dict(
+            run_config.get('execution')
+        ).execution_engine_config
+
+        return execution_engine_config.get('job_namespace')
 
 
 def _get_validated_celery_k8s_executor_config(run_config):

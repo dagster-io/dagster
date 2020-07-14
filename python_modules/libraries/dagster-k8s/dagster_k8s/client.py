@@ -5,7 +5,8 @@ from enum import Enum
 import kubernetes
 import six
 
-from dagster import check
+from dagster import DagsterInstance, check
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 1.0  # 1 second
@@ -18,6 +19,10 @@ class WaitForPodState(Enum):
 
 
 class DagsterK8sError(Exception):
+    pass
+
+
+class DagsterK8sPipelineStatusException(Exception):
     pass
 
 
@@ -48,10 +53,77 @@ class DagsterKubernetesClient:
             time.time,
         )
 
+    def delete_job(
+        self, job_name, namespace,
+    ):
+        '''Delete Kubernetes Job. We also need to delete corresponding pods due to:
+        https://github.com/kubernetes-client/python/issues/234
+
+        Args:
+            job_name (str): Name of the job to wait for.
+            namespace (str): Namespace in which the job is located.
+        '''
+        check.str_param(job_name, 'job_name')
+        check.str_param(namespace, 'namespace')
+
+        pod_names = self.get_pod_names_for_job(job_name, namespace)
+
+        try:
+            # Collect all the errors so that we can post-process before raising
+            errors = []
+            try:
+                self.batch_api.delete_namespaced_job(name=job_name, namespace=namespace)
+            except Exception as e:  # pylint: disable=broad-except
+                errors.append(e)
+
+            for pod_name in pod_names:
+                try:
+                    self.core_api.delete_namespaced_pod(name=pod_name, namespace=namespace)
+                except Exception as e:  # pylint: disable=broad-except
+                    errors.append(e)
+
+            if len(errors) > 0:
+                # Raise first non-expected error. Else, raise first error.
+                for error in errors:
+                    if not (
+                        isinstance(error, kubernetes.client.rest.ApiException)
+                        and error.reason == 'Not Found'
+                    ):
+                        raise error
+                raise errors[0]
+
+            return True
+        except kubernetes.client.rest.ApiException as e:
+            if e.reason == 'Not Found':
+                return False
+            raise e
+
+    def get_pod_names_for_job(self, job_name, namespace):
+        '''Get pod names that corresponds to job name
+
+        Args:
+            job_name (str): Name of the job to wait for.
+            namespace (str): Namespace in which the job is located.
+        '''
+        check.str_param(job_name, 'job_name')
+        check.str_param(namespace, 'namespace')
+
+        pods = self.core_api.list_namespaced_pod(
+            label_selector='job-name=={}'.format(job_name), namespace=namespace
+        )
+
+        pod_names = []
+        for item in pods.items:
+            pod_names.append(item.metadata.name)
+
+        return pod_names
+
     def wait_for_job_success(
         self,
         job_name,
         namespace,
+        instance=None,
+        run_id=None,
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
@@ -71,12 +143,13 @@ class DagsterKubernetesClient:
         '''
         check.str_param(job_name, 'job_name')
         check.str_param(namespace, 'namespace')
+        check.opt_inst_param(instance, 'instance', DagsterInstance)
+        check.opt_str_param(run_id, 'run_id')
         check.numeric_param(wait_timeout, 'wait_timeout')
         check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
         check.int_param(num_pods_to_wait_for, 'num_pods_to_wait_for')
 
         job = None
-
         start = self.timer()
 
         # Ensure we found the job that we launched
@@ -121,6 +194,11 @@ class DagsterKubernetesClient:
             # done waiting for pod completion
             if status.succeeded == num_pods_to_wait_for:
                 break
+
+            if instance and run_id:
+                pipeline_run_status = instance.get_run_by_id(run_id).status
+                if pipeline_run_status != PipelineRunStatus.STARTED:
+                    raise DagsterK8sPipelineStatusException()
 
             self.sleeper(wait_time_between_attempts)
 

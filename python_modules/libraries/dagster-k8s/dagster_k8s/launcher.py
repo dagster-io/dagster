@@ -2,15 +2,7 @@ import weakref
 
 import kubernetes
 
-from dagster import (
-    DagsterInvariantViolationError,
-    EventMetadataEntry,
-    Field,
-    Noneable,
-    StringSource,
-    check,
-    seven,
-)
+from dagster import EventMetadataEntry, Field, Noneable, StringSource, check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
@@ -22,8 +14,10 @@ from dagster.utils import frozentags, merge_dicts
 from .job import (
     DagsterK8sJobConfig,
     construct_dagster_graphql_k8s_job,
+    get_job_name_from_run_id,
     get_k8s_resource_requirements,
 )
+from .utils import delete_job
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -219,12 +213,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         return run
 
+    # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        if not isinstance(self._instance, DagsterInstance):
-            raise DagsterInvariantViolationError(
-                'DagsterInstance is required for termination, but was not found.'
-            )
+
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
             return False
@@ -234,31 +226,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
-        if not isinstance(self._instance, DagsterInstance):
-            raise DagsterInvariantViolationError(
-                'DagsterInstance is required for termination, but was not found.'
-            )
+
         if not self.can_terminate(run_id):
             return False
 
-        job_name = 'dagster-run-{}'.format(run_id)
+        job_name = get_job_name_from_run_id(run_id)
 
-        # Need to find and delete the Pod in addition to deleting the job
-        # https://github.com/kubernetes-client/python/issues/234
-        pod = self._core_api.list_namespaced_pod(
-            label_selector='job-name=={}'.format(job_name), namespace=self.job_namespace
-        )
-        if len(pod.items) > 1:
-            raise DagsterInvariantViolationError(
-                'Multiple pods found with the same job-name label. Unable to terminate.'
-            )
-        pod_name = pod.items[0].metadata.name
-
-        try:
-            self._batch_api.delete_namespaced_job(name=job_name, namespace=self.job_namespace)
-            self._core_api.delete_namespaced_pod(name=pod_name, namespace=self.job_namespace)
-            return True
-        except kubernetes.client.rest.ApiException as e:
-            if e.reason == 'Not Found':
-                return False
-            raise e
+        return delete_job(job_name=job_name, namespace=self.job_namespace)

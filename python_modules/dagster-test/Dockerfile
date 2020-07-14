@@ -7,6 +7,9 @@ ADD . .
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
+# This makes sure that logs show up immediately instead of being buffered
+ENV PYTHONUNBUFFERED=1
+
 RUN pip install \
     -e dagster \
     -e dagster-graphql \

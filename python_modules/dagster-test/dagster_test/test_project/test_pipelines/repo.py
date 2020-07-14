@@ -5,7 +5,9 @@ import os
 import random
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 
+import boto3
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
@@ -13,6 +15,8 @@ from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 from dagster import (
     InputDefinition,
     Int,
+    List,
+    Materialization,
     ModeDefinition,
     Output,
     OutputDefinition,
@@ -22,20 +26,21 @@ from dagster import (
     lambda_solid,
     pipeline,
     repository,
+    resource,
     solid,
 )
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
 
 
-def celery_mode_defs():
+def celery_mode_defs(resources=None):
     from dagster_celery import celery_executor
     from dagster_celery_k8s import celery_k8s_job_executor
 
     return [
         ModeDefinition(
             system_storage_defs=s3_plus_default_storage_defs,
-            resource_defs={'s3': s3_resource},
+            resource_defs=resources if resources else {'s3': s3_resource},
             executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
         )
     ]
@@ -263,6 +268,71 @@ def define_slow_pipeline():
     return slow_pipeline
 
 
+def define_resource_pipeline():
+    @resource
+    @contextmanager
+    def s3_resource_with_context_manager(context):
+        try:
+            context.log.info('initializing s3_resource_with_context_manager')
+            s3 = boto3.resource(
+                's3', region_name='us-west-1', use_ssl=True, endpoint_url=None
+            ).meta.client
+            yield s3
+        finally:
+            context.log.info('tearing down s3_resource_with_context_manager')
+            bucket = 'dagster-scratch-80542c2'
+            key = 'resource_termination_test/{}'.format(context.run_id)
+            s3.put_object(Bucket=bucket, Key=key, Body=b'foo')
+
+    @solid(required_resource_keys={'s3_resource_with_context_manager'})
+    def super_slow_solid(context):
+        with context.resources.s3_resource_with_context_manager:
+            time.sleep(1000)
+
+    @pipeline(
+        mode_defs=celery_mode_defs(
+            resources={
+                's3': s3_resource,
+                's3_resource_with_context_manager': s3_resource_with_context_manager,
+            }
+        )
+    )
+    def resource_pipeline():
+        super_slow_solid()
+
+    return resource_pipeline
+
+
+def define_fan_in_fan_out_pipeline():
+    @solid(output_defs=[OutputDefinition(int)])
+    def return_one(_):
+        return 1
+
+    @solid(input_defs=[InputDefinition('num', int)])
+    def add_one_fan(_, num):
+        return num + 1
+
+    @solid(input_defs=[InputDefinition('nums', List[int])])
+    def sum_fan_in(_, nums):
+        return sum(nums)
+
+    def construct_fan_in_level(source, level, fanout):
+        fan_outs = []
+        for i in range(0, fanout):
+            fan_outs.append(add_one_fan.alias('add_one_fan_{}_{}'.format(level, i))(source))
+
+        return sum_fan_in.alias('sum_{}'.format(level))(fan_outs)
+
+    @pipeline(mode_defs=celery_mode_defs())
+    def fan_in_fan_out_pipeline():
+        return_one_out = return_one()
+        prev_level_out = return_one_out
+        for level in range(0, 20):
+            prev_level_out = construct_fan_in_level(prev_level_out, level, 2)
+
+    return fan_in_fan_out_pipeline
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -278,6 +348,8 @@ def define_demo_execution_repo():
                 'resources_limit_pipeline_celery': define_resources_limit_pipeline_celery,
                 'retry_pipeline': define_step_retry_pipeline,
                 'slow_pipeline': define_slow_pipeline,
+                'fan_in_fan_out_pipeline': define_fan_in_fan_out_pipeline,
+                'resource_pipeline': define_resource_pipeline,
             },
             'schedules': define_schedules(),
         }

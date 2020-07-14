@@ -54,6 +54,10 @@ def get_k8s_resource_requirements(tags):
     return None
 
 
+def get_job_name_from_run_id(run_id):
+    return 'dagster-run-{}'.format(run_id)
+
+
 @whitelist_for_serdes
 class DagsterK8sJobConfig(
     namedtuple(
