@@ -162,6 +162,10 @@ def test_successful_run():
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_crashy_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
