@@ -51,7 +51,7 @@ class LocalExternalStepLauncher(StepLauncher):
             pickle.dump(step_run_ref, step_pickle_file)
 
         command_tokens = [
-            'python',
+            sys.executable,
             '-m',
             'dagster.core.execution.plan.local_external_step_main',
             step_run_ref_file_path,

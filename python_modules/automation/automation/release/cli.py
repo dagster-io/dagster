@@ -10,6 +10,7 @@ available by running `python publish.py --help`.
 
 import os
 import subprocess
+import sys
 import tempfile
 import urllib
 
@@ -223,7 +224,7 @@ def after_install(options, home_dir):
         with tempfile.NamedTemporaryFile('w') as bootstrap_script_file:
             bootstrap_script_file.write(bootstrap_script)
 
-            args = ['python', bootstrap_script_file.name, venv_dir]
+            args = [sys.executable, bootstrap_script_file.name, venv_dir]
 
             click.echo(subprocess.check_output(args).decode('utf-8'))
 

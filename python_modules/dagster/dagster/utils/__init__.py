@@ -219,7 +219,7 @@ def all_none(kwargs):
 
 def check_script(path, return_code=0):
     try:
-        subprocess.check_output(['python', path])
+        subprocess.check_output([sys.executable, path])
     except subprocess.CalledProcessError as exc:
         if return_code != 0:
             if exc.returncode == return_code:
@@ -228,7 +228,17 @@ def check_script(path, return_code=0):
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
-    cli_cmd = ['python', '-m', 'dagster', 'pipeline', 'execute', '-f', path, '-a', pipeline_fn_name]
+    cli_cmd = [
+        sys.executable,
+        '-m',
+        'dagster',
+        'pipeline',
+        'execute',
+        '-f',
+        path,
+        '-a',
+        pipeline_fn_name,
+    ]
 
     if env_file:
         cli_cmd.append('-c')

@@ -7,6 +7,7 @@ This tooling should be invoked to regenerate the Python grpc artifacts by runnin
 import os
 import shutil
 import subprocess
+import sys
 
 from dagster.utils import file_relative_path, safe_tempfile_path
 
@@ -47,7 +48,7 @@ def protoc():
     #   -I protos --python_out __generated__ --grpc_python_out __generated__ protos/api.proto
     _res = subprocess.check_output(
         [
-            'python',
+            sys.executable,
             '-m',
             'grpc_tools.protoc',
             '-I',
@@ -100,7 +101,7 @@ def protoc():
     # We need to run black
     _res = subprocess.check_output(
         [
-            'python',
+            sys.executable,
             '-m',
             'black',
             '-l',
