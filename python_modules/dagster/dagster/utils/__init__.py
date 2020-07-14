@@ -473,3 +473,17 @@ def restore_sys_modules():
         yield
     finally:
         sys.modules = sys_modules
+
+
+def process_is_alive(pid):
+    if IS_WINDOWS:
+        import psutil
+
+        return psutil.pid_exists(pid=pid)
+    else:
+        try:
+            subprocess.check_output(['ps', str(pid)])
+        except subprocess.CalledProcessError as exc:
+            assert exc.returncode == 1
+            return False
+        return True

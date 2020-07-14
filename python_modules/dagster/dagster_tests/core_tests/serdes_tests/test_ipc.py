@@ -11,25 +11,7 @@ from dagster.serdes.ipc import (
     open_ipc_subprocess,
 )
 from dagster.seven import IS_WINDOWS, ExitStack
-from dagster.utils import file_relative_path, safe_tempfile_path
-
-
-def process_is_alive(pid):
-    if IS_WINDOWS:
-        import psutil
-
-        try:
-            psutil.Process(pid=pid)
-        except psutil.NoSuchProcess:
-            return False
-        return True
-    else:
-        try:
-            subprocess.check_output(['ps', str(pid)])
-        except subprocess.CalledProcessError as exc:
-            assert exc.returncode == 1
-            return False
-        return True
+from dagster.utils import file_relative_path, safe_tempfile_path, process_is_alive
 
 
 def wait_for_file(path, timeout=5):
