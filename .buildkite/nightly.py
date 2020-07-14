@@ -27,8 +27,6 @@ if __name__ == "__main__":
             'git push --delete origin nightly',
             'git checkout -b nightly',
             'git push --set-upstream origin nightly',
-            # Install reqs
-            'pip install -r bin/requirements.txt',
             # Create ~/.pypirc
             '.buildkite/scripts/pypi.sh',
             # Publish
