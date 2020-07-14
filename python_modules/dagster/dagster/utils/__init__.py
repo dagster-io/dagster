@@ -477,7 +477,7 @@ def restore_sys_modules():
 
 def process_is_alive(pid):
     if IS_WINDOWS:
-        import psutil
+        import psutil  # pylint: disable=import-error
 
         return psutil.pid_exists(pid=pid)
     else:
