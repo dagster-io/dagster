@@ -10,7 +10,7 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
   onNextPage
 }) => {
   return (
-    <div style={{ textAlign: "center" }}>
+    <div style={{ textAlign: "center", marginBottom: 10 }}>
       <Button
         style={{
           visibility: hasPrevPage ? "initial" : "hidden",

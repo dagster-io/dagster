@@ -31,7 +31,7 @@ import {
 
 export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;
-}> = ({ run }) => {
+}> = React.memo(({ run }) => {
   const { refetch } = React.useContext(RunsQueryRefetchContext);
 
   const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
@@ -108,7 +108,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             disabled={!run.canTerminate}
             onClick={async () => {
               const result = await cancel({ variables: { runId: run.runId } });
-              showToastFor(result.data.terminatePipelineExecution, "Run cancelled.");
+              showToastFor(result.data.terminatePipelineExecution, `Run ${run.runId} cancelled.`);
             }}
           />
           <MenuDivider />
@@ -118,7 +118,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             disabled={run.canTerminate}
             onClick={async () => {
               const result = await destroy({ variables: { runId: run.runId } });
-              showToastFor(result.data.deletePipelineRun, "Run deleted.");
+              showToastFor(result.data.deletePipelineRun, `Run ${run.runId} deleted.`);
             }}
           />
         </Menu>
@@ -133,7 +133,57 @@ export const RunActionsMenu: React.FunctionComponent<{
       <Button minimal={true} icon="more" />
     </Popover>
   );
-};
+});
+
+export const RunBulkActionsMenu: React.FunctionComponent<{
+  selected: RunTableRunFragment[];
+  onChangeSelection: (runs: RunTableRunFragment[]) => void;
+}> = React.memo(({ selected, onChangeSelection }) => {
+  const { refetch } = React.useContext(RunsQueryRefetchContext);
+  const [cancel] = useMutation(CANCEL_MUTATION, { onCompleted: refetch });
+  const [destroy] = useMutation(DELETE_MUTATION, { onCompleted: refetch });
+
+  const cancelable = selected.filter(r => r.canTerminate);
+  const deletable = selected.filter(r => !r.canTerminate);
+
+  return (
+    <Popover
+      content={
+        <Menu>
+          <MenuItem
+            icon="stop"
+            text={`Cancel ${cancelable.length} ${cancelable.length === 1 ? "run" : "runs"}`}
+            disabled={cancelable.length === 0}
+            onClick={async () => {
+              for (const run of cancelable) {
+                const result = await cancel({ variables: { runId: run.runId } });
+                showToastFor(result.data.terminatePipelineExecution, `Run ${run.runId} cancelled.`);
+              }
+              onChangeSelection([]);
+            }}
+          />
+          <MenuItem
+            icon="trash"
+            text={`Delete ${deletable.length} ${deletable.length === 1 ? "run" : "runs"}`}
+            disabled={deletable.length === 0}
+            onClick={async () => {
+              for (const run of deletable) {
+                const result = await destroy({ variables: { runId: run.runId } });
+                showToastFor(result.data.deletePipelineRun, `Run ${run.runId} deleted.`);
+              }
+              // we could remove just the runs that are deleted and leave the others, but we may
+              // need to test it for a while and see what seems natural.
+              onChangeSelection([]);
+            }}
+          />
+        </Menu>
+      }
+      position={"bottom"}
+    >
+      <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
+    </Popover>
+  );
+});
 
 const OPEN_PLAYGROUND_UNKNOWN =
   "Playground is unavailable because the pipeline is not present in the current repository.";

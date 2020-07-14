@@ -22,9 +22,9 @@ export const RUN_STATUS_HOVER_COLORS = {
   SUCCESS: Colors.GREEN4,
   FAILURE: Colors.RED5
 };
-export const RunStatusWithStats: React.SFC<RunStatusProps & {
+export const RunStatusWithStats: React.FunctionComponent<RunStatusProps & {
   runId: string;
-}> = ({ runId, ...rest }) => (
+}> = React.memo(({ runId, ...rest }) => (
   <Popover
     position={"bottom"}
     interactionKind={"hover"}
@@ -35,14 +35,14 @@ export const RunStatusWithStats: React.SFC<RunStatusProps & {
       <RunStatus {...rest} />
     </div>
   </Popover>
-);
+));
 
 interface RunStatusProps {
   status: IRunStatus;
   size?: number;
 }
 
-export const RunStatus: React.SFC<RunStatusProps> = ({ status, size }) => {
+export const RunStatus: React.FunctionComponent<RunStatusProps> = React.memo(({ status, size }) => {
   if (status === "STARTED") {
     return (
       <div style={{ display: "inline-block" }}>
@@ -51,7 +51,7 @@ export const RunStatus: React.SFC<RunStatusProps> = ({ status, size }) => {
     );
   }
   return <RunStatusDot status={status} size={size || 11} />;
-};
+});
 
 // eslint-disable-next-line no-unexpected-multiline
 const RunStatusDot = styled.div<{
