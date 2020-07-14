@@ -7,7 +7,6 @@ from contextlib import contextmanager
 import kubernetes
 import psycopg2
 import pytest
-from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
@@ -18,7 +17,7 @@ from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.utils import find_free_port
 
-from .integration_utils import IS_BUILDKITE, check_output, image_pull_policy
+from .integration_utils import IS_BUILDKITE, check_output
 
 # How long to wait before giving up on trying to establish postgres port forwarding
 PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute
@@ -80,27 +79,6 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             raise Exception('unknown cluster provider %s' % provider)
 
     return _cluster_provider
-
-
-@pytest.fixture(scope='session')
-def run_launcher(
-    cluster_provider, helm_namespace
-):  # pylint: disable=redefined-outer-name,unused-argument
-
-    return K8sRunLauncher(
-        image_pull_secrets=[{'name': 'element-dev-key'}],
-        service_account_name='dagit-admin',
-        instance_config_map='dagster-instance',
-        postgres_password_secret='dagster-postgresql-secret',
-        dagster_home='/opt/dagster/dagster_home',
-        job_image=test_project_docker_image(),
-        load_incluster_config=False,
-        kubeconfig_file=cluster_provider.kubeconfig_file,
-        image_pull_policy=image_pull_policy(),
-        job_namespace=helm_namespace,
-        env_config_maps=['dagster-pipeline-env', 'test-env-configmap'],
-        env_secrets=['test-env-secret'],
-    )
 
 
 @pytest.fixture(scope='session')

@@ -3,14 +3,12 @@ import os
 
 import docker
 import pytest
+from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s_test_infra.cluster import define_cluster_provider_fixture
 from dagster_k8s_test_infra.helm import helm_namespace
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
-from dagster_k8s_test_infra.cluster import (  # isort:skip
-    dagster_instance,
-    run_launcher,
-)
+from dagster_k8s_test_infra.cluster import dagster_instance  # isort:skip
 
 cluster_provider = define_cluster_provider_fixture()
 
@@ -33,6 +31,19 @@ def dagster_docker_image():
             build_and_tag_test_image(docker_image)
 
     return docker_image
+
+
+@pytest.fixture(scope='session')
+def run_launcher(
+    cluster_provider, helm_namespace
+):  # pylint: disable=redefined-outer-name,unused-argument
+    return CeleryK8sRunLauncher(
+        instance_config_map='dagster-instance',
+        postgres_password_secret='dagster-postgresql-secret',
+        dagster_home='/opt/dagster/dagster_home',
+        load_incluster_config=False,
+        kubeconfig_file=cluster_provider.kubeconfig_file,
+    )
 
 
 # See: https://stackoverflow.com/a/31526934/324449
