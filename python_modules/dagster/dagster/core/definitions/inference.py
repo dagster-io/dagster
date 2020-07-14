@@ -18,7 +18,7 @@ def infer_output_definitions(decorator_name, solid_name, fn):
         # try to infer from docstring
         defs = _infer_output_definitions_from_docstring(solid_name, fn)
 
-        if not defs:
+        if defs is None:
             defs = [
                 OutputDefinition()
                 if signature.return_annotation is funcsigs.Signature.empty
@@ -61,14 +61,14 @@ def infer_input_definitions_for_lambda_solid(solid_name, fn):
 
 def _infer_output_definitions_from_docstring(solid_name, fn):
     if not is_module_available("docstring_parser"):
-        return []
+        return
 
     from docstring_parser import parse
 
     docstring = parse(fn.__doc__)
 
     if docstring.returns is None:
-        return []
+        return
 
     type_name = docstring.returns.type_name
     name = docstring.returns.return_name or "result"
@@ -95,7 +95,7 @@ def _infer_output_definitions_from_docstring(solid_name, fn):
 
 def _infer_input_definitions_from_docstring(solid_name, fn):
     if not is_module_available("docstring_parser"):
-        return []
+        return
 
     from docstring_parser import parse
 
@@ -130,6 +130,9 @@ def _infer_input_definitions_from_docstring(solid_name, fn):
                 ),
                 type_error,
             )
+
+    if not input_defs:
+        return None
 
     return input_defs
 
@@ -172,7 +175,7 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
     # try to infer from docstrings
     defs = _infer_input_definitions_from_docstring(solid_name, fn)
 
-    if not defs:
+    if defs is None:
         defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
 
     return defs
@@ -185,7 +188,7 @@ def infer_input_definitions_for_solid(solid_name, fn):
     # try to infer from docstrings
     defs = _infer_input_definitions_from_docstring(solid_name, fn)
 
-    if not defs:
+    if defs is None:
         defs = _infer_inputs_from_params(params[1:], '@solid', solid_name)
 
     return defs

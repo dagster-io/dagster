@@ -4,8 +4,8 @@ import unittest
 import pytest
 
 from dagster import lambda_solid, solid
-from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.definitions import inference
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 def test_single_input():
@@ -76,7 +76,7 @@ def test_one_arg_lambda_solid():
 
 
 @pytest.mark.skipif(sys.version_info > (2,), reason='py2 only test')
-def test_py2_infer_from_docstrings_return_empty_list():
+def test_py2_infer_from_docstrings_return_None():
     @solid
     def good_numpy(context, hello, optional=5):
         """
@@ -96,18 +96,17 @@ def test_py2_infer_from_docstrings_return_empty_list():
         """
         pass
 
-
     inputs = inference._infer_input_definitions_from_docstring(
         good_numpy.name, good_numpy.compute_fn
     )
 
-    assert inputs == []
+    assert inputs is None
 
     outputs = inference._infer_output_definitions_from_docstring(
         good_numpy.name, good_numpy.compute_fn
     )
 
-    assert outputs == []
+    assert outputs is None
 
 
 @pytest.mark.skipif(sys.version_info < (3, 6), reason='docstring_parser requires python >= 3.6')
@@ -148,7 +147,7 @@ class DefinitionsFromDocstringTestCase(unittest.TestCase):
             pass
 
         defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
-        assert len(defs2) == 0
+        assert defs2 is None
 
     def test_infer_inputs_from_docstring_numpy_type_dont_exist(self):
         with pytest.raises(DagsterInvalidDefinitionError) as err:
@@ -232,7 +231,7 @@ class DefinitionsFromDocstringTestCase(unittest.TestCase):
             pass
 
         defs2 = inference._infer_input_definitions_from_docstring(nodoc.name, nodoc.compute_fn)
-        assert len(defs2) == 0
+        assert defs2 is None
 
     def test_infer_inputs_from_docstring_google_invalid_type(self):
         @solid
