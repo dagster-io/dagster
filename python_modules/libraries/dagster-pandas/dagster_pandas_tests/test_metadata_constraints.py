@@ -118,7 +118,7 @@ def test_multi_column_constraint():
     df = DataFrame({'foo': [1, 2, 3], 'bar': [3, 2, 1], 'baz': [1, 4, 5]})
     column_val = MultiColumnConstraintWithMetadata(
         "Complex number confirmation",
-        [('bar', [col_val_two, col_val_three]), ('baz', [col_val_three])],
+        dict([('bar', [col_val_two, col_val_three]), ('baz', [col_val_three])]),
         ColumnWithMetadataException,
         raise_or_typecheck=False,
     )
@@ -153,7 +153,7 @@ def test_aggregate_constraint():
     )
     val = aggregate_val.validate(df, *df.columns).metadata_entries[0].entry_data.data
     assert {'foo'} == val["offending"]
-    assert ([1, 2] == val["actual"]['foo']).all()
+    assert [1, 2] == val["actual"]['foo']
 
 
 def test_multi_agg_constraint():
@@ -168,7 +168,7 @@ def test_multi_agg_constraint():
     df = DataFrame({'foo': [1, 2], 'bar': [1, 1],})
     aggregate_val = MultiAggregateConstraintWithMetadata(
         "Confirms column means equal to 1",
-        [('bar', [column_val_1, column_val_2]), ('foo', [column_val_1, column_val_2])],
+        dict([('bar', [column_val_1, column_val_2]), ('foo', [column_val_1, column_val_2])]),
         ConstraintWithMetadataException,
         raise_or_typecheck=False,
     )

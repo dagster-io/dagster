@@ -186,7 +186,8 @@ def create_dagster_pandas_dataframe_type(
     check.str_param(name, 'name')
     warnings.warn(
         """This method of constructing dataframe types is deprecated,
-     and is planned to be removed in a future version (tentatively 0.10.0)"""
+     and is planned to be removed in a future version (tentatively 0.10.0).
+     Please use create_structured_dataframe_type instead."""
     )
     event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
     description = create_dagster_pandas_dataframe_description(
@@ -284,20 +285,21 @@ def create_structured_dataframe_type(
                 ),
             )
         individual_result_dict = {}
+
+        if dataframe_validator is not None:
+            individual_result_dict["dataframe"] = dataframe_validator.validate(value)
         if columns_validator is not None:
             individual_result_dict["columns"] = columns_validator.validate(value)
 
         if columns_aggregate_validator is not None:
-            individual_result_dict["column aggregates"] = columns_aggregate_validator.validate(
+            individual_result_dict["column-aggregates"] = columns_aggregate_validator.validate(
                 value
             )
 
-        if dataframe_validator is not None:
-            individual_result_dict["dataframe"] = dataframe_validator.validate(value)
-
         typechecks_succeeded = True
         metadata = []
-        overall_description = ""
+        overall_description = "Failed Constraints: {}"
+        constraint_clauses = []
         for key, result in individual_result_dict.items():
             result_val = result.success
             if result_val:
@@ -307,11 +309,12 @@ def create_structured_dataframe_type(
             metadata.append(
                 EventMetadataEntry.json(result_dict, '{}-constraint-metadata'.format(key),)
             )
-            overall_description += "{} failing constraints, requiring {}".format(
-                key, result.description
-            )
+            constraint_clauses.append("{} failing constraints, {}".format(key, result.description))
+        # returns aggregates, then column, then dataframe
         return TypeCheck(
-            success=typechecks_succeeded, description=overall_description, metadata_entries=metadata
+            success=typechecks_succeeded,
+            description=overall_description.format(constraint_clauses),
+            metadata_entries=sorted(metadata, key=lambda x: x.label),
         )
 
     description = check.opt_str_param(description, 'description', default='')

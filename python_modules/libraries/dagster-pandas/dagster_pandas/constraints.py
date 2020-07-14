@@ -1,7 +1,9 @@
 import sys
 from collections import defaultdict
 from datetime import datetime
+from functools import wraps
 
+import pandas as pd
 from pandas import DataFrame
 
 from dagster import DagsterType, EventMetadataEntry, TypeCheck, check
@@ -134,7 +136,8 @@ class ConstraintWithMetadata(object):
 
     args:
         description (str): description of the constraint
-        validation_fn (DataFrame -> Tuple[bool, dict[str, Union[dict,list, str, set]]]):  the validation function to run over inputted data
+        validation_fn (Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
+                    the validation function to run over inputted data
                     This function should return a tuple of a boolean for success or failure, and a dict containing
                     metadata about the test -- this metadata will be passed to the resulting exception if validation
                     fails.
@@ -197,7 +200,7 @@ class MultiConstraintWithMetadata(ConstraintWithMetadata):
 
         args:
             description (str): description of the constraint
-            validation_fn_arr(List[DataFrame -> Tuple[bool, dict[str, Any]]]):
+            validation_fn_arr(List[Callable[[DataFrame], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
                         a list of the validation functions to run over inputted data
                         Each function should return a tuple of a boolean for success or failure, and a dict containing
                         metadata about the test -- this metadata will be passed to the resulting exception if validation
@@ -379,17 +382,38 @@ def apply_ignore_missing_data_to_mask(mask, column):
 
 
 class ColumnAggregateConstraintWithMetadata(ConstraintWithMetadata):
+    """
+    Similar to the base class, but now your validation functions should take in columns (pd.Series) not Dataframes.
+    args:
+        description (str): description of the constraint
+        validation_fn (Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
+                    the validation function to run over inputted data
+                    This function should return a tuple of a boolean for success or failure, and a dict containing
+                    metadata about the test -- this metadata will be passed to the resulting exception if validation
+                    fails.
+        resulting_exception (ConstraintWithMetadataException):  what response a failed typecheck should induce
+        raise_or_typecheck (Optional[bool]): whether to raise an exception (if set to True) or emit a failed typecheck event
+                    (if set to False) when validation fails
+        name (Optional[str]): what to call the constraint, defaults to the class name.
+    """
+
     def validate(self, data, *columns, **kwargs):
         if len(columns) == 0:
             columns = data.columns
+        columns = [column for column in columns if column in data.columns]
         relevant_data = data[list(columns)]
+
         offending_columns = set()
         offending_values = {}
         for column in columns:
             # TODO: grab extra metadata
-            if not self.validation_fn(relevant_data[column])[0]:
+            res = self.validation_fn(relevant_data[column])
+            if not res[0]:
                 offending_columns.add(column)
-                offending_values[column] = relevant_data[column].to_numpy()
+                if not res[1].get('actual') is None:
+                    offending_values[column] = [x.item() for x in res[1].get('actual').to_numpy()]
+                else:
+                    offending_values[column] = [x.item() for x in relevant_data[column].to_numpy()]
         if len(offending_columns) == 0 and not self.raise_or_typecheck:
             return TypeCheck(success=True)
         elif len(offending_columns) > 0:
@@ -412,11 +436,26 @@ class ColumnConstraintWithMetadata(ConstraintWithMetadata):
     """
     This class is useful for constructing single constraints that
     you want to apply to multiple columns of your dataframe
+    The main difference from the base class in terms of construction is that now, your validation_fns should operate on
+    individual values.
+    args:
+        description (str): description of the constraint
+        validation_fn (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]:
+                    the validation function to run over inputted data
+                    This function should return a tuple of a boolean for success or failure, and a dict containing
+                    metadata about the test -- this metadata will be passed to the resulting exception if validation
+                    fails.
+        resulting_exception (ConstraintWithMetadataException):  what response a failed typecheck should induce
+        raise_or_typecheck (Optional[bool]): whether to raise an exception (if set to True) or emit a failed typecheck event
+                    (if set to False) when validation fails
+        name (Optional[str]): what to call the constraint, defaults to the class name.
     """
 
     def validate(self, data, *columns, **kwargs):
         if len(columns) == 0:
             columns = data.columns
+
+        columns = [column for column in columns if column in data.columns]
         relevant_data = data[list(columns)]
         offending = {}
         offending_values = {}
@@ -454,9 +493,11 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
         and also allows for cases like 'fail if any one of these constraints fails but still run all of them'
 
         Args:
-            description (str): description of the overall set of validations (TODO:  support multiple descriptions)
-            fn_and_columns_arr (List[Tuple[str, List[DataFrame -> Tuple[bool, dict[str, Any]]]]]:  while this is a
-            relatively complex type, what it amounts to is 'a list of pairs of columns and the functions to run on them'
+            description (str): description of the overall set of validations
+            fn_and_columns_dict (Dict[str, List[Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+                                        while this is a relatively complex type,
+                                        what it amounts to is 'a dict mapping columns to the functions to
+                                        run on them'
             resulting_exception (type): the response to generate if validation fails. Subclass of
                                         ConstraintWithMetadataException
             raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
@@ -468,20 +509,23 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
     def __init__(
         self,
         description,
-        fn_and_columns_arr,
+        fn_and_columns_dict,
         resulting_exception,
         raise_or_typecheck=True,
         type_for_internal=ColumnConstraintWithMetadata,
         name=None,
     ):
-        self.column_to_fn_dict = defaultdict(list)
-        for (column, fn_list) in fn_and_columns_arr:
-            self.column_to_fn_dict[column].extend(fn_list)
+        # TODO:  support multiple descriptions
+        self.column_to_fn_dict = check.dict_param(
+            fn_and_columns_dict, 'fn_and_columns_dict', key_type=str
+        )
 
         def validation_fn(data, *args, **kwargs):
             metadict = defaultdict(dict)
             truthparam = True
             for column, fn_arr in self.column_to_fn_dict.items():
+                if column not in data.columns:
+                    continue
                 for fn in fn_arr:
                     # TODO:  do this more effectively
                     new_validator = type_for_internal(
@@ -529,19 +573,32 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
         This class is similar to multicolumn, but takes in functions that operate on the whole column at once
         rather than ones that operate on each value --
         consider this similar to the difference between apply-map and apply aggregate.
+
+        Args:
+            description (str): description of the overall set of validations (TODO:  support multiple descriptions)
+            fn_and_columns_dict (Dict[str, List[Callable[[pd.Series], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+                                        while this is a relatively complex type,
+                                        what it amounts to is a dict mapping columns to the functions to
+                                        run on them'
+            resulting_exception (type): the response to generate if validation fails. Subclass of
+                                        ConstraintWithMetadataException
+            raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
+            type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
+                                                ConstraintWithMetadata
+            name (Optional[str]): what to call the constraint, defaults to the class name.
     """
 
     def __init__(
         self,
         description,
-        fn_and_columns_arr,
+        fn_and_columns_dict,
         resulting_exception,
         raise_or_typecheck=True,
         name=None,
     ):
         super(MultiAggregateConstraintWithMetadata, self).__init__(
             description,
-            fn_and_columns_arr,
+            fn_and_columns_dict,
             resulting_exception,
             raise_or_typecheck=raise_or_typecheck,
             type_for_internal=ColumnAggregateConstraintWithMetadata,
@@ -549,21 +606,254 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
         )
 
 
+def non_null_validation(x):
+    """
+    validates that a particular value in a column is not null
+    Usage:
+        pass this as a column validator to
+        :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
+        Generally, you should prefer to use nonnull as a decorator/wrapper rather than using this
+        directly.
+    """
+    return not pd.isnull(x), {}
+
+
+def all_unique_validator(column, ignore_missing_vals=False):
+    """
+    validates that all values in an iterable are unique
+    Returns duplicated values as metadata
+
+    Usage:
+        As a validation function for a
+        :py:class:'~dagster_pandas.constraints.ColumnAggregateConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiAggregateConstraintWithMetadata'
+    Example:
+        .. code-block:: python
+            aggregate_validator = MultiAggregateConstraintWithMetadata(
+            "confirms all values are unique",
+            {'bar': [all_unique_validator]},
+            ConstraintWithMetadataException,
+            raise_or_typecheck=False,
+            )
+            ntype = create_structured_dataframe_type(
+            "NumericType",
+            columns_aggregate_validator=aggregate_validator
+            )
+            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            def create_dataframe(_):
+                yield Output(
+                DataFrame({'foo': [1, 2, 3], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
+            )
+            #will fail with
+            metadata['offending'] == {'bar': {'all_unique_validator': 'a violation'}}
+            metadata['actual'] == {'bar': {'all_unique_validator': [10.0]}}
+    """
+    column = pd.Series(column)
+    duplicated = column.duplicated()
+    if ignore_missing_vals:
+        duplicated = apply_ignore_missing_data_to_mask(duplicated, column)
+    return not duplicated.any(), {'actual': column[duplicated]}
+
+
+def nonnull(func):
+    """
+    decorator for column validation functions to make them error on nulls
+    Usage:
+        pass decorated functions as column validators to
+        :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
+    Args:
+        func (Callable[[Any], Tuple[bool, dict[str, Union[dict,list, str, set]]]]]):
+            the column validator you want to error on nulls
+    """
+
+    @wraps(func)
+    def nvalidator(val):
+        origval = func(val)
+        nval = non_null_validation(val)
+        return origval[0] and nval[0], {}
+
+    nvalidator.__doc__ += " and ensures no values are null"
+
+    return nvalidator
+
+
+def column_range_validation_factory(minim=None, maxim=None, ignore_missing_vals=False):
+    """
+    factory for validators testing if column values are within a range
+    Args:
+        minim(Optional[Comparable]): the low end of the range
+        maxim(Optional[Comparable]): the high end of the range
+        ignore_missing_vals(Optional[bool]): whether to ignore nulls
+
+    Returns: a validation function for this constraint
+    Usage:
+        pass returned functions as column validators to
+         :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
+    Examples:
+        .. code-block:: python
+            in_range_validator = column_range_validation_factory(1, 3, ignore_missing_vals=True)
+            column_validator = MultiColumnConstraintWithMetadata(
+                            "confirms values are numbers in a range",
+                            {'foo': [in_range_validator]},
+                            ColumnWithMetadataException,
+                            raise_or_typecheck=False,
+                        )
+            ntype = create_structured_dataframe_type(
+            "NumericType",
+            columns_validator=column_validator
+            )
+            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            def create_dataframe(_):
+                yield Output(
+                DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
+            )
+            #will fail with
+            metadata['offending'] == {'foo': {'in_range_validation_fn': ['row 2']}}
+            metadata['actual'] == {'foo': {'in_range_validation_fn': [7]}}
+
+    """
+    if minim is None:
+        if isinstance(maxim, datetime):
+            minim = datetime.min
+        else:
+            minim = -1 * (sys.maxsize - 1)
+    if maxim is None:
+        if isinstance(minim, datetime):
+            maxim = datetime.max
+        else:
+            maxim = sys.maxsize
+
+    def in_range_validation_fn(x):
+        if ignore_missing_vals and pd.isnull(x):
+            return True, {}
+        return (isinstance(x, (type(minim), type(maxim)))) and (x <= maxim) and (x >= minim), {}
+
+    in_range_validation_fn.__doc__ = 'checks whether values are between {} and {}'.format(
+        minim, maxim
+    )
+    if ignore_missing_vals:
+        in_range_validation_fn.__doc__ += ', ignoring nulls'
+
+    return in_range_validation_fn
+
+
+def categorical_column_validator_factory(categories, ignore_missing_vals=False):
+    """
+    factory for validators testing if all values are in some set
+    Args:
+        categories(Union[Sequence, set]): the set of allowed values
+        ignore_missing_vals(Optional[bool]): whether to ignore nulls
+
+    Returns: a validation function for this constraint
+
+    Usage:
+        pass returned functions as column validators to
+        :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
+
+    Example:
+        .. code-block:: python
+            categorical_validation_fn = categorical_column_validator_factory([1, 2])
+            column_validator = MultiColumnConstraintWithMetadata(
+                            "confirms values are numbers in a range",
+                            {'foo': [categorical_validation_fn]},
+                            ColumnWithMetadataException,
+                            raise_or_typecheck=False,
+                        )
+            ntype = create_structured_dataframe_type(
+            "NumericType",
+            columns_validator=column_validator
+            )
+            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            def create_dataframe(_):
+                yield Output(
+                DataFrame({'foo': [1, 2, 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
+            )
+            #will fail with
+            metadata['offending'] == {'foo': {'categorical_validation_fn': ['row 2']}}
+            metadata['actual'] == {'foo': {'categorical_validation_fn': [7]}}
+
+    """
+
+    categories = set(categories)
+
+    def categorical_validation_fn(x):
+        if ignore_missing_vals and pd.isnull(x):
+            return True, {}
+        return (x in categories), {}
+
+    categorical_validation_fn.__doc__ = 'checks whether values are within this set of values: {}'.format(
+        categories
+    )
+    if ignore_missing_vals:
+        categorical_validation_fn.__doc__ += ', ignoring nulls'
+
+    return categorical_validation_fn
+
+
+def dtype_in_set_validation_factory(datatypes, ignore_missing_vals=False):
+    """
+    factory for testing if the dtype of a val falls within some allowed set
+    Args:
+        datatypes(Union[set[type], type]): which datatype/datatypes are allowed
+        ignore_missing_vals(Optional[bool]): whether to ignore nulls
+
+    Returns: a validation function for this constraint
+
+    Usage:
+        pass returned functions as column validators to
+        :py:class:'~dagster_pandas.constraints.ColumnConstraintWithMetadata'
+        or :py:class:'~dagster_pandas.constraints.MultiColumnConstraintWithMetadata'
+
+    Examples:
+        .. code-block:: python
+            dtype_is_num_validator = dtype_in_set_validation_factory((int, float, int64, float64))
+            column_validator = MultiColumnConstraintWithMetadata(
+            "confirms values are numbers in a range",
+            {'foo': [dtype_is_num_validator]},
+            ColumnWithMetadataException,
+            raise_or_typecheck=False,
+            )
+            ntype = create_structured_dataframe_type(
+            "NumericType",
+            columns_validator=column_validator
+            )
+            @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=ntype)])
+            def create_dataframe(_):
+                yield Output(
+                DataFrame({'foo': [1, 'a', 7], 'bar': [9, 10, 10]}), output_name='basic_dataframe',
+            )
+            #will fail with
+            metadata['offending'] == {'foo': {'categorical_validation_fn': ['row 1']}}
+            metadata['actual'] == {'foo': {'categorical_validation_fn': ['a']}}
+
+    """
+
+    def dtype_in_set_validation_fn(x):
+        if ignore_missing_vals and pd.isnull(x):
+            return True, {}
+        return isinstance(x, datatypes), {}
+
+    dtype_in_set_validation_fn.__doc__ = 'checks whether values are this type/types: {}'.format(
+        datatypes
+    )
+    if ignore_missing_vals:
+        dtype_in_set_validation_fn.__doc__ += ', ignoring nulls'
+
+    return dtype_in_set_validation_fn
+
+
 class ColumnRangeConstraintWithMetadata(ColumnConstraintWithMetadata):
     def __init__(self, minim=None, maxim=None, columns=None, raise_or_typecheck=True):
         self.name = self.__class__.__name__
-        if minim is None:
-            minim = -1 * (sys.maxsize - 1)
-        if maxim is None:
-            maxim = sys.maxsize
-
-        def validation_fn(x):
-            return ((x <= maxim) and (x >= minim), {})
 
         description = "Confirms values are between {} and {}".format(minim, maxim)
         super(ColumnRangeConstraintWithMetadata, self).__init__(
             description=description,
-            validation_fn=validation_fn,
+            validation_fn=column_range_validation_factory(minim=minim, maxim=maxim),
             resulting_exception=ColumnWithMetadataException,
             raise_or_typecheck=raise_or_typecheck,
         )
