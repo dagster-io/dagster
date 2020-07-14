@@ -13,7 +13,7 @@ interface ConfigEditorHelpProps {
 export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = React.memo(
   ({ context, allInnerTypes }) => {
     if (!context) {
-      return <span />;
+      return <Container />;
     }
     return (
       <Container>
@@ -46,19 +46,16 @@ const AutocompletionsNote = styled.div`
 const ConfigScrollWrap = styled.div`
   padding: 8px;
   color: black;
+  flex: 1;
   pointer-events: initial;
-  background-color: #e1e8edd1;
   max-height: 100%;
   overflow-y: auto;
 `;
 
 const Container = styled.div`
-  width: 300px;
-  top: 14px;
-  right: 14px;
-  bottom: 68px;
-  position: absolute;
-  align-items: center;
-  pointer-events: none;
-  z-index: 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #e1e8edd1;
+  height: 100%;
 `;

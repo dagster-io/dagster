@@ -2,6 +2,8 @@ import * as React from "react";
 import styled, { CSSProperties } from "styled-components/macro";
 import { Colors, ButtonGroup, Button } from "@blueprintjs/core";
 
+const DIVIDER_THICKNESS = 4;
+
 interface SplitPanelContainerProps {
   axis?: "horizontal" | "vertical";
   identifier: string;
@@ -10,6 +12,7 @@ interface SplitPanelContainerProps {
   firstMinSize?: number;
   second: React.ReactNode;
 }
+
 interface SplitPanelContainerState {
   size: number;
   key: string;
@@ -44,12 +47,15 @@ export class SplitPanelContainer extends React.Component<
     const axis = this.props.axis || "horizontal";
 
     const firstPaneStyles: CSSProperties = { flexShrink: 0 };
+
+    // Note: The divider appears after the first panel, so making the first panel 100% wide
+    // hides the divider offscreen. To prevent this, we subtract the divider depth.
     if (axis === "horizontal") {
       firstPaneStyles.minWidth = firstMinSize;
-      firstPaneStyles.width = `${size}vw`;
+      firstPaneStyles.width = `calc(${size}% - ${DIVIDER_THICKNESS}px)`;
     } else {
       firstPaneStyles.minHeight = firstMinSize;
-      firstPaneStyles.height = `${size}vh`;
+      firstPaneStyles.height = `calc(${size}% - ${DIVIDER_THICKNESS}px)`;
     }
 
     return (
@@ -91,12 +97,12 @@ export class PanelDivider extends React.Component<IDividerProps> {
       if (!parent) return;
       const parentRect = parent.getBoundingClientRect();
 
-      const vx =
+      const firstPanelPercent =
         this.props.axis === "horizontal"
-          ? ((event.clientX - parentRect.left) * 100) / window.innerWidth
-          : ((event.clientY - parentRect.top) * 100) / window.innerHeight;
+          ? ((event.clientX - parentRect.left) * 100) / parentRect.width
+          : ((event.clientY - parentRect.top) * 100) / parentRect.height;
 
-      this.props.onMove(Math.min(100, Math.max(0, vx)));
+      this.props.onMove(Math.min(100, Math.max(0, firstPanelPercent)));
     };
 
     const onMouseUp = () => {
@@ -119,12 +125,12 @@ export class PanelDivider extends React.Component<IDividerProps> {
   }
 }
 
-interface SplitPanelTogglesProps {
+interface PanelToggleProps {
   axis: "horizontal" | "vertical";
   container: React.RefObject<SplitPanelContainer>;
 }
 
-export const SplitPanelToggles = ({ container, axis }: SplitPanelTogglesProps) => {
+export const FirstOrSecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
   return (
     <ButtonGroup style={{ flexShrink: 0 }}>
       <Button
@@ -143,9 +149,45 @@ export const SplitPanelToggles = ({ container, axis }: SplitPanelTogglesProps) =
   );
 };
 
+// Todo: This component attempts to sync itself with the container, but it can't
+// observe the container's width without a React context or adding a listener, etc.
+// If we keep making components that manipulate panel state we may want to move it
+// all to a context consumed by both.
+//
+export const SecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
+  const [prevSize, setPrevSize] = React.useState<number | "unknown">("unknown");
+  const initialIsOpen = (container.current?.state.size || 0) < 100;
+
+  const [open, setOpen] = React.useState<boolean>(initialIsOpen);
+  React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
+
+  return (
+    <Button
+      small={true}
+      active={open}
+      title={"Toggle Second Pane"}
+      icon={axis === "vertical" ? "add-row-bottom" : "add-column-right"}
+      onClick={() => {
+        if (!container.current) return;
+        const current = container.current.state.size;
+        if (current < 90) {
+          setPrevSize(current);
+          setOpen(false);
+          container.current.onChangeSize(100);
+        } else {
+          setOpen(true);
+          container.current.onChangeSize(
+            prevSize === "unknown" ? container.current.props.firstInitialPercent : prevSize
+          );
+        }
+      }}
+    />
+  );
+};
+
 const DividerWrapper = {
   horizontal: styled.div<{ resizing: boolean }>`
-    width: 4px;
+    width: ${DIVIDER_THICKNESS}px;
     z-index: 2;
     background: ${Colors.WHITE};
     border-left: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
@@ -154,7 +196,7 @@ const DividerWrapper = {
     position: relative;
   `,
   vertical: styled.div<{ resizing: boolean }>`
-    height: 4px;
+    height: ${DIVIDER_THICKNESS}px;
     z-index: 2;
     background: ${Colors.WHITE};
     border-top: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};

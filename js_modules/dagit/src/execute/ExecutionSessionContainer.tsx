@@ -7,7 +7,7 @@ import { ApolloConsumer } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import { RunPreview } from "./RunPreview";
-import { SplitPanelContainer } from "../SplitPanelContainer";
+import { SplitPanelContainer, SecondPanelToggle } from "../SplitPanelContainer";
 import SolidSelector from "./SolidSelector";
 import {
   ConfigEditor,
@@ -123,6 +123,8 @@ export default class ExecutionSessionContainer extends React.Component<
   };
 
   editor = React.createRef<ConfigEditor>();
+
+  editorSplitPanelContainer = React.createRef<SplitPanelContainer>();
 
   mounted = false;
 
@@ -308,7 +310,7 @@ export default class ExecutionSessionContainer extends React.Component<
                 onCreateSession={onCreateSession}
                 onSaveSession={onSaveSession}
               />
-              <div style={{ width: 5 }} />
+              <SessionSettingsSpacer />
               <SolidSelector
                 serverProvidedSubsetError={
                   preview?.isPipelineConfigValid.__typename === "InvalidSubsetError"
@@ -320,7 +322,7 @@ export default class ExecutionSessionContainer extends React.Component<
                 query={currentSession.solidSelectionQuery || null}
                 onChange={this.onSolidSelectionChange}
               />
-              <div style={{ width: 5 }} />
+              <SessionSettingsSpacer />
               <ConfigEditorModePicker
                 modes={pipeline.modes}
                 modeError={modeError}
@@ -342,9 +344,7 @@ export default class ExecutionSessionContainer extends React.Component<
                 open={tagEditorOpen}
                 onRequestClose={this.closeTagEditor}
               />
-            </SessionSettingsBar>
-            {tags.length ? <TagContainer tags={tags} onRequestEdit={this.openTagEditor} /> : null}
-            <ConfigEditorDisplayOptionsContainer>
+              <div style={{ flex: 1 }} />
               <Button
                 icon="paragraph"
                 small={true}
@@ -352,33 +352,45 @@ export default class ExecutionSessionContainer extends React.Component<
                 style={{ marginLeft: "auto" }}
                 onClick={() => this.setState({ showWhitespace: !showWhitespace })}
               />
-            </ConfigEditorDisplayOptionsContainer>
-            <ConfigEditorContainer>
-              <ConfigEditorHelp
-                context={editorHelpContext}
-                allInnerTypes={runConfigSchema?.allConfigTypes || []}
-              />
-              <ApolloConsumer>
-                {client => (
-                  <ConfigEditor
-                    ref={this.editor}
-                    readOnly={false}
-                    runConfigSchema={runConfigSchema}
-                    configCode={currentSession.runConfigYaml}
-                    onConfigChange={this.onConfigChange}
-                    onHelpContextChange={next => {
-                      if (!isHelpContextEqual(editorHelpContext, next)) {
-                        this.setState({ editorHelpContext: next });
-                      }
-                    }}
-                    showWhitespace={showWhitespace}
-                    checkConfig={async configJSON => {
-                      return await this.checkConfig(client, configJSON);
-                    }}
-                  />
-                )}
-              </ApolloConsumer>
-            </ConfigEditorContainer>
+              <SessionSettingsSpacer />
+              <SecondPanelToggle axis="horizontal" container={this.editorSplitPanelContainer} />
+            </SessionSettingsBar>
+            {tags.length ? <TagContainer tags={tags} onRequestEdit={this.openTagEditor} /> : null}
+            <SplitPanelContainer
+              ref={this.editorSplitPanelContainer}
+              axis="horizontal"
+              identifier="execution-editor"
+              firstMinSize={100}
+              firstInitialPercent={70}
+              first={
+                <ApolloConsumer>
+                  {client => (
+                    <ConfigEditor
+                      ref={this.editor}
+                      readOnly={false}
+                      runConfigSchema={runConfigSchema}
+                      configCode={currentSession.runConfigYaml}
+                      onConfigChange={this.onConfigChange}
+                      onHelpContextChange={next => {
+                        if (!isHelpContextEqual(editorHelpContext, next)) {
+                          this.setState({ editorHelpContext: next });
+                        }
+                      }}
+                      showWhitespace={showWhitespace}
+                      checkConfig={async configJSON => {
+                        return await this.checkConfig(client, configJSON);
+                      }}
+                    />
+                  )}
+                </ApolloConsumer>
+              }
+              second={
+                <ConfigEditorHelp
+                  context={editorHelpContext}
+                  allInnerTypes={runConfigSchema?.allConfigTypes || []}
+                />
+              }
+            />
           </>
         }
         second={
@@ -499,20 +511,10 @@ const LoadingOverlay: React.FunctionComponent<{
   </LoadingOverlayContainer>
 );
 
-const ConfigEditorDisplayOptionsContainer = styled.div`
-  display: inline-block;
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  z-index: 10;
+const SessionSettingsSpacer = styled.div`
+  width: 5px;
 `;
 
-const ConfigEditorContainer = styled.div`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0%;
-`;
 const TagEditorLink = styled.div`
   color: #666;
   cursor: pointer;

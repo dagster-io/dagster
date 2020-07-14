@@ -539,7 +539,7 @@ exports[`renders execution 1`] = `
         style={
           Object {
             "flexShrink": 0,
-            "height": "75vh",
+            "height": "calc(75% - 4px)",
             "minHeight": 100,
           }
         }
@@ -1157,7 +1157,7 @@ exports[`renders pipeline page 1`] = `
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
-            "width": "70vw",
+            "width": "calc(70% - 4px)",
           }
         }
       >
@@ -5742,7 +5742,7 @@ exports[`renders pipeline solid page 1`] = `
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
-            "width": "70vw",
+            "width": "calc(70% - 4px)",
           }
         }
       >
@@ -10180,7 +10180,7 @@ exports[`renders solids explorer 1`] = `
         Object {
           "flexShrink": 0,
           "minWidth": 420,
-          "width": "40vw",
+          "width": "calc(40% - 4px)",
         }
       }
     >
@@ -12038,7 +12038,7 @@ exports[`renders type page 1`] = `
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
-            "width": "70vw",
+            "width": "calc(70% - 4px)",
           }
         }
       >
@@ -16623,7 +16623,7 @@ exports[`renders type page 2`] = `
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
-            "width": "70vw",
+            "width": "calc(70% - 4px)",
           }
         }
       >
@@ -21208,7 +21208,7 @@ exports[`renders without error 1`] = `
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
-            "width": "70vw",
+            "width": "calc(70% - 4px)",
           }
         }
       >

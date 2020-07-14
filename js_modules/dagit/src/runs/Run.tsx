@@ -7,7 +7,7 @@ import ApolloClient from "apollo-client";
 import LogsScrollingTable from "./LogsScrollingTable";
 import { LogsProvider, GetDefaultLogFilter, LogFilter } from "./LogsProvider";
 import { RunFragment } from "./types/RunFragment";
-import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
+import { SplitPanelContainer, FirstOrSecondPanelToggle } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import {
@@ -295,7 +295,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                   mode: GaantChartMode.WATERFALL_TIMED
                 }}
                 toolbarLeftActions={
-                  <SplitPanelToggles axis={"vertical"} container={splitPanelContainer} />
+                  <FirstOrSecondPanelToggle axis={"vertical"} container={splitPanelContainer} />
                 }
                 toolbarActions={
                   <RunActionButtons
