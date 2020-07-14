@@ -292,7 +292,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     'repositoryLocationName': repo_location_name,
                     'repositoryName': repo_name,
                     'pipelineName': pipeline_run.pipeline_name,
-                    'solidSelection': pipeline_run.solid_selection,
+                    'solidSelection': list(pipeline_run.solids_to_execute)
+                    if pipeline_run.solids_to_execute
+                    else None,
                 },
                 'executionMetadata': {'runId': run_id},
                 'stepKeys': step_keys,
