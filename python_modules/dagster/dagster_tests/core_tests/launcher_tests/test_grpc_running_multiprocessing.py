@@ -5,6 +5,8 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
 
+import pytest
+
 from dagster import (
     Field,
     InputDefinition,
@@ -333,6 +335,10 @@ def infinite_loop_pipeline():
     loop()
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_has_run_query_and_terminate():
     with temp_instance() as instance:
         with safe_tempfile_path() as path:
@@ -362,6 +368,10 @@ def test_has_run_query_and_terminate():
         assert not os.path.exists(path)
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_two_runs_running():
     with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two, temp_instance() as instance:
         pipeline_run_one = instance.create_run_for_pipeline(

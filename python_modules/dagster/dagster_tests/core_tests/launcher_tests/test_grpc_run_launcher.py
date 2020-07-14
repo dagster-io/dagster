@@ -106,7 +106,7 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     )
 
 
-def poll_for_run(instance, run_id, timeout=5):
+def poll_for_run(instance, run_id, timeout=10):
     total_time = 0
     backoff = 0.01
 
@@ -122,7 +122,7 @@ def poll_for_run(instance, run_id, timeout=5):
                 raise Exception('Timed out')
 
 
-def poll_for_step_start(instance, run_id, timeout=5):
+def poll_for_step_start(instance, run_id, timeout=10):
     total_time = 0
     backoff = 0.01
 
@@ -138,6 +138,10 @@ def poll_for_step_start(instance, run_id, timeout=5):
                 raise Exception('Timed out')
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_successful_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
@@ -158,10 +162,14 @@ def test_successful_run():
         assert pipeline_run
         assert pipeline_run.run_id == run_id
 
-        pipeline_run = poll_for_run(instance, run_id, timeout=5)
+        pipeline_run = poll_for_run(instance, run_id)
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_crashy_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
@@ -182,7 +190,7 @@ def test_crashy_run():
         assert failed_pipeline_run
         assert failed_pipeline_run.run_id == run_id
 
-        failed_pipeline_run = poll_for_run(instance, run_id, timeout=5)
+        failed_pipeline_run = poll_for_run(instance, run_id)
         assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
 
         event_records = instance.all_logs(run_id)
@@ -220,7 +228,7 @@ def test_terminated_run():
         # Return false is already terminated
         assert not launcher.terminate(run_id)
 
-        terminated_pipeline_run = poll_for_run(instance, run_id, timeout=2)
+        terminated_pipeline_run = poll_for_run(instance, run_id)
         terminated_pipeline_run = instance.get_run_by_id(run_id)
         assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
 

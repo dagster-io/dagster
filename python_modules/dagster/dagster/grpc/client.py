@@ -248,7 +248,12 @@ class DagsterGrpcClient(object):
             yield instance.report_run_failed(pipeline_run)
             raise interrupt
         except grpc.RpcError as rpc_error:
-            if 'Socket closed' in rpc_error.debug_error_string():  # pylint: disable=no-member
+            if (
+                # posix
+                'Socket closed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+                # windows
+                or 'Stream removed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+            ):
                 yield instance.report_engine_event(
                     message='User process: GRPC server for {run_id} terminated unexpectedly'.format(
                         run_id=pipeline_run.run_id
@@ -283,7 +288,6 @@ def _wait_for_grpc_server(server_process, timeout=3):
     total_time = 0
     backoff = 0.01
     for line in iter(server_process.stdout.readline, ''):
-        print(line)
         if line.rstrip() == SERVER_FAILED_TO_BIND_TOKEN_BYTES:
             raise CouldNotBindGrpcServerToAddress()
         elif line.rstrip() != SERVER_STARTED_TOKEN_BYTES:
