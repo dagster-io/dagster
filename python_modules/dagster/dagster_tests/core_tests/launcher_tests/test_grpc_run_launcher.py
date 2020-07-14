@@ -138,6 +138,10 @@ def poll_for_step_start(instance, run_id, timeout=10):
                 raise Exception('Timed out')
 
 
+# https://github.com/dagster-io/dagster/issues/2709
+@pytest.mark.skipif(
+    seven.IS_WINDOWS, reason='Unresolved issue with orphaned compute log process on Windows'
+)
 def test_successful_run():
     with temp_instance() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
