@@ -32,7 +32,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
 
     # https://github.com/dagster-io/dagster/issues/2440
     check.invariant(
-        pipeline_context.system_storage_def.is_persistent,
+        execution_plan.artifacts_persisted,
         'Cannot use in-memory storage with Celery, use filesystem (on top of NFS or '
         'similar system that allows files to be available to all nodes), S3, or GCS',
     )

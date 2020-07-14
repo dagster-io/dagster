@@ -100,6 +100,15 @@ def test_using_file_system_for_subplan():
     )
 
 
+def test_using_intermediates_file_system_is_persistent():
+    pipeline = define_inty_pipeline()
+
+    run_config = {'intermediate_storage': {'filesystem': {}}}
+    execution_plan = create_execution_plan(pipeline, run_config=run_config,)
+
+    assert execution_plan.artifacts_persisted
+
+
 def test_using_intermediates_file_system_for_subplan():
     pipeline = define_inty_pipeline()
 

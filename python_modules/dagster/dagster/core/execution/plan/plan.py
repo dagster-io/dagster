@@ -12,7 +12,10 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.system_config.objects import (
+    EmptyIntermediateStoreBackcompatConfig,
+    EnvironmentConfig,
+)
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
@@ -99,17 +102,26 @@ class _PlanBuilder(object):
 
         step_dict = {step.key: step for step in self._steps.values()}
 
-        system_storage_def = self.mode_definition.get_system_storage_def(
-            self.environment_config.storage.system_storage_name
-        )
-
         step_keys_to_execute = self.step_keys_to_execute or [
             step.key for step in self._steps.values()
         ]
 
         return ExecutionPlan(
-            self.pipeline, step_dict, deps, system_storage_def.is_persistent, step_keys_to_execute,
+            self.pipeline, step_dict, deps, self.storage_is_persistent(), step_keys_to_execute,
         )
+
+    def storage_is_persistent(self):
+        if isinstance(
+            self.environment_config.intermediate_storage.intermediate_storage_name,
+            EmptyIntermediateStoreBackcompatConfig,
+        ):
+            return self.mode_definition.get_system_storage_def(
+                self.environment_config.storage.system_storage_name
+            ).is_persistent
+
+        return self.mode_definition.get_intermediate_storage_def(
+            self.environment_config.intermediate_storage.intermediate_storage_name
+        ).is_persistent
 
     def _build_from_sorted_solids(
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
