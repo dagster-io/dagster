@@ -9,5 +9,7 @@ its assets.
 from .asset import Asset, source_asset
 from .computation import Computation
 from .decorators import computed_asset, computed_table
-from .house import Lakehouse, TypeStoragePolicy
+from .house import Lakehouse
+from .multi_type_storage import multi_type_asset_storage
+from .storage import AssetStorage, AssetStorageDefinition, asset_storage
 from .table import Column, Table, source_table

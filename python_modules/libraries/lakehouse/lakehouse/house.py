@@ -1,7 +1,4 @@
-from abc import ABCMeta, abstractmethod
 from functools import wraps
-
-import six
 
 from dagster import (
     DependencyDefinition,
@@ -76,7 +73,7 @@ class Lakehouse:
     '''
 
     def __init__(
-        self, preset_defs, mode_defs, in_memory_type_resource_keys=None, type_storage_policies=None
+        self, preset_defs=None, mode_defs=None, in_memory_type_resource_keys=None,
     ):
         '''
         Args:
@@ -87,30 +84,15 @@ class Lakehouse:
             in_memory_type_resource_keys (Dict[type, List[str]]): For any type, declares resource
                 keys that need to be around when that type is an input or output of an asset
                 derivation, e.g. "pyspark" for asset whose derivation involves PySpark DataFrames.
-            type_storage_policies (List[Type[TypeStoragePolicy]]): Each policy describes how to read
-                and write a single in-memory type to a single storage definition.
         '''
         self._presets_by_name = {preset.name: preset for preset in preset_defs}
         self._modes_by_name = {mode.name: mode for mode in mode_defs}
         self._in_memory_type_resource_keys = in_memory_type_resource_keys or {}
-        self._policies_by_type_storage = {
-            (policy.in_memory_type(), policy.storage_definition()): policy
-            for policy in type_storage_policies
-        }
 
     def build_pipeline_definition(self, name, assets_to_update):
         solid_defs = {}
         for asset in assets_to_update:
             if asset.computation:
-                for mode in self._modes_by_name.values():
-                    self.check_has_policy(
-                        mode, asset.computation.output_in_memory_type, asset.storage_key
-                    )
-
-                for mode in self._modes_by_name.values():
-                    for dep in asset.computation.deps.values():
-                        self.check_has_policy(mode, dep.in_memory_type, dep.asset.storage_key)
-
                 solid_defs[asset.path] = self.get_computed_asset_solid_def(asset, assets_to_update)
             else:
                 check.failed('All elements of assets_to_update must have computations')
@@ -179,66 +161,17 @@ class Lakehouse:
         @wraps(asset.computation.compute_fn)
         def compute(context, _input_defs):
             kwargs = {}
-            mode = self._modes_by_name[context.mode_def.name]
 
             for arg_name, dep in asset.computation.deps.items():
                 storage_key = dep.asset.storage_key
-                policy = self.policy_for_type_storage(mode, dep.in_memory_type, storage_key)
-                storage = getattr(context.resources, storage_key)
-                kwargs[arg_name] = policy.load(storage, dep.asset.path, context.resources)
+                input_storage = getattr(context.resources, storage_key)
+                kwargs[arg_name] = input_storage.load(
+                    dep.in_memory_type, dep.asset.path, context.resources
+                )
             result = asset.computation.compute_fn(**kwargs)
 
-            output_policy = self.policy_for_type_storage(
-                mode, asset.computation.output_in_memory_type, asset.storage_key
-            )
-            storage = getattr(context.resources, asset.storage_key)
-            output_policy.save(result, storage, asset.path, context.resources)
+            output_storage = getattr(context.resources, asset.storage_key)
+            output_storage.save(result, asset.path, context.resources)
             yield Output(value=asset.path, output_name=output_def.name)
 
         return compute
-
-    def check_has_policy(self, mode, in_memory_type, storage_key):
-        check.invariant(
-            storage_key in mode.resource_defs,
-            'Mode {name} is missing storage_key {storage_key}'.format(
-                name=mode.name, storage_key=storage_key,
-            ),
-        )
-        storage_def = mode.resource_defs[storage_key]
-        check.invariant(
-            (in_memory_type, storage_def) in self._policies_by_type_storage,
-            'Mode {name} is missing TypeStoragePolicy for storage_key {storage_key} '
-            'and in-memory type {in_memory_type}'.format(
-                name=mode.name, storage_key=storage_key, in_memory_type=in_memory_type,
-            ),
-        )
-
-    def policy_for_type_storage(self, mode, in_memory_type, storage_key):
-        storage_def = mode.resource_defs[storage_key]
-        return self._policies_by_type_storage[in_memory_type, storage_def]
-
-
-class TypeStoragePolicy(six.with_metaclass(ABCMeta)):
-    '''A TypeStoragePolicy describes how to save and load a particular in-memory type to
-    and from a particular kind of storage, e.g. how to save and load Pandas DataFrames to/from
-    CSV files in S3.'''
-
-    @classmethod
-    @abstractmethod
-    def in_memory_type(cls):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def storage_definition(cls):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def save(cls, obj, storage, path, resources):
-        pass
-
-    @classmethod
-    @abstractmethod
-    def load(cls, storage, path, resources):
-        pass

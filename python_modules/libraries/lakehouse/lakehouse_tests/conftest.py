@@ -1,71 +1,39 @@
 import pytest
-from lakehouse import Lakehouse, TypeStoragePolicy
+from lakehouse import AssetStorage, Lakehouse, asset_storage
 
-from dagster import ModeDefinition, PresetDefinition, resource
+from dagster import ModeDefinition, PresetDefinition
 
 
 @pytest.fixture
 def basic_lakehouse_and_storages():
-    class DictStorage:
+    class DictStorage(AssetStorage):
         def __init__(self):
             self.the_dict = {}
+
+        def save(self, obj, path, _resources):
+            self.the_dict[path] = obj
+
+        def load(self, _python_type, path, _resources):
+            return self.the_dict[path]
 
     storage1 = DictStorage()
     storage2 = DictStorage()
 
-    @resource
+    @asset_storage()
     def some_storage(_):
         return storage1
 
-    @resource
+    @asset_storage()
     def some_other_storage(_):
         return storage2
 
     dev_mode = ModeDefinition(
-        name='dev', resource_defs={'storage1': some_storage, 'storage2': some_other_storage,},
+        name='dev', resource_defs={'storage1': some_storage, 'storage2': some_other_storage},
     )
-    dev_preset = PresetDefinition(name='dev', mode='dev', run_config={}, solid_selection=None,)
-
-    class IntSomeStoragePolicy(TypeStoragePolicy):
-        @classmethod
-        def in_memory_type(cls):
-            return int
-
-        @classmethod
-        def storage_definition(cls):
-            return some_storage
-
-        @classmethod
-        def save(cls, obj, storage, path, _resources):
-            storage.the_dict[path] = obj
-
-        @classmethod
-        def load(cls, storage, path, _resources):
-            return storage.the_dict[path]
-
-    class IntSomeOtherStoragePolicy(TypeStoragePolicy):
-        @classmethod
-        def in_memory_type(cls):
-            return int
-
-        @classmethod
-        def storage_definition(cls):
-            return some_other_storage
-
-        @classmethod
-        def save(cls, obj, storage, path, _resources):
-            storage.the_dict[path] = obj
-
-        @classmethod
-        def load(cls, storage, path, _resources):
-            return storage.the_dict[path]
+    dev_preset = PresetDefinition(name='dev', mode='dev', run_config={}, solid_selection=None)
 
     return (
-        Lakehouse(
-            mode_defs=[dev_mode],
-            preset_defs=[dev_preset],
-            type_storage_policies=[IntSomeStoragePolicy, IntSomeOtherStoragePolicy],
-        ),
+        Lakehouse(mode_defs=[dev_mode], preset_defs=[dev_preset]),
         storage1,
         storage2,
     )

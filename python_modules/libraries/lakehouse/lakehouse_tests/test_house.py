@@ -1,8 +1,6 @@
-import pytest
 from lakehouse import computed_asset, source_asset
 
 from dagster import execute_pipeline
-from dagster.check import CheckError
 
 
 def _assert_input_defs(solid_def, expected):
@@ -87,35 +85,6 @@ def test_get_computed_asset_solid_def_with_computed_asset_deps(basic_lakehouse):
         [(dep_asset1.dagster_type.key, 'dep_asset1'), (dep_asset2.dagster_type.key, 'dep_asset2')],
     )
     _assert_output_def(solid_def, some_asset.dagster_type, 'result')
-
-
-def test_build_pipeline_definition_missing_storage(basic_lakehouse):
-    @computed_asset(storage_key='storage3')
-    def return_one_asset() -> int:
-        return 1
-
-    with pytest.raises(CheckError):
-        basic_lakehouse.build_pipeline_definition('some_pipeline', [return_one_asset])
-
-
-def test_build_pipeline_definition_missing_output_policy(basic_lakehouse):
-    @computed_asset(storage_key='storage1')
-    def str_asset() -> str:
-        return ''
-
-    with pytest.raises(CheckError):
-        basic_lakehouse.build_pipeline_definition('some_pipeline', [str_asset])
-
-
-def test_build_pipeline_definition_missing_input_policy(basic_lakehouse):
-    source_asset1 = source_asset(storage_key='storage1', path=('a', 'b'))
-
-    @computed_asset(storage_key='storage1', input_assets=[source_asset1])
-    def some_asset(source: str) -> int:
-        return int(source)
-
-    with pytest.raises(CheckError):
-        basic_lakehouse.build_pipeline_definition('some_pipeline', [some_asset])
 
 
 def test_build_and_execute_pipeline(basic_lakehouse_and_storages):
