@@ -23,7 +23,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import IPCErrorMessage, setup_interrupt_support
+from dagster.serdes.ipc import IPCErrorMessage
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -360,8 +360,6 @@ SERVER_FAILED_TO_BIND_TOKEN_BYTES = b'dagster_grpc_server_failed_to_bind'
 
 class DagsterGrpcServer(object):
     def __init__(self, host='localhost', port=None, socket=None, max_workers=1):
-        setup_interrupt_support()
-
         check.opt_str_param(host, 'host')
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')
