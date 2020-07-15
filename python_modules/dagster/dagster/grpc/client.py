@@ -309,7 +309,7 @@ def open_server_process(port, socket, python_executable_path=None):
     server_process = open_ipc_subprocess(
         [python_executable_path, '-m', 'dagster.grpc']
         + (['-p', str(port)] if port else [])
-        + (['-f', socket] if socket else []),
+        + (['-s', socket] if socket else []),
         stdout=subprocess.PIPE,
     )
     ready = _wait_for_grpc_server(server_process)

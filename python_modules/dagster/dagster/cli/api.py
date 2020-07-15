@@ -402,7 +402,7 @@ def _schedule_tick_state(instance, tick_data):
 
 @click.command(name='grpc', help='Serve the Dagster inter-process API over GRPC')
 @click.option('--port', '-p', type=click.INT, required=False)
-@click.option('--socket', '-f', type=click.Path(), required=False)
+@click.option('--socket', '-s', type=click.Path(), required=False)
 @click.option('--host', '-h', type=click.STRING, required=False, default='localhost')
 def grpc_command(port=None, socket=None, host='localhost'):
     if seven.IS_WINDOWS and port is None:
