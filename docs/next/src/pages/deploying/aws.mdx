@@ -46,12 +46,12 @@ You'll first need to need to add S3 storage to your **`ModeDefinition`**.
 
 ```python
 from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3.system_storage import s3_plus_default_intermediate_storage_defs
 from dagster import ModeDefinition
 
 prod_mode = ModeDefinition(
     name='prod',
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
     resource_defs={'s3': s3_resource}
 )
 ```
@@ -59,7 +59,7 @@ prod_mode = ModeDefinition(
 Then, just add the following YAML block in your pipeline config:
 
 ```yaml
-storage:
+intermediate_storage:
   s3:
     config:
       s3_bucket: your-s3-bucket-name

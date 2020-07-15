@@ -58,6 +58,22 @@ System Storage
 
 ----
 
+
+Intermediate Storage
+--------------
+.. autodecorator:: intermediate_storage
+
+.. autoclass:: IntermediateStorageDefinition
+
+.. autoclass:: InitIntermediateStorageContext
+   :members:
+
+.. currentmodule:: dagster.core.storage.system_storage
+
+.. autoclass:: IntermediateStorage
+
+----
+
 Instance
 --------
 

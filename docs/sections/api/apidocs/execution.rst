@@ -171,6 +171,21 @@ System Storage
   :py:class:`fs_system_storage`].
 
 
+Intermediate Storage
+--------------
+.. autodata:: mem_intermediate_storage
+  :annotation: IntermediateStorageDefinition
+
+.. autodata:: fs_intermediate_storage
+  :annotation: IntermediateStorageDefinition
+
+.. autodata:: default_intermediate_storage_defs
+  :annotation: List[IntermediateStorageDefinition]
+
+  The default intermediate storages available on any :py:class:`ModeDefinition` that does not provide
+  custom intermediate storages. These are currently [:py:class:`mem_intermediate_storage`,
+  :py:class:`fs_intermediate_storage`].
+
 Executors
 ---------
 .. autodata:: in_process_executor

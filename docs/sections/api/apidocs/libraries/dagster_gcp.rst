@@ -39,5 +39,9 @@ GCS
 .. autodata:: gcs_system_storage
   :annotation: SystemStorageDefinition
 
+
+.. autodata:: gcs_intermediate_storage
+  :annotation: IntermediateStorageDefinition
+
 .. autodata:: gcs_resource
   :annotation: ResourceDefinition
