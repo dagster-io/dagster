@@ -63,6 +63,11 @@ if sys.version_info > (3,):
 else:
     from pathlib2 import Path  # pylint: disable=import-error
 
+if sys.version_info > (3,):
+    from contextlib import ExitStack  # pylint: disable=import-error
+else:
+    from contextlib2 import ExitStack  # pylint: disable=import-error
+
 IS_WINDOWS = os.name == 'nt'
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
