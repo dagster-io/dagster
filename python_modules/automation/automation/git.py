@@ -125,3 +125,14 @@ def set_git_tag(tag, signed=False, dry_run=True):
         raise Exception(str(exc_info.output))
 
     return tag
+
+
+def git_commit_updates(repo_dir, message):
+    cmds = [
+        'git add -A',
+        'git commit -m "{}"'.format(message),
+    ]
+
+    print('Committing to {} with message {}'.format(repo_dir, message))
+    for cmd in cmds:
+        subprocess.call(cmd, cwd=repo_dir, shell=True)

@@ -1,38 +1,10 @@
-#!/usr/bin/env python
-
 import os
 import re
 import shutil
 import subprocess
 import sys
 
-import click
-import six
-from automation.git import git_repo_root
-
-DEFAULT_DOCS_DIR = '/tmp/dagster-docs'
-
-
-def git_commit_updates(repo_dir, message):
-    cmds = [
-        'git add -A',
-        'git commit -m "{}"'.format(message),
-    ]
-
-    print('Committing docs on {}'.format(repo_dir))
-    for cmd in cmds:
-        subprocess.call(cmd, cwd=repo_dir, shell=True)
-
-
-def copytree(src, dst):
-    '''https://stackoverflow.com/a/12514470/11295366'''
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d)
-        else:
-            shutil.copy2(s, d)
+from automation.git import git_commit_updates, git_repo_root
 
 
 class DagsterRepo:
@@ -108,25 +80,3 @@ class DagsterDocsRepo:
 
     def commit(self, docs_version):
         git_commit_updates(self.docs_dir, message='[Docs] {}'.format(docs_version))
-
-
-@click.command()
-@click.option('-v', '--docs-version', type=click.STRING, required=True)
-@click.option('-d', '--docs-dir', type=click.STRING, required=False, default=DEFAULT_DOCS_DIR)
-def build(docs_version, docs_dir):
-    ddr = DagsterDocsRepo(docs_dir)
-    dr = DagsterRepo()
-
-    ddr.check_new_version_dir(docs_version)
-    ddr.remove_existing_docs_files()
-
-    # Build and copy new docs files into dagster-docs
-    dr.build_docs(docs_version)
-    copytree(dr.out_path, docs_dir)
-
-    dr.commit(docs_version)
-    ddr.commit(docs_version)
-
-
-if __name__ == '__main__':
-    build()  # pylint: disable=no-value-for-parameter

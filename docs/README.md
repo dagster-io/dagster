@@ -30,5 +30,6 @@ linkchecker http://127.0.0.1:8000
 To build and push docs for a new version (e.g. 0.8.5), in `docs` directory, run:
 
 ```
-docs/build.py -v 0.8.5
+pip install -e python_modules/automation
+dagster-docs build -v 0.8.5
 ```

@@ -1,10 +1,10 @@
 '''This script is to ensure that we provide docs for every library that we create
 '''
 import os
-import subprocess
 import sys
 
 import six
+from automation.git import git_repo_root
 
 EXPECTED_LIBRARY_README_CONTENTS = '''
 # {library}
@@ -12,10 +12,6 @@ EXPECTED_LIBRARY_README_CONTENTS = '''
 The docs for `{library}` can be found
 [here](https://docs.dagster.io/_apidocs/libraries/{library_underscore}).
 '''.strip()
-
-
-def git_repo_root():
-    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
 
 
 def get_library_module_directories():
@@ -69,8 +65,7 @@ def check_api_docs(library_name):
         sys.exit(1)
 
 
-def main():
-
+def validate_library_readmes():
     dirs = get_library_module_directories()
     for library_name in dirs:
         library_root = os.path.join(git_repo_root(), 'python_modules', 'libraries')
@@ -84,7 +79,3 @@ def main():
 
     print(':white_check_mark: All README.md contents exist and content validated!')
     print(':white_check_mark: All API docs exist!')
-
-
-if __name__ == "__main__":
-    main()

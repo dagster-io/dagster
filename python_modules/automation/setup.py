@@ -32,6 +32,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            'dagster-docs = automation.docs.cli:main',
             'dagster-image = automation.docker.cli:main',
             'dagster-release = automation.release.cli:main',
             'dagster-scaffold = automation.scaffold.cli:main',
