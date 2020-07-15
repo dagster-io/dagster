@@ -317,7 +317,9 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             recon_repo = ReconstructableRepository(pointer)
 
             execution_plan = create_execution_plan(
-                pipeline=recon_repo.get_reconstructable_pipeline(external_pipeline.name),
+                pipeline=recon_repo.get_reconstructable_pipeline(
+                    external_pipeline.name
+                ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
                 run_config=run_config,
                 mode=pipeline_run.mode,
                 step_keys_to_execute=step_keys_to_execute,
