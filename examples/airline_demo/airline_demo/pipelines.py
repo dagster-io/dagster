@@ -6,7 +6,7 @@ from dagster_aws.s3 import (
     file_handle_to_s3,
     s3_file_cache,
     s3_file_manager,
-    s3_plus_default_storage_defs,
+    s3_plus_default_intermediate_storage_defs,
     s3_resource,
 )
 from dagster_pyspark import pyspark_resource
@@ -47,7 +47,7 @@ test_mode = ModeDefinition(
         'file_cache': fs_file_cache,
         'file_manager': local_file_manager,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -62,7 +62,7 @@ local_mode = ModeDefinition(
         'file_cache': fs_file_cache,
         'file_manager': local_file_manager,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -77,7 +77,7 @@ prod_mode = ModeDefinition(
         'file_cache': s3_file_cache,
         'file_manager': s3_file_manager,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 

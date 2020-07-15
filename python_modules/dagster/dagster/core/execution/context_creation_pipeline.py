@@ -127,7 +127,7 @@ def create_context_creation_data(
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, system_storage_def
+            execution_plan, system_storage_def, intermediate_storage_def
         ),
     )
 
@@ -330,9 +330,8 @@ def create_intermediate_storage(
                 pipeline_run=pipeline_run,
                 instance=context_creation_data.instance,
                 environment_config=environment_config,
-                # TODO: Fix
                 type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                    pipeline_def, context_creation_data.system_storage_def
+                    pipeline_def, intermediate_storage_def
                 ),
                 resources=scoped_resources_builder.build(
                     context_creation_data.intermediate_storage_def.required_resource_keys,
@@ -386,6 +385,7 @@ def construct_pipeline_execution_context(
             pipeline=context_creation_data.pipeline,
             mode_def=context_creation_data.mode_def,
             system_storage_def=context_creation_data.system_storage_def,
+            intermediate_storage_def=context_creation_data.intermediate_storage_def,
             pipeline_run=context_creation_data.pipeline_run,
             scoped_resources_builder=scoped_resources_builder,
             environment_config=context_creation_data.environment_config,

@@ -151,7 +151,9 @@ class Manager(object):
                 pipeline_context=pipeline_context,
                 solid_config=None,
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan, pipeline_context.system_storage_def
+                    execution_plan,
+                    pipeline_context.system_storage_def,
+                    pipeline_context.intermediate_storage_def,
                 ),
             )
 
@@ -232,7 +234,9 @@ class Manager(object):
                 pipeline_context=pipeline_context,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    execution_plan, pipeline_context.system_storage_def
+                    execution_plan,
+                    pipeline_context.system_storage_def,
+                    pipeline_context.intermediate_storage_def,
                 ),
             )
 

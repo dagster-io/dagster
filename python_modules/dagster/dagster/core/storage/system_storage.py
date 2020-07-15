@@ -2,6 +2,7 @@ from dagster import check
 from dagster.config import Field
 from dagster.core.definitions.intermediate_storage import intermediate_storage
 from dagster.core.definitions.system_storage import SystemStorageData, system_storage
+from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 
 from .file_manager import LocalFileManager
 from .init import InitIntermediateStorageContext
@@ -44,7 +45,9 @@ def build_intermediate_storage_from_object_store(
         object_store=object_store,
         run_id=init_context.pipeline_run.run_id,
         root_for_run_id=root_for_run_id,
-        type_storage_plugin_registry=init_context.type_storage_plugin_registry,
+        type_storage_plugin_registry=init_context.type_storage_plugin_registry
+        if init_context.type_storage_plugin_registry
+        else TypeStoragePluginRegistry(types_to_register=[]),
     )
     return IntermediateStoreIntermediatesManager(intermediate_store)
 

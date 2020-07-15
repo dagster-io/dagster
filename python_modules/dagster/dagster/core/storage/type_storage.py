@@ -103,10 +103,18 @@ class TypeStoragePluginRegistry(object):
 
 def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
     # Needed to avoid circular dep
-    from dagster.core.definitions import PipelineDefinition, SystemStorageDefinition
+    from dagster.core.definitions import (
+        PipelineDefinition,
+        SystemStorageDefinition,
+        IntermediateStorageDefinition,
+    )
 
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
+    check.inst_param(
+        system_storage_def,
+        'system_storage_def',
+        (SystemStorageDefinition, IntermediateStorageDefinition),
+    )
 
     type_plugins = []
     for type_obj in pipeline_def.all_dagster_types():

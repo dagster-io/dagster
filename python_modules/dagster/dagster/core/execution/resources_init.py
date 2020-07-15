@@ -186,24 +186,30 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(execution_plan, system_storage_def):
+def get_required_resource_keys_to_init(
+    execution_plan, system_storage_def, intermediate_storage_def
+):
     resource_keys = set()
 
     resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
+    if intermediate_storage_def is not None:
+        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     for step_key, step in execution_plan.step_dict.items():
         if step_key not in execution_plan.step_keys_to_execute:
             continue
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(
-                step, execution_plan.pipeline_def, system_storage_def
+                step, execution_plan.pipeline_def, system_storage_def, intermediate_storage_def
             )
         )
 
     return frozenset(resource_keys)
 
 
-def get_required_resource_keys_for_step(execution_step, pipeline_def, system_storage_def):
+def get_required_resource_keys_for_step(
+    execution_step, pipeline_def, system_storage_def, intermediate_storage_def
+):
     resource_keys = set()
 
     # add all the system storage resource keys
@@ -234,5 +240,7 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
         for auto_plugin in dagster_type.auto_plugins:
             if auto_plugin.compatible_with_storage_def(system_storage_def):
                 resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
-
+            if intermediate_storage_def is not None:
+                if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
+                    resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
     return frozenset(resource_keys)

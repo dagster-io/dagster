@@ -26,7 +26,7 @@ class SystemExecutionContextData(
         '_SystemExecutionContextData',
         (
             'pipeline_run scoped_resources_builder environment_config pipeline '
-            'mode_def system_storage_def instance intermediates_manager file_manager '
+            'mode_def system_storage_def intermediate_storage_def instance intermediates_manager file_manager '
             'raise_on_error retries'
         ),
     )
@@ -44,6 +44,7 @@ class SystemExecutionContextData(
         pipeline,
         mode_def,
         system_storage_def,
+        intermediate_storage_def,
         instance,
         intermediates_manager,
         file_manager,
@@ -51,6 +52,7 @@ class SystemExecutionContextData(
         retries,
     ):
         from dagster.core.definitions.system_storage import SystemStorageDefinition
+        from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
         from dagster.core.storage.intermediates_manager import IntermediateStorage
         from dagster.core.instance import DagsterInstance
 
@@ -67,6 +69,9 @@ class SystemExecutionContextData(
             mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
             system_storage_def=check.inst_param(
                 system_storage_def, 'system_storage_def', SystemStorageDefinition
+            ),
+            intermediate_storage_def=check.opt_inst_param(
+                intermediate_storage_def, 'intermediate_storage_def', IntermediateStorageDefinition
             ),
             instance=check.inst_param(instance, 'instance', DagsterInstance),
             intermediates_manager=check.inst_param(
@@ -134,6 +139,10 @@ class SystemExecutionContext(object):
     @property
     def system_storage_def(self):
         return self._execution_context_data.system_storage_def
+
+    @property
+    def intermediate_storage_def(self):
+        return self._execution_context_data.intermediate_storage_def
 
     @property
     def instance(self):
@@ -206,7 +215,10 @@ class SystemStepExecutionContext(SystemExecutionContext):
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(execution_context_data, log_manager)
         self._required_resource_keys = get_required_resource_keys_for_step(
-            step, execution_context_data.pipeline_def, execution_context_data.system_storage_def,
+            step,
+            execution_context_data.pipeline_def,
+            execution_context_data.system_storage_def,
+            execution_context_data.intermediate_storage_def,
         )
         self._resources = self._execution_context_data.scoped_resources_builder.build(
             self._required_resource_keys

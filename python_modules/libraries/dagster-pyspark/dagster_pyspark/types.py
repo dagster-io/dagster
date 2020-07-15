@@ -15,7 +15,7 @@ from dagster import (
     dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
-from dagster.core.storage.system_storage import fs_system_storage
+from dagster.core.storage.system_storage import fs_intermediate_storage, fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 
 WriteModeOptions = Enum(
@@ -344,9 +344,12 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
     @classmethod
     def compatible_with_storage_def(cls, system_storage_def):
         try:
-            from dagster_aws.s3 import s3_system_storage
+            from dagster_aws.s3 import s3_system_storage, s3_intermediate_storage
 
-            return system_storage_def is s3_system_storage
+            return (
+                system_storage_def is s3_system_storage
+                or system_storage_def is s3_intermediate_storage
+            )
         except ImportError:
             return False
 
@@ -382,7 +385,9 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def compatible_with_storage_def(cls, system_storage_def):
-        return system_storage_def is fs_system_storage
+        return (
+            system_storage_def is fs_system_storage or system_storage_def is fs_intermediate_storage
+        )
 
     @classmethod
     def set_object(cls, intermediate_store, obj, _context, _dagster_type, paths):

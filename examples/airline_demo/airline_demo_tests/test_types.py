@@ -6,7 +6,7 @@ from airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_aws.s3 import (
     S3IntermediateStore,
     s3_file_manager,
-    s3_plus_default_storage_defs,
+    s3_plus_default_intermediate_storage_defs,
     s3_resource,
 )
 from dagster_pyspark import DataFrame, pyspark_resource
@@ -38,7 +38,7 @@ spark_local_fs_mode = ModeDefinition(
         'pyspark_step_launcher': no_step_launcher,
         'file_manager': local_file_manager,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 spark_s3_mode = ModeDefinition(
@@ -50,7 +50,7 @@ spark_s3_mode = ModeDefinition(
         'pyspark_step_launcher': no_step_launcher,
         'file_manager': s3_file_manager,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -69,7 +69,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
         spark_df_test_pipeline,
         mode='spark',
         run_config={
-            'storage': {'filesystem': {}},
+            'intermediate_storage': {'filesystem': {}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
         instance=instance,
@@ -109,7 +109,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
     result = execute_pipeline(
         spark_df_test_pipeline,
         run_config={
-            'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
+            'intermediate_storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
             'resources': {
                 'pyspark': {'config': {'spark_conf': spark_config}},
                 'file_manager': {'config': {'s3_bucket': s3_bucket}},
