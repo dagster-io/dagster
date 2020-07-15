@@ -9,7 +9,7 @@ from lakehouse import AssetStorage, Lakehouse, asset_storage, multi_type_asset_s
 from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 
-from dagster import ModeDefinition, PresetDefinition, StringSource
+from dagster import ModeDefinition, StringSource
 
 
 class S3:
@@ -155,29 +155,22 @@ s3_storage = multi_type_asset_storage(
 def make_simple_lakehouse():
     dev_mode = ModeDefinition(
         name='dev',
-        resource_defs={'pyspark': pyspark_resource, 'filesystem': local_file_system_storage},
-    )
-    dev = PresetDefinition(
-        name='dev',
-        mode='dev',
-        run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
-        solid_selection=None,
+        resource_defs={
+            'pyspark': pyspark_resource,
+            'filesystem': local_file_system_storage.configured({'root': '.'}),
+        },
     )
 
     prod_mode = ModeDefinition(
-        name='prod', resource_defs={'pyspark': pyspark_resource, 'filesystem': s3_storage},
-    )
-    prod = PresetDefinition(
         name='prod',
-        mode='prod',
-        run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
-        solid_selection=None,
+        resource_defs={
+            'pyspark': pyspark_resource,
+            'filesystem': s3_storage.configured({'bucket': 'some_bucket', 'prefix': 'some_prefix'}),
+        },
     )
 
     return Lakehouse(
-        preset_defs=[dev, prod],
-        mode_defs=[dev_mode, prod_mode],
-        in_memory_type_resource_keys={SparkDF: ['pyspark']},
+        mode_defs=[dev_mode, prod_mode], in_memory_type_resource_keys={SparkDF: ['pyspark']},
     )
 
 

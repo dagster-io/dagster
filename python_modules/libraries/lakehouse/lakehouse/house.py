@@ -85,8 +85,8 @@ class Lakehouse:
                 keys that need to be around when that type is an input or output of an asset
                 derivation, e.g. "pyspark" for asset whose derivation involves PySpark DataFrames.
         '''
-        self._presets_by_name = {preset.name: preset for preset in preset_defs}
-        self._modes_by_name = {mode.name: mode for mode in mode_defs}
+        self._preset_defs = preset_defs
+        self._mode_defs = mode_defs
         self._in_memory_type_resource_keys = in_memory_type_resource_keys or {}
 
     def build_pipeline_definition(self, name, assets_to_update):
@@ -112,9 +112,9 @@ class Lakehouse:
         return PipelineDefinition(
             name=name,
             solid_defs=list(solid_defs.values()),
-            mode_defs=list(self._modes_by_name.values()),
+            mode_defs=self._mode_defs,
             dependencies=solid_deps,
-            preset_defs=list(self._presets_by_name.values()),
+            preset_defs=self._preset_defs,
         )
 
     def get_computed_asset_solid_def(self, computed_asset, assets_in_pipeline):
