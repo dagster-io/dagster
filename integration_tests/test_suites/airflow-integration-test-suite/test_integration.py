@@ -21,7 +21,6 @@ from dagster.utils import load_yaml_from_glob_list
 
 @nettest
 def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider):
-    print('--- :airflow: test_kubernetes.test_s3_storage')
     _check_aws_creds_available()
     environments_path = test_project_environments_path()
 
@@ -51,8 +50,6 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
 def test_gcs_storage(
     dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider,
 ):
-    print('--- :airflow: test_kubernetes.test_gcs_storage')
-
     environments_path = test_project_environments_path()
 
     pipeline_name = 'demo_pipeline_gcs'
@@ -72,7 +69,6 @@ def test_gcs_storage(
 
 
 def test_error_dag_k8s(dagster_docker_image, cluster_provider):
-    print('--- :airflow: test_kubernetes.test_error_dag_k8s')
     _check_aws_creds_available()
 
     pipeline_name = 'demo_error_pipeline'

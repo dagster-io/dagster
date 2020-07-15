@@ -142,6 +142,8 @@ def git_commit_updates(repo_dir, message):
         'git commit -m "{}"'.format(message),
     ]
 
-    print('Committing to {} with message {}'.format(repo_dir, message))
+    print(  # pylint: disable=print-call
+        'Committing to {} with message {}'.format(repo_dir, message)
+    )
     for cmd in cmds:
         subprocess.call(cmd, cwd=repo_dir, shell=True)

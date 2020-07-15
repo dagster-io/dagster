@@ -1,5 +1,6 @@
 '''This script is to ensure that we provide docs for every library that we create
 '''
+# pylint: disable=print-call
 import os
 import sys
 

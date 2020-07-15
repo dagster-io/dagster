@@ -6,7 +6,6 @@ def test_header():
         printer.write_header()
         result = printer.read()
 
-    print(result)
     assert result.startswith(
         """'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
 
@@ -24,7 +23,6 @@ def test_rest():
         with printer.with_indent():
             printer.line('indented')
         result = printer.read()
-    print(result)
     assert (
         result
         == '''foo bar

@@ -122,7 +122,6 @@ class FakeBlobClient(object):
             elif hasattr(contents, 'read'):
                 self.contents = contents.read()
             else:
-                print("Uploading unknown data")
                 self.contents = contents
 
     @property

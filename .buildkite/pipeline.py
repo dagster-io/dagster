@@ -700,7 +700,7 @@ if __name__ == "__main__":
     if DO_COVERAGE:
         steps += [wait_step(), coverage_step()]
 
-    print(
+    print(  # pylint: disable=print-call
         yaml.dump(
             {
                 "env": {

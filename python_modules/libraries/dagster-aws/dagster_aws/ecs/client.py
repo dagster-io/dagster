@@ -257,4 +257,4 @@ if __name__ == "__main__":
     testclient.spin_til_done(offset=2)
     testclient.spin_til_done(offset=1)
     testclient.spin_til_done()
-    print(testclient.logs_messages)
+    print(testclient.logs_messages)  # pylint: disable=print-call

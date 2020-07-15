@@ -106,7 +106,7 @@ def execute_query_from_cli(workspace, query, variables=None, output=None):
         with open(output, 'w') as f:
             f.write(str_res + '\n')
     else:
-        print(str_res)
+        print(str_res)  # pylint: disable=print-call
 
     return str_res
 
@@ -213,7 +213,7 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
 
     if remote:
         res = execute_query_against_remote(remote, query, variables)
-        print(res)
+        print(res)  # pylint: disable=print-call
     else:
         workspace = get_workspace_from_kwargs(kwargs)
         execute_query_from_cli(workspace, query, variables, output)

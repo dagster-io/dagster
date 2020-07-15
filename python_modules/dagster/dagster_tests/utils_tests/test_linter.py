@@ -1,5 +1,6 @@
 import astroid
 import pylint.testutils
+import pytest
 
 from dagster.utils.linter import define_dagster_checker
 
@@ -62,3 +63,9 @@ class TestDagsterChecker(pylint.testutils.CheckerTestCase):
             pylint.testutils.Message(msg_id="finally-yield", node=yield_node)
         ):
             self.checker.visit_yield(yield_node)
+
+    @pytest.mark.parametrize('statement', ['print(abc)', 'def afunc():\n    print(abc)'])
+    def test_print_call(self, statement):
+        node = astroid.extract_node(statement)
+        self.walk(node)
+        assert [msg.msg_id for msg in self.linter.release_messages()] == ['print-call']

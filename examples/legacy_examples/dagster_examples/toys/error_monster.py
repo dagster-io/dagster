@@ -138,4 +138,3 @@ if __name__ == '__main__':
             'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
         },
     )
-    print('Pipeline Success: ', result.success)

@@ -34,7 +34,9 @@ def get_kernelspec(kernel):
             )
         ) + list(kernelspecs['kernelspecs'].keys())
         kernel = preferred_kernels[0]
-        print('No kernel specified, defaulting to \'{kernel}\''.format(kernel=kernel))
+        print(  # pylint: disable=print-call
+            'No kernel specified, defaulting to \'{kernel}\''.format(kernel=kernel)
+        )
 
     check.invariant(
         kernel in kernelspecs['kernelspecs'],

@@ -121,7 +121,6 @@ class FakeADLS2FileClient(object):
             elif isinstance(contents, bytes):
                 self.contents = contents
             else:
-                print("Uploading unknown data")
                 self.contents = contents
 
     @contextmanager

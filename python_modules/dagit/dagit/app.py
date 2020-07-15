@@ -221,7 +221,7 @@ def create_app_from_workspace(workspace, instance, path_prefix=''):
 
     warn_if_compute_logs_disabled()
 
-    print('Loading repository...')
+    print('Loading repository...')  # pylint: disable=print-call
 
     locations = []
     for repository_location_handle in workspace.repository_location_handles:

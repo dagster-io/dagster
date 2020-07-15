@@ -131,7 +131,7 @@ class ParsedConfig(namedtuple('_ParsedConfig', 'name configs enums')):
 
     def write_configs(self, base_path):
         configs_filename = 'configs_%s.py' % self.name
-        print('Writing', configs_filename)
+        print('Writing', configs_filename)  # pylint: disable=print-call
         with open(os.path.join(base_path, configs_filename), 'wb') as f:
             f.write(self.configs)
 
@@ -188,7 +188,7 @@ class ConfigParser(object):
 
         # Print type tree
         prefix = '|' + ('-' * 4 * depth) + ' ' if depth > 0 else ''
-        print(prefix + (name or obj.get('type')))
+        print(prefix + (name or obj.get('type')))  # pylint: disable=print-call
 
         # Switch on object type
         obj_type = obj.get('type')

@@ -209,7 +209,7 @@ def worker_start_command(
 def worker_list_command(config_yaml=None):
     app = get_app(config_yaml)
 
-    print(app.control.inspect(timeout=1).active())
+    print(app.control.inspect(timeout=1).active())  # pylint: disable=print-call
 
 
 @click.command(

@@ -110,26 +110,18 @@ def main(step_run_ref_filepath, pipeline_zip):
     # even be Python packages.
     with tempfile.TemporaryDirectory() as tmp:
 
-        print('Extracting {}'.format(pipeline_zip))
         with zipfile.ZipFile(pipeline_zip) as zf:
             zf.extractall(tmp)
         site.addsitedir(tmp)
 
-        print('Loading step run ref')
         # We can use regular local filesystem APIs to access DBFS inside the Databricks runtime.
         with open(step_run_ref_filepath, 'rb') as handle:
             step_run_ref = pickle.load(handle)
 
-        print('Step run ref:')
-        print(step_run_ref)
-
-        print('Setting up storage credentials')
         setup_storage(step_run_ref)
 
-        print('Running pipeline')
         events = list(run_step_from_ref(step_run_ref))
 
-    print('Saving events to DBFS')
     events_filepath = os.path.dirname(step_run_ref_filepath) + '/' + PICKLED_EVENTS_FILE_NAME
     with open(events_filepath, 'wb') as handle:
         pickle.dump(serialize_value(events), handle)

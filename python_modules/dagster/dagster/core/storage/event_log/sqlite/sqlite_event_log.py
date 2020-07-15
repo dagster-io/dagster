@@ -66,7 +66,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def upgrade(self):
         all_run_ids = self.get_all_run_ids()
-        print(
+        print(  # pylint: disable=print-call
             'Updating event log storage for {n_runs} runs on disk...'.format(
                 n_runs=len(all_run_ids)
             )

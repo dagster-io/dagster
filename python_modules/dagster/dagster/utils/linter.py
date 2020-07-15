@@ -19,7 +19,8 @@ def define_dagster_checker():
                 'Cannot yield in a finally block without handling GeneratorExit (see {})'.format(
                     INFO_LINK
                 ),
-            )
+            ),
+            'W0002': ('print() call', 'print-call', 'Cannot call print()'),
         }
         options = ()
 
@@ -52,6 +53,14 @@ def define_dagster_checker():
                     self.add_message('finally-yield', node=node)
 
                 current = current.parent
+
+        def visit_call(self, node):
+            if (
+                node.callable
+                and isinstance(node.func, astroid.node_classes.Name)
+                and node.func.name == 'print'
+            ):
+                self.add_message('print-call', node=node)
 
     return DagsterChecker
 

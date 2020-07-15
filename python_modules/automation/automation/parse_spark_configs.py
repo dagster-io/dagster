@@ -237,7 +237,7 @@ def extract(spark_docs_markdown_text):
 
         # Traverse spark.app.name key paths, creating SparkConfigNode at each tree node.
         # The leaves of the tree (stored in SparkConfigNode.value) are SparkConfig values.
-        print(spark_config.path, file=sys.stderr)
+        print(spark_config.path, file=sys.stderr)  # pylint: disable=print-call
         key_path = spark_config.split_path
 
         d = result

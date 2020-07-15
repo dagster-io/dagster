@@ -156,7 +156,8 @@ with models.DAG(
 
     # Search
     search_catalog = PythonOperator(
-        task_id="search_catalog", python_callable=lambda: print("search_catalog")
+        task_id="search_catalog",
+        python_callable=lambda: print("search_catalog"),  # pylint: disable=print-call
     )
 
     search_catalog_result = BashOperator(

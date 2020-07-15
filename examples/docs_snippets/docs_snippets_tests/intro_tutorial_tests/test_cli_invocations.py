@@ -322,15 +322,6 @@ def test_dagster_pipeline_execute(
             + (['--preset', preset] if preset else []),
             return_code,
         )
-        print(
-            (
-                ['-f', filepath, '-a', fn_name]
-                + (['-c', yamlpath] if yamlpath else [])
-                + (['-d', mode] if mode else [])
-                + (['--preset', preset] if preset else []),
-                return_code,
-            )
-        )
 
 
 @pytest.mark.parametrize(

@@ -30,7 +30,7 @@ def test_compute_log_manager(s3_bucket):
         @solid
         def easy(context):
             context.log.info('easy')
-            print(HELLO_WORLD)
+            print(HELLO_WORLD)  # pylint: disable=print-call
             return 'easy'
 
         easy()

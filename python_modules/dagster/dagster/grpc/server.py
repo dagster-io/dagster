@@ -494,10 +494,10 @@ class DagsterGrpcServer(object):
         # - 1 when a UDS is successfully bound
         res = self.server.add_insecure_port(server_address)
         if socket and res != 1:
-            print(SERVER_FAILED_TO_BIND_TOKEN)
+            print(SERVER_FAILED_TO_BIND_TOKEN)  # pylint: disable=print-call
             raise CouldNotBindGrpcServerToAddress(socket)
         if port and res != port:
-            print(SERVER_FAILED_TO_BIND_TOKEN)
+            print(SERVER_FAILED_TO_BIND_TOKEN)  # pylint: disable=print-call
             raise CouldNotBindGrpcServerToAddress(port)
 
     def serve(self):
@@ -524,7 +524,7 @@ class DagsterGrpcServer(object):
         # https://github.com/grpc/grpc/issues/23315, and our own tracking issue at
 
         self.server.start()
-        print(SERVER_STARTED_TOKEN)
+        print(SERVER_STARTED_TOKEN)  # pylint: disable=print-call
         sys.stdout.flush()
         server_termination_thread = threading.Thread(
             target=server_termination_target, args=[self._shutdown_server_event, self.server],

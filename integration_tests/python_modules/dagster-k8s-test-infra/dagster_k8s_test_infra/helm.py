@@ -1,3 +1,4 @@
+# pylint: disable=print-call
 import base64
 import os
 import subprocess

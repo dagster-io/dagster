@@ -1,3 +1,4 @@
+# pylint: disable=print-call
 import os
 import subprocess
 import time

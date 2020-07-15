@@ -608,7 +608,7 @@ def materialization_pipeline():
 def spew_pipeline():
     @solid
     def spew(_):
-        print('HELLO WORLD')
+        print('HELLO WORLD')  # pylint: disable=print-call
 
     spew()
 

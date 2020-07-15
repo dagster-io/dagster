@@ -28,8 +28,12 @@ def spawn(_):
 def spew(_, name):
     i = 0
     while i < NUM_LOOP:
-        print('{} {} OUT {}: {}'.format(os.getpid(), name, i, datetime.now()), file=sys.stdout)
-        print('{} {} ERROR {}: {}'.format(os.getpid(), name, i, datetime.now()), file=sys.stderr)
+        print(  # pylint: disable=print-call
+            '{} {} OUT {}: {}'.format(os.getpid(), name, i, datetime.now()), file=sys.stdout
+        )
+        print(  # pylint: disable=print-call
+            '{} {} ERROR {}: {}'.format(os.getpid(), name, i, datetime.now()), file=sys.stderr
+        )
         time.sleep(REP_INTERVAL)
         i += 1
 

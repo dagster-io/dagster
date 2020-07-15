@@ -22,7 +22,7 @@ def events_jar():
     dst = os.path.join(temp_dir, 'events.jar')
 
     if os.path.exists(dst):
-        print('events jar already exists, skipping')
+        print('events jar already exists, skipping')  # pylint: disable=print-call
     else:
         subprocess.check_call(
             ['sbt', 'events/assembly'], cwd=os.path.join(git_repo_root, 'scala_modules')

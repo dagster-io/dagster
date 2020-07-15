@@ -141,7 +141,7 @@ def uploading_logging_thread():
 def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
-    print(
+    print(  # pylint: disable=print-call
         'Serving on http://{host}:{port}{path_prefix} in process {pid}'.format(
             host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )

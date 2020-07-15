@@ -1,3 +1,4 @@
+# pylint: disable=print-call
 import json
 import os
 import shutil

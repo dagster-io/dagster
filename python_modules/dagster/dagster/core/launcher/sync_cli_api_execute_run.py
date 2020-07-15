@@ -27,4 +27,4 @@ if __name__ == '__main__':
             instance_ref=instance_ref, pipeline_origin=pipeline_origin, pipeline_run=pipeline_run
         )
     ]
-    print(len(events))
+    print(len(events))  # pylint: disable=print-call

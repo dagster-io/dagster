@@ -31,7 +31,7 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     with open(filepath, 'r') as file:
         for block in iter(lambda: file.read(1024), None):
             if block:
-                print(block, end='', file=stream)
+                print(block, end='', file=stream)  # pylint: disable=print-call
             else:
                 if parent_pid and current_process_is_orphaned(parent_pid):
                     sys.exit()

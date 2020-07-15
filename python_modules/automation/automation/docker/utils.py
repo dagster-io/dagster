@@ -1,3 +1,4 @@
+# pylint: disable=print-call
 import subprocess
 import sys
 from datetime import datetime, timezone
