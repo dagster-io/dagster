@@ -133,9 +133,11 @@ class InstanceType(Enum):
 class DagsterInstance:
     '''Core abstraction for managing Dagster's access to storage and other resources.
 
-    Users should not directly instantiate this class; it is instantiated by internal machinery when
-    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
-    ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+    Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
+    the values in the ``dagster.yaml`` file in ``$DAGSTER_HOME`` if set, otherwise fallback
+    to using an ephemeral in-memory set of components.
+
+    Configuration of this class should be done by setting values in ``$DAGSTER_HOME/dagster.yaml``.
     For example, to use Postgres for run and event log storage, you can write a ``dagster.yaml``
     such as the following:
 
