@@ -2,7 +2,6 @@ import yaml
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data
 from dagster.core.host_representation import (
     ExternalSchedule,
     ExternalScheduleExecutionData,
@@ -175,8 +174,9 @@ def get_schedule_definition_or_error(graphene_info, schedule_selector):
 def get_schedule_config(graphene_info, external_schedule):
     check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
     handle = external_schedule.handle.repository_handle
-    result = sync_get_external_schedule_execution_data(
-        graphene_info.context.instance, handle, external_schedule.name
+
+    result = graphene_info.context.get_external_schedule_execution_data(
+        handle, external_schedule.name
     )
     if isinstance(result, ExternalScheduleExecutionData):
         run_config_yaml = yaml.safe_dump(result.run_config, default_flow_style=False)

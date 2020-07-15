@@ -19,7 +19,6 @@ from dagster.core.errors import (
     DagsterLaunchFailedError,
     DagsterSubprocessError,
     DagsterUserCodeExecutionError,
-    PartitionExecutionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
@@ -54,7 +53,13 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
-from dagster.grpc.impl import get_external_pipeline_subset_result, get_external_schedule_execution
+from dagster.grpc.impl import (
+    get_external_pipeline_subset_result,
+    get_external_schedule_execution,
+    get_partition_config,
+    get_partition_names,
+    get_partition_tags,
+)
 from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
@@ -207,24 +212,7 @@ def execution_plan_snapshot_command(args):
 )
 def partition_config_command(args):
     check.inst_param(args, 'args', PartitionArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
-    partition = partition_set_def.get_partition(args.partition_name)
-    try:
-        with user_code_error_boundary(
-            PartitionExecutionError,
-            lambda: 'Error occurred during the evaluation of the `run_config_for_partition` '
-            'function for partition set {partition_set_name}'.format(
-                partition_set_name=partition_set_def.name
-            ),
-        ):
-            run_config = partition_set_def.run_config_for_partition(partition)
-            return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
-    except PartitionExecutionError:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return get_partition_config(args)
 
 
 @unary_api_cli_command(
@@ -237,23 +225,7 @@ def partition_config_command(args):
     output_cls=(ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
 )
 def partition_tags_command(args):
-    check.inst_param(args, 'args', PartitionArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
-    partition = partition_set_def.get_partition(args.partition_name)
-    try:
-        with user_code_error_boundary(
-            PartitionExecutionError,
-            lambda: 'Error occurred during the evaluation of the `tags_for_partition` function for '
-            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
-        ):
-            tags = partition_set_def.tags_for_partition(partition)
-            return ExternalPartitionTagsData(name=partition.name, tags=tags)
-    except PartitionExecutionError:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return get_partition_tags(args)
 
 
 @unary_api_cli_command(
@@ -266,23 +238,7 @@ def partition_tags_command(args):
     output_cls=(ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
 )
 def partition_names_command(args):
-    check.inst_param(args, 'args', PartitionNamesArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
-    try:
-        with user_code_error_boundary(
-            PartitionExecutionError,
-            lambda: 'Error occurred during the execution of the partition generation function for '
-            'partition set {partition_set_name}'.format(partition_set_name=partition_set_def.name),
-        ):
-            return ExternalPartitionNamesData(
-                partition_names=partition_set_def.get_partition_names()
-            )
-    except PartitionExecutionError:
-        return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return get_partition_names(args)
 
 
 @unary_api_cli_command(

@@ -2,11 +2,6 @@ import yaml
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.api.snapshot_partition import (
-    sync_get_external_partition_config,
-    sync_get_external_partition_names,
-    sync_get_external_partition_tags,
-)
 from dagster.core.host_representation import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -83,9 +78,11 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
-    result = sync_get_external_partition_config(
-        repository_handle, partition_set_name, partition_name
+
+    result = graphene_info.context.get_external_partition_config(
+        repository_handle, partition_set_name, partition_name,
     )
+
     if isinstance(result, ExternalPartitionConfigData):
         return graphene_info.schema.type_named('PartitionRunConfig')(
             yaml=yaml.safe_dump(result.run_config, default_flow_style=False)
@@ -98,7 +95,11 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
-    result = sync_get_external_partition_tags(repository_handle, partition_set_name, partition_name)
+
+    result = graphene_info.context.get_external_partition_tags(
+        repository_handle, partition_set_name, partition_name
+    )
+
     if isinstance(result, ExternalPartitionTagsData):
         return graphene_info.schema.type_named('PartitionTags')(
             results=[
@@ -115,7 +116,9 @@ def get_partitions(
 ):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.inst_param(partition_set, 'partition_set', ExternalPartitionSet)
-    result = sync_get_external_partition_names(repository_handle, partition_set.name)
+    result = graphene_info.context.get_external_partition_names(
+        repository_handle, partition_set.name
+    )
 
     if isinstance(result, ExternalPartitionNamesData):
         partition_names = _apply_cursor_limit_reverse(

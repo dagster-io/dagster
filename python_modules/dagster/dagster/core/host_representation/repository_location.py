@@ -3,7 +3,13 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
+from dagster.api.snapshot_partition import (
+    sync_get_external_partition_config,
+    sync_get_external_partition_names,
+    sync_get_external_partition_tags,
+)
 from dagster.api.snapshot_repository import sync_get_external_repositories
+from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
@@ -18,6 +24,13 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.grpc.impl import (
+    get_external_schedule_execution,
+    get_partition_config,
+    get_partition_names,
+    get_partition_tags,
+)
+from dagster.grpc.types import ExternalScheduleExecutionArgs, PartitionArgs, PartitionNamesArgs
 from dagster.utils.hosted_user_process import (
     external_repo_from_def,
     is_repository_location_in_same_python_env,
@@ -89,6 +102,22 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_subset_external_pipeline_result(self, selector):
+        pass
+
+    @abstractmethod
+    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+        pass
+
+    @abstractmethod
+    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+        pass
+
+    @abstractmethod
+    def get_external_partition_names(self, repository_handle, partition_set_name):
+        pass
+
+    @abstractmethod
+    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
         pass
 
     @abstractmethod
@@ -234,6 +263,51 @@ class InProcessRepositoryLocation(RepositoryLocation):
             retries=retries,
         )
 
+    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        args = PartitionArgs(
+            repository_origin=repository_handle.get_origin(),
+            partition_set_name=partition_set_name,
+            partition_name=partition_name,
+        )
+        return get_partition_config(args)
+
+    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        args = PartitionArgs(
+            repository_origin=repository_handle.get_origin(),
+            partition_set_name=partition_set_name,
+            partition_name=partition_name,
+        )
+        return get_partition_tags(args)
+
+    def get_external_partition_names(self, repository_handle, partition_set_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+
+        args = PartitionNamesArgs(
+            repository_origin=repository_handle.get_origin(), partition_set_name=partition_set_name
+        )
+        return get_partition_names(args)
+
+    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(schedule_name, 'schedule_name')
+
+        args = ExternalScheduleExecutionArgs(
+            instance_ref=instance.get_ref(),
+            repository_origin=repository_handle.get_origin(),
+            schedule_name=schedule_name,
+        )
+        return get_external_schedule_execution(args)
+
 
 class PythonEnvRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
@@ -358,3 +432,34 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         return sync_get_external_pipeline_subset(
             pipeline_handle.get_origin(), selector.solid_selection
         )
+
+    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        return sync_get_external_partition_config(
+            repository_handle, partition_set_name, partition_name
+        )
+
+    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        return sync_get_external_partition_tags(
+            repository_handle, partition_set_name, partition_name
+        )
+
+    def get_external_partition_names(self, repository_handle, partition_set_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+
+        return sync_get_external_partition_names(repository_handle, partition_set_name)
+
+    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(schedule_name, 'schedule_name')
+
+        return sync_get_external_schedule_execution_data(instance, repository_handle, schedule_name)

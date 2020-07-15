@@ -96,6 +96,34 @@ class DagsterGraphQLContext:
             step_keys_to_execute=step_keys_to_execute,
         )
 
+    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_partition_config(
+            repository_handle=repository_handle,
+            partition_set_name=partition_set_name,
+            partition_name=partition_name,
+        )
+
+    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_partition_tags(
+            repository_handle=repository_handle,
+            partition_set_name=partition_set_name,
+            partition_name=partition_name,
+        )
+
+    def get_external_partition_names(self, repository_handle, partition_set_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_partition_names(repository_handle, partition_set_name)
+
+    def get_external_schedule_execution_data(self, repository_handle, schedule_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_schedule_execution_data(self.instance, repository_handle, schedule_name)
+
     def execute_plan(
         self, external_pipeline, run_config, pipeline_run, step_keys_to_execute, retries=None
     ):
