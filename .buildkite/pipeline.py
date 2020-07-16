@@ -3,6 +3,7 @@ import os
 import yaml
 from defines import (
     TOX_MAP,
+    UNIT_IMAGE_VERSION,
     SupportedPython,
     SupportedPython3s,
     SupportedPython3sNo38,
@@ -70,6 +71,11 @@ def publish_test_images():
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
+                # set the base image
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py"
+                + version
+                + "-"
+                + UNIT_IMAGE_VERSION,
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-core-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
                 + version,

@@ -35,9 +35,13 @@ cp -R $ROOT/python_modules/dagster \
 
 find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
+PYTHON_SLIM_IMAGE="python:${PYTHON_VERSION}-slim"
+BASE_IMAGE=${BASE_IMAGE:=$PYTHON_SLIM_IMAGE}
+
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 docker build . \
     -f Dockerfile.core \
     --no-cache \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+    --build-arg BASE_IMAGE="${BASE_IMAGE}" \
     -t "${IMAGE_TAG}"
