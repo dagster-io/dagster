@@ -1,5 +1,5 @@
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
+from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
@@ -43,7 +43,7 @@ emr_mode = ModeDefinition(
         'pyspark': pyspark_resource,
         's3': s3_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 emr_preset = PresetDefinition.from_pkg_resources(

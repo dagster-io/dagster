@@ -1,6 +1,6 @@
 '''Pipeline definitions for the simple_pyspark example.'''
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
+from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import pyspark_resource
 
@@ -26,7 +26,7 @@ prod_emr_mode = ModeDefinition(
         'pyspark': pyspark_resource,
         's3': s3_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 
@@ -37,7 +37,7 @@ prod_databricks_mode = ModeDefinition(
         'pyspark': pyspark_resource,
         's3': s3_resource,
     },
-    system_storage_defs=s3_plus_default_storage_defs,
+    intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 

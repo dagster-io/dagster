@@ -1,4 +1,5 @@
 import logging
+import re
 
 import pytest
 from dagster_tests.general_tests.test_repository import (
@@ -15,6 +16,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     String,
+    default_system_storage_defs,
     execute_pipeline,
     logger,
     pipeline,
@@ -369,3 +371,16 @@ def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
     assert len([x for x in foo_original_messages if 'Here we are' in x]) == 1
 
     assert not bar_logger_captured_results
+
+
+def test_system_storage_deprecated():
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            'system_storage_defs are deprecated and will be removed in 0.10.0 '
+            'and should be replaced with '
+            'intermediate_storage_defs for intermediates and resource_defs for files'
+        ),
+    ):
+        a = ModeDefinition(system_storage_defs=default_system_storage_defs)
+        assert isinstance(a, ModeDefinition)

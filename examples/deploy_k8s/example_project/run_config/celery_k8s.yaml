@@ -7,7 +7,7 @@ execution:
         - "dagster-pipeline-env"
       repo_location_name: "example_repo"
 
-storage:
+intermediate_storage:
   s3:
     config:
       s3_bucket: "YOUR_BUCKET"
