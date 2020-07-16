@@ -17,6 +17,11 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent {
   stepKey: string | null;
 }
 
+export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -71,6 +76,7 @@ export type LogsScrollingTableMessageFragment_StepMaterializationEvent_materiali
 
 export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization {
   __typename: "Materialization";
+  assetKey: LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization_assetKey | null;
   label: string;
   description: string | null;
   metadataEntries: LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization_metadataEntries[];

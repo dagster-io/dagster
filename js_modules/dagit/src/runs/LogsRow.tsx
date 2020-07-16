@@ -44,6 +44,9 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         }
         ... on StepMaterializationEvent {
           materialization {
+            assetKey {
+              path
+            }
             label
             description
             metadataEntries {

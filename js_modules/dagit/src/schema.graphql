@@ -439,6 +439,7 @@ type Instance {
   info: String!
   runLauncher: RunLauncher
   disableRunStart: Boolean!
+  assetsSupported: Boolean!
 }
 
 type InvalidOutputError {
@@ -531,6 +532,7 @@ type Materialization implements DisplayableEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
 }
 
 interface MessageEvent {

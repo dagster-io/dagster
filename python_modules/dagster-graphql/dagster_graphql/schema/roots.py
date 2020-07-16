@@ -908,6 +908,7 @@ class DauphinInstance(dauphin.ObjectType):
     info = dauphin.NonNull(dauphin.String)
     runLauncher = dauphin.Field('RunLauncher')
     disableRunStart = dauphin.NonNull(dauphin.Boolean)
+    assetsSupported = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
@@ -925,6 +926,9 @@ class DauphinInstance(dauphin.ObjectType):
         if not execution_manager_settings:
             return False
         return execution_manager_settings.get('disabled', False)
+
+    def resolve_assetsSupported(self, _graphene_info):
+        return self._instance.is_asset_aware
 
 
 class DauphinAssetKeyInput(dauphin.InputObjectType):

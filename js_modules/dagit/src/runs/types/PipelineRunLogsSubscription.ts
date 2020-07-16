@@ -18,6 +18,11 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubs
   stepKey: string | null;
 }
 
+export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -72,6 +77,7 @@ export type PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscript
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization {
   __typename: "Materialization";
+  assetKey: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_assetKey | null;
   label: string;
   description: string | null;
   metadataEntries: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess_messages_StepMaterializationEvent_materialization_metadataEntries[];

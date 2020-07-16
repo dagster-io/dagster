@@ -556,8 +556,18 @@ class DauphinMaterialization(dauphin.ObjectType):
         name = 'Materialization'
         interfaces = (DauphinDisplayableEvent,)
 
+    assetKey = dauphin.Field('AssetKey')
+
     def resolve_metadataEntries(self, _graphene_info):
         return _to_dauphin_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+
+    def resolve_assetKey(self, graphene_info):
+        asset_key = self.asset_key  # pylint: disable=no-member
+
+        if not asset_key:
+            return None
+
+        return graphene_info.schema.type_named('AssetKey')(path=asset_key.path)
 
 
 class DauphinExpectationResult(dauphin.ObjectType):

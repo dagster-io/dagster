@@ -17,6 +17,11 @@ export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
   stepKey: string | null;
 }
 
+export interface LogsRowStructuredFragment_StepMaterializationEvent_materialization_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -71,6 +76,7 @@ export type LogsRowStructuredFragment_StepMaterializationEvent_materialization_m
 
 export interface LogsRowStructuredFragment_StepMaterializationEvent_materialization {
   __typename: "Materialization";
+  assetKey: LogsRowStructuredFragment_StepMaterializationEvent_materialization_assetKey | null;
   label: string;
   description: string | null;
   metadataEntries: LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries[];

@@ -17,6 +17,11 @@ export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
   stepKey: string | null;
 }
 
+export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -71,6 +76,7 @@ export type RunPipelineRunEventFragment_StepMaterializationEvent_materialization
 
 export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization {
   __typename: "Materialization";
+  assetKey: RunPipelineRunEventFragment_StepMaterializationEvent_materialization_assetKey | null;
   label: string;
   description: string | null;
   metadataEntries: RunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries[];

@@ -8,6 +8,7 @@ import { NonIdealState } from "@blueprintjs/core";
 import { Run } from "./Run";
 import { RunRootQuery } from "./types/RunRootQuery";
 import gql from "graphql-tag";
+import { AssetsSupported } from "../AssetsSupported";
 
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
   runId: string;
@@ -38,7 +39,11 @@ export const RunById: React.FunctionComponent<{
     );
   }
 
-  return <Run client={client} run={data.pipelineRunOrError} runId={runId} />;
+  return (
+    <AssetsSupported.Provider value={!!data.instance?.assetsSupported}>
+      <Run client={client} run={data.pipelineRunOrError} runId={runId} />
+    </AssetsSupported.Provider>
+  );
 };
 
 export const RUN_ROOT_QUERY = gql`
@@ -55,6 +60,9 @@ export const RUN_ROOT_QUERY = gql`
         }
         ...RunFragment
       }
+    }
+    instance {
+      assetsSupported
     }
   }
 

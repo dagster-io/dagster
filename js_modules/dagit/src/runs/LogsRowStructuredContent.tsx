@@ -1,17 +1,17 @@
 import * as React from "react";
 import { Tag, Colors, Intent } from "@blueprintjs/core";
-import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
-import { EventTypeColumn } from "./LogsRowComponents";
 import {
-  MetadataEntries,
-  createLogRowStructuredContentTable,
-  MetadataEntryLink
-} from "./MetadataEntry";
+  LogsRowStructuredFragment,
+  LogsRowStructuredFragment_StepMaterializationEvent_materialization
+} from "./types/LogsRowStructuredFragment";
+import { EventTypeColumn } from "./LogsRowComponents";
+import { LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { PythonErrorFragment } from "../types/PythonErrorFragment";
 import { ComputeLogLink } from "./ComputeLogModal";
 import { IRunMetadataDict } from "../RunMetadataProvider";
+import { AssetsSupported } from "../AssetsSupported";
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -50,19 +50,21 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       } else {
         return (
           <DefaultContent message={node.message} eventType="Step Start">
-            {createLogRowStructuredContentTable([
-              {
-                label: "step_logs",
-                item: (
-                  <ComputeLogLink
-                    stepKey={node.stepKey}
-                    runState={metadata.steps[node.stepKey]?.state}
-                  >
-                    <MetadataEntryLink>View Raw Step Output</MetadataEntryLink>
-                  </ComputeLogLink>
-                )
-              }
-            ])}
+            <LogRowStructuredContentTable
+              rows={[
+                {
+                  label: "step_logs",
+                  item: (
+                    <ComputeLogLink
+                      stepKey={node.stepKey}
+                      runState={metadata.steps[node.stepKey]?.state}
+                    >
+                      <MetadataEntryLink>View Raw Step Output</MetadataEntryLink>
+                    </ComputeLogLink>
+                  )
+                }
+              ]}
+            />
           </DefaultContent>
         );
       }
@@ -118,9 +120,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
     case "StepMaterializationEvent":
       return (
-        <DefaultContent message={node.message} eventType="Materialization">
-          <MetadataEntries entries={node.materialization.metadataEntries} />
-        </DefaultContent>
+        <MaterializationContent message={node.message} materialization={node.materialization} />
       );
     case "ObjectStoreOperationEvent":
       return (
@@ -233,3 +233,50 @@ const FailureContent: React.FunctionComponent<{
     </span>
   </>
 );
+
+const MaterializationContent: React.FunctionComponent<{
+  message: string;
+  materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
+}> = ({ message, materialization }) => {
+  const assetsSupported = React.useContext(AssetsSupported);
+
+  if (!materialization.assetKey) {
+    return (
+      <DefaultContent message={message} eventType="Materialization">
+        <MetadataEntries entries={materialization.metadataEntries} />
+      </DefaultContent>
+    );
+  }
+
+  const assetDashboardLink = assetsSupported ? (
+    <span style={{ marginLeft: 10 }}>
+      [
+      <MetadataEntryLink href={`/assets/${materialization.assetKey.path.join("/")}`}>
+        View Asset Dashboard
+      </MetadataEntryLink>
+      ]
+    </span>
+  ) : null;
+
+  return (
+    <DefaultContent message={message} eventType="AssetMaterialization">
+      <>
+        <LogRowStructuredContentTable
+          rows={[
+            {
+              label: "asset_key",
+              item: (
+                <>
+                  {materialization.assetKey.path.join(".")}
+                  {assetDashboardLink}
+                </>
+              )
+            }
+          ]}
+          styles={{ paddingBottom: 0 }}
+        />
+        <MetadataEntries entries={materialization.metadataEntries} />
+      </>
+    </DefaultContent>
+  );
+};

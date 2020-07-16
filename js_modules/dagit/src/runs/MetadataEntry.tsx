@@ -7,41 +7,46 @@ import { copyValue } from "../DomUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { Button, Dialog, Classes, Colors, Icon, Position, Tooltip } from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";
+import CSS from "csstype";
 
-export function createLogRowStructuredContentTable(rows: { label: string; item: JSX.Element }[]) {
-  return (
-    <div style={{ overflow: "auto", paddingBottom: 10 }}>
-      <LogRowStructuredContentTable cellPadding="0" cellSpacing="0">
-        <tbody>
-          {rows.map(({ label, item }, idx) => (
-            <tr key={idx} style={{ display: "flex" }}>
-              <td
-                style={{
-                  flex: 1,
-                  maxWidth: "max-content"
-                }}
-              >
-                {label}
-              </td>
-              <td style={{ flex: 1 }}>{item}</td>
-            </tr>
-          ))}
-        </tbody>
-      </LogRowStructuredContentTable>
-    </div>
-  );
-}
+export const LogRowStructuredContentTable: React.FunctionComponent<{
+  rows: { label: string; item: JSX.Element }[];
+  styles?: CSS.Properties;
+}> = ({ rows, styles }) => (
+  <div style={{ overflow: "auto", paddingBottom: 10, ...(styles || {}) }}>
+    <StructuredContentTable cellPadding="0" cellSpacing="0">
+      <tbody>
+        {rows.map(({ label, item }, idx) => (
+          <tr key={idx} style={{ display: "flex" }}>
+            <td
+              style={{
+                flex: 1,
+                maxWidth: "max-content"
+              }}
+            >
+              {label}
+            </td>
+            <td style={{ flex: 1 }}>{item}</td>
+          </tr>
+        ))}
+      </tbody>
+    </StructuredContentTable>
+  </div>
+);
+
 export const MetadataEntries: React.FunctionComponent<{
   entries?: MetadataEntryFragment[];
 }> = ({ entries }) => {
   if (!entries || !entries.length) {
     return null;
   }
-  return createLogRowStructuredContentTable(
-    entries.map(entry => ({
-      label: entry.label,
-      item: <MetadataEntry entry={entry} />
-    }))
+  return (
+    <LogRowStructuredContentTable
+      rows={entries.map(entry => ({
+        label: entry.label,
+        item: <MetadataEntry entry={entry} />
+      }))}
+    />
   );
 };
 
@@ -230,7 +235,7 @@ export const MetadataEntryLink = styled.a`
   }
 `;
 
-export const LogRowStructuredContentTable = styled.table`
+const StructuredContentTable = styled.table`
   padding: 0;
   margin-top: 4px;
   border-top: 1px solid #dbc5ad;
