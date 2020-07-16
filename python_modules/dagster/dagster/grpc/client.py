@@ -10,6 +10,7 @@ from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
+from dagster.grpc.types import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path
@@ -25,7 +26,6 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
-    ListRepositoriesArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -126,14 +126,9 @@ class DagsterGrpcClient(object):
         )
         return deserialize_json_to_dagster_namedtuple(res.serialized_execution_plan_snapshot)
 
-    def list_repositories(self, list_repositories_args):
-        check.inst_param(list_repositories_args, 'list_repositories_args', ListRepositoriesArgs)
+    def list_repositories(self):
 
-        res = self._query(
-            'ListRepositories',
-            api_pb2.ListRepositoriesRequest,
-            serialized_list_repositories_args=serialize_dagster_namedtuple(list_repositories_args),
-        )
+        res = self._query('ListRepositories', api_pb2.ListRepositoriesRequest)
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_list_repositories_response)
 
@@ -304,18 +299,44 @@ def _wait_for_grpc_server(server_process, timeout=3):
             return True
 
 
-def open_server_process(port, socket, python_executable_path=None):
+def open_server_process(
+    port, socket, loadable_target_origin=None,
+):
     check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
-    python_executable_path = check.opt_str_param(
-        python_executable_path, 'python_executable_path', default=sys.executable
+    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+
+    subprocess_args = (
+        [
+            loadable_target_origin.executable_path if loadable_target_origin else sys.executable,
+            '-m',
+            'dagster.grpc',
+        ]
+        + (['-p', str(port)] if port else [])
+        + (['-s', socket] if socket else [])
     )
 
-    server_process = open_ipc_subprocess(
-        [python_executable_path, '-m', 'dagster.grpc']
-        + (['-p', str(port)] if port else [])
-        + (['-s', socket] if socket else []),
-        stdout=subprocess.PIPE,
-    )
+    if loadable_target_origin:
+        subprocess_args += (
+            (
+                ['-f', loadable_target_origin.python_file]
+                if loadable_target_origin.python_file
+                else []
+            )
+            + (
+                ['-m', loadable_target_origin.module_name]
+                if loadable_target_origin.module_name
+                else []
+            )
+            + (
+                ['-d', loadable_target_origin.working_directory]
+                if loadable_target_origin.working_directory
+                else []
+            )
+            + (['-a', loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
+        )
+
+    server_process = open_ipc_subprocess(subprocess_args, stdout=subprocess.PIPE)
+
     ready = _wait_for_grpc_server(server_process)
 
     if ready:
@@ -326,14 +347,16 @@ def open_server_process(port, socket, python_executable_path=None):
         return None
 
 
-def open_server_process_on_dynamic_port(max_retries=10, python_executable_path=None):
+def open_server_process_on_dynamic_port(
+    max_retries=10, loadable_target_origin=None,
+):
     server_process = None
     retries = 0
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
             server_process = open_server_process(
-                port=port, socket=None, python_executable_path=python_executable_path
+                port=port, socket=None, loadable_target_origin=loadable_target_origin,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -344,10 +367,13 @@ def open_server_process_on_dynamic_port(max_retries=10, python_executable_path=N
 
 
 @contextmanager
-def ephemeral_grpc_api_client(python_executable_path=None, force_port=False, max_retries=10):
+def ephemeral_grpc_api_client(
+    loadable_target_origin=None, force_port=False, max_retries=10,
+):
+
     if seven.IS_WINDOWS or force_port:
         server_process, port = open_server_process_on_dynamic_port(
-            max_retries=max_retries, python_executable_path=python_executable_path
+            max_retries=max_retries, loadable_target_origin=loadable_target_origin,
         )
 
         if server_process is None:
@@ -363,7 +389,7 @@ def ephemeral_grpc_api_client(python_executable_path=None, force_port=False, max
     else:
         with safe_tempfile_path() as socket:
             server_process = open_server_process(
-                port=None, socket=socket, python_executable_path=python_executable_path
+                port=None, socket=socket, loadable_target_origin=loadable_target_origin,
             )
 
             if server_process is None:

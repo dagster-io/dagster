@@ -1,10 +1,9 @@
 from dagster import check
+from dagster.api.utils import execute_unary_api_cli_command
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster.grpc.client import ephemeral_grpc_api_client
 from dagster.grpc.server import ExecutionPlanSnapshotArgs
-
-from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_execution_plan(

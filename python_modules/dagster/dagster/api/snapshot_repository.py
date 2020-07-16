@@ -7,6 +7,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.grpc.client import ephemeral_grpc_api_client
+from dagster.grpc.types import LoadableTargetOrigin
 
 from .utils import execute_unary_api_cli_command
 
@@ -50,7 +51,9 @@ def sync_get_external_repositories_grpc(repository_location_handle):
     repos = []
 
     with ephemeral_grpc_api_client(
-        python_executable_path=repository_location_handle.executable_path
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=repository_location_handle.executable_path
+        )
     ) as api_client:
         for key, pointer in repository_location_handle.repository_code_pointer_dict.items():
             external_repository_data = check.inst(

@@ -67,6 +67,7 @@ from dagster.grpc.types import (
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
+    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -360,7 +361,8 @@ def _schedule_tick_state(instance, tick_data):
 @click.option('--port', '-p', type=click.INT, required=False)
 @click.option('--socket', '-s', type=click.Path(), required=False)
 @click.option('--host', '-h', type=click.STRING, required=False, default='localhost')
-def grpc_command(port=None, socket=None, host='localhost'):
+@origin_target_argument
+def grpc_command(port=None, socket=None, host='localhost', **kwargs):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             'You must pass a valid --port/-p on Windows: --socket/-f not supported.'
@@ -368,7 +370,20 @@ def grpc_command(port=None, socket=None, host='localhost'):
     if not (port or socket and not (port and socket)):
         raise click.UsageError('You must pass one and only one of --port/-p or --socket/-f.')
 
-    server = DagsterGrpcServer(port=port, socket=socket, host=host)
+    loadable_target_origin = None
+    if any(kwargs[key] for key in ['attribute', 'working_directory', 'module_name', 'python_file']):
+        loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute=kwargs['attribute'],
+            working_directory=kwargs['working_directory'],
+            module_name=kwargs['module_name'],
+            python_file=kwargs['python_file'],
+        )
+
+    server = DagsterGrpcServer(
+        port=port, socket=socket, host=host, loadable_target_origin=loadable_target_origin
+    )
+
     server.serve()
 
 

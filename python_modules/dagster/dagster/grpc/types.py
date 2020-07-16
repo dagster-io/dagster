@@ -1,9 +1,34 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.code_pointer import CodePointer
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
+
+
+class LoadableTargetOrigin(
+    namedtuple(
+        'LoadableTargetOrigin',
+        'executable_path python_file module_name working_directory attribute',
+    )
+):
+    def __new__(
+        cls,
+        executable_path=None,
+        python_file=None,
+        module_name=None,
+        working_directory=None,
+        attribute=None,
+    ):
+        return super(LoadableTargetOrigin, cls).__new__(
+            cls,
+            executable_path=check.opt_str_param(executable_path, 'executable_path'),
+            python_file=check.opt_str_param(python_file, 'python_file'),
+            module_name=check.opt_str_param(module_name, 'module_name'),
+            working_directory=check.opt_str_param(working_directory, 'working_directory'),
+            attribute=check.opt_str_param(attribute, 'attribute'),
+        )
 
 
 @whitelist_for_serdes
@@ -63,27 +88,28 @@ class LoadableRepositorySymbol(
 
 
 @whitelist_for_serdes
-class ListRepositoriesArgs(
-    namedtuple('_ListRepositoriesArgs', 'module_name python_file working_directory')
+class ListRepositoriesResponse(
+    namedtuple(
+        '_ListRepositoriesResponse',
+        'repository_symbols executable_path repository_code_pointer_dict',
+    )
 ):
-    def __new__(cls, module_name, python_file, working_directory):
-        check.invariant(not (module_name and python_file), 'Must set only one')
-        check.invariant(module_name or python_file, 'Must set at least one')
-        return super(ListRepositoriesArgs, cls).__new__(
-            cls,
-            module_name=check.opt_str_param(module_name, 'module_name'),
-            python_file=check.opt_str_param(python_file, 'python_file'),
-            working_directory=check.opt_str_param(working_directory, 'working_directory'),
-        )
-
-
-@whitelist_for_serdes
-class ListRepositoriesResponse(namedtuple('_ListRepositoriesResponse', 'repository_symbols')):
-    def __new__(cls, repository_symbols):
+    def __new__(
+        cls, repository_symbols, executable_path=None, repository_code_pointer_dict=None,
+    ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
             repository_symbols=check.list_param(
                 repository_symbols, 'repository_symbols', of_type=LoadableRepositorySymbol
+            ),
+            # These are currently only used by the GRPC Repository Location, but
+            # we will need to migrate the rest of the repository locations to use this.
+            executable_path=check.opt_str_param(executable_path, 'executable_path'),
+            repository_code_pointer_dict=check.opt_dict_param(
+                repository_code_pointer_dict,
+                'repository_code_pointer_dict',
+                key_type=str,
+                value_type=CodePointer,
             ),
         )
 

@@ -7,7 +7,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.client import ephemeral_grpc_api_client
-from dagster.grpc.types import PartitionArgs, PartitionNamesArgs
+from dagster.grpc.types import LoadableTargetOrigin, PartitionArgs, PartitionNamesArgs
 
 from .utils import execute_unary_api_cli_command
 
@@ -35,7 +35,7 @@ def sync_get_external_partition_names_grpc(repository_handle, partition_set_name
     repository_origin = repository_handle.get_origin()
 
     with ephemeral_grpc_api_client(
-        python_executable_path=repository_origin.executable_path
+        LoadableTargetOrigin(executable_path=repository_origin.executable_path)
     ) as api_client:
         return check.inst(
             api_client.external_partition_names(
@@ -74,7 +74,7 @@ def sync_get_external_partition_config_grpc(repository_handle, partition_set_nam
     repository_origin = repository_handle.get_origin()
 
     with ephemeral_grpc_api_client(
-        python_executable_path=repository_origin.executable_path
+        LoadableTargetOrigin(executable_path=repository_origin.executable_path)
     ) as api_client:
         return check.inst(
             api_client.external_partition_config(
@@ -115,7 +115,9 @@ def sync_get_external_partition_tags_grpc(repository_handle, partition_set_name,
     repository_origin = repository_handle.get_origin()
 
     with ephemeral_grpc_api_client(
-        python_executable_path=repository_origin.executable_path
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=repository_origin.executable_path
+        )
     ) as api_client:
         return check.inst(
             api_client.external_partition_tags(

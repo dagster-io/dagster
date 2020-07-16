@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.grpc.client import ephemeral_grpc_api_client
-from dagster.grpc.types import PipelineSubsetSnapshotArgs
+from dagster.grpc.types import LoadableTargetOrigin, PipelineSubsetSnapshotArgs
 
 from .utils import execute_unary_api_cli_command
 
@@ -28,7 +28,7 @@ def sync_get_external_pipeline_subset_grpc(pipeline_origin, solid_selection=None
     check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
 
     with ephemeral_grpc_api_client(
-        python_executable_path=pipeline_origin.executable_path
+        loadable_target_origin=LoadableTargetOrigin(executable_path=pipeline_origin.executable_path)
     ) as api_client:
         return check.inst(
             api_client.external_pipeline_subset(

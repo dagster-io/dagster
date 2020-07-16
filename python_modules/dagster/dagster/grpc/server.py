@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 
 from dagster import check, seven
+from dagster.core.code_pointer import CodePointer
 from dagster.core.errors import (
     DagsterSubprocessError,
     PartitionExecutionError,
@@ -37,9 +38,9 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
-    ListRepositoriesArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
+    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -120,6 +121,21 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
 
 
 class DagsterApiServer(DagsterApiServicer):
+
+    # The loadable_target_origin is currently Noneable to support instaniating a server.
+    # This helps us test the ping methods, and incrementally migrate each method to
+    # the target passed in here instead of passing in a target in the argument.
+    def __init__(self, loadable_target_origin=None):
+        super(DagsterApiServer, self).__init__()
+
+        self._loadable_target_origin = loadable_target_origin
+        if loadable_target_origin:
+            self._loadable_targets = get_loadable_targets(
+                loadable_target_origin.python_file,
+                loadable_target_origin.module_name,
+                loadable_target_origin.working_directory,
+            )
+
     def Ping(self, request, _context):
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
@@ -159,27 +175,40 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ListRepositories(self, request, _context):
-        list_repositories_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_list_repositories_args
-        )
+        loadable_targets = self._loadable_targets
+        loadable_repository_symbols = [
+            LoadableRepositorySymbol(
+                attribute=loadable_target.attribute,
+                repository_name=loadable_target.target_definition.name,
+            )
+            for loadable_target in self._loadable_targets
+        ]
 
-        check.inst_param(list_repositories_args, 'list_repositories_args', ListRepositoriesArgs)
+        # This code can probably be extracted and shared with existing logic that exists in
+        # _location_handle_from_python_environment_config
+        repository_code_pointer_dict = {}
+        for loadable_target in loadable_targets:
+            if self._loadable_target_origin.python_file:
+                repository_code_pointer_dict[
+                    loadable_target.target_definition.name
+                ] = CodePointer.from_python_file(
+                    self._loadable_target_origin.python_file,
+                    loadable_target.attribute,
+                    self._loadable_target_origin.working_directory,
+                )
+            if self._loadable_target_origin.module_name:
+                repository_code_pointer_dict[
+                    loadable_target.target_definition.name
+                ] = CodePointer.from_module(
+                    self._loadable_target_origin.module_name, loadable_target.attribute
+                )
 
-        loadable_targets = get_loadable_targets(
-            list_repositories_args.python_file,
-            list_repositories_args.module_name,
-            list_repositories_args.working_directory,
-        )
         return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response=serialize_dagster_namedtuple(
                 ListRepositoriesResponse(
-                    [
-                        LoadableRepositorySymbol(
-                            attribute=loadable_target.attribute,
-                            repository_name=loadable_target.target_definition.name,
-                        )
-                        for loadable_target in loadable_targets
-                    ]
+                    loadable_repository_symbols,
+                    executable_path=self._loadable_target_origin.executable_path,
+                    repository_code_pointer_dict=repository_code_pointer_dict,
                 )
             )
         )
@@ -359,10 +388,14 @@ SERVER_FAILED_TO_BIND_TOKEN_BYTES = b'dagster_grpc_server_failed_to_bind'
 
 
 class DagsterGrpcServer(object):
-    def __init__(self, host='localhost', port=None, socket=None, max_workers=1):
+    def __init__(
+        self, host='localhost', port=None, socket=None, max_workers=1, loadable_target_origin=None
+    ):
         check.opt_str_param(host, 'host')
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')
+        check.int_param(max_workers, 'max_workers')
+        check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
             'You must pass a valid `port` on Windows: `socket` not supported.',
@@ -377,7 +410,7 @@ class DagsterGrpcServer(object):
         )
 
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
-        add_DagsterApiServicer_to_server(DagsterApiServer(), self.server)
+        add_DagsterApiServicer_to_server(DagsterApiServer(loadable_target_origin), self.server)
 
         if port:
             server_address = host + ':' + str(port)
