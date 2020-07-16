@@ -14,8 +14,7 @@ RUN pip install \
     dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \
     dagster-aws==${DAGSTER_VERSION} \
     dagster-k8s==${DAGSTER_VERSION} \
-    dagster-celery-k8s==${DAGSTER_VERSION}
+    dagster-celery-k8s==${DAGSTER_VERSION} \
+    dagit==${DAGSTER_VERSION}
 
-ADD example_project example_project
-
-WORKDIR /example_project
+ADD example_project .
