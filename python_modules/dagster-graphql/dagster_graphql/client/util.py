@@ -129,9 +129,7 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     event_specific_data = None
     if event_type == DagsterEventType.STEP_OUTPUT:
         event_specific_data = StepOutputData(
-            step_output_handle=StepOutputHandle(
-                event_dict['step']['key'], event_dict['outputName']
-            ),
+            step_output_handle=StepOutputHandle(event_dict['stepKey'], event_dict['outputName']),
             type_check_data=TypeCheckData(
                 success=event_dict['typeCheck']['success'],
                 label=event_dict['typeCheck']['label'],
@@ -196,24 +194,18 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             else None,
         )
 
-    # We should update the GraphQL response so that clients don't need to do this handle parsing.
-    # See: https://github.com/dagster-io/dagster/issues/1559
-    handle = None
-    step_key = None
-    step_kind_value = None
-    if 'step' in event_dict and event_dict['step']:
-        step_key = event_dict['step']['key']
-        step_kind_value = event_dict['step']['kind']
-        keys = event_dict['step']['solidHandleID'].split('.')
-        while keys:
-            handle = SolidHandle(keys.pop(0), parent=handle)
-
     return DagsterEvent(
         event_type_value=event_type.value,
         pipeline_name=pipeline_name,
-        step_key=step_key,
-        solid_handle=handle,
-        step_kind_value=step_kind_value,
+        step_key=event_dict.get('stepKey'),
+        solid_handle=SolidHandle.from_string(event_dict['solidHandleID'])
+        if event_dict.get('solidHandleID')
+        else None,
+        # at the time of writing this:
+        # * 'COMPUTE` is the only step kind
+        # * this code should get deleted in the near future as we move away from
+        #   dagster-graphql CLI as what we invoke in dask/k8s/etc.
+        step_kind_value='COMPUTE' if event_dict.get('stepKey') else None,
         logging_tags=None,
         event_specific_data=event_specific_data,
     )

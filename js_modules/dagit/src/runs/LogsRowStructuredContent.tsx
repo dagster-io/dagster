@@ -45,7 +45,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
 
     case "ExecutionStepStartEvent":
-      if (!node.step) {
+      if (!node.stepKey) {
         return <DefaultContent message={node.message} eventType="Step Start" />;
       } else {
         return (
@@ -55,8 +55,8 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
                 label: "step_logs",
                 item: (
                   <ComputeLogLink
-                    stepKey={node.step.key}
-                    runState={metadata.steps[node.step.key]?.state}
+                    stepKey={node.stepKey}
+                    runState={metadata.steps[node.stepKey]?.state}
                   >
                     <MetadataEntryLink>View Raw Step Output</MetadataEntryLink>
                   </ComputeLogLink>

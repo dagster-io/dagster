@@ -40,9 +40,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
           message
           timestamp
           level
-          step {
-            key
-          }
+          stepKey
         }
         ... on StepMaterializationEvent {
           materialization {
@@ -142,7 +140,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
       });
     } else {
       showCustomAlert({
-        title: (node.step && node.step.key) || "Info",
+        title: (node.stepKey && node.stepKey) || "Info",
         body: (
           <StructuredContent>
             <LogsRowStructuredContent node={node} metadata={metadata} />
@@ -171,7 +169,7 @@ const StructuredMemoizedContent: React.FunctionComponent<{
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
     >
-      <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
+      <SolidColumn stepKey={"stepKey" in node && node.stepKey} />
       <StructuredContent>
         <LogsRowStructuredContent node={node} metadata={metadata} />
       </StructuredContent>
@@ -195,9 +193,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
           message
           timestamp
           level
-          step {
-            key
-          }
+          stepKey
         }
       }
     `
@@ -227,7 +223,7 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
     >
-      <SolidColumn stepKey={node.step && node.step.key} />
+      <SolidColumn stepKey={node.stepKey} />
       <EventTypeColumn>{node.level}</EventTypeColumn>
       <span style={{ flex: 1 }}>{node.message}</span>
       <TimestampColumn time={node.timestamp} />

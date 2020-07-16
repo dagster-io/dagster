@@ -9,35 +9,20 @@ import { ObjectStoreOperationType } from "./globalTypes";
 // GraphQL fragment: RunMetadataProviderMessageFragment
 // ====================================================
 
-export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
 export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
   __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step | null;
-}
-
-export interface RunMetadataProviderMessageFragment_EngineEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
+  stepKey: string | null;
 }
 
 export interface RunMetadataProviderMessageFragment_EngineEvent {
   __typename: "EngineEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_EngineEvent_step | null;
+  stepKey: string | null;
   markerStart: string | null;
   markerEnd: string | null;
-}
-
-export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
@@ -102,13 +87,8 @@ export interface RunMetadataProviderMessageFragment_StepMaterializationEvent {
   __typename: "StepMaterializationEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_StepMaterializationEvent_step | null;
+  stepKey: string | null;
   materialization: RunMetadataProviderMessageFragment_StepMaterializationEvent_materialization;
-}
-
-export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry {
@@ -174,13 +154,8 @@ export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent {
   __typename: "StepExpectationResultEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_StepExpectationResultEvent_step | null;
+  stepKey: string | null;
   expectationResult: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult;
-}
-
-export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
@@ -245,7 +220,7 @@ export interface RunMetadataProviderMessageFragment_ObjectStoreOperationEvent {
   __typename: "ObjectStoreOperationEvent";
   message: string;
   timestamp: string;
-  step: RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_step | null;
+  stepKey: string | null;
   operationResult: RunMetadataProviderMessageFragment_ObjectStoreOperationEvent_operationResult;
 }
 

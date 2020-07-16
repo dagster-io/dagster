@@ -112,27 +112,13 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    external_execution_plan = (
-        ExternalExecutionPlan(
-            execution_plan_snapshot=instance.get_execution_plan_snapshot(
-                run.execution_plan_snapshot_id
-            ),
-            represented_pipeline=instance.get_historical_pipeline(run.pipeline_snapshot_id),
-        )
-        if run.pipeline_snapshot_id and run.execution_plan_snapshot_id
-        else None
-    )
-
     # pylint: disable=E1101
     return Observable.create(
         PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
     ).map(
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             run=graphene_info.schema.type_named('PipelineRun')(run),
-            messages=[
-                from_event_record(event, run.pipeline_name, external_execution_plan)
-                for event in events
-            ],
+            messages=[from_event_record(event, run.pipeline_name) for event in events],
         )
     )
 
@@ -229,9 +215,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline, retries
     )
 
     def to_graphql_event(event_record):
-        return from_dagster_event_record(
-            event_record, external_pipeline.name, external_execution_plan
-        )
+        return from_dagster_event_record(event_record, external_pipeline.name)
 
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=DauphinPipeline(external_pipeline),

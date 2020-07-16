@@ -11,10 +11,9 @@ from .utils import sync_execute_get_events
 def get_expectation_results(logs, solid_name):
     def _f():
         for log in logs:
-            if (
-                log['__typename'] == 'StepExpectationResultEvent'
-                and log['step']['solidHandleID'] == solid_name
-            ):
+            if log['__typename'] == 'StepExpectationResultEvent' and log[
+                'stepKey'
+            ] == '{}.compute'.format(solid_name):
                 yield log
 
     return list(_f())

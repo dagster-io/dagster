@@ -9,22 +9,12 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // GraphQL fragment: LogsRowStructuredFragment
 // ====================================================
 
-export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
   __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_ExecutionStepSkippedEvent_step | null;
-}
-
-export interface LogsRowStructuredFragment_StepMaterializationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
+  stepKey: string | null;
 }
 
 export interface LogsRowStructuredFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
@@ -91,13 +81,8 @@ export interface LogsRowStructuredFragment_StepMaterializationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_StepMaterializationEvent_step | null;
+  stepKey: string | null;
   materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
-}
-
-export interface LogsRowStructuredFragment_PipelineInitFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_PipelineInitFailureEvent_error_cause {
@@ -118,13 +103,8 @@ export interface LogsRowStructuredFragment_PipelineInitFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_PipelineInitFailureEvent_step | null;
+  stepKey: string | null;
   error: LogsRowStructuredFragment_PipelineInitFailureEvent_error;
-}
-
-export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_cause {
@@ -202,14 +182,9 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_ExecutionStepFailureEvent_step | null;
+  stepKey: string | null;
   error: LogsRowStructuredFragment_ExecutionStepFailureEvent_error;
   failureMetadata: LogsRowStructuredFragment_ExecutionStepFailureEvent_failureMetadata | null;
-}
-
-export interface LogsRowStructuredFragment_ExecutionStepInputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -277,14 +252,9 @@ export interface LogsRowStructuredFragment_ExecutionStepInputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_ExecutionStepInputEvent_step | null;
+  stepKey: string | null;
   inputName: string;
   typeCheck: LogsRowStructuredFragment_ExecutionStepInputEvent_typeCheck;
-}
-
-export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -352,14 +322,9 @@ export interface LogsRowStructuredFragment_ExecutionStepOutputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_ExecutionStepOutputEvent_step | null;
+  stepKey: string | null;
   outputName: string;
   typeCheck: LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck;
-}
-
-export interface LogsRowStructuredFragment_StepExpectationResultEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
@@ -427,13 +392,8 @@ export interface LogsRowStructuredFragment_StepExpectationResultEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_StepExpectationResultEvent_step | null;
+  stepKey: string | null;
   expectationResult: LogsRowStructuredFragment_StepExpectationResultEvent_expectationResult;
-}
-
-export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
@@ -499,13 +459,8 @@ export interface LogsRowStructuredFragment_ObjectStoreOperationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_ObjectStoreOperationEvent_step | null;
+  stepKey: string | null;
   operationResult: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
@@ -578,7 +533,7 @@ export interface LogsRowStructuredFragment_EngineEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsRowStructuredFragment_EngineEvent_step | null;
+  stepKey: string | null;
   metadataEntries: LogsRowStructuredFragment_EngineEvent_metadataEntries[];
   engineError: LogsRowStructuredFragment_EngineEvent_engineError | null;
 }

@@ -32,7 +32,7 @@ query ModesQuery($selector: PipelineSelector!, $mode: String!)
 
 def get_step_output(logs, step_key):
     for log in logs:
-        if log['__typename'] == 'ExecutionStepOutputEvent' and log['step']['key'] == step_key:
+        if log['__typename'] == 'ExecutionStepOutputEvent' and log['stepKey'] == step_key:
             return log
 
 

@@ -78,13 +78,7 @@ mutation ($executionParams: ExecutionParams!, $retries: Retries) {
                 ... on MessageEvent {
                     message
                 }
-                step {
-                    key
-                    metadata {
-                       key
-                       value
-                    }
-                }
+                stepKey
                 ... on ExecutionStepOutputEvent {
                     outputName
                 }
@@ -176,9 +170,9 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event
+        step_event['stepKey']: step_event
         for step_event in query_result['stepEvents']
-        if step_event['step']
+        if step_event['stepKey']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -219,9 +213,9 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event
+        step_event['stepKey']: step_event
         for step_event in query_result['stepEvents']
-        if step_event['step']
+        if step_event['stepKey']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -260,9 +254,9 @@ def test_success_whole_execution_plan_with_in_memory_config(graphql_context, sna
     assert query_result['pipeline']['name'] == 'csv_hello_world'
     assert query_result['hasFailures'] is False
     step_events = {
-        step_event['step']['key']: step_event
+        step_event['stepKey']: step_event
         for step_event in query_result['stepEvents']
-        if step_event['step']
+        if step_event['stepKey']
     }
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
@@ -314,7 +308,7 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
         'ExecutionStepSuccessEvent',
     ]
 
-    assert step_events[1]['step']['key'] == 'sum_solid.compute'
+    assert step_events[1]['stepKey'] == 'sum_solid.compute'
     assert step_events[2]['outputName'] == 'result'
 
     expected_value_repr = (
@@ -322,8 +316,8 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
         '''OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7)])]'''
     )
 
-    assert step_events[3]['step']['key'] == 'sum_solid.compute'
-    assert step_events[4]['step']['key'] == 'sum_solid.compute'
+    assert step_events[3]['stepKey'] == 'sum_solid.compute'
+    assert step_events[4]['stepKey'] == 'sum_solid.compute'
 
     snapshot.assert_match(clean_log_messages(result.data))
 
@@ -392,11 +386,11 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
         'ObjectStoreOperationEvent',
         'ExecutionStepSuccessEvent',
     ]
-    assert step_events[0]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[1]['step']['key'] == 'sum_sq_solid.compute'
-    assert step_events[2]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[0]['stepKey'] == 'sum_sq_solid.compute'
+    assert step_events[1]['stepKey'] == 'sum_sq_solid.compute'
+    assert step_events[2]['stepKey'] == 'sum_sq_solid.compute'
     assert step_events[3]['outputName'] == 'result'
-    assert step_events[4]['step']['key'] == 'sum_sq_solid.compute'
+    assert step_events[4]['stepKey'] == 'sum_sq_solid.compute'
 
     snapshot.assert_match(clean_log_messages(result_two.data))
 

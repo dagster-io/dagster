@@ -27,8 +27,6 @@ from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
-from .execution import DauphinExecutionStep
-
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
 
@@ -291,7 +289,8 @@ class DauphinMessageEvent(dauphin.Interface):
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
     level = dauphin.NonNull('LogLevel')
-    step = dauphin.Field('ExecutionStep')
+    stepKey = dauphin.Field(dauphin.String)
+    solidHandleID = dauphin.Field(dauphin.String)
 
 
 class DauphinEventMetadataEntry(dauphin.Interface):
@@ -386,7 +385,8 @@ class DauphinStepEvent(dauphin.Interface):
     class Meta(object):
         name = 'StepEvent'
 
-    step = dauphin.Field('ExecutionStep')
+    stepKey = dauphin.Field(dauphin.String)
+    solidHandleID = dauphin.Field(dauphin.String)
 
 
 class DauphinExecutionStepStartEvent(dauphin.ObjectType):
@@ -694,19 +694,18 @@ class DauphinPipelineTag(dauphin.ObjectType):
         super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
-def from_dagster_event_record(event_record, pipeline_name, external_execution_plan):
+def from_dagster_event_record(event_record, pipeline_name):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
     check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
 
     # circular ref at module scope
     from .errors import DauphinPythonError
 
     dagster_event = event_record.dagster_event
-    basic_params = construct_basic_params(event_record, external_execution_plan)
+    basic_params = construct_basic_params(event_record)
     if dagster_event.event_type == DagsterEventType.STEP_START:
         return DauphinExecutionStepStartEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
@@ -797,35 +796,18 @@ def from_compute_log_file(graphene_info, file):
     )
 
 
-def from_event_record(event_record, pipeline_name, external_execution_plan):
+def from_event_record(event_record, pipeline_name):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
 
     if event_record.is_dagster_event:
-        return from_dagster_event_record(event_record, pipeline_name, external_execution_plan)
+        return from_dagster_event_record(event_record, pipeline_name)
     else:
-        return DauphinLogMessageEvent(
-            **construct_basic_params(event_record, external_execution_plan)
-        )
+        return DauphinLogMessageEvent(**construct_basic_params(event_record))
 
 
-def create_dauphin_step(event_record, external_execution_plan):
+def construct_basic_params(event_record):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
-
-    return (
-        DauphinExecutionStep(
-            external_execution_plan, external_execution_plan.get_step_by_key(event_record.step_key),
-        )
-        if event_record.step_key
-        else None
-    )
-
-
-def construct_basic_params(event_record, external_execution_plan):
-    check.inst_param(event_record, 'event_record', EventRecord)
-    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
     return {
         'runId': event_record.run_id,
         'message': event_record.dagster_event.message
@@ -833,7 +815,8 @@ def construct_basic_params(event_record, external_execution_plan):
         else event_record.user_message,
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
-        'step': create_dauphin_step(event_record, external_execution_plan)
-        if external_execution_plan
+        'stepKey': event_record.step_key,
+        'solidHandleID': event_record.dagster_event.solid_handle.to_string()
+        if event_record.is_dagster_event and event_record.dagster_event.solid_handle
         else None,
     }

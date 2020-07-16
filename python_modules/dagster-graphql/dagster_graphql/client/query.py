@@ -48,31 +48,8 @@ fragment metadataEntryFragment on EventMetadataEntry {
 }
 
 fragment stepEventFragment on StepEvent {
-  step {
-    key
-    solidHandleID
-    kind
-    inputs {
-      name
-      type {
-        key
-      }
-      dependsOn {
-        key
-      }
-    }
-    outputs {
-      name
-      type {
-        key
-      }
-    }
-    metadata {
-      key
-      value
-    }
-  }
-
+  stepKey
+  solidHandleID
   ... on EngineEvent {
     metadataEntries {
       ...metadataEntryFragment
@@ -128,7 +105,7 @@ fragment stepEventFragment on StepEvent {
   }
 
   ... on ObjectStoreOperationEvent {
-        step { key }
+        stepKey
         operationResult {
             op
             metadataEntries {
@@ -378,10 +355,7 @@ subscription subscribeTest($runId: ID!) {
         }
 
         ... on ExecutionStepFailureEvent {
-          step {
-            key
-            kind
-          }
+          stepKey
           error {
             ...errorFragment
           }

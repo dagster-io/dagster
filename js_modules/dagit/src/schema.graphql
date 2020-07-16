@@ -145,7 +145,8 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
@@ -296,7 +297,8 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   error: PythonError!
   failureMetadata: FailureMetadata
 }
@@ -312,7 +314,8 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   inputName: String!
   typeCheck: TypeCheck!
 }
@@ -327,7 +330,8 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   outputName: String!
   typeCheck: TypeCheck!
 }
@@ -337,7 +341,8 @@ type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
@@ -345,7 +350,8 @@ type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type ExecutionStepStartEvent implements MessageEvent & StepEvent {
@@ -353,7 +359,8 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
@@ -361,7 +368,8 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
@@ -369,7 +377,8 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   error: PythonError!
   secondsToWait: Int
 }
@@ -514,7 +523,8 @@ type LogMessageEvent implements MessageEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type Materialization implements DisplayableEvent {
@@ -528,7 +538,8 @@ interface MessageEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 type MetadataItemDefinition {
@@ -610,7 +621,8 @@ type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   operationResult: ObjectStoreOperationResult!
 }
 
@@ -748,7 +760,8 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   pipelineName: String!
 }
 
@@ -757,7 +770,8 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   pipelineName: String!
   error: PythonError!
 }
@@ -908,7 +922,8 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   pipelineName: String!
 }
 
@@ -917,7 +932,8 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   pipelineName: String!
 }
 
@@ -1279,7 +1295,8 @@ type SolidInvocationSite {
 }
 
 interface StepEvent {
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
 }
 
 enum StepEventStatus {
@@ -1293,7 +1310,8 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   expectationResult: ExpectationResult!
 }
 
@@ -1306,7 +1324,8 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   message: String!
   timestamp: String!
   level: LogLevel!
-  step: ExecutionStep
+  stepKey: String
+  solidHandleID: String
   materialization: Materialization!
 }
 

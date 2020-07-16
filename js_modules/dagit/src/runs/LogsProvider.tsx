@@ -207,10 +207,10 @@ export class LogsProvider extends React.Component<
         filter.values.length === 0 ||
         filter.values.every(f => {
           if (f.token === "query") {
-            return node.step && selectedSteps.includes(node.step.key);
+            return node.stepKey && selectedSteps.includes(node.stepKey);
           }
           if (f.token === "step") {
-            return node.step && node.step.key === f.value;
+            return node.stepKey && node.stepKey === f.value;
           }
           if (f.token === "type") {
             return node.__typename.toLowerCase().includes(f.value);

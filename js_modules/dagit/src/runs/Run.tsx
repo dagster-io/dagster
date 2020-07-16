@@ -97,9 +97,7 @@ export class Run extends React.Component<RunProps, RunState> {
           message
           timestamp
           level
-          step {
-            key
-          }
+          stepKey
         }
 
         ...LogsScrollingTableMessageFragment
@@ -120,10 +118,7 @@ export class Run extends React.Component<RunProps, RunState> {
 
   onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
-      node =>
-        node.__typename === "ExecutionStepFailureEvent" &&
-        node.step != null &&
-        node.step.key === stepKey
+      node => node.__typename === "ExecutionStepFailureEvent" && node.stepKey === stepKey
     ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
 
     if (errorNode) {

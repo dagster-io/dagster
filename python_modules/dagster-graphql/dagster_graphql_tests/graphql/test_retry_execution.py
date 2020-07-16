@@ -36,7 +36,7 @@ from .utils import get_all_logs_for_finished_run_via_subscription, sync_execute_
 
 def step_started(logs, step_key):
     return any(
-        log['step']['key'] == step_key
+        log['stepKey'] == step_key
         for log in logs
         if log['__typename'] in ('ExecutionStepStartEvent',)
     )
@@ -44,7 +44,7 @@ def step_started(logs, step_key):
 
 def step_did_not_run(logs, step_key):
     return not any(
-        log['step']['key'] == step_key
+        log['stepKey'] == step_key
         for log in logs
         if log['__typename']
         in ('ExecutionStepSuccessEvent', 'ExecutionStepSkippedEvent', 'ExecutionStepFailureEvent')
@@ -53,21 +53,21 @@ def step_did_not_run(logs, step_key):
 
 def step_did_succeed(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepSuccessEvent' and step_key == log['step']['key']
+        log['__typename'] == 'ExecutionStepSuccessEvent' and step_key == log['stepKey']
         for log in logs
     )
 
 
 def step_did_skip(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepSkippedEvent' and step_key == log['step']['key']
+        log['__typename'] == 'ExecutionStepSkippedEvent' and step_key == log['stepKey']
         for log in logs
     )
 
 
 def step_did_fail(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepFailureEvent' and step_key == log['step']['key']
+        log['__typename'] == 'ExecutionStepFailureEvent' and step_key == log['stepKey']
         for log in logs
     )
 
@@ -116,7 +116,7 @@ def get_step_output_event(logs, step_key, output_name='result'):
     for log in logs:
         if (
             log['__typename'] == 'ExecutionStepOutputEvent'
-            and log['step']['key'] == step_key
+            and log['stepKey'] == step_key
             and log['outputName'] == output_name
         ):
             return log

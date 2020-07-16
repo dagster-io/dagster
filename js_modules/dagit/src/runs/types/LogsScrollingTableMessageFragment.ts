@@ -9,22 +9,12 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // GraphQL fragment: LogsScrollingTableMessageFragment
 // ====================================================
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
 export interface LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent {
   __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent_step | null;
-}
-
-export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
+  stepKey: string | null;
 }
 
 export interface LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
@@ -91,13 +81,8 @@ export interface LogsScrollingTableMessageFragment_StepMaterializationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_StepMaterializationEvent_step | null;
+  stepKey: string | null;
   materialization: LogsScrollingTableMessageFragment_StepMaterializationEvent_materialization;
-}
-
-export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error_cause {
@@ -118,13 +103,8 @@ export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_step | null;
+  stepKey: string | null;
   error: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error;
-}
-
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_cause {
@@ -202,14 +182,9 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_step | null;
+  stepKey: string | null;
   error: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error;
   failureMetadata: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata | null;
-}
-
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -277,14 +252,9 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_step | null;
+  stepKey: string | null;
   inputName: string;
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck;
-}
-
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -352,14 +322,9 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_step | null;
+  stepKey: string | null;
   outputName: string;
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck;
-}
-
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
@@ -427,13 +392,8 @@ export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_StepExpectationResultEvent_step | null;
+  stepKey: string | null;
   expectationResult: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult;
-}
-
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
@@ -499,13 +459,8 @@ export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_step | null;
+  stepKey: string | null;
   operationResult: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult;
-}
-
-export interface LogsScrollingTableMessageFragment_EngineEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
@@ -578,7 +533,7 @@ export interface LogsScrollingTableMessageFragment_EngineEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: LogsScrollingTableMessageFragment_EngineEvent_step | null;
+  stepKey: string | null;
   metadataEntries: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries[];
   engineError: LogsScrollingTableMessageFragment_EngineEvent_engineError | null;
 }

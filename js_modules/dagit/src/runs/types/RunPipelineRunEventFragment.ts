@@ -9,22 +9,12 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // GraphQL fragment: RunPipelineRunEventFragment
 // ====================================================
 
-export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
 export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
   __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_ExecutionStepSkippedEvent_step | null;
-}
-
-export interface RunPipelineRunEventFragment_StepMaterializationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
+  stepKey: string | null;
 }
 
 export interface RunPipelineRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
@@ -91,13 +81,8 @@ export interface RunPipelineRunEventFragment_StepMaterializationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_StepMaterializationEvent_step | null;
+  stepKey: string | null;
   materialization: RunPipelineRunEventFragment_StepMaterializationEvent_materialization;
-}
-
-export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_error_cause {
@@ -118,13 +103,8 @@ export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_PipelineInitFailureEvent_step | null;
+  stepKey: string | null;
   error: RunPipelineRunEventFragment_PipelineInitFailureEvent_error;
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause {
@@ -202,14 +182,9 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_ExecutionStepFailureEvent_step | null;
+  stepKey: string | null;
   error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
   failureMetadata: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepInputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -277,14 +252,9 @@ export interface RunPipelineRunEventFragment_ExecutionStepInputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_ExecutionStepInputEvent_step | null;
+  stepKey: string | null;
   inputName: string;
   typeCheck: RunPipelineRunEventFragment_ExecutionStepInputEvent_typeCheck;
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
@@ -352,14 +322,9 @@ export interface RunPipelineRunEventFragment_ExecutionStepOutputEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_ExecutionStepOutputEvent_step | null;
+  stepKey: string | null;
   outputName: string;
   typeCheck: RunPipelineRunEventFragment_ExecutionStepOutputEvent_typeCheck;
-}
-
-export interface RunPipelineRunEventFragment_StepExpectationResultEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
@@ -427,13 +392,8 @@ export interface RunPipelineRunEventFragment_StepExpectationResultEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_StepExpectationResultEvent_step | null;
+  stepKey: string | null;
   expectationResult: RunPipelineRunEventFragment_StepExpectationResultEvent_expectationResult;
-}
-
-export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
@@ -499,13 +459,8 @@ export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_ObjectStoreOperationEvent_step | null;
+  stepKey: string | null;
   operationResult: RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult;
-}
-
-export interface RunPipelineRunEventFragment_EngineEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
 }
 
 export interface RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
@@ -578,7 +533,7 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  step: RunPipelineRunEventFragment_EngineEvent_step | null;
+  stepKey: string | null;
   metadataEntries: RunPipelineRunEventFragment_EngineEvent_metadataEntries[];
   engineError: RunPipelineRunEventFragment_EngineEvent_engineError | null;
   markerStart: string | null;

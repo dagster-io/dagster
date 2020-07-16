@@ -327,7 +327,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'DEBUG'
 
         sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
-        assert sum_solid_output['step']['key'] == 'sum_solid.compute'
+        assert sum_solid_output['stepKey'] == 'sum_solid.compute'
 
     def test_basic_filesystem_sync_execution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
@@ -353,7 +353,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'DEBUG'
 
         sum_solid_output = get_step_output_event(logs, 'sum_solid.compute')
-        assert sum_solid_output['step']['key'] == 'sum_solid.compute'
+        assert sum_solid_output['stepKey'] == 'sum_solid.compute'
         assert sum_solid_output['outputName'] == 'result'
 
     def test_basic_start_pipeline_execution_with_tags(self, graphql_context):
@@ -441,7 +441,7 @@ def sqlite_instance_with_manager_disabled():
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
     for message_data in pipeline_run_logs['messages']:
         if message_data['__typename'] == typename:
-            if message_data['step']['key'] == step_key:
+            if message_data['stepKey'] == step_key:
                 return message_data
 
 
@@ -460,7 +460,7 @@ def get_step_output_event(logs, step_key, output_name='result'):
     for log in logs:
         if (
             log['__typename'] == 'ExecutionStepOutputEvent'
-            and log['step']['key'] == step_key
+            and log['stepKey'] == step_key
             and log['outputName'] == output_name
         ):
             return log

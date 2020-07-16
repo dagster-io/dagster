@@ -228,7 +228,7 @@ export function extractMetadataFromLogs(
       metadata.exitedAt = timestamp;
     }
 
-    if (log.__typename === "EngineEvent" && !log.step) {
+    if (log.__typename === "EngineEvent" && !log.stepKey) {
       if (log.markerStart) {
         upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
       }
@@ -237,8 +237,8 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (log.step) {
-      const stepKey = log.step.key;
+    if (log.stepKey) {
+      const stepKey = log.stepKey;
       const step =
         metadata.steps[stepKey] ||
         ({
@@ -375,18 +375,14 @@ export class RunMetadataProvider extends React.Component<IRunMetadataProviderPro
         ... on MessageEvent {
           message
           timestamp
-          step {
-            key
-          }
+          stepKey
         }
         ... on EngineEvent {
           markerStart
           markerEnd
         }
         ... on StepMaterializationEvent {
-          step {
-            key
-          }
+          stepKey
           materialization {
             label
             description
