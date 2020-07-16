@@ -28,9 +28,10 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
   pipelinePath: string;
 }>> = ({ match }) => {
   const pipelineName = match.params.pipelinePath.split(":")[0];
-  const [data, onSave] = useStorage(pipelineName);
-  const session = data.sessions[data.current];
   const { repositoryName, repositoryLocationName } = useRepositorySelector();
+  const [data, onSave] = useStorage(repositoryName, pipelineName);
+
+  const session = data.sessions[data.current];
   const pipelineSelector = usePipelineSelector(pipelineName, session?.solidSelection || undefined);
 
   const onSaveSession = (session: string, changes: IExecutionSessionChanges) => {

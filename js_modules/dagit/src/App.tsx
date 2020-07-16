@@ -22,10 +22,9 @@ import { FeatureFlagsRoot } from "./FeatureFlagsRoot";
 import { InstanceDetailsRoot } from "./InstanceDetailsRoot";
 import { SolidDetailsRoot } from "./solids/SolidDetailsRoot";
 import {
-  isRepositoryOptionEqual,
   DagsterRepositoryContext,
   useRepositoryOptions,
-  DagsterRepoOption
+  useCurrentRepositoryState
 } from "./DagsterRepositoryContext";
 import { CustomTooltipProvider } from "./CustomTooltipProvider";
 import { APP_PATH_PREFIX } from "./DomUtils";
@@ -86,13 +85,7 @@ const AppRoutes = () => (
 
 export const App: React.FunctionComponent = () => {
   const { options, error } = useRepositoryOptions();
-  const [repo, setRepo] = React.useState<DagsterRepoOption | null>(null);
-
-  React.useEffect(() => {
-    if (!repo || !options.find(o => isRepositoryOptionEqual(o, repo))) {
-      setRepo(options[0]);
-    }
-  }, [repo, options]);
+  const [repo, setRepo] = useCurrentRepositoryState(options);
 
   return (
     <div style={{ display: "flex", height: "100%" }}>

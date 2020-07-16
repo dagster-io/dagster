@@ -1,21 +1,19 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
+import { getJSONForKey } from "../LocalStorage";
 
 const ColumnWidthsStorageKey = "ColumnWidths";
-const ColumnWidths = {
-  eventType: 140,
-  solid: 150,
-  timestamp: 100
-};
-const MIN_COLUMN_WIDTH = 40;
+const ColumnWidths = Object.assign(
+  {
+    eventType: 140,
+    solid: 150,
+    timestamp: 100
+  },
+  getJSONForKey(ColumnWidthsStorageKey)
+);
 
-try {
-  const saved = window.localStorage.getItem(ColumnWidthsStorageKey);
-  Object.assign(ColumnWidths, JSON.parse(saved || "{}"));
-} catch (err) {
-  // no-op
-}
+const MIN_COLUMN_WIDTH = 40;
 
 export const ColumnWidthsContext = React.createContext({
   ...ColumnWidths,

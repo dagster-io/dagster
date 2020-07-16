@@ -1,11 +1,15 @@
 # Changelog
 
-
 ## 0.8.9 (Upcoming)
 
 **New**
 
 - The new `configured` API makes it easy to create configured versions of resources.
+
+**Bugfixes**
+
+- Opening new Dagit browser windows maintains your current repository selection. #2722
+- Pipelines with the same name in different repositories no longer incorrectly share playground state. #2720
 
 ## 0.8.8
 

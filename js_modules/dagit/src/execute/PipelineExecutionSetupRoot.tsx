@@ -1,14 +1,17 @@
 import * as React from "react";
 import { Redirect } from "react-router";
-import { useStorage, applyCreateSession, IExecutionSession } from "../LocalStorage";
 import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router-dom";
+
+import { useRepositorySelector } from "../DagsterRepositoryContext";
+import { useStorage, applyCreateSession, IExecutionSession } from "../LocalStorage";
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({ match }) => {
+  const { repositoryName } = useRepositorySelector();
   const pipelineName = match.params.pipelinePath.split(":")[0];
-  const [data, onSave] = useStorage(pipelineName);
+  const [data, onSave] = useStorage(repositoryName, pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {

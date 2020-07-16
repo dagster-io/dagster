@@ -1,5 +1,6 @@
 import LRU from "lru-cache";
 import moment from "moment";
+import { getJSONForKey } from "./LocalStorage";
 
 export const DEFAULT_RESULT_NAME = "result";
 
@@ -171,7 +172,7 @@ export enum FeatureFlag {
 }
 
 export function getFeatureFlags(): FeatureFlag[] {
-  return JSON.parse(localStorage.getItem(DAGIT_FLAGS_KEY) || "[]");
+  return getJSONForKey(DAGIT_FLAGS_KEY) || [];
 }
 
 export function setFeatureFlags(flags: FeatureFlag[]) {

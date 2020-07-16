@@ -116,23 +116,28 @@ function getKey(namespace: string) {
   return `dagit.v2.${namespace}`;
 }
 
+export function getJSONForKey(key: string) {
+  try {
+    const jsonString = window.localStorage.getItem(key);
+    if (jsonString) {
+      return JSON.parse(jsonString);
+    }
+  } catch (err) {
+    // noop
+  }
+  return undefined;
+}
+
 function getStorageDataForNamespace(namespace: string) {
   if (_data && _dataNamespace === namespace) {
     return _data;
   }
 
-  let data: IStorageData = {
-    sessions: {},
-    current: ""
-  };
-  try {
-    const jsonString = window.localStorage.getItem(getKey(namespace));
-    if (jsonString) {
-      data = Object.assign(data, JSON.parse(jsonString));
-    }
-  } catch (err) {
-    // noop
-  }
+  let data: IStorageData = Object.assign(
+    { sessions: {}, current: "" },
+    getJSONForKey(getKey(namespace))
+  );
+
   if (Object.keys(data.sessions).length === 0) {
     data = applyCreateSession(data, {});
   }
@@ -159,7 +164,8 @@ current localStorage namespace in memory (in _data above) and React keeps a simp
 version flag it can use to trigger a re-render after changes are saved, so changing
 namespaces changes the returned data immediately.
 */
-export function useStorage(namespace = "shared"): StorageHook {
+export function useStorage(repositoryName: string, pipelineName: string): StorageHook {
+  const namespace = `${repositoryName}.${pipelineName}`;
   const [version, setVersion] = React.useState<number>(0);
 
   const onSave = (newData: IStorageData) => {

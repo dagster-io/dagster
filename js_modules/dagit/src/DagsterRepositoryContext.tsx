@@ -16,6 +16,8 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
+const LAST_REPO_KEY = "dagit.last-repo";
+
 export const DagsterRepositoryContext = React.createContext<DagsterRepoOption>(
   new Error("DagsterRepositoryContext should never be uninitialized") as any
 );
@@ -43,11 +45,16 @@ export const ROOT_REPOSITORIES_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
-  a.repository.name === b.repository.name && a.repositoryLocation.name === b.repositoryLocation.name
-    ? true
-    : false;
+export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
+  `${a.repository.name}:${a.repositoryLocation.name}`;
 
+export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
+  getRepositoryOptionHash(a) === getRepositoryOptionHash(b);
+
+/**
+ * useRepositoryOptions vends the set of available repositories by fetching them via GraphQL
+ * and coercing the response to the DagsterRepoOption[] type.
+ */
 export const useRepositoryOptions = () => {
   const { data } = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: "cache-and-network"
@@ -66,6 +73,35 @@ export const useRepositoryOptions = () => {
   }));
 
   return { error: null, options };
+};
+
+/**
+ * useCurrentRepositoryState vends `[repo, setRepo]` and internally mirrors the current
+ * selection into localStorage so that the default selection in new browser windows
+ * is the repo currently active in your session.
+ */
+export const useCurrentRepositoryState = (options: DagsterRepoOption[]) => {
+  const [repo, _setRepo] = React.useState<DagsterRepoOption | null>(null);
+
+  const setRepo = (next: DagsterRepoOption) => {
+    window.localStorage.setItem(LAST_REPO_KEY, getRepositoryOptionHash(next));
+    _setRepo(next);
+  };
+
+  // If the selection is null or the selected repository cannot be found in the set,
+  // coerce the selection to the last used repo or [0].
+  React.useEffect(() => {
+    if (!options.length) {
+      return;
+    }
+    if (!repo || !options.some(o => getRepositoryOptionHash(o) === getRepositoryOptionHash(repo))) {
+      const lastHash = window.localStorage.getItem(LAST_REPO_KEY);
+      const last = lastHash && options.find(o => getRepositoryOptionHash(o) === lastHash);
+      setRepo(last || options[0]);
+    }
+  }, [repo, options]);
+
+  return [repo, setRepo] as [typeof repo, typeof setRepo];
 };
 
 export const useRepositorySelector = () => {
