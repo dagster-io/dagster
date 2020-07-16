@@ -40,6 +40,10 @@ export default class MyDocument extends Document<Props> {
     return (
       <html>
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.css"
+        />
         <Head>
           {/* We only want to add the scripts if in production */}
           {isProduction && (
@@ -54,6 +58,7 @@ export default class MyDocument extends Document<Props> {
         </Head>
         <body>
           <Main />
+          <script src="https://cdn.jsdelivr.net/npm/docsearch.js@2.6.3/dist/cdn/docsearch.min.js"></script>
           <NextScript />
         </body>
       </html>

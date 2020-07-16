@@ -51,13 +51,22 @@ type NavProps = {
 };
 
 const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
-  const treeOfContents = useTreeOfContents();
+  let treeOfContents = useTreeOfContents();
   const router = useRouter();
+
+  const isApiDocs = router.pathname.startsWith('/_apidocs');
+
+  if (isApiDocs) {
+    treeOfContents = treeOfContents.filter((i) => i.name === 'API Docs');
+  } else {
+    treeOfContents = treeOfContents.filter((i) => i.name !== 'API Docs');
+  }
+
   const allLinks = flatten(treeOfContents, true);
   const selectedSection = allLinks.find((l) => router.asPath.includes(l.path));
   const selectedSectionChildren = treeOfContents.find(
-    entry => entry.name === selectedSection?.name
-  )?.children
+    (entry) => entry.name === selectedSection?.name,
+  )?.children;
 
   return (
     <nav className={className}>
@@ -75,9 +84,11 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
       selectedSectionChildren &&
       selectedSectionChildren.length > 0 ? (
         <div className="mt-8">
-          <h3 className="px-3 text-xs leading-4 font-semibold text-gray-500 uppercase tracking-wider">
-            {selectedSection.name}
-          </h3>
+          {!isApiDocs && (
+            <h3 className="px-3 text-xs leading-4 font-semibold text-gray-500 uppercase tracking-wider">
+              {selectedSection.name}
+            </h3>
+          )}
           <div className="mt-1">
             {selectedSectionChildren.map((c: TreeLink) => {
               const subSelected =

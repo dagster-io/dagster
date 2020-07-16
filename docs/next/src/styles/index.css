@@ -563,3 +563,8 @@ details[open] > summary ~ * {
 .react-syntax-highlighter-line-number {
   user-select: none;
 }
+
+.algolia-autocomplete {
+  display: block !important;
+  @apply pl-10;
+}

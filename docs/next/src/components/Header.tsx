@@ -1,7 +1,8 @@
 import CommunityLinks from './CommunityLinks';
 import { VersionedLink, VersionedImage } from './VersionedComponents';
 import Search from './Search';
-import { useState } from 'react';
+import DocSearch from './Docsearch';
+import React, { useState } from 'react';
 import cx from 'classnames';
 import getConfig from 'next/config';
 import { useRouter } from 'next/router';
@@ -33,6 +34,8 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
   }
 
   const router = useRouter();
+
+  const isApiDocs = router.pathname.startsWith('/_apidocs');
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow fixed left-0 right-0 h-16 z-10">
@@ -69,13 +72,31 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
                   className={cx(
                     'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
                     {
-                      'border-indigo-500': true,
+                      'border-indigo-500': !router.pathname.startsWith(
+                        '/_apidocs',
+                      ),
                     },
                   )}
                 >
                   Docs
                 </a>
               </VersionedLink>
+
+              <VersionedLink href="/_apidocs">
+                <a
+                  className={cx(
+                    'ml-2 lg:ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
+                    {
+                      'border-indigo-500': router.pathname.startsWith(
+                        '/_apidocs',
+                      ),
+                    },
+                  )}
+                >
+                  API Docs
+                </a>
+              </VersionedLink>
+
               <a
                 href="https://medium.com/dagster-io"
                 target="_blank"
@@ -85,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
               </a>
             </div>
           </div>
-          <Search />
+          {isApiDocs ? <Search /> : <DocSearch />}
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => onMobileToggleNavigationClick()}
