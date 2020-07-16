@@ -101,7 +101,22 @@ class DagsterKubernetesClient:
             status = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace).status
 
             if status.failed and status.failed > 0:
-                raise DagsterK8sError('Encountered failed job pods with status: %s' % str(status))
+                pods = self.core_api.list_namespaced_pod(
+                    label_selector='job-name=={}'.format(job_name), namespace=namespace
+                )
+                logs = {}
+                for pod in pods.items:
+                    pod_name = pod.metadata.name
+                    try:
+                        logs[pod_name] = self.core_api.read_namespaced_pod_log(
+                            name=pod_name, namespace=namespace
+                        )
+                    except kubernetes.client.rest.ApiException as e:
+                        logs[pod_name] = e
+
+                raise DagsterK8sError(
+                    'Encountered failed job pods with status: {}, and logs: {}'.format(status, logs)
+                )
 
             # done waiting for pod completion
             if status.succeeded == num_pods_to_wait_for:
