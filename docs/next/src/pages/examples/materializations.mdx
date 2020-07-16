@@ -7,13 +7,13 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 Dagster solids often produce persistent assets which represent a result of some computation. In
 Dagster pipelines, these assets are often by-products or side-effects of a solid's computation,
 distinct from the `Output` returned by a solid. Dagster solids can describe these assets by
-yielding a `Materialization` event and attaching useful metadata.
+yielding an `AssetMaterialization` event and attaching useful metadata.
 
-Materialization events optionally include an `AssetKey`, which serves as an organizational index
-across pipelines and runs. These materialized assets are represented in `dagit` under the `Assets`
-tab and cross-reference the pipelines and runs that generate them. This is useful not only for
-quickly viewing the status of an asset, but also for better understanding the relationship over time
-between the asset and the computation that created it.
+AssetMaterialization events include an `AssetKey`, which serves as an organizational index across
+pipelines and runs. These materialized assets are represented in `dagit` under the `Assets` tab and
+cross-reference the pipelines and runs that generate them. This is useful not only for quickly
+viewing the status of an asset, but also for better understanding the relationship over time between
+the asset and the computation that created it.
 
 This example sets up a pipeline that materializes an asset annotated with metadata, and builds that
 asset view in `dagit`.

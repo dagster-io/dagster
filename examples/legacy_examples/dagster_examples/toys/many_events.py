@@ -1,8 +1,8 @@
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
     InputDefinition,
-    Materialization,
     Nothing,
     Output,
     OutputDefinition,
@@ -40,8 +40,8 @@ def create_raw_file_solid(name):
         ),
     )
     def raw_file_solid(_context):
-        yield Materialization(
-            label='table_info',
+        yield AssetMaterialization(
+            asset_key='table_info',
             metadata_entries=[
                 EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(name))
             ],
@@ -81,8 +81,8 @@ def many_table_materializations(_context):
     with open(file_relative_path(__file__, MARKDOWN_EXAMPLE), 'r') as f:
         md_str = f.read()
         for table in raw_tables:
-            yield Materialization(
-                label='table_info',
+            yield AssetMaterialization(
+                asset_key='table_info',
                 metadata_entries=[
                     EventMetadataEntry.text(text=table, label='table_name'),
                     EventMetadataEntry.fspath(path='/path/to/{}'.format(table), label='table_path'),
@@ -115,8 +115,8 @@ def many_materializations_and_passing_expectations(_context):
     ]
 
     for table in tables:
-        yield Materialization(
-            label='table_info',
+        yield AssetMaterialization(
+            asset_key='table_info',
             metadata_entries=[
                 EventMetadataEntry.path(label='table_path', path='/path/to/{}.raw'.format(table))
             ],
@@ -181,8 +181,8 @@ def check_admins_both_succeed(_context):
 
 @pipeline(
     description=(
-        'Demo pipeline that yields Materializations and ExpectationResults, along with the various '
-        'forms of metadata that can be attached to them.'
+        'Demo pipeline that yields AssetMaterializations and ExpectationResults, along with the '
+        'various forms of metadata that can be attached to them.'
     )
 )
 def many_events():

@@ -5,6 +5,9 @@
 **New**
 
 - The new `configured` API makes it easy to create configured versions of resources.
+- Deprecated the `Materialization` event type in favor of the new `AssetMaterialization` event type,
+  which requires the `asset_key` parameter. Solids yielding `Materialization` events will continue
+  to work as before, though the `Materialization` event will be removed in a future release.
 
 **Bugfixes**
 

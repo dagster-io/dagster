@@ -231,7 +231,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
             if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
                 raise DagsterInvariantViolationError(
                     (
-                        'Error in solid {solid_name}: If you are returning a Materialization '
+                        'Error in solid {solid_name}: If you are returning an AssetMaterialization '
                         'or an ExpectationResult from solid you must yield them to avoid '
                         'ambiguity with an implied result from returning a value.'.format(
                             solid_name=context.solid.name

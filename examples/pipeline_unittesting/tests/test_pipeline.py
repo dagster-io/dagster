@@ -1,7 +1,7 @@
 from dagster import (
+    AssetMaterialization,
     DagsterEventType,
     ExpectationResult,
-    Materialization,
     PipelineExecutionResult,
     SolidExecutionResult,
     execute_pipeline,
@@ -86,5 +86,5 @@ def test_event_stream():
     assert expectation_result.label == 'positive'
 
     materialization = materialization_event.event_specific_data.materialization
-    assert isinstance(materialization, Materialization)
+    assert isinstance(materialization, AssetMaterialization)
     assert materialization.label == 'persisted_string'

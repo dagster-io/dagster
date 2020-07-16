@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from dagster import AssetKey, EventMetadataEntry, Materialization, Output, solid
+from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, Output, solid
 
 
 def do_some_transform(df):
@@ -26,7 +26,7 @@ def my_simple_solid(context, df):
 def my_materialization_solid(context, df):
     do_some_transform(df)
     persist_to_storage(df)
-    yield Materialization(label='my_dataset', description='Persisted result to storage')
+    yield AssetMaterialization(asset_key='my_dataset', description='Persisted result to storage')
     yield Output(df)
 
 
@@ -34,8 +34,8 @@ def my_materialization_solid(context, df):
 def my_metadata_materialization_solid(context, df):
     do_some_transform(df)
     persist_to_storage(df)
-    yield Materialization(
-        label='my_dataset',
+    yield AssetMaterialization(
+        asset_key='my_dataset',
         description='Persisted result to storage',
         metadata_entries=[
             EventMetadataEntry.text('Text-based metadata for this event', label='text_metadata'),
@@ -51,7 +51,7 @@ def my_metadata_materialization_solid(context, df):
 def my_asset_key_materialization_solid(context, df):
     do_some_transform(df)
     persist_to_storage(df)
-    yield Materialization(
+    yield AssetMaterialization(
         asset_key=AssetKey(['dashboard', 'my_cool_site']),
         description='Persisted result to storage',
         metadata_entries=[

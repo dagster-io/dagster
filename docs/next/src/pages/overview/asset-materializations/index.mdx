@@ -8,12 +8,12 @@ import PyObject from 'components/PyObject';
 In Dagster, an `Asset` is the abstract representation of a data artifact produced and persisted by
 a solid.  These assets are generally persisted to storage external to Dagster (e.g. database table,
 analytics dashboard) as a side-effect of the solid's computation. The act of persisting an asset
-is called a "materialization" and solids can express materializations by yielding a materialization
-event.
+is called a "materialization" and solids can express materializations by yielding an asset
+materialization event.
 
 ## Materializing an Asset
 
-To generate an asset materialization, we can yield a <PyObject module="dagster" object="Materialization" /> event in our solid.
+To generate an asset materialization, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event in our solid.
 This would involve changing the following solid:
 
 ```python literalinclude caption=materialization.py

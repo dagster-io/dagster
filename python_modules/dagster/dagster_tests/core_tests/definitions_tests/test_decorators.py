@@ -487,7 +487,7 @@ def test_solid_yields_single_bare_value():
         match=re.escape('Compute function for solid return_iterator yielded a value of type <')
         + r'(class|type)'
         + re.escape(
-            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            ' \'int\'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. '
             'Values yielded by solids must be wrapped in one of these types. If your solid has a '
             'single output and yields no other events, you may want to use `return` instead of '
             '`yield` in the body of your solid compute function. If you are already using '
@@ -513,7 +513,7 @@ def test_solid_yields_multiple_bare_values():
         match=re.escape('Compute function for solid return_iterator yielded a value of type <')
         + r'(class|type)'
         + re.escape(
-            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            ' \'int\'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. '
             'Values yielded by solids must be wrapped in one of these types. If your solid has a '
             'single output and yields no other events, you may want to use `return` instead of '
             '`yield` in the body of your solid compute function. If you are already using '
@@ -542,7 +542,7 @@ def test_solid_returns_iterator():
         match=re.escape('Compute function for solid return_iterator yielded a value of type <')
         + r'(class|type)'
         + re.escape(
-            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            ' \'int\'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. '
             'Values yielded by solids must be wrapped in one of these types. If your solid has a '
             'single output and yields no other events, you may want to use `return` instead of '
             '`yield` in the body of your solid compute function. If you are already using '

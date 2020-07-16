@@ -1,8 +1,8 @@
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     EventMetadataEntry,
     Field,
-    Materialization,
     Output,
     pipeline,
     repository,
@@ -18,7 +18,7 @@ def source_float(context):
 @solid
 def add_one_and_materialize(_, num):
     result = num + 1
-    yield Materialization(
+    yield AssetMaterialization(
         description='Analytics dashboard for example pipeline',
         asset_key=AssetKey(['dashboards', 'analytics_dashboard']),
         metadata_entries=[

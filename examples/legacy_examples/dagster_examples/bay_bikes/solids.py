@@ -37,11 +37,11 @@ from pandas import (
 
 from dagster import (
     Any,
+    AssetMaterialization,
     DagsterType,
     EventMetadataEntry,
     Field,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     check,
@@ -87,8 +87,8 @@ def download_zipfile_from_url(context, file_name: str, base_url: str):
         _download_zipfile_from_url(
             url, target, context.solid_config['chunk_size'],
         )
-    yield Materialization(
-        label='downloaded zipfile',
+    yield AssetMaterialization(
+        asset_key=file_name,
         metadata_entries=[
             EventMetadataEntry.text(url, 'zipfile url source'),
             EventMetadataEntry.text(target, 'zipfile filepath'),
@@ -139,15 +139,12 @@ def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, f
         fp.seek(0)
         gcs_bucket.blob(key).upload_from_file(fp)
 
-    yield Materialization(
+    gcs_url = 'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key)
+
+    yield AssetMaterialization(
+        asset_key=gcs_url,
         description='Serialized object to Google Cloud Storage Bucket',
-        label='GCS Blob',
-        metadata_entries=[
-            EventMetadataEntry.text(
-                'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key),
-                'google cloud storage URI',
-            ),
-        ],
+        metadata_entries=[EventMetadataEntry.text(gcs_url, 'google cloud storage URI'),],
     )
     yield Output(value)
 
@@ -180,8 +177,8 @@ def _create_and_load_staging_table(engine, table_name, records):
 )
 def insert_into_staging_table(context, records: DataFrame, table_name: str):
     _create_and_load_staging_table(context.resources.postgres_db.engine, table_name, records)
-    yield Materialization(
-        label=table_name,
+    yield AssetMaterialization(
+        asset_key=table_name,
         description='Table {} created in database {}'.format(
             table_name, context.resources.postgres_db.db_name
         ),
@@ -521,14 +518,12 @@ def train_lstm_model_and_upload_to_gcs(context, training_set: TrainingSet, bucke
         fp.seek(0)
         gcs_bucket.blob(key).upload_from_file(fp)
 
-    yield Materialization(
+    gcs_url = 'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key)
+    yield AssetMaterialization(
+        asset_key=gcs_url,
         description='Serialized model to Google Cloud Storage Bucket',
-        label='Serialized model and uploaded to gcs',
         metadata_entries=[
-            EventMetadataEntry.text(
-                'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key),
-                'google cloud storage URI',
-            ),
+            EventMetadataEntry.text(gcs_url, 'google cloud storage URI'),
             EventMetadataEntry.text(str(results[0]), 'Mean Squared Error'),
             EventMetadataEntry.text(str(results[1]), 'Mean Absolute Error'),
         ],

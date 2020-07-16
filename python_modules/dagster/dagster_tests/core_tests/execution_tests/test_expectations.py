@@ -76,6 +76,6 @@ def test_return_expectation_failure():
 
     assert str(exc_info.value) == (
         'Error in solid return_expectation_failure: If you are returning '
-        'a Materialization or an ExpectationResult from solid you must yield '
+        'an AssetMaterialization or an ExpectationResult from solid you must yield '
         'them to avoid ambiguity with an implied result from returning a value.'
     )

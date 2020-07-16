@@ -30,6 +30,8 @@ from dagster import ModeDefinition, execute_pipeline, execute_solid, pipeline, s
 START_TIME = 1514793600
 VOLUME_TARGET_DIRECTORY = '/tmp/bar'
 FAKE_ZIPFILE_NAME = 'data.csv.zip'
+BUCKET_NAME = 'dagster-scratch-ccdfe1e'
+TRAINING_FILE_NAME = 'training_data'
 
 
 class MockResponse:
@@ -169,7 +171,7 @@ def compose_training_data_env_dict():
                 "inputs": {"weather_table_name": "weather"},
             },
             "upload_training_set_to_gcs": {
-                "inputs": {"bucket_name": "dagster-scratch-ccdfe1e", "file_name": "training_data",}
+                "inputs": {"bucket_name": BUCKET_NAME, "file_name": TRAINING_FILE_NAME,}
             },
         },
     }
@@ -353,7 +355,13 @@ def test_generate_training_set(mocker):
     ]
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    assert materialization.label == 'GCS Blob'
+    assert materialization.asset_key.path[0:5] == [
+        'gs',
+        'dagster',
+        'scratch',
+        'ccdfe1e',
+        'training_data',
+    ]
     materialization_event_metadata = materialization.metadata_entries
     assert len(materialization_event_metadata) == 1
     assert materialization_event_metadata[0].label == 'google cloud storage URI'

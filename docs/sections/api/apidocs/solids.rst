@@ -62,7 +62,7 @@ Event types
 .. autoclass:: Output
     :members:
 
-.. autoclass:: Materialization
+.. autoclass:: AssetMaterialization
     :members:
 
 .. autoclass:: ExpectationResult

@@ -2,9 +2,9 @@ import csv
 import os
 
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
     Field,
-    Materialization,
     Selector,
     String,
     dagster_type_loader,
@@ -57,7 +57,7 @@ def less_simple_data_frame_materializer(context, config, value):
     context.log.debug(
         'Wrote dataframe as .csv to {path}'.format(path=csv_path)
     )
-    yield Materialization(
+    yield AssetMaterialization(
         '1data_frame_csv',
         'LessSimpleDataFrame materialized as csv',
         [
@@ -77,7 +77,7 @@ def less_simple_data_frame_materializer(context, config, value):
     context.log.debug(
         'Wrote dataframe as .json to {path}'.format(path=json_path)
     )
-    yield Materialization(
+    yield AssetMaterialization(
         'data_frame_json',
         'LessSimpleDataFrame materialized as json',
         [

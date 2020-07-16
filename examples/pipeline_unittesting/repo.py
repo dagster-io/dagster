@@ -1,7 +1,7 @@
 from dagster import (
+    AssetMaterialization,
     ExpectationResult,
     InputDefinition,
-    Materialization,
     Output,
     OutputDefinition,
     pipeline,
@@ -45,8 +45,8 @@ def emit_events_solid(_, input_num):
     yield ExpectationResult(
         success=a_num > 0, label='positive', description='A num must be positive'
     )
-    yield Materialization(
-        label='persisted_string', description='Let us pretend we persisted the string somewhere'
+    yield AssetMaterialization(
+        asset_key='persisted_string', description='Let us pretend we persisted the string somewhere'
     )
     yield Output(value=a_num, output_name='a_num')
     yield Output(value=a_string, output_name='a_string')

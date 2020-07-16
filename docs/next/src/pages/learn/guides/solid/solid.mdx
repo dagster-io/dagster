@@ -68,7 +68,7 @@ communicate high quality, human-readable information to the authors and operator
 applications, as well as to support tools that can operate on the event streams. Tools can subscribe
 to these events via our GraphQL API.
 
-Currently the body of a solid can emit four event types: `Output`, `Materialization`,
+Currently the body of a solid can emit four event types: `Output`, `AssetMaterialization`,
 `ExpectationResult`, or `Failure` (failures are emitted using `raise` rather than `yield`). In the
 simplest case, where a solid has a single output, the framework provides sugar allowing the solid
 to simply `return` a single value.
@@ -93,24 +93,24 @@ Solids can define more than one output, and outputs may also be marked as option
 branch-like behavior within pipelines, where solids that are downstream of optional outputs are
 skipped.
 
-#### Materializations
+#### Asset Materializations
 
-A materialization indicates that a solid has produced a data asset -- e.g. a file in an object
-store, a table in a data warehouse -- in an external system that will outlive the current
+An asset materialization event indicates that a solid has produced a data asset -- e.g. a file in an
+object store, a table in a data warehouse -- in an external system that will outlive the current
 computation.
 
-The set of materializations produced by a solid is _not_ known prior to execution. A solid is free
-to emit any materialization that it wants, for any reason. Materializations, like any event in the
-system, can have structured metadata attached. We expect this to be used for cases as varied as
-rendering links to internal tools in Dagit (or other viewers), to infrastructure consuming those
-materializations and registering the creation of assets in a metastore.
+The set of asset materializations produced by a solid is _not_ known prior to execution. A solid is
+free to emit any materialization that it wants, for any reason. Asset materializations, like any
+event in the system, can have structured metadata attached. We expect this to be used for cases as
+varied as rendering links to internal tools in Dagit (or other viewers), to infrastructure consuming
+those materializations and registering the creation of assets in a metastore.
 
-A frequent pattern is to informally link outputs and materializations (this link may be formalized
-in the future). Take for example the common case of a solid computing a table or a partition within
-a data warehouse. The author will likely want to both create a durable data asset as well as
-communicate metadata about that asset to downstream solids so they can operate on it. In this case
-the natural thing to do emit both a materialization and an output, and ensure that computation
-is idempotent with respect to the materialized data asset.
+A frequent pattern is to informally link outputs and asset materializations (this link may be
+formalized in the future). Take for example the common case of a solid computing a table or a
+partition within a data warehouse. The author will likely want to both create a durable data asset
+as well as communicate metadata about that asset to downstream solids so they can operate on it. In
+this case the natural thing to do emit both a materialization and an output, and ensure that
+computation is idempotent with respect to the materialized data asset.
 
 #### Expectation Results
 
@@ -124,7 +124,7 @@ Expectations are a mechanism by which data application author can make those _im
 _explicit_. Expectations can encapsulate arbitrary computation: perhaps a simple type check, or
 asserting the existence of a file on disk, or a distributional analysis of an entire data set.
 
-As with materializations, Dagster provides the mechanism to communicate -- to the runtime
+As with asset materializations, Dagster provides the mechanism to communicate -- to the runtime
 and by extension to tools -- structured metadata about these expectations, for visualization,
 tracking, or whatever purpose. In future, we intend to expand the tooling built on top of structured
 expectation metadata.

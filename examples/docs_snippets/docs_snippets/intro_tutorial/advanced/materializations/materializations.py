@@ -2,8 +2,8 @@ import csv
 import os
 
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
-    Materialization,
     Output,
     execute_pipeline,
     pipeline,
@@ -45,8 +45,8 @@ def sort_by_calories(context, cereals):
         writer = csv.DictWriter(fd, fieldnames)
         writer.writeheader()
         writer.writerows(sorted_cereals)
-    yield Materialization(
-        label='sorted_cereals_csv',
+    yield AssetMaterialization(
+        asset_key='sorted_cereals_csv',
         description='Cereals data frame sorted by caloric content',
         metadata_entries=[
             EventMetadataEntry.path(

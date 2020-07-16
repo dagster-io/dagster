@@ -360,8 +360,8 @@ def _create_output_materializations(step_context, output_name, value):
                         raise DagsterInvariantViolationError(
                             (
                                 'materialize_runtime_values on type {type_name} has returned '
-                                'value {value} of type {python_type}. You must return a '
-                                'Materialization.'
+                                'value {value} of type {python_type}. You must return an '
+                                'AssetMaterialization.'
                             ).format(
                                 type_name=step_output.dagster_type.name,
                                 value=repr(materialization),

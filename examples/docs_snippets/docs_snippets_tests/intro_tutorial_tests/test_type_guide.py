@@ -4,11 +4,11 @@ import pytest
 import yaml
 
 from dagster import (
+    AssetMaterialization,
     DagsterType,
     DagsterTypeCheckDidNotPass,
     EventMetadataEntry,
     InputDefinition,
-    Materialization,
     Nothing,
     OutputDefinition,
     PythonObjectDagsterType,
@@ -128,7 +128,7 @@ def test_even_type_materialization_config():
     def save_to_file_materialization(_, cfg, value):
         with open(cfg['path'], 'w') as ff:
             ff.write(str(value))
-            return Materialization(
+            return AssetMaterialization(
                 'path',
                 'Wrote out value to {path}'.format(path=path),
                 metadata_entries=[EventMetadataEntry.text('path', path)],

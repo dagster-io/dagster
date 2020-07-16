@@ -10,13 +10,13 @@ from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
+    AssetMaterialization,
     EventMetadataEntry,
     ExpectationResult,
     Field,
     FileHandle,
     InputDefinition,
     Int,
-    Materialization,
     Output,
     OutputDefinition,
     String,
@@ -222,8 +222,8 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
 
     table_name = context.solid_config['table_name']
-    yield Materialization(
-        label='Table: {table_name}'.format(table_name=table_name),
+    yield AssetMaterialization(
+        asset_key='table:{table_name}'.format(table_name=table_name),
         description=(
             'Persisted table {table_name} in database configured in the db_info resource.'
         ).format(table_name=table_name),

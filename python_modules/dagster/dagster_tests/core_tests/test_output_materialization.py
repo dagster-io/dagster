@@ -373,7 +373,9 @@ def test_basic_bad_output_materialization():
 
     pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
 
-    with pytest.raises(DagsterInvariantViolationError, match='You must return a Materialization'):
+    with pytest.raises(
+        DagsterInvariantViolationError, match='You must return an AssetMaterialization'
+    ):
         execute_pipeline(
             pipeline_def, run_config={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
         )
