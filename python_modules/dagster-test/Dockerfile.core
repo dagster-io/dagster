@@ -9,6 +9,6 @@ RUN pip install \
     -e dagster \
     -e .
 
-WORKDIR /dagster_test/dagster-core-docker-buildkite/
+WORKDIR /dagster_test/dagster_core_docker_buildkite/
 
 EXPOSE 80

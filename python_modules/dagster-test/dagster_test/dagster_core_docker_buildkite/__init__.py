@@ -16,7 +16,7 @@ def test_repo_path():
         'python_modules',
         'dagster-test',
         'dagster_test',
-        'dagster-core-docker-buildkite',
+        'dagster_core_docker_buildkite',
     )
 
 
