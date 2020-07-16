@@ -970,6 +970,10 @@ def test_multi_dep_optional():
     def ret_one():
         return 1
 
+    @lambda_solid
+    def echo(x):
+        return x
+
     @solid(output_defs=[OutputDefinition(name='skip', is_required=False)])
     def skip(_):
         return
@@ -978,6 +982,10 @@ def test_multi_dep_optional():
     @solid
     def collect(_, items):
         return items
+
+    @solid
+    def collect_and(_, items, other):
+        return items + [other]
 
     @pipeline
     def test_remaining():
@@ -994,3 +1002,51 @@ def test_multi_dep_optional():
     result = execute_pipeline(test_all_skip)
     assert result.success
     assert result.result_for_solid('collect').skipped
+
+    @pipeline
+    def test_skipped_upstream():
+        collect([ret_one(), echo(echo(skip()))])
+
+    result = execute_pipeline(test_skipped_upstream)
+    assert result.success
+    assert result.result_for_solid('collect').output_value() == [1]
+
+    @pipeline
+    def test_all_upstream_skip():
+        collect([echo(skip()), echo(skip()), echo(skip())])
+
+    result = execute_pipeline(test_all_upstream_skip)
+    assert result.success
+    assert result.result_for_solid('collect').skipped
+
+    @pipeline
+    def test_all_upstream_skip_with_other():
+        collect_and([echo(skip()), echo(skip()), echo(skip())], ret_one())
+
+    result = execute_pipeline(test_all_upstream_skip_with_other)
+    assert result.success
+    assert result.result_for_solid('collect_and').skipped
+
+    @pipeline
+    def test_all_skip_with_other():
+        collect_and([skip(), skip(), skip()], ret_one())
+
+    result = execute_pipeline(test_all_skip_with_other)
+    assert result.success
+    assert result.result_for_solid('collect_and').skipped
+
+    @pipeline
+    def test_other_skip():
+        collect_and([ret_one(), skip(), skip()], skip())
+
+    result = execute_pipeline(test_other_skip)
+    assert result.success
+    assert result.result_for_solid('collect_and').skipped
+
+    @pipeline
+    def test_other_skip_upstream():
+        collect_and([ret_one(), skip(), skip()], echo(skip()))
+
+    result = execute_pipeline(test_other_skip_upstream)
+    assert result.success
+    assert result.result_for_solid('collect_and').skipped

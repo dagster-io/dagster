@@ -52,7 +52,28 @@ class ActiveExecution(object):
                 if requirements.issubset(self._success):
                     new_steps_to_execute.append(step_key)
                 else:
-                    new_steps_to_skip.append(step_key)
+                    step = self._plan.get_step_by_key(step_key)
+
+                    # The step will skip on any upstream failure
+                    should_skip = True
+
+                    # Unless a fan-in input has any successful inputs
+                    for inp in step.step_inputs:
+                        if inp.is_from_multiple_outputs:
+                            if any([key in self._success for key in inp.dependency_keys]):
+                                should_skip = False
+
+                    # but no missing regular inputs
+                    for inp in step.step_inputs:
+                        if inp.is_from_single_output:
+                            if any([key not in self._success for key in inp.dependency_keys]):
+                                should_skip = True
+
+                    if should_skip:
+                        new_steps_to_skip.append(step_key)
+                    else:
+                        new_steps_to_execute.append(step_key)
+
         for key in new_steps_to_execute:
             self._executable.append(key)
             del self._pending[key]
