@@ -106,7 +106,7 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     )
 
 
-def poll_for_run(instance, run_id, timeout=10):
+def poll_for_run(instance, run_id, timeout=20):
     total_time = 0
     interval = 0.01
 

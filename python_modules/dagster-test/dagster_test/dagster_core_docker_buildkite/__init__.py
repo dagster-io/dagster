@@ -32,7 +32,9 @@ def build_and_tag_test_image(tag):
     )
 
     # Build and tag local dagster test image
-    return subprocess.check_output(['../../build_core.sh', base_python, tag], cwd=test_repo_path())
+    return subprocess.check_output(
+        ['../../build_core.sh', base_python, tag], cwd=test_repo_path(), stderr=subprocess.STDOUT
+    )
 
 
 def get_test_project_external_pipeline(pipeline_name):
@@ -48,9 +50,16 @@ def get_test_project_external_pipeline(pipeline_name):
     )
 
 
+def get_default_docker_image_tag():
+    # Detect the python version we're running on
+    majmin = str(sys.version_info.major) + str(sys.version_info.minor)
+
+    return 'py{majmin}-{image_version}'.format(majmin=majmin, image_version='latest')
+
+
 def test_project_docker_image():
     docker_repository = os.getenv('DAGSTER_DOCKER_REPOSITORY')
-    image_name = os.getenv('DAGSTER_DOCKER_IMAGE', 'dagster-docker-buildkite')
+    image_name = os.getenv('DAGSTER_DOCKER_IMAGE', 'dagster-core-docker-buildkite')
     docker_image_tag = os.getenv('DAGSTER_DOCKER_IMAGE_TAG')
 
     if IS_BUILDKITE:
@@ -69,12 +78,7 @@ def test_project_docker_image():
         docker_repository = 'dagster.io.priv'
 
     if not docker_image_tag:
-        # Detect the python version we're running on
-        majmin = str(sys.version_info.major) + str(sys.version_info.minor)
-
-        docker_image_tag = 'py{majmin}-{image_version}'.format(
-            majmin=majmin, image_version='latest'
-        )
+        docker_image_tag = get_default_docker_image_tag()
 
     final_docker_image = '{repository}/{image_name}:{tag}'.format(
         repository=docker_repository, image_name=image_name, tag=docker_image_tag

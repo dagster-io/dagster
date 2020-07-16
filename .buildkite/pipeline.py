@@ -170,6 +170,14 @@ def integration_suite_extra_cmds_fn(version):
     ]
 
 
+def dagster_extra_cmds_fn(version):
+    return [
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        "aws ecr get-login --no-include-email --region us-west-1 | sh",
+    ]
+
+
 def dagit_extra_cmds_fn(_):
     return ["make rebuild_dagit"]
 
@@ -286,6 +294,8 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         'python_modules/dagster',
+        extra_cmds_fn=dagster_extra_cmds_fn,
+        env_vars=['AWS_ACCOUNT_ID'],
         tox_env_suffixes=['-api_tests', '-cli_tests', '-core_tests', '-general_tests'],
     ),
     ModuleBuildSpec(
