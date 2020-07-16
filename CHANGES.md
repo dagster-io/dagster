@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.9 (Upcoming)
+## 0.8.8
 
 **New**
 
@@ -8,17 +8,19 @@
 - Deprecated the `Materialization` event type in favor of the new `AssetMaterialization` event type,
   which requires the `asset_key` parameter. Solids yielding `Materialization` events will continue
   to work as before, though the `Materialization` event will be removed in a future release.
+- We have added an `intermediate_store_defs` argument to `ModeDefinition`, which will eventually
+  replace system storage. You can only use one or the other for now. We will eventually deprecate
+  system storage entirely, but continued usage for the time being is fine.
+- The help panel in the dagit config editor can now be resized and toggled open or closed, to
+  enable easier editing on smaller screens.
 
 **Bugfixes**
 
 - Opening new Dagit browser windows maintains your current repository selection. #2722
 - Pipelines with the same name in different repositories no longer incorrectly share playground state. #2720
-
-## 0.8.8
-
-**Bugfixes**
-
-- Fixed rendering bug in the Dagit run reviewer where yet-to-be executed execution steps were rendered on left-hand side instead of the right.
+- Setting `default_value` config on a field now works as expected. #2725
+- Fixed rendering bug in the dagit run reviewer where yet-to-be executed execution steps were
+  rendered on left-hand side instead of the right.
 
 ## 0.8.7
 
