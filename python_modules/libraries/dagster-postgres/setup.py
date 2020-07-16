@@ -1,30 +1,18 @@
-import argparse
-import sys
-
 from setuptools import find_packages, setup
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagster_postgres/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-postgres':
-        return version['__version__']
-    elif name == 'dagster-postgres-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-
-def _do_setup(name='dagster-postgres'):
+if __name__ == '__main__':
     setup(
-        name=name,
-        version=get_version(name),
+        name='dagster-postgres',
+        version=get_version(),
         author='Elementl',
         author_email='hello@elementl.com',
         license='Apache-2.0',
@@ -39,7 +27,7 @@ def _do_setup(name='dagster-postgres'):
         ],
         packages=find_packages(exclude=['test']),
         package_data={
-            name: [
+            'dagster-postgres': [
                 'dagster_postgres/event_log/alembic/*',
                 'dagster_postgres/run_storage/alembic/*',
                 'dagster_postgres/schedule_storage/alembic/*',
@@ -49,12 +37,3 @@ def _do_setup(name='dagster-postgres'):
         install_requires=['dagster', 'psycopg2-binary'],
         zip_safe=False,
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagster-postgres-nightly')
-    else:
-        _do_setup('dagster-postgres')

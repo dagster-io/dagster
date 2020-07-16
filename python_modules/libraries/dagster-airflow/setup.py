@@ -1,32 +1,18 @@
-import argparse
-import sys
-
 from setuptools import find_packages, setup
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagster_airflow/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-airflow':
-        return version['__version__']
-    elif name == 'dagster-airflow-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-kubernetes = ['kubernetes>=3.0.0', 'cryptography>=2.0.0']
-
-
-def _do_setup(name='dagster-airflow'):
-    ver = get_version(name)
+if __name__ == '__main__':
+    ver = get_version()
     setup(
-        name=name,
+        name='dagster-airflow',
         version=ver,
         author='Elementl',
         author_email='hello@elementl.com',
@@ -52,15 +38,6 @@ def _do_setup(name='dagster-airflow'):
             # RSA 4.1+ is incompatible with py2.7
             'rsa<=4.0; python_version<"3"',
         ],
-        extras_require={'kubernetes': kubernetes},
+        extras_require={'kubernetes': ['kubernetes>=3.0.0', 'cryptography>=2.0.0']},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagster-airflow-nightly')
-    else:
-        _do_setup('dagster-airflow')

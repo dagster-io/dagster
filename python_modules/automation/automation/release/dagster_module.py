@@ -90,31 +90,23 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
         with open(self.version_file_path) as fp:
             exec(fp.read(), module_version)  # pylint: disable=W0122
 
-        assert (
-            '__version__' in module_version and '__nightly__' in module_version
-        ), 'Bad version for module {name}'.format(name=self.name)
+        assert '__version__' in module_version, 'Bad version for module {name}'.format(
+            name=self.name
+        )
 
         return {
             '__version__': module_version['__version__'],
-            '__nightly__': module_version['__nightly__'],
         }
 
-    def set_version_info(self, new_version, new_nightly, dry_run=True):
-        '''Updates this modules version.py file with a new version and nightly version.
+    def set_version_info(self, new_version, dry_run=True):
+        '''Updates this modules version.py file with a new version
 
         Returns:
             Dict[str, str]: Dictionary of version information.
         '''
         assert isinstance(new_version, six.string_types)
-        assert isinstance(new_nightly, six.string_types)
 
-        output = (
-            '__version__ = \'{new_version}\'\n'
-            '\n'
-            '__nightly__ = \'{new_nightly}\'\n'.format(
-                new_version=new_version, new_nightly=new_nightly
-            )
-        )
+        output = '__version__ = \'{}\'\n'.format(new_version)
 
         version_file = self.version_file_path
 
@@ -128,21 +120,17 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
             with open(version_file, 'w') as fd:
                 fd.write(output)
 
-        return {'__version__': new_version, '__nightly__': new_nightly}
+        return {'__version__': new_version}
 
-    def publish(self, nightly=False, dry_run=True):
+    def publish(self, dry_run=True):
         '''Publish this module to PyPI.
 
         Args:
-            nightly (bool, optional): Set if this is a nightly build vs. prod release. Defaults to
-                False.
             dry_run (bool, optional): If a dry run, will echo and won't actually run the publish
                 commands. Defaults to True.
         '''
         with self.pushd_module() as cwd:
-            for command in construct_publish_comands(
-                additional_steps=self.additional_steps, nightly=nightly
-            ):
+            for command in construct_publish_comands(additional_steps=self.additional_steps):
                 if dry_run:
                     click.echo(
                         click.style('Dry run; not running.', fg='red')
@@ -168,16 +156,14 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
                     )
 
 
-def construct_publish_comands(additional_steps=None, nightly=False):
+def construct_publish_comands(additional_steps=None):
     '''Get the shell commands we'll use to actually build and publish a package to PyPI.
 
     Returns:
         List[str]: List of shell commands needed to publish a module.
     '''
 
-    nightly = ' --nightly' if nightly else ''
-
     return (additional_steps or []) + [
-        'python setup.py sdist bdist_wheel{nightly}'.format(nightly=nightly),
+        'python setup.py sdist bdist_wheel',
         'twine upload --verbose dist/*',
     ]

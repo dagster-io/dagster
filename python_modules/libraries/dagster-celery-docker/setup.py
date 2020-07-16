@@ -1,30 +1,18 @@
-import argparse
-import sys
-
 from setuptools import find_packages, setup
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagster_celery_docker/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-celery-docker':
-        return version['__version__']
-    elif name == 'dagster-celery-docker-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-
-def _do_setup(name='dagster-celery-docker'):
+if __name__ == '__main__':
     setup(
-        name=name,
-        version=get_version(name),
+        name='dagster-celery-docker',
+        version=get_version(),
         author='Elementl',
         license='Apache-2.0',
         description='A Dagster integration for celery-docker',
@@ -41,12 +29,3 @@ def _do_setup(name='dagster-celery-docker'):
         tests_require=[],
         zip_safe=False,
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagster-celery-docker-nightly')
-    else:
-        _do_setup('dagster-celery-docker')

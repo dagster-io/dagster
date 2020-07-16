@@ -19,13 +19,7 @@ import packaging.version
 import requests
 import slackclient
 import virtualenv
-from automation.git import (
-    get_most_recent_git_tag,
-    git_check_status,
-    git_push,
-    git_user,
-    set_git_tag,
-)
+from automation.git import get_most_recent_git_tag, git_check_status, git_user, set_git_tag
 from automation.utils import which_
 
 from .dagster_module_publisher import DagsterModulePublisher
@@ -63,10 +57,9 @@ def cli():
 
 
 @cli.command()
-@click.option('--nightly', is_flag=True)
 @click.option('--autoclean', is_flag=True)
 @click.option('--dry-run', is_flag=True)
-def publish(nightly, autoclean, dry_run):
+def publish(autoclean, dry_run):
     '''Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twine, e.g. in a ~/.pypirc file, and users must
@@ -97,10 +90,9 @@ def publish(nightly, autoclean, dry_run):
     )
     dmp = DagsterModulePublisher()
 
-    checked_version = dmp.check_versions(nightly=nightly)
-    if not nightly:
-        click.echo('... and match git tag on most recent commit...')
-        git_check_status()
+    checked_version = dmp.check_versions()
+    click.echo('... and match git tag on most recent commit...')
+    git_check_status()
     click.echo('... and that there is no cruft present...')
     dmp.check_for_cruft(autoclean)
     click.echo('... and that the directories look like we expect')
@@ -108,28 +100,18 @@ def publish(nightly, autoclean, dry_run):
 
     click.echo('Publishing packages to PyPI...')
 
-    if nightly:
-        new_nightly_version = dmp.set_version_info(dry_run=dry_run)['__nightly__']
-        dmp.commit_new_version(
-            'nightly: {nightly}'.format(nightly=new_nightly_version), dry_run=dry_run
+    dmp.publish_all(dry_run=dry_run)
+
+    parsed_version = packaging.version.parse(checked_version['__version__'])
+    if not parsed_version.is_prerelease and not dry_run:
+        slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])
+        slack_client.api_call(
+            'chat.postMessage',
+            channel='#general',
+            text=('{git_user} just published a new version: {version}.').format(
+                git_user=git_user(), version=checked_version['__version__']
+            ),
         )
-        tag = set_git_tag('nightly-{ver}'.format(ver=new_nightly_version), dry_run=dry_run)
-        git_push(dry_run=dry_run)
-        git_push(tag, dry_run=dry_run)
-
-    dmp.publish_all(nightly, dry_run=dry_run)
-
-    if not nightly:
-        parsed_version = packaging.version.parse(checked_version['__version__'])
-        if not parsed_version.is_prerelease and not dry_run:
-            slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])
-            slack_client.api_call(
-                'chat.postMessage',
-                channel='#general',
-                text=('{git_user} just published a new version: {version}.').format(
-                    git_user=git_user(), version=checked_version['__version__']
-                ),
-            )
 
 
 @cli.command()

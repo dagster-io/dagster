@@ -1,6 +1,4 @@
-import argparse
 import os
-import sys
 
 from setuptools import find_packages, setup
 
@@ -11,27 +9,18 @@ def long_description():
         return fh.read()
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagster_pandas/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-pandas':
-        return version['__version__']
-    elif name == 'dagster-pandas-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-
-def _do_setup(name='dagster-pandas'):
+if __name__ == '__main__':
     setup(
-        name=name,
-        version=get_version(name),
+        name='dagster-pandas',
+        version=get_version(),
         author='Elementl',
         author_email='hello@elementl.com',
         license='Apache-2.0',
@@ -54,12 +43,3 @@ def _do_setup(name='dagster-pandas'):
         include_package_data=True,
         install_requires=['dagster', 'pandas', 'matplotlib'],
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagster-pandas-nightly')
-    else:
-        _do_setup('dagster-pandas')

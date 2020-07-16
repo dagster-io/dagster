@@ -1,30 +1,18 @@
-import argparse
-import sys
-
 from setuptools import find_packages, setup
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagster_ssh/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagster-ssh':
-        return version['__version__']
-    elif name == 'dagster-ssh-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-
-def _do_setup(name='dagster-ssh'):
+if __name__ == '__main__':
     setup(
-        name=name,
-        version=get_version(name),
+        name='dagster-ssh',
+        version=get_version(),
         author='Elementl',
         author_email='hello@elementl.com',
         license='Apache-2.0',
@@ -41,12 +29,3 @@ def _do_setup(name='dagster-ssh'):
         install_requires=['dagster', 'sshtunnel', 'paramiko'],
         zip_safe=False,
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagster-ssh-nightly')
-    else:
-        _do_setup('dagster-ssh')

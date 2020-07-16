@@ -2,12 +2,10 @@ import os
 import re
 
 import pytest
-from automation.release.dagster_module import DagsterModule
 from automation.release.dagster_module_publisher import (
     DagsterModulePublisher,
     get_core_module_directories,
     get_library_module_directories,
-    get_nightly_version,
 )
 
 
@@ -17,7 +15,6 @@ def test_all_module_versions():
     for key in ['dagster', 'dagit', 'dagster-graphql']:
         assert key in versions
         assert '__version__' in versions[key]
-        assert '__nightly__' in versions[key]
 
 
 def test_check_directory_structure():
@@ -58,15 +55,8 @@ def test_bad_core_module(bad_core_module):  # pylint: disable=unused-argument
 
 def test_set_version_info():
     new_version = '100.100.0'
-    new_nightly_version = get_nightly_version()
     dmp = DagsterModulePublisher()
 
-    # Test setting both version and nightly
+    # Test setting version
     version = dmp.set_version_info(new_version=new_version, dry_run=True)
-    assert version == {'__version__': new_version, '__nightly__': new_nightly_version}
-
-    # Test only setting nightly
-    version = dmp.set_version_info(dry_run=True)
-    dm = DagsterModule('dagster', is_library=False)
-    existing_version = dm.get_version_info()['__version__']
-    assert version == {'__version__': existing_version, '__nightly__': new_nightly_version}
+    assert version == {'__version__': new_version}

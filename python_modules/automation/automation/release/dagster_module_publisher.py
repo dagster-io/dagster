@@ -1,8 +1,6 @@
-import datetime
 import itertools
 import os
 import subprocess
-import sys
 
 import click
 import packaging.version
@@ -166,7 +164,7 @@ class DagsterModulePublisher:
             )
 
     def check_all_versions_equal(self):
-        '''Checks that all versions (both module and nightly) are equal
+        '''Checks that all versions are equal
 
         Returns:
             List[dict]: List of dictionaries of version info
@@ -180,37 +178,16 @@ class DagsterModulePublisher:
             )
         return module_versions
 
-    def check_versions_equal(self, nightly=False):
-        '''Checks that all versions for one source (module or nightly) are equal
-
-        Returns:
-            List[dict]: List of dictionaries of version info
-        '''
-        module_versions = self.all_module_versions
-
-        source = '__nightly__' if nightly else '__version__'
-
-        if not all_equal([module_version[source] for module_version in module_versions.values()]):
-            click.echo(
-                'Module versions must be in lockstep to release. Found:\n{versions}'.format(
-                    versions=format_module_versions(module_versions)
-                )
-            )
-            sys.exit(1)
-
-        return module_versions['dagster']
-
-    def check_versions(self, nightly=False):
+    def check_versions(self):
         click.echo('Checking that module versions are in lockstep')
 
-        module_version = self.check_versions_equal(nightly)
-        if not nightly:
-            git_tag = get_git_tag()
-            assert (
-                module_version['__version__'] == git_tag
-            ), 'Version {version} does not match expected git tag {git_tag}'.format(
-                version=module_version['__version__'], git_tag=git_tag
-            )
+        module_version = self.check_all_versions_equal()
+        git_tag = get_git_tag()
+        assert (
+            module_version['__version__'] == git_tag
+        ), 'Version {version} does not match expected git tag {git_tag}'.format(
+            version=module_version['__version__'], git_tag=git_tag
+        )
 
         return module_version
 
@@ -264,19 +241,16 @@ class DagsterModulePublisher:
         '''Updates the version in version.py files for all modules we manage/release.
 
         Args:
-            new_version (str, optional): A new module version. If not set, we only update the
-                nightly version. Defaults to None.
+            new_version (str, optional): A new module version. Defaults to None.
             dry_run (bool, optional): Whether this operation should be a dry run. Defaults to True.
 
         Returns:
             List[dict]: The new versions of all modules.
         '''
-        new_nightly = get_nightly_version()
-
         versions = []
         for module in self.all_publishable_modules:
             new_version = new_version or module.get_version_info()['__version__']
-            res = module.set_version_info(new_version, new_nightly, dry_run=dry_run)
+            res = module.set_version_info(new_version, dry_run=dry_run)
 
             versions.append(res)
 
@@ -305,13 +279,9 @@ class DagsterModulePublisher:
         except subprocess.CalledProcessError as exc_info:
             raise Exception(exc_info.output)
 
-    def publish_all(self, nightly, dry_run=True):
+    def publish_all(self, dry_run=True):
         for module in self.all_publishable_modules:
-            module.publish(nightly, dry_run=dry_run)
-
-
-def get_nightly_version():
-    return datetime.datetime.utcnow().strftime('%Y.%m.%d')
+            module.publish(dry_run=dry_run)
 
 
 def get_core_module_directories():

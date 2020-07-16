@@ -1,15 +1,8 @@
-import argparse
-import sys
-
 from setuptools import find_packages, setup
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
-
-
-def _do_setup(name='dagster-k8s-test-infra'):
+if __name__ == '__main__':
     setup(
-        name=name,
+        name='dagster-k8s-test-infra',
         author='Elementl',
         author_email='hello@elementl.com',
         license='Apache-2.0',
@@ -27,9 +20,3 @@ def _do_setup(name='dagster-k8s-test-infra'):
         tests_require=[],
         zip_safe=False,
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    _do_setup('dagster-k8s-test-infra')

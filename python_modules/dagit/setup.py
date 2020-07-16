@@ -1,6 +1,4 @@
-import argparse
 import os
-import sys
 
 from setuptools import find_packages, setup
 
@@ -11,27 +9,19 @@ def long_description():
         return fh.read()
 
 
-def get_version(name):
+def get_version():
     version = {}
     with open('dagit/version.py') as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if name == 'dagit':
-        return version['__version__']
-    elif name == 'dagit-nightly':
-        return version['__nightly__']
-    else:
-        raise Exception('Shouldn\'t be here: bad package name {name}'.format(name=name))
+    return version['__version__']
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--nightly', action='store_true')
+if __name__ == '__main__':
+    ver = get_version()
 
-
-def _do_setup(name='dagit'):
-    ver = get_version(name)
     setup(
-        name=name,
+        name='dagit',
         version=ver,
         author='Elementl',
         author_email='hello@elementl.com',
@@ -76,12 +66,3 @@ def _do_setup(name='dagit'):
         ],
         entry_points={'console_scripts': ['dagit = dagit.cli:main']},
     )
-
-
-if __name__ == '__main__':
-    parsed, unparsed = parser.parse_known_args()
-    sys.argv = [sys.argv[0]] + unparsed
-    if parsed.nightly:
-        _do_setup('dagit-nightly')
-    else:
-        _do_setup('dagit')

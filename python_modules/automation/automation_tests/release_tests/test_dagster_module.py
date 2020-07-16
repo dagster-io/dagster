@@ -60,22 +60,20 @@ def test_get_version_info(dagster_modules):
     dagster, dagster_k8s = dagster_modules
 
     dagster_version = dagster.get_version_info()
-    assert set(dagster_version.keys()) == {'__nightly__', '__version__'}
+    assert set(dagster_version.keys()) == {'__version__'}
 
     dagster_k8s_version = dagster_k8s.get_version_info()
-    assert set(dagster_k8s_version.keys()) == {'__nightly__', '__version__'}
+    assert set(dagster_k8s_version.keys()) == {'__version__'}
 
 
 def test_set_version_info(dagster_modules):
     dagster, dagster_k8s = dagster_modules
 
-    assert dagster.set_version_info('foo', '2020.01.01', dry_run=True) == {
-        '__nightly__': '2020.01.01',
+    assert dagster.set_version_info('foo', dry_run=True) == {
         '__version__': 'foo',
     }
 
-    assert dagster_k8s.set_version_info('foo', '2020.01.01', dry_run=True) == {
-        '__nightly__': '2020.01.01',
+    assert dagster_k8s.set_version_info('foo', dry_run=True) == {
         '__version__': 'foo',
     }
 
@@ -92,10 +90,3 @@ def test_should_publish(dagster_modules):
 def test_construct_publish_comands():
     pub = construct_publish_comands()
     assert pub == ['python setup.py sdist bdist_wheel', 'twine upload --verbose dist/*']
-
-    pub2 = construct_publish_comands(additional_steps=['foo'], nightly=True)
-    assert pub2 == [
-        'foo',
-        'python setup.py sdist bdist_wheel --nightly',
-        'twine upload --verbose dist/*',
-    ]
