@@ -209,36 +209,6 @@
     ]
   },
   {
-    "name": "Learn",
-    "path": "/learn",
-    "children": [
-      {
-        "name": "Getting Started",
-        "path": "/learn"
-      },
-      {
-        "name": "Guides",
-        "path": "/learn/guides"
-      },
-      {
-        "name": "How-Tos",
-        "path": "/learn/how-tos"
-      },
-      {
-        "name": "Principles",
-        "path": "/learn/principles"
-      },
-      {
-        "name": "Concepts",
-        "path": "/learn/concepts"
-      },
-      {
-        "name": "Demos",
-        "path": "/learn/demos"
-      }
-    ]
-  },
-  {
     "name": "API Docs",
     "path": "/_apidocs",
     "children": [
