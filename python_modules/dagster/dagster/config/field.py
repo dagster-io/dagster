@@ -263,7 +263,8 @@ class Field(object):
                 )
 
         if is_required is None:
-            is_required = not all_optional_type(self.config_type)
+            is_optional = all_optional_type(self.config_type) or self.default_provided
+            is_required = not is_optional
 
             # on implicitly optional - set the default value
             # by resolving the defaults of the type
