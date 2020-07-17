@@ -1,6 +1,10 @@
+import hashlib
+import random
+import string
 from collections import namedtuple
 
 import kubernetes
+import six
 import yaml
 
 from dagster import Array, DagsterInvariantViolationError, Field, Noneable, StringSource
@@ -189,7 +193,7 @@ class DagsterK8sJobConfig(
                 '"IfNotPresent".',
             ),
             'image_pull_secrets': Field(
-                Array(Shape({'name': StringSource})),
+                Noneable(Array(Shape({'name': StringSource}))),
                 is_required=False,
                 description='(Advanced) Specifies that Kubernetes should get the credentials from '
                 'the Secrets named in this list.',
@@ -247,14 +251,15 @@ class DagsterK8sJobConfig(
         return DagsterK8sJobConfig(**config)
 
 
-def construct_dagster_graphql_k8s_job(
-    job_config, args, job_name, resources=None, pod_name=None, component=None
+def construct_dagster_k8s_job(
+    job_config, command, args, job_name, resources=None, pod_name=None, component=None
 ):
     '''Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
     Args:
         job_config (DagsterK8sJobConfig): Job configuration to use for constructing the Kubernetes
             Job object.
+        command (List[str]): Command to run.
         args (List[str]): CLI arguments to use with dagster-graphql in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
         resources (Dict[str, Dict[str, str]]): The resource requirements for the container
@@ -267,6 +272,7 @@ def construct_dagster_graphql_k8s_job(
         kubernetes.client.V1Job: A Kubernetes Job object.
     '''
     check.inst_param(job_config, 'job_config', DagsterK8sJobConfig)
+    command = check.list_param(command, 'command', of_type=str)
     check.list_param(args, 'args', of_type=str)
     check.str_param(job_name, 'job_name')
     check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
@@ -299,7 +305,7 @@ def construct_dagster_graphql_k8s_job(
     job_container = kubernetes.client.V1Container(
         name=job_name,
         image=job_config.job_image,
-        command=['dagster-graphql'],
+        command=command,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
         env=[
@@ -356,3 +362,22 @@ def construct_dagster_graphql_k8s_job(
         ),
     )
     return job
+
+
+def get_k8s_job_name(input_1, input_2=None):
+    '''Creates a unique (short!) identifier to name k8s objects based on run ID and step key(s).
+
+    K8s Job names are limited to 63 characters, because they are used as labels. For more info, see:
+
+    https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+    '''
+    check.str_param(input_1, 'input_1')
+    check.opt_str_param(input_2, 'input_2')
+    if not input_2:
+        letters = string.ascii_lowercase
+        input_2 = ''.join(random.choice(letters) for i in range(20))
+
+    # Creates 32-bit signed int, so could be negative
+    name_hash = hashlib.md5(six.ensure_binary(input_1 + input_2))
+
+    return name_hash.hexdigest()

@@ -466,6 +466,12 @@ def integration_tests():
     ]
 
     for integration_suite in integration_suites:
+        tox_env_suffixes = (
+            ['-default', '-markscheduler']
+            if integration_suite
+            == os.path.join('integration_tests', 'test_suites', 'k8s-integration-test-suite')
+            else None
+        )
         tests += ModuleBuildSpec(
             integration_suite,
             env_vars=[
@@ -480,6 +486,7 @@ def integration_tests():
             upload_coverage=True,
             extra_cmds_fn=integration_suite_extra_cmds_fn,
             depends_on_fn=test_image_depends_fn,
+            tox_env_suffixes=tox_env_suffixes,
         ).get_tox_build_steps()
     return tests
 

@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from dagster_k8s import construct_dagster_graphql_k8s_job
+from dagster_k8s import construct_dagster_k8s_job
 from dagster_k8s.job import K8S_RESOURCE_REQUIREMENTS_KEY, get_k8s_resource_requirements
 from dagster_k8s.test import wait_for_job_and_get_logs
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
@@ -92,8 +92,9 @@ def test_valid_job_format(run_launcher):
 
     job_name = 'dagster-run-%s' % run.run_id
     pod_name = 'dagster-run-%s' % run.run_id
-    job = construct_dagster_graphql_k8s_job(
-        run_launcher.job_config,
+    job = construct_dagster_k8s_job(
+        job_config=run_launcher.job_config,
+        command=['dagster-graphql'],
         args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
         job_name=job_name,
         pod_name=pod_name,
@@ -132,8 +133,9 @@ def test_valid_job_format_with_resources(run_launcher):
     resources = get_k8s_resource_requirements(tags)
     job_name = 'dagster-run-%s' % run.run_id
     pod_name = 'dagster-run-%s' % run.run_id
-    job = construct_dagster_graphql_k8s_job(
-        run_launcher.job_config,
+    job = construct_dagster_k8s_job(
+        job_config=run_launcher.job_config,
+        command=['dagster-graphql'],
         args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
         job_name=job_name,
         resources=resources,

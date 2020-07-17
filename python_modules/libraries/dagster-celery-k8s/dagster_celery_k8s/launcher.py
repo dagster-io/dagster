@@ -3,7 +3,7 @@ import weakref
 import kubernetes
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
-    construct_dagster_graphql_k8s_job,
+    construct_dagster_k8s_job,
     get_job_name_from_run_id,
     get_k8s_resource_requirements,
 )
@@ -175,8 +175,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
 
-        job = construct_dagster_graphql_k8s_job(
-            job_config,
+        job = construct_dagster_k8s_job(
+            job_config=job_config,
+            command=['dagster-graphql'],
             args=[
                 '-p',
                 'executeRunInProcess',

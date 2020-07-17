@@ -16,6 +16,8 @@ from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
+from dagster.core.storage.runs import SqliteRunStorage
+from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.utils import find_free_port
 
 from .integration_utils import IS_BUILDKITE, check_output
@@ -82,78 +84,104 @@ def define_cluster_provider_fixture(additional_kind_images=None):
     return _cluster_provider
 
 
+@contextmanager
+def local_port_forward_postgres(namespace):
+    print('Port-forwarding postgres')
+    postgres_pod_name = (
+        check_output(
+            [
+                'kubectl',
+                'get',
+                'pods',
+                '--namespace',
+                namespace,
+                '-l',
+                'app=postgresql,release=dagster',
+                '-o',
+                'jsonpath="{.items[0].metadata.name}"',
+            ]
+        )
+        .decode('utf-8')
+        .strip('"')
+    )
+    forward_port = find_free_port()
+
+    wait_for_pod(postgres_pod_name, namespace=namespace)
+
+    try:
+        p = subprocess.Popen(
+            [
+                'kubectl',
+                'port-forward',
+                '--namespace',
+                namespace,
+                postgres_pod_name,
+                '{forward_port}:5432'.format(forward_port=forward_port),
+            ]
+        )
+
+        # Validate port forwarding works
+        start = time.time()
+
+        while True:
+            if time.time() - start > PG_PORT_FORWARDING_TIMEOUT:
+                raise Exception('Timed out while waiting for postgres port forwarding')
+
+            print(
+                'Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be'
+                ' available...' % (postgres_pod_name, forward_port)
+            )
+            try:
+                conn = psycopg2.connect(
+                    database='test',
+                    user='test',
+                    password='test',
+                    host='localhost',
+                    port=forward_port,
+                )
+                conn.close()
+                break
+            except:  # pylint: disable=bare-except, broad-except
+                time.sleep(1)
+                continue
+
+        yield forward_port
+
+    finally:
+        print('Terminating port-forwarding')
+        p.terminate()
+
+
+@pytest.fixture
+def dagster_instance_with_k8s_scheduler(
+    helm_namespace, run_launcher, k8s_scheduler, schedule_tempdir
+):
+    with local_port_forward_postgres(namespace=helm_namespace) as local_forward_port:
+        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+            local_forward_port=local_forward_port
+        )
+        print('Local Postgres forwarding URL: ', postgres_url)
+
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(schedule_tempdir),
+            run_storage=SqliteRunStorage.from_local(os.path.join(schedule_tempdir, 'runs')),
+            event_storage=PostgresEventLogStorage(postgres_url),
+            compute_log_manager=NoOpComputeLogManager(),
+            run_launcher=run_launcher,
+            schedule_storage=SqliteScheduleStorage.from_local(
+                os.path.join(schedule_tempdir, 'schedules')
+            ),
+            scheduler=k8s_scheduler,
+        )
+        yield instance
+
+
 @pytest.fixture(scope='session')
 def dagster_instance(helm_namespace, run_launcher):  # pylint: disable=redefined-outer-name
-    @contextmanager
-    def local_port_forward_postgres():
-        print('Port-forwarding postgres')
-        postgres_pod_name = (
-            check_output(
-                [
-                    'kubectl',
-                    'get',
-                    'pods',
-                    '--namespace',
-                    helm_namespace,
-                    '-l',
-                    'app=postgresql,release=dagster',
-                    '-o',
-                    'jsonpath="{.items[0].metadata.name}"',
-                ]
-            )
-            .decode('utf-8')
-            .strip('"')
-        )
-        forward_port = find_free_port()
-
-        wait_for_pod(postgres_pod_name, namespace=helm_namespace)
-
-        try:
-            p = subprocess.Popen(
-                [
-                    'kubectl',
-                    'port-forward',
-                    '--namespace',
-                    helm_namespace,
-                    postgres_pod_name,
-                    '{forward_port}:5432'.format(forward_port=forward_port),
-                ]
-            )
-
-            # Validate port forwarding works
-            start = time.time()
-
-            while True:
-                if time.time() - start > PG_PORT_FORWARDING_TIMEOUT:
-                    raise Exception('Timed out while waiting for postgres port forwarding')
-
-                print(
-                    'Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be'
-                    ' available...' % (postgres_pod_name, forward_port)
-                )
-                try:
-                    conn = psycopg2.connect(
-                        database='test',
-                        user='test',
-                        password='test',
-                        host='localhost',
-                        port=forward_port,
-                    )
-                    conn.close()
-                    break
-                except:  # pylint: disable=bare-except, broad-except
-                    time.sleep(1)
-                    continue
-
-            yield forward_port
-
-        finally:
-            print('Terminating port-forwarding')
-            p.terminate()
-
     tempdir = DagsterInstance.temp_storage()
 
-    with local_port_forward_postgres() as local_forward_port:
+    with local_port_forward_postgres(namespace=helm_namespace) as local_forward_port:
         postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
             local_forward_port=local_forward_port
         )

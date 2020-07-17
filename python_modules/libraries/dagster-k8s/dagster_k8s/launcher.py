@@ -13,7 +13,7 @@ from dagster.utils import frozentags, merge_dicts
 
 from .job import (
     DagsterK8sJobConfig,
-    construct_dagster_graphql_k8s_job,
+    construct_dagster_k8s_job,
     get_job_name_from_run_id,
     get_k8s_resource_requirements,
 )
@@ -176,8 +176,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
 
-        job = construct_dagster_graphql_k8s_job(
-            self.job_config,
+        job = construct_dagster_k8s_job(
+            job_config=self.job_config,
+            command=['dagster-graphql'],
             args=[
                 '-p',
                 'executeRunInProcess',

@@ -1,15 +1,12 @@
-import hashlib
-
 import kubernetes
-import six
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
 from dagster_graphql.client.mutations import handle_execute_plan_result, handle_execution_errors
 from dagster_graphql.client.util import parse_raw_log_lines
-from dagster_k8s import DagsterK8sJobConfig, construct_dagster_graphql_k8s_job
+from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import DagsterK8sPipelineStatusException
-from dagster_k8s.job import get_k8s_resource_requirements
+from dagster_k8s.job import get_k8s_job_name, get_k8s_resource_requirements
 from dagster_k8s.utils import (
     delete_job,
     get_pod_names_in_job,
@@ -289,7 +286,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = _get_k8s_name_key(run_id, step_keys)
+        k8s_name_key = get_k8s_job_name(run_id, step_key)
 
         retries = Retries.from_config(retries_dict)
 
@@ -320,7 +317,14 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         }
         args = ['-p', 'executePlan', '-v', seven.json.dumps(variables), '--remap-sigterm']
 
-        job = construct_dagster_graphql_k8s_job(job_config, args, job_name, resources, pod_name)
+        job = construct_dagster_k8s_job(
+            job_config=job_config,
+            command=['dagster-graphql'],
+            args=args,
+            job_name=job_name,
+            resources=resources,
+            pod_name=pod_name,
+        )
 
         # Running list of events generated from this task execution
         events = []
@@ -403,19 +407,3 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         return serialized_events
 
     return _execute_step_k8s_job
-
-
-def _get_k8s_name_key(run_id, step_keys):
-    '''Creates a unique (short!) identifier to name k8s objects based on run ID and step key(s).
-
-    K8s Job names are limited to 63 characters, because they are used as labels. For more info, see:
-
-    https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
-    '''
-    check.str_param(run_id, 'run_id')
-    check.list_param(step_keys, 'step_keys', of_type=str)
-
-    # Creates 32-bit signed int, so could be negative
-    name_hash = hashlib.md5(six.ensure_binary(run_id + '-'.join(step_keys)))
-
-    return name_hash.hexdigest()

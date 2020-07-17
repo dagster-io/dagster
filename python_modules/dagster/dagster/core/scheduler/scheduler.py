@@ -331,7 +331,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         for the given schedule.
 
         Args:
-            instance (DagsterInstance): The current instance.S
+            instance (DagsterInstance): The current instance.
             external_schedule (ExternalSchedule): The schedule to start running.
         '''
 
