@@ -80,12 +80,15 @@ def test_readonly_marks_filter():
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
+            GraphQLContextVariant.readonly_in_memory_instance_grpc(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
+            GraphQLContextVariant.readonly_sqlite_instance_grpc(),
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
+            GraphQLContextVariant.readonly_postgres_instance_grpc(),
         ]
     }
 

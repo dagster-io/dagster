@@ -11,6 +11,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
+    RepositoryLocationApi,
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -336,6 +337,26 @@ class EnvironmentManagers:
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
 
     @staticmethod
+    def grpc():
+        @contextmanager
+        def _mgr_fn(recon_repo):
+            '''Goes out of process via grpc'''
+            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+
+            repo_name = recon_repo.get_definition().name
+            yield [
+                PythonEnvRepositoryLocation(
+                    RepositoryLocationHandle.create_out_of_process_location(
+                        location_name='test',
+                        repository_code_pointer_dict={repo_name: recon_repo.pointer},
+                        api=RepositoryLocationApi.GRPC,
+                    )
+                )
+            ]
+
+        return MarkedManager(_mgr_fn, [Marks.grpc_env])
+
+    @staticmethod
     def multi_location():
         @contextmanager
         def _mgr_fn(recon_repo):
@@ -385,6 +406,7 @@ class Marks:
     hosted_user_process_env = pytest.mark.hosted_user_process_env
     out_of_process_env = pytest.mark.out_of_process_env
     multi_location = pytest.mark.multi_location
+    grpc_env = pytest.mark.grpc_env
 
     # Asset-aware sqlite variants
     asset_aware_instance = pytest.mark.asset_aware_instance
@@ -555,6 +577,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_sqlite_instance_grpc():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_sqlite_instance(),
+            EnvironmentManagers.grpc(),
+            test_id='readonly_sqlite_instance_grpc',
+        )
+
+    @staticmethod
     def readonly_postgres_instance_in_process_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
@@ -579,6 +609,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_postgres_instance_grpc():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_postgres_instance(),
+            EnvironmentManagers.grpc(),
+            test_id='readonly_postgres_instance_grpc',
+        )
+
+    @staticmethod
     def readonly_in_memory_instance_in_process_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
@@ -600,6 +638,14 @@ class GraphQLContextVariant:
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.multi_location(),
             test_id='readonly_in_memory_instance_multi_location',
+        )
+
+    @staticmethod
+    def readonly_in_memory_instance_grpc():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_in_memory_instance(),
+            EnvironmentManagers.grpc(),
+            test_id='readonly_in_memory_instance_grpc',
         )
 
     @staticmethod
@@ -629,12 +675,15 @@ class GraphQLContextVariant:
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
+            GraphQLContextVariant.readonly_in_memory_instance_grpc(),
             GraphQLContextVariant.readonly_sqlite_instance_in_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
+            GraphQLContextVariant.readonly_sqlite_instance_grpc(),
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),
+            GraphQLContextVariant.readonly_postgres_instance_grpc(),
             GraphQLContextVariant.asset_aware_sqlite_instance_in_process_env(),
         ]
 

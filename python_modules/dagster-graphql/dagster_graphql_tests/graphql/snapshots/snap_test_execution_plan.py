@@ -443,3 +443,15 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
         ]
     }
 }
+
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_memory_instance_grpc] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
+    }
+}
