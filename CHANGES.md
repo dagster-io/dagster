@@ -8,9 +8,21 @@
 - Deprecated the `Materialization` event type in favor of the new `AssetMaterialization` event type,
   which requires the `asset_key` parameter. Solids yielding `Materialization` events will continue
   to work as before, though the `Materialization` event will be removed in a future release.
-- We have added an `intermediate_store_defs` argument to `ModeDefinition`, which will eventually
-  replace system storage. You can only use one or the other for now. We will eventually deprecate
-  system storage entirely, but continued usage for the time being is fine.
+- We are starting to deprecate "system storages" - instead of pipelines having a system storage
+  definition which creates an intermediate storage, pipelines now directly have an intermediate
+  storage definition.
+  - We have added an `intermediate_storage_defs` argument to `ModeDefinition`, which accepts a
+    list of `IntermediateStorageDefinition`s, e.g. `s3_plus_default_intermediate_storage_defs`.
+    As before, the default includes an in-memory intermediate and a local filesystem intermediate
+    storage.
+  - We have deprecated `system_storage_defs` argument to `ModeDefinition` in favor of
+    `intermediate_storage_defs`.  `system_storage_defs` will be removed in 0.10.0 at the earliest.
+  - We have added an `@intermediate_storage` decorator, which makes it easy to define intermediate
+    storages.
+  - We have added `s3_file_manager` and `local_file_manager` resources to replace the file managers
+    that previously lived inside system storages.  The airline demo has been updated to include
+    an example of how to do this:
+    https://github.com/dagster-io/dagster/blob/0.8.8/examples/airline_demo/airline_demo/solids.py#L171.
 - The help panel in the dagit config editor can now be resized and toggled open or closed, to
   enable easier editing on smaller screens.
 
