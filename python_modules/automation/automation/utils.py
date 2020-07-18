@@ -5,14 +5,14 @@ from itertools import groupby
 import click
 
 
-def check_output(cmd, dry_run=True):
+def check_output(cmd, dry_run=True, cwd=None):
     if dry_run:
         click.echo(
             click.style('Dry run; not running.', fg='red') + ' Would run: %s' % ' '.join(cmd)
         )
         return None
     else:
-        return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        return subprocess.check_output(cmd, stderr=subprocess.STDOUT, cwd=cwd)
 
 
 def which_(exe):

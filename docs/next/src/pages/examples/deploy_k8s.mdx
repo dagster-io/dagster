@@ -4,13 +4,11 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <ExampleReferenceLink filePath="examples/deploy_k8s" />
 
-To install Dagster on your Kubernetes cluster, you can clone the Dagster repo and install the Helm
-chart (we do not yet host our Helm chart, but will soon!):
+First, install Dagster using [Helm](https://helm.sh/):
 
 ```shell
-git clone https://github.com/dagster-io/dagster.git
-cd dagster/python_modules/libraries/dagster-k8s/
-helm install dagster helm/dagster
+helm repo add dagster https://dagster-io.github.io/helm
+helm install dagster dagster/dagster
 ```
 
 Helm will launch several pods including PostgreSQL and RabbitMQ; you can check the status of the

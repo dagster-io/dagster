@@ -19,8 +19,19 @@ import packaging.version
 import requests
 import slackclient
 import virtualenv
-from automation.git import get_most_recent_git_tag, git_check_status, git_user, set_git_tag
+from automation.git import (
+    get_git_repo_branch,
+    get_most_recent_git_tag,
+    git_check_status,
+    git_commit_updates,
+    git_push,
+    git_repo_root,
+    git_user,
+    set_git_tag,
+)
 from automation.utils import which_
+
+from dagster import check
 
 from .dagster_module_publisher import DagsterModulePublisher
 from .pypirc import ConfigFileError, RCParser
@@ -209,6 +220,47 @@ def after_install(options, home_dir):
             args = [sys.executable, bootstrap_script_file.name, venv_dir]
 
             click.echo(subprocess.check_output(args).decode('utf-8'))
+
+
+@cli.command()
+@click.option('--helm-repo', '-r', required=True)
+@click.option('--ver', '-v', required=True)
+@click.option('--dry-run', is_flag=True)
+def helm(helm_repo, ver, dry_run):
+    '''Publish the Dagster Helm chart
+
+    See: https://medium.com/containerum/how-to-make-and-share-your-own-helm-package-50ae40f6c221
+    for more info on this process
+    '''
+
+    helm_path = os.path.join(git_repo_root(), 'python_modules', 'libraries', 'dagster-k8s', 'helm')
+
+    check.invariant(
+        get_git_repo_branch(helm_repo) == 'gh-pages', 'helm repo must be on gh-pages branch'
+    )
+
+    cmd = [
+        'helm',
+        'package',
+        'dagster',
+        '-d',
+        helm_repo,
+        '--app-version',
+        ver,
+        '--version',
+        ver,
+    ]
+    click.echo(click.style('Running command: ' + ' '.join(cmd) + '\n', fg='green'))
+    click.echo(subprocess.check_output(cmd, cwd=helm_path))
+
+    cmd = ['helm', 'repo', 'index', '.', '--url', 'https://dagster-io.github.io/helm/']
+    click.echo(click.style('Running command: ' + ' '.join(cmd) + '\n', fg='green'))
+    click.echo(subprocess.check_output(cmd, cwd=helm_repo))
+
+    # Commit and push Helm updates for this Dagster release
+    msg = 'Helm release for Dagster release {}'.format(ver)
+    git_commit_updates(helm_repo, msg)
+    git_push(cwd=helm_repo, dry_run=dry_run)
 
 
 def main():
