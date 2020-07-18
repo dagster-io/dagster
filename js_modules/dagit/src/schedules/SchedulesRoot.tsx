@@ -44,7 +44,7 @@ const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
 
         <p>
           See the{" "}
-          <a href="https://docs.dagster.io/deploying/instance#instance-configuration-yaml">
+          <a href="https://docs.dagster.io/overview/instances/dagster-instance#instance-configuration-yaml">
             instance configuration documentation
           </a>{" "}
           for more information.
