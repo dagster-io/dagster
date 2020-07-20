@@ -1,3 +1,5 @@
+import weakref
+
 import kubernetes
 
 from dagster import (
@@ -138,7 +140,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_config_maps=check.opt_list_param(env_config_maps, 'env_config_maps', of_type=str),
             env_secrets=check.opt_list_param(env_secrets, 'env_secrets', of_type=str),
         )
-        self._instance = None
+        self._instance_ref = None
 
     @classmethod
     def config_type(cls):
@@ -162,9 +164,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def _instance(self):
+        return self._instance_ref() if self._instance_ref else None
+
     def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
-        self._instance = instance
+        # Store a weakref to avoid a circular reference / enable GC
+        self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(run, 'run', PipelineRun)

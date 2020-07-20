@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+import weakref
 
 from dagster import check
 from dagster.api.execute_run import cli_api_execute_run
@@ -27,7 +28,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     '''
 
     def __init__(self, inst_data=None):
-        self._instance = None
+        self._instance_ref = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
         self._processes_lock = threading.Lock()
@@ -47,10 +48,16 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return CliApiRunLauncher(inst_data=inst_data)
 
+    @property
+    def _instance(self):
+        return self._instance_ref() if self._instance_ref else None
+
     def initialize(self, instance):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.invariant(self._instance is None, 'Must only call initialize once')
-        self._instance = instance
+
+        # Store a weakref to avoid a circular reference / enable GC
+        self._instance_ref = weakref.ref(instance)
 
         self._thread = threading.Thread(target=self._clock, args=())
         self._thread.daemon = True

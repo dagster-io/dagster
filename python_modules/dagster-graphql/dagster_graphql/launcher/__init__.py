@@ -2,6 +2,8 @@ from future.standard_library import install_aliases  # isort:skip
 
 install_aliases()  # isort:skip
 
+import weakref
+
 import requests
 from dagster_graphql.client.query import EXECUTE_RUN_IN_PROCESS_MUTATION
 from requests import RequestException
@@ -21,7 +23,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         self._address = check.str_param(address, 'address')
         self._timeout = check.numeric_param(timeout, 'timeout')
         self._handle = None
-        self._instance = None
+        self._instance_ref = None
         self._validated = False
 
         parsed_url = urlparse(address)
@@ -49,6 +51,10 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def _instance(self):
+        return self._instance_ref() if self._instance_ref else None
+
     def start(self, handle):
         self._handle = handle
 
@@ -74,7 +80,8 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
             )
 
     def initialize(self, instance):
-        self._instance = instance
+        # Store a weakref to avoid a circular reference / enable GC
+        self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
