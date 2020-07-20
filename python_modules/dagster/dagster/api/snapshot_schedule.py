@@ -31,23 +31,33 @@ def sync_get_external_schedule_execution_data(instance, repository_handle, sched
     )
 
 
-def sync_get_external_schedule_execution_data_grpc(instance, repository_handle, schedule_name):
+def sync_get_external_schedule_execution_data_ephemeral_grpc(
+    instance, repository_handle, schedule_name
+):
+    origin = repository_handle.get_origin()
+    with ephemeral_grpc_api_client(
+        LoadableTargetOrigin(executable_path=origin.executable_path)
+    ) as api_client:
+        return sync_get_external_schedule_execution_data_grpc(
+            api_client, instance, repository_handle, schedule_name
+        )
 
+
+def sync_get_external_schedule_execution_data_grpc(
+    api_client, instance, repository_handle, schedule_name
+):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(schedule_name, 'schedule_name')
 
     origin = repository_handle.get_origin()
 
-    with ephemeral_grpc_api_client(
-        LoadableTargetOrigin(executable_path=origin.executable_path)
-    ) as api_client:
-        return check.inst(
-            api_client.external_schedule_execution(
-                external_schedule_execution_args=ExternalScheduleExecutionArgs(
-                    repository_origin=origin,
-                    instance_ref=instance.get_ref(),
-                    schedule_name=schedule_name,
-                )
-            ),
-            (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
-        )
+    return check.inst(
+        api_client.external_schedule_execution(
+            external_schedule_execution_args=ExternalScheduleExecutionArgs(
+                repository_origin=origin,
+                instance_ref=instance.get_ref(),
+                schedule_name=schedule_name,
+            )
+        ),
+        (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
+    )

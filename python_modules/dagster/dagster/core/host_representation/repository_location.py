@@ -5,19 +5,19 @@ import six
 from dagster import check
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config,
-    sync_get_external_partition_config_grpc,
+    sync_get_external_partition_config_ephemeral_grpc,
     sync_get_external_partition_names,
-    sync_get_external_partition_names_grpc,
+    sync_get_external_partition_names_ephemeral_grpc,
     sync_get_external_partition_tags,
-    sync_get_external_partition_tags_grpc,
+    sync_get_external_partition_tags_ephemeral_grpc,
 )
 from dagster.api.snapshot_repository import (
     sync_get_external_repositories,
-    sync_get_external_repositories_grpc,
+    sync_get_external_repositories_ephemeral_grpc,
 )
 from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,
-    sync_get_external_schedule_execution_data_grpc,
+    sync_get_external_schedule_execution_data_ephemeral_grpc,
 )
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -328,7 +328,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         )
 
         repo_list = (
-            sync_get_external_repositories_grpc(self._handle)
+            sync_get_external_repositories_ephemeral_grpc(self._handle)
             if self._use_grpc()
             else sync_get_external_repositories(self._handle)
         )
@@ -368,7 +368,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
     ):
         from dagster.api.snapshot_execution_plan import (
             sync_get_external_execution_plan,
-            sync_get_external_execution_plan_grpc,
+            sync_get_external_execution_plan_ephemeral_grpc,
         )
 
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
@@ -377,7 +377,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan_snapshot = (
-            sync_get_external_execution_plan_grpc(
+            sync_get_external_execution_plan_ephemeral_grpc(
                 pipeline_origin=external_pipeline.get_origin(),
                 solid_selection=external_pipeline.solid_selection,
                 run_config=run_config,
@@ -451,7 +451,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
     def get_subset_external_pipeline_result(self, selector):
         from dagster.api.snapshot_pipeline import (
             sync_get_external_pipeline_subset,
-            sync_get_external_pipeline_subset_grpc,
+            sync_get_external_pipeline_subset_ephemeral_grpc,
         )
 
         check.inst_param(selector, 'selector', PipelineSelector)
@@ -465,7 +465,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         external_repository = self.external_repositories[selector.repository_name]
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return (
-            sync_get_external_pipeline_subset_grpc(
+            sync_get_external_pipeline_subset_ephemeral_grpc(
                 pipeline_handle.get_origin(), selector.solid_selection
             )
             if self._use_grpc()
@@ -480,7 +480,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, 'partition_name')
 
         return (
-            sync_get_external_partition_config_grpc(
+            sync_get_external_partition_config_ephemeral_grpc(
                 repository_handle, partition_set_name, partition_name
             )
             if self._use_grpc()
@@ -495,7 +495,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.str_param(partition_name, 'partition_name')
 
         return (
-            sync_get_external_partition_tags_grpc(
+            sync_get_external_partition_tags_ephemeral_grpc(
                 repository_handle, partition_set_name, partition_name
             )
             if self._use_grpc()
@@ -509,7 +509,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.str_param(partition_set_name, 'partition_set_name')
 
         return (
-            sync_get_external_partition_names_grpc(repository_handle, partition_set_name)
+            sync_get_external_partition_names_ephemeral_grpc(repository_handle, partition_set_name)
             if self._use_grpc()
             else sync_get_external_partition_names(repository_handle, partition_set_name)
         )
@@ -520,7 +520,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.str_param(schedule_name, 'schedule_name')
 
         return (
-            sync_get_external_schedule_execution_data_grpc(
+            sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance, repository_handle, schedule_name
             )
             if self._use_grpc()

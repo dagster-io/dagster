@@ -6,7 +6,7 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.client import ephemeral_grpc_api_client
+from dagster.grpc.client import DagsterGrpcClient, ephemeral_grpc_api_client
 from dagster.grpc.types import LoadableTargetOrigin, PartitionArgs, PartitionNamesArgs
 
 from .utils import execute_unary_api_cli_command
@@ -29,22 +29,33 @@ def sync_get_external_partition_names(repository_handle, partition_set_name):
     )
 
 
-def sync_get_external_partition_names_grpc(repository_handle, partition_set_name):
+def sync_get_external_partition_names_ephemeral_grpc(repository_handle, partition_set_name):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
+
     repository_origin = repository_handle.get_origin()
 
     with ephemeral_grpc_api_client(
         LoadableTargetOrigin(executable_path=repository_origin.executable_path)
     ) as api_client:
-        return check.inst(
-            api_client.external_partition_names(
-                partition_names_args=PartitionNamesArgs(
-                    repository_origin=repository_origin, partition_set_name=partition_set_name,
-                ),
-            ),
-            (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
+        return sync_get_external_partition_names_grpc(
+            api_client, repository_handle, partition_set_name
         )
+
+
+def sync_get_external_partition_names_grpc(api_client, repository_handle, partition_set_name):
+    check.inst_param(api_client, 'api_client', DagsterGrpcClient)
+    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.str_param(partition_set_name, 'partition_set_name')
+    repository_origin = repository_handle.get_origin()
+    return check.inst(
+        api_client.external_partition_names(
+            partition_names_args=PartitionNamesArgs(
+                repository_origin=repository_origin, partition_set_name=partition_set_name,
+            ),
+        ),
+        (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
+    )
 
 
 def sync_get_external_partition_config(repository_handle, partition_set_name, partition_name):
@@ -67,25 +78,40 @@ def sync_get_external_partition_config(repository_handle, partition_set_name, pa
     )
 
 
-def sync_get_external_partition_config_grpc(repository_handle, partition_set_name, partition_name):
+def sync_get_external_partition_config_ephemeral_grpc(
+    repository_handle, partition_set_name, partition_name
+):
+    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.str_param(partition_set_name, 'partition_set_name')
+    check.str_param(partition_name, 'partition_name')
+
+    repository_origin = repository_handle.get_origin()
+    with ephemeral_grpc_api_client(
+        LoadableTargetOrigin(executable_path=repository_origin.executable_path)
+    ) as api_client:
+        return sync_get_external_partition_config_grpc(
+            api_client, repository_handle, partition_set_name, partition_name
+        )
+
+
+def sync_get_external_partition_config_grpc(
+    api_client, repository_handle, partition_set_name, partition_name
+):
+    check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
     repository_origin = repository_handle.get_origin()
-
-    with ephemeral_grpc_api_client(
-        LoadableTargetOrigin(executable_path=repository_origin.executable_path)
-    ) as api_client:
-        return check.inst(
-            api_client.external_partition_config(
-                partition_args=PartitionArgs(
-                    repository_origin=repository_origin,
-                    partition_set_name=partition_set_name,
-                    partition_name=partition_name,
-                ),
+    return check.inst(
+        api_client.external_partition_config(
+            partition_args=PartitionArgs(
+                repository_origin=repository_origin,
+                partition_set_name=partition_set_name,
+                partition_name=partition_name,
             ),
-            (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
-        )
+        ),
+        (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
+    )
 
 
 def sync_get_external_partition_tags(repository_handle, partition_set_name, partition_name):
@@ -108,10 +134,13 @@ def sync_get_external_partition_tags(repository_handle, partition_set_name, part
     )
 
 
-def sync_get_external_partition_tags_grpc(repository_handle, partition_set_name, partition_name):
+def sync_get_external_partition_tags_ephemeral_grpc(
+    repository_handle, partition_set_name, partition_name
+):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
     check.str_param(partition_name, 'partition_name')
+
     repository_origin = repository_handle.get_origin()
 
     with ephemeral_grpc_api_client(
@@ -119,13 +148,27 @@ def sync_get_external_partition_tags_grpc(repository_handle, partition_set_name,
             executable_path=repository_origin.executable_path
         )
     ) as api_client:
-        return check.inst(
-            api_client.external_partition_tags(
-                partition_args=PartitionArgs(
-                    repository_origin=repository_origin,
-                    partition_set_name=partition_set_name,
-                    partition_name=partition_name,
-                ),
-            ),
-            (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
+        return sync_get_external_partition_tags_grpc(
+            api_client, repository_handle, partition_set_name, partition_name
         )
+
+
+def sync_get_external_partition_tags_grpc(
+    api_client, repository_handle, partition_set_name, partition_name
+):
+    check.inst_param(api_client, 'api_client', DagsterGrpcClient)
+    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.str_param(partition_set_name, 'partition_set_name')
+    check.str_param(partition_name, 'partition_name')
+
+    repository_origin = repository_handle.get_origin()
+    return check.inst(
+        api_client.external_partition_tags(
+            partition_args=PartitionArgs(
+                repository_origin=repository_origin,
+                partition_set_name=partition_set_name,
+                partition_name=partition_name,
+            ),
+        ),
+        (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
+    )

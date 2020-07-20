@@ -5,7 +5,7 @@ import pytest
 
 from dagster.api.snapshot_pipeline import (
     sync_get_external_pipeline_subset,
-    sync_get_external_pipeline_subset_grpc,
+    sync_get_external_pipeline_subset_ephemeral_grpc,
 )
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.handle import PipelineHandle
@@ -77,7 +77,7 @@ def test_pipeline_with_invalid_definition_snapshot_api():
 def test_pipeline_snapshot_api_grpc():
     pipeline_handle = get_foo_pipeline_handle()
 
-    external_pipeline_subset_result = sync_get_external_pipeline_subset_grpc(
+    external_pipeline_subset_result = sync_get_external_pipeline_subset_ephemeral_grpc(
         pipeline_handle.get_origin()
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
@@ -88,7 +88,7 @@ def test_pipeline_snapshot_api_grpc():
 def test_pipeline_with_valid_subset_snapshot_api_grpc():
     pipeline_handle = get_foo_pipeline_handle()
 
-    external_pipeline_subset_result = sync_get_external_pipeline_subset_grpc(
+    external_pipeline_subset_result = sync_get_external_pipeline_subset_ephemeral_grpc(
         pipeline_handle.get_origin(), solid_selection=["do_something"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
@@ -99,7 +99,7 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc():
 def test_pipeline_with_invalid_subset_snapshot_api_grpc():
     pipeline_handle = get_foo_pipeline_handle()
 
-    external_pipeline_subset_result = sync_get_external_pipeline_subset_grpc(
+    external_pipeline_subset_result = sync_get_external_pipeline_subset_ephemeral_grpc(
         pipeline_handle.get_origin(), solid_selection=["invalid_solid"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
@@ -114,7 +114,7 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc():
 def test_pipeline_with_invalid_definition_snapshot_api_grpc():
     pipeline_handle = PipelineHandle('bar', get_bar_repo_handle())
 
-    external_pipeline_subset_result = sync_get_external_pipeline_subset_grpc(
+    external_pipeline_subset_result = sync_get_external_pipeline_subset_ephemeral_grpc(
         pipeline_handle.get_origin(), solid_selection=["fail_subset"]
     )
     assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
