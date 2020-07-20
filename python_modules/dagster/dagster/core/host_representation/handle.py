@@ -1,5 +1,6 @@
 import sys
 from collections import namedtuple
+from enum import Enum
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -16,6 +17,15 @@ from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, Sc
 IN_PROCESS_NAME = '<<in_process>>'
 
 
+# Which API the repository location should use to communicate with the process
+# containing user code
+class RepositoryLocationApi(Enum):
+    # Execute via the command-line API
+    CLI = 'CLI'
+    # Connect via gRPC
+    GRPC = 'GRPC'
+
+
 class RepositoryLocationHandle:
     @staticmethod
     def create_in_process_location(pointer):
@@ -28,22 +38,20 @@ class RepositoryLocationHandle:
         return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, {repo_def.name: pointer})
 
     @staticmethod
-    def create_out_of_process_location(location_name, repository_code_pointer_dict):
-        check.str_param(location_name, 'location_name')
-        check.dict_param(
-            repository_code_pointer_dict,
-            'repository_code_pointer_dict',
-            key_type=str,
-            value_type=CodePointer,
-        )
-        return PythonEnvRepositoryLocationHandle(
-            location_name=location_name,
+    def create_out_of_process_location(
+        location_name, repository_code_pointer_dict, api=RepositoryLocationApi.CLI
+    ):
+        return RepositoryLocationHandle.create_python_env_location(
             executable_path=sys.executable,
+            location_name=location_name,
             repository_code_pointer_dict=repository_code_pointer_dict,
+            api=api,
         )
 
     @staticmethod
-    def create_python_env_location(executable_path, location_name, repository_code_pointer_dict):
+    def create_python_env_location(
+        executable_path, location_name, repository_code_pointer_dict, api
+    ):
         check.str_param(executable_path, 'executable_path')
         check.str_param(location_name, 'location_name')
         check.dict_param(
@@ -52,17 +60,19 @@ class RepositoryLocationHandle:
             key_type=str,
             value_type=CodePointer,
         )
+        check.inst_param(api, 'api', RepositoryLocationApi)
         return PythonEnvRepositoryLocationHandle(
             location_name=location_name,
             executable_path=executable_path,
             repository_code_pointer_dict=repository_code_pointer_dict,
+            api=api,
         )
 
 
 class PythonEnvRepositoryLocationHandle(
     namedtuple(
         '_PythonEnvRepositoryLocationHandle',
-        'executable_path location_name repository_code_pointer_dict',
+        'executable_path location_name repository_code_pointer_dict api',
     ),
     RepositoryLocationHandle,
 ):

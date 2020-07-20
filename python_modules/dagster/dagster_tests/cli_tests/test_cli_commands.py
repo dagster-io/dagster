@@ -187,6 +187,24 @@ def test_list_command():
     execute_list_command(
         {
             'repository_yaml': None,
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'bar',
+            'grpc': True,
+        },
+        no_print,
+    )
+
+    result = runner.invoke(
+        pipeline_list_command,
+        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-g'],
+    )
+
+    assert_correct_bar_repository_output(result)
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
             'python_file': None,
             'module_name': 'dagster_tests.cli_tests.test_cli_commands',
             'fn_name': 'bar',
@@ -196,6 +214,23 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
+    )
+    assert_correct_bar_repository_output(result)
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': None,
+            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'fn_name': 'bar',
+            'grpc': True,
+        },
+        no_print,
+    )
+
+    result = runner.invoke(
+        pipeline_list_command,
+        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-g'],
     )
     assert_correct_bar_repository_output(result)
 
@@ -243,6 +278,12 @@ def test_list_command():
     )
     assert_correct_extra_repository_output(result)
 
+    # Can't specify --grpc/-g if there's a workspace being set
+    result = runner.invoke(
+        pipeline_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml'), '-g']
+    )
+    assert result.exit_code == 2
+
     with pytest.raises(UsageError):
         execute_list_command(
             {
@@ -266,7 +307,17 @@ def test_list_command():
     assert_correct_bar_repository_output(result)
 
     result = runner.invoke(
+        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-g'],
+    )
+    assert_correct_bar_repository_output(result)
+
+    result = runner.invoke(
         pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py')]
+    )
+    assert_correct_bar_repository_output(result)
+
+    result = runner.invoke(
+        pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-g']
     )
     assert_correct_bar_repository_output(result)
 
@@ -281,6 +332,7 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': None,
                 'attribute': None,
+                'grpc': None,
             },
             True,
         ),
@@ -291,6 +343,7 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': None,
                 'attribute': None,
+                'grpc': None,
             },
             True,
         ),
@@ -301,6 +354,7 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'bar',
+                'grpc': None,
             },
             False,
         ),
@@ -311,6 +365,7 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': 'dagster_tests.cli_tests.test_cli_commands',
                 'attribute': 'bar',
+                'grpc': None,
             },
             False,
         ),
@@ -321,6 +376,7 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': 'dagster_tests.cli_tests.test_cli_commands',
                 'attribute': 'foo_pipeline',
+                'grpc': None,
             },
             False,
         ),
@@ -331,6 +387,7 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'define_foo_pipeline',
+                'grpc': None,
             },
             False,
         ),
@@ -341,6 +398,62 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'foo_pipeline',
+                'grpc': None,
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': 'foo',
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'bar',
+                'grpc': True,
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': 'foo',
+                'python_file': None,
+                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'attribute': 'bar',
+                'grpc': True,
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': None,
+                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'attribute': 'foo_pipeline',
+                'grpc': True,
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'define_foo_pipeline',
+                'grpc': True,
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'foo_pipeline',
+                'grpc': True,
             },
             False,
         ),
@@ -376,6 +489,33 @@ def valid_cli_args():
                 file_relative_path(__file__, 'test_cli_commands.py'),
                 '-a',
                 'define_foo_pipeline',
+            ],
+            False,
+        ),
+        (
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-a',
+                'bar',
+                '-p',
+                'foo',
+                '-g',
+            ],
+            False,
+        ),
+        (
+            ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo', '-g'],
+            False,
+        ),
+        (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline', '-g'], False),
+        (
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-a',
+                'define_foo_pipeline',
+                '-g',
             ],
             False,
         ),

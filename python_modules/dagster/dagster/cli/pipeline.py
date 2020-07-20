@@ -25,12 +25,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import (
-    DEFAULT_REPOSITORY_YAML_FILENAME,
-    DEFAULT_WORKSPACE_YAML_FILENAME,
-    load_yaml_from_glob_list,
-    merge_dicts,
-)
+from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
@@ -62,34 +57,6 @@ def apply_click_params(command, *click_params):
     for click_param in click_params:
         command = click_param(command)
     return command
-
-
-def legacy_repository_target_argument(f):
-    return apply_click_params(
-        f,
-        click.option(
-            '--workspace', '-w', type=click.Path(exists=True), help=('Path to workspace file')
-        ),
-        click.option(
-            '--repository-yaml',
-            '-y',
-            type=click.Path(exists=True),
-            help=(
-                'Path to config file. Defaults to ./{default_filename} if --python-file '
-                'and --module-name are not specified'
-            ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
-        ),
-        click.option(
-            '--python-file',
-            '-f',
-            type=click.Path(exists=True),
-            help='Specify python file where repository or pipeline function lives.',
-        ),
-        click.option(
-            '--module-name', '-m', help='Specify module where repository or pipeline function lives'
-        ),
-        click.option('--fn-name', '-n', help='Function that returns either repository or pipeline'),
-    )
 
 
 @click.command(

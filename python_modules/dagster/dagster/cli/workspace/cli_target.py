@@ -7,7 +7,7 @@ from click import UsageError
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import RepositoryLocation
+from dagster.core.host_representation import RepositoryLocation, RepositoryLocationApi
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -39,17 +39,29 @@ def are_all_keys_empty(kwargs, keys):
     return True
 
 
-WORKSPACE_CLI_ARGS = ('workspace', 'python_file', 'module_name', 'attribute', 'repository_yaml')
+WORKSPACE_CLI_ARGS = (
+    'workspace',
+    'python_file',
+    'module_name',
+    'attribute',
+    'repository_yaml',
+    'grpc',
+)
 
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
-PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
-ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute api')
+ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute api')
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
 
 WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget, EmptyWorkspaceTarget)
+
+
+def _cli_get_api(kwargs):
+    check.dict_param(kwargs, 'kwargs')
+    return RepositoryLocationApi.GRPC if kwargs.get('grpc') else RepositoryLocationApi.CLI
 
 
 def created_workspace_load_target(kwargs):
@@ -74,16 +86,20 @@ def created_workspace_load_target(kwargs):
         _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'workspace')
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'grpc')
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
         return PythonFileTarget(
-            python_file=kwargs.get('python_file'), attribute=kwargs.get('attribute')
+            python_file=kwargs.get('python_file'),
+            attribute=kwargs.get('attribute'),
+            api=_cli_get_api(kwargs),
         )
     if kwargs.get('module_name'):
         return ModuleTarget(
-            module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute')
+            module_name=kwargs.get('module_name'),
+            attribute=kwargs.get('attribute'),
+            api=_cli_get_api(kwargs),
         )
     check.failed('invalid')
 
@@ -95,11 +111,19 @@ def workspace_from_load_target(load_target):
         return load_workspace_from_yaml_paths(load_target.paths)
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
-            [location_handle_from_python_file(load_target.python_file, load_target.attribute, None)]
+            [
+                location_handle_from_python_file(
+                    load_target.python_file, load_target.attribute, api=load_target.api
+                )
+            ]
         )
     elif isinstance(load_target, ModuleTarget):
         return Workspace(
-            [location_handle_from_module_name(load_target.module_name, load_target.attribute)]
+            [
+                location_handle_from_module_name(
+                    load_target.module_name, load_target.attribute, api=load_target.api
+                )
+            ]
         )
     elif isinstance(load_target, EmptyWorkspaceTarget):
         return Workspace([])
@@ -124,6 +148,15 @@ def python_target_click_options():
         ),
         click.option('--working-directory', '-d', help='Specify working directory',),
     ]
+
+
+def grpc_option():
+    return click.option(
+        '--grpc',
+        '-g',
+        is_flag=True,
+        help=('Flag to communicate with child processes via gRPC instead of via the command line'),
+    )
 
 
 def attribute_option():
@@ -157,6 +190,7 @@ def workspace_target_click_options():
         ]
         + python_target_click_options()
         + [attribute_option()]
+        + [grpc_option()]
     )
 
 

@@ -34,6 +34,7 @@ from .handle import (
     PipelineHandle,
     PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
+    RepositoryLocationApi,
     RepositoryLocationHandle,
 )
 from .historical import HistoricalPipeline

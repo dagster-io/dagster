@@ -5,6 +5,7 @@ import yaml
 from dagster.api.snapshot_repository import sync_get_external_repositories
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_config, load_workspace_from_yaml_paths
+from dagster.core.host_representation import RepositoryLocationApi
 from dagster.utils import file_relative_path
 
 
@@ -109,8 +110,58 @@ load_from:
     assert set(loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }
+    assert loaded_from_file_handle.api == RepositoryLocationApi.CLI
 
     loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
+    assert set(loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
+        'hello_world_repository'
+    }
+    assert loaded_from_module_handle.api == RepositoryLocationApi.CLI
+
+
+def test_grpc_multi_location_workspace():
+    workspace_yaml = '''
+load_from:
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_file:
+                relative_path: hello_world_repository.py
+                location_name: loaded_from_file
+
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_module:
+                module_name: dagster.utils.test.hello_world_repository
+                location_name: loaded_from_module
+opt_in:
+    - grpc
+
+    '''.format(
+        executable=sys.executable
+    )
+
+    workspace = load_workspace_from_config(
+        yaml.safe_load(workspace_yaml),
+        # fake out as if it were loaded by a yaml file in this directory
+        file_relative_path(__file__, 'not_a_real.yaml'),
+    )
+
+    assert isinstance(workspace, Workspace)
+    assert len(workspace.repository_location_handles) == 2
+    assert workspace.has_repository_location_handle('loaded_from_file')
+    assert workspace.has_repository_location_handle('loaded_from_module')
+
+    loaded_from_file_handle = workspace.get_repository_location_handle('loaded_from_file')
+    assert loaded_from_file_handle.api == RepositoryLocationApi.GRPC
+
+    assert set(loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
+        'hello_world_repository'
+    }
+
+    loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
+    assert loaded_from_module_handle.api == RepositoryLocationApi.GRPC
     assert set(loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }

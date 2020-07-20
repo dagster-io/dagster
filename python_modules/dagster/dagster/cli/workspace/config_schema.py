@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.config import Field, ScalarUnion, Selector
+from dagster.config import Enum, EnumValue, Field, ScalarUnion, Selector
 from dagster.config.source import StringSource
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -57,30 +57,35 @@ def _get_target_config():
 
 
 WORKSPACE_CONFIG_SCHEMA = {
-    'load_from': [
-        Selector(
-            merge_dicts(
-                _get_target_config(),
-                {
-                    'python_environment': {
-                        'executable_path': StringSource,
-                        'target': Selector(_get_target_config()),
+    'load_from': Field(
+        [
+            Selector(
+                merge_dicts(
+                    _get_target_config(),
+                    {
+                        'python_environment': {
+                            'executable_path': StringSource,
+                            'target': Selector(_get_target_config()),
+                        },
                     },
-                },
+                )
             )
-        )
-    ],
+        ],
+        is_required=False,
+    ),
+    'opt_in': Field([Enum('WorkspaceOptInFeature', [EnumValue('grpc')])], is_required=False),
 }
 
-WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY = Selector(
-    merge_dicts(
-        {
-            'repository': {
+WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY = merge_dicts(
+    {
+        'repository': Field(
+            {
                 'module': Field(str, is_required=False),
                 'file': Field(str, is_required=False),
                 'fn': Field(str),
             },
-        },
-        WORKSPACE_CONFIG_SCHEMA,
-    )
+            is_required=False,
+        ),
+    },
+    WORKSPACE_CONFIG_SCHEMA,
 )

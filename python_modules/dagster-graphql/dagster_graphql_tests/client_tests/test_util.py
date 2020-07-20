@@ -22,6 +22,7 @@ from dagster import (
 from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.host_representation import RepositoryLocationApi
 from dagster.core.instance import DagsterInstance
 
 
@@ -104,7 +105,7 @@ def test_pipeline():
 
 def test_all_step_events():  # pylint: disable=too-many-locals
     workspace = workspace_from_load_target(
-        PythonFileTarget(__file__, define_test_events_pipeline.__name__)
+        PythonFileTarget(__file__, define_test_events_pipeline.__name__, RepositoryLocationApi.CLI)
     )
     pipeline_def = define_test_events_pipeline()
     mode = pipeline_def.get_default_mode_name()
