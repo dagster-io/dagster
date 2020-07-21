@@ -26,12 +26,13 @@ def solid_one(_):
 def solid_two(_):
     yield AssetMaterialization(asset_key=AssetKey('asset_2'))
     yield AssetMaterialization(asset_key=AssetKey(['path', 'to', 'asset_3']))
+    yield AssetMaterialization(asset_key=AssetKey(('path', 'to', 'asset_4')))
     yield Output(1)
 
 
 @solid
 def solid_normalization(_):
-    yield AssetMaterialization(asset_key='path/to-asset_4')
+    yield AssetMaterialization(asset_key='path/to-asset_5')
     yield Output(1)
 
 
@@ -73,11 +74,16 @@ def test_asset_single_wipe(asset_instance):
     execute_pipeline(pipeline_two, instance=asset_instance)
     assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
-    assert len(asset_keys) == 3
+    assert len(asset_keys) == 4
 
     result = runner.invoke(asset_wipe_command, ['path.to.asset_3'], input='DELETE\n')
     assert result.exit_code == 0
     assert 'Removed asset indexes from event logs' in result.output
+
+    result = runner.invoke(asset_wipe_command, ['path.to.asset_4'], input='DELETE\n')
+    assert result.exit_code == 0
+    assert 'Removed asset indexes from event logs' in result.output
+
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 2
 
@@ -88,13 +94,13 @@ def test_asset_multi_wipe(asset_instance):
     execute_pipeline(pipeline_two, instance=asset_instance)
     assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
-    assert len(asset_keys) == 3
+    assert len(asset_keys) == 4
 
     result = runner.invoke(asset_wipe_command, ['path.to.asset_3', 'asset_1'], input='DELETE\n')
     assert result.exit_code == 0
     assert 'Removed asset indexes from event logs' in result.output
     asset_keys = asset_instance.all_asset_keys()
-    assert len(asset_keys) == 1
+    assert len(asset_keys) == 2
 
 
 def test_asset_wipe_all(asset_instance):
@@ -103,7 +109,7 @@ def test_asset_wipe_all(asset_instance):
     execute_pipeline(pipeline_two, instance=asset_instance)
     assert asset_instance.is_asset_aware
     asset_keys = asset_instance.all_asset_keys()
-    assert len(asset_keys) == 3
+    assert len(asset_keys) == 4
 
     result = runner.invoke(asset_wipe_command, ['--all'], input='DELETE\n')
     assert result.exit_code == 0

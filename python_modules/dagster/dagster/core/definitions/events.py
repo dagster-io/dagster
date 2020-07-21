@@ -43,8 +43,8 @@ def validate_structured_asset_key(l):
 
 @whitelist_for_persistence
 class AssetKey(namedtuple('_AssetKey', 'path'), Persistable):
-    ''' Object representing the structure of an asset key.  Takes in a sanitized string or list of
-    strings.
+    ''' Object representing the structure of an asset key.  Takes in a sanitized string, list of
+    strings, or tuple of strings.
 
     Example usage:
 
@@ -52,18 +52,20 @@ class AssetKey(namedtuple('_AssetKey', 'path'), Persistable):
 
         AssetKey(['parent', 'child', 'grandchild'])
 
+        AssetKey(('parent', 'child', 'grandchild'))
+
     Args:
-        asset_key_str_or_list (str|str[]): String or list of strings.  A list of strings represent
-            the hierarchical structure of the asset_key.
+        path (str|str[]|str()): String, list of strings, or tuple of strings.  A list of strings
+            represent the hierarchical structure of the asset_key.
     '''
 
     def __new__(cls, path=None):
         if check.is_str(path):
             path = [validate_asset_key_string(path)]
+        elif isinstance(path, list):
+            path = validate_structured_asset_key(check.list_param(path, 'path', of_type=str))
         else:
-            path = validate_structured_asset_key(
-                check.list_param(path, 'asset_key_str_or_list', of_type=str)
-            )
+            path = validate_structured_asset_key(check.tuple_param(path, 'path', of_type=str))
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
@@ -348,13 +350,16 @@ class AssetMaterialization(
     '''
 
     def __new__(cls, asset_key, description=None, metadata_entries=None):
-        if check.is_str(asset_key):
+        if isinstance(asset_key, AssetKey):
+            check.inst_param(asset_key, 'asset_key', AssetKey)
+        elif check.is_str(asset_key):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
             check.is_list(asset_key, of_type=str)
             asset_key = AssetKey(asset_key)
         else:
-            check.inst_param(asset_key, 'asset_key', AssetKey)
+            check.is_tuple(asset_key, of_type=str)
+            asset_key = AssetKey(asset_key)
 
         return super(AssetMaterialization, cls).__new__(
             cls,
