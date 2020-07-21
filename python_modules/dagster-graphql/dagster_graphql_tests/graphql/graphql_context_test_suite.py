@@ -12,7 +12,6 @@ from dagster.core.host_representation import (
     GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
-    RepositoryLocationApi,
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -354,13 +353,14 @@ class EnvironmentManagers:
             '''Goes out of process via grpc'''
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
 
-            repo_name = recon_repo.get_definition().name
+            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
+                recon_repo.get_origin()
+            )
+
             yield [
-                PythonEnvRepositoryLocation(
-                    RepositoryLocationHandle.create_out_of_process_location(
-                        location_name='test',
-                        repository_code_pointer_dict={repo_name: recon_repo.pointer},
-                        api=RepositoryLocationApi.GRPC,
+                GrpcServerRepositoryLocation(
+                    RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                        loadable_target_origin=loadable_target_origin, location_name='test',
                     )
                 )
             ]

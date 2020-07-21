@@ -647,6 +647,11 @@ class GrpcServerProcess(object):
         if self.server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
 
+    def create_client(self):
+        from dagster.grpc.client import DagsterGrpcClient
+
+        return DagsterGrpcClient(port=self.port, socket=self.socket, host='localhost')
+
     def __enter__(self):
         return self
 

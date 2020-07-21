@@ -7,7 +7,7 @@ from click import UsageError
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationApi
+from dagster.core.host_representation import RepositoryLocation, UserProcessApi
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -50,8 +50,8 @@ WORKSPACE_CLI_ARGS = (
 
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
-PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute api')
-ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute api')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute user_process_api')
+ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute user_process_api')
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
@@ -59,9 +59,9 @@ EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
 WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget, EmptyWorkspaceTarget)
 
 
-def _cli_get_api(kwargs):
+def _cli_get_user_process_api(kwargs):
     check.dict_param(kwargs, 'kwargs')
-    return RepositoryLocationApi.GRPC if kwargs.get('grpc') else RepositoryLocationApi.CLI
+    return UserProcessApi.GRPC if kwargs.get('grpc') else UserProcessApi.CLI
 
 
 def created_workspace_load_target(kwargs):
@@ -93,13 +93,13 @@ def created_workspace_load_target(kwargs):
         return PythonFileTarget(
             python_file=kwargs.get('python_file'),
             attribute=kwargs.get('attribute'),
-            api=_cli_get_api(kwargs),
+            user_process_api=_cli_get_user_process_api(kwargs),
         )
     if kwargs.get('module_name'):
         return ModuleTarget(
             module_name=kwargs.get('module_name'),
             attribute=kwargs.get('attribute'),
-            api=_cli_get_api(kwargs),
+            user_process_api=_cli_get_user_process_api(kwargs),
         )
     check.failed('invalid')
 
@@ -113,7 +113,9 @@ def workspace_from_load_target(load_target):
         return Workspace(
             [
                 location_handle_from_python_file(
-                    load_target.python_file, load_target.attribute, api=load_target.api
+                    load_target.python_file,
+                    load_target.attribute,
+                    user_process_api=load_target.user_process_api,
                 )
             ]
         )
@@ -121,7 +123,9 @@ def workspace_from_load_target(load_target):
         return Workspace(
             [
                 location_handle_from_module_name(
-                    load_target.module_name, load_target.attribute, api=load_target.api
+                    load_target.module_name,
+                    load_target.attribute,
+                    user_process_api=load_target.user_process_api,
                 )
             ]
         )

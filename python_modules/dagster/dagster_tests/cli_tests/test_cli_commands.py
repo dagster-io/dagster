@@ -184,23 +184,13 @@ def test_list_command():
 
     assert_correct_bar_repository_output(result)
 
-    execute_list_command(
-        {
-            'repository_yaml': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'fn_name': 'bar',
-            'grpc': True,
-        },
-        no_print,
-    )
-
+    # grpc server does not currently work wtih the pipeline list command since it requires
+    # the python environment to match the host process
     result = runner.invoke(
         pipeline_list_command,
         ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-g'],
     )
-
-    assert_correct_bar_repository_output(result)
+    assert result.exit_code == 1
 
     execute_list_command(
         {
@@ -214,23 +204,6 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
-    )
-    assert_correct_bar_repository_output(result)
-
-    execute_list_command(
-        {
-            'repository_yaml': None,
-            'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
-            'fn_name': 'bar',
-            'grpc': True,
-        },
-        no_print,
-    )
-
-    result = runner.invoke(
-        pipeline_list_command,
-        ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-g'],
     )
     assert_correct_bar_repository_output(result)
 
@@ -278,12 +251,6 @@ def test_list_command():
     )
     assert_correct_extra_repository_output(result)
 
-    # Can't specify --grpc/-g if there's a workspace being set
-    result = runner.invoke(
-        pipeline_list_command, ['-w', file_relative_path(__file__, 'workspace.yaml'), '-g']
-    )
-    assert result.exit_code == 2
-
     with pytest.raises(UsageError):
         execute_list_command(
             {
@@ -307,17 +274,7 @@ def test_list_command():
     assert_correct_bar_repository_output(result)
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-g'],
-    )
-    assert_correct_bar_repository_output(result)
-
-    result = runner.invoke(
         pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py')]
-    )
-    assert_correct_bar_repository_output(result)
-
-    result = runner.invoke(
-        pipeline_list_command, ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-g']
     )
     assert_correct_bar_repository_output(result)
 

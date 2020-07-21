@@ -6,7 +6,7 @@ from dagster_graphql.client.mutations import (
 from dagster import file_relative_path
 from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.host_representation import RepositoryLocationApi
+from dagster.core.host_representation import UserProcessApi
 from dagster.core.instance import DagsterInstance
 
 EXPECTED_EVENTS = {
@@ -39,7 +39,7 @@ EXPECTED_EVENTS = {
 def load_sleepy_workspace():
     return workspace_from_load_target(
         PythonFileTarget(
-            file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline', RepositoryLocationApi.CLI
+            file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline', UserProcessApi.CLI
         )
     )
 

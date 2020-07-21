@@ -18,9 +18,19 @@ from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, Sc
 IN_PROCESS_NAME = '<<in_process>>'
 
 
-# Which API the repository location should use to communicate with the process
+def assign_grpc_location_name(port, socket, host):
+    check.opt_int_param(port, 'port')
+    check.opt_str_param(socket, 'socket')
+    check.str_param(host, 'host')
+    check.invariant(port or socket)
+    return 'grpc:{host}:{socket_or_port}'.format(
+        host=host, socket_or_port=(socket if socket else port)
+    )
+
+
+# Which API the host process should use to communicate with the process
 # containing user code
-class RepositoryLocationApi(Enum):
+class UserProcessApi(Enum):
     # Execute via the command-line API
     CLI = 'CLI'
     # Connect via gRPC
@@ -40,18 +50,17 @@ class RepositoryLocationHandle:
 
     @staticmethod
     def create_out_of_process_location(
-        location_name, repository_code_pointer_dict, api=RepositoryLocationApi.CLI
+        location_name, repository_code_pointer_dict,
     ):
         return RepositoryLocationHandle.create_python_env_location(
             executable_path=sys.executable,
             location_name=location_name,
             repository_code_pointer_dict=repository_code_pointer_dict,
-            api=api,
         )
 
     @staticmethod
     def create_python_env_location(
-        executable_path, location_name, repository_code_pointer_dict, api
+        executable_path, location_name, repository_code_pointer_dict,
     ):
         check.str_param(executable_path, 'executable_path')
         check.str_param(location_name, 'location_name')
@@ -61,19 +70,38 @@ class RepositoryLocationHandle:
             key_type=str,
             value_type=CodePointer,
         )
-        check.inst_param(api, 'api', RepositoryLocationApi)
         return PythonEnvRepositoryLocationHandle(
             location_name=location_name,
             executable_path=executable_path,
             repository_code_pointer_dict=repository_code_pointer_dict,
-            api=api,
+        )
+
+    @staticmethod
+    def create_process_bound_grpc_server_location(loadable_target_origin, location_name):
+        from dagster.grpc.server import GrpcServerProcess
+
+        server = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+        client = server.create_client()
+        list_repositories_response = sync_list_repositories_grpc(client)
+
+        return GrpcServerRepositoryLocationHandle(
+            port=server.port,
+            socket=server.socket,
+            host='localhost',
+            location_name=location_name
+            if location_name
+            else assign_grpc_location_name(server.port, server.socket, 'localhost'),
+            client=client,
+            server_process=server,
+            executable_path=list_repositories_response.executable_path,
+            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
         )
 
     @staticmethod
     def create_grpc_server_location(location_name, port, socket, host):
         from dagster.grpc.client import DagsterGrpcClient
 
-        check.str_param(location_name, 'location_name')
+        check.opt_str_param(location_name, 'location_name')
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')
         check.str_param(host, 'host')
@@ -86,8 +114,11 @@ class RepositoryLocationHandle:
             port=port,
             socket=socket,
             host=host,
-            location_name=location_name,
+            location_name=location_name
+            if location_name
+            else assign_grpc_location_name(port, socket, host),
             client=client,
+            server_process=None,
             executable_path=list_repositories_response.executable_path,
             repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
         )
@@ -96,7 +127,7 @@ class RepositoryLocationHandle:
 class GrpcServerRepositoryLocationHandle(
     namedtuple(
         '_GrpcServerRepositoryLocationHandle',
-        'port socket host location_name client executable_path repository_code_pointer_dict',
+        'port socket host location_name client server_process executable_path repository_code_pointer_dict',
     ),
     RepositoryLocationHandle,
 ):
@@ -106,7 +137,7 @@ class GrpcServerRepositoryLocationHandle(
 class PythonEnvRepositoryLocationHandle(
     namedtuple(
         '_PythonEnvRepositoryLocationHandle',
-        'executable_path location_name repository_code_pointer_dict api',
+        'executable_path location_name repository_code_pointer_dict',
     ),
     RepositoryLocationHandle,
 ):

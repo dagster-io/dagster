@@ -5,7 +5,10 @@ import yaml
 from dagster.api.snapshot_repository import sync_get_external_repositories
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_config, load_workspace_from_yaml_paths
-from dagster.core.host_representation import RepositoryLocationApi
+from dagster.core.host_representation.handle import (
+    GrpcServerRepositoryLocationHandle,
+    PythonEnvRepositoryLocationHandle,
+)
 from dagster.utils import file_relative_path
 
 
@@ -110,13 +113,13 @@ load_from:
     assert set(loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }
-    assert loaded_from_file_handle.api == RepositoryLocationApi.CLI
+    assert isinstance(loaded_from_file_handle, PythonEnvRepositoryLocationHandle)
 
     loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
     assert set(loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }
-    assert loaded_from_module_handle.api == RepositoryLocationApi.CLI
+    assert isinstance(loaded_from_file_handle, PythonEnvRepositoryLocationHandle)
 
 
 def test_grpc_multi_location_workspace():
@@ -154,14 +157,15 @@ opt_in:
     assert workspace.has_repository_location_handle('loaded_from_module')
 
     loaded_from_file_handle = workspace.get_repository_location_handle('loaded_from_file')
-    assert loaded_from_file_handle.api == RepositoryLocationApi.GRPC
+    assert isinstance(loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
     assert set(loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }
 
     loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
-    assert loaded_from_module_handle.api == RepositoryLocationApi.GRPC
+    assert isinstance(loaded_from_module_handle, GrpcServerRepositoryLocationHandle)
+
     assert set(loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
         'hello_world_repository'
     }
