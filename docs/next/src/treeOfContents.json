@@ -221,6 +221,22 @@
         "path": "/_apidocs/pipeline"
       },
       {
+        "name": "Modes & Resources",
+        "path": "/_apidocs/modes-resources"
+      },
+      {
+        "name": "Presets",
+        "path": "/_apidocs/presets"
+      },
+      {
+        "name": "Loggers",
+        "path": "/_apidocs/loggers"
+      },
+      {
+        "name": "Repositories",
+        "path": "/_apidocs/repositories"
+      },
+      {
         "name": "Config",
         "path": "/_apidocs/config"
       },
