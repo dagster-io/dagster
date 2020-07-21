@@ -1,4 +1,6 @@
+import multiprocessing
 import os
+import queue
 import subprocess
 import sys
 import threading
@@ -10,13 +12,8 @@ import grpc
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import load_def_in_module, load_def_in_python_file
-from dagster.core.errors import (
-    DagsterSubprocessError,
-    PartitionExecutionError,
-    user_code_error_boundary,
-)
-from dagster.core.events import EngineEventData
-from dagster.core.execution.api import create_execution_plan, execute_run_iterator
+from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -24,7 +21,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -38,8 +34,15 @@ from dagster.utils.hosted_user_process import (
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
-from .impl import get_external_pipeline_subset_result, get_external_schedule_execution
+from .impl import (
+    ExecuteRunInSubprocessComplete,
+    execute_run_in_subprocess,
+    get_external_pipeline_subset_result,
+    get_external_schedule_execution,
+)
 from .types import (
+    CancelExecutionRequest,
+    CancelExecutionResult,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -53,77 +56,11 @@ from .types import (
 )
 from .utils import get_loadable_targets
 
+EVENT_QUEUE_POLL_INTERVAL = 0.1
+
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
-
-
-def _execute_run(request):
-    try:
-        execute_run_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_execute_run_args
-        )
-        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
-
-        recon_pipeline = recon_pipeline_from_origin(execute_run_args.pipeline_origin)
-
-        instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
-
-        pid = os.getpid()
-
-    except:  # pylint: disable=bare-except
-        yield IPCErrorMessage(
-            serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
-            message='Error during RPC setup for ExecuteRun',
-        )
-        return
-
-    yield instance.report_engine_event(
-        'Started process for pipeline (pid: {pid}).'.format(pid=pid),
-        pipeline_run,
-        EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
-    )
-
-    # This is so nasty but seemingly unavoidable
-    # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
-    closed = False
-    try:
-        for event in _core_execute_run(recon_pipeline, pipeline_run, instance):
-            yield event
-    except GeneratorExit:
-        closed = True
-        raise
-    finally:
-        if not closed:
-            yield instance.report_engine_event(
-                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
-            )
-
-
-def _core_execute_run(recon_pipeline, pipeline_run, instance):
-    try:
-        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
-            yield event
-    except DagsterSubprocessError as err:
-        if not all(
-            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
-        ):
-            yield instance.report_engine_event(
-                'An exception was thrown during execution that is likely a framework error, '
-                'rather than an error in user code.',
-                pipeline_run,
-                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-            )
-            instance.report_run_failed(pipeline_run)
-    except Exception:  # pylint: disable=broad-except
-        yield instance.report_engine_event(
-            'An exception was thrown during execution that is likely a framework error, '
-            'rather than an error in user code.',
-            pipeline_run,
-            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-        )
-        instance.report_run_failed(pipeline_run)
 
 
 class DagsterApiServer(DagsterApiServicer):
@@ -183,6 +120,15 @@ class DagsterApiServer(DagsterApiServicer):
             ]
         else:
             self._loadable_repository_symbols = []
+
+        self._shutdown_server_event = check.inst_param(
+            shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
+        )
+        # Dict[str, multiprocessing.Process] of run_id to execute_run process
+        self._executions = {}
+        # Dict[str, multiprocessing.Event]
+        self._termination_events = {}
+        self._execution_lock = threading.Lock()
 
     def Ping(self, request, _context):
         echo = request.echo
@@ -404,12 +350,75 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ExecuteRun(self, request, _context):
-        for dagster_event_or_ipc_error_message in _execute_run(request):
+        try:
+            execute_run_args = deserialize_json_to_dagster_namedtuple(
+                request.serialized_execute_run_args
+            )
+            check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+
+            run_id = execute_run_args.pipeline_run_id
+
+        except:  # pylint: disable=bare-except
             yield api_pb2.ExecuteRunEvent(
                 serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
-                    dagster_event_or_ipc_error_message
+                    IPCErrorMessage(
+                        serializable_error_info=serializable_error_info_from_exc_info(
+                            sys.exc_info()
+                        ),
+                        message='Error during RPC setup for ExecuteRun',
+                    )
                 )
             )
+            return
+
+        event_queue = multiprocessing.Queue()
+        termination_event = multiprocessing.Event()
+        execution_process = multiprocessing.Process(
+            target=execute_run_in_subprocess, args=[request, event_queue, termination_event]
+        )
+        with self._execution_lock:
+            execution_process.start()
+            self._executions[run_id] = execution_process
+            self._termination_events[run_id] = termination_event
+
+        done = False
+        while not done:
+            try:
+                dagster_event_or_ipc_error_message_or_done = event_queue.get_nowait()
+            except queue.Empty:
+                if not execution_process.is_alive():
+                    # subprocess died unexpectedly
+                    yield api_pb2.ExecuteRunEvent(
+                        serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
+                            IPCErrorMessage(
+                                serializable_error_info=serializable_error_info_from_exc_info(
+                                    sys.exc_info()
+                                ),
+                                message=(
+                                    'GRPC server: Subprocess for {run_id} terminated unexpectedly'
+                                ).format(run_id=run_id),
+                            )
+                        )
+                    )
+                    done = True
+                time.sleep(EVENT_QUEUE_POLL_INTERVAL)
+            else:
+                if isinstance(
+                    dagster_event_or_ipc_error_message_or_done, ExecuteRunInSubprocessComplete
+                ):
+                    done = True
+                else:
+                    yield api_pb2.ExecuteRunEvent(
+                        serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
+                            dagster_event_or_ipc_error_message_or_done
+                        )
+                    )
+
+        with self._execution_lock:
+            if run_id in self._executions:
+                del self._executions[run_id]
+            if run_id in self._termination_events:
+                del self._termination_events[run_id]
 
     def ShutdownServer(self, request, _context):
         try:
@@ -424,6 +433,44 @@ class DagsterApiServer(DagsterApiServicer):
                 serialized_shutdown_server_result=serialize_dagster_namedtuple(
                     ShutdownServerResult(
                         success=False,
+                        serializable_error_info=serializable_error_info_from_exc_info(
+                            sys.exc_info()
+                        ),
+                    )
+                )
+            )
+
+    def CancelExecution(self, request, _context):
+        try:
+            cancel_execution_request = check.inst(
+                deserialize_json_to_dagster_namedtuple(request.serialized_cancel_execution_request),
+                CancelExecutionRequest,
+            )
+            with self._execution_lock:
+                if cancel_execution_request.run_id not in self._executions:
+                    return api_pb2.CancelExecutionReply(
+                        serialized_cancel_execution_result=serialize_dagster_namedtuple(
+                            CancelExecutionResult(
+                                success=False,
+                                message=str(self._executions),
+                                serializable_error_info=None,
+                            )
+                        )
+                    )
+                self._termination_events[cancel_execution_request.run_id].set()
+                return api_pb2.CancelExecutionReply(
+                    serialized_cancel_execution_result=serialize_dagster_namedtuple(
+                        CancelExecutionResult(
+                            success=True, message=None, serializable_error_info=None
+                        )
+                    )
+                )
+        except:  # pylint: disable=bare-except
+            return api_pb2.CancelExecutionReply(
+                serialized_cancel_execution_result=serialize_dagster_namedtuple(
+                    CancelExecutionResult(
+                        success=False,
+                        message=None,
                         serializable_error_info=serializable_error_info_from_exc_info(
                             sys.exc_info()
                         ),
@@ -527,7 +574,9 @@ class DagsterGrpcServer(object):
         print(SERVER_STARTED_TOKEN)  # pylint: disable=print-call
         sys.stdout.flush()
         server_termination_thread = threading.Thread(
-            target=server_termination_target, args=[self._shutdown_server_event, self.server],
+            target=server_termination_target,
+            args=[self._shutdown_server_event, self.server],
+            name='grpc-server-termination',
         )
 
         server_termination_thread.daemon = True
@@ -565,11 +614,10 @@ def wait_for_grpc_server(server_process, timeout=3):
             return True
 
 
-def open_server_process(
-    port, socket, loadable_target_origin=None,
-):
+def open_server_process(port, socket, loadable_target_origin=None, max_workers=1):
     check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
     check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+    check.int_param(max_workers, 'max_workers')
 
     subprocess_args = (
         [
@@ -581,6 +629,7 @@ def open_server_process(
         ]
         + (['-p', str(port)] if port else [])
         + (['-s', socket] if socket else [])
+        + ['-n', str(max_workers)]
     )
 
     if loadable_target_origin:
@@ -615,16 +664,17 @@ def open_server_process(
         return None
 
 
-def open_server_process_on_dynamic_port(
-    max_retries=10, loadable_target_origin=None,
-):
+def open_server_process_on_dynamic_port(max_retries=10, loadable_target_origin=None, max_workers=1):
     server_process = None
     retries = 0
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
             server_process = open_server_process(
-                port=port, socket=None, loadable_target_origin=loadable_target_origin,
+                port=port,
+                socket=None,
+                loadable_target_origin=loadable_target_origin,
+                max_workers=max_workers,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -645,7 +695,9 @@ def cleanup_server_process(server_process, timeout=3):
 
 
 class GrpcServerProcess(object):
-    def __init__(self, loadable_target_origin=None, force_port=False, max_retries=10):
+    def __init__(
+        self, loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
+    ):
         self.port = None
         self.socket = None
         self.server_process = None
@@ -653,16 +705,22 @@ class GrpcServerProcess(object):
         check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
         check.bool_param(force_port, 'force_port')
         check.int_param(max_retries, 'max_retries')
+        check.int_param(max_workers, 'max_workers')
 
         if seven.IS_WINDOWS or force_port:
             self.server_process, self.port = open_server_process_on_dynamic_port(
-                max_retries=max_retries, loadable_target_origin=loadable_target_origin,
+                max_retries=max_retries,
+                loadable_target_origin=loadable_target_origin,
+                max_workers=max_workers,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
 
             self.server_process = open_server_process(
-                port=None, socket=self.socket, loadable_target_origin=loadable_target_origin,
+                port=None,
+                socket=self.socket,
+                loadable_target_origin=loadable_target_origin,
+                max_workers=max_workers,
             )
 
         if self.server_process is None:

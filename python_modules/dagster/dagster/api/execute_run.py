@@ -4,7 +4,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.client import ephemeral_grpc_api_client
 from dagster.grpc.server import ExecuteRunArgs
 from dagster.serdes.ipc import (
     IPCErrorMessage,
@@ -61,7 +60,7 @@ def cli_api_execute_run(output_file, instance, pipeline_origin, pipeline_run):
         return process
 
 
-def cli_api_execute_run_grpc(instance_ref, pipeline_origin, pipeline_run):
+def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
     check.inst_param(instance_ref, 'instance_ref', InstanceRef)
     check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -76,22 +75,36 @@ def cli_api_execute_run_grpc(instance_ref, pipeline_origin, pipeline_run):
         engine_event_data=EngineEventData(marker_start='cli_api_subprocess_init'),
     )
 
-    with ephemeral_grpc_api_client() as api_client:
-        execute_run_args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=pipeline_run.run_id,
-            instance_ref=instance_ref,
-        )
-        for event in api_client.execute_run(execute_run_args=execute_run_args):
-            if isinstance(event, IPCErrorMessage):
-                instance.report_engine_event(
-                    event.message,
-                    pipeline_run=pipeline_run,
-                    engine_event_data=EngineEventData(
-                        marker_end='cli_api_subprocess_init', error=event.serializable_error_info
-                    ),
-                )
-                instance.report_run_failed(pipeline_run)
-                return
+    run_did_fail = False
 
+    execute_run_args = ExecuteRunArgs(
+        pipeline_origin=pipeline_origin,
+        pipeline_run_id=pipeline_run.run_id,
+        instance_ref=instance_ref,
+    )
+    for event in api_client.execute_run(execute_run_args=execute_run_args):
+        if isinstance(event, IPCErrorMessage):
+            yield instance.report_engine_event(
+                event.message,
+                pipeline_run=pipeline_run,
+                engine_event_data=EngineEventData(
+                    marker_end='cli_api_subprocess_init', error=event.serializable_error_info
+                ),
+            )
+            if not run_did_fail:
+                run_did_fail = True
+                yield instance.report_run_failed(pipeline_run)
+        else:
             yield event
+
+
+def sync_execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
+    return [
+        event
+        for event in execute_run_grpc(
+            api_client=api_client,
+            instance_ref=instance_ref,
+            pipeline_origin=pipeline_origin,
+            pipeline_run=pipeline_run,
+        )
+    ]

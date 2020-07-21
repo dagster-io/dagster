@@ -2,8 +2,6 @@ import os
 import time
 from contextlib import contextmanager
 
-import pytest
-
 from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
@@ -186,7 +184,7 @@ def test_crashy_run():
 
         event_records = instance.all_logs(run_id)
 
-        message = 'User process: GRPC server for {run_id} terminated unexpectedly'.format(
+        message = 'GRPC server: Subprocess for {run_id} terminated unexpectedly'.format(
             run_id=run_id
         )
 
@@ -224,19 +222,24 @@ def test_terminated_run():
         terminated_pipeline_run = instance.get_run_by_id(run_id)
         assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
 
-        events = [event.dagster_event.event_type_value for event in instance.all_logs(run_id)]
+        launcher.join()
 
-        # This test tracks the termination behavior of the GRPC ExecuteRun handler. Currently this
-        # is "hard" rather than "soft" -- no STEP_FAILURE event is created.
-        assert events == [
+        run_logs = instance.all_logs(run_id)
+
+        event_types = [event.dagster_event.event_type_value for event in run_logs]
+        assert event_types == [
             'ENGINE_EVENT',
             'ENGINE_EVENT',
             'PIPELINE_START',
             'ENGINE_EVENT',
             'STEP_START',
-            'ENGINE_EVENT',
+            'STEP_FAILURE',
             'PIPELINE_FAILURE',
+            'ENGINE_EVENT',
+            'ENGINE_EVENT',
         ]
+
+        assert run_logs[-2].dagster_event.message == 'Pipeline execution terminated by interrupt'
 
         # psutil.Process appears to think processes are gone before their contention for files
         # is complete

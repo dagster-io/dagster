@@ -15,6 +15,7 @@ service DagsterApi {
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
+  rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
 }
 
 message Empty {}
@@ -110,4 +111,12 @@ message ExecuteRunEvent {
 
 message ShutdownServerReply {
   string serialized_shutdown_server_result = 1;
+}
+
+message CancelExecutionRequest {
+  string serialized_cancel_execution_request = 1;
+}
+
+message CancelExecutionReply {
+  string serialized_cancel_execution_result = 1;
 }

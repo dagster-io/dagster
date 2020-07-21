@@ -15,6 +15,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess
 from .types import (
+    CancelExecutionRequest,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -203,22 +204,29 @@ class DagsterGrpcClient(object):
         try:
             instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
-
-            for event in self._streaming_query(
+            event_iterator = self._streaming_query(
                 'ExecuteRun',
                 api_pb2.ExecuteRunRequest,
                 serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
-            ):
+            )
+        except Exception as exc:  # pylint: disable=bare-except
+            yield instance.report_engine_event(
+                message='Unexpected error in IPC client',
+                pipeline_run=pipeline_run,
+                engine_event_data=EngineEventData.engine_error(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
+            raise exc
+
+        try:
+            for event in event_iterator:
                 yield deserialize_json_to_dagster_namedtuple(
                     event.serialized_dagster_event_or_ipc_error_message
                 )
         except KeyboardInterrupt:
-            self._terminate_server()
-            yield instance.report_engine_event(
-                message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
-            )
-            yield instance.report_run_failed(pipeline_run)
-            return
+            self.cancel_execution(CancelExecutionRequest(run_id=execute_run_args.pipeline_run_id))
+            raise
         except grpc.RpcError as rpc_error:
             if (
                 # posix
@@ -259,6 +267,21 @@ class DagsterGrpcClient(object):
         res = self._query('ShutdownServer', api_pb2.Empty)
         return deserialize_json_to_dagster_namedtuple(res.serialized_shutdown_server_result)
 
+    def cancel_execution(self, cancel_execution_request):
+        check.inst_param(
+            cancel_execution_request, 'cancel_execution_request', CancelExecutionRequest,
+        )
+
+        res = self._query(
+            'CancelExecution',
+            api_pb2.CancelExecutionRequest,
+            serialized_cancel_execution_request=serialize_dagster_namedtuple(
+                cancel_execution_request
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(res.serialized_cancel_execution_result)
+
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     def __init__(
@@ -274,7 +297,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
 
 @contextmanager
 def ephemeral_grpc_api_client(
-    loadable_target_origin=None, force_port=False, max_retries=10,
+    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
 ):
     check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
     check.bool_param(force_port, 'force_port')
@@ -284,6 +307,7 @@ def ephemeral_grpc_api_client(
         loadable_target_origin=loadable_target_origin,
         force_port=force_port,
         max_retries=max_retries,
+        max_workers=max_workers,
     ) as server:
         client = EphemeralDagsterGrpcClient(
             port=server.port, socket=server.socket, server_process=server.server_process

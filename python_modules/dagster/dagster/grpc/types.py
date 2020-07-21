@@ -244,3 +244,26 @@ class ShutdownServerResult(namedtuple('_ShutdownServerResult', 'success serializ
                 serializable_error_info, 'serializable_error_info', SerializableErrorInfo
             ),
         )
+
+
+@whitelist_for_serdes
+class CancelExecutionRequest(namedtuple('_CancelExecutionRequest', 'run_id')):
+    def __new__(cls, run_id):
+        return super(CancelExecutionRequest, cls).__new__(
+            cls, run_id=check.str_param(run_id, 'run_id'),
+        )
+
+
+@whitelist_for_serdes
+class CancelExecutionResult(
+    namedtuple('_CancelExecutionResult', 'success message serializable_error_info')
+):
+    def __new__(cls, success, message, serializable_error_info):
+        return super(CancelExecutionResult, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            message=check.opt_str_param(message, 'message'),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, 'serializable_error_info', SerializableErrorInfo
+            ),
+        )

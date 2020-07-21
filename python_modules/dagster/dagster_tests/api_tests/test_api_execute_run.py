@@ -1,8 +1,9 @@
 import pytest
 
 from dagster import seven
-from dagster.api.execute_run import cli_api_execute_run, cli_api_execute_run_grpc
+from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance
+from dagster.grpc.client import ephemeral_grpc_api_client
 from dagster.serdes.ipc import ipc_read_event_stream
 from dagster.utils import safe_tempfile_path
 
@@ -83,14 +84,16 @@ def test_execute_run_api_grpc(repo_handle):
             execution_plan_snapshot=None,
             parent_pipeline_snapshot=None,
         )
-        events = [
-            event
-            for event in cli_api_execute_run_grpc(
-                instance_ref=instance.get_ref(),
-                pipeline_origin=repo_handle.get_origin(),
-                pipeline_run=pipeline_run,
-            )
-        ]
+        with ephemeral_grpc_api_client() as api_client:
+            events = [
+                event
+                for event in sync_execute_run_grpc(
+                    api_client=api_client,
+                    instance_ref=instance.get_ref(),
+                    pipeline_origin=repo_handle.get_origin(),
+                    pipeline_run=pipeline_run,
+                )
+            ]
 
     assert len(events) == 14
     assert [event.event_type_value for event in events] == [

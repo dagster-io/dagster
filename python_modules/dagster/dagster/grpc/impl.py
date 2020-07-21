@@ -1,5 +1,6 @@
 '''Workhorse functions for individual API requests.'''
 
+import os
 import sys
 
 from dagster import check
@@ -7,10 +8,13 @@ from dagster.core.definitions import ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import (
     DagsterInvalidSubsetError,
+    DagsterSubprocessError,
     PartitionExecutionError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
+from dagster.core.events import EngineEventData
+from dagster.core.execution.api import execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
@@ -22,11 +26,110 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExternalScheduleExecutionArgs, PartitionArgs, PartitionNamesArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes.ipc import IPCErrorMessage
+from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_repository_from_origin
+from dagster.utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    recon_repository_from_origin,
+)
 
-from .types import ExternalScheduleExecutionArgs
+from .types import ExecuteRunArgs, ExternalScheduleExecutionArgs
+
+
+class ExecuteRunInSubprocessComplete:
+    pass
+
+
+def _core_execute_run(recon_pipeline, pipeline_run, instance):
+    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    try:
+        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
+            yield event
+    except DagsterSubprocessError as err:
+        if not all(
+            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
+        ):
+            yield instance.report_engine_event(
+                'An exception was thrown during execution that is likely a framework error, '
+                'rather than an error in user code.',
+                pipeline_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+            instance.report_run_failed(pipeline_run)
+    except Exception:  # pylint: disable=broad-except
+        yield instance.report_engine_event(
+            'An exception was thrown during execution that is likely a framework error, '
+            'rather than an error in user code.',
+            pipeline_run,
+            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+        )
+        instance.report_run_failed(pipeline_run)
+
+
+def execute_run_in_subprocess(request, event_queue, termination_event):
+    start_termination_thread(termination_event)
+    try:
+        execute_run_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_execute_run_args
+        )
+        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+
+        recon_pipeline = recon_pipeline_from_origin(execute_run_args.pipeline_origin)
+
+        instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
+        pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+
+        pid = os.getpid()
+
+    except:  # pylint: disable=bare-except
+        event_queue.put(
+            IPCErrorMessage(
+                serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+                message='Error during RPC setup for ExecuteRun',
+            )
+        )
+        event_queue.put(ExecuteRunInSubprocessComplete())
+        return
+
+    event_queue.put(
+        instance.report_engine_event(
+            'Started process for pipeline (pid: {pid}).'.format(pid=pid),
+            pipeline_run,
+            EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+        )
+    )
+
+    # This is so nasty but seemingly unavoidable
+    # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
+    closed = False
+    try:
+        for event in _core_execute_run(recon_pipeline, pipeline_run, instance):
+            event_queue.put(event)
+    except KeyboardInterrupt:
+        event_queue.put(
+            instance.report_engine_event(
+                message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
+            )
+        )
+        raise
+    except GeneratorExit:
+        closed = True
+        raise
+    finally:
+        if not closed:
+            event_queue.put(
+                instance.report_engine_event(
+                    'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+                )
+            )
+        event_queue.put(ExecuteRunInSubprocessComplete())
 
 
 def get_external_pipeline_subset_result(recon_pipeline, solid_selection):

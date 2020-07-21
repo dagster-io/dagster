@@ -928,6 +928,11 @@ class DagsterInstance:
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         message = "This pipeline run has been marked as failed from outside the execution context"
 
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            pipeline_name=pipeline_run.pipeline_name,
+            message=message,
+        )
         event_record = DagsterEventRecord(
             message=message,
             user_message=message,
@@ -936,13 +941,10 @@ class DagsterInstance:
             run_id=pipeline_run.run_id,
             error_info=None,
             timestamp=time.time(),
-            dagster_event=DagsterEvent(
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                pipeline_name=pipeline_run.pipeline_name,
-                message=message,
-            ),
+            dagster_event=dagster_event,
         )
         self.handle_new_event(event_record)
+        return dagster_event
 
     # directories
 

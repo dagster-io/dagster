@@ -33,6 +33,22 @@ from dagster.utils import file_relative_path, safe_tempfile_path
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 
 
+def poll_for_run(instance, run_id, timeout=5):
+    total_time = 0
+    backoff = 0.01
+
+    while True:
+        run = instance.get_run_by_id(run_id)
+        if run.is_finished:
+            return run
+        else:
+            time.sleep(backoff)
+            total_time += backoff
+            backoff = backoff * 2
+            if total_time > timeout:
+                raise Exception('Timed out')
+
+
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
@@ -253,7 +269,7 @@ def test_execution_crash():
         ]  # last message is pipeline failure, second to last is...
 
         assert crash_log.message.startswith(
-            'User process: GRPC server for {run_id} terminated unexpectedly'.format(
+            'GRPC server: Subprocess for {run_id} terminated unexpectedly'.format(
                 run_id=pipeline_run.run_id
             )
         )
@@ -361,6 +377,9 @@ def test_has_run_query_and_terminate():
 
             assert run_launcher.can_terminate(pipeline_run.run_id)
             assert run_launcher.terminate(pipeline_run.run_id)
+
+            poll_for_run(instance, pipeline_run.run_id)
+
             assert instance.get_run_by_id(pipeline_run.run_id).is_finished
             assert not run_launcher.can_terminate(pipeline_run.run_id)
             assert not run_launcher.terminate(pipeline_run.run_id)

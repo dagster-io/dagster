@@ -1,20 +1,49 @@
-import sys
+import multiprocessing
 import threading
 import time
 import weakref
 
 from dagster import check
+from dagster.api.execute_run import sync_execute_run_grpc
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
+from dagster.core.instance.ref import InstanceRef
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster.seven import json
-from dagster.utils import file_relative_path
+from dagster.grpc.client import ephemeral_grpc_api_client
+from dagster.grpc.types import CancelExecutionRequest
+from dagster.serdes import ConfigurableClass
 
 from .base import RunLauncher
 
 SUBPROCESS_TICK = 0.5
+
+
+def _launched_run_client(instance_ref, pipeline_origin, pipeline_run_id, cancellation_event):
+    check.inst_param(instance_ref, 'instance_ref', InstanceRef)
+    check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
+    check.str_param(pipeline_run_id, 'pipeline_run_id')
+    check.inst_param(cancellation_event, 'cancellation_event', multiprocessing.synchronize.Event)
+    instance = DagsterInstance.from_ref(instance_ref)
+    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+
+    with ephemeral_grpc_api_client(max_workers=2) as api_client:
+        execute_run_thread = threading.Thread(
+            target=sync_execute_run_grpc,
+            kwargs={
+                'api_client': api_client,
+                'instance_ref': instance_ref,
+                'pipeline_origin': pipeline_origin,
+                'pipeline_run': pipeline_run,
+            },
+        )
+
+        execute_run_thread.start()
+        while execute_run_thread.is_alive():
+            if cancellation_event.is_set():
+                api_client.cancel_execution(CancelExecutionRequest(run_id=pipeline_run_id))
+                execute_run_thread.join()
+            time.sleep(SUBPROCESS_TICK)
 
 
 class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
@@ -24,7 +53,7 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     Instead, for each call to launch_run, a new process is created that uses a wrapper around the
     ephemeral_grpc_api_client machinery to spin up a GRPC server. A streaming query is performed
-    by the client process, and then the client process hard terminates the server and itself exits.
+    by the client process, and then the client process terminates the server and itself exits.
     If there are N launched runs, 2N processes are created.
 
     This is a drop-in replacement for the CliApiRunLauncher
@@ -32,11 +61,13 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(self, inst_data=None):
         self._instance_ref = None
+        # Dict[str, multiprocessing.Process]
         self._living_process_by_run_id = {}
-        self._output_files_by_run_id = {}
+        # Dict[str, multiprocessing.Process]
+        self._cancellation_events_by_run_id = {}
         self._processes_lock = threading.Lock()
         self._stopping = False
-        self._thread = None
+        self._clock_thread = None
         self._inst_data = inst_data
 
     @property
@@ -61,9 +92,11 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_ref = weakref.ref(instance)
 
-        self._thread = threading.Thread(target=self._clock, args=())
-        self._thread.daemon = True
-        self._thread.start()
+        self._clock_thread = threading.Thread(
+            target=self._clock, args=(), name='grpc-run-launcher-clock'
+        )
+        self._clock_thread.daemon = True
+        self._clock_thread.start()
 
     def _generate_synthetic_error_from_crash(self, run):
         message = 'User process: GRPC client for {run_id} unexpectedly exited.'.format(
@@ -98,7 +131,7 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
         living_process_snapshot = self._living_process_snapshot()
 
         for run_id, process in living_process_snapshot.items():
-            if not process.poll() is None:
+            if not process.is_alive:
                 run = self._instance.get_run_by_id(run_id)
                 if not run:  # defensive
                     continue
@@ -118,7 +151,10 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     # always call this within lock
     def _delete_process(self, run_id):
-        del self._living_process_by_run_id[run_id]
+        if run_id in self._living_process_by_run_id:
+            del self._living_process_by_run_id[run_id]
+        if run_id in self._cancellation_events_by_run_id:
+            del self._cancellation_events_by_run_id[run_id]
 
     def launch_run(self, instance, run, external_pipeline):
         '''Subclasses must implement this method.'''
@@ -126,28 +162,22 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, 'run', PipelineRun)
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
-        # We use the IPC subprocess machinery here because we want to be able to interrupt this
-        # process. We could use multiprocessing and a thread to poll a shared multiprocessing.Event,
-        # interrupting when the event is set, but in this case that's six of one, half a dozen of
-        # the other.
-        process = open_ipc_subprocess(
-            [
-                sys.executable,
-                file_relative_path(__file__, 'sync_cli_api_execute_run.py'),
-                json.dumps(
-                    {
-                        'instance_ref': serialize_dagster_namedtuple(self._instance.get_ref()),
-                        'pipeline_origin': serialize_dagster_namedtuple(
-                            external_pipeline.get_origin()
-                        ),
-                        'pipeline_run_id': run.run_id,
-                    }
-                ),
-            ]
+        cancellation_event = multiprocessing.Event()
+        process = multiprocessing.Process(
+            target=_launched_run_client,
+            kwargs={
+                'instance_ref': self._instance.get_ref(),
+                'pipeline_origin': external_pipeline.get_origin(),
+                'pipeline_run_id': run.run_id,
+                'cancellation_event': cancellation_event,
+            },
         )
 
         with self._processes_lock:
             self._living_process_by_run_id[run.run_id] = process
+            self._cancellation_events_by_run_id[run.run_id] = cancellation_event
+
+        process.start()
 
         return run
 
@@ -158,13 +188,13 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
         # Stop the watcher tread
         self._stopping = True
-        self._thread.join()
+        self._clock_thread.join()
 
         # Wrap up all open executions
         with self._processes_lock:
             for run_id, process in self._living_process_by_run_id.items():
-                if process.poll() is None:
-                    process.wait()
+                if process.is_alive():
+                    process.join()
 
                 run = self._instance.get_run_by_id(run_id)
 
@@ -173,25 +203,28 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     def _get_process(self, run_id):
         if not self._instance:
-            return None
+            return (None, None)
 
         with self._processes_lock:
-            return self._living_process_by_run_id.get(run_id)
+            return (
+                self._living_process_by_run_id.get(run_id),
+                self._cancellation_events_by_run_id.get(run_id),
+            )
 
     def is_process_running(self, run_id):
         check.str_param(run_id, 'run_id')
-        process = self._get_process(run_id)
-        return process.poll() is None if process else False
+        process, _ = self._get_process(run_id)
+        return process.is_alive() if process else False
 
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        process = self._get_process(run_id)
+        process, cancellation_event = self._get_process(run_id)
 
-        if not process:
+        if not process or not cancellation_event:
             return False
 
-        if not process.poll() is None:
+        if not process.is_alive() or cancellation_event.is_set():
             return False
 
         return True
@@ -199,18 +232,17 @@ class EphemeralGrpcRunLauncher(RunLauncher, ConfigurableClass):
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        process = self._get_process(run_id)
+        process, cancellation_event = self._get_process(run_id)
 
-        if not process:
+        if not process or not cancellation_event:
             return False
 
-        if not process.poll() is None:
+        if not process.is_alive() or cancellation_event.is_set():
             return False
 
-        # Pipeline execution machinery is set up to gracefully
-        # terminate and report to instance on KeyboardInterrupt
-        interrupt_ipc_subprocess(process)
-        process.wait()
+        with self._processes_lock:
+            self._cancellation_events_by_run_id[run_id].set()
+
         return True
 
     def get_active_run_count(self):

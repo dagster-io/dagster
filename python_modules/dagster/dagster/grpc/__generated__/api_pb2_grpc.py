@@ -82,6 +82,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExecuteRunRequest.SerializeToString,
             response_deserializer=api__pb2.ExecuteRunEvent.FromString,
         )
+        self.CancelExecution = channel.unary_unary(
+            '/api.DagsterApi/CancelExecution',
+            request_serializer=api__pb2.CancelExecutionRequest.SerializeToString,
+            response_deserializer=api__pb2.CancelExecutionReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -159,6 +164,12 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CancelExecution(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -221,6 +232,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExecuteRun,
             request_deserializer=api__pb2.ExecuteRunRequest.FromString,
             response_serializer=api__pb2.ExecuteRunEvent.SerializeToString,
+        ),
+        'CancelExecution': grpc.unary_unary_rpc_method_handler(
+            servicer.CancelExecution,
+            request_deserializer=api__pb2.CancelExecutionRequest.FromString,
+            response_serializer=api__pb2.CancelExecutionReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
@@ -546,6 +562,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExecuteRun',
             api__pb2.ExecuteRunRequest.SerializeToString,
             api__pb2.ExecuteRunEvent.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def CancelExecution(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/CancelExecution',
+            api__pb2.CancelExecutionRequest.SerializeToString,
+            api__pb2.CancelExecutionReply.FromString,
             options,
             channel_credentials,
             call_credentials,

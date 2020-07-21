@@ -361,8 +361,9 @@ def _schedule_tick_state(instance, tick_data):
 @click.option('--port', '-p', type=click.INT, required=False)
 @click.option('--socket', '-s', type=click.Path(), required=False)
 @click.option('--host', '-h', type=click.STRING, required=False, default='localhost')
+@click.option('--max_workers', '-n', type=click.INT, required=False, default=1)
 @origin_target_argument
-def grpc_command(port=None, socket=None, host='localhost', **kwargs):
+def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwargs):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             'You must pass a valid --port/-p on Windows: --socket/-f not supported.'
@@ -381,7 +382,11 @@ def grpc_command(port=None, socket=None, host='localhost', **kwargs):
         )
 
     server = DagsterGrpcServer(
-        port=port, socket=socket, host=host, loadable_target_origin=loadable_target_origin
+        port=port,
+        socket=socket,
+        host=host,
+        loadable_target_origin=loadable_target_origin,
+        max_workers=max_workers,
     )
 
     server.serve()
