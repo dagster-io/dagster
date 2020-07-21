@@ -20,6 +20,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
@@ -454,6 +455,23 @@ def test_stacked_resource_cleanup():
     execute_pipeline(pipeline)
 
     assert called == ['creation_1', 'creation_2', 'solid', 'cleanup_2', 'cleanup_1']
+
+
+def test_incorrect_resource_init_error():
+    try:
+
+        @resource
+        def _correct_resource(_):
+            pass
+
+    except DagsterInvalidDefinitionError:
+        pytest.fail('Correct resource definition threw a DagsterInvalidDefinitionError...')
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @resource
+        def _incorrect_resource():
+            pass
 
 
 def test_resource_init_failure():

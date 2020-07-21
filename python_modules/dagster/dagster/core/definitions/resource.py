@@ -6,8 +6,10 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.config.validate import process_config
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import IConfigMappable
-from dagster.core.errors import DagsterUnknownResourceError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+
+from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
 
 class ResourceDefinition(IConfigMappable):
@@ -41,6 +43,19 @@ class ResourceDefinition(IConfigMappable):
         config=None,
         process_config_fn=None,
     ):
+        EXPECTED_POSITIONALS = ['*']
+        fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
+        missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
+
+        if missing_positional:
+            raise DagsterInvalidDefinitionError(
+                "@resource '{resource_name}' decorated function does not have required "
+                "positional parameter '{missing_param}'. Resource functions should only have keyword "
+                "arguments that match input names and a first positional parameter.".format(
+                    resource_name=resource_fn.__name__, missing_param=missing_positional
+                )
+            )
+
         self._resource_fn = check.opt_callable_param(resource_fn, 'resource_fn')
         self._config_schema = canonicalize_backcompat_args(
             check_user_facing_opt_config_param(config_schema, 'config_schema'),
