@@ -2,7 +2,7 @@ import boto3
 from botocore.handlers import disable_signing
 
 from dagster import Field, StringSource, resource
-from dagster.utils.merger import deep_merge_dicts
+from dagster.utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
 
@@ -92,7 +92,7 @@ def s3_resource(context):
 
 
 @resource(
-    deep_merge_dicts(
+    merge_dicts(
         S3_SESSION_CONFIG,
         {
             's3_bucket': Field(StringSource),

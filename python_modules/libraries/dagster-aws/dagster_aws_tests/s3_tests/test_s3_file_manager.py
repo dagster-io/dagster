@@ -2,7 +2,12 @@ import os
 import uuid
 
 import boto3
-from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_plus_default_storage_defs
+from dagster_aws.s3 import (
+    S3FileHandle,
+    S3FileManager,
+    s3_file_manager,
+    s3_plus_default_storage_defs,
+)
 from moto import mock_s3
 
 from dagster import (
@@ -11,6 +16,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
+    configured,
     execute_pipeline,
     pipeline,
     solid,
@@ -184,3 +190,52 @@ def test_depends_on_s3_resource_file_manager():
     assert '/'.join(comps[:-1]) == 'dagster/storage/{run_id}/files'.format(run_id=result.run_id)
 
     assert uuid.UUID(comps[-1])
+
+
+@mock.patch('boto3.resource')
+@mock.patch('dagster_aws.s3.resources.S3FileManager')
+def test_s3_file_manger_resource(MockS3FileManager, mock_boto3_resource):
+    did_it_run = dict(it_ran=False)
+
+    resource_config = {
+        'use_unsigned_session': True,
+        'region_name': 'us-west-1',
+        'endpoint_url': 'http://alternate-s3-host.io',
+        's3_bucket': 'some-bucket',
+        's3_prefix': 'some-prefix',
+    }
+
+    mock_s3_session = mock_boto3_resource.return_value.meta.client
+
+    @solid(required_resource_keys={'file_manager'})
+    def test_solid(context):
+        # test that we got back a S3FileManager
+        assert context.resources.file_manager == MockS3FileManager.return_value
+
+        # make sure the file manager was initalized with the config we are supplying
+        MockS3FileManager.assert_called_once_with(
+            s3_session=mock_s3_session,
+            s3_bucket=resource_config['s3_bucket'],
+            s3_base_key=resource_config['s3_prefix'],
+        )
+        mock_boto3_resource.assert_called_once_with(
+            's3',
+            region_name=resource_config['region_name'],
+            endpoint_url=resource_config['endpoint_url'],
+            use_ssl=True,
+        )
+
+        did_it_run['it_ran'] = True
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={'file_manager': configured(s3_file_manager)(resource_config)},
+            )
+        ]
+    )
+    def test_pipeline():
+        test_solid()
+
+    execute_pipeline(test_pipeline)
+    assert did_it_run['it_ran']
