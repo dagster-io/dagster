@@ -1,0 +1,45 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags title="Intro | Dagster" />
+
+<p align="center">
+<img
+    className="w-1/2 sm:w-1/3 md:w-1/5 h-auto text-center h-full"
+    src="https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png"
+/>
+</p>
+
+<p align="center" className="mt-6 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-8 md:text-xl md:max-w-2xl">
+A data orchestrator for machine learning, analytics, and ETL
+</p>
+
+```python literalinclude
+file:/docs_snippets/docs_snippets/introduction/intro.py
+lines:15-35
+```
+
+```bash
+> dagster pipeline execute -c local_development.yaml sugariest_pipeline
+```
+
+## Dagit
+
+Dagster comes with a rich UI for viewing and executing data pipelines.
+
+### Visualize pipeline topology, with data types
+
+<p align="center">
+  <img src="/assets/images/intro/dag-with-descrip.png" width="50%" height="50%"/>
+</p>
+
+### Execute pipelines and digest what happened as structured logs
+
+<p align="center">
+  <img src="/assets/images/intro/execution-log.png" width="75%" height="75%"/>
+</p>
+
+### Manage a history of past runs
+
+<p align="center">
+  <img src="/assets/images/intro/runs.png"/>
+</p>

@@ -19,22 +19,12 @@ def sugar_by_volume(_, cereals: DataFrame) -> DataFrame:
     return df
 
 
-@solid(
-    description='Finds the sugar-per-cup cutoff that separates the top quartile of cereals from the rest.'
-)
+@solid(description='Finds the sugar-per-cup cutoff for the top quartile of cereals.')
 def top_quartile_cutoff(_, cereals: DataFrame) -> float:
     return cereals['sugar_per_cup'].quantile(0.75)
 
 
-@solid(
-    description='''
-    Selects cereals whose sugar-per-cup exceeds the given cutoff.
-
-    Inputs:
-    - **cereals** - A DataFrame of cereal names with sugar per cup.
-    - **cutoff** - The sugar-per-cup cutoff for inclusion.
-'''
-)
+@solid(description='Selects cereals whose sugar-per-cup exceeds the given cutoff.')
 def sugariest_cereals(_, cereals: DataFrame, cutoff: float) -> DataFrame:
     return cereals[cereals['sugar_per_cup'] > cutoff]
 
