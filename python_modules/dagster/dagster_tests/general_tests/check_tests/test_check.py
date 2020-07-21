@@ -109,19 +109,6 @@ def test_set_param():
         check.set_param({'foo'}, 'set_param', of_type=int)
 
 
-def test_is_list():
-    assert check.is_list([]) == []
-
-    with pytest.raises(CheckError):
-        check.is_list(None)
-
-    with pytest.raises(CheckError):
-        check.is_list('3u4')
-
-    with pytest.raises(CheckError, match='Did you pass a class'):
-        check.is_list([str], of_type=int)
-
-
 def test_typed_list_param():
     class Foo(object):
         pass
@@ -138,6 +125,37 @@ def test_typed_list_param():
 
     with pytest.raises(CheckError):
         check.list_param([None], 'list_param', Foo)
+
+
+def test_is_tuple():
+    assert check.is_tuple(()) == ()
+
+    with pytest.raises(CheckError):
+        check.is_tuple(None)
+
+    with pytest.raises(CheckError):
+        check.is_tuple('3u4')
+
+    with pytest.raises(CheckError, match='Did you pass a class'):
+        check.is_tuple((str,), of_type=int)
+
+
+def test_typed_is_tuple():
+    class Foo(object):
+        pass
+
+    class Bar(object):
+        pass
+
+    assert check.is_tuple((), Foo) == ()
+    foo_tuple = (Foo(),)
+    assert check.is_tuple(foo_tuple, Foo) == foo_tuple
+
+    with pytest.raises(CheckError):
+        check.is_tuple((Bar(),), Foo)
+
+    with pytest.raises(CheckError):
+        check.is_tuple((None,), Foo)
 
 
 def test_typed_is_list():

@@ -294,6 +294,16 @@ def is_list(obj_list, of_type=None, desc=None):
     return _check_list_items(obj_list, of_type)
 
 
+def is_tuple(obj_tuple, of_type=None, desc=None):
+    if not isinstance(obj_tuple, tuple):
+        raise_with_traceback(_type_mismatch_error(obj_tuple, tuple, desc))
+
+    if not of_type:
+        return obj_tuple
+
+    return _check_tuple_items(obj_tuple, of_type)
+
+
 def list_param(obj_list, param_name, of_type=None):
     from dagster.utils import frozenlist
 
