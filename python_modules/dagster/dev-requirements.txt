@@ -1,3 +1,4 @@
+astroid>=2.3.3; python_version >= '3.6'
 black==19.10b0; python_version >= '3.6'
 coverage==4.5.4 # 5.0 release on 12/19 broke everything
 flake8>=3.7.8
