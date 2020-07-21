@@ -2,8 +2,8 @@ from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
     ExternalRepositoryData,
-    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
+    RepositoryLocationHandle,
 )
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.grpc.client import ephemeral_grpc_api_client
@@ -14,7 +14,7 @@ from .utils import execute_unary_api_cli_command
 
 def sync_get_external_repositories(repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', PythonEnvRepositoryLocationHandle,
+        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle,
     )
 
     repos = []
@@ -54,7 +54,7 @@ def sync_get_external_repositories_ephemeral_grpc(repository_location_handle):
 
 def sync_get_external_repositories_grpc(api_client, repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', PythonEnvRepositoryLocationHandle,
+        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
     )
 
     repos = []

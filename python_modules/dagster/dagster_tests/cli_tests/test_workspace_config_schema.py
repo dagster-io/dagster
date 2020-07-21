@@ -207,3 +207,38 @@ def test_load_python_environment_with_invalid_opt_in():
         validation_result = _validate_yaml_contents(invalid_yaml)
 
         assert not validation_result.success
+
+
+def test_load_from_grpc_server():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        valid_yaml = '''
+    load_from:
+        - grpc_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+    '''
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success
+
+
+def test_load_python_environment_and_grpc_server():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        valid_yaml = '''
+    load_from:
+        - grpc_server:
+            host: remotehost
+            port: 4266
+            location_name: 'my_grpc_server'
+        - python_environment:
+            executable_path:
+                env: TEST_EXECUTABLE_PATH
+            target:
+                python_file: file_valid_in_that_env.py
+    '''
+
+        validation_result = _validate_yaml_contents(valid_yaml)
+
+        assert validation_result.success

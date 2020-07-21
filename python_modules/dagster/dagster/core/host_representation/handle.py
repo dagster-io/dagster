@@ -3,6 +3,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
@@ -68,6 +69,39 @@ class RepositoryLocationHandle:
             api=api,
         )
 
+    @staticmethod
+    def create_grpc_server_location(location_name, port, socket, host):
+        from dagster.grpc.client import DagsterGrpcClient
+
+        check.str_param(location_name, 'location_name')
+        check.opt_int_param(port, 'port')
+        check.opt_str_param(socket, 'socket')
+        check.str_param(host, 'host')
+
+        client = DagsterGrpcClient(port=port, socket=socket, host=host)
+
+        list_repositories_response = sync_list_repositories_grpc(client)
+
+        return GrpcServerRepositoryLocationHandle(
+            port=port,
+            socket=socket,
+            host=host,
+            location_name=location_name,
+            client=client,
+            executable_path=list_repositories_response.executable_path,
+            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
+        )
+
+
+class GrpcServerRepositoryLocationHandle(
+    namedtuple(
+        '_GrpcServerRepositoryLocationHandle',
+        'port socket host location_name client executable_path repository_code_pointer_dict',
+    ),
+    RepositoryLocationHandle,
+):
+    pass
+
 
 class PythonEnvRepositoryLocationHandle(
     namedtuple(
@@ -121,6 +155,14 @@ class RepositoryHandle(
                 executable_path=sys.executable,
             )
         elif isinstance(self.repository_location_handle, PythonEnvRepositoryLocationHandle):
+            return RepositoryPythonOrigin(
+                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
+                    self.repository_key
+                ],
+                executable_path=self.repository_location_handle.executable_path,
+            )
+        elif isinstance(self.repository_location_handle, GrpcServerRepositoryLocationHandle):
+            # This should be a different type of origin eventually
             return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
                     self.repository_key

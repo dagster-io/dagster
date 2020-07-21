@@ -67,6 +67,12 @@ WORKSPACE_CONFIG_SCHEMA = {
                             'executable_path': StringSource,
                             'target': Selector(_get_target_config()),
                         },
+                        'grpc_server': {
+                            'host': Field(str, is_required=False),
+                            'socket': Field(str, is_required=False),
+                            'port': Field(int, is_required=False),
+                            'location_name': Field(str, is_required=False),
+                        },
                     },
                 )
             )

@@ -299,6 +299,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             '-sqlite_instance_out_of_process_env',
             '-sqlite_instance_multi_location',
             '-sqlite_instance_grpc_env',
+            '-sqlite_instance_external_grpc_server_env',
         ],
     ),
     ModuleBuildSpec(

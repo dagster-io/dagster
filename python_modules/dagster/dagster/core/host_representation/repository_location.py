@@ -3,27 +3,35 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
+from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config,
     sync_get_external_partition_config_ephemeral_grpc,
+    sync_get_external_partition_config_grpc,
     sync_get_external_partition_names,
     sync_get_external_partition_names_ephemeral_grpc,
+    sync_get_external_partition_names_grpc,
     sync_get_external_partition_tags,
     sync_get_external_partition_tags_ephemeral_grpc,
+    sync_get_external_partition_tags_grpc,
 )
+from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import (
     sync_get_external_repositories,
     sync_get_external_repositories_ephemeral_grpc,
+    sync_get_external_repositories_grpc,
 )
 from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,
     sync_get_external_schedule_execution_data_ephemeral_grpc,
+    sync_get_external_schedule_execution_data_grpc,
 )
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
+    GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
     PipelineHandle,
     PythonEnvRepositoryLocationHandle,
@@ -150,6 +158,8 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
             return InProcessRepositoryLocation(ReconstructableRepository(pointer))
         elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
             return PythonEnvRepositoryLocation(repository_location_handle)
+        elif isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
+            return GrpcServerRepositoryLocation(repository_location_handle)
         else:
             check.failed('Unsupported handle: {}'.format(repository_location_handle))
 
@@ -319,6 +329,129 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return get_external_schedule_execution(args)
 
 
+class GrpcServerRepositoryLocation(RepositoryLocation):
+    def __init__(self, repository_location_handle):
+        self._handle = check.inst_param(
+            repository_location_handle,
+            'repository_location_handle',
+            GrpcServerRepositoryLocationHandle,
+        )
+
+        external_repositories_list = sync_get_external_repositories_grpc(
+            self._handle.client, self._handle,
+        )
+
+        self.external_repositories = {repo.name: repo for repo in external_repositories_list}
+
+    def create_reloaded_repository_location(self):
+        return GrpcServerRepositoryLocation(self._handle)
+
+    @property
+    def is_reload_supported(self):
+        return True
+
+    def get_repository(self, name):
+        check.str_param(name, 'name')
+        return self.external_repositories[name]
+
+    def has_repository(self, name):
+        return name in self.external_repositories
+
+    def get_repositories(self):
+        return self.external_repositories
+
+    @property
+    def name(self):
+        return self._handle.location_name
+
+    @property
+    def location_handle(self):
+        return self._handle
+
+    def get_external_execution_plan(
+        self, external_pipeline, run_config, mode, step_keys_to_execute
+    ):
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.dict_param(run_config, 'run_config')
+        check.str_param(mode, 'mode')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+        execution_plan_snapshot = sync_get_external_execution_plan_grpc(
+            api_client=self._handle.client,
+            pipeline_origin=external_pipeline.get_origin(),
+            run_config=run_config,
+            mode=mode,
+            pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            solid_selection=external_pipeline.solid_selection,
+            step_keys_to_execute=step_keys_to_execute,
+        )
+
+        return ExternalExecutionPlan(
+            execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=external_pipeline,
+        )
+
+    def execute_plan(
+        self,
+        instance,
+        external_pipeline,
+        run_config,
+        pipeline_run,
+        step_keys_to_execute,
+        retries=None,
+    ):
+        raise NotImplementedError('execute_plan is not implemented for grpc servers')
+
+    def get_subset_external_pipeline_result(self, selector):
+        check.inst_param(selector, 'selector', PipelineSelector)
+        check.invariant(
+            selector.location_name == self.name,
+            'PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}'.format(
+                self=self, selector=selector
+            ),
+        )
+
+        external_repository = self.external_repositories[selector.repository_name]
+        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
+        return sync_get_external_pipeline_subset_grpc(
+            self._handle.client, pipeline_handle.get_origin(), selector.solid_selection
+        )
+
+    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        return sync_get_external_partition_config_grpc(
+            self._handle.client, repository_handle, partition_set_name, partition_name
+        )
+
+    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_name, 'partition_name')
+
+        return sync_get_external_partition_tags_grpc(
+            self._handle.client, repository_handle, partition_set_name, partition_name
+        )
+
+    def get_external_partition_names(self, repository_handle, partition_set_name):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+
+        return sync_get_external_partition_names_grpc(
+            self._handle.client, repository_handle, partition_set_name
+        )
+
+    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(schedule_name, 'schedule_name')
+
+        return sync_get_external_schedule_execution_data_grpc(
+            self._handle.client, instance, repository_handle, schedule_name
+        )
+
+
 class PythonEnvRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
         self._handle = check.inst_param(
@@ -444,9 +577,6 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
                 'environment with the exact same executable and when there is only a single '
                 'repository.'
             )
-
-    def execute_pipeline(self, instance, external_pipeline, pipeline_run):
-        raise NotImplementedError()
 
     def get_subset_external_pipeline_result(self, selector):
         from dagster.api.snapshot_pipeline import (

@@ -9,6 +9,7 @@ from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 from dagster import check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
+    GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
     RepositoryLocationApi,
@@ -24,6 +25,8 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
+from dagster.grpc.server import ephemeral_grpc_server
+from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 
@@ -365,6 +368,31 @@ class EnvironmentManagers:
         return MarkedManager(_mgr_fn, [Marks.grpc_env])
 
     @staticmethod
+    def external_grpc_server():
+        @contextmanager
+        def _mgr_fn(recon_repo):
+            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+
+            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
+                recon_repo.get_origin()
+            )
+
+            with ephemeral_grpc_server(loadable_target_origin=loadable_target_origin) as (
+                _,
+                port,
+                socket,
+            ):
+                yield [
+                    GrpcServerRepositoryLocation(
+                        RepositoryLocationHandle.create_grpc_server_location(
+                            location_name='test', port=port, socket=socket, host='localhost',
+                        )
+                    )
+                ]
+
+        return MarkedManager(_mgr_fn, [Marks.external_grpc_server_env])
+
+    @staticmethod
     def multi_location():
         @contextmanager
         def _mgr_fn(recon_repo):
@@ -415,6 +443,7 @@ class Marks:
     out_of_process_env = pytest.mark.out_of_process_env
     multi_location = pytest.mark.multi_location
     grpc_env = pytest.mark.grpc_env
+    external_grpc_server_env = pytest.mark.external_grpc_server_env
 
     # Asset-aware sqlite variants
     asset_aware_instance = pytest.mark.asset_aware_instance
@@ -593,6 +622,14 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def readonly_sqlite_instance_external_grpc_server():
+        return GraphQLContextVariant(
+            InstanceManagers.readonly_sqlite_instance(),
+            EnvironmentManagers.external_grpc_server(),
+            test_id='readonly_sqlite_instance_external_grpc_server',
+        )
+
+    @staticmethod
     def readonly_postgres_instance_in_process_env():
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
@@ -688,6 +725,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.readonly_sqlite_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_sqlite_instance_multi_location(),
             GraphQLContextVariant.readonly_sqlite_instance_grpc(),
+            GraphQLContextVariant.readonly_sqlite_instance_external_grpc_server(),
             GraphQLContextVariant.readonly_postgres_instance_in_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_postgres_instance_multi_location(),

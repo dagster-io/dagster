@@ -1,7 +1,14 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.code_pointer import CodePointer
+from dagster.core.code_pointer import (
+    CodePointer,
+    FileCodePointer,
+    FileInDirectoryCodePointer,
+    ModuleCodePointer,
+    PackageCodePointer,
+)
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
@@ -30,6 +37,45 @@ class LoadableTargetOrigin(
             working_directory=check.opt_str_param(working_directory, 'working_directory'),
             attribute=check.opt_str_param(attribute, 'attribute'),
         )
+
+    @staticmethod
+    def from_python_origin(repository_python_origin):
+        check.inst_param(
+            repository_python_origin, 'repository_python_origin', RepositoryPythonOrigin
+        )
+        executable_path = repository_python_origin.executable_path
+        code_pointer = repository_python_origin.code_pointer
+        if isinstance(code_pointer, FileCodePointer):
+            return LoadableTargetOrigin(
+                executable_path=executable_path,
+                python_file=code_pointer.python_file,
+                attribute=code_pointer.fn_name,
+            )
+        elif isinstance(code_pointer, FileInDirectoryCodePointer):
+            return LoadableTargetOrigin(
+                executable_path=executable_path,
+                python_file=code_pointer.python_file,
+                attribute=code_pointer.fn_name,
+                working_directory=code_pointer.working_directory,
+            )
+        elif isinstance(code_pointer, ModuleCodePointer):
+            return LoadableTargetOrigin(
+                executable_path=executable_path,
+                module_name=code_pointer.module,
+                attribute=code_pointer.fn_name,
+            )
+        elif isinstance(code_pointer, PackageCodePointer):
+            return LoadableTargetOrigin(
+                executable_path=executable_path,
+                module_name=code_pointer.module,
+                attribute=code_pointer.attribute,
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                "Unexpected code pointer {code_pointer_name}".format(
+                    code_pointer_name=type(code_pointer).__name__
+                )
+            )
 
 
 @whitelist_for_serdes

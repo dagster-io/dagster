@@ -30,6 +30,7 @@ from .external_data import (
     external_repository_data_from_def,
 )
 from .handle import (
+    GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
     PipelineHandle,
     PythonEnvRepositoryLocationHandle,
@@ -40,6 +41,7 @@ from .handle import (
 from .historical import HistoricalPipeline
 from .pipeline_index import PipelineIndex
 from .repository_location import (
+    GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
     RepositoryLocation,

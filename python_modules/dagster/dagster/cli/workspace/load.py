@@ -268,6 +268,42 @@ def _list_repositories(executable_path, python_file, module_name, working_direct
         )
 
 
+def _assign_grpc_location_name(port, socket, host):
+    check.opt_int_param(port, 'port')
+    check.opt_str_param(socket, 'socket')
+    check.str_param(host, 'host')
+    check.invariant(port or socket)
+    return 'grpc:{host}:{socket_or_port}'.format(
+        host=host, socket_or_port=(socket if socket else port)
+    )
+
+
+def _location_handle_from_grpc_server_config(grpc_server_config, yaml_path):
+    check.dict_param(grpc_server_config, 'grpc_server_config')
+    check.str_param(yaml_path, 'yaml_path')
+
+    port, socket, host, location_name = (
+        grpc_server_config.get('port'),
+        grpc_server_config.get('socket'),
+        grpc_server_config.get('host'),
+        grpc_server_config.get('location_name'),
+    )
+
+    check.invariant(
+        (socket or port) and not (socket and port), "must supply either a socket or a port"
+    )
+
+    if not host:
+        host = 'localhost'
+
+    if not location_name:
+        location_name = _assign_grpc_location_name(port, socket, host)
+
+    return RepositoryLocationHandle.create_grpc_server_location(
+        port=port, socket=socket, host=host, location_name=location_name,
+    )
+
+
 def _location_handle_from_python_environment_config(python_environment_config, yaml_path, api):
     check.dict_param(python_environment_config, 'python_environment_config')
     check.str_param(yaml_path, 'yaml_path')
@@ -394,6 +430,9 @@ def _location_handle_from_location_config(location_config, yaml_path, opt_ins):
 
     if is_target_config(location_config):
         return _location_handle_from_target_config(location_config, yaml_path, api)
+
+    elif 'grpc_server' in location_config:
+        return _location_handle_from_grpc_server_config(location_config['grpc_server'], yaml_path)
 
     elif 'python_environment' in location_config:
         return _location_handle_from_python_environment_config(

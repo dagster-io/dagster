@@ -21,10 +21,12 @@ from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.host_representation import (
+    GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
 )
 from dagster.core.host_representation.handle import (
+    GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
     PythonEnvRepositoryLocationHandle,
 )
@@ -231,6 +233,8 @@ def create_app_from_workspace(workspace, instance, path_prefix=''):
             locations.append(InProcessRepositoryLocation(recon_repo))
         elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
             locations.append(PythonEnvRepositoryLocation(repository_location_handle))
+        elif isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
+            locations.append(GrpcServerRepositoryLocation(repository_location_handle))
         else:
             check.failed('{} unsupported'.format(repository_location_handle))
 

@@ -133,18 +133,36 @@ class DagsterApiServer(DagsterApiServicer):
     def __init__(self, shutdown_server_event, loadable_target_origin=None):
         super(DagsterApiServer, self).__init__()
 
-        self._loadable_target_origin = check.opt_inst_param(
-            loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
-        )
-        if loadable_target_origin:
-            self._loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.working_directory,
-            )
         self._shutdown_server_event = check.inst_param(
             shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
         )
+        self._loadable_target_origin = check.opt_inst_param(
+            loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
+        )
+
+        if loadable_target_origin:
+            if loadable_target_origin.attribute:
+                self._loadable_repository_symbols = [
+                    LoadableRepositorySymbol(
+                        attribute=loadable_target_origin.attribute,
+                        repository_name=loadable_target_origin.attribute,
+                    )
+                ]
+            else:
+                loadable_targets = get_loadable_targets(
+                    loadable_target_origin.python_file,
+                    loadable_target_origin.module_name,
+                    loadable_target_origin.working_directory,
+                )
+                self._loadable_repository_symbols = [
+                    LoadableRepositorySymbol(
+                        attribute=loadable_target.attribute,
+                        repository_name=loadable_target.target_definition.name,
+                    )
+                    for loadable_target in loadable_targets
+                ]
+        else:
+            self._loadable_repository_symbols = []
 
     def Ping(self, request, _context):
         echo = request.echo
@@ -185,39 +203,30 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ListRepositories(self, request, _context):
-        loadable_targets = self._loadable_targets
-        loadable_repository_symbols = [
-            LoadableRepositorySymbol(
-                attribute=loadable_target.attribute,
-                repository_name=loadable_target.target_definition.name,
-            )
-            for loadable_target in self._loadable_targets
-        ]
-
-        # This code can probably be extracted and shared with existing logic that exists in
-        # _location_handle_from_python_environment_config
         repository_code_pointer_dict = {}
-        for loadable_target in loadable_targets:
+        for loadable_repository_symbol in self._loadable_repository_symbols:
             if self._loadable_target_origin.python_file:
                 repository_code_pointer_dict[
-                    loadable_target.target_definition.name
+                    loadable_repository_symbol.repository_name
                 ] = CodePointer.from_python_file(
                     self._loadable_target_origin.python_file,
-                    loadable_target.attribute,
+                    loadable_repository_symbol.attribute,
                     self._loadable_target_origin.working_directory,
                 )
             if self._loadable_target_origin.module_name:
                 repository_code_pointer_dict[
-                    loadable_target.target_definition.name
+                    loadable_repository_symbol.repository_name
                 ] = CodePointer.from_module(
-                    self._loadable_target_origin.module_name, loadable_target.attribute
+                    self._loadable_target_origin.module_name, loadable_repository_symbol.attribute,
                 )
 
         return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response=serialize_dagster_namedtuple(
                 ListRepositoriesResponse(
-                    loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path,
+                    self._loadable_repository_symbols,
+                    executable_path=self._loadable_target_origin.executable_path
+                    if self._loadable_target_origin
+                    else None,
                     repository_code_pointer_dict=repository_code_pointer_dict,
                 )
             )
