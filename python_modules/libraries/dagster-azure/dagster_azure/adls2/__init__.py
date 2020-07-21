@@ -3,7 +3,7 @@ from .file_cache import ADLS2FileCache, adls2_file_cache
 from .file_manager import ADLS2FileHandle, ADLS2FileManager
 from .intermediate_store import ADLS2IntermediateStore
 from .object_store import ADLS2ObjectStore
-from .resources import adls2_resource
+from .resources import adls2_file_manager, adls2_resource
 from .system_storage import (
     adls2_intermediate_storage,
     adls2_plus_default_intermediate_storage_defs,

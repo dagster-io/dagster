@@ -1,24 +1,26 @@
 from dagster_azure.blob.utils import create_blob_client
 
 from dagster import Field, Selector, StringSource, resource
+from dagster.utils.merger import merge_dicts
 
+from .file_manager import ADLS2FileManager
 from .utils import create_adls2_client
 
-
-@resource(
-    {
-        'storage_account': Field(StringSource, description='The storage account name.'),
-        'credential': Field(
-            Selector(
-                {
-                    'sas': Field(StringSource, description='SAS token for the account.'),
-                    'key': Field(StringSource, description='Shared Access Key for the account'),
-                }
-            ),
-            description='The credentials with which to authenticate.',
+ADLS2_CLIENT_CONFIG = {
+    'storage_account': Field(StringSource, description='The storage account name.'),
+    'credential': Field(
+        Selector(
+            {
+                'sas': Field(StringSource, description='SAS token for the account.'),
+                'key': Field(StringSource, description='Shared Access Key for the account'),
+            }
         ),
-    }
-)
+        description='The credentials with which to authenticate.',
+    ),
+}
+
+
+@resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
     '''Resource that gives solids access to Azure Data Lake Storage Gen2.
 
@@ -73,9 +75,26 @@ def adls2_resource(context):
                   env: AZURE_DATA_LAKE_STORAGE_KEY
                 # str: The shared access key for the account.
     '''
-    storage_account = context.resource_config['storage_account']
-    credential = context.resource_config["credential"].copy().popitem()[1]
-    return ADLS2Resource(storage_account, credential)
+    return _adls2_resource_from_config(context.resource_config)
+
+
+@resource(
+    merge_dicts(
+        ADLS2_CLIENT_CONFIG,
+        {
+            'adls2_file_system': Field(StringSource, description='ADLS Gen2 file system name'),
+            'adls2_prefix': Field(StringSource, is_required=False, default_value='dagster'),
+        },
+    )
+)
+def adls2_file_manager(context):
+    adls2_client = _adls2_resource_from_config(context.resource_config).adls2_client
+
+    return ADLS2FileManager(
+        adls2_client=adls2_client,
+        file_system=context.resource_config['adls2_file_system'],
+        prefix=context.resource_config['adls2_prefix'],
+    )
 
 
 class ADLS2Resource(object):
@@ -96,3 +115,15 @@ class ADLS2Resource(object):
     @property
     def blob_client(self):
         return self._blob_client
+
+
+def _adls2_resource_from_config(config):
+    '''
+    Args:
+        config: A configuration containing the fields in ADLS2_CLIENT_CONFIG.
+
+    Returns: An adls2 client.
+    '''
+    storage_account = config['storage_account']
+    credential = config["credential"].copy().popitem()[1]
+    return ADLS2Resource(storage_account, credential)

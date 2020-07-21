@@ -4,6 +4,7 @@ from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
     FakeADLS2Resource,
+    adls2_file_manager,
     adls2_plus_default_storage_defs,
 )
 
@@ -13,6 +14,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
+    configured,
     execute_pipeline,
     pipeline,
     solid,
@@ -188,3 +190,46 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     assert '/'.join(comps[:-1]) == 'dagster/storage/{run_id}/files'.format(run_id=result.run_id)
 
     assert uuid.UUID(comps[-1])
+
+
+@mock.patch('dagster_azure.adls2.resources.ADLS2Resource')
+@mock.patch('dagster_azure.adls2.resources.ADLS2FileManager')
+def test_adls_file_manager_resource(MockADLS2FileManager, MockADLS2Resource):
+    did_it_run = dict(it_ran=False)
+
+    resource_config = {
+        'storage_account': 'some-storage-account',
+        'credential': {'key': 'some-key',},
+        'adls2_file_system': 'some-file-system',
+        'adls2_prefix': 'some-prefix',
+    }
+
+    @solid(required_resource_keys={'file_manager'})
+    def test_solid(context):
+        # test that we got back a ADLS2FileManager
+        assert context.resources.file_manager == MockADLS2FileManager.return_value
+
+        # make sure the file manager was initalized with the config we are supplying
+        MockADLS2FileManager.assert_called_once_with(
+            adls2_client=MockADLS2Resource.return_value.adls2_client,
+            file_system=resource_config['adls2_file_system'],
+            prefix=resource_config['adls2_prefix'],
+        )
+        MockADLS2Resource.assert_called_once_with(
+            resource_config['storage_account'], resource_config['credential']['key']
+        )
+
+        did_it_run['it_ran'] = True
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={'file_manager': configured(adls2_file_manager)(resource_config)},
+            )
+        ]
+    )
+    def test_pipeline():
+        test_solid()
+
+    execute_pipeline(test_pipeline)
+    assert did_it_run['it_ran']
