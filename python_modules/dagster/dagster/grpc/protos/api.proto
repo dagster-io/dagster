@@ -13,8 +13,11 @@ service DagsterApi {
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
+  rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
 }
+
+message Empty {}
 
 message PingRequest {
   string echo = 1;
@@ -103,4 +106,8 @@ message ExternalScheduleExecutionReply {
 
 message ExecuteRunEvent {
   string serialized_dagster_event_or_ipc_error_message = 1;
+}
+
+message ShutdownServerReply {
+  string serialized_shutdown_server_result = 1;
 }

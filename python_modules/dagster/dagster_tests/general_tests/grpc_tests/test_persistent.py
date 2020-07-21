@@ -1,6 +1,7 @@
 import subprocess
 
-from dagster.grpc.client import DagsterGrpcClient, _wait_for_grpc_server
+from dagster.grpc.client import DagsterGrpcClient
+from dagster.grpc.server import wait_for_grpc_server
 from dagster.utils import file_relative_path, find_free_port
 
 
@@ -13,7 +14,7 @@ def test_ping():
     )
 
     try:
-        _wait_for_grpc_server(process)
+        wait_for_grpc_server(process)
         assert DagsterGrpcClient(port=port).ping('foobar') == 'foobar'
     finally:
         process.terminate()
@@ -28,7 +29,7 @@ def test_streaming():
     )
 
     try:
-        _wait_for_grpc_server(process)
+        wait_for_grpc_server(process)
         api_client = DagsterGrpcClient(port=port)
         results = [result for result in api_client.streaming_ping(sequence_length=10, echo='foo')]
         assert len(results) == 10

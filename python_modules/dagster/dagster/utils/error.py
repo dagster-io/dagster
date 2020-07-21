@@ -30,7 +30,7 @@ def _serializable_error_info_from_tb(tb):
         # usually one entry, last entry for syntax errors is the exception that occurred
         list(tb.format_exception_only())[-1],
         tb.stack.format(),
-        tb.exc_type.__name__,
+        tb.exc_type.__name__ if tb.exc_type is not None else None,
         _serializable_error_info_from_tb(tb.__cause__) if tb.__cause__ else None,
     )
 

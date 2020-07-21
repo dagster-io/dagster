@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-import time
 from contextlib import contextmanager
 
 import grpc
@@ -10,42 +9,24 @@ from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import open_ipc_subprocess
-from dagster.utils import find_free_port, safe_tempfile_path
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
-from .server import (
-    SERVER_FAILED_TO_BIND_TOKEN_BYTES,
-    SERVER_STARTED_TOKEN_BYTES,
-    CouldNotBindGrpcServerToAddress,
-)
+from .server import ephemeral_grpc_server
 from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
 )
 
 
-class CouldNotStartServerProcess(Exception):
-    def __init__(self, port=None, socket=None):
-        super(CouldNotStartServerProcess, self).__init__(
-            'Could not start server with '
-            + (
-                'port {port}'.format(port=port)
-                if port is not None
-                else 'socket {socket}'.format(socket=socket)
-            )
-        )
-
-
 class DagsterGrpcClient(object):
-    def __init__(self, port=None, socket=None, server_process=None, host='localhost'):
+    def __init__(self, port=None, socket=None, host='localhost'):
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')
         check.opt_str_param(host, 'host')
@@ -66,10 +47,6 @@ class DagsterGrpcClient(object):
         else:
             self._server_address = 'unix:' + os.path.abspath(socket)
 
-        self._server_process = check.opt_inst_param(
-            server_process, 'server_process', subprocess.Popen
-        )
-
     def _query(self, method, request_type, **kwargs):
         with grpc.insecure_channel(self._server_address) as channel:
             stub = DagsterApiStub(channel)
@@ -84,14 +61,8 @@ class DagsterGrpcClient(object):
             for response in response_stream:
                 yield response
 
-    def terminate_server_process(self):
-        if self._server_process is not None:
-            # We hard terminate here because the interrupt machinery doesn't work with the grpc
-            # server machinery. We will eventually implement both terminate_run and shutdown_server
-            # calls over the GRPC API.
-            self._server_process.terminate()
-            self._server_process.wait()
-            self._server_process = None
+    def _terminate_server(self):
+        self.shutdown_server()
 
     def ping(self, echo):
         check.str_param(echo, 'echo')
@@ -240,7 +211,7 @@ class DagsterGrpcClient(object):
                     event.serialized_dagster_event_or_ipc_error_message
                 )
         except KeyboardInterrupt:
-            self.terminate_server_process()
+            self._terminate_server()
             yield instance.report_engine_event(
                 message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
             )
@@ -282,122 +253,39 @@ class DagsterGrpcClient(object):
             )
             raise exc
 
-
-def _wait_for_grpc_server(server_process, timeout=3):
-    total_time = 0
-    backoff = 0.01
-    for line in iter(server_process.stdout.readline, ''):
-        if line.rstrip() == SERVER_FAILED_TO_BIND_TOKEN_BYTES:
-            raise CouldNotBindGrpcServerToAddress()
-        elif line.rstrip() != SERVER_STARTED_TOKEN_BYTES:
-            time.sleep(backoff)
-            total_time += backoff
-            backoff = backoff * 2
-            if total_time > timeout:
-                return False
-        else:
-            return True
+    def shutdown_server(self):
+        res = self._query('ShutdownServer', api_pb2.Empty)
+        return deserialize_json_to_dagster_namedtuple(res.serialized_shutdown_server_result)
 
 
-def open_server_process(
-    port, socket, loadable_target_origin=None,
-):
-    check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
-    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+class EphemeralDagsterGrpcClient(DagsterGrpcClient):
+    def __init__(
+        self, server_process=None, *args, **kwargs
+    ):  # pylint: disable=keyword-arg-before-vararg
+        self._server_process = check.inst_param(server_process, 'server_process', subprocess.Popen)
+        super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
-    subprocess_args = (
-        [
-            loadable_target_origin.executable_path if loadable_target_origin else sys.executable,
-            '-m',
-            'dagster.grpc',
-        ]
-        + (['-p', str(port)] if port else [])
-        + (['-s', socket] if socket else [])
-    )
-
-    if loadable_target_origin:
-        subprocess_args += (
-            (
-                ['-f', loadable_target_origin.python_file]
-                if loadable_target_origin.python_file
-                else []
-            )
-            + (
-                ['-m', loadable_target_origin.module_name]
-                if loadable_target_origin.module_name
-                else []
-            )
-            + (
-                ['-d', loadable_target_origin.working_directory]
-                if loadable_target_origin.working_directory
-                else []
-            )
-            + (['-a', loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
-        )
-
-    server_process = open_ipc_subprocess(subprocess_args, stdout=subprocess.PIPE)
-
-    ready = _wait_for_grpc_server(server_process)
-
-    if ready:
-        return server_process
-    else:
-        if server_process.poll() is None:
-            server_process.terminate()
-        return None
-
-
-def open_server_process_on_dynamic_port(
-    max_retries=10, loadable_target_origin=None,
-):
-    server_process = None
-    retries = 0
-    while server_process is None and retries < max_retries:
-        port = find_free_port()
-        try:
-            server_process = open_server_process(
-                port=port, socket=None, loadable_target_origin=loadable_target_origin,
-            )
-        except CouldNotBindGrpcServerToAddress:
-            pass
-
-        retries += 1
-
-    return server_process, port
+    def _terminate_server(self):
+        # Hard termination pending implementation of soft scheme
+        self._server_process.terminate()
 
 
 @contextmanager
 def ephemeral_grpc_api_client(
     loadable_target_origin=None, force_port=False, max_retries=10,
 ):
+    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+    check.bool_param(force_port, 'force_port')
+    check.int_param(max_retries, 'max_retries')
 
-    if seven.IS_WINDOWS or force_port:
-        server_process, port = open_server_process_on_dynamic_port(
-            max_retries=max_retries, loadable_target_origin=loadable_target_origin,
-        )
-
-        if server_process is None:
-            raise CouldNotStartServerProcess(port=port, socket=None)
-
-        client = DagsterGrpcClient(port=port, server_process=server_process)
-
+    with ephemeral_grpc_server(
+        loadable_target_origin=loadable_target_origin,
+        force_port=force_port,
+        max_retries=max_retries,
+    ) as (server_process, port, socket):
+        client = EphemeralDagsterGrpcClient(port=port, socket=socket, server_process=server_process)
         try:
             yield client
         finally:
-            client.terminate_server_process()
-
-    else:
-        with safe_tempfile_path() as socket:
-            server_process = open_server_process(
-                port=None, socket=socket, loadable_target_origin=loadable_target_origin,
-            )
-
-            if server_process is None:
-                raise CouldNotStartServerProcess(port=None, socket=socket)
-
-            client = DagsterGrpcClient(socket=socket, server_process=server_process)
-
-            try:
-                yield client
-            finally:
-                client.terminate_server_process()
+            if server_process.poll() is None:
+                client.shutdown_server()

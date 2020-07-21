@@ -72,6 +72,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
         )
+        self.ShutdownServer = channel.unary_unary(
+            '/api.DagsterApi/ShutdownServer',
+            request_serializer=api__pb2.Empty.SerializeToString,
+            response_deserializer=api__pb2.ShutdownServerReply.FromString,
+        )
         self.ExecuteRun = channel.unary_stream(
             '/api.DagsterApi/ExecuteRun',
             request_serializer=api__pb2.ExecuteRunRequest.SerializeToString,
@@ -142,6 +147,12 @@ class DagsterApiServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ShutdownServer(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ExecuteRun(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -200,6 +211,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalScheduleExecution,
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
+        ),
+        'ShutdownServer': grpc.unary_unary_rpc_method_handler(
+            servicer.ShutdownServer,
+            request_deserializer=api__pb2.Empty.FromString,
+            response_serializer=api__pb2.ShutdownServerReply.SerializeToString,
         ),
         'ExecuteRun': grpc.unary_stream_rpc_method_handler(
             servicer.ExecuteRun,
@@ -476,6 +492,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExternalScheduleExecution',
             api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             api__pb2.ExternalScheduleExecutionReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ShutdownServer(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ShutdownServer',
+            api__pb2.Empty.SerializeToString,
+            api__pb2.ShutdownServerReply.FromString,
             options,
             channel_credentials,
             call_credentials,

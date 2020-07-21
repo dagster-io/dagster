@@ -5,6 +5,7 @@ from dagster.core.code_pointer import CodePointer
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
+from dagster.utils.error import SerializableErrorInfo
 
 
 class LoadableTargetOrigin(
@@ -184,4 +185,16 @@ class ExternalScheduleExecutionArgs(
             ),
             instance_ref=check.inst_param(instance_ref, 'instance_ref', InstanceRef),
             schedule_name=check.str_param(schedule_name, 'schedule_name'),
+        )
+
+
+@whitelist_for_serdes
+class ShutdownServerResult(namedtuple('_ShutdownServerResult', 'success serializable_error_info')):
+    def __new__(cls, success, serializable_error_info):
+        return super(ShutdownServerResult, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, 'serializable_error_info', SerializableErrorInfo
+            ),
         )
