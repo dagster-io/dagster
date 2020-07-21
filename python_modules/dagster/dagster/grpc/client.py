@@ -13,7 +13,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
-from .server import ephemeral_grpc_server
+from .server import GrpcServerProcess
 from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
@@ -278,14 +278,16 @@ def ephemeral_grpc_api_client(
     check.bool_param(force_port, 'force_port')
     check.int_param(max_retries, 'max_retries')
 
-    with ephemeral_grpc_server(
+    with GrpcServerProcess(
         loadable_target_origin=loadable_target_origin,
         force_port=force_port,
         max_retries=max_retries,
-    ) as (server_process, port, socket):
-        client = EphemeralDagsterGrpcClient(port=port, socket=socket, server_process=server_process)
+    ) as server:
+        client = EphemeralDagsterGrpcClient(
+            port=server.port, socket=server.socket, server_process=server.server_process
+        )
         try:
             yield client
         finally:
-            if server_process.poll() is None:
+            if server.server_process.poll() is None:
                 client.shutdown_server()

@@ -25,7 +25,7 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.grpc.server import ephemeral_grpc_server
+from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 
@@ -377,15 +377,14 @@ class EnvironmentManagers:
                 recon_repo.get_origin()
             )
 
-            with ephemeral_grpc_server(loadable_target_origin=loadable_target_origin) as (
-                _,
-                port,
-                socket,
-            ):
+            with GrpcServerProcess(loadable_target_origin=loadable_target_origin) as server:
                 yield [
                     GrpcServerRepositoryLocation(
                         RepositoryLocationHandle.create_grpc_server_location(
-                            location_name='test', port=port, socket=socket, host='localhost',
+                            location_name='test',
+                            port=server.port,
+                            socket=server.socket,
+                            host='localhost',
                         )
                     )
                 ]

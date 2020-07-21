@@ -252,8 +252,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         raise cpe
 
 
-@contextlib.contextmanager
-def safe_tempfile_path():
+def safe_tempfile_path_unmanaged():
     # This gets a valid temporary file path in the safest possible way, although there is still no
     # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
     # deleted when the context manager exits and the file object is closed.
@@ -265,10 +264,14 @@ def safe_tempfile_path():
     # https://github.com/dagster-io/dagster/issues/1582
     with tempfile.NamedTemporaryFile() as fd:
         path = fd.name
+    return Path(path).as_posix()
 
+
+@contextlib.contextmanager
+def safe_tempfile_path():
     try:
-        yield Path(path).as_posix()
-
+        path = safe_tempfile_path_unmanaged()
+        yield path
     finally:
         if os.path.exists(path):
             os.unlink(path)

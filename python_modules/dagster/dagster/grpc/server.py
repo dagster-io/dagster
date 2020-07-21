@@ -4,7 +4,6 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
 
 import grpc
 
@@ -29,7 +28,7 @@ from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster.utils import find_free_port, safe_tempfile_path
+from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -624,38 +623,44 @@ def cleanup_server_process(server_process, timeout=3):
         server_process.wait()
 
 
-@contextmanager
-def ephemeral_grpc_server(loadable_target_origin=None, force_port=False, max_retries=10):
-    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
-    check.bool_param(force_port, 'force_port')
-    check.int_param(max_retries, 'max_retries')
+class GrpcServerProcess(object):
+    def __init__(self, loadable_target_origin=None, force_port=False, max_retries=10):
+        self.port = None
+        self.socket = None
+        self.server_process = None
 
-    port = None
-    socket = None
+        check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+        check.bool_param(force_port, 'force_port')
+        check.int_param(max_retries, 'max_retries')
 
-    if seven.IS_WINDOWS or force_port:
-        server_process, port = open_server_process_on_dynamic_port(
-            max_retries=max_retries, loadable_target_origin=loadable_target_origin,
-        )
+        if seven.IS_WINDOWS or force_port:
+            self.server_process, self.port = open_server_process_on_dynamic_port(
+                max_retries=max_retries, loadable_target_origin=loadable_target_origin,
+            )
+        else:
+            self.socket = safe_tempfile_path_unmanaged()
 
-        if server_process is None:
-            raise CouldNotStartServerProcess(port=port, socket=None)
-
-        try:
-            yield (server_process, port, socket)
-        finally:
-            cleanup_server_process(server_process)
-
-    else:
-        with safe_tempfile_path() as socket:
-            server_process = open_server_process(
-                port=None, socket=socket, loadable_target_origin=loadable_target_origin,
+            self.server_process = open_server_process(
+                port=None, socket=self.socket, loadable_target_origin=loadable_target_origin,
             )
 
-            if server_process is None:
-                raise CouldNotStartServerProcess(port=None, socket=socket)
+        if self.server_process is None:
+            raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
 
-            try:
-                yield (server_process, port, socket)
-            finally:
-                cleanup_server_process(server_process)
+    def __enter__(self):
+        return self
+
+    def __del__(self):
+        self._dispose()
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._dispose()
+
+    def _dispose(self):
+        if self.server_process:
+            cleanup_server_process(self.server_process)
+            self.server_process = None
+        if self.socket:
+            if os.path.exists(self.socket):
+                os.unlink(self.socket)
+            self.socket = None

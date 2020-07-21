@@ -5,15 +5,17 @@ from dagster import seven
 from dagster.check import CheckError
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_config
-from dagster.grpc.server import ephemeral_grpc_server
+from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace():
 
-    with ephemeral_grpc_server() as (_, _, first_socket):
-        with ephemeral_grpc_server() as (_, _, second_socket):
+    with GrpcServerProcess() as first_server:
+        with GrpcServerProcess() as second_server:
+            first_socket = first_server.socket
+            second_socket = second_server.socket
             workspace_yaml = '''
 load_from:
 - grpc_server:
@@ -55,8 +57,10 @@ load_from:
 
 
 def test_grpc_server_workspace():
-    with ephemeral_grpc_server(force_port=True) as (_, first_port, _):
-        with ephemeral_grpc_server(force_port=True) as (_, second_port, _):
+    with GrpcServerProcess(force_port=True) as first_server:
+        with GrpcServerProcess(force_port=True) as second_server:
+            first_port = first_server.port
+            second_port = second_server.port
             workspace_yaml = '''
 load_from:
 - grpc_server:
