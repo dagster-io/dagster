@@ -13,10 +13,33 @@ export interface SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError";
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_origin {
-  __typename: "RepositoryOrigin";
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
-  codePointerDescription: string;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type SchedulesRootQuery_repositoryOrError_Repository_origin = SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin | SchedulesRootQuery_repositoryOrError_Repository_origin_GrpcRepositoryOrigin;
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_location {
+  __typename: "RepositoryLocation";
+  name: string;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository {
@@ -24,6 +47,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository {
   name: string;
   id: string;
   origin: SchedulesRootQuery_repositoryOrError_Repository_origin;
+  location: SchedulesRootQuery_repositoryOrError_Repository_location;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_PythonError_cause {

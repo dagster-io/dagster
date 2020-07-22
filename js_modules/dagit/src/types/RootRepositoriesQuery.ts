@@ -20,11 +20,36 @@ export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_
   environmentPath: string | null;
 }
 
+export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_PythonRepositoryOrigin | RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin_GrpcRepositoryOrigin;
+
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes {
   __typename: "Repository";
   name: string;
   pipelines: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_pipelines[];
   location: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+  origin: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin;
 }
 
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection {

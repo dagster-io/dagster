@@ -38,6 +38,16 @@ type AssetsNotSupportedError implements Error {
 
 union AssetsOrError = AssetConnection | AssetsNotSupportedError
 
+type CodePointer {
+  description: String!
+  metadata: [CodePointerMetadata!]!
+}
+
+type CodePointerMetadata {
+  key: String!
+  value: String!
+}
+
 type CompositeConfigType implements ConfigType {
   key: String!
   description: String
@@ -417,6 +427,10 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
   fieldNames: [String!]!
 }
 
+type GrpcRepositoryOrigin {
+  grpcUrl: String!
+}
+
 type Input {
   solid: Solid!
   definition: InputDefinition!
@@ -440,6 +454,7 @@ type Instance {
   runLauncher: RunLauncher
   disableRunStart: Boolean!
   assetsSupported: Boolean!
+  executablePath: String!
 }
 
 type InvalidOutputError {
@@ -961,6 +976,11 @@ type PythonError implements Error {
   cause: PythonError
 }
 
+type PythonRepositoryOrigin {
+  executablePath: String!
+  codePointer: CodePointer!
+}
+
 type Query {
   version: String!
   repositoriesOrError: RepositoriesOrError!
@@ -1056,10 +1076,7 @@ type RepositoryNotFoundError implements Error {
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
-type RepositoryOrigin {
-  executablePath: String!
-  codePointerDescription: String!
-}
+union RepositoryOrigin = PythonRepositoryOrigin | GrpcRepositoryOrigin
 
 input RepositorySelector {
   repositoryName: String!

@@ -6,7 +6,9 @@ import {
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location
 } from "./types/RootRepositoriesQuery";
+import { InstanceExecutableQuery } from "./types/InstanceExecutableQuery";
 import PythonErrorInfo from "./PythonErrorInfo";
+import { RepositoryInformationFragment } from "./RepositoryInformation";
 
 export type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
 export type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
@@ -38,12 +40,14 @@ export const ROOT_REPOSITORIES_QUERY = gql`
             isReloadSupported
             environmentPath
           }
+          ...RepositoryInfoFragment
         }
       }
       ...PythonErrorFragment
     }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RepositoryInformationFragment}
 `;
 
 export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
@@ -140,4 +144,19 @@ export const useScheduleSelector = (scheduleName: string) => {
     ...repositorySelector,
     scheduleName
   };
+};
+
+export const INSTANCE_EXECUTABLE_QUERY = gql`
+  query InstanceExecutableQuery {
+    instance {
+      executablePath
+    }
+  }
+`;
+export const useDagitExecutablePath = () => {
+  const { data } = useQuery<InstanceExecutableQuery>(INSTANCE_EXECUTABLE_QUERY, {
+    fetchPolicy: "cache-and-network"
+  });
+
+  return data?.instance.executablePath;
 };

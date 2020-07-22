@@ -23,6 +23,7 @@ import gql from "graphql-tag";
 import PythonErrorInfo from "../PythonErrorInfo";
 
 import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
+import { RepositoryInformation, RepositoryInformationFragment } from "../RepositoryInformation";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { ReconcileButton } from "./ReconcileButton";
@@ -183,11 +184,11 @@ const ScheduleTable: React.FunctionComponent<{
           interactionKind={PopoverInteractionKind.HOVER}
           content={
             <pre>
-              python: <Code>{props.repository.origin.executablePath}</Code>
-              {"\n"}
-              code: <Code>{props.repository.origin.codePointerDescription}</Code>
-              {"\n"}
-              id: <Code>{props.repository.id}</Code>
+              <RepositoryInformation repository={props.repository} />
+              <div style={{ fontSize: 11 }}>
+                <span style={{ marginRight: 5 }}>id:</span>
+                <span style={{ opacity: 0.5 }}>{props.repository.id}</span>
+              </div>
             </pre>
           }
         >
@@ -281,10 +282,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
       ... on Repository {
         name
         id
-        origin {
-          executablePath
-          codePointerDescription
-        }
+        ...RepositoryInfoFragment
       }
       ...PythonErrorFragment
     }
@@ -316,6 +314,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
 
   ${ScheduleFragment}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RepositoryInformationFragment}
 `;
 
 export default SchedulesRoot;

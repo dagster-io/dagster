@@ -4,12 +4,19 @@ from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 
 from dagster import check
+from dagster.core.code_pointer import (
+    CodePointer,
+    FileCodePointer,
+    FileInDirectoryCodePointer,
+    ModuleCodePointer,
+    PackageCodePointer,
+)
 from dagster.core.host_representation import (
     ExternalRepository,
     PythonEnvRepositoryLocationHandle,
     RepositoryLocation,
 )
-from dagster.core.origin import RepositoryOrigin
+from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
 
 
 class DauphinRepository(dauphin.ObjectType):
@@ -35,7 +42,11 @@ class DauphinRepository(dauphin.ObjectType):
         return self._repository.get_origin_id()
 
     def resolve_origin(self, graphene_info):
-        return graphene_info.schema.type_named('RepositoryOrigin')(self._repository.get_origin())
+        origin = self._repository.get_origin()
+        if isinstance(origin, RepositoryGrpcServerOrigin):
+            return graphene_info.schema.type_named('GrpcRepositoryOrigin')(origin)
+        else:
+            return graphene_info.schema.type_named('PythonRepositoryOrigin')(origin)
 
     def resolve_location(self, graphene_info):
         return graphene_info.schema.type_named('RepositoryLocation')(self._repository_location)
@@ -56,21 +67,43 @@ class DauphinRepository(dauphin.ObjectType):
         return get_solids(self._repository)
 
 
-class DauphinRepositoryOrigin(dauphin.ObjectType):
+class DauphinPythonRepositoryOrigin(dauphin.ObjectType):
     class Meta(object):
-        name = 'RepositoryOrigin'
+        name = 'PythonRepositoryOrigin'
 
     executable_path = dauphin.NonNull(dauphin.String)
-    code_pointer_description = dauphin.NonNull(dauphin.String)
+    code_pointer = dauphin.NonNull('CodePointer')
 
     def __init__(self, origin):
-        self._origin = check.inst_param(origin, 'origin', RepositoryOrigin)
+        self._origin = check.inst_param(origin, 'origin', RepositoryPythonOrigin)
 
     def resolve_executable_path(self, _graphene_info):
         return self._origin.executable_path
 
-    def resolve_code_pointer_description(self, _graphene_info):
-        return self._origin.code_pointer.describe()
+    def resolve_code_pointer(self, graphene_info):
+        return graphene_info.schema.type_named('CodePointer')(self._origin.code_pointer)
+
+
+class DauphinGrpcRepositoryOrigin(dauphin.ObjectType):
+    class Meta(object):
+        name = 'GrpcRepositoryOrigin'
+
+    grpc_url = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, origin):
+        self._origin = check.inst_param(origin, 'origin', RepositoryGrpcServerOrigin)
+
+    def resolve_grpc_url(self, _graphene_info):
+        return 'grpc:{host}:{socket_or_port}'.format(
+            host=self._origin.host,
+            socket_or_port=(self._origin.socket if self._origin.socket else self._origin.port),
+        )
+
+
+class DauphinRepositoryOrigin(dauphin.Union):
+    class Meta(object):
+        name = 'RepositoryOrigin'
+        types = ('PythonRepositoryOrigin', 'GrpcRepositoryOrigin')
 
 
 class DauphinRepositoryLocation(dauphin.ObjectType):
@@ -103,6 +136,45 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
             graphene_info.schema.type_named('Repository')(repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
+
+
+class DauphinCodePointer(dauphin.ObjectType):
+    class Meta(object):
+        name = 'CodePointer'
+
+    description = dauphin.NonNull(dauphin.String)
+    metadata = dauphin.non_null_list('CodePointerMetadata')
+
+    def __init__(self, code_pointer):
+        self._code_pointer = check.inst_param(code_pointer, 'code_pointer', CodePointer)
+
+    def resolve_description(self, _graphene_info):
+        return self._code_pointer.describe()
+
+    def resolve_metadata(self, graphene_info):
+        metadata = {}
+        if isinstance(self._code_pointer, (FileCodePointer, FileInDirectoryCodePointer)):
+            metadata['python_file'] = self._code_pointer.python_file
+            metadata['attribute'] = self._code_pointer.fn_name
+        if isinstance(self._code_pointer, ModuleCodePointer):
+            metadata['python_module'] = self._code_pointer.module
+            metadata['attribute'] = self._code_pointer.fn_name
+        if isinstance(self._code_pointer, PackageCodePointer):
+            metadata['python_package'] = self._code_pointer.module
+            metadata['attribute'] = self._code_pointer.attribute
+
+        return [
+            graphene_info.schema.type_named('CodePointerMetadata')(key=key, value=value)
+            for key, value in metadata.items()
+        ]
+
+
+class DauphinCodePointerMetadata(dauphin.ObjectType):
+    class Meta(object):
+        name = 'CodePointerMetadata'
+
+    key = dauphin.NonNull(dauphin.String)
+    value = dauphin.NonNull(dauphin.String)
 
 
 class DauphinRepositoryConnection(dauphin.ObjectType):

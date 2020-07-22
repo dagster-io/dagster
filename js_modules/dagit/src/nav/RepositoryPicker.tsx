@@ -1,9 +1,14 @@
 import React from "react";
 import { Colors, Icon, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
-import { DagsterRepoOption, isRepositoryOptionEqual } from "../DagsterRepositoryContext";
+import {
+  DagsterRepoOption,
+  isRepositoryOptionEqual,
+  useDagitExecutablePath
+} from "../DagsterRepositoryContext";
 import styled from "styled-components/macro";
 import { useHistory } from "react-router";
 import { ReloadRepositoryLocationButton } from "./ReloadRepositoryLocationButton";
+import { RepositoryInformation } from "../RepositoryInformation";
 
 interface RepositoryPickerProps {
   options: DagsterRepoOption[];
@@ -18,6 +23,7 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
 }) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
+  const dagitExecutablePath = useDagitExecutablePath();
 
   const selectOption = (repo: DagsterRepoOption) => {
     setRepo(repo);
@@ -40,14 +46,10 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
               active={repo ? isRepositoryOptionEqual(repo, option) : false}
               icon={"git-repo"}
               text={
-                <div>
-                  <div>{option.repository.name}</div>
-                  <div style={{ opacity: 0.5, fontSize: 12, marginTop: 5 }}>
-                    {option.repositoryLocation.environmentPath
-                      ? `${option.repositoryLocation.name}: ${option.repositoryLocation.environmentPath}`
-                      : option.repositoryLocation.name}
-                  </div>
-                </div>
+                <RepositoryInformation
+                  repository={option.repository}
+                  dagitExecutablePath={dagitExecutablePath}
+                />
               }
             />
           ))}

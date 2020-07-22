@@ -1,3 +1,5 @@
+import sys
+
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
@@ -909,6 +911,7 @@ class DauphinInstance(dauphin.ObjectType):
     runLauncher = dauphin.Field('RunLauncher')
     disableRunStart = dauphin.NonNull(dauphin.Boolean)
     assetsSupported = dauphin.NonNull(dauphin.Boolean)
+    executablePath = dauphin.NonNull(dauphin.String)
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
@@ -926,6 +929,9 @@ class DauphinInstance(dauphin.ObjectType):
 
     def resolve_assetsSupported(self, _graphene_info):
         return self._instance.is_asset_aware
+
+    def resolve_executablePath(self, _graphene_info):
+        return sys.executable
 
 
 class DauphinAssetKeyInput(dauphin.InputObjectType):
