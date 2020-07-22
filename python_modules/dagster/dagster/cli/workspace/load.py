@@ -353,7 +353,7 @@ def _location_handle_from_python_environment_config(
                 executable_path=executable_path,
                 location_name=location_name,
                 repository_code_pointer_dict={
-                    lrs.attribute: CodePointer.from_python_file(
+                    lrs.repository_name: CodePointer.from_python_file(
                         absolute_path, lrs.attribute, working_directory
                     )
                     for lrs in response.repository_symbols
@@ -396,7 +396,7 @@ def _location_handle_from_python_environment_config(
                 executable_path=executable_path,
                 location_name=location_name,
                 repository_code_pointer_dict={
-                    lrs.attribute: CodePointer.from_module(module_name, lrs.attribute)
+                    lrs.repository_name: CodePointer.from_module(module_name, lrs.attribute)
                     for lrs in response.repository_symbols
                 },
             )
@@ -435,7 +435,9 @@ def _location_handle_from_python_environment_config(
                 executable_path=executable_path,
                 location_name=location_name,
                 repository_code_pointer_dict={
-                    lrs.attribute: CodePointer.from_python_package(package_name, lrs.attribute)
+                    lrs.repository_name: CodePointer.from_python_package(
+                        package_name, lrs.attribute
+                    )
                     for lrs in response.repository_symbols
                 },
             )
