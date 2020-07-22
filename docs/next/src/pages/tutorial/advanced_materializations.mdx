@@ -21,7 +21,7 @@ artifacts produced by many different runs of a pipeline, or to identify all of t
 might have been created by some pipeline's logic.
 
 Dagster solids can describe their persistent artifacts to the system by
-yielding <PyObject module="dagster" object="Asset Materialization" /> events. Like <PyObject module="dagster" object="TypeCheck" /> and <PyObject module="dagster" object="ExpectationResult" />,
+yielding <PyObject module="dagster" object="AssetMaterialization" /> events. Like <PyObject module="dagster" object="TypeCheck" /> and <PyObject module="dagster" object="ExpectationResult" />,
 asset materializations are side-channels for metadata -- they don't get passed
 to downstream solids and they aren't used to define the data dependencies that
 structure a pipeline's DAG.

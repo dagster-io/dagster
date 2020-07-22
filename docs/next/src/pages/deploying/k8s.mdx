@@ -8,82 +8,122 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 # Deploying on Kubernetes
 
-The `dagster-k8s` package includes a template [Helm](https://helm.sh/)
-chart that you can use to get up and running quickly on a Kubernetes
-cluster. It's still early days for this chart, so it's not as yet
-available on the Helm Hub.
+## Quickstart
 
-Even if you don't use Helm, you may find the Helm charts useful as a
-reference for all the components you will probably want as part of a
-Kubernetes-based deployment of Dagster.
+We publish a Dagster [Helm](https://helm.sh/) chart that you can use to get up and running quickly
+on a Kubernetes cluster. Even if you don't use Helm, you may find the [Helm
+chart](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-k8s/helm)
+useful as a reference for all the components you will probably want as part of a Kubernetes-based
+deployment of Dagster.
+
+You can install a simple demo of Dagster on your Kubernetes cluster by running the shell commands:
+
+```shell
+helm repo add dagster https://dagster-io.github.io/helm
+helm install dagster dagster/dagster
+```
+
+All of the configurable parameters for this chart live in the default
+[`values.yaml`](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-k8s/helm/dagster/values.yaml)
+file.
+
+## Deploying and executing your pipelines on Kubernetes
+
+The most important thing you'll need to provide is an image that contains your repository/pipelines,
+along with the required Dagster Python packages. It's worth looking at the example
+[Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile)
+and [example
+code](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) for
+what's needed.
+
+Once you've defined your image, you should publish it to a registry that is accessible from your
+Kubernetes cluster. Then, to deploy Dagster, you should specify the image in a `values.yaml` which
+overrides the defaults to use this image for deploying Dagit and for pipeline execution:
+
+```yaml
+dagit:
+  image:
+    repository: 'your_repo/your_image:latest'
+    tag: 'latest'
+
+# This image is used to launch the run coordinator job and the step execution jobs
+pipeline_run:
+  image:
+    repository: 'your_repo/your_image:latest'
+    tag: 'latest'
+```
+
+You can then install the Helm chart with the image configured:
+
+```shell
+helm install dagster dagster/dagster -f /path/to/values.yaml
+```
+
+_**Note:** Currently, Dagit must run on the user code image, but this constraint will be relaxed in
+an upcoming release._
+
+## System overview
+
+The Helm chart installs several different components, including Dagit. In this system, the <PyObject
+module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> coupled with the corresponding
+`celery_k8s_job_executor` handles physical execution of Dagster pipelines via Celery-on-K8s. This
+deployment aims to provide:
+
+- **User Code Separation:** user code should be deployed separately from the Dagster system
+  components. In this system, the Celery workers can be deployed via fixed images without user code,
+  and in the 0.9.0 time frame, Dagit will support the same.
+- **Priorities & Queueing:** we include Celery to take advantage of its support for task
+  priorities and queue widths. When using this system, you can annotate your solids with priority
+  tags to prioritize certain solid executions, and with queue tags to manage parallelism of solid
+  executions. This works well but is not yet documented, so please reach out to us if you need help.
+
+The deployed system looks like:
+
+<!-- https://excalidraw.com/#json=6321162049028096,gYi_3fAQJvT5UQLY2MRCUg -->
+
+![k8s_deployment.png](/assets/images/deploying/k8s_deployment.png)
+
+When a pipeline is executed, Dagit (or the scheduler) instigates execution via the <PyObject
+module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />. This run launcher in turn launches a
+"run coordinator" [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) from the
+user code image you specify in the `pipeline_run:` values YAML configuration (the run coordinator
+Job will be named `dagster-run-<run_id>`, to make debugging in kubectl easier). The role of the run
+coordinator Job is to traverse the execution plan, and enqueue execution steps as Celery tasks.
+Celery workers listen for new step execution tasks, and for each execution step that is enqueued, a
+step execution Job is launched to execute that step. These step execution Jobs are also launched
+using the `pipeline_run:` image, and each will be named `dagster-job-<hash>`.
 
 ## Helm chart
 
-If you've cloned the source for the Dagster repo, you can find the Helm
-chart at (from the root of the repo)
-`python_modules/libraries/dagster-k8s/helm/dagster`.
+As a full inventory, the Helm chart sets up the following components by default:
 
-The Helm chart sets up a simple but complete deployment with the
-following components (strangely capitalized nouns are Kubernetes
-objects):
-
-- Dagit running as a Deployment behind a Service. Dagit is configured
-  with a ConfigMap (from which the instance config/`dagster.yaml` is
-  read) to use a Postgres database of your choice for run and event
-  log storage, and to use the `K8sRunLauncher` to launch each pipeline
-  run in a separate Job. Each Jobs also gets its instance config from
-  the ConfigMap.
-- Optionally, a Postgres database for run and event log storage.
-- Optionally, a RabbitMQ as a dagster-celery broker.
-- Optionally, a set of dagster-celery workers running as a Deployment.
-  Each workers also gets its instance config from the ConfigMap.
-- An additional ConfigMap from which the dagster-celery workers, if
-  configured, can read the celery config (i.e., the broker URL,
-  backend, etc.; `celery.yaml`).
-- An additional ConfigMap which can be used to inject environment
-  variables into the dagster-k8s Jobs.
-- A ServiceAccount (to launch the Jobs) bound to a properly scoped
-  Role.
-
-All of the parameters for this chart live in the `values.yaml` file.
-
-## K8sRunLauncher
-
-We use the **`RunLauncher`** to
-express the difference between asking Dagit to execute a pipeline
-directly (on the same node) and asking Dagit to launch execution
-"somewhere else" -- perhaps just on a remote Dagit instance, or
-perhaps in another environment such as a Kubernetes Job.
-
-Note that **where** execution is launched is independent from **how** it
-is executed, that is, which executor is used. The **`RunLauncher`** abstraction is
-layered on top of the executor abstraction. You might choose to launch
-execution in a Kubernetes Job so that execution is isolated from your
-instance of Dagit, but users may still run their pipelines using the
-single-process executor, the multiprocess executor, or the
-dagster-celery executor.
-
-A concrete **`RunLauncher`**, in
-this case the <PyObject module="dagster_k8s" object="K8sRunLauncher" />,
-can be configured on the Dagster instance using a config block such as the following:
-
-```yaml
-run_launcher:
-  module: dagster_k8s.launcher
-  class: K8sRunLauncher
-  config:
-    service_account_name: cool-service-account
-    job_image: cool-docker-image
-    instance_config_map: my-cool-instance-config-map
-    job_namespace: cool-namespace
-    #... more config options -- see the class for complete documentation
-```
-
-The most important thing to note here is the `job_image` config
-parameter. As currently written, the <PyObject module="dagster_k8s" object="K8sRunLauncher" />
-requires an image that can run CLI invocations of `dagster-graphql`
-corresponding to the execution of your pipeline runs. That means that
-your Dagster code (as well as dagster-graphql, and any system or Python
-dependencies) must be present on the `job_image`. We plan to explore
-other implementation options, perhaps allowing Dagster code to be
-brought in using a persistent volume, and would appreciate feedback.
+- Dagit running as a
+  [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a
+  [Service](https://kubernetes.io/docs/concepts/services-networking/service/). Currently, we deploy
+  cron running in the background on this container to instigate scheduled executions. By default,
+  Dagit is launched running a simple example pipeline; see the
+  [Dockerfile](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-example/Dockerfile)
+  and [the code](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project).
+- _PostgreSQL_ for Dagster's storage. In a real deployment, you'll likely want to configure the
+  system to use a PostgreSQL database hosted elsewhere.
+- _RabbitMQ_ as a dagster-celery broker. In a real deployment, you'll likely want to configure the
+  system to use a separately-hosted queueing service, like Redis.
+- A set of `dagster-celery` workers running as a Deployment. By default, these deploy the image
+  `dagster/k8s-celery-worker:<<DAGSTER_VERSION>>`. The Dockerfile
+  for this image can be found
+  [here](https://github.com/dagster-io/dagster/blob/master/python_modules/automation/automation/docker/images/k8s-celery-worker/Dockerfile)
+  if you need to customize the Celery workers for some reason.
+- A ServiceAccount (to launch the [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)) bound to a properly scoped Role.
+- [Flower](https://flower.readthedocs.io/en/latest/), a useful service for monitoring Celery tasks
+  and debugging issues
+- A [Secret](https://kubernetes.io/docs/concepts/configuration/secret/),
+  `dagster-postgresql-secret`,
+  with the PG password; used for connecting to the PostgreSQL database.
+- Several [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/):
+  - `dagster-*-env`: Environment variables for Dagit, the Celery workers, and pipeline execution.
+  - `dagster-celery`: Configures the backend/broker which the Celery workers connect to.
+  - `dagster-instance`: Defines the [Instance YAML](/overview/instances/dagster-instance) for all
+    nodes in the system. Configures Dagster storages to use PostgreSQL, schedules to use cron, and
+    sets the run launcher as <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />
+    to launch pipeline runs as Kubernetes
+    [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/).

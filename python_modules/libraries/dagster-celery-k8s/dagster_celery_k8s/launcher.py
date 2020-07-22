@@ -46,7 +46,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
           class: CeleryK8sRunLauncher
           config:
             instance_config_map: "dagster-k8s-instance-config-map"
-            dagter_home: "/some/path"
+            dagster_home: "/some/path"
             postgres_password_secret: "dagster-k8s-pg-password"
             broker: "some_celery_broker_url"
             backend: "some_celery_backend_url"
