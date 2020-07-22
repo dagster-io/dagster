@@ -185,7 +185,7 @@ def create_dagster_pandas_dataframe_type(
     # configs don't suffice. This is purely optional.
     check.str_param(name, 'name')
     warnings.warn(
-        """This method of constructing dataframe types is deprecated,
+        """Using create_dagster_pandas_dataframe_type for dataframe types is deprecated,
      and is planned to be removed in a future version (tentatively 0.10.0).
      Please use create_structured_dataframe_type instead."""
     )
