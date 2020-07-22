@@ -21,13 +21,13 @@ from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
 
-def get_celery_engine_config(dagster_docker_image, helm_namespace):
+def get_celery_engine_config(dagster_docker_image, job_namespace):
     return {
         'execution': {
             'celery-k8s': {
                 'config': {
                     'job_image': dagster_docker_image,
-                    'job_namespace': helm_namespace,
+                    'job_namespace': job_namespace,
                     'image_pull_policy': 'Always',
                     'env_config_maps': ['dagster-pipeline-env'],
                 }
@@ -49,7 +49,7 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name
             ]
         ),
         get_celery_engine_config(
-            dagster_docker_image=dagster_docker_image, helm_namespace=helm_namespace
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
     )
 
@@ -79,7 +79,7 @@ def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-oute
     run_config = merge_dicts(
         merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml')]),
         get_celery_engine_config(
-            dagster_docker_image=dagster_docker_image, helm_namespace=helm_namespace
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
     )
 
@@ -136,7 +136,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
     run_config = merge_dicts(
         merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml'),]),
         get_celery_engine_config(
-            dagster_docker_image=dagster_docker_image, helm_namespace=helm_namespace
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
         ),
     )
 
@@ -158,17 +158,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=re
     ), 'no match, result: {}'.format(result)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
-def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-outer-name
-    dagster_docker_image, dagster_instance, helm_namespace
-):
-    run_config = merge_dicts(
-        merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml'),]),
-        get_celery_engine_config(
-            dagster_docker_image=dagster_docker_image, helm_namespace=helm_namespace
-        ),
-    )
-
+def _test_termination(dagster_instance, run_config):
     pipeline_name = 'resource_pipeline'
     run = create_run_for_test(
         dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode='default',
@@ -249,3 +239,43 @@ def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-ou
     bucket = 'dagster-scratch-80542c2'
     key = 'resource_termination_test/{}'.format(run.run_id)
     assert s3.get_object(Bucket=bucket, Key=key)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
+def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-outer-name
+    dagster_docker_image, dagster_instance, helm_namespace
+):
+    run_config = merge_dicts(
+        merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml'),]),
+        get_celery_engine_config(
+            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
+        ),
+    )
+
+    _test_termination(dagster_instance, run_config)
+
+
+@pytest.fixture(scope='function')
+def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
+    try:
+        old_value = os.getenv('DAGSTER_K8S_PIPELINE_RUN_NAMESPACE')
+        os.environ['DAGSTER_K8S_PIPELINE_RUN_NAMESPACE'] = helm_namespace
+        yield
+    finally:
+        if old_value is not None:
+            os.environ['DAGSTER_K8S_PIPELINE_RUN_NAMESPACE'] = old_value
+
+
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
+def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=redefined-outer-name
+    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
+):
+    run_config = merge_dicts(
+        merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml'),]),
+        get_celery_engine_config(
+            dagster_docker_image=dagster_docker_image,
+            job_namespace={'env': 'DAGSTER_K8S_PIPELINE_RUN_NAMESPACE'},
+        ),
+    )
+
+    _test_termination(dagster_instance, run_config)
