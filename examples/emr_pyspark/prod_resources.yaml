@@ -1,9 +1,0 @@
-resources:
-  pyspark_step_launcher:
-    config:
-      cluster_id:
-        env: EMR_CLUSTER_ID
-      local_pipeline_package_path: "."
-      deploy_local_pipeline_package: true
-      region_name: "us-west-1"
-      staging_bucket: "dagster-scratch-80542c2"

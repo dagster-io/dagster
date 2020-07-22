@@ -4,12 +4,12 @@ import os
 from dagster import execute_pipeline
 from dagster.core.execution.api import create_execution_plan
 
-from ..repo import emr_preset, my_pipeline
+from ..repo import my_pipeline
 
 
 def test_emr_pyspark_execution_plan():
     os.environ["EMR_CLUSTER_ID"] = "some_cluster_id"
-    create_execution_plan(my_pipeline, mode="emr", run_config=emr_preset.run_config)
+    create_execution_plan(my_pipeline, mode="emr")
 
 
 def test_emr_pyspark_local_mode():
