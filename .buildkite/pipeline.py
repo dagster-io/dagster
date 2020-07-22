@@ -304,7 +304,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             '-in_memory_instance_hosted_user_process_env',
             '-in_memory_instance_out_of_process_env',
             '-in_memory_instance_multi_location',
-            '-in_memory_instance_grpc_env'
+            '-in_memory_instance_grpc_env',
             '-sqlite_instance_hosted_user_process_env',
             '-sqlite_instance_out_of_process_env',
             '-sqlite_instance_multi_location',
