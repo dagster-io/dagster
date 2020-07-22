@@ -17,7 +17,6 @@ from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.system_config.objects import ExecutionConfig
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 
@@ -247,11 +246,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         pipeline_run = self._instance.get_run_by_id(run_id)
         run_config = pipeline_run.run_config
-        execution_engine_config = ExecutionConfig.from_dict(
-            run_config.get('execution')
-        ).execution_engine_config
-
-        return execution_engine_config.get('job_namespace')
+        executor_config = _get_validated_celery_k8s_executor_config(run_config)
+        return executor_config.get('job_namespace')
 
 
 def _get_validated_celery_k8s_executor_config(run_config):
