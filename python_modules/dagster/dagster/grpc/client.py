@@ -8,7 +8,7 @@ import grpc
 from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryPythonOrigin
+from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -161,16 +161,18 @@ class DagsterGrpcClient(object):
             res.serialized_external_pipeline_subset_result
         )
 
-    def external_repository(self, repository_python_origin):
+    def external_repository(self, repository_grpc_server_origin):
         check.inst_param(
-            repository_python_origin, 'repository_python_origin', RepositoryPythonOrigin
+            repository_grpc_server_origin,
+            'repository_grpc_server_origin',
+            RepositoryGrpcServerOrigin,
         )
 
         res = self._query(
             'ExternalRepository',
             api_pb2.ExternalRepositoryRequest,
             serialized_repository_python_origin=serialize_dagster_namedtuple(
-                repository_python_origin
+                repository_grpc_server_origin
             ),
         )
 

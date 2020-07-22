@@ -1,10 +1,13 @@
 from dagster.api.snapshot_repository import (
     sync_get_external_repositories,
-    sync_get_external_repositories_ephemeral_grpc,
+    sync_get_external_repositories_grpc,
 )
 from dagster.core.host_representation import ExternalRepository
 
-from .utils import get_bar_repo_repository_location_handle
+from .utils import (
+    get_bar_repo_grpc_repository_location_handle,
+    get_bar_repo_repository_location_handle,
+)
 
 
 def test_external_repositories_api():
@@ -20,8 +23,10 @@ def test_external_repositories_api():
 
 
 def test_external_repositories_api_grpc():
-    repository_location_handle = get_bar_repo_repository_location_handle()
-    external_repos = sync_get_external_repositories_ephemeral_grpc(repository_location_handle)
+    repository_location_handle = get_bar_repo_grpc_repository_location_handle()
+    external_repos = sync_get_external_repositories_grpc(
+        repository_location_handle.client, repository_location_handle
+    )
 
     assert len(external_repos) == 1
 

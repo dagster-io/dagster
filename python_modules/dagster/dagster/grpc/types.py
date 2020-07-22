@@ -10,7 +10,7 @@ from dagster.core.code_pointer import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, RepositoryOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -184,7 +184,7 @@ class PartitionArgs(
         return super(PartitionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, 'repository_origin', RepositoryPythonOrigin
+                repository_origin, 'repository_origin', RepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
             partition_name=check.str_param(partition_name, 'partition_name'),
@@ -197,7 +197,7 @@ class PartitionNamesArgs(namedtuple('_PartitionNamesArgs', 'repository_origin pa
         return super(PartitionNamesArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, 'repository_origin', RepositoryPythonOrigin
+                repository_origin, 'repository_origin', RepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
         )
@@ -227,7 +227,7 @@ class ExternalScheduleExecutionArgs(
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, 'repository_origin', RepositoryPythonOrigin
+                repository_origin, 'repository_origin', RepositoryOrigin
             ),
             instance_ref=check.inst_param(instance_ref, 'instance_ref', InstanceRef),
             schedule_name=check.str_param(schedule_name, 'schedule_name'),

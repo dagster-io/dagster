@@ -1,13 +1,44 @@
+from abc import ABCMeta
 from collections import namedtuple
+
+import six
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
 
+class RepositoryOrigin(six.with_metaclass(ABCMeta)):
+    def get_id(self):
+        return create_snapshot_id(self)
+
+
+@whitelist_for_serdes
+class RepositoryGrpcServerOrigin(
+    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket executable_path code_pointer'),
+    RepositoryOrigin,
+):
+    '''
+    Subset of information needed to load a RepositoryDefinition from a GRPC server.
+
+    executable_path and code_pointer are used for backwards compatibility and will be replaced
+    with a repository key isntead.
+    '''
+
+    def __new__(cls, host, port, socket, executable_path, code_pointer):
+        return super(RepositoryGrpcServerOrigin, cls).__new__(
+            cls,
+            check.str_param(host, 'host'),
+            check.opt_int_param(port, 'port'),
+            check.opt_str_param(socket, 'socket'),
+            check.str_param(executable_path, 'executable_path'),
+            check.inst_param(code_pointer, 'code_pointer', CodePointer),
+        )
+
+
 @whitelist_for_serdes
 class RepositoryPythonOrigin(
-    namedtuple('_RepositoryPythonOrigin', 'executable_path code_pointer'),
+    namedtuple('_RepositoryPythonOrigin', 'executable_path code_pointer'), RepositoryOrigin,
 ):
     '''
     Derived from the handle structure in the host process, this is the subset of information
@@ -24,9 +55,6 @@ class RepositoryPythonOrigin(
     def get_cli_args(self):
         return self.code_pointer.get_cli_args()
 
-    def get_id(self):
-        return create_snapshot_id(self)
-
 
 @whitelist_for_serdes
 class PipelinePythonOrigin(namedtuple('_PipelinePythonOrigin', 'pipeline_name repository_origin')):
@@ -34,7 +62,7 @@ class PipelinePythonOrigin(namedtuple('_PipelinePythonOrigin', 'pipeline_name re
         return super(PipelinePythonOrigin, cls).__new__(
             cls,
             check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
+            check.inst_param(repository_origin, 'repository_origin', RepositoryOrigin),
         )
 
     @property
@@ -57,7 +85,7 @@ class SchedulePythonOrigin(namedtuple('_SchedulePythonOrigin', 'schedule_name re
         return super(SchedulePythonOrigin, cls).__new__(
             cls,
             check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
+            check.inst_param(repository_origin, 'repository_origin', RepositoryOrigin),
         )
 
     @property

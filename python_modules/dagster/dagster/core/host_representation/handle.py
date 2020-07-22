@@ -6,7 +6,12 @@ from dagster import check
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
+from dagster.core.origin import (
+    PipelinePythonOrigin,
+    RepositoryGrpcServerOrigin,
+    RepositoryPythonOrigin,
+    SchedulePythonOrigin,
+)
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -193,8 +198,10 @@ class RepositoryHandle(
                 executable_path=self.repository_location_handle.executable_path,
             )
         elif isinstance(self.repository_location_handle, GrpcServerRepositoryLocationHandle):
-            # This should be a different type of origin eventually
-            return RepositoryPythonOrigin(
+            return RepositoryGrpcServerOrigin(
+                host=self.repository_location_handle.host,
+                port=self.repository_location_handle.port,
+                socket=self.repository_location_handle.socket,
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
                     self.repository_key
                 ],

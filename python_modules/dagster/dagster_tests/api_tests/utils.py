@@ -3,9 +3,11 @@ from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import (
+    GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
 )
+from dagster.grpc.types import LoadableTargetOrigin
 
 
 def get_bar_repo_repository_location_handle():
@@ -19,9 +21,26 @@ def get_bar_repo_repository_location_handle():
     )
 
 
+def get_bar_repo_grpc_repository_location_handle():
+    return RepositoryLocationHandle.create_process_bound_grpc_server_location(
+        loadable_target_origin=LoadableTargetOrigin(
+            attribute='bar_repo', python_file=file_relative_path(__file__, 'api_tests_repo.py'),
+        ),
+        location_name='bar_repo',
+    )
+
+
 def get_bar_repo_handle():
     return (
         PythonEnvRepositoryLocation(get_bar_repo_repository_location_handle())
+        .get_repository('bar_repo')
+        .handle
+    )
+
+
+def get_bar_grpc_repo_handle():
+    return (
+        GrpcServerRepositoryLocation(get_bar_repo_grpc_repository_location_handle())
         .get_repository('bar_repo')
         .handle
     )

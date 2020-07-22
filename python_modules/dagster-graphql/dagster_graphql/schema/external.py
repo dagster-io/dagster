@@ -9,7 +9,7 @@ from dagster.core.host_representation import (
     PythonEnvRepositoryLocationHandle,
     RepositoryLocation,
 )
-from dagster.core.origin import RepositoryPythonOrigin
+from dagster.core.origin import RepositoryOrigin
 
 
 class DauphinRepository(dauphin.ObjectType):
@@ -64,7 +64,7 @@ class DauphinRepositoryOrigin(dauphin.ObjectType):
     code_pointer_description = dauphin.NonNull(dauphin.String)
 
     def __init__(self, origin):
-        self._origin = check.inst_param(origin, 'origin', RepositoryPythonOrigin)
+        self._origin = check.inst_param(origin, 'origin', RepositoryOrigin)
 
     def resolve_executable_path(self, _graphene_info):
         return self._origin.executable_path
