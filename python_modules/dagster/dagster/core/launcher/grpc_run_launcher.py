@@ -8,10 +8,10 @@ from dagster.api.execute_run import sync_execute_run_grpc
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin, RepositoryGrpcServerOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.client import ephemeral_grpc_api_client
-from dagster.grpc.types import CancelExecutionRequest
+from dagster.grpc.server import GrpcServerProcess
+from dagster.grpc.types import CancelExecutionRequest, LoadableTargetOrigin
 from dagster.serdes import ConfigurableClass
 
 from .base import RunLauncher
@@ -27,13 +27,33 @@ def _launched_run_client(instance_ref, pipeline_origin, pipeline_run_id, cancell
     instance = DagsterInstance.from_ref(instance_ref)
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
-    with ephemeral_grpc_api_client(max_workers=2) as api_client:
+    # Create an ephemeral GRPC server, create a repository origin for it for the passed in
+    # PipelinePythonOrigin. This is a temporary measure that we can remove once
+    # EphemeralGrpcRunLauncher is removed.
+    loadable_target_origin = LoadableTargetOrigin.from_python_origin(
+        pipeline_origin.repository_origin
+    )
+
+    with GrpcServerProcess(loadable_target_origin, max_workers=2) as server_process:
+        api_client = server_process.create_ephemeral_client()
+
+        grpc_repository_origin = RepositoryGrpcServerOrigin(
+            host='localhost',
+            port=server_process.port,
+            socket=server_process.socket,
+            repository_key=pipeline_origin.repository_origin.code_pointer.fn_name,
+        )
+
+        grpc_pipeline_origin = PipelinePythonOrigin(
+            pipeline_name=pipeline_origin.pipeline_name, repository_origin=grpc_repository_origin
+        )
+
         execute_run_thread = threading.Thread(
             target=sync_execute_run_grpc,
             kwargs={
                 'api_client': api_client,
                 'instance_ref': instance_ref,
-                'pipeline_origin': pipeline_origin,
+                'pipeline_origin': grpc_pipeline_origin,
                 'pipeline_run': pipeline_run,
             },
         )

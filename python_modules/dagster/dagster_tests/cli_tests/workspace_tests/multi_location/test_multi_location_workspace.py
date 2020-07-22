@@ -253,37 +253,29 @@ opt_in:
     loaded_from_file_handle = workspace.get_repository_location_handle('loaded_from_file')
     assert isinstance(loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
-    assert set(loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
-        'hello_world_repository'
-    }
+    assert loaded_from_file_handle.repository_keys == {'hello_world_repository'}
 
     loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
     assert isinstance(loaded_from_module_handle, GrpcServerRepositoryLocationHandle)
 
-    assert set(loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
-        'hello_world_repository'
-    }
+    assert loaded_from_module_handle.repository_keys == {'hello_world_repository'}
 
     named_loaded_from_file_handle = workspace.get_repository_location_handle(
         'named_loaded_from_file'
     )
-    assert set(named_loaded_from_file_handle.repository_code_pointer_dict.keys()) == {
-        'hello_world_repository_name'
-    }
+    assert named_loaded_from_file_handle.repository_keys == {'hello_world_repository_name'}
     assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
     named_loaded_from_module_handle = workspace.get_repository_location_handle(
         'named_loaded_from_module'
     )
-    assert set(named_loaded_from_module_handle.repository_code_pointer_dict.keys()) == {
-        'hello_world_repository_name'
-    }
+    assert named_loaded_from_module_handle.repository_keys == {'hello_world_repository_name'}
     assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
 
     named_loaded_from_module_attribute_handle = workspace.get_repository_location_handle(
         'named_loaded_from_module_attribute'
     )
-    assert set(named_loaded_from_module_attribute_handle.repository_code_pointer_dict.keys()) == {
+    assert named_loaded_from_module_attribute_handle.repository_keys == {
         'hello_world_repository_name'
     }
     assert isinstance(named_loaded_from_module_attribute_handle, GrpcServerRepositoryLocationHandle)
@@ -291,7 +283,7 @@ opt_in:
     named_loaded_from_file_attribute_handle = workspace.get_repository_location_handle(
         'named_loaded_from_file_attribute'
     )
-    assert set(named_loaded_from_file_attribute_handle.repository_code_pointer_dict.keys()) == {
+    assert named_loaded_from_file_attribute_handle.repository_keys == {
         'hello_world_repository_name'
     }
     assert isinstance(named_loaded_from_file_attribute_handle, GrpcServerRepositoryLocationHandle)

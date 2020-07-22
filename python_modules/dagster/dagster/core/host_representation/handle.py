@@ -89,6 +89,10 @@ class RepositoryLocationHandle:
         client = server.create_client()
         list_repositories_response = sync_list_repositories_grpc(client)
 
+        repository_keys = set(
+            symbol.repository_name for symbol in list_repositories_response.repository_symbols
+        )
+
         return GrpcServerRepositoryLocationHandle(
             port=server.port,
             socket=server.socket,
@@ -98,8 +102,7 @@ class RepositoryLocationHandle:
             else assign_grpc_location_name(server.port, server.socket, 'localhost'),
             client=client,
             server_process=server,
-            executable_path=list_repositories_response.executable_path,
-            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
+            repository_keys=repository_keys,
         )
 
     @staticmethod
@@ -115,6 +118,10 @@ class RepositoryLocationHandle:
 
         list_repositories_response = sync_list_repositories_grpc(client)
 
+        repository_keys = set(
+            symbol.repository_name for symbol in list_repositories_response.repository_symbols
+        )
+
         return GrpcServerRepositoryLocationHandle(
             port=port,
             socket=socket,
@@ -124,15 +131,14 @@ class RepositoryLocationHandle:
             else assign_grpc_location_name(port, socket, host),
             client=client,
             server_process=None,
-            executable_path=list_repositories_response.executable_path,
-            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
+            repository_keys=repository_keys,
         )
 
 
 class GrpcServerRepositoryLocationHandle(
     namedtuple(
         '_GrpcServerRepositoryLocationHandle',
-        'port socket host location_name client server_process executable_path repository_code_pointer_dict',
+        'port socket host location_name client server_process repository_keys',
     ),
     RepositoryLocationHandle,
 ):
@@ -202,10 +208,7 @@ class RepositoryHandle(
                 host=self.repository_location_handle.host,
                 port=self.repository_location_handle.port,
                 socket=self.repository_location_handle.socket,
-                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
-                    self.repository_key
-                ],
-                executable_path=self.repository_location_handle.executable_path,
+                repository_key=self.repository_key,
             )
         else:
             check.failed(

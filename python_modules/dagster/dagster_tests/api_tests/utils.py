@@ -50,6 +50,10 @@ def get_foo_pipeline_handle():
     return PipelineHandle('foo', get_bar_repo_handle())
 
 
+def get_foo_grpc_pipeline_handle():
+    return PipelineHandle('foo', get_bar_grpc_repo_handle())
+
+
 def legacy_get_bar_repo_handle():
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
         file_relative_path(__file__, 'repository_file.yaml')

@@ -112,9 +112,14 @@ def host_dagit_ui_with_workspace(
 
     if len(workspace.repository_location_handles) == 1:
         repository_location_handle = workspace.repository_location_handles[0]
-        if len(repository_location_handle.repository_code_pointer_dict) == 1:
-            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
 
+        # Telemetry logic needs to be updated to support multi-repo / gRPC repo locations
+        # See https://github.com/dagster-io/dagster/issues/2752
+        if (
+            hasattr(repository_location_handle, 'repository_code_pointer_dict')
+            and len(repository_location_handle.repository_code_pointer_dict) == 1
+        ):
+            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
             from dagster.core.definitions.reconstructable import ReconstructableRepository
 
             recon_repo = ReconstructableRepository(pointer)

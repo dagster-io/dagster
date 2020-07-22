@@ -309,9 +309,7 @@ def ephemeral_grpc_api_client(
         max_retries=max_retries,
         max_workers=max_workers,
     ) as server:
-        client = EphemeralDagsterGrpcClient(
-            port=server.port, socket=server.socket, server_process=server.server_process
-        )
+        client = server.create_ephemeral_client()
         try:
             yield client
         finally:

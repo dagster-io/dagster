@@ -2,7 +2,7 @@ from dagster import check
 from dagster.api.utils import execute_unary_api_cli_command
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-from dagster.grpc.client import DagsterGrpcClient, ephemeral_grpc_api_client
+from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import ExecutionPlanSnapshotArgs
 
 
@@ -70,23 +70,3 @@ def sync_get_external_execution_plan_grpc(
         ),
         ExecutionPlanSnapshot,
     )
-
-
-def sync_get_external_execution_plan_ephemeral_grpc(
-    pipeline_origin,
-    run_config,
-    mode,
-    pipeline_snapshot_id,
-    solid_selection=None,
-    step_keys_to_execute=None,
-):
-    with ephemeral_grpc_api_client() as api_client:
-        return sync_get_external_execution_plan_grpc(
-            api_client,
-            pipeline_origin,
-            run_config,
-            mode,
-            pipeline_snapshot_id,
-            solid_selection,
-            step_keys_to_execute,
-        )

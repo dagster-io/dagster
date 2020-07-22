@@ -15,24 +15,19 @@ class RepositoryOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class RepositoryGrpcServerOrigin(
-    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket executable_path code_pointer'),
-    RepositoryOrigin,
+    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket repository_key'), RepositoryOrigin,
 ):
     '''
     Subset of information needed to load a RepositoryDefinition from a GRPC server.
-
-    executable_path and code_pointer are used for backwards compatibility and will be replaced
-    with a repository key isntead.
     '''
 
-    def __new__(cls, host, port, socket, executable_path, code_pointer):
+    def __new__(cls, host, port, socket, repository_key):
         return super(RepositoryGrpcServerOrigin, cls).__new__(
             cls,
             check.str_param(host, 'host'),
             check.opt_int_param(port, 'port'),
             check.opt_str_param(socket, 'socket'),
-            check.str_param(executable_path, 'executable_path'),
-            check.inst_param(code_pointer, 'code_pointer', CodePointer),
+            check.str_param(repository_key, 'repository_key'),
         )
 
 

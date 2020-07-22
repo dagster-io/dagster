@@ -3,11 +3,14 @@ import pytest
 from dagster import seven
 from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance
-from dagster.grpc.client import ephemeral_grpc_api_client
 from dagster.serdes.ipc import ipc_read_event_stream
 from dagster.utils import safe_tempfile_path
 
-from .utils import get_foo_pipeline_handle, legacy_get_foo_pipeline_handle
+from .utils import (
+    get_foo_grpc_pipeline_handle,
+    get_foo_pipeline_handle,
+    legacy_get_foo_pipeline_handle,
+)
 
 
 @pytest.mark.parametrize(
@@ -64,9 +67,9 @@ def test_execute_run_api(repo_handle):
 
 
 @pytest.mark.parametrize(
-    "repo_handle", [get_foo_pipeline_handle(), legacy_get_foo_pipeline_handle()],
+    "pipeline_handle", [get_foo_grpc_pipeline_handle()],
 )
-def test_execute_run_api_grpc(repo_handle):
+def test_execute_run_api_grpc(pipeline_handle):
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         pipeline_run = instance.create_run(
@@ -84,16 +87,15 @@ def test_execute_run_api_grpc(repo_handle):
             execution_plan_snapshot=None,
             parent_pipeline_snapshot=None,
         )
-        with ephemeral_grpc_api_client() as api_client:
-            events = [
-                event
-                for event in sync_execute_run_grpc(
-                    api_client=api_client,
-                    instance_ref=instance.get_ref(),
-                    pipeline_origin=repo_handle.get_origin(),
-                    pipeline_run=pipeline_run,
-                )
-            ]
+        events = [
+            event
+            for event in sync_execute_run_grpc(
+                api_client=pipeline_handle.repository_handle.repository_location_handle.client,
+                instance_ref=instance.get_ref(),
+                pipeline_origin=pipeline_handle.get_origin(),
+                pipeline_run=pipeline_run,
+            )
+        ]
 
     assert len(events) == 14
     assert [event.event_type_value for event in events] == [

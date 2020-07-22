@@ -32,10 +32,7 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import (
-    recon_pipeline_from_origin,
-    recon_repository_from_origin,
-)
+from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 from .types import ExecuteRunArgs, ExternalScheduleExecutionArgs
 
@@ -73,15 +70,13 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
         instance.report_run_failed(pipeline_run)
 
 
-def execute_run_in_subprocess(request, event_queue, termination_event):
+def execute_run_in_subprocess(request, recon_pipeline, event_queue, termination_event):
     start_termination_thread(termination_event)
     try:
         execute_run_args = deserialize_json_to_dagster_namedtuple(
             request.serialized_execute_run_args
         )
         check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
-
-        recon_pipeline = recon_pipeline_from_origin(execute_run_args.pipeline_origin)
 
         instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
         pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)

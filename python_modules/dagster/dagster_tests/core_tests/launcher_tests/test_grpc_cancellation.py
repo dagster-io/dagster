@@ -5,9 +5,9 @@ from contextlib import contextmanager
 
 from dagster import DagsterInstance, Field, Int, Materialization, pipeline, repository, seven, solid
 from dagster.core.code_pointer import CodePointer
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
-from dagster.grpc.client import ephemeral_grpc_api_client
-from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs
+from dagster.core.origin import PipelinePythonOrigin, RepositoryGrpcServerOrigin
+from dagster.grpc.server import GrpcServerProcess
+from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
 
 
 @contextmanager
@@ -76,7 +76,14 @@ def _stream_events_target(results, api_client, execute_run_args):
 
 def test_cancel_run():
     with temp_instance() as instance:
-        with ephemeral_grpc_api_client(max_workers=10) as api_client:
+
+        loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable, python_file=__file__, working_directory=None,
+        )
+
+        with GrpcServerProcess(loadable_target_origin, max_workers=10) as server_process:
+            api_client = server_process.create_ephemeral_client()
+
             streaming_results = []
 
             pipeline_run = instance.create_run_for_pipeline(
@@ -85,13 +92,11 @@ def test_cancel_run():
             execute_run_args = ExecuteRunArgs(
                 pipeline_origin=PipelinePythonOrigin(
                     pipeline_name='streaming_pipeline',
-                    repository_origin=RepositoryPythonOrigin(
-                        executable_path=sys.executable,
-                        code_pointer=CodePointer.from_python_file(
-                            python_file=__file__,
-                            definition='test_repository',
-                            working_directory=None,
-                        ),
+                    repository_origin=RepositoryGrpcServerOrigin(
+                        host='localhost',
+                        socket=server_process.socket,
+                        port=server_process.port,
+                        repository_key='test_repository',
                     ),
                 ),
                 pipeline_run_id=pipeline_run.run_id,
