@@ -8,6 +8,8 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
+    Optional,
+    Output,
     OutputDefinition,
     PipelineDefinition,
     String,
@@ -431,3 +433,26 @@ def test_mapping_errors():
             solid_defs=[echo],
             output_mappings=[OutputDefinition(str).mapping_from('echo', 'result')],
         )
+
+
+def test_composite_skippable_output_result():
+    @lambda_solid(output_def=OutputDefinition(int))
+    def emit_one():
+        return 1
+
+    @solid(output_defs=[OutputDefinition(Optional[float], name="foo_output", is_required=False)])
+    def foo_solid(_, condition=False):
+        if condition:
+            yield Output(1.0, 'foo_output')
+
+    @composite_solid(
+        output_defs=[
+            OutputDefinition(Optional[float], name="foo_output", is_required=False),
+            OutputDefinition(int, name="one_output"),
+        ]
+    )
+    def foo_composite():
+        return {"foo_output": foo_solid(), "one_output": emit_one()}
+
+    result = execute_solid(foo_composite)
+    assert result.output_values == {"one_output": 1}

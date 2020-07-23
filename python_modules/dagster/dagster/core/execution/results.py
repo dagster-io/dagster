@@ -204,10 +204,20 @@ class CompositeSolidExecutionResult(IContainSolidsExecutionResult):
 
     @property
     def output_values(self):
-        return {
-            output_name: self.output_value(output_name)
-            for output_name in self.solid.definition.output_dict
-        }
+        values = {}
+
+        for output_name in self.solid.definition.output_dict:
+            output_mapping = self.solid.definition.get_output_mapping(output_name)
+
+            inner_solid_values = self._result_for_handle(
+                self.solid.definition.solid_named(output_mapping.solid_name),
+                SolidHandle(output_mapping.solid_name, None),
+            ).output_values
+
+            if output_mapping.output_name in inner_solid_values:
+                values[output_name] = inner_solid_values[output_mapping.output_name]
+
+        return values
 
     def output_value(self, output_name=DEFAULT_OUTPUT):
         check.str_param(output_name, 'output_name')
