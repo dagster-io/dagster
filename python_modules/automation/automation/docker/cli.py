@@ -25,7 +25,7 @@ def cli():
 @cli.command()
 def list():  # pylint: disable=redefined-builtin
     for image in list_images():
-        print(image)  # pylint: disable=print-call
+        print(image.image)  # pylint: disable=print-call
 
 
 @cli.command()

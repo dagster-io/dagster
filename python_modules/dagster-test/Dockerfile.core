@@ -3,11 +3,10 @@ ARG PYTHON_VERSION
 
 FROM "${BASE_IMAGE}"
 
-ADD build_cache/ /
-ADD . .
+COPY . .
 
 RUN pip install \
-    -e dagster \
+    -e modules/dagster \
     -e .
 
 WORKDIR /dagster_test/dagster_core_docker_buildkite/

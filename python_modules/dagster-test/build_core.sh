@@ -4,7 +4,7 @@ ROOT=$(git rev-parse --show-toplevel)
 BASE_DIR="${ROOT}/python_modules/dagster-test/"
 
 function cleanup {
-    rm -rf "${BASE_DIR}/build_cache"
+    rm -rf "${BASE_DIR}/modules"
     set +ux
 }
 
@@ -27,11 +27,11 @@ IMAGE_TAG=$2
 
 pushd $BASE_DIR
 
-mkdir -p build_cache
+mkdir -p modules
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
 cp -R $ROOT/python_modules/dagster \
-      build_cache/
+      modules/
 
 find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
@@ -41,7 +41,6 @@ BASE_IMAGE=${BASE_IMAGE:=$PYTHON_SLIM_IMAGE}
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 docker build . \
     -f Dockerfile.core \
-    --no-cache \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg BASE_IMAGE="${BASE_IMAGE}" \
     -t "${IMAGE_TAG}"
