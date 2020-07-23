@@ -109,6 +109,21 @@ load_from:
                 module_name: dagster.utils.test.named_hello_world_repository
                 location_name: named_loaded_from_module
 
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_module:
+                module_name: dagster.utils.test.named_hello_world_repository
+                attribute: named_hello_world_repository
+                location_name: named_loaded_from_module_attribute
+
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_file:
+                relative_path: named_hello_world_repository.py
+                attribute: named_hello_world_repository
+                location_name: named_loaded_from_file_attribute
     '''.format(
         executable=sys.executable
     )
@@ -119,7 +134,7 @@ load_from:
         file_relative_path(__file__, 'not_a_real.yaml'),
     )
     assert isinstance(workspace, Workspace)
-    assert len(workspace.repository_location_handles) == 4
+    assert len(workspace.repository_location_handles) == 6
     assert workspace.has_repository_location_handle('loaded_from_file')
     assert workspace.has_repository_location_handle('loaded_from_module')
     assert workspace.has_repository_location_handle('named_loaded_from_file')
@@ -153,6 +168,22 @@ load_from:
     }
     assert isinstance(named_loaded_from_file_handle, PythonEnvRepositoryLocationHandle)
 
+    named_loaded_from_module_attribute_handle = workspace.get_repository_location_handle(
+        'named_loaded_from_module_attribute'
+    )
+    assert set(named_loaded_from_module_attribute_handle.repository_code_pointer_dict.keys()) == {
+        'named_hello_world_repository'
+    }
+    assert isinstance(named_loaded_from_module_attribute_handle, PythonEnvRepositoryLocationHandle)
+
+    named_loaded_from_file_attribute_handle = workspace.get_repository_location_handle(
+        'named_loaded_from_file_attribute'
+    )
+    assert set(named_loaded_from_file_attribute_handle.repository_code_pointer_dict.keys()) == {
+        'named_hello_world_repository'
+    }
+    assert isinstance(named_loaded_from_file_attribute_handle, PythonEnvRepositoryLocationHandle)
+
 
 def test_grpc_multi_location_workspace():
     workspace_yaml = '''
@@ -185,6 +216,22 @@ load_from:
                 module_name: dagster.utils.test.named_hello_world_repository
                 location_name: named_loaded_from_module
 
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_module:
+                module_name: dagster.utils.test.named_hello_world_repository
+                attribute: named_hello_world_repository
+                location_name: named_loaded_from_module_attribute
+
+    - python_environment:
+        executable_path: {executable}
+        target:
+            python_file:
+                relative_path: named_hello_world_repository.py
+                attribute: named_hello_world_repository
+                location_name: named_loaded_from_file_attribute
+
 opt_in:
     - grpc
 
@@ -199,7 +246,7 @@ opt_in:
     )
 
     assert isinstance(workspace, Workspace)
-    assert len(workspace.repository_location_handles) == 4
+    assert len(workspace.repository_location_handles) == 6
     assert workspace.has_repository_location_handle('loaded_from_file')
     assert workspace.has_repository_location_handle('loaded_from_module')
 
@@ -232,3 +279,19 @@ opt_in:
         'hello_world_repository_name'
     }
     assert isinstance(named_loaded_from_file_handle, GrpcServerRepositoryLocationHandle)
+
+    named_loaded_from_module_attribute_handle = workspace.get_repository_location_handle(
+        'named_loaded_from_module_attribute'
+    )
+    assert set(named_loaded_from_module_attribute_handle.repository_code_pointer_dict.keys()) == {
+        'hello_world_repository_name'
+    }
+    assert isinstance(named_loaded_from_module_attribute_handle, GrpcServerRepositoryLocationHandle)
+
+    named_loaded_from_file_attribute_handle = workspace.get_repository_location_handle(
+        'named_loaded_from_file_attribute'
+    )
+    assert set(named_loaded_from_file_attribute_handle.repository_code_pointer_dict.keys()) == {
+        'hello_world_repository_name'
+    }
+    assert isinstance(named_loaded_from_file_attribute_handle, GrpcServerRepositoryLocationHandle)

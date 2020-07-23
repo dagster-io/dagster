@@ -9,6 +9,7 @@ import grpc
 
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.reconstructable import load_def_in_module, load_def_in_python_file
 from dagster.core.errors import (
     DagsterSubprocessError,
     PartitionExecutionError,
@@ -140,26 +141,46 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         if loadable_target_origin:
-            if loadable_target_origin.attribute:
-                self._loadable_repository_symbols = [
-                    LoadableRepositorySymbol(
-                        attribute=loadable_target_origin.attribute,
-                        repository_name=loadable_target_origin.attribute,
-                    )
-                ]
-            else:
+            from dagster.cli.workspace.autodiscovery import LoadableTarget
+
+            if not loadable_target_origin.attribute:
                 loadable_targets = get_loadable_targets(
                     loadable_target_origin.python_file,
                     loadable_target_origin.module_name,
                     loadable_target_origin.working_directory,
                 )
-                self._loadable_repository_symbols = [
-                    LoadableRepositorySymbol(
-                        attribute=loadable_target.attribute,
-                        repository_name=loadable_target.target_definition.name,
+            elif loadable_target_origin.python_file:
+                loadable_targets = [
+                    LoadableTarget(
+                        loadable_target_origin.attribute,
+                        load_def_in_python_file(
+                            loadable_target_origin.python_file,
+                            loadable_target_origin.attribute,
+                            loadable_target_origin.working_directory,
+                        ),
                     )
-                    for loadable_target in loadable_targets
                 ]
+            else:
+                check.invariant(
+                    loadable_target_origin.module_name,
+                    'if attribute is set, either a file or module must also be set',
+                )
+                loadable_targets = [
+                    LoadableTarget(
+                        loadable_target_origin.attribute,
+                        load_def_in_module(
+                            loadable_target_origin.module_name, loadable_target_origin.attribute,
+                        ),
+                    )
+                ]
+
+            self._loadable_repository_symbols = [
+                LoadableRepositorySymbol(
+                    attribute=loadable_target.attribute,
+                    repository_name=loadable_target.target_definition.name,
+                )
+                for loadable_target in loadable_targets
+            ]
         else:
             self._loadable_repository_symbols = []
 

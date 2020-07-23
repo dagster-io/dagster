@@ -7,7 +7,11 @@ import six
 from dagster import check
 from dagster.api.list_repositories import sync_list_repositories
 from dagster.core.code_pointer import CodePointer, rebase_file
-from dagster.core.definitions.reconstructable import def_from_pointer
+from dagster.core.definitions.reconstructable import (
+    load_def_in_module,
+    load_def_in_package,
+    load_def_in_python_file,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryLocationHandle, UserProcessApi
 from dagster.grpc.types import LoadableTargetOrigin
@@ -70,18 +74,6 @@ def load_workspace_from_config(workspace_config, yaml_path):
         )
 
     return Workspace(location_handles)
-
-
-def load_def_in_module(module_name, attribute):
-    return def_from_pointer(CodePointer.from_module(module_name, attribute))
-
-
-def load_def_in_package(package_name, attribute):
-    return def_from_pointer(CodePointer.from_python_package(package_name, attribute))
-
-
-def load_def_in_python_file(python_file, attribute, working_directory):
-    return def_from_pointer(CodePointer.from_python_file(python_file, attribute, working_directory))
 
 
 def _location_handle_from_module_config(python_module_config, user_process_api):

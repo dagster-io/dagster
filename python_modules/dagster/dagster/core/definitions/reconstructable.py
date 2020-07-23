@@ -268,6 +268,18 @@ def _check_is_loadable(definition):
     return definition
 
 
+def load_def_in_module(module_name, attribute):
+    return def_from_pointer(CodePointer.from_module(module_name, attribute))
+
+
+def load_def_in_package(package_name, attribute):
+    return def_from_pointer(CodePointer.from_python_package(package_name, attribute))
+
+
+def load_def_in_python_file(python_file, attribute, working_directory):
+    return def_from_pointer(CodePointer.from_python_file(python_file, attribute, working_directory))
+
+
 def def_from_pointer(pointer):
     target = pointer.load_target()
 
