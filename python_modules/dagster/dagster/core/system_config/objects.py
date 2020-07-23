@@ -101,7 +101,7 @@ class EnvironmentConfig(
         config_value = config_evr.value
 
         mode_def = pipeline_def.get_mode_definition(mode)
-        resource_configs = config_value.get('resources', {})
+        resource_configs = run_config.get('resources', {})
         processed_resource_configs = {}
         for resource_key, resource_def in mode_def.resource_defs.items():
             resource_config = resource_configs.get(resource_key, {})

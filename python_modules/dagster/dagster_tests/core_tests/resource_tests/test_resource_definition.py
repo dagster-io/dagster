@@ -3,8 +3,11 @@ import pytest
 from dagster import (
     DagsterEventType,
     DagsterResourceFunctionError,
+    Enum,
+    EnumValue,
     Field,
     Int,
+    IntSource,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -824,3 +827,55 @@ def test_configured_decorator_with_fn():
         return str(num + 1)
 
     assert_pipeline_runs_with_resource(configured_resource, 2, '3')
+
+
+def test_resource_with_enum_in_schema():
+    from enum import Enum as PythonEnum
+
+    class TestPythonEnum(PythonEnum):
+        VALUE_ONE = 0
+        OTHER = 1
+
+    DagsterEnumType = Enum(
+        'TestEnum',
+        [
+            EnumValue('VALUE_ONE', TestPythonEnum.VALUE_ONE),
+            EnumValue('OTHER', TestPythonEnum.OTHER),
+        ],
+    )
+
+    @resource(config_schema={'enum': DagsterEnumType})
+    def enum_resource(context):
+        return context.resource_config['enum']
+
+    assert_pipeline_runs_with_resource(
+        enum_resource, {'enum': 'VALUE_ONE'}, TestPythonEnum.VALUE_ONE
+    )
+
+
+def test_resource_with_enum_in_schema_configured():
+    from enum import Enum as PythonEnum
+
+    class TestPythonEnum(PythonEnum):
+        VALUE_ONE = 0
+        OTHER = 1
+
+    DagsterEnumType = Enum(
+        'TestEnum',
+        [
+            EnumValue('VALUE_ONE', TestPythonEnum.VALUE_ONE),
+            EnumValue('OTHER', TestPythonEnum.OTHER),
+        ],
+    )
+
+    @resource(config_schema={'enum': DagsterEnumType})
+    def enum_resource(context):
+        return context.resource_config['enum']
+
+    @configured(enum_resource, {'enum': DagsterEnumType})
+    def passthrough_to_enum_resource(config):
+        return {'enum': 'VALUE_ONE' if config['enum'] == TestPythonEnum.VALUE_ONE else 'OTHER'}
+
+    assert_pipeline_runs_with_resource(
+        passthrough_to_enum_resource, {'enum': 'VALUE_ONE'}, TestPythonEnum.VALUE_ONE
+    )
