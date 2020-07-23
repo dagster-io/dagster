@@ -37,8 +37,12 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 from .types import ExecuteRunArgs, ExternalScheduleExecutionArgs
 
 
-class ExecuteRunInSubprocessComplete:
-    pass
+class RunInSubprocessComplete:
+    '''Sentinel passed over multiprocessing Queue when subprocess is complete'''
+
+
+class StartRunInSubprocessSuccessful:
+    '''Sentinel passed over multiprocessing Queue when launch is successful in subprocess.'''
 
 
 def _core_execute_run(recon_pipeline, pipeline_run, instance):
@@ -70,12 +74,17 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
         instance.report_run_failed(pipeline_run)
 
 
-def execute_run_in_subprocess(request, recon_pipeline, event_queue, termination_event):
+def _run_in_subprocess(
+    serialized_execute_run_args,
+    recon_pipeline,
+    termination_event,
+    subprocess_status_handler,
+    run_event_handler,
+):
+
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_execute_run_args
-        )
+        execute_run_args = deserialize_json_to_dagster_namedtuple(serialized_execute_run_args)
         check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
 
         instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
@@ -84,16 +93,17 @@ def execute_run_in_subprocess(request, recon_pipeline, event_queue, termination_
         pid = os.getpid()
 
     except:  # pylint: disable=bare-except
-        event_queue.put(
-            IPCErrorMessage(
-                serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
-                message='Error during RPC setup for ExecuteRun',
-            )
+        event = IPCErrorMessage(
+            serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+            message='Error during RPC setup for ExecuteRun',
         )
-        event_queue.put(ExecuteRunInSubprocessComplete())
+        subprocess_status_handler(event)
+        subprocess_status_handler(RunInSubprocessComplete())
         return
 
-    event_queue.put(
+    subprocess_status_handler(StartRunInSubprocessSuccessful())
+
+    run_event_handler(
         instance.report_engine_event(
             'Started process for pipeline (pid: {pid}).'.format(pid=pid),
             pipeline_run,
@@ -106,9 +116,9 @@ def execute_run_in_subprocess(request, recon_pipeline, event_queue, termination_
     closed = False
     try:
         for event in _core_execute_run(recon_pipeline, pipeline_run, instance):
-            event_queue.put(event)
+            run_event_handler(event)
     except KeyboardInterrupt:
-        event_queue.put(
+        run_event_handler(
             instance.report_engine_event(
                 message='Pipeline execution terminated by interrupt', pipeline_run=pipeline_run,
             )
@@ -119,12 +129,36 @@ def execute_run_in_subprocess(request, recon_pipeline, event_queue, termination_
         raise
     finally:
         if not closed:
-            event_queue.put(
+            run_event_handler(
                 instance.report_engine_event(
                     'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
                 )
             )
-        event_queue.put(ExecuteRunInSubprocessComplete())
+        subprocess_status_handler(RunInSubprocessComplete())
+
+
+def execute_run_in_subprocess(
+    serialized_execute_run_args, recon_pipeline, event_queue, termination_event
+):
+    _run_in_subprocess(
+        serialized_execute_run_args,
+        recon_pipeline,
+        termination_event,
+        subprocess_status_handler=event_queue.put,
+        run_event_handler=event_queue.put,
+    )
+
+
+def start_run_in_subprocess(
+    serialized_execute_run_args, recon_pipeline, event_queue, termination_event
+):
+    _run_in_subprocess(
+        serialized_execute_run_args,
+        recon_pipeline,
+        termination_event,
+        subprocess_status_handler=event_queue.put,
+        run_event_handler=lambda x: None,
+    )
 
 
 def get_external_pipeline_subset_result(recon_pipeline, solid_selection):

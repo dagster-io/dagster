@@ -15,6 +15,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess
 from .types import (
+    CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
@@ -281,6 +282,44 @@ class DagsterGrpcClient(object):
         )
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_cancel_execution_result)
+
+    def can_cancel_execution(self, can_cancel_execution_request):
+        check.inst_param(
+            can_cancel_execution_request, 'can_cancel_execution_request', CanCancelExecutionRequest,
+        )
+
+        res = self._query(
+            'CanCancelExecution',
+            api_pb2.CanCancelExecutionRequest,
+            serialized_can_cancel_execution_request=serialize_dagster_namedtuple(
+                can_cancel_execution_request
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(res.serialized_can_cancel_execution_result)
+
+    def start_run(self, execute_run_args):
+        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+
+        try:
+            instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
+            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+            res = self._query(
+                'StartRun',
+                api_pb2.StartRunRequest,
+                serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
+            )
+            return deserialize_json_to_dagster_namedtuple(res.serialized_start_run_result)
+
+        except Exception:  # pylint: disable=bare-except
+            instance.report_engine_event(
+                message='Unexpected error in IPC client',
+                pipeline_run=pipeline_run,
+                engine_event_data=EngineEventData.engine_error(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
+            raise
 
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):

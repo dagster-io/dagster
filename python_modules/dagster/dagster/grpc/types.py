@@ -262,3 +262,32 @@ class CancelExecutionResult(
                 serializable_error_info, 'serializable_error_info', SerializableErrorInfo
             ),
         )
+
+
+@whitelist_for_serdes
+class CanCancelExecutionRequest(namedtuple('_CanCancelExecutionRequest', 'run_id')):
+    def __new__(cls, run_id):
+        return super(CanCancelExecutionRequest, cls).__new__(
+            cls, run_id=check.str_param(run_id, 'run_id'),
+        )
+
+
+@whitelist_for_serdes
+class CanCancelExecutionResult(namedtuple('_CancelExecutionResult', 'can_cancel')):
+    def __new__(cls, can_cancel):
+        return super(CanCancelExecutionResult, cls).__new__(
+            cls, can_cancel=check.bool_param(can_cancel, 'can_cancel'),
+        )
+
+
+@whitelist_for_serdes
+class StartRunResult(namedtuple('_StartRunResult', 'success message serializable_error_info')):
+    def __new__(cls, success, message, serializable_error_info):
+        return super(StartRunResult, cls).__new__(
+            cls,
+            success=check.bool_param(success, 'success'),
+            message=check.opt_str_param(message, 'message'),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, 'serializable_error_info', SerializableErrorInfo
+            ),
+        )

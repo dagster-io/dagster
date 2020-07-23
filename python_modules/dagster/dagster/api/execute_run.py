@@ -62,6 +62,8 @@ def cli_api_execute_run(output_file, instance, pipeline_origin, pipeline_run):
 
 
 def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
+    '''Asynchronously execute a run over GRPC.'''
+
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(instance_ref, 'instance_ref', InstanceRef)
     check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin)
@@ -101,6 +103,7 @@ def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
 
 
 def sync_execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
+    '''Synchronous version of execute_run_grpc.'''
     return [
         event
         for event in execute_run_grpc(

@@ -361,10 +361,36 @@ def _schedule_tick_state(instance, tick_data):
 
 
 @click.command(name='grpc', help='Serve the Dagster inter-process API over GRPC')
-@click.option('--port', '-p', type=click.INT, required=False)
-@click.option('--socket', '-s', type=click.Path(), required=False)
-@click.option('--host', '-h', type=click.STRING, required=False, default='localhost')
-@click.option('--max_workers', '-n', type=click.INT, required=False, default=1)
+@click.option(
+    '--port',
+    '-p',
+    type=click.INT,
+    required=False,
+    help='Port over which to serve. You must pass one and only one of --port/-p or --socket/-f.',
+)
+@click.option(
+    '--socket',
+    '-s',
+    type=click.Path(),
+    required=False,
+    help='Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-f.',
+)
+@click.option(
+    '--host',
+    '-h',
+    type=click.STRING,
+    required=False,
+    default='localhost',
+    help='Hostname at which to serve. Default is localhost.',
+)
+@click.option(
+    '--max_workers',
+    '-n',
+    type=click.INT,
+    required=False,
+    default=1,
+    help='Maximum number of (threaded) workers to use in the GRPC server',
+)
 @origin_target_argument
 def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwargs):
     if seven.IS_WINDOWS and port is None:
