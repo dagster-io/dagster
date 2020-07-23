@@ -61,7 +61,7 @@ def test_presets():
         ],
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(DagsterInvariantViolationError):
         PresetDefinition.from_files(
             'invalid_1', config_files=[file_relative_path(__file__, 'not_a_file.yaml')]
         )

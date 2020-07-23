@@ -1,13 +1,12 @@
-import os
 from collections import namedtuple
-from glob import glob
 
 import pkg_resources
 import six
 import yaml
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import (
@@ -15,7 +14,6 @@ from dagster.utils.backcompat import (
     canonicalize_run_config,
     rename_warning,
 )
-from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -106,29 +104,7 @@ class PresetDefinition(
         )
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
-        filenames = []
-        for file_glob in config_files or []:
-            globbed_files = glob(file_glob)
-            if not globbed_files:
-                raise DagsterInvalidDefinitionError(
-                    'File or glob pattern "{file_glob}" for "config_files" in preset '
-                    '"{name}" produced no results.'.format(name=name, file_glob=file_glob)
-                )
-
-            filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]
-
-        try:
-            merged = merge_yamls(filenames)
-        except yaml.YAMLError as err:
-            six.raise_from(
-                DagsterInvariantViolationError(
-                    'Encountered error attempting to parse yaml. Parsing files {file_set} '
-                    'loaded by file/patterns {files} on preset "{name}".'.format(
-                        file_set=filenames, files=config_files, name=name
-                    )
-                ),
-                err,
-            )
+        merged = config_from_files(config_files)
 
         return PresetDefinition(name, merged, solid_selection, mode, tags)
 
@@ -161,16 +137,7 @@ class PresetDefinition(
         )
         mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
 
-        try:
-            merged = merge_yaml_strings(yaml_strings)
-        except yaml.YAMLError as err:
-            six.raise_from(
-                DagsterInvariantViolationError(
-                    'Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} '
-                    'on preset "{name}".'.format(yaml_strings=yaml_strings, name=name)
-                ),
-                err,
-            )
+        merged = config_from_yaml_strings(yaml_strings)
 
         return PresetDefinition(name, merged, solid_selection, mode, tags)
 
