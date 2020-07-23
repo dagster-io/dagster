@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.8.9
+
+**New**
+
+- `CeleryK8sRunLauncher` supports termination of pipeline runs. This can be accessed via the
+  “Terminate” button in Dagit’s Pipeline Run view or via “Cancel” in Dagit’s All Runs page. This
+  will terminate the run master K8s Job along with all running step job K8s Jobs; steps that are
+  still in the Celery queue will not create K8s Jobs. The pipeline and all impacted steps will
+  be marked as failed. We recommend implementing resources as context managers and we will execute
+  the finally block upon termination.
+- `K8sRunLauncher` supports termination of pipeline runs.
+- `AssetMaterialization` events display the asset key in the Runs view.
+- Added a new "Actions" button in Dagit to allow to cancel or delete mulitple runs.
+
+**Bugfixes**
+
+- Fixed an issue where `DagsterInstance` was leaving database connections open due to not being
+  garbage collected.
+- Fixed an issue with fan-in inputs skipping when upstream solids have skipped.
+- Fixed an issue with getting results from composites with skippable outputs in python API.
+- Fixed an issue where using `Enum` in resource config schemas resulted in an error.
+
 ## 0.8.8
 
 **New**
