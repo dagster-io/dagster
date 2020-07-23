@@ -472,7 +472,7 @@ def fail_me():
 
 
 def dummy_resource(config_schema=None):
-    return ResourceDefinition(lambda: None, config_schema=config_schema)
+    return ResourceDefinition(lambda _: None, config_schema=config_schema)
 
 
 def test_wrong_resources():

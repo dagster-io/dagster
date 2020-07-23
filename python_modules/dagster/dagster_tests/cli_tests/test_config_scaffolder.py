@@ -63,7 +63,7 @@ def test_basic_solids_config(snapshot):
 
 
 def dummy_resource(config_field):
-    return ResourceDefinition(lambda: None, config_field)
+    return ResourceDefinition(lambda _: None, config_field)
 
 
 def test_two_modes(snapshot):

@@ -49,7 +49,7 @@ def test_all_types_provided():
                 name='SomeMode',
                 resource_defs={
                     'some_resource': ResourceDefinition(
-                        lambda: None,
+                        lambda _: None,
                         config_schema={
                             'with_default_int': Field(Int, is_required=False, default_value=23434)
                         },
@@ -82,7 +82,7 @@ def test_provided_default_on_resources_config():
                 name='some_mode',
                 resource_defs={
                     'some_resource': ResourceDefinition(
-                        resource_fn=lambda: None,
+                        resource_fn=lambda _: None,
                         config_schema={
                             'with_default_int': Field(Int, is_required=False, default_value=23434)
                         },
@@ -220,7 +220,9 @@ def test_whole_environment():
             ModeDefinition(
                 name='test_mode',
                 resource_defs={
-                    'test_resource': ResourceDefinition(resource_fn=lambda: None, config_schema=Any)
+                    'test_resource': ResourceDefinition(
+                        resource_fn=lambda _: None, config_schema=Any
+                    )
                 },
             )
         ],
@@ -438,7 +440,7 @@ def test_required_resource_with_required_subfield():
             ModeDefinition(
                 resource_defs={
                     'with_required': ResourceDefinition(
-                        resource_fn=lambda: None, config_schema={'required_field': String},
+                        resource_fn=lambda _: None, config_schema={'required_field': String},
                     )
                 }
             )
@@ -464,7 +466,7 @@ def test_all_optional_field_on_single_resource():
             ModeDefinition(
                 resource_defs={
                     'with_optional': ResourceDefinition(
-                        resource_fn=lambda: None,
+                        resource_fn=lambda _: None,
                         config_schema={'optional_field': Field(String, is_required=False)},
                     )
                 }
@@ -493,11 +495,11 @@ def test_optional_and_required_context():
                 name='mixed',
                 resource_defs={
                     'optional_resource': ResourceDefinition(
-                        lambda: None,
+                        lambda _: None,
                         config_schema={'optional_field': Field(String, is_required=False)},
                     ),
                     'required_resource': ResourceDefinition(
-                        lambda: None, config_schema={'required_field': String},
+                        lambda _: None, config_schema={'required_field': String},
                     ),
                 },
             )
