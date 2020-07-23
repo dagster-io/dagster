@@ -35,12 +35,16 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
 from .impl import (
-    ExecuteRunInSubprocessComplete,
+    RunInSubprocessComplete,
+    StartRunInSubprocessSuccessful,
     execute_run_in_subprocess,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
+    start_run_in_subprocess,
 )
 from .types import (
+    CanCancelExecutionRequest,
+    CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
     ExecuteRunArgs,
@@ -53,6 +57,7 @@ from .types import (
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
     ShutdownServerResult,
+    StartRunResult,
 )
 from .utils import get_loadable_targets
 
@@ -368,7 +373,12 @@ class DagsterApiServer(DagsterApiServicer):
         termination_event = multiprocessing.Event()
         execution_process = multiprocessing.Process(
             target=execute_run_in_subprocess,
-            args=[request, recon_pipeline, event_queue, termination_event],
+            args=[
+                request.serialized_execute_run_args,
+                recon_pipeline,
+                event_queue,
+                termination_event,
+            ],
         )
         with self._execution_lock:
             execution_process.start()
@@ -378,6 +388,8 @@ class DagsterApiServer(DagsterApiServicer):
         done = False
         while not done:
             try:
+                # We use `get_nowait()` instead of `get()` so that we can handle the case where the
+                # execution process has died unexpectedly -- `get()` would hang forever in that case
                 dagster_event_or_ipc_error_message_or_done = event_queue.get_nowait()
             except queue.Empty:
                 if not execution_process.is_alive():
@@ -397,10 +409,12 @@ class DagsterApiServer(DagsterApiServicer):
                     done = True
                 time.sleep(EVENT_QUEUE_POLL_INTERVAL)
             else:
-                if isinstance(
-                    dagster_event_or_ipc_error_message_or_done, ExecuteRunInSubprocessComplete
-                ):
+                if isinstance(dagster_event_or_ipc_error_message_or_done, RunInSubprocessComplete):
                     done = True
+                elif isinstance(
+                    dagster_event_or_ipc_error_message_or_done, StartRunInSubprocessSuccessful
+                ):
+                    continue
                 else:
                     yield api_pb2.ExecuteRunEvent(
                         serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
@@ -435,34 +449,66 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def CancelExecution(self, request, _context):
+        success = False
+        message = None
+        serializable_error_info = None
         try:
             cancel_execution_request = check.inst(
                 deserialize_json_to_dagster_namedtuple(request.serialized_cancel_execution_request),
                 CancelExecutionRequest,
             )
             with self._execution_lock:
-                if cancel_execution_request.run_id not in self._executions:
-                    return api_pb2.CancelExecutionReply(
-                        serialized_cancel_execution_result=serialize_dagster_namedtuple(
-                            CancelExecutionResult(
-                                success=False,
-                                message=str(self._executions),
-                                serializable_error_info=None,
-                            )
-                        )
-                    )
-                self._termination_events[cancel_execution_request.run_id].set()
-                return api_pb2.CancelExecutionReply(
-                    serialized_cancel_execution_result=serialize_dagster_namedtuple(
-                        CancelExecutionResult(
-                            success=True, message=None, serializable_error_info=None
-                        )
-                    )
-                )
+                if cancel_execution_request.run_id in self._executions:
+                    self._termination_events[cancel_execution_request.run_id].set()
+                    success = True
+
         except:  # pylint: disable=bare-except
-            return api_pb2.CancelExecutionReply(
-                serialized_cancel_execution_result=serialize_dagster_namedtuple(
-                    CancelExecutionResult(
+            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.CancelExecutionReply(
+            serialized_cancel_execution_result=serialize_dagster_namedtuple(
+                CancelExecutionResult(
+                    success=success,
+                    message=message,
+                    serializable_error_info=serializable_error_info,
+                )
+            )
+        )
+
+    def CanCancelExecution(self, request, _context):
+        can_cancel_execution_request = check.inst(
+            deserialize_json_to_dagster_namedtuple(request.serialized_can_cancel_execution_request),
+            CanCancelExecutionRequest,
+        )
+        with self._execution_lock:
+            can_cancel = can_cancel_execution_request.run_id in self._executions
+
+        return api_pb2.CanCancelExecutionReply(
+            serialized_can_cancel_execution_result=serialize_dagster_namedtuple(
+                CanCancelExecutionResult(can_cancel=can_cancel)
+            )
+        )
+
+    def StartRun(self, request, _context):
+        execute_run_args = check.inst(
+            deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
+            ExecuteRunArgs,
+        )
+
+        try:
+            execute_run_args = check.inst(
+                deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
+                ExecuteRunArgs,
+            )
+
+            run_id = execute_run_args.pipeline_run_id
+
+            recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
+
+        except:  # pylint: disable=bare-except
+            return api_pb2.StartRunReply(
+                serialized_start_run_result=serialize_dagster_namedtuple(
+                    StartRunResult(
                         success=False,
                         message=None,
                         serializable_error_info=serializable_error_info_from_exc_info(
@@ -471,6 +517,69 @@ class DagsterApiServer(DagsterApiServicer):
                     )
                 )
             )
+
+        event_queue = multiprocessing.Queue()
+        termination_event = multiprocessing.Event()
+        execution_process = multiprocessing.Process(
+            target=start_run_in_subprocess,
+            args=[
+                request.serialized_execute_run_args,
+                recon_pipeline,
+                event_queue,
+                termination_event,
+            ],
+        )
+        with self._execution_lock:
+            execution_process.start()
+            self._executions[run_id] = execution_process
+            self._termination_events[run_id] = termination_event
+
+        success = None
+        message = None
+        serializable_error_info = None
+
+        while success is None:
+            time.sleep(EVENT_QUEUE_POLL_INTERVAL)
+            # We use `get_nowait()` instead of `get()` so that we can handle the case where the
+            # execution process has died unexpectedly -- `get()` would hang forever in that case
+            try:
+                dagster_event_or_ipc_error_message_or_done = event_queue.get_nowait()
+            except queue.Empty:
+                if not execution_process.is_alive():
+                    # subprocess died unexpectedly
+                    success = False
+                    message = (
+                        'GRPC server: Subprocess for {run_id} terminated unexpectedly with '
+                        'exit code {exit_code}'.format(
+                            run_id=run_id, exit_code=execution_process.exitcode,
+                        )
+                    )
+                    serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            else:
+                if isinstance(
+                    dagster_event_or_ipc_error_message_or_done, StartRunInSubprocessSuccessful
+                ):
+                    success = True
+                elif isinstance(
+                    dagster_event_or_ipc_error_message_or_done, RunInSubprocessComplete
+                ):
+                    continue
+                if isinstance(dagster_event_or_ipc_error_message_or_done, IPCErrorMessage):
+                    success = False
+                    message = dagster_event_or_ipc_error_message_or_done.message
+                    serializable_error_info = (
+                        dagster_event_or_ipc_error_message_or_done.serializable_error_info
+                    )
+
+        return api_pb2.StartRunReply(
+            serialized_start_run_result=serialize_dagster_namedtuple(
+                StartRunResult(
+                    success=success,
+                    message=message,
+                    serializable_error_info=serializable_error_info,
+                )
+            )
+        )
 
 
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom

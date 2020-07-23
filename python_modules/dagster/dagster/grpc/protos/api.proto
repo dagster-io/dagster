@@ -16,6 +16,8 @@ service DagsterApi {
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
+  rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
+  rpc StartRun (StartRunRequest) returns (StartRunReply) {}
 }
 
 message Empty {}
@@ -101,7 +103,7 @@ message ExternalScheduleExecutionReply {
   string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
 }
 
-  message ExecuteRunRequest {
+message ExecuteRunRequest {
   string serialized_execute_run_args = 1;
 }
 
@@ -119,4 +121,20 @@ message CancelExecutionRequest {
 
 message CancelExecutionReply {
   string serialized_cancel_execution_result = 1;
+}
+
+message CanCancelExecutionRequest {
+  string serialized_can_cancel_execution_request = 1;
+}
+
+message CanCancelExecutionReply {
+  string serialized_can_cancel_execution_result = 1;
+}
+
+message StartRunRequest {
+  string serialized_execute_run_args = 1;
+}
+
+message StartRunReply {
+  string serialized_start_run_result = 1;
 }

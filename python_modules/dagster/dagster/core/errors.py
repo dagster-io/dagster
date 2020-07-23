@@ -342,6 +342,16 @@ class DagsterLaunchFailedError(DagsterError):
     '''Indicates an error while attempting to launch a pipeline run.
     '''
 
+    def __init__(self, *args, **kwargs):
+        from dagster.utils.error import SerializableErrorInfo
+
+        self.serializable_error_info = check.opt_inst_param(
+            kwargs.pop('serializable_error_info', None),
+            'subprocess_error_info',
+            SerializableErrorInfo,
+        )
+        super(DagsterLaunchFailedError, self).__init__(*args, **kwargs)
+
 
 class DagsterInstanceMigrationRequired(DagsterError):
     '''Indicates that the dagster instance must be migrated.'''
