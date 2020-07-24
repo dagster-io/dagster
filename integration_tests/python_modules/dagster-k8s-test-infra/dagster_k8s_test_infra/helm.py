@@ -190,6 +190,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 'env_config_maps': [TEST_CONFIGMAP_NAME],
                 'env_secrets': [TEST_SECRET_NAME],
             },
+            'scheduler': {'k8sEnabled': 'true', 'schedulerNamespace': namespace},
             'serviceAccount': {'name': 'dagit-admin'},
             'postgresqlPassword': 'test',
             'postgresqlDatabase': 'test',

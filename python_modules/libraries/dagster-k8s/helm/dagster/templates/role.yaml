@@ -23,7 +23,7 @@ metadata:
 #
 rules:
 - apiGroups: ["batch"]
-  resources: ["jobs", "jobs/status"]
+  resources: ["jobs", "jobs/status", "cronjobs"]
   verbs: ["*"]
 # The empty arg "" corresponds to the core API group
 - apiGroups: [""]

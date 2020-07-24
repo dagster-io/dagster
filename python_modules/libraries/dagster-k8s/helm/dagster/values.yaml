@@ -96,6 +96,19 @@ pipeline_run:
     - ""
 
 ####################################################################################################
+# Scheduler: Configuration for scheduler
+####################################################################################################
+scheduler:
+  # If k8sEnabled is true, then use K8sScheduler; else, use CronScheduler
+  k8sEnabled: false
+  # (K8sScheduler only) K8s Namespace for K8s CronJob(s) and launched K8s Job(s)
+  schedulerNamespace: ""
+  # (K8sScheduler only) Set to true to load kubeconfig from within cluster
+  loadInclusterConfig: true
+  # (K8sScheduler only) File to load kubeconfig from. Only set this if loadInclusterConfig is false.
+  kubeconfigFile: ""
+
+####################################################################################################
 # PostgreSQL: Configuration values for postgresql
 #
 # https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md

@@ -10,8 +10,35 @@ metadata:
 data:
   dagster.yaml: |
     scheduler:
+      {{- if .Values.scheduler.k8sEnabled }}
+      module: dagster_k8s.scheduler
+      class: K8sScheduler
+      config:
+        load_incluster_config: {{ .Values.scheduler.loadInclusterConfig }}
+        scheduler_namespace: {{ .Values.scheduler.schedulerNamespace }}
+        kubeconfig_file: {{ .Values.scheduler.kubeconfigFile }}
+        {{- with $.Values.imagePullSecrets }}
+        image_pull_secrets:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        service_account_name: {{ include "dagster.serviceAccountName" . }}
+        job_image:
+          env: DAGSTER_K8S_PIPELINE_RUN_IMAGE
+        dagster_home:
+          env: DAGSTER_HOME
+        postgres_password_secret:
+          env: DAGSTER_K8S_PG_PASSWORD_SECRET
+        image_pull_policy:
+          env: DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY
+        instance_config_map:
+          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
+        env_config_maps:
+          - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
+        env_secrets:
+    {{- else }}
       module: dagster_cron.cron_scheduler
       class: SystemCronScheduler
+    {{- end }}
 
     schedule_storage:
       module: dagster_postgres.schedule_storage
