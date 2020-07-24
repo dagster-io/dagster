@@ -11,7 +11,7 @@ def get_version():
 
 if __name__ == '__main__':
     setup(
-        name='dagster-prrometheus',
+        name='dagster-prometheus',
         version=get_version(),
         author='Elementl',
         author_email='hello@elementl.com',
