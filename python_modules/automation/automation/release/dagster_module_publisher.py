@@ -178,10 +178,10 @@ class DagsterModulePublisher:
             )
         return module_versions
 
-    def check_versions(self):
+    def check_version(self):
         click.echo('Checking that module versions are in lockstep')
 
-        module_version = self.check_all_versions_equal()
+        module_version = self.check_all_versions_equal()['dagster']
         git_tag = get_git_tag()
         assert (
             module_version['__version__'] == git_tag

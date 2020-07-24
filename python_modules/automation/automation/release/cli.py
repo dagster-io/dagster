@@ -101,7 +101,7 @@ def publish(autoclean, dry_run):
     )
     dmp = DagsterModulePublisher()
 
-    checked_version = dmp.check_versions()
+    checked_version = dmp.check_version()
     click.echo('... and match git tag on most recent commit...')
     git_check_status()
     click.echo('... and that there is no cruft present...')
@@ -113,14 +113,14 @@ def publish(autoclean, dry_run):
 
     dmp.publish_all(dry_run=dry_run)
 
-    parsed_version = packaging.version.parse(checked_version['__version__'])
+    parsed_version = packaging.version.parse(checked_version)
     if not parsed_version.is_prerelease and not dry_run:
         slack_client = slackclient.SlackClient(os.environ['SLACK_RELEASE_BOT_TOKEN'])
         slack_client.api_call(
             'chat.postMessage',
             channel='#general',
             text=('{git_user} just published a new version: {version}.').format(
-                git_user=git_user(), version=checked_version['__version__']
+                git_user=git_user(), version=checked_version
             ),
         )
 
