@@ -39,6 +39,10 @@ class DagsterInvalidDefinitionError(DagsterError):
     '''Indicates that the rules for a definition have been violated by the user.'''
 
 
+class DagsterMaterializationError(DagsterError):
+    '''Indicates an error during materialization of values.'''
+
+
 class DagsterInvalidSubsetError(DagsterError):
     '''Indicates that a subset of a pipeline is invalid because either:
         - One or more solids in the specified subset do not exist on the pipeline.'

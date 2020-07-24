@@ -6,12 +6,14 @@ from dagster import (
     AssetMaterialization,
     DagsterEventType,
     DagsterInvalidConfigError,
+    EventMetadataEntry,
     InputDefinition,
     Int,
     Output,
     OutputDefinition,
     PipelineDefinition,
     String,
+    TextMetadataEntryData,
     dagster_type_materializer,
     execute_pipeline,
     lambda_solid,
@@ -185,7 +187,7 @@ def test_basic_materialization_event():
 
         mat = mat_event.event_specific_data.materialization
 
-        assert len(mat.metadata_entries) == 1
+        assert len(mat.metadata_entries) == 3
         assert mat.metadata_entries[0].path
         path = mat.metadata_entries[0].entry_data.path
 
@@ -208,6 +210,72 @@ def test_basic_string_json_materialization():
         with open(filename, 'r') as ff:
             value = json.loads(ff.read())
             assert value == {'value': 'foo'}
+
+
+def test_basic_type_materialization():
+    pipeline = single_string_output_pipeline()
+
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            pipeline,
+            {'solids': {'return_foo': {'outputs': [{'result': {'json': {'path': filename}}}]}}},
+        )
+
+        assert result.success
+        for event in result.event_list:
+            if event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                event = event.event_specific_data.materialization
+                assert len(event.metadata_entries) == 3
+                assert event.metadata_entries[1] == EventMetadataEntry(
+                    label='type-name',
+                    description=None,
+                    entry_data=TextMetadataEntryData(text='String'),
+                )
+                assert event.metadata_entries[2] == EventMetadataEntry(
+                    label='type-description',
+                    description=None,
+                    entry_data=TextMetadataEntryData(text='Any'),
+                )
+
+
+def test_complex_type_materialization():
+    pipeline = multiple_output_pipeline()
+
+    with get_temp_file_names(2) as file_tuple:
+        filename_one, filename_two = file_tuple  # pylint: disable=E0632
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_one_and_foo': {
+                        'outputs': [
+                            {'string': {'json': {'path': filename_one}}},
+                            {'number': {'json': {'path': filename_two}}},
+                        ]
+                    }
+                }
+            },
+        )
+
+        assert result.success
+        for event in result.event_list:
+            if event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                event = event.event_specific_data.materialization
+                assert len(event.metadata_entries) == 3
+                assert event.metadata_entries[1] == EventMetadataEntry(
+                    label='type-name',
+                    description=None,
+                    entry_data=TextMetadataEntryData(text='String'),
+                ) or event.metadata_entries[1] == EventMetadataEntry(
+                    label='type-name',
+                    description=None,
+                    entry_data=TextMetadataEntryData(text='Int'),
+                )
+                assert event.metadata_entries[2] == EventMetadataEntry(
+                    label='type-description',
+                    description=None,
+                    entry_data=TextMetadataEntryData(text='Any'),
+                )
 
 
 def test_basic_int_and_string_json_materialization():
