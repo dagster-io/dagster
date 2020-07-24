@@ -25,12 +25,13 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
-from dagster.core.origin import RepositoryGrpcServerOrigin
+from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -147,21 +148,21 @@ class DagsterApiServer(DagsterApiServicer):
                     self._loadable_target_origin.module_name, loadable_repository_symbol.attribute,
                 )
 
-    def _recon_repository_from_grpc_origin(self, grpc_server_repository_origin):
+    def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
-            grpc_server_repository_origin,
-            'repository_grpc_server_origin',
-            RepositoryGrpcServerOrigin,
-        )
-        return ReconstructableRepository(
-            self._repository_code_pointer_dict[grpc_server_repository_origin.repository_key]
+            repository_origin, 'repository_origin', RepositoryOrigin,
         )
 
-    def _recon_pipeline_from_grpc_origin(self, grpc_server_pipeline_origin):
-        recon_repo = self._recon_repository_from_grpc_origin(
-            grpc_server_pipeline_origin.repository_origin
-        )
-        return recon_repo.get_reconstructable_pipeline(grpc_server_pipeline_origin.pipeline_name)
+        if isinstance(repository_origin, RepositoryGrpcServerOrigin):
+            return ReconstructableRepository(
+                self._repository_code_pointer_dict[repository_origin.repository_key]
+            )
+        return recon_repository_from_origin(repository_origin)
+
+    def _recon_pipeline_from_origin(self, pipeline_origin):
+        check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin)
+        recon_repo = self._recon_repository_from_origin(pipeline_origin.repository_origin)
+        return recon_repo.get_reconstructable_pipeline(pipeline_origin.pipeline_name)
 
     def Ping(self, request, _context):
         echo = request.echo
@@ -181,11 +182,11 @@ class DagsterApiServer(DagsterApiServicer):
         check.inst_param(execution_plan_args, 'execution_plan_args', ExecutionPlanSnapshotArgs)
 
         recon_pipeline = (
-            self._recon_pipeline_from_grpc_origin(
+            self._recon_pipeline_from_origin(
                 execution_plan_args.pipeline_origin
             ).subset_for_execution(execution_plan_args.solid_selection)
             if execution_plan_args.solid_selection
-            else self._recon_pipeline_from_grpc_origin(execution_plan_args.pipeline_origin)
+            else self._recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
         )
 
         execution_plan_snapshot = snapshot_from_execution_plan(
@@ -221,7 +222,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
 
-        recon_repo = self._recon_repository_from_grpc_origin(partition_names_args.repository_origin)
+        recon_repo = self._recon_repository_from_origin(partition_names_args.repository_origin)
         definition = recon_repo.get_definition()
         partition_set_def = definition.get_partition_set_def(
             partition_names_args.partition_set_name
@@ -255,7 +256,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(partition_args, 'partition_args', PartitionArgs)
 
-        recon_repo = self._recon_repository_from_grpc_origin(partition_args.repository_origin)
+        recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
         definition = recon_repo.get_definition()
         partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
         partition = partition_set_def.get_partition(partition_args.partition_name)
@@ -287,7 +288,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(partition_args, 'partition_args', PartitionArgs)
 
-        recon_repo = self._recon_repository_from_grpc_origin(partition_args.repository_origin)
+        recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
         definition = recon_repo.get_definition()
         partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
         partition = partition_set_def.get_partition(partition_args.partition_name)
@@ -328,9 +329,7 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalPipelineSubsetSnapshotReply(
             serialized_external_pipeline_subset_result=serialize_dagster_namedtuple(
                 get_external_pipeline_subset_result(
-                    self._recon_pipeline_from_grpc_origin(
-                        pipeline_subset_snapshot_args.pipeline_origin
-                    ),
+                    self._recon_pipeline_from_origin(pipeline_subset_snapshot_args.pipeline_origin),
                     pipeline_subset_snapshot_args.solid_selection,
                 )
             )
@@ -341,9 +340,9 @@ class DagsterApiServer(DagsterApiServicer):
             request.serialized_repository_python_origin
         )
 
-        check.inst_param(repository_origin, 'repository_origin', RepositoryGrpcServerOrigin)
+        check.inst_param(repository_origin, 'repository_origin', RepositoryOrigin)
 
-        recon_repo = self._recon_repository_from_grpc_origin(repository_origin)
+        recon_repo = self._recon_repository_from_origin(repository_origin)
         return api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialize_dagster_namedtuple(
                 external_repository_data_from_def(recon_repo.get_definition())
@@ -376,7 +375,7 @@ class DagsterApiServer(DagsterApiServicer):
 
             run_id = execute_run_args.pipeline_run_id
 
-            recon_pipeline = self._recon_pipeline_from_grpc_origin(execute_run_args.pipeline_origin)
+            recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
 
         except:  # pylint: disable=bare-except
             yield api_pb2.ExecuteRunEvent(

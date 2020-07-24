@@ -84,20 +84,14 @@ class RepositoryLocationHandle:
         client = server.create_client()
         list_repositories_response = sync_list_repositories_grpc(client)
 
-        repository_keys = set(
-            symbol.repository_name for symbol in list_repositories_response.repository_symbols
-        )
-
-        return GrpcServerRepositoryLocationHandle(
-            port=server.port,
-            socket=server.socket,
-            host='localhost',
+        return ManagedGrpcPythonEnvRepositoryLocationHandle(
+            executable_path=list_repositories_response.executable_path,
             location_name=location_name
             if location_name
             else assign_grpc_location_name(server.port, server.socket, 'localhost'),
+            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
             client=client,
-            server_process=server,
-            repository_keys=repository_keys,
+            grpc_server_process=server,
         )
 
     @staticmethod
@@ -125,7 +119,6 @@ class RepositoryLocationHandle:
             if location_name
             else assign_grpc_location_name(port, socket, host),
             client=client,
-            server_process=None,
             repository_keys=repository_keys,
         )
 
@@ -133,13 +126,16 @@ class RepositoryLocationHandle:
 class GrpcServerRepositoryLocationHandle(
     namedtuple(
         '_GrpcServerRepositoryLocationHandle',
-        'port socket host location_name client server_process repository_keys',
+        'port socket host location_name client repository_keys',
     ),
     RepositoryLocationHandle,
 ):
-    def __new__(cls, port, socket, host, location_name, client, server_process, repository_keys):
+    '''
+    Represents a gRPC server that Dagster is not responsible for managing.
+    '''
+
+    def __new__(cls, port, socket, host, location_name, client, repository_keys):
         from dagster.grpc.client import DagsterGrpcClient
-        from dagster.grpc.server import GrpcServerProcess
 
         return super(GrpcServerRepositoryLocationHandle, cls).__new__(
             cls,
@@ -148,7 +144,6 @@ class GrpcServerRepositoryLocationHandle(
             check.str_param(host, 'host'),
             check.str_param(location_name, 'location_name'),
             check.inst_param(client, 'client', DagsterGrpcClient),
-            check.opt_inst_param(server_process, 'server_process', GrpcServerProcess),
             check.set_param(repository_keys, 'repository_keys', of_type=str),
         )
 
@@ -172,6 +167,59 @@ class PythonEnvRepositoryLocationHandle(
                 value_type=CodePointer,
             ),
         )
+
+
+class ManagedGrpcPythonEnvRepositoryLocationHandle(
+    namedtuple(
+        '_ManagedGrpcPythonEnvRepositoryLocationHandle',
+        'executable_path location_name repository_code_pointer_dict grpc_server_process client',
+    ),
+    RepositoryLocationHandle,
+):
+    '''
+    A Python environment for which Dagster is managing a gRPC server.
+    '''
+
+    def __new__(
+        cls,
+        executable_path,
+        location_name,
+        repository_code_pointer_dict,
+        grpc_server_process,
+        client,
+    ):
+        from dagster.grpc.client import DagsterGrpcClient
+        from dagster.grpc.server import GrpcServerProcess
+
+        return super(ManagedGrpcPythonEnvRepositoryLocationHandle, cls).__new__(
+            cls,
+            check.str_param(executable_path, 'executable_path'),
+            check.str_param(location_name, 'location_name'),
+            check.dict_param(
+                repository_code_pointer_dict,
+                'repository_code_pointer_dict',
+                key_type=str,
+                value_type=CodePointer,
+            ),
+            check.inst_param(grpc_server_process, 'grpc_server_process', GrpcServerProcess),
+            check.inst_param(client, 'client', DagsterGrpcClient),
+        )
+
+    @property
+    def repository_keys(self):
+        return set(self.repository_code_pointer_dict.keys())
+
+    @property
+    def host(self):
+        return 'localhost'
+
+    @property
+    def port(self):
+        return self.grpc_server_process.port
+
+    @property
+    def socket(self):
+        return self.grpc_server_process.socket
 
 
 class InProcessRepositoryLocationHandle(
@@ -215,7 +263,11 @@ class RepositoryHandle(
                 ],
                 executable_path=sys.executable,
             )
-        elif isinstance(self.repository_location_handle, PythonEnvRepositoryLocationHandle):
+        elif isinstance(
+            self.repository_location_handle, PythonEnvRepositoryLocationHandle
+        ) or isinstance(
+            self.repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
+        ):
             return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
                     self.repository_key

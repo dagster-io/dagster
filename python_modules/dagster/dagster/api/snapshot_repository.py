@@ -2,7 +2,6 @@ from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
     ExternalRepositoryData,
-    GrpcServerRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -44,7 +43,7 @@ def sync_get_external_repositories(repository_location_handle):
 
 def sync_get_external_repositories_grpc(api_client, repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', GrpcServerRepositoryLocationHandle
+        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
     )
 
     repos = []

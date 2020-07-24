@@ -18,18 +18,8 @@ from nbconvert import HTMLExporter
 from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import Workspace
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.host_representation import (
-    GrpcServerRepositoryLocation,
-    InProcessRepositoryLocation,
-    PythonEnvRepositoryLocation,
-)
-from dagster.core.host_representation.handle import (
-    GrpcServerRepositoryLocationHandle,
-    InProcessRepositoryLocationHandle,
-    PythonEnvRepositoryLocationHandle,
-)
+from dagster.core.host_representation import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -225,18 +215,7 @@ def create_app_from_workspace(workspace, instance, path_prefix=''):
 
     locations = []
     for repository_location_handle in workspace.repository_location_handles:
-        if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
-            # will need to change for multi repo
-            check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
-            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
-            recon_repo = ReconstructableRepository(pointer)
-            locations.append(InProcessRepositoryLocation(recon_repo))
-        elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
-            locations.append(PythonEnvRepositoryLocation(repository_location_handle))
-        elif isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
-            locations.append(GrpcServerRepositoryLocation(repository_location_handle))
-        else:
-            check.failed('{} unsupported'.format(repository_location_handle))
+        locations.append(RepositoryLocation.from_handle(repository_location_handle))
 
     context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
 

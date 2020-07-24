@@ -28,6 +28,7 @@ from dagster.core.host_representation import (
     ExternalPipeline,
     GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
+    ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
     PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
@@ -152,7 +153,9 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
             return InProcessRepositoryLocation(ReconstructableRepository(pointer))
         elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
             return PythonEnvRepositoryLocation(repository_location_handle)
-        elif isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
+        elif isinstance(
+            repository_location_handle, GrpcServerRepositoryLocationHandle
+        ) or isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
             return GrpcServerRepositoryLocation(repository_location_handle)
         else:
             check.failed('Unsupported handle: {}'.format(repository_location_handle))
@@ -325,11 +328,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
-        self._handle = check.inst_param(
-            repository_location_handle,
+        check.param_invariant(
+            isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle)
+            or isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle),
             'repository_location_handle',
-            GrpcServerRepositoryLocationHandle,
         )
+
+        self._handle = repository_location_handle
 
         external_repositories_list = sync_get_external_repositories_grpc(
             self._handle.client, self._handle,
