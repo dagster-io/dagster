@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from dagster import DagsterInstance, Field, Int, Materialization, pipeline, repository, seven, solid
 from dagster.core.code_pointer import CodePointer
-from dagster.core.origin import PipelinePythonOrigin, RepositoryGrpcServerOrigin
+from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
 
@@ -90,7 +90,7 @@ def test_cancel_run():
                 streaming_pipeline, run_config={'solids': {'streamer': {'config': {'length': 20}}}},
             )
             execute_run_args = ExecuteRunArgs(
-                pipeline_origin=PipelinePythonOrigin(
+                pipeline_origin=PipelineGrpcServerOrigin(
                     pipeline_name='streaming_pipeline',
                     repository_origin=RepositoryGrpcServerOrigin(
                         host='localhost',

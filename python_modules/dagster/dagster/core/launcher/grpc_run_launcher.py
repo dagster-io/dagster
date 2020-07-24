@@ -8,7 +8,11 @@ from dagster.api.execute_run import sync_execute_run_grpc
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin, RepositoryGrpcServerOrigin
+from dagster.core.origin import (
+    PipelineGrpcServerOrigin,
+    PipelinePythonOrigin,
+    RepositoryGrpcServerOrigin,
+)
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, LoadableTargetOrigin
@@ -44,7 +48,7 @@ def _launched_run_client(instance_ref, pipeline_origin, pipeline_run_id, cancell
             repository_key=pipeline_origin.repository_origin.code_pointer.fn_name,
         )
 
-        grpc_pipeline_origin = PipelinePythonOrigin(
+        grpc_pipeline_origin = PipelineGrpcServerOrigin(
             pipeline_name=pipeline_origin.pipeline_name, repository_origin=grpc_repository_origin
         )
 

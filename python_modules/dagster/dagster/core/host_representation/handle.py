@@ -6,12 +6,7 @@ from dagster import check
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.origin import (
-    PipelinePythonOrigin,
-    RepositoryGrpcServerOrigin,
-    RepositoryPythonOrigin,
-    SchedulePythonOrigin,
-)
+from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -142,7 +137,20 @@ class GrpcServerRepositoryLocationHandle(
     ),
     RepositoryLocationHandle,
 ):
-    pass
+    def __new__(cls, port, socket, host, location_name, client, server_process, repository_keys):
+        from dagster.grpc.client import DagsterGrpcClient
+        from dagster.grpc.server import GrpcServerProcess
+
+        return super(GrpcServerRepositoryLocationHandle, cls).__new__(
+            cls,
+            check.opt_int_param(port, 'port'),
+            check.opt_str_param(socket, 'socket'),
+            check.str_param(host, 'host'),
+            check.str_param(location_name, 'location_name'),
+            check.inst_param(client, 'client', DagsterGrpcClient),
+            check.opt_inst_param(server_process, 'server_process', GrpcServerProcess),
+            check.set_param(repository_keys, 'repository_keys', of_type=str),
+        )
 
 
 class PythonEnvRepositoryLocationHandle(
@@ -152,7 +160,18 @@ class PythonEnvRepositoryLocationHandle(
     ),
     RepositoryLocationHandle,
 ):
-    pass
+    def __new__(cls, executable_path, location_name, repository_code_pointer_dict):
+        return super(PythonEnvRepositoryLocationHandle, cls).__new__(
+            cls,
+            check.str_param(executable_path, 'executable_path'),
+            check.str_param(location_name, 'location_name'),
+            check.dict_param(
+                repository_code_pointer_dict,
+                'repository_code_pointer_dict',
+                key_type=str,
+                value_type=CodePointer,
+            ),
+        )
 
 
 class InProcessRepositoryLocationHandle(
@@ -238,7 +257,7 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
         return self.repository_handle.repository_location_handle.location_name
 
     def get_origin(self):
-        return PipelinePythonOrigin(self.pipeline_name, self.repository_handle.get_origin())
+        return self.repository_handle.get_origin().get_pipeline_origin(self.pipeline_name)
 
     def to_selector(self):
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
@@ -261,7 +280,7 @@ class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_han
         return self.repository_handle.repository_location_handle.location_name
 
     def get_origin(self):
-        return SchedulePythonOrigin(self.schedule_name, self.repository_handle.get_origin())
+        return self.repository_handle.get_origin().get_schedule_origin(self.schedule_name)
 
 
 class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):

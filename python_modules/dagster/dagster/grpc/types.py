@@ -10,7 +10,7 @@ from dagster.core.code_pointer import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin, RepositoryOrigin, RepositoryPythonOrigin
+from dagster.core.origin import PipelineOrigin, RepositoryOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -96,9 +96,7 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin),
             solid_selection=check.opt_list_param(solid_selection, 'solid_selection', of_type=str),
             run_config=check.dict_param(run_config, 'run_config'),
             mode=check.str_param(mode, 'mode'),
@@ -114,9 +112,7 @@ class ExecuteRunArgs(namedtuple('_ExecuteRunArgs', 'pipeline_origin pipeline_run
     def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin),
             pipeline_run_id=check.str_param(pipeline_run_id, 'pipeline_run_id'),
             instance_ref=check.inst_param(instance_ref, 'instance_ref', InstanceRef),
         )
@@ -210,9 +206,7 @@ class PipelineSubsetSnapshotArgs(
     def __new__(cls, pipeline_origin, solid_selection):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, 'pipeline_origin', PipelinePythonOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin),
             solid_selection=check.list_param(solid_selection, 'solid_selection', of_type=str)
             if solid_selection
             else None,

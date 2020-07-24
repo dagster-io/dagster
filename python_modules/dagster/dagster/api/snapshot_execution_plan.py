@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.api.utils import execute_unary_api_cli_command
-from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.origin import PipelineGrpcServerOrigin, PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import ExecutionPlanSnapshotArgs
@@ -50,7 +50,7 @@ def sync_get_external_execution_plan_grpc(
 ):
 
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
-    check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
+    check.inst_param(pipeline_origin, 'pipeline_origin', PipelineGrpcServerOrigin)
     check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
     check.dict_param(run_config, 'run_config')
     check.str_param(mode, 'mode')
