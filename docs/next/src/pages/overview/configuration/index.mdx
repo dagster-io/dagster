@@ -8,7 +8,7 @@ import PyObject from 'components/PyObject';
 
 Several dimensions of pipeline execution can be determined at execution time through configuration.
 We call this set of chosen values **run config**. The run config is passed as a dictionary in the python api
-or as a yaml document when using `dagit`. The following top level keys in the run config allow you to
+or as a yaml document when using `dagit` or the CLI. The following top level keys in the run config allow you to
 configure different aspects:
 
 - **execution**: Determine and configure the <PyObject module="dagster" object="Executor" /> to be used to control
@@ -35,4 +35,25 @@ The following example shows how **config_schema** can be used on a solid to cont
 
 ```python literalinclude
 file:/docs_snippets/docs_snippets/overview/configuration/example.py
+```
+
+## Configured
+
+In many cases, the option to configure an entity at runtime is more distracting than helpful, and
+it's preferable to supply the entity's configuration at definition time.
+
+The `configured` API offers a way to do this.  It returns an entity with the given configuration
+"baked in".
+
+```python literalinclude
+file:/docs_snippets/docs_snippets/overview/configuration/configured_example.py
+```
+
+In other cases, it's useful to partially fill out configuration at definition time and leave other
+configuration for runtime.  For these cases, `configured` can be used as a decorator, accepting a
+function that translates from runtime config to config that satisfies the entity's config schema.
+It returns an entity with the "outer" config schema as its schema.
+
+```python literalinclude
+file:/docs_snippets/docs_snippets/overview/configuration/config_map_example.py
 ```
