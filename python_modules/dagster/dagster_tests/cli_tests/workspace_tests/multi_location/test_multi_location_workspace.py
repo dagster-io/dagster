@@ -172,7 +172,7 @@ load_from:
         'named_loaded_from_module_attribute'
     )
     assert set(named_loaded_from_module_attribute_handle.repository_code_pointer_dict.keys()) == {
-        'named_hello_world_repository'
+        'hello_world_repository_name'
     }
     assert isinstance(named_loaded_from_module_attribute_handle, PythonEnvRepositoryLocationHandle)
 
@@ -180,7 +180,7 @@ load_from:
         'named_loaded_from_file_attribute'
     )
     assert set(named_loaded_from_file_attribute_handle.repository_code_pointer_dict.keys()) == {
-        'named_hello_world_repository'
+        'hello_world_repository_name'
     }
     assert isinstance(named_loaded_from_file_attribute_handle, PythonEnvRepositoryLocationHandle)
 
@@ -253,29 +253,29 @@ opt_in:
     loaded_from_file_handle = workspace.get_repository_location_handle('loaded_from_file')
     assert isinstance(loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
 
-    assert loaded_from_file_handle.repository_keys == {'hello_world_repository'}
+    assert loaded_from_file_handle.repository_names == {'hello_world_repository'}
 
     loaded_from_module_handle = workspace.get_repository_location_handle('loaded_from_module')
     assert isinstance(loaded_from_module_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
 
-    assert loaded_from_module_handle.repository_keys == {'hello_world_repository'}
+    assert loaded_from_module_handle.repository_names == {'hello_world_repository'}
 
     named_loaded_from_file_handle = workspace.get_repository_location_handle(
         'named_loaded_from_file'
     )
-    assert named_loaded_from_file_handle.repository_keys == {'hello_world_repository_name'}
+    assert named_loaded_from_file_handle.repository_names == {'hello_world_repository_name'}
     assert isinstance(named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
 
     named_loaded_from_module_handle = workspace.get_repository_location_handle(
         'named_loaded_from_module'
     )
-    assert named_loaded_from_module_handle.repository_keys == {'hello_world_repository_name'}
+    assert named_loaded_from_module_handle.repository_names == {'hello_world_repository_name'}
     assert isinstance(named_loaded_from_file_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
 
     named_loaded_from_module_attribute_handle = workspace.get_repository_location_handle(
         'named_loaded_from_module_attribute'
     )
-    assert named_loaded_from_module_attribute_handle.repository_keys == {
+    assert named_loaded_from_module_attribute_handle.repository_names == {
         'hello_world_repository_name'
     }
     assert isinstance(
@@ -285,7 +285,7 @@ opt_in:
     named_loaded_from_file_attribute_handle = workspace.get_repository_location_handle(
         'named_loaded_from_file_attribute'
     )
-    assert named_loaded_from_file_attribute_handle.repository_keys == {
+    assert named_loaded_from_file_attribute_handle.repository_names == {
         'hello_world_repository_name'
     }
     assert isinstance(

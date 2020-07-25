@@ -23,19 +23,19 @@ class RepositoryOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class RepositoryGrpcServerOrigin(
-    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket repository_key'), RepositoryOrigin,
+    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket repository_name'), RepositoryOrigin,
 ):
     '''
     Subset of information needed to load a RepositoryDefinition from a GRPC server.
     '''
 
-    def __new__(cls, host, port, socket, repository_key):
+    def __new__(cls, host, port, socket, repository_name):
         return super(RepositoryGrpcServerOrigin, cls).__new__(
             cls,
             check.str_param(host, 'host'),
             check.opt_int_param(port, 'port'),
             check.opt_str_param(socket, 'socket'),
-            check.str_param(repository_key, 'repository_key'),
+            check.str_param(repository_name, 'repository_name'),
         )
 
     def get_pipeline_origin(self, pipeline_name):

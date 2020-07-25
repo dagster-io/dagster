@@ -13,8 +13,7 @@ from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
-    load_def_in_module,
-    load_def_in_python_file,
+    repository_def_from_target_def,
 )
 from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
 from dagster.core.execution.api import create_execution_plan
@@ -79,43 +78,18 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         if loadable_target_origin:
-            from dagster.cli.workspace.autodiscovery import LoadableTarget
-
-            if not loadable_target_origin.attribute:
-                loadable_targets = get_loadable_targets(
-                    loadable_target_origin.python_file,
-                    loadable_target_origin.module_name,
-                    loadable_target_origin.working_directory,
-                )
-            elif loadable_target_origin.python_file:
-                loadable_targets = [
-                    LoadableTarget(
-                        loadable_target_origin.attribute,
-                        load_def_in_python_file(
-                            loadable_target_origin.python_file,
-                            loadable_target_origin.attribute,
-                            loadable_target_origin.working_directory,
-                        ),
-                    )
-                ]
-            else:
-                check.invariant(
-                    loadable_target_origin.module_name,
-                    'if attribute is set, either a file or module must also be set',
-                )
-                loadable_targets = [
-                    LoadableTarget(
-                        loadable_target_origin.attribute,
-                        load_def_in_module(
-                            loadable_target_origin.module_name, loadable_target_origin.attribute,
-                        ),
-                    )
-                ]
-
+            loadable_targets = get_loadable_targets(
+                loadable_target_origin.python_file,
+                loadable_target_origin.module_name,
+                loadable_target_origin.working_directory,
+                loadable_target_origin.attribute,
+            )
             self._loadable_repository_symbols = [
                 LoadableRepositorySymbol(
                     attribute=loadable_target.attribute,
-                    repository_name=loadable_target.target_definition.name,
+                    repository_name=repository_def_from_target_def(
+                        loadable_target.target_definition
+                    ).name,
                 )
                 for loadable_target in loadable_targets
             ]
@@ -155,7 +129,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         if isinstance(repository_origin, RepositoryGrpcServerOrigin):
             return ReconstructableRepository(
-                self._repository_code_pointer_dict[repository_origin.repository_key]
+                self._repository_code_pointer_dict[repository_origin.repository_name]
             )
         return recon_repository_from_origin(repository_origin)
 

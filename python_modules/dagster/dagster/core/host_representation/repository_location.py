@@ -170,11 +170,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         def_name = repo_def.name
         self._external_repo = external_repo_from_def(
             repo_def,
-            RepositoryHandle(
-                repository_name=def_name,
-                repository_key=def_name,
-                repository_location_handle=self._handle,
-            ),
+            RepositoryHandle(repository_name=def_name, repository_location_handle=self._handle),
         )
         self._repositories = {self._external_repo.name: self._external_repo}
 

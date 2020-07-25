@@ -3,7 +3,7 @@ from dagster import check
 from .utils import execute_unary_api_cli_command
 
 
-def sync_list_repositories(executable_path, python_file, module_name, working_directory):
+def sync_list_repositories(executable_path, python_file, module_name, working_directory, attribute):
     from dagster.grpc.types import ListRepositoriesResponse, ListRepositoriesInput
 
     return check.inst(
@@ -14,6 +14,7 @@ def sync_list_repositories(executable_path, python_file, module_name, working_di
                 module_name=module_name,
                 python_file=python_file,
                 working_directory=working_directory,
+                attribute=attribute,
             ),
         ),
         ListRepositoriesResponse,
@@ -29,7 +30,7 @@ def sync_list_repositories_grpc(api_client):
 
 
 def sync_list_repositories_ephemeral_grpc(
-    executable_path, python_file, module_name, working_directory
+    executable_path, python_file, module_name, working_directory, attribute
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
     from dagster.grpc.types import LoadableTargetOrigin
@@ -45,7 +46,7 @@ def sync_list_repositories_ephemeral_grpc(
             module_name=module_name,
             python_file=python_file,
             working_directory=working_directory,
-            attribute=None,
+            attribute=attribute,
         )
     ) as api_client:
         return sync_list_repositories_grpc(api_client)

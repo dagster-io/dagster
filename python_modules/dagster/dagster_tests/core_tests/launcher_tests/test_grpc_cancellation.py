@@ -96,7 +96,7 @@ def test_cancel_run():
                         host='localhost',
                         socket=server_process.socket,
                         port=server_process.port,
-                        repository_key='test_repository',
+                        repository_name='test_repository',
                     ),
                 ),
                 pipeline_run_id=pipeline_run.run_id,

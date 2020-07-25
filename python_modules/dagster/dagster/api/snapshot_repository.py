@@ -17,8 +17,7 @@ def sync_get_external_repositories(repository_location_handle):
 
     repos = []
 
-    for key, pointer in repository_location_handle.repository_code_pointer_dict.items():
-
+    for _, pointer in repository_location_handle.repository_code_pointer_dict.items():
         external_repository_data = check.inst(
             execute_unary_api_cli_command(
                 repository_location_handle.executable_path,
@@ -32,7 +31,6 @@ def sync_get_external_repositories(repository_location_handle):
                 external_repository_data,
                 RepositoryHandle(
                     repository_name=external_repository_data.name,
-                    repository_key=key,
                     repository_location_handle=repository_location_handle,
                 ),
             )
@@ -47,14 +45,14 @@ def sync_get_external_repositories_grpc(api_client, repository_location_handle):
     )
 
     repos = []
-    for repository_key in repository_location_handle.repository_keys:
+    for repository_name in repository_location_handle.repository_names:
         external_repository_data = check.inst(
             api_client.external_repository(
                 repository_grpc_server_origin=RepositoryGrpcServerOrigin(
                     repository_location_handle.host,
                     repository_location_handle.port,
                     repository_location_handle.socket,
-                    repository_key,
+                    repository_name,
                 )
             ),
             ExternalRepositoryData,
@@ -64,7 +62,6 @@ def sync_get_external_repositories_grpc(api_client, repository_location_handle):
                 external_repository_data,
                 RepositoryHandle(
                     repository_name=external_repository_data.name,
-                    repository_key=repository_key,
                     repository_location_handle=repository_location_handle,
                 ),
             )

@@ -191,9 +191,7 @@ def _external_pipeline_from_def(pipeline_def, solid_selection=None):
     repo_def = recon_repo.get_definition()
     location_handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
     repository_handle = RepositoryHandle(
-        repository_name=repo_def.name,
-        repository_key=repo_def.name,
-        repository_location_handle=location_handle,
+        repository_name=repo_def.name, repository_location_handle=location_handle,
     )
     return external_pipeline_from_recon_pipeline(
         reconstructable(pipeline_def),

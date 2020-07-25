@@ -11,6 +11,7 @@ from dagster.core.definitions.reconstructable import (
     load_def_in_module,
     load_def_in_package,
     load_def_in_python_file,
+    repository_def_from_target_def,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryLocationHandle, UserProcessApi
@@ -121,13 +122,13 @@ def location_handle_from_module_name(module_name, attribute, user_process_api, l
     repository_code_pointer_dict = {}
     for loadable_target in loadable_targets:
         repository_code_pointer_dict[
-            loadable_target.target_definition.name
+            repository_def_from_target_def(loadable_target.target_definition).name
         ] = CodePointer.from_module(module_name, loadable_target.attribute)
 
     return RepositoryLocationHandle.create_out_of_process_location(
         repository_code_pointer_dict=repository_code_pointer_dict,
         # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, repository_code_pointer_dict),
+        location_name=assign_location_name(location_name, loadable_targets),
     )
 
 
@@ -180,26 +181,26 @@ def location_handle_from_package_name(
     repository_code_pointer_dict = {}
     for loadable_target in loadable_targets:
         repository_code_pointer_dict[
-            loadable_target.target_definition.name
+            repository_def_from_target_def(loadable_target.target_definition).name
         ] = CodePointer.from_python_package(package_name, loadable_target.attribute)
 
     return RepositoryLocationHandle.create_out_of_process_location(
         repository_code_pointer_dict=repository_code_pointer_dict,
         # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, repository_code_pointer_dict),
+        location_name=assign_location_name(location_name, loadable_targets),
     )
 
 
-def assign_location_name(location_name, repository_code_pointer_dict):
+def assign_location_name(location_name, loadable_targets):
     if location_name:
         return location_name
 
-    if len(repository_code_pointer_dict) > 1:
+    if len(loadable_targets) > 1:
         raise DagsterInvariantViolationError(
             'If there is one than more repository you must provide a location name'
         )
 
-    return next(iter(repository_code_pointer_dict.keys()))
+    return next(iter(loadable_targets)).target_definition.name
 
 
 def location_handle_from_python_file_config(python_file_config, yaml_path, user_process_api):
@@ -264,13 +265,13 @@ def location_handle_from_python_file(
     repository_code_pointer_dict = {}
     for loadable_target in loadable_targets:
         repository_code_pointer_dict[
-            loadable_target.target_definition.name
+            repository_def_from_target_def(loadable_target.target_definition).name
         ] = CodePointer.from_python_file(python_file, loadable_target.attribute, working_directory)
 
     return RepositoryLocationHandle.create_out_of_process_location(
         repository_code_pointer_dict=repository_code_pointer_dict,
         # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, repository_code_pointer_dict),
+        location_name=assign_location_name(location_name, loadable_targets),
     )
 
 
@@ -334,12 +335,13 @@ def _location_handle_from_python_environment_config(
                 ),
                 location_name=location_name,
             )
-        elif not attribute:
+        else:
             response = sync_list_repositories(
                 executable_path=executable_path,
                 python_file=absolute_path,
                 module_name=None,
                 working_directory=None,
+                attribute=attribute,
             )
             return RepositoryLocationHandle.create_python_env_location(
                 executable_path=executable_path,
@@ -349,16 +351,6 @@ def _location_handle_from_python_environment_config(
                         absolute_path, lrs.attribute, working_directory
                     )
                     for lrs in response.repository_symbols
-                },
-            )
-        else:
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    attribute: CodePointer.from_python_file(
-                        absolute_path, attribute, working_directory
-                    )
                 },
             )
 
@@ -377,12 +369,13 @@ def _location_handle_from_python_environment_config(
                 ),
                 location_name=location_name,
             )
-        elif not attribute:
+        else:
             response = sync_list_repositories(
                 executable_path=executable_path,
                 python_file=None,
                 module_name=module_name,
                 working_directory=None,
+                attribute=attribute,
             )
             return RepositoryLocationHandle.create_python_env_location(
                 executable_path=executable_path,
@@ -390,14 +383,6 @@ def _location_handle_from_python_environment_config(
                 repository_code_pointer_dict={
                     lrs.repository_name: CodePointer.from_module(module_name, lrs.attribute)
                     for lrs in response.repository_symbols
-                },
-            )
-        else:
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    attribute: CodePointer.from_module(module_name, attribute)
                 },
             )
 
@@ -416,12 +401,13 @@ def _location_handle_from_python_environment_config(
                 ),
                 location_name=location_name,
             )
-        elif not attribute:
+        else:
             response = sync_list_repositories(
                 executable_path=executable_path,
                 python_file=None,
                 module_name=package_name,
                 working_directory=None,
+                attribute=attribute,
             )
             return RepositoryLocationHandle.create_python_env_location(
                 executable_path=executable_path,
@@ -431,14 +417,6 @@ def _location_handle_from_python_environment_config(
                         package_name, lrs.attribute
                     )
                     for lrs in response.repository_symbols
-                },
-            )
-        else:
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    attribute: CodePointer.from_python_package(package_name, attribute)
                 },
             )
 

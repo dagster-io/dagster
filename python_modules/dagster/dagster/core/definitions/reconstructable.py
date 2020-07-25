@@ -314,25 +314,29 @@ def pipeline_def_from_pointer(pointer):
     )
 
 
-def repository_def_from_pointer(pointer):
+def repository_def_from_target_def(target):
     from .pipeline import PipelineDefinition
     from .repository import RepositoryData, RepositoryDefinition
-
-    target = def_from_pointer(pointer)
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, PipelineDefinition):
         # consider including pipeline name in generated repo name
-        repo_def = RepositoryDefinition(
+        return RepositoryDefinition(
             name=EPHEMERAL_NAME, repository_data=RepositoryData.from_list([target])
         )
     elif isinstance(target, RepositoryDefinition):
-        repo_def = target
+        return target
     else:
+        return None
+
+
+def repository_def_from_pointer(pointer):
+    target = def_from_pointer(pointer)
+    repo_def = repository_def_from_target_def(target)
+    if not repo_def:
         raise DagsterInvariantViolationError(
             'CodePointer ({str}) must resolve to a '
             'RepositoryDefinition or a PipelineDefinition. '
             'Received a {type}'.format(str=pointer.describe(), type=type(target))
         )
-
     return repo_def

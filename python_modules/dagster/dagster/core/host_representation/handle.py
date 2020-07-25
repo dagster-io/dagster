@@ -107,7 +107,7 @@ class RepositoryLocationHandle:
 
         list_repositories_response = sync_list_repositories_grpc(client)
 
-        repository_keys = set(
+        repository_names = set(
             symbol.repository_name for symbol in list_repositories_response.repository_symbols
         )
 
@@ -119,14 +119,14 @@ class RepositoryLocationHandle:
             if location_name
             else assign_grpc_location_name(port, socket, host),
             client=client,
-            repository_keys=repository_keys,
+            repository_names=repository_names,
         )
 
 
 class GrpcServerRepositoryLocationHandle(
     namedtuple(
         '_GrpcServerRepositoryLocationHandle',
-        'port socket host location_name client repository_keys',
+        'port socket host location_name client repository_names',
     ),
     RepositoryLocationHandle,
 ):
@@ -134,7 +134,7 @@ class GrpcServerRepositoryLocationHandle(
     Represents a gRPC server that Dagster is not responsible for managing.
     '''
 
-    def __new__(cls, port, socket, host, location_name, client, repository_keys):
+    def __new__(cls, port, socket, host, location_name, client, repository_names):
         from dagster.grpc.client import DagsterGrpcClient
 
         return super(GrpcServerRepositoryLocationHandle, cls).__new__(
@@ -144,7 +144,7 @@ class GrpcServerRepositoryLocationHandle(
             check.str_param(host, 'host'),
             check.str_param(location_name, 'location_name'),
             check.inst_param(client, 'client', DagsterGrpcClient),
-            check.set_param(repository_keys, 'repository_keys', of_type=str),
+            check.set_param(repository_names, 'repository_names', of_type=str),
         )
 
 
@@ -206,7 +206,7 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
         )
 
     @property
-    def repository_keys(self):
+    def repository_names(self):
         return set(self.repository_code_pointer_dict.keys())
 
     @property
@@ -240,16 +240,12 @@ class InProcessRepositoryLocationHandle(
 
 
 class RepositoryHandle(
-    # repository_name is the name of the repository itself.
-    # repository_key is how the repository location indexes into the collection
-    # of pointers.
-    namedtuple('_RepositoryHandle', 'repository_name repository_key repository_location_handle')
+    namedtuple('_RepositoryHandle', 'repository_name repository_location_handle')
 ):
-    def __new__(cls, repository_name, repository_key, repository_location_handle):
+    def __new__(cls, repository_name, repository_location_handle):
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, 'repository_name'),
-            check.str_param(repository_key, 'repository_key'),
             check.inst_param(
                 repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
             ),
@@ -259,7 +255,7 @@ class RepositoryHandle(
         if isinstance(self.repository_location_handle, InProcessRepositoryLocationHandle):
             return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
-                    self.repository_key
+                    self.repository_name
                 ],
                 executable_path=sys.executable,
             )
@@ -270,7 +266,7 @@ class RepositoryHandle(
         ):
             return RepositoryPythonOrigin(
                 code_pointer=self.repository_location_handle.repository_code_pointer_dict[
-                    self.repository_key
+                    self.repository_name
                 ],
                 executable_path=self.repository_location_handle.executable_path,
             )
@@ -279,7 +275,7 @@ class RepositoryHandle(
                 host=self.repository_location_handle.host,
                 port=self.repository_location_handle.port,
                 socket=self.repository_location_handle.socket,
-                repository_key=self.repository_key,
+                repository_name=self.repository_name,
             )
         else:
             check.failed(
