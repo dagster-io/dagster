@@ -302,7 +302,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 EngineEventData(
                     [
                         EventMetadataEntry.text(docker_image, 'Job image'),
-                        EventMetadataEntry.text(err.stderr, 'Docker stderr'),
+                        EventMetadataEntry.text(err.stderr or '', 'Docker stderr'),
                     ],
                 ),
                 CeleryDockerExecutor,
