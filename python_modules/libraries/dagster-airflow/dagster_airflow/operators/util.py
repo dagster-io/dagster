@@ -9,7 +9,7 @@ from dagster_graphql.client.util import construct_execute_plan_variables
 
 from dagster import DagsterEventType, check, seven
 from dagster.core.events import DagsterEvent
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 
@@ -116,7 +116,6 @@ def invoke_steps_within_python_operator(
     variables = construct_execute_plan_variables(
         recon_repo, mode, run_config, pipeline_name, run_id, step_keys
     )
-    variables = add_airflow_tags(variables, ts)
 
     logging.info(
         'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
@@ -125,6 +124,7 @@ def invoke_steps_within_python_operator(
     )
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
     if instance:
+        tags = {AIRFLOW_EXECUTION_DATE_STR: ts} if ts else {}
         instance.register_managed_run(
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -132,7 +132,7 @@ def invoke_steps_within_python_operator(
             mode=mode,
             solids_to_execute=None,
             step_keys_to_execute=None,
-            tags=None,
+            tags=tags,
             root_run_id=None,
             parent_run_id=None,
             pipeline_snapshot=pipeline_snapshot,
@@ -147,19 +147,11 @@ def invoke_steps_within_python_operator(
     return events
 
 
-def add_airflow_tags(variables, ts):
-    check.dict_param(variables, 'variables')
+def airflow_tags_for_ts(ts):
+    ''' Converts an Airflow timestamp string to a list of tags.
+    '''
     check.opt_str_param(ts, 'ts')
 
-    # If an Airflow timestamp string is provided, stash it (and the converted version) in tags
-    if ts is not None:
-        tags = [
-            {'key': 'airflow_ts', 'value': ts},
-            {
-                'key': 'execution_epoch_time',
-                'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
-            },
-        ]
-        variables['executionParams']['executionMetadata']['tags'] = tags
-
-    return variables
+    return [
+        {'key': AIRFLOW_EXECUTION_DATE_STR, 'value': ts},
+    ]

@@ -422,7 +422,6 @@ def make_airflow_dag_containerized(
         run_config (Optional[dict]): The environment config, if any, with which to compile
             the pipeline to an execution plan, as a Python dict.
         mode (Optional[str]): The mode in which to execute the pipeline.
-        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
         dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
             :py:class:`DAG <airflow:airflow.models.DAG>`).
         dag_description (Optional[str]): The description to use for the compiled Airflow DAG
@@ -438,6 +437,15 @@ def make_airflow_dag_containerized(
         list of its constituent tasks.
     '''
     check.str_param(module_name, 'module_name')
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.str_param(image, 'image')
+    check.opt_dict_param(run_config, 'run_config')
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(dag_id, 'dag_id')
+    check.opt_str_param(dag_description, 'dag_description')
+    check.opt_dict_param(dag_kwargs, 'dag_kwargs')
+    check.opt_dict_param(op_kwargs, 'op_kwargs')
+    check.opt_dict_param(environment_dict, 'environment_dict')
 
     recon_repo = ReconstructableRepository.for_module(module_name, pipeline_name)
     run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
@@ -468,6 +476,14 @@ def make_airflow_dag_containerized_for_recon_repo(
     dag_kwargs=None,
     op_kwargs=None,
 ):
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.str_param(image, 'image')
+    check.opt_dict_param(run_config, 'run_config')
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(dag_id, 'dag_id')
+    check.opt_str_param(dag_description, 'dag_description')
+    check.opt_dict_param(dag_kwargs, 'dag_kwargs')
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image
 
@@ -498,10 +514,17 @@ def make_airflow_dag_kubernetized_for_recon_repo(
 ):
     from .operators.kubernetes_operator import DagsterKubernetesPodOperator
 
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.opt_dict_param(run_config, 'run_config')
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(dag_id, 'dag_id')
+    check.opt_str_param(dag_description, 'dag_description')
+    check.opt_dict_param(dag_kwargs, 'dag_kwargs')
     # See: https://github.com/dagster-io/dagster/issues/1663
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
-    op_kwargs['image'] = image
-    op_kwargs['namespace'] = namespace
+    op_kwargs['image'] = check.str_param(image, 'image')
+    op_kwargs['namespace'] = check.str_param(namespace, 'namespace')
 
     return _make_airflow_dag(
         recon_repo=recon_repo,

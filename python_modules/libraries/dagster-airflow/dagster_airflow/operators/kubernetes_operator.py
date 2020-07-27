@@ -9,13 +9,13 @@ from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from dagster_graphql.client.util import construct_execute_plan_variables, parse_raw_log_lines
 
 from dagster import __version__ as dagster_version
-from dagster import seven
+from dagster import check, seven
 from dagster.core.events import EngineEventData
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
-    add_airflow_tags,
+    airflow_tags_for_ts,
     check_events_for_failures,
     check_events_for_skips,
     get_aws_environment,
@@ -59,9 +59,6 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             else None
         )
 
-        # Store Airflow DAG run timestamp so that we can pass along via execution metadata
-        self.airflow_ts = kwargs.get('ts')
-
         # Add AWS creds
         self.env_vars = kwargs.get('env_vars', {})
         for k, v in get_aws_environment().items():
@@ -92,8 +89,9 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
     def run_id(self):
         return getattr(self, '_run_id', '')
 
-    @property
-    def query(self):
+    def query(self, airflow_ts):
+        check.opt_str_param(airflow_ts, 'airflow_ts')
+
         variables = construct_execute_plan_variables(
             self.recon_repo,
             self.mode,
@@ -102,7 +100,8 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.run_id,
             self.step_keys,
         )
-        variables = add_airflow_tags(variables, self.airflow_ts)
+        tags = airflow_tags_for_ts(airflow_ts)
+        variables['executionParams']['executionMetadata']['tags'] = tags
 
         self.log.info(
             'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
@@ -156,7 +155,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 image=self.image,
                 pod_id=self.name,
                 cmds=self.cmds,
-                arguments=self.query,
+                arguments=self.query(context.get('ts')),
                 labels=self.labels,
             )
 
@@ -177,6 +176,10 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
             try:
                 if self.instance:
+                    tags = (
+                        {AIRFLOW_EXECUTION_DATE_STR: context.get('ts')} if 'ts' in context else {}
+                    )
+
                     run = self.instance.register_managed_run(
                         pipeline_name=self.pipeline_name,
                         run_id=self.run_id,
@@ -184,7 +187,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                         mode=self.mode,
                         solids_to_execute=None,
                         step_keys_to_execute=None,
-                        tags=None,
+                        tags=tags,
                         root_run_id=None,
                         parent_run_id=None,
                         pipeline_snapshot=self.pipeline_snapshot,

@@ -4,19 +4,23 @@ import warnings
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
-from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
+from dagster_graphql.client.mutations import (
+    DagsterGraphQLClientError,
+    handle_execute_plan_result_raw,
+    handle_execution_errors,
+)
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from dagster_graphql.client.util import construct_execute_plan_variables, parse_raw_log_lines
 from docker import APIClient, from_env
 
-from dagster import seven
+from dagster import check, seven
 from dagster.core.events import EngineEventData
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
-    add_airflow_tags,
+    airflow_tags_for_ts,
     check_events_for_failures,
     check_events_for_skips,
     get_aws_environment,
@@ -25,98 +29,7 @@ from .util import (
 DOCKER_TEMPDIR = '/tmp'
 
 
-class ModifiedDockerOperator(DockerOperator):
-    """ModifiedDockerOperator supports host temporary directories on OSX.
-
-    Incorporates https://github.com/apache/airflow/pull/4315/ and an implementation of
-    https://issues.apache.org/jira/browse/AIRFLOW-3825.
-
-    :param host_tmp_dir: Specify the location of the temporary directory on the host which will
-        be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
-    :type host_tmp_dir: str
-    """
-
-    def __init__(self, host_tmp_dir='/tmp', **kwargs):
-        self.host_tmp_dir = host_tmp_dir
-        kwargs['xcom_push'] = True
-        super(ModifiedDockerOperator, self).__init__(**kwargs)
-
-    @contextmanager
-    def get_host_tmp_dir(self):
-        '''Abstracts the tempdir context manager so that this can be overridden.'''
-        with TemporaryDirectory(prefix='airflowtmp', dir=self.host_tmp_dir) as tmp_dir:
-            yield tmp_dir
-
-    def execute(self, context):
-        '''Modified only to use the get_host_tmp_dir helper.'''
-        self.log.info('Starting docker container from image %s', self.image)
-
-        tls_config = self.__get_tls_config()
-        if self.docker_conn_id:
-            self.cli = self.get_hook().get_conn()
-        else:
-            self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
-
-        if self.force_pull or len(self.cli.images(name=self.image)) == 0:
-            self.log.info('Pulling docker image %s', self.image)
-            for l in self.cli.pull(self.image, stream=True):
-                output = seven.json.loads(l.decode('utf-8').strip())
-                if 'status' in output:
-                    self.log.info("%s", output['status'])
-
-        with self.get_host_tmp_dir() as host_tmp_dir:
-            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
-            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
-
-            self.container = self.cli.create_container(
-                command=self.get_command(),
-                environment=self.environment,
-                host_config=self.cli.create_host_config(
-                    auto_remove=self.auto_remove,
-                    binds=self.volumes,
-                    network_mode=self.network_mode,
-                    shm_size=self.shm_size,
-                    dns=self.dns,
-                    dns_search=self.dns_search,
-                    cpu_shares=int(round(self.cpus * 1024)),
-                    mem_limit=self.mem_limit,
-                ),
-                image=self.image,
-                user=self.user,
-                working_dir=self.working_dir,
-            )
-            self.cli.start(self.container['Id'])
-
-            res = []
-            line = ''
-            for new_line in self.cli.logs(container=self.container['Id'], stream=True):
-                line = new_line.strip()
-                if hasattr(line, 'decode'):
-                    line = line.decode('utf-8')
-                self.log.info(line)
-                res.append(line)
-
-            result = self.cli.wait(self.container['Id'])
-            if result['StatusCode'] != 0:
-                raise AirflowException(
-                    'docker container failed with result: {result} and logs: {logs}'.format(
-                        result=repr(result), logs='\n'.join(res)
-                    )
-                )
-
-            if self.xcom_push_flag:
-                # Try to avoid any kind of race condition?
-                return res if self.xcom_all else str(line)
-
-    # This is a class-private name on DockerOperator for no good reason --
-    # all that the status quo does is inhibit extension of the class.
-    # See https://issues.apache.org/jira/browse/AIRFLOW-3880
-    def __get_tls_config(self):
-        # pylint: disable=no-member
-        return super(ModifiedDockerOperator, self)._DockerOperator__get_tls_config()
-
-
-class DagsterDockerOperator(ModifiedDockerOperator):
+class DagsterDockerOperator(DockerOperator):
     '''Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
@@ -125,6 +38,13 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     Unlike the standard DockerOperator, this operator also supports config using docker.from_env,
     so it isn't necessary to explicitly set docker_url, tls_config, or api_version.
 
+
+    Incorporates https://github.com/apache/airflow/pull/4315/ and an implementation of
+    https://issues.apache.org/jira/browse/AIRFLOW-3825.
+
+    Parameters:
+    host_tmp_dir (str): Specify the location of the temporary directory on the host which will
+        be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
     '''
 
     # py2 compat
@@ -133,6 +53,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
+        self.host_tmp_dir = host_tmp_dir
 
         run_config = dagster_operator_parameters.run_config
         if 'filesystem' in run_config['storage']:
@@ -198,13 +119,6 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             else:
                 kwargs['docker_conn_id'] = True
 
-        # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
-        # just check the last log line to see if it's JSON.
-        kwargs['xcom_all'] = True
-
-        # Store Airflow DAG run timestamp so that we can pass along via execution metadata
-        self.airflow_ts = kwargs.get('ts')
-
         if 'environment' not in kwargs:
             kwargs['environment'] = get_aws_environment()
 
@@ -213,9 +127,85 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             dag=dagster_operator_parameters.dag,
             tmp_dir=tmp_dir,
             host_tmp_dir=host_tmp_dir,
+            xcom_push=True,
+            # We do this because log lines won't necessarily be emitted in order (!) -- so we can't
+            # just check the last log line to see if it's JSON.
+            xcom_all=True,
             *args,
             **kwargs
         )
+
+    @contextmanager
+    def get_host_tmp_dir(self):
+        yield self.host_tmp_dir
+
+    def execute_raw(self, context):
+        '''Modified only to use the get_host_tmp_dir helper.'''
+        self.log.info('Starting docker container from image %s', self.image)
+
+        tls_config = self.__get_tls_config()
+        if self.docker_conn_id:
+            self.cli = self.get_hook().get_conn()
+        else:
+            self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
+
+        if self.force_pull or len(self.cli.images(name=self.image)) == 0:
+            self.log.info('Pulling docker image %s', self.image)
+            for l in self.cli.pull(self.image, stream=True):
+                output = seven.json.loads(l.decode('utf-8').strip())
+                if 'status' in output:
+                    self.log.info("%s", output['status'])
+
+        with self.get_host_tmp_dir() as host_tmp_dir:
+            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
+            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
+
+            self.container = self.cli.create_container(
+                command=self.get_docker_command(context.get('ts')),
+                environment=self.environment,
+                host_config=self.cli.create_host_config(
+                    auto_remove=self.auto_remove,
+                    binds=self.volumes,
+                    network_mode=self.network_mode,
+                    shm_size=self.shm_size,
+                    dns=self.dns,
+                    dns_search=self.dns_search,
+                    cpu_shares=int(round(self.cpus * 1024)),
+                    mem_limit=self.mem_limit,
+                ),
+                image=self.image,
+                user=self.user,
+                working_dir=self.working_dir,
+            )
+            self.cli.start(self.container['Id'])
+
+            res = []
+            line = ''
+            for new_line in self.cli.logs(container=self.container['Id'], stream=True):
+                line = new_line.strip()
+                if hasattr(line, 'decode'):
+                    line = line.decode('utf-8')
+                self.log.info(line)
+                res.append(line)
+
+            result = self.cli.wait(self.container['Id'])
+            if result['StatusCode'] != 0:
+                raise AirflowException(
+                    'docker container failed with result: {result} and logs: {logs}'.format(
+                        result=repr(result), logs='\n'.join(res)
+                    )
+                )
+
+            if self.xcom_push_flag:
+                # Try to avoid any kind of race condition?
+                return res if self.xcom_all else str(line)
+
+    # This is a class-private name on DockerOperator for no good reason --
+    # all that the status quo does is inhibit extension of the class.
+    # See https://issues.apache.org/jira/browse/AIRFLOW-3880
+    def __get_tls_config(self):
+        # pylint: disable=no-member
+        return super(DagsterDockerOperator, self)._DockerOperator__get_tls_config()
 
     @property
     def run_id(self):
@@ -224,8 +214,9 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         else:
             return self._run_id
 
-    @property
-    def query(self):
+    def query(self, airflow_ts):
+        check.opt_str_param(airflow_ts, 'airflow_ts')
+
         variables = construct_execute_plan_variables(
             self.recon_repo,
             self.mode,
@@ -234,7 +225,9 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             self.run_id,
             self.step_keys,
         )
-        variables = add_airflow_tags(variables, self.airflow_ts)
+
+        tags = airflow_tags_for_ts(airflow_ts)
+        variables['executionParams']['executionMetadata']['tags'] = tags
 
         self.log.info(
             'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
@@ -246,13 +239,16 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             variables=seven.json.dumps(variables), query=RAW_EXECUTE_PLAN_MUTATION
         )
 
-    def get_command(self):
+    def get_docker_command(self, airflow_ts):
+        '''Deliberately renamed from get_command to avoid shadoowing the method of the base class'''
+        check.opt_str_param(airflow_ts, 'airflow_ts')
+
         if self.command is not None and self.command.strip().find('[') == 0:
             commands = ast.literal_eval(self.command)
         elif self.command is not None:
             commands = self.command
         else:
-            commands = self.query
+            commands = self.query(airflow_ts)
         return commands
 
     def get_hook(self):
@@ -266,19 +262,6 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         return _DummyHook()
 
     def execute(self, context):
-        try:
-            from dagster_graphql.client.mutations import (
-                DagsterGraphQLClientError,
-                handle_execution_errors,
-                handle_execute_plan_result_raw,
-            )
-
-        except ImportError:
-            raise AirflowException(
-                'To use the DagsterDockerOperator, dagster and dagster_graphql must be installed '
-                'in your Airflow environment.'
-            )
-
         if 'run_id' in self.params:
             self._run_id = self.params['run_id']
         elif 'dag_run' in context and context['dag_run'] is not None:
@@ -286,6 +269,8 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
         try:
             if self.instance:
+                tags = {AIRFLOW_EXECUTION_DATE_STR: context.get('ts')} if 'ts' in context else {}
+
                 run = self.instance.register_managed_run(
                     pipeline_name=self.pipeline_name,
                     run_id=self.run_id,
@@ -293,7 +278,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                     mode=self.mode,
                     solids_to_execute=None,
                     step_keys_to_execute=None,
-                    tags=None,
+                    tags=tags,
                     root_run_id=None,
                     parent_run_id=None,
                     pipeline_snapshot=self.pipeline_snapshot,
@@ -301,7 +286,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                     parent_pipeline_snapshot=self.parent_pipeline_snapshot,
                 )
 
-            raw_res = super(DagsterDockerOperator, self).execute(context)
+            raw_res = self.execute_raw(context)
             self.log.info('Finished executing container.')
 
             res = parse_raw_log_lines(raw_res)
@@ -334,14 +319,3 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
         finally:
             self._run_id = None
-
-    # This is a class-private name on DockerOperator for no good reason --
-    # all that the status quo does is inhibit extension of the class.
-    # See https://issues.apache.org/jira/browse/AIRFLOW-3880
-    def __get_tls_config(self):
-        # pylint:disable=no-member
-        return super(DagsterDockerOperator, self)._ModifiedDockerOperator__get_tls_config()
-
-    @contextmanager
-    def get_host_tmp_dir(self):
-        yield self.host_tmp_dir

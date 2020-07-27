@@ -105,6 +105,51 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     assert 'Exception: Unusual error' in str(exc_info.value)
 
 
+def test_airflow_execution_date_tags_k8s(dagster_docker_image, cluster_provider):
+    _check_aws_creds_available()
+
+    pipeline_name = 'demo_airflow_execution_date_pipeline'
+    recon_repo = ReconstructableRepository.for_module(
+        'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo'
+    )
+    environments_path = test_project_environments_path()
+    environment_yaml = [
+        os.path.join(environments_path, 'env_s3.yaml'),
+    ]
+    run_config = load_yaml_from_glob_list(environment_yaml)
+
+    execution_date = timezone.utcnow()
+
+    dag, tasks = make_airflow_dag_kubernetized_for_recon_repo(
+        recon_repo=recon_repo,
+        pipeline_name=pipeline_name,
+        image=dagster_docker_image,
+        namespace='default',
+        run_config=run_config,
+        op_kwargs={
+            'config_file': os.environ['KUBECONFIG'],
+            'env_vars': {
+                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
+                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            },
+        },
+    )
+
+    results = execute_tasks_in_dag(
+        dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
+    )
+
+    materialized_airflow_execution_date = None
+    for result in results.values():
+        for event in result:
+            if event.event_type_value == 'STEP_MATERIALIZATION':
+                materialization = event.event_specific_data.materialization
+                materialization_entry = materialization.metadata_entries[0]
+                materialized_airflow_execution_date = materialization_entry.entry_data.text
+
+    assert execution_date.isoformat() == materialized_airflow_execution_date
+
+
 def _check_aws_creds_available():
     for expected_env_var in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']:
         if expected_env_var not in os.environ:

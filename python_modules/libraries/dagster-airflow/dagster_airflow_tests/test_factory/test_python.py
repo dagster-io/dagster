@@ -136,7 +136,7 @@ def test_rename_for_airflow():
 
 
 @requires_airflow_db
-def test_error_dag_python():  # pylint: disable=redefined-outer-name
+def test_error_dag_python():
     pipeline_name = 'demo_error_pipeline'
     recon_repo = ReconstructableRepository.for_module(
         'dagster_test.test_project.test_pipelines.repo', pipeline_name
@@ -154,3 +154,33 @@ def test_error_dag_python():  # pylint: disable=redefined-outer-name
         execute_tasks_in_dag(dag, tasks, run_id=make_new_run_id(), execution_date=execution_date)
 
     assert 'Exception: Unusual error' in str(exc_info.value)
+
+
+@requires_airflow_db
+def test_airflow_execution_date_tags():
+    pipeline_name = 'demo_airflow_execution_date_pipeline'
+    recon_repo = ReconstructableRepository.for_module(
+        'dagster_test.test_project.test_pipelines.repo', pipeline_name
+    )
+    environments_path = test_project_environments_path()
+    environment_yaml = [
+        os.path.join(environments_path, 'env_filesystem.yaml'),
+    ]
+    run_config = load_yaml_from_glob_list(environment_yaml)
+    execution_date = timezone.utcnow()
+
+    dag, tasks = make_airflow_dag_for_recon_repo(recon_repo, pipeline_name, run_config)
+
+    results = execute_tasks_in_dag(
+        dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
+    )
+
+    materialized_airflow_execution_date = None
+    for result in results.values():
+        for event in result:
+            if event.event_type_value == 'STEP_MATERIALIZATION':
+                materialization = event.event_specific_data.materialization
+                materialization_entry = materialization.metadata_entries[0]
+                materialized_airflow_execution_date = materialization_entry.entry_data.text
+
+    assert execution_date.isoformat() == materialized_airflow_execution_date

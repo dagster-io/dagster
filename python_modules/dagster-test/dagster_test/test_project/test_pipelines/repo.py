@@ -13,10 +13,11 @@ from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 from dagster import (
+    AssetMaterialization,
+    EventMetadataEntry,
     InputDefinition,
     Int,
     List,
-    Materialization,
     ModeDefinition,
     Output,
     OutputDefinition,
@@ -351,6 +352,29 @@ def define_fan_in_fan_out_pipeline():
     return fan_in_fan_out_pipeline
 
 
+@solid
+def emit_airflow_execution_date(context):
+    airflow_execution_date = context.pipeline_run.tags['airflow_execution_date']
+    yield AssetMaterialization(
+        asset_key='airflow_execution_date',
+        metadata_entries=[
+            EventMetadataEntry.text(airflow_execution_date, 'airflow_execution_date')
+        ],
+    )
+    yield Output(airflow_execution_date)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            system_storage_defs=s3_plus_default_storage_defs, resource_defs={'s3': s3_resource}
+        )
+    ]
+)
+def demo_airflow_execution_date_pipeline():
+    emit_airflow_execution_date()
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -369,6 +393,7 @@ def define_demo_execution_repo():
                 'fan_in_fan_out_pipeline': define_fan_in_fan_out_pipeline,
                 'resource_pipeline': define_resource_pipeline,
                 'docker_celery_pipeline': define_docker_celery_pipeline,
+                'demo_airflow_execution_date_pipeline': demo_airflow_execution_date_pipeline,
             },
             'schedules': define_schedules(),
         }

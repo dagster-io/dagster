@@ -23,9 +23,7 @@ def test_project_environments_path():
 def build_and_tag_test_image(tag):
     check.str_param(tag, 'tag')
 
-    base_python = '.'.join(
-        [str(x) for x in [sys.version_info.major, sys.version_info.minor, sys.version_info.micro]]
-    )
+    base_python = '3.7.8'
 
     # Build and tag local dagster test image
     return subprocess.check_output(['./build.sh', base_python, tag], cwd=test_repo_path())
@@ -81,5 +79,5 @@ def test_project_docker_image():
     final_docker_image = '{repository}/{image_name}:{tag}'.format(
         repository=docker_repository, image_name=image_name, tag=docker_image_tag
     )
-    print('Using Docker image: %s' % final_docker_image)
+    print('Using Docker image: %s' % final_docker_image)  # pylint: disable=print-call
     return final_docker_image
