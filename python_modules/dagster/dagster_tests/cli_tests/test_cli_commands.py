@@ -53,6 +53,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.serdes import ConfigurableClass
+from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.utils import file_relative_path
 from dagster.utils.test import FilesystemTestScheduler
 
@@ -648,7 +649,7 @@ def test_more_than_one_pipeline():
 
 def test_attribute_not_found():
     with pytest.raises(
-        DagsterInvariantViolationError, match=re.escape('nope not found at module scope in file')
+        DagsterIPCProtocolError, match=re.escape('nope not found at module scope in file')
     ):
         execute_execute_command(
             env=None,
@@ -671,7 +672,7 @@ not_a_repo_or_pipeline = 123
 
 def test_attribute_is_wrong_thing():
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterIPCProtocolError,
         match=re.escape(
             'Loadable attributes must be either a PipelineDefinition or a '
             'RepositoryDefinition. Got 123.'
@@ -691,10 +692,9 @@ def test_attribute_is_wrong_thing():
 
 def test_attribute_fn_returns_wrong_thing():
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterIPCProtocolError,
         match=re.escape(
-            "Loadable attributes must be either a PipelineDefinition or a "
-            "RepositoryDefinition. Got 'kdjfkjdf'."
+            "Loadable attributes must be either a PipelineDefinition or a RepositoryDefinition."
         ),
     ):
         execute_execute_command(

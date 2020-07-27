@@ -5,7 +5,10 @@ from dagster_graphql.client.mutations import (
 
 from dagster import file_relative_path
 from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    get_ephemeral_repository_name,
+)
 from dagster.core.host_representation import UserProcessApi
 from dagster.core.instance import DagsterInstance
 
@@ -62,8 +65,8 @@ def test_execute_execute_plan_mutation():
             'runConfigData': {},
             'mode': 'default',
             'selector': {
-                'repositoryLocationName': pipeline_name,
-                'repositoryName': '<<unnamed>>',
+                'repositoryLocationName': get_ephemeral_repository_name(pipeline_name),
+                'repositoryName': get_ephemeral_repository_name(pipeline_name),
                 'pipelineName': pipeline_name,
             },
             'executionMetadata': {'runId': pipeline_run.run_id},
@@ -89,8 +92,8 @@ def test_execute_execute_plan_mutation_raw():
             'runConfigData': {},
             'mode': 'default',
             'selector': {
-                'repositoryLocationName': pipeline_name,
-                'repositoryName': '<<unnamed>>',
+                'repositoryLocationName': get_ephemeral_repository_name(pipeline_name),
+                'repositoryName': get_ephemeral_repository_name(pipeline_name),
                 'pipelineName': pipeline_name,
             },
             'executionMetadata': {'runId': pipeline_run.run_id},

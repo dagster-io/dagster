@@ -20,6 +20,7 @@ from dagster import (
     solid,
 )
 from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
+from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation import UserProcessApi
@@ -137,8 +138,8 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             variables = {
                 'executionParams': {
                     'selector': {
-                        'repositoryLocationName': 'test_events',
-                        'repositoryName': '<<unnamed>>',
+                        'repositoryLocationName': get_ephemeral_repository_name(pipeline_def.name),
+                        'repositoryName': get_ephemeral_repository_name(pipeline_def.name),
                         'pipelineName': pipeline_def.name,
                     },
                     'runConfigData': {'storage': {'filesystem': {}}},

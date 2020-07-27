@@ -18,7 +18,10 @@ from dagster.seven import lru_cache
 
 from .executable import ExecutablePipeline
 
-EPHEMERAL_NAME = '<<unnamed>>'
+
+def get_ephemeral_repository_name(pipeline_name):
+    check.str_param(pipeline_name, 'pipeline_name')
+    return '<<pipeline:{pipeline_name}>>'.format(pipeline_name=pipeline_name)
 
 
 @whitelist_for_serdes
@@ -322,7 +325,8 @@ def repository_def_from_target_def(target):
     if isinstance(target, PipelineDefinition):
         # consider including pipeline name in generated repo name
         return RepositoryDefinition(
-            name=EPHEMERAL_NAME, repository_data=RepositoryData.from_list([target])
+            name=get_ephemeral_repository_name(target.name),
+            repository_data=RepositoryData.from_list([target]),
         )
     elif isinstance(target, RepositoryDefinition):
         return target

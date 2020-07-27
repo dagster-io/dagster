@@ -7,23 +7,10 @@ import six
 from dagster import check
 from dagster.api.list_repositories import sync_list_repositories
 from dagster.core.code_pointer import CodePointer, rebase_file
-from dagster.core.definitions.reconstructable import (
-    load_def_in_module,
-    load_def_in_package,
-    load_def_in_python_file,
-    repository_def_from_target_def,
-)
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryLocationHandle, UserProcessApi
 from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils import load_yaml_from_path
 
-from .autodiscovery import (
-    LoadableTarget,
-    loadable_targets_from_python_file,
-    loadable_targets_from_python_module,
-    loadable_targets_from_python_package,
-)
 from .config_schema import ensure_workspace_config
 from .workspace import Workspace
 
@@ -77,10 +64,14 @@ def load_workspace_from_config(workspace_config, yaml_path):
     return Workspace(location_handles)
 
 
-def _location_handle_from_module_config(python_module_config, user_process_api):
+def _location_handle_from_module_config(
+    python_module_config, user_process_api, executable_path=sys.executable
+):
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
     module_name, attribute, location_name = _get_module_config_data(python_module_config)
-    return location_handle_from_module_name(module_name, attribute, user_process_api, location_name)
+    return location_handle_from_module_name(
+        module_name, attribute, user_process_api, location_name, executable_path
+    )
 
 
 def _get_module_config_data(python_module_config):
@@ -95,7 +86,9 @@ def _get_module_config_data(python_module_config):
     )
 
 
-def location_handle_from_module_name(module_name, attribute, user_process_api, location_name=None):
+def location_handle_from_module_name(
+    module_name, attribute, user_process_api, location_name=None, executable_path=sys.executable
+):
     check.str_param(module_name, 'module_name')
     check.opt_str_param(attribute, 'attribute')
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
@@ -104,7 +97,7 @@ def location_handle_from_module_name(module_name, attribute, user_process_api, l
     if user_process_api == UserProcessApi.GRPC:
         return RepositoryLocationHandle.create_process_bound_grpc_server_location(
             LoadableTargetOrigin(
-                executable_path=sys.executable,
+                executable_path=executable_path,
                 python_file=None,
                 module_name=module_name,
                 working_directory=None,
@@ -112,31 +105,31 @@ def location_handle_from_module_name(module_name, attribute, user_process_api, l
             ),
             location_name,
         )
-
-    loadable_targets = (
-        [LoadableTarget(attribute, load_def_in_module(module_name, attribute))]
-        if attribute
-        else loadable_targets_from_python_module(module_name)
-    )
-
-    repository_code_pointer_dict = {}
-    for loadable_target in loadable_targets:
-        repository_code_pointer_dict[
-            repository_def_from_target_def(loadable_target.target_definition).name
-        ] = CodePointer.from_module(module_name, loadable_target.attribute)
-
-    return RepositoryLocationHandle.create_out_of_process_location(
-        repository_code_pointer_dict=repository_code_pointer_dict,
-        # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, loadable_targets),
-    )
+    else:
+        response = sync_list_repositories(
+            executable_path=executable_path,
+            python_file=None,
+            module_name=module_name,
+            working_directory=None,
+            attribute=attribute,
+        )
+        return RepositoryLocationHandle.create_python_env_location(
+            executable_path=executable_path,
+            location_name=location_name,
+            repository_code_pointer_dict={
+                lrs.repository_name: CodePointer.from_module(module_name, lrs.attribute)
+                for lrs in response.repository_symbols
+            },
+        )
 
 
-def _location_handle_from_package_config(python_module_config, user_process_api):
+def _location_handle_from_package_config(
+    python_package_config, user_process_api, executable_path=sys.executable
+):
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
-    module_name, attribute, location_name = _get_package_config_data(python_module_config)
+    module_name, attribute, location_name = _get_package_config_data(python_package_config)
     return location_handle_from_package_name(
-        module_name, attribute, user_process_api, location_name
+        module_name, attribute, user_process_api, location_name, executable_path
     )
 
 
@@ -153,7 +146,7 @@ def _get_package_config_data(python_package_config):
 
 
 def location_handle_from_package_name(
-    package_name, attribute, user_process_api, location_name=None
+    package_name, attribute, user_process_api, location_name=None, executable_path=sys.executable
 ):
     check.str_param(package_name, 'package_name')
     check.opt_str_param(attribute, 'attribute')
@@ -163,7 +156,7 @@ def location_handle_from_package_name(
     if user_process_api == UserProcessApi.GRPC:
         return RepositoryLocationHandle.create_process_bound_grpc_server_location(
             loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
+                executable_path=executable_path,
                 python_file=None,
                 module_name=package_name,
                 working_directory=None,
@@ -171,39 +164,27 @@ def location_handle_from_package_name(
             ),
             location_name=location_name,
         )
-
-    loadable_targets = (
-        [LoadableTarget(attribute, load_def_in_package(package_name, attribute))]
-        if attribute
-        else loadable_targets_from_python_package(package_name)
-    )
-
-    repository_code_pointer_dict = {}
-    for loadable_target in loadable_targets:
-        repository_code_pointer_dict[
-            repository_def_from_target_def(loadable_target.target_definition).name
-        ] = CodePointer.from_python_package(package_name, loadable_target.attribute)
-
-    return RepositoryLocationHandle.create_out_of_process_location(
-        repository_code_pointer_dict=repository_code_pointer_dict,
-        # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, loadable_targets),
-    )
-
-
-def assign_location_name(location_name, loadable_targets):
-    if location_name:
-        return location_name
-
-    if len(loadable_targets) > 1:
-        raise DagsterInvariantViolationError(
-            'If there is one than more repository you must provide a location name'
+    else:
+        response = sync_list_repositories(
+            executable_path=executable_path,
+            python_file=None,
+            module_name=package_name,
+            working_directory=None,
+            attribute=attribute,
+        )
+        return RepositoryLocationHandle.create_python_env_location(
+            executable_path=executable_path,
+            location_name=location_name,
+            repository_code_pointer_dict={
+                lrs.repository_name: CodePointer.from_python_package(package_name, lrs.attribute)
+                for lrs in response.repository_symbols
+            },
         )
 
-    return next(iter(loadable_targets)).target_definition.name
 
-
-def location_handle_from_python_file_config(python_file_config, yaml_path, user_process_api):
+def _location_handle_from_python_file_config(
+    python_file_config, yaml_path, user_process_api, executable_path=sys.executable
+):
     check.str_param(yaml_path, 'yaml_path')
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
 
@@ -212,7 +193,12 @@ def location_handle_from_python_file_config(python_file_config, yaml_path, user_
     )
 
     return location_handle_from_python_file(
-        absolute_path, attribute, user_process_api, location_name, working_directory
+        absolute_path,
+        attribute,
+        user_process_api,
+        location_name,
+        working_directory,
+        executable_path,
     )
 
 
@@ -232,7 +218,12 @@ def _get_python_file_config_data(python_file_config, yaml_path):
 
 
 def location_handle_from_python_file(
-    python_file, attribute, user_process_api, location_name=None, working_directory=None
+    python_file,
+    attribute,
+    user_process_api,
+    location_name=None,
+    working_directory=None,
+    executable_path=sys.executable,
 ):
     check.str_param(python_file, 'python_file')
     check.opt_str_param(attribute, 'attribute')
@@ -243,7 +234,7 @@ def location_handle_from_python_file(
     if user_process_api == UserProcessApi.GRPC:
         return RepositoryLocationHandle.create_process_bound_grpc_server_location(
             loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
+                executable_path=executable_path,
                 python_file=python_file,
                 module_name=None,
                 working_directory=working_directory,
@@ -251,28 +242,24 @@ def location_handle_from_python_file(
             ),
             location_name=location_name,
         )
-
-    loadable_targets = (
-        [
-            LoadableTarget(
-                attribute, load_def_in_python_file(python_file, attribute, working_directory)
-            )
-        ]
-        if attribute
-        else loadable_targets_from_python_file(python_file, working_directory)
-    )
-
-    repository_code_pointer_dict = {}
-    for loadable_target in loadable_targets:
-        repository_code_pointer_dict[
-            repository_def_from_target_def(loadable_target.target_definition).name
-        ] = CodePointer.from_python_file(python_file, loadable_target.attribute, working_directory)
-
-    return RepositoryLocationHandle.create_out_of_process_location(
-        repository_code_pointer_dict=repository_code_pointer_dict,
-        # default to the name of the repository symbol for now
-        location_name=assign_location_name(location_name, loadable_targets),
-    )
+    else:
+        response = sync_list_repositories(
+            executable_path=executable_path,
+            python_file=python_file,
+            module_name=None,
+            working_directory=working_directory,
+            attribute=attribute,
+        )
+        return RepositoryLocationHandle.create_python_env_location(
+            executable_path=executable_path,
+            location_name=location_name,
+            repository_code_pointer_dict={
+                lrs.repository_name: CodePointer.from_python_file(
+                    python_file, lrs.attribute, working_directory
+                )
+                for lrs in response.repository_symbols
+            },
+        )
 
 
 def _location_handle_from_grpc_server_config(grpc_server_config, yaml_path):
@@ -320,105 +307,18 @@ def _location_handle_from_python_environment_config(
     )
 
     if python_file_config:
-        absolute_path, attribute, location_name, working_directory = _get_python_file_config_data(
-            python_file_config, yaml_path
+        return _location_handle_from_python_file_config(
+            python_file_config, yaml_path, user_process_api, executable_path
         )
-
-        if user_process_api == UserProcessApi.GRPC:
-            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                loadable_target_origin=LoadableTargetOrigin(
-                    executable_path=executable_path,
-                    python_file=absolute_path,
-                    module_name=None,
-                    working_directory=None,
-                    attribute=attribute,
-                ),
-                location_name=location_name,
-            )
-        else:
-            response = sync_list_repositories(
-                executable_path=executable_path,
-                python_file=absolute_path,
-                module_name=None,
-                working_directory=None,
-                attribute=attribute,
-            )
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    lrs.repository_name: CodePointer.from_python_file(
-                        absolute_path, lrs.attribute, working_directory
-                    )
-                    for lrs in response.repository_symbols
-                },
-            )
-
     elif python_module_config:
-        check.invariant(python_module_config)
-        module_name, attribute, location_name = _get_module_config_data(python_module_config)
-
-        if user_process_api == UserProcessApi.GRPC:
-            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                loadable_target_origin=LoadableTargetOrigin(
-                    executable_path=executable_path,
-                    python_file=None,
-                    module_name=module_name,
-                    working_directory=None,
-                    attribute=attribute,
-                ),
-                location_name=location_name,
-            )
-        else:
-            response = sync_list_repositories(
-                executable_path=executable_path,
-                python_file=None,
-                module_name=module_name,
-                working_directory=None,
-                attribute=attribute,
-            )
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    lrs.repository_name: CodePointer.from_module(module_name, lrs.attribute)
-                    for lrs in response.repository_symbols
-                },
-            )
-
+        return _location_handle_from_module_config(
+            python_module_config, user_process_api, executable_path
+        )
     else:
         check.invariant(python_package_config)
-        package_name, attribute, location_name = _get_package_config_data(python_package_config)
-
-        if user_process_api == UserProcessApi.GRPC:
-            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                loadable_target_origin=LoadableTargetOrigin(
-                    executable_path=executable_path,
-                    python_file=None,
-                    module_name=package_name,
-                    working_directory=None,
-                    attribute=attribute,
-                ),
-                location_name=location_name,
-            )
-        else:
-            response = sync_list_repositories(
-                executable_path=executable_path,
-                python_file=None,
-                module_name=package_name,
-                working_directory=None,
-                attribute=attribute,
-            )
-            return RepositoryLocationHandle.create_python_env_location(
-                executable_path=executable_path,
-                location_name=location_name,
-                repository_code_pointer_dict={
-                    lrs.repository_name: CodePointer.from_python_package(
-                        package_name, lrs.attribute
-                    )
-                    for lrs in response.repository_symbols
-                },
-            )
+        return _location_handle_from_package_config(
+            python_package_config, user_process_api, executable_path
+        )
 
 
 def _location_handle_from_location_config(location_config, yaml_path, opt_ins):
@@ -458,7 +358,7 @@ def _location_handle_from_target_config(target_config, yaml_path, user_process_a
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
 
     if 'python_file' in target_config:
-        return location_handle_from_python_file_config(
+        return _location_handle_from_python_file_config(
             target_config['python_file'], yaml_path, user_process_api
         )
 

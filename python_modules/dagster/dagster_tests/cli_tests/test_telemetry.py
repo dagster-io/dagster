@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.core.definitions.reconstructable import EPHEMERAL_NAME
+from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import UPDATE_REPO_STATS, get_dir_from_dagster_home, hash_name
 from dagster.core.test_utils import environ
@@ -47,18 +47,21 @@ def test_dagster_telemetry_enabled(caplog):
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_file('')):
-                pipeline_name = 'foo_pipeline'
+                pipeline_attribute = 'foo_pipeline'
+                pipeline_name = 'foo'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_name,],
+                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_attribute,],
                 )
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get('action') == UPDATE_REPO_STATS:
-                        assert message.get('pipeline_name_hash') == hash_name('foo')
+                        assert message.get('pipeline_name_hash') == hash_name(pipeline_name)
                         assert message.get('num_pipelines_in_repo') == str(1)
-                        assert message.get('repo_hash') == hash_name(EPHEMERAL_NAME)
+                        assert message.get('repo_hash') == hash_name(
+                            get_ephemeral_repository_name(pipeline_name)
+                        )
                     assert set(message.keys()) == EXPECTED_KEYS
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
@@ -100,18 +103,21 @@ def test_dagster_telemetry_unset(caplog):
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_file('')):
-                pipeline_name = 'foo_pipeline'
+                pipeline_attribute = 'foo_pipeline'
+                pipeline_name = 'foo'
                 result = runner.invoke(
                     pipeline_execute_command,
-                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_name,],
+                    ['-f', path_to_file('test_cli_commands.py'), '-a', pipeline_attribute],
                 )
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get('action') == UPDATE_REPO_STATS:
-                        assert message.get('pipeline_name_hash') == hash_name('foo')
+                        assert message.get('pipeline_name_hash') == hash_name(pipeline_name)
                         assert message.get('num_pipelines_in_repo') == str(1)
-                        assert message.get('repo_hash') == hash_name(EPHEMERAL_NAME)
+                        assert message.get('repo_hash') == hash_name(
+                            get_ephemeral_repository_name(pipeline_name)
+                        )
                     assert set(message.keys()) == EXPECTED_KEYS
 
                 assert len(caplog.records) == 5

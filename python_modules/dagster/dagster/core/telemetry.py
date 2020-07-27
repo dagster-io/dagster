@@ -30,9 +30,9 @@ import yaml
 from dagster import check
 from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.reconstructable import (
-    EPHEMERAL_NAME,
     ReconstructablePipeline,
     ReconstructableRepository,
+    get_ephemeral_repository_name,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
@@ -346,7 +346,7 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             num_pipelines_in_repo = len(repository.pipeline_names)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
-            repo_hash = hash_name(EPHEMERAL_NAME)
+            repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))
             num_pipelines_in_repo = 1
 
         write_telemetry_log_line(

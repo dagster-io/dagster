@@ -5,6 +5,7 @@ from enum import Enum
 from dagster import check
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
 
@@ -18,7 +19,7 @@ from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrig
 IN_PROCESS_NAME = '<<in_process>>'
 
 
-def assign_grpc_location_name(port, socket, host):
+def _assign_grpc_location_name(port, socket, host):
     check.opt_int_param(port, 'port')
     check.opt_str_param(socket, 'socket')
     check.str_param(host, 'host')
@@ -26,6 +27,21 @@ def assign_grpc_location_name(port, socket, host):
     return 'grpc:{host}:{socket_or_port}'.format(
         host=host, socket_or_port=(socket if socket else port)
     )
+
+
+def _assign_python_env_location_name(repository_code_pointer_dict):
+    check.dict_param(
+        repository_code_pointer_dict,
+        'repository_code_pointer_dict',
+        key_type=str,
+        value_type=CodePointer,
+    )
+    if len(repository_code_pointer_dict) > 1:
+        raise DagsterInvariantViolationError(
+            'If there is one than more repository you must provide a location name'
+        )
+
+    return next(iter(repository_code_pointer_dict.keys()))
 
 
 # Which API the host process should use to communicate with the process
@@ -63,7 +79,7 @@ class RepositoryLocationHandle:
         executable_path, location_name, repository_code_pointer_dict,
     ):
         check.str_param(executable_path, 'executable_path')
-        check.str_param(location_name, 'location_name')
+        check.opt_str_param(location_name, 'location_name')
         check.dict_param(
             repository_code_pointer_dict,
             'repository_code_pointer_dict',
@@ -71,7 +87,9 @@ class RepositoryLocationHandle:
             value_type=CodePointer,
         )
         return PythonEnvRepositoryLocationHandle(
-            location_name=location_name,
+            location_name=location_name
+            if location_name
+            else _assign_python_env_location_name(repository_code_pointer_dict),
             executable_path=executable_path,
             repository_code_pointer_dict=repository_code_pointer_dict,
         )
@@ -84,12 +102,14 @@ class RepositoryLocationHandle:
         client = server.create_client()
         list_repositories_response = sync_list_repositories_grpc(client)
 
+        code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+
         return ManagedGrpcPythonEnvRepositoryLocationHandle(
             executable_path=list_repositories_response.executable_path,
             location_name=location_name
             if location_name
-            else assign_grpc_location_name(server.port, server.socket, 'localhost'),
-            repository_code_pointer_dict=list_repositories_response.repository_code_pointer_dict,
+            else _assign_python_env_location_name(code_pointer_dict),
+            repository_code_pointer_dict=code_pointer_dict,
             client=client,
             grpc_server_process=server,
         )
@@ -117,7 +137,7 @@ class RepositoryLocationHandle:
             host=host,
             location_name=location_name
             if location_name
-            else assign_grpc_location_name(port, socket, host),
+            else _assign_grpc_location_name(port, socket, host),
             client=client,
             repository_names=repository_names,
         )
