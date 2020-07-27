@@ -53,4 +53,5 @@ def dagster_instance_config_schema():
             is_required=False,
         ),
         'telemetry': Field({'enabled': Field(Bool, default_value=True, is_required=False)}),
+        'opt_in': Field({'local_servers': Field(Bool, default_value=False, is_required=False)}),
     }

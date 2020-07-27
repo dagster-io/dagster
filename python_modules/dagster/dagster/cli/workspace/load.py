@@ -15,12 +15,13 @@ from .config_schema import ensure_workspace_config
 from .workspace import Workspace
 
 
-def load_workspace_from_yaml_paths(yaml_paths):
+def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
     check.list_param(yaml_paths, 'yaml_paths', str)
+    check.inst_param(python_user_process_api, 'python_user_process_api', UserProcessApi)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
     workspaces = [
-        load_workspace_from_config(workspace_config, yaml_path)
+        load_workspace_from_config(workspace_config, yaml_path, python_user_process_api)
         for workspace_config, yaml_path in zip(workspace_configs, yaml_paths)
     ]
 
@@ -36,8 +37,9 @@ def load_workspace_from_yaml_paths(yaml_paths):
     return merged_workspace
 
 
-def load_workspace_from_config(workspace_config, yaml_path):
+def load_workspace_from_config(workspace_config, yaml_path, python_user_process_api):
     ensure_workspace_config(workspace_config, yaml_path)
+    check.inst_param(python_user_process_api, 'python_user_process_api', UserProcessApi)
 
     if 'repository' in workspace_config:
         warnings.warn(
@@ -53,12 +55,12 @@ def load_workspace_from_config(workspace_config, yaml_path):
             ]
         )
 
-    opt_ins = set(workspace_config.get('opt_in') if workspace_config.get('opt_in') else [])
-
     location_handles = []
     for location_config in workspace_config['load_from']:
         location_handles.append(
-            _location_handle_from_location_config(location_config, yaml_path, opt_ins)
+            _location_handle_from_location_config(
+                location_config, yaml_path, python_user_process_api
+            )
         )
 
     return Workspace(location_handles)
@@ -321,22 +323,22 @@ def _location_handle_from_python_environment_config(
         )
 
 
-def _location_handle_from_location_config(location_config, yaml_path, opt_ins):
+def _location_handle_from_location_config(location_config, yaml_path, python_user_process_api):
     check.dict_param(location_config, 'location_config')
     check.str_param(yaml_path, 'yaml_path')
-    check.set_param(opt_ins, 'opt_ins')
-
-    user_process_api = UserProcessApi.GRPC if 'grpc' in opt_ins else UserProcessApi.CLI
+    check.inst_param(python_user_process_api, 'python_user_process_api', UserProcessApi)
 
     if is_target_config(location_config):
-        return _location_handle_from_target_config(location_config, yaml_path, user_process_api)
+        return _location_handle_from_target_config(
+            location_config, yaml_path, python_user_process_api
+        )
 
     elif 'grpc_server' in location_config:
         return _location_handle_from_grpc_server_config(location_config['grpc_server'], yaml_path)
 
     elif 'python_environment' in location_config:
         return _location_handle_from_python_environment_config(
-            location_config['python_environment'], yaml_path, user_process_api
+            location_config['python_environment'], yaml_path, python_user_process_api
         )
 
     else:

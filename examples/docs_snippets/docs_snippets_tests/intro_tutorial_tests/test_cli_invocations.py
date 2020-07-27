@@ -269,9 +269,9 @@ def path_to_tutorial_file(path):
 
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
-    workspace = get_workspace_from_kwargs(kwargs)
-
-    app = create_app_from_workspace(workspace, DagsterInstance.ephemeral())
+    instance = DagsterInstance.ephemeral()
+    workspace = get_workspace_from_kwargs(kwargs, instance)
+    app = create_app_from_workspace(workspace, instance)
 
     client = app.test_client()
 

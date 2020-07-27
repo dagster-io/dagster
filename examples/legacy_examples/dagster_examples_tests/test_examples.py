@@ -9,6 +9,7 @@ from dagster import seven
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduledExecutionSuccess
 from dagster.core.test_utils import environ
 from dagster.utils import file_relative_path, script_relative_path
@@ -29,6 +30,7 @@ def test_list_command():
             'fn_name': None,
         },
         no_print,
+        DagsterInstance.get(),
     )
 
     result = runner.invoke(

@@ -170,11 +170,9 @@ class DagsterInstance:
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
             a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in
             addition to running them locally.
-        dagit_settings (Optional[Dict]): Specifies certain Dagit-specific, per-instance settings,
-            such as feature flags. These are set in the ``dagster.yaml`` under the key ``dagit``.
-        telemetry_settings (Optional[Dict]): Specifies certain telemetry-specific, per-instance
-            settings, such as whether it is enabled. These are set in the ``dagster.yaml`` under
-            the key ``telemetry``
+        settings (Optional[Dict]): Specifies certain per-instance settings,
+            such as feature flags. These are set in the ``dagster.yaml`` under a set of whitelisted
+            keys.
         ref (Optional[InstanceRef]): Used by internal machinery to pass instances across process
             boundaries.
     '''
@@ -191,8 +189,7 @@ class DagsterInstance:
         schedule_storage=None,
         scheduler=None,
         run_launcher=None,
-        dagit_settings=None,
-        telemetry_settings=None,
+        settings=None,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -219,8 +216,7 @@ class DagsterInstance:
         self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._run_launcher.initialize(self)
 
-        self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
-        self._telemetry_settings = check.opt_dict_param(telemetry_settings, 'telemetry_settings')
+        self._settings = check.opt_dict_param(settings, 'settings')
 
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
@@ -288,8 +284,7 @@ class DagsterInstance:
             schedule_storage=instance_ref.schedule_storage,
             scheduler=instance_ref.scheduler,
             run_launcher=instance_ref.run_launcher,
-            dagit_settings=instance_ref.dagit_settings,
-            telemetry_settings=instance_ref.telemetry_settings,
+            settings=instance_ref.settings,
             ref=instance_ref,
         )
 
@@ -338,8 +333,7 @@ class DagsterInstance:
 
     def info_str(self):
 
-        dagit_settings = self._dagit_settings if self._dagit_settings else None
-        telemetry_settings = self._telemetry_settings if self._telemetry_settings else None
+        settings = self._settings if self._settings else None
 
         return (
             'local_artifact_storage:\n{artifact}\n'
@@ -349,8 +343,6 @@ class DagsterInstance:
             'schedule_storage:\n{schedule_storage}\n'
             'scheduler:\n{scheduler}\n'
             'run_launcher:\n{run_launcher}\n'
-            'dagit_settings:\n{dagit}\n'
-            'telemetry_settings:\n{telemetry}\n'
             ''.format(
                 artifact=self._info(self._local_artifact_storage),
                 run=self._info(self._run_storage),
@@ -359,8 +351,14 @@ class DagsterInstance:
                 schedule_storage=self._info(self._schedule_storage),
                 scheduler=self._info(self._scheduler),
                 run_launcher=self._info(self._run_launcher),
-                dagit=self._info(dagit_settings),
-                telemetry=self._info(telemetry_settings),
+            )
+            + '\n'.join(
+                [
+                    '{settings_key}:\n{settings_value}'.format(
+                        settings_key=settings_key, settings_value=self._info(settings_value)
+                    )
+                    for settings_key, settings_value in settings.items()
+                ]
             )
         )
 
@@ -390,8 +388,12 @@ class DagsterInstance:
 
     @property
     def dagit_settings(self):
-        if self._dagit_settings:
-            return self._dagit_settings
+        return self.get_settings('dagit')
+
+    def get_settings(self, settings_key):
+        check.str_param(settings_key, 'settings_key')
+        if self._settings and settings_key in self._settings:
+            return self._settings.get(settings_key)
         return {}
 
     @property
@@ -401,11 +403,13 @@ class DagsterInstance:
 
         dagster_telemetry_enabled_default = True
 
-        if not self._telemetry_settings:
+        telemetry_settings = self.get_settings('telemetry')
+
+        if not telemetry_settings:
             return dagster_telemetry_enabled_default
 
-        if 'enabled' in self._telemetry_settings:
-            return self._telemetry_settings['enabled']
+        if 'enabled' in telemetry_settings:
+            return telemetry_settings['enabled']
         else:
             return dagster_telemetry_enabled_default
 

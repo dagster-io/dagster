@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.config import Enum, EnumValue, Field, ScalarUnion, Selector
+from dagster.config import Field, ScalarUnion, Selector
 from dagster.config.source import StringSource
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -79,7 +79,6 @@ WORKSPACE_CONFIG_SCHEMA = {
         ],
         is_required=False,
     ),
-    'opt_in': Field([Enum('WorkspaceOptInFeature', [EnumValue('grpc')])], is_required=False),
 }
 
 WORKSPACE_CONFIG_SCHEMA_WITH_LEGACY = merge_dicts(

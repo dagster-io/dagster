@@ -94,21 +94,19 @@ def ui(host, port, path_prefix, storage_fallback, **kwargs):
 
 
 def host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup=True, **kwargs):
-    workspace = get_workspace_from_kwargs(kwargs)
+
+    instance = DagsterInstance.get(storage_fallback)
+
+    workspace = get_workspace_from_kwargs(kwargs, instance)
     if not workspace:
         raise Exception('Unable to load workspace with cli_args: {}'.format(kwargs))
 
-    return host_dagit_ui_with_workspace(
-        workspace, host, port, path_prefix, storage_fallback, port_lookup
-    )
+    return host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup)
 
 
-def host_dagit_ui_with_workspace(
-    workspace, host, port, path_prefix, storage_fallback, port_lookup=True
-):
+def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup=True):
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(workspace, 'workspace', Workspace)
-
-    instance = DagsterInstance.get(storage_fallback)
 
     if len(workspace.repository_location_handles) == 1:
         repository_location_handle = workspace.repository_location_handles[0]

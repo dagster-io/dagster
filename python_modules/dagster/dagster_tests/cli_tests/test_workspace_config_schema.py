@@ -156,59 +156,6 @@ def test_load_python_environment_with_env_var():
         assert validation_result.success
 
 
-def test_load_python_environment_with_empty_opt_in():
-    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
-        valid_yaml = '''
-    load_from:
-        - python_environment:
-            executable_path:
-                env: TEST_EXECUTABLE_PATH
-            target:
-                python_file: file_valid_in_that_env.py
-    opt_in: []
-    '''
-
-        validation_result = _validate_yaml_contents(valid_yaml)
-
-        assert validation_result.success
-
-
-def test_load_python_environment_with_grpc_opt_in():
-    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
-        valid_yaml = '''
-    load_from:
-        - python_environment:
-            executable_path:
-                env: TEST_EXECUTABLE_PATH
-            target:
-                python_file: file_valid_in_that_env.py
-    opt_in:
-        - grpc
-    '''
-
-        validation_result = _validate_yaml_contents(valid_yaml)
-
-        assert validation_result.success
-
-
-def test_load_python_environment_with_invalid_opt_in():
-    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
-        invalid_yaml = '''
-    load_from:
-        - python_environment:
-            executable_path:
-                env: TEST_EXECUTABLE_PATH
-            target:
-                python_file: file_valid_in_that_env.py
-    opt_in:
-        - foobar
-    '''
-
-        validation_result = _validate_yaml_contents(invalid_yaml)
-
-        assert not validation_result.success
-
-
 def test_load_from_grpc_server():
     with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
         valid_yaml = '''

@@ -23,7 +23,6 @@ from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_lo
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.host_representation import UserProcessApi
 from dagster.core.instance import DagsterInstance
 
 
@@ -105,14 +104,13 @@ def test_pipeline():
 
 
 def test_all_step_events():  # pylint: disable=too-many-locals
+    instance = DagsterInstance.ephemeral()
+
     workspace = workspace_from_load_target(
-        PythonFileTarget(
-            __file__, define_test_events_pipeline.__name__, user_process_api=UserProcessApi.CLI
-        )
+        PythonFileTarget(__file__, define_test_events_pipeline.__name__), instance,
     )
     pipeline_def = define_test_events_pipeline()
     mode = pipeline_def.get_default_mode_name()
-    instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def, mode=mode)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan, mode=mode

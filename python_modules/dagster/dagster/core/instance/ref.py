@@ -40,7 +40,7 @@ class InstanceRef(
     namedtuple(
         '_InstanceRef',
         'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data '
-        'schedule_storage_data scheduler_data run_launcher_data dagit_settings telemetry_settings',
+        'schedule_storage_data scheduler_data run_launcher_data settings',
     )
 ):
     '''Serializable representation of a :py:class:`DagsterInstance`.
@@ -57,8 +57,7 @@ class InstanceRef(
         schedule_storage_data,
         scheduler_data,
         run_launcher_data,
-        dagit_settings,
-        telemetry_settings,
+        settings,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -83,8 +82,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, 'run_launcher_data', ConfigurableClassData
             ),
-            dagit_settings=check.opt_dict_param(dagit_settings, 'dagit_settings'),
-            telemetry_settings=check.opt_dict_param(telemetry_settings, 'telemetry_settings'),
+            settings=check.opt_dict_param(settings, 'settings'),
         )
 
     @staticmethod
@@ -153,6 +151,9 @@ class InstanceRef(
             ),
         )
 
+        settings_keys = {'dagit', 'telemetry', 'opt_in'}
+        settings = {key: config_value.get(key) for key in settings_keys}
+
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
             run_storage_data=run_storage_data,
@@ -161,8 +162,7 @@ class InstanceRef(
             schedule_storage_data=schedule_storage_data,
             scheduler_data=scheduler_data,
             run_launcher_data=run_launcher_data,
-            dagit_settings=config_value.get('dagit'),
-            telemetry_settings=config_value.get('telemetry'),
+            settings=settings,
         )
 
     @staticmethod
@@ -170,7 +170,7 @@ class InstanceRef(
         def value_for_ref_item(k, v):
             if v is None:
                 return None
-            if k in ['dagit_settings', 'telemetry_settings']:
+            if k == 'settings':
                 return v
             return ConfigurableClassData(*v)
 

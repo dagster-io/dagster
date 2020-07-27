@@ -1,5 +1,6 @@
 import sys
 
+import pytest
 import yaml
 
 from dagster.api.snapshot_repository import sync_get_external_repositories
@@ -8,13 +9,17 @@ from dagster.cli.workspace.load import load_workspace_from_config, load_workspac
 from dagster.core.host_representation.handle import (
     ManagedGrpcPythonEnvRepositoryLocationHandle,
     PythonEnvRepositoryLocationHandle,
+    UserProcessApi,
 )
 from dagster.utils import file_relative_path
 
 
-def test_multi_location_workspace():
+@pytest.mark.parametrize(
+    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
+)
+def test_multi_location_workspace(python_user_process_api):
     workspace = load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, 'multi_location.yaml')]
+        [file_relative_path(__file__, 'multi_location.yaml')], python_user_process_api,
     )
     assert isinstance(workspace, Workspace)
     assert len(workspace.repository_location_handles) == 2
@@ -22,12 +27,16 @@ def test_multi_location_workspace():
     assert workspace.has_repository_location_handle('loaded_from_module')
 
 
-def test_multi_file_extend_workspace():
+@pytest.mark.parametrize(
+    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
+)
+def test_multi_file_extend_workspace(python_user_process_api):
     workspace = load_workspace_from_yaml_paths(
         [
             file_relative_path(__file__, 'multi_location.yaml'),
             file_relative_path(__file__, 'extra_location.yaml'),
-        ]
+        ],
+        python_user_process_api,
     )
     assert isinstance(workspace, Workspace)
     assert len(workspace.repository_location_handles) == 3
@@ -36,12 +45,16 @@ def test_multi_file_extend_workspace():
     assert workspace.has_repository_location_handle('extra_location')
 
 
-def test_multi_file_override_workspace():
+@pytest.mark.parametrize(
+    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
+)
+def test_multi_file_override_workspace(python_user_process_api):
     workspace = load_workspace_from_yaml_paths(
         [
             file_relative_path(__file__, 'multi_location.yaml'),
             file_relative_path(__file__, 'override_location.yaml'),
-        ]
+        ],
+        python_user_process_api,
     )
     assert isinstance(workspace, Workspace)
     assert len(workspace.repository_location_handles) == 2
@@ -56,13 +69,17 @@ def test_multi_file_override_workspace():
     assert external_repositories[0].name == "extra_repository"
 
 
-def test_multi_file_extend_and_override_workspace():
+@pytest.mark.parametrize(
+    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
+)
+def test_multi_file_extend_and_override_workspace(python_user_process_api):
     workspace = load_workspace_from_yaml_paths(
         [
             file_relative_path(__file__, 'multi_location.yaml'),
             file_relative_path(__file__, 'override_location.yaml'),
             file_relative_path(__file__, 'extra_location.yaml'),
-        ]
+        ],
+        python_user_process_api,
     )
     assert isinstance(workspace, Workspace)
     assert len(workspace.repository_location_handles) == 3
@@ -78,8 +95,8 @@ def test_multi_file_extend_and_override_workspace():
     assert external_repositories[0].name == "extra_repository"
 
 
-def test_multi_python_environment_workspace():
-    workspace_yaml = '''
+def _get_multi_location_workspace_yaml():
+    return '''
 load_from:
     - python_environment:
         executable_path: {executable}
@@ -124,14 +141,18 @@ load_from:
                 relative_path: named_hello_world_repository.py
                 attribute: named_hello_world_repository
                 location_name: named_loaded_from_file_attribute
+
     '''.format(
         executable=sys.executable
     )
 
+
+def test_multi_python_environment_workspace():
     workspace = load_workspace_from_config(
-        yaml.safe_load(workspace_yaml),
+        yaml.safe_load(_get_multi_location_workspace_yaml()),
         # fake out as if it were loaded by a yaml file in this directory
         file_relative_path(__file__, 'not_a_real.yaml'),
+        UserProcessApi.CLI,
     )
     assert isinstance(workspace, Workspace)
     assert len(workspace.repository_location_handles) == 6
@@ -186,63 +207,12 @@ load_from:
 
 
 def test_grpc_multi_location_workspace():
-    workspace_yaml = '''
-load_from:
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: hello_world_repository.py
-                location_name: loaded_from_file
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.hello_world_repository
-                location_name: loaded_from_module
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: named_hello_world_repository.py
-                location_name: named_loaded_from_file
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.named_hello_world_repository
-                location_name: named_loaded_from_module
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_module:
-                module_name: dagster.utils.test.named_hello_world_repository
-                attribute: named_hello_world_repository
-                location_name: named_loaded_from_module_attribute
-
-    - python_environment:
-        executable_path: {executable}
-        target:
-            python_file:
-                relative_path: named_hello_world_repository.py
-                attribute: named_hello_world_repository
-                location_name: named_loaded_from_file_attribute
-
-opt_in:
-    - grpc
-
-    '''.format(
-        executable=sys.executable
-    )
 
     workspace = load_workspace_from_config(
-        yaml.safe_load(workspace_yaml),
+        yaml.safe_load(_get_multi_location_workspace_yaml()),
         # fake out as if it were loaded by a yaml file in this directory
         file_relative_path(__file__, 'not_a_real.yaml'),
+        UserProcessApi.GRPC,
     )
 
     assert isinstance(workspace, Workspace)

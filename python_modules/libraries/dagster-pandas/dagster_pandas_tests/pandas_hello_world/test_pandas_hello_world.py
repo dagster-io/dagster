@@ -3,6 +3,7 @@ import os
 from dagster import execute_pipeline
 from dagster.cli.pipeline import do_execute_command
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
 
@@ -51,6 +52,7 @@ def test_cli_execute():
             pipeline=ReconstructablePipeline.for_module(
                 'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
             ),
+            instance=DagsterInstance.get(),
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
@@ -76,6 +78,7 @@ def test_cli_execute_failure():
             pipeline=ReconstructablePipeline.for_module(
                 'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world_fails'
             ),
+            instance=DagsterInstance.get(),
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'

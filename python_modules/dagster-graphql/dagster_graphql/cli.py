@@ -86,16 +86,20 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
     return result_dict
 
 
-def execute_query_from_cli(workspace, query, variables=None, output=None):
+def execute_query_from_cli(workspace, query, instance, variables=None, output=None):
     check.inst_param(workspace, 'workspace', Workspace)
     check.str_param(query, 'query')
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.opt_str_param(variables, 'variables')
     check.opt_str_param(output, 'output')
 
     query = query.strip('\'" \n\t')
 
     result_dict = execute_query(
-        workspace, query, variables=seven.json.loads(variables) if variables else None
+        workspace,
+        query,
+        instance=instance,
+        variables=seven.json.loads(variables) if variables else None,
     )
     str_res = seven.json.dumps(result_dict)
 
@@ -215,8 +219,11 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         res = execute_query_against_remote(remote, query, variables)
         print(res)  # pylint: disable=print-call
     else:
-        workspace = get_workspace_from_kwargs(kwargs)
-        execute_query_from_cli(workspace, query, variables, output)
+        instance = DagsterInstance.get()
+        workspace = get_workspace_from_kwargs(kwargs, instance)
+        execute_query_from_cli(
+            workspace, query, instance, variables, output,
+        )
 
 
 cli = create_dagster_graphql_cli()

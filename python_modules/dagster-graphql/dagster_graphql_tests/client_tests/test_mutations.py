@@ -9,7 +9,6 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     get_ephemeral_repository_name,
 )
-from dagster.core.host_representation import UserProcessApi
 from dagster.core.instance import DagsterInstance
 
 EXPECTED_EVENTS = {
@@ -39,11 +38,9 @@ EXPECTED_EVENTS = {
 }
 
 
-def load_sleepy_workspace():
+def load_sleepy_workspace(instance):
     return workspace_from_load_target(
-        PythonFileTarget(
-            file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline', UserProcessApi.CLI
-        )
+        PythonFileTarget(file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline'), instance
     )
 
 
@@ -55,10 +52,10 @@ def sleepy_recon_pipeline():
 
 def test_execute_execute_plan_mutation():
     pipeline_name = 'sleepy_pipeline'
+    instance = DagsterInstance.local_temp()
 
     pipeline = sleepy_recon_pipeline()
-    workspace = load_sleepy_workspace()
-    instance = DagsterInstance.local_temp()
+    workspace = load_sleepy_workspace(instance)
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
         'executionParams': {
@@ -83,9 +80,10 @@ def test_execute_execute_plan_mutation():
 def test_execute_execute_plan_mutation_raw():
     pipeline_name = 'sleepy_pipeline'
     pipeline = sleepy_recon_pipeline()
-    workspace = load_sleepy_workspace()
-
     instance = DagsterInstance.local_temp()
+
+    workspace = load_sleepy_workspace(instance)
+
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
         'executionParams': {

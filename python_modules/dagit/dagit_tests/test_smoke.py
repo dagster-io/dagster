@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import json
 
+import pytest
 from dagit import app
 
 from dagster.cli.workspace import get_workspace_from_kwargs
@@ -26,10 +27,19 @@ SMOKE_TEST_QUERY = '''
 '''
 
 
-def test_smoke_app():
-    flask_app = app.create_app_from_workspace(
-        get_workspace_from_kwargs(dict(module_name='dagit_tests.toy.bar_repo', definition='bar',)),
+@pytest.mark.parametrize(
+    "instance",
+    [
         DagsterInstance.ephemeral(),
+        DagsterInstance.local_temp(overrides={"opt_in": {"local_servers": True}}),
+    ],
+)
+def test_smoke_app(instance):
+    flask_app = app.create_app_from_workspace(
+        get_workspace_from_kwargs(
+            dict(module_name='dagit_tests.toy.bar_repo', definition='bar'), instance
+        ),
+        instance,
     )
     client = flask_app.test_client()
 

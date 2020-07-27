@@ -8,6 +8,7 @@ from click import UsageError
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi
+from dagster.core.instance import DagsterInstance
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -45,23 +46,17 @@ WORKSPACE_CLI_ARGS = (
     'module_name',
     'attribute',
     'repository_yaml',
-    'grpc',
 )
 
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
-PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute user_process_api')
-ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute user_process_api')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
+ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
 
 WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget, EmptyWorkspaceTarget)
-
-
-def _cli_get_user_process_api(kwargs):
-    check.dict_param(kwargs, 'kwargs')
-    return UserProcessApi.GRPC if kwargs.get('grpc') else UserProcessApi.CLI
 
 
 def created_workspace_load_target(kwargs):
@@ -86,36 +81,40 @@ def created_workspace_load_target(kwargs):
         _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'workspace')
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'grpc')
+        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
         return PythonFileTarget(
-            python_file=kwargs.get('python_file'),
-            attribute=kwargs.get('attribute'),
-            user_process_api=_cli_get_user_process_api(kwargs),
+            python_file=kwargs.get('python_file'), attribute=kwargs.get('attribute'),
         )
     if kwargs.get('module_name'):
         return ModuleTarget(
-            module_name=kwargs.get('module_name'),
-            attribute=kwargs.get('attribute'),
-            user_process_api=_cli_get_user_process_api(kwargs),
+            module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute'),
         )
     check.failed('invalid')
 
 
-def workspace_from_load_target(load_target):
+def workspace_from_load_target(load_target, instance):
     check.inst_param(load_target, 'load_target', WorkspaceLoadTarget)
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    opt_in_settings = instance.get_settings('opt_in')
+    python_user_process_api = (
+        UserProcessApi.GRPC
+        if (opt_in_settings and opt_in_settings['local_servers'])
+        else UserProcessApi.CLI
+    )
 
     if isinstance(load_target, WorkspaceFileTarget):
-        return load_workspace_from_yaml_paths(load_target.paths)
+        return load_workspace_from_yaml_paths(load_target.paths, python_user_process_api)
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
             [
                 location_handle_from_python_file(
                     load_target.python_file,
                     load_target.attribute,
-                    user_process_api=load_target.user_process_api,
+                    user_process_api=python_user_process_api,
                 )
             ]
         )
@@ -125,7 +124,7 @@ def workspace_from_load_target(load_target):
                 location_handle_from_module_name(
                     load_target.module_name,
                     load_target.attribute,
-                    user_process_api=load_target.user_process_api,
+                    user_process_api=python_user_process_api,
                 )
             ]
         )
@@ -135,8 +134,9 @@ def workspace_from_load_target(load_target):
         check.not_implemented('Unsupported: {}'.format(load_target))
 
 
-def get_workspace_from_kwargs(kwargs):
-    return workspace_from_load_target(created_workspace_load_target(kwargs))
+def get_workspace_from_kwargs(kwargs, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    return workspace_from_load_target(created_workspace_load_target(kwargs), instance)
 
 
 def python_target_click_options():
@@ -152,15 +152,6 @@ def python_target_click_options():
         ),
         click.option('--working-directory', '-d', help='Specify working directory',),
     ]
-
-
-def grpc_option():
-    return click.option(
-        '--grpc',
-        '-g',
-        is_flag=True,
-        help=('Flag to communicate with child processes via gRPC instead of via the command line'),
-    )
 
 
 def attribute_option():
@@ -194,7 +185,6 @@ def workspace_target_click_options():
         ]
         + python_target_click_options()
         + [attribute_option()]
-        + [grpc_option()]
     )
 
 
@@ -267,8 +257,9 @@ def get_reconstructable_repository_from_origin_kwargs(kwargs):
     check.failed('invalid')
 
 
-def get_repository_location_from_kwargs(kwargs):
-    workspace = get_workspace_from_kwargs(kwargs)
+def get_repository_location_from_kwargs(kwargs, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    workspace = get_workspace_from_kwargs(kwargs, instance)
     provided_location_name = kwargs.get('location')
 
     if provided_location_name is None and len(workspace.repository_location_handles) == 1:
@@ -298,8 +289,9 @@ def get_repository_location_from_kwargs(kwargs):
     )
 
 
-def get_external_repository_from_kwargs(kwargs):
-    repo_location = get_repository_location_from_kwargs(kwargs)
+def get_external_repository_from_kwargs(kwargs, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    repo_location = get_repository_location_from_kwargs(kwargs, instance)
 
     repo_dict = repo_location.get_repositories()
 
@@ -334,8 +326,9 @@ def get_external_repository_from_kwargs(kwargs):
     return repo_location.get_repository(provided_repo_name)
 
 
-def get_external_pipeline_from_kwargs(kwargs):
-    external_repo = get_external_repository_from_kwargs(kwargs)
+def get_external_pipeline_from_kwargs(kwargs, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    external_repo = get_external_repository_from_kwargs(kwargs, instance)
 
     provided_pipeline_name = kwargs.get('pipeline')
 

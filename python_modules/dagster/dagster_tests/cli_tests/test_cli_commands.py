@@ -176,6 +176,7 @@ def test_list_command():
             'fn_name': 'bar',
         },
         no_print,
+        DagsterInstance.local_temp(),
     )
 
     result = runner.invoke(
@@ -185,14 +186,6 @@ def test_list_command():
 
     assert_correct_bar_repository_output(result)
 
-    # grpc server does not currently work wtih the pipeline list command since it requires
-    # the python environment to match the host process
-    result = runner.invoke(
-        pipeline_list_command,
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-g'],
-    )
-    assert result.exit_code == 1
-
     execute_list_command(
         {
             'repository_yaml': None,
@@ -201,10 +194,11 @@ def test_list_command():
             'fn_name': 'bar',
         },
         no_print,
+        DagsterInstance.local_temp(),
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
+        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar'],
     )
     assert_correct_bar_repository_output(result)
 
@@ -223,6 +217,7 @@ def test_list_command():
                 'fn_name': None,
             },
             no_print,
+            DagsterInstance.local_temp(),
         )
 
     with pytest.warns(
@@ -261,6 +256,7 @@ def test_list_command():
                 'fn_name': 'bar',
             },
             no_print,
+            DagsterInstance.local_temp(),
         )
 
     result = runner.invoke(
@@ -290,7 +286,6 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': None,
                 'attribute': None,
-                'grpc': None,
             },
             True,
         ),
@@ -301,7 +296,6 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': None,
                 'attribute': None,
-                'grpc': None,
             },
             True,
         ),
@@ -312,7 +306,6 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'bar',
-                'grpc': None,
             },
             False,
         ),
@@ -323,7 +316,6 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': 'dagster_tests.cli_tests.test_cli_commands',
                 'attribute': 'bar',
-                'grpc': None,
             },
             False,
         ),
@@ -334,7 +326,6 @@ def valid_execute_args():
                 'python_file': None,
                 'module_name': 'dagster_tests.cli_tests.test_cli_commands',
                 'attribute': 'foo_pipeline',
-                'grpc': None,
             },
             False,
         ),
@@ -345,7 +336,6 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'define_foo_pipeline',
-                'grpc': None,
             },
             False,
         ),
@@ -356,7 +346,6 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'foo_pipeline',
-                'grpc': None,
             },
             False,
         ),
