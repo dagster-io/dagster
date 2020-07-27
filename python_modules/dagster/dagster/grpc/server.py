@@ -730,8 +730,8 @@ def open_server_process(port, socket, loadable_target_origin=None, max_workers=1
             '-m',
             'dagster.grpc',
         ]
-        + (['-p', str(port)] if port else [])
-        + (['-s', socket] if socket else [])
+        + (['--port', str(port)] if port else [])
+        + (['--socket', socket] if socket else [])
         + ['-n', str(max_workers)]
     )
 

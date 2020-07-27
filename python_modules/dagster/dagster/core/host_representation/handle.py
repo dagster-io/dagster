@@ -115,13 +115,13 @@ class RepositoryLocationHandle:
         )
 
     @staticmethod
-    def create_grpc_server_location(location_name, port, socket, host):
+    def create_grpc_server_location(port, socket, host, location_name=None):
         from dagster.grpc.client import DagsterGrpcClient
 
-        check.opt_str_param(location_name, 'location_name')
         check.opt_int_param(port, 'port')
         check.opt_str_param(socket, 'socket')
         check.str_param(host, 'host')
+        check.opt_str_param(location_name, 'location_name')
 
         client = DagsterGrpcClient(port=port, socket=socket, host=host)
 

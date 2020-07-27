@@ -11,7 +11,7 @@ import click
 from dagster import check, seven
 from dagster.cli.workspace.cli_target import (
     get_reconstructable_repository_from_origin_kwargs,
-    origin_target_argument,
+    python_origin_target_argument,
 )
 from dagster.core.definitions import ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
@@ -391,7 +391,7 @@ def _schedule_tick_state(instance, tick_data):
     default=1,
     help='Maximum number of (threaded) workers to use in the GRPC server',
 )
-@origin_target_argument
+@python_origin_target_argument
 def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwargs):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
@@ -432,7 +432,7 @@ def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwar
     ),
 )
 @click.argument('output_file', type=click.Path())
-@origin_target_argument
+@python_origin_target_argument
 @click.option('--schedule_name')
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:

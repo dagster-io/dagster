@@ -51,6 +51,8 @@ from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
+from dagster.grpc.server import GrpcServerProcess
+from dagster.grpc.types import LoadableTargetOrigin
 from dagster.serdes import ConfigurableClass
 from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.utils import file_relative_path
@@ -168,6 +170,33 @@ def grpc_instance():
     return DagsterInstance.local_temp(overrides={"opt_in": {"local_servers": True}})
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
+def test_list_command_grpc_socket():
+    runner = CliRunner()
+
+    with GrpcServerProcess(
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
+        ),
+    ) as server_process:
+        execute_list_command(
+            {'socket': server_process.socket}, no_print, DagsterInstance.local_temp(),
+        )
+        execute_list_command(
+            {'socket': server_process.socket, 'host': 'localhost'},
+            no_print,
+            DagsterInstance.local_temp(),
+        )
+
+        result = runner.invoke(pipeline_list_command, ['--socket', server_process.socket])
+        assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(
+            pipeline_list_command, ['--socket', server_process.socket, '--host', 'localhost'],
+        )
+        assert_correct_bar_repository_output(result)
+
+
 def test_list_command():
     runner = CliRunner()
 
@@ -199,6 +228,38 @@ def test_list_command():
     )
 
     assert_correct_bar_repository_output(result)
+
+    with GrpcServerProcess(
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
+        ),
+        force_port=True,
+    ) as server_process:
+        execute_list_command(
+            {'port': server_process.port}, no_print, DagsterInstance.local_temp(),
+        )
+        result = runner.invoke(pipeline_list_command, ['--port', server_process.port])
+        assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(
+            pipeline_list_command, ['--port', server_process.port, '--host', 'localhost',],
+        )
+        assert_correct_bar_repository_output(result)
+
+        result = runner.invoke(pipeline_list_command, ['--port', server_process.port],)
+        assert_correct_bar_repository_output(result)
+
+        # Can't supply both port and socket
+        with pytest.raises(UsageError):
+            execute_list_command(
+                {'port': server_process.port, 'socket': 'foonamedsocket'},
+                no_print,
+                DagsterInstance.local_temp(),
+            )
+
+        result = runner.invoke(
+            pipeline_list_command, ['--port', server_process.port, '--socket', 'foonamedsocket'],
+        )
 
     execute_list_command(
         {

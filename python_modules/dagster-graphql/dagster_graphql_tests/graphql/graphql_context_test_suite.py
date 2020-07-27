@@ -381,10 +381,10 @@ class EnvironmentManagers:
                 yield [
                     GrpcServerRepositoryLocation(
                         RepositoryLocationHandle.create_grpc_server_location(
-                            location_name='test',
                             port=server.port,
                             socket=server.socket,
                             host='localhost',
+                            location_name='test',
                         )
                     )
                 ]

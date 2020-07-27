@@ -8,6 +8,7 @@ from click import UsageError
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi
+from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 
 from .load import (
@@ -46,17 +47,26 @@ WORKSPACE_CLI_ARGS = (
     'module_name',
     'attribute',
     'repository_yaml',
+    'host',
+    'port',
+    'socket',
 )
-
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
 PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
 ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
+GrpcServerTarget = namedtuple('GrpcServerTarget', 'host port socket')
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 EmptyWorkspaceTarget = namedtuple('EmptyWorkspaceTarget', '')
 
-WorkspaceLoadTarget = (WorkspaceFileTarget, PythonFileTarget, ModuleTarget, EmptyWorkspaceTarget)
+WorkspaceLoadTarget = (
+    WorkspaceFileTarget,
+    PythonFileTarget,
+    ModuleTarget,
+    EmptyWorkspaceTarget,
+    GrpcServerTarget,
+)
 
 
 def created_workspace_load_target(kwargs):
@@ -78,19 +88,37 @@ def created_workspace_load_target(kwargs):
             'You have used -y or --repository-yaml to load a workspace. '
             'This is deprecated and will be eliminated in 0.9.0.'
         )
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute', 'workspace')
+        _check_cli_arguments_none(
+            kwargs, 'python_file', 'module_name', 'attribute', 'workspace', 'host', 'port', 'socket'
+        )
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
-        _check_cli_arguments_none(kwargs, 'python_file', 'module_name', 'attribute')
+        _check_cli_arguments_none(
+            kwargs, 'python_file', 'module_name', 'attribute', 'host', 'port', 'socket'
+        )
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
-        _check_cli_arguments_none(kwargs, 'workspace', 'module_name')
+        _check_cli_arguments_none(kwargs, 'workspace', 'module_name', 'host', 'port', 'socket')
         return PythonFileTarget(
             python_file=kwargs.get('python_file'), attribute=kwargs.get('attribute'),
         )
     if kwargs.get('module_name'):
+        _check_cli_arguments_none(kwargs, 'workspace', 'python_file', 'host', 'port', 'socket')
         return ModuleTarget(
             module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute'),
+        )
+    if kwargs.get('port'):
+        _check_cli_arguments_none(kwargs, 'socket')
+        return GrpcServerTarget(
+            port=kwargs.get('port'),
+            socket=None,
+            host=(kwargs.get('host') if kwargs.get('host') else 'localhost'),
+        )
+    elif kwargs.get('socket'):
+        return GrpcServerTarget(
+            port=None,
+            socket=kwargs.get('socket'),
+            host=(kwargs.get('host') if kwargs.get('host') else 'localhost'),
         )
     check.failed('invalid')
 
@@ -128,6 +156,14 @@ def workspace_from_load_target(load_target, instance):
                 )
             ]
         )
+    elif isinstance(load_target, GrpcServerTarget):
+        return Workspace(
+            [
+                RepositoryLocationHandle.create_grpc_server_location(
+                    port=load_target.port, socket=load_target.socket, host=load_target.host,
+                )
+            ]
+        )
     elif isinstance(load_target, EmptyWorkspaceTarget):
         return Workspace([])
     else:
@@ -150,19 +186,24 @@ def python_target_click_options():
         click.option(
             '--module-name', '-m', help='Specify module where repository or pipeline function lives'
         ),
-        click.option('--working-directory', '-d', help='Specify working directory',),
+        click.option('--working-directory', '-d', help='Specify working directory'),
+        click.option(
+            '--attribute',
+            '-a',
+            help=(
+                'Attribute that is either a 1) repository or pipeline or '
+                '2) a function that returns a repository or pipeline.'
+            ),
+        ),
     ]
 
 
-def attribute_option():
-    return click.option(
-        '--attribute',
-        '-a',
-        help=(
-            'Attribute that is either a 1) repository or pipeline or '
-            '2) a function that returns a repository.'
-        ),
-    )
+def grpc_server_target_click_options():
+    return [
+        click.option('--port', type=click.INT, required=False),
+        click.option('--socket', type=click.Path(), required=False),
+        click.option('--host', type=click.STRING, required=False),
+    ]
 
 
 def workspace_target_click_options():
@@ -184,7 +225,7 @@ def workspace_target_click_options():
             ),
         ]
         + python_target_click_options()
-        + [attribute_option()]
+        + grpc_server_target_click_options()
     )
 
 
@@ -194,16 +235,17 @@ def workspace_target_argument(f):
     return apply_click_params(f, *workspace_target_click_options())
 
 
-def python_target_argument(f):
+def grpc_server_origin_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
-    return apply_click_params(f, *python_target_click_options())
+    options = grpc_server_target_click_options()
+    return apply_click_params(f, *options)
 
 
-def origin_target_argument(f):
+def python_origin_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
-    options = python_target_click_options() + [attribute_option()]
+    options = python_target_click_options()
     return apply_click_params(f, *options)
 
 
