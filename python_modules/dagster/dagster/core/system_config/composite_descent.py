@@ -96,7 +96,19 @@ def _composite_descent(parent_stack, solids_config_dict):
 
         # the base case
         if not isinstance(solid.definition, CompositeSolidDefinition):
-            yield SolidConfigEntry(current_handle, SolidConfig.from_dict(current_solid_config))
+            transformed_current_solid_config = solid.definition.apply_config_mapping(
+                current_solid_config
+            )
+            if not transformed_current_solid_config.success:
+                raise DagsterInvalidConfigError(
+                    'Error in config for solid {}'.format(solid.name),
+                    transformed_current_solid_config.errors,
+                    transformed_current_solid_config,
+                )
+
+            yield SolidConfigEntry(
+                current_handle, SolidConfig.from_dict(transformed_current_solid_config.value)
+            )
             continue
 
         composite_def = check.inst(solid.definition, CompositeSolidDefinition)

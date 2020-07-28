@@ -21,7 +21,7 @@ disable=C,R,duplicate-code,W0231,W0511,W1201,W1202,no-init
 # See: https://github.com/getsentry/responses/issues/74
 [TYPECHECK]
 ignored-classes=responses
-signature-mutators=solid,composite_solid,lambda_solid
+signature-mutators=solid,composite_solid,lambda_solid,configured
 
 [MASTER]
 ignore=snapshots

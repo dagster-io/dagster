@@ -14,6 +14,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.definitions.config_mappable import configured
 from dagster.core.system_config.composite_descent import composite_descent
 
 
@@ -519,3 +520,88 @@ def test_config_mapped_enum():
         ).output_for_solid('wrap_return_int')
         == 2
     )
+
+
+def test_single_level_pipeline_with_configured_solid():
+    @solid(config_schema=int)
+    def return_int(context):
+        return context.solid_config
+
+    return_int_5 = configured(return_int, name='return_int_5')(5)
+
+    @pipeline
+    def return_int_pipeline():
+        return_int_5()
+
+    result = execute_pipeline(return_int_pipeline)
+
+    assert result.success
+    assert result.result_for_solid('return_int_5').output_value() == 5
+
+
+def test_single_level_pipeline_with_complex_configured_solid_within_composite():
+    @solid(config_schema={'age': int, 'name': str})
+    def introduce(context):
+        return "{name} is {age} years old".format(**context.solid_config)
+
+    @configured(introduce, {'age': int})
+    def introduce_aj(config):
+        return {'name': 'AJ', 'age': config['age']}
+
+    assert introduce_aj.name == 'introduce'  # TODO should this be called `introduce_aj`?
+
+    @composite_solid(
+        config_schema={'num_as_str': str},
+        config_fn=lambda cfg: {'introduce': {'config': {'age': int(cfg['num_as_str'])}}},
+    )
+    def composite_wrapper():
+        return introduce_aj()
+
+    @pipeline
+    def return_int_pipeline():
+        composite_wrapper()
+
+    result = execute_pipeline(
+        return_int_pipeline, {'solids': {'composite_wrapper': {'config': {'num_as_str': '20'}}}}
+    )
+
+    assert result.success
+    assert result.result_for_solid('composite_wrapper').output_value() == "AJ is 20 years old"
+
+
+def test_single_level_pipeline_with_complex_configured_solid():
+    @solid(config_schema={'age': int, 'name': str})
+    def introduce(context):
+        return "{name} is {age} years old".format(**context.solid_config)
+
+    introduce_aj = configured(introduce, name="introduce_aj")({'age': 20, 'name': "AJ"})
+
+    @pipeline
+    def return_int_pipeline():
+        introduce_aj()
+
+    result = execute_pipeline(return_int_pipeline)
+
+    assert result.success
+    assert result.result_for_solid('introduce_aj').output_value() == "AJ is 20 years old"
+
+
+def test_single_level_pipeline_with_complex_configured_solid_nested():
+    @solid(config_schema={'age': int, 'name': str})
+    def introduce(context):
+        return "{name} is {age} years old".format(**context.solid_config)
+
+    @configured(introduce, {'age': int})
+    def introduce_aj(config):
+        return {'name': 'AJ', 'age': config['age']}
+
+    introduce_aj_20 = configured(introduce_aj, name="introduce_aj_20")({'age': 20})
+
+    @pipeline
+    def return_int_pipeline():
+        introduce_aj_20()
+
+    result = execute_pipeline(return_int_pipeline)
+
+    assert result.success
+    assert result.result_for_solid('introduce_aj_20').output_value() == "AJ is 20 years old"

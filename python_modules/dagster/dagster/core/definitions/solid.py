@@ -6,6 +6,7 @@ import six
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
+from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
 from dagster.utils.backcompat import rename_warning
@@ -166,7 +167,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         return CallableSolidNode(self, hook_defs=hook_defs)
 
 
-class SolidDefinition(ISolidDefinition):
+class SolidDefinition(ISolidDefinition, IConfigMappable):
     '''
     The definition of a Solid that performs a user-defined computation.
 
@@ -200,6 +201,8 @@ class SolidDefinition(ISolidDefinition):
             solid.
         positional_inputs (Optional[List[str]]): The positional order of the input names if it
             differs from the order of the input definitions.
+        _configured_config_mapping_fn: This argument is for internal use only. Users should not
+            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
 
 
     Examples:
@@ -227,11 +230,15 @@ class SolidDefinition(ISolidDefinition):
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
+        _configured_config_mapping_fn=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
+        )
+        self.__configured_config_mapping_fn = check.opt_callable_param(
+            _configured_config_mapping_fn, 'config_mapping_fn'
         )
 
         super(SolidDefinition, self).__init__(
@@ -279,6 +286,28 @@ class SolidDefinition(ISolidDefinition):
 
     def default_value_for_input(self, input_name):
         return self.input_def_named(input_name).default_value
+
+    @property
+    def _configured_config_mapping_fn(self):
+        return self.__configured_config_mapping_fn
+
+    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
+            config_or_config_fn, config_schema
+        )
+
+        return SolidDefinition(
+            name=kwargs.get('name', self.name),
+            input_defs=self.input_defs,
+            compute_fn=self.compute_fn,
+            output_defs=self.output_defs,
+            config_schema=config_schema,
+            description=kwargs.get('description', self.description),
+            tags=self.tags,
+            required_resource_keys=self.required_resource_keys,
+            positional_inputs=self.positional_inputs,
+            _configured_config_mapping_fn=wrapped_config_mapping_fn,
+        )
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
