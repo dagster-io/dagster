@@ -67,6 +67,7 @@ def less_simple_data_frame_materializer(context, config, value):
                 description='LessSimpleDataFrame written to csv format',
             )
         ],
+        dagster_type=context.dagster_type,
     )
     # Materialize LessSimpleDataFrame into a json file
     json_path = os.path.abspath(config['json']['path'])
@@ -87,6 +88,7 @@ def less_simple_data_frame_materializer(context, config, value):
                 description='LessSimpleDataFrame written to json format',
             )
         ],
+        dagster_type=context.dagster_type,
     )
 
 
@@ -131,7 +133,7 @@ if __name__ == '__main__':
         {
             'solids': {
                 'sort_by_calories': {
-                    'inputs': {'cereals': {'csv': 'cereal.csv'}},
+                    'inputs': {'cereals': {'csv': '../../cereal.csv'}},
                     'outputs': [
                         {
                             'result': {

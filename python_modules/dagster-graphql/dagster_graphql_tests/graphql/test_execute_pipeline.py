@@ -426,7 +426,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
             # ensure only one event
             assert step_mat_event
-            assert len(step_mat_event['materialization']['metadataEntries']) == 3
+            assert len(step_mat_event['materialization']['metadataEntries']) == 1
             assert step_mat_event['materialization']['metadataEntries'][0]['path'] == out_csv_path
 
 

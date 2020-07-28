@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from copy import deepcopy
 from enum import Enum as PythonEnum
 from functools import partial
 
@@ -9,18 +8,8 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.events import (
-    AssetMaterialization,
-    EventMetadataEntry,
-    Materialization,
-    TypeCheck,
-)
-from dagster.core.errors import (
-    DagsterError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    DagsterMaterializationError,
-)
+from dagster.core.definitions.events import TypeCheck
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
@@ -140,7 +129,7 @@ class DagsterType(object):
             'input_hydration_config',
             '0.10.0',
         )
-        materializer = canonicalize_backcompat_args(
+        self.materializer = canonicalize_backcompat_args(
             check.opt_inst_param(materializer, 'materializer', DagsterTypeMaterializer),
             'materializer',
             check.opt_inst_param(
@@ -151,59 +140,6 @@ class DagsterType(object):
             'output_materialization_config',
             '0.10.0',
         )
-        self.materializer = materializer
-        if materializer is not None:
-            # this bit of code wraps the materializer in order to add type metadata to its
-            # materialization events
-
-            class _WrappedTypeMaterializer(DagsterTypeMaterializer):
-                def __init__(self, dagster_type_materializer_to_wrap):
-                    self._wrapped_materialize_runtime_values = (
-                        dagster_type_materializer_to_wrap.materialize_runtime_values
-                    )
-                    self.materializer = dagster_type_materializer_to_wrap
-                    self.required_resource_keys = (
-                        dagster_type_materializer_to_wrap.required_resource_keys
-                    )
-
-                @property
-                def schema_type(self):
-                    return self.materializer.schema_type
-
-                def materialize_runtime_values(self, step_context, output_name, value):
-                    try:
-                        for evt in self._wrapped_materialize_runtime_values(
-                            step_context, output_name, value
-                        ):
-                            if not (isinstance(evt, (AssetMaterialization, Materialization))):
-                                raise DagsterInvariantViolationError(
-                                    (
-                                        'materialize_runtime_values on type {type_name} has returned '
-                                        'value {value} of type {python_type}. You must return an '
-                                        'AssetMaterialization.'
-                                    ).format(
-                                        type_name=(name if name else 'Any'),
-                                        value=repr(evt),
-                                        python_type=type(evt).__name__,
-                                    )
-                                )
-                            nevt = deepcopy(evt)
-                            nevt.metadata_entries.append(
-                                EventMetadataEntry.text((name if name else 'Any'), 'type-name')
-                            )
-                            nevt.metadata_entries.append(
-                                EventMetadataEntry.text(
-                                    (description if description else 'Any'), 'type-description',
-                                )
-                            )
-                            yield nevt
-                    except Exception as e:
-                        if isinstance(e, DagsterError):
-                            raise e
-                        raise DagsterMaterializationError(e.args)
-
-            self.materializer = _WrappedTypeMaterializer(materializer)
-
         self.serialization_strategy = check.opt_inst_param(
             serialization_strategy,
             'serialization_strategy',

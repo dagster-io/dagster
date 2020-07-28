@@ -566,6 +566,6 @@ def test_basic_execute_plan_with_materialization(graphql_context):
         # ensure only one event
         assert step_mat_event
         assert step_mat_event['materialization']
-        assert len(step_mat_event['materialization']['metadataEntries']) == 3
+        assert len(step_mat_event['materialization']['metadataEntries']) == 1
         metadata_entry = step_mat_event['materialization']['metadataEntries'][0]
         assert metadata_entry['path'] == out_csv_path

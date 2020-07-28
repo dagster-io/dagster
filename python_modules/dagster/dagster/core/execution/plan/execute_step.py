@@ -149,7 +149,9 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
         ),
     ):
         type_check = _do_type_check(
-            step_context.for_type(step_input.dagster_type), step_input.dagster_type, input_value,
+            step_context.for_type_check(step_input.dagster_type),
+            step_input.dagster_type,
+            input_value,
         )
 
         yield _create_step_input_event(
@@ -205,7 +207,9 @@ def _type_checked_step_output_event_sequence(step_context, output):
         ),
     ):
         type_check = _do_type_check(
-            step_context.for_type(step_output.dagster_type), step_output.dagster_type, output.value
+            step_context.for_type_check(step_output.dagster_type),
+            step_output.dagster_type,
+            output.value,
         )
 
         yield _create_step_output_event(
@@ -292,18 +296,20 @@ def _create_step_events_for_output(step_context, output):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.inst_param(output, 'output', Output)
 
-    step = step_context.step
+    step_type_context = step_context.for_type_output(output.output_name)
+
+    step = step_type_context.step
     step_output = step.step_output_named(output.output_name)
 
-    for output_event in _type_checked_step_output_event_sequence(step_context, output):
+    for output_event in _type_checked_step_output_event_sequence(step_type_context, output):
         yield output_event
 
     step_output_handle = StepOutputHandle.from_step(step=step, output_name=output.output_name)
 
-    for evt in _set_intermediates(step_context, step_output, step_output_handle, output):
+    for evt in _set_intermediates(step_type_context, step_output, step_output_handle, output):
         yield evt
 
-    for evt in _create_output_materializations(step_context, output.output_name, output.value):
+    for evt in _create_output_materializations(step_type_context, output.output_name, output.value):
         yield evt
 
 

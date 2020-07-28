@@ -375,7 +375,7 @@ def check_dagster_type(dagster_type, value):
 
     dagster_type = resolve_dagster_type(dagster_type)
     with yield_empty_pipeline_context() as pipeline_context:
-        context = pipeline_context.for_type(dagster_type)
+        context = pipeline_context.for_type_check(dagster_type)
         try:
             type_check = dagster_type.type_check(context, value)
         except Failure as failure:

@@ -227,12 +227,12 @@ def test_basic_type_materialization():
                 event = event.event_specific_data.materialization
                 assert len(event.metadata_entries) == 3
                 assert event.metadata_entries[1] == EventMetadataEntry(
-                    label='type-name',
+                    label='system-type-name',
                     description=None,
                     entry_data=TextMetadataEntryData(text='String'),
                 )
                 assert event.metadata_entries[2] == EventMetadataEntry(
-                    label='type-description',
+                    label='system-type-description',
                     description=None,
                     entry_data=TextMetadataEntryData(text='Any'),
                 )
@@ -263,16 +263,16 @@ def test_complex_type_materialization():
                 event = event.event_specific_data.materialization
                 assert len(event.metadata_entries) == 3
                 assert event.metadata_entries[1] == EventMetadataEntry(
-                    label='type-name',
+                    label='system-type-name',
                     description=None,
                     entry_data=TextMetadataEntryData(text='String'),
                 ) or event.metadata_entries[1] == EventMetadataEntry(
-                    label='type-name',
+                    label='system-type-name',
                     description=None,
                     entry_data=TextMetadataEntryData(text='Int'),
                 )
                 assert event.metadata_entries[2] == EventMetadataEntry(
-                    label='type-description',
+                    label='system-type-description',
                     description=None,
                     entry_data=TextMetadataEntryData(text='Any'),
                 )
