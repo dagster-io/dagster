@@ -27,10 +27,12 @@ from dagster import (
     reexecute_pipeline,
     solid,
 )
+from dagster.cli.workspace.load import location_handle_from_python_file
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.solid_container import _create_adjacency_lists
 from dagster.core.execution.results import SolidExecutionResult
+from dagster.core.host_representation import RepositoryLocation, UserProcessApi
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
 from dagster.core.utility_solids import (
@@ -155,6 +157,21 @@ def create_diamond_pipeline():
 
 def test_diamond_toposort():
     assert [s.name for s in create_diamond_pipeline().solids_in_topological_order] == [
+        'A_source',
+        'A',
+        'B',
+        'C',
+        'D',
+    ]
+
+
+def test_external_diamond_toposort():
+    repo_location = RepositoryLocation.from_handle(
+        location_handle_from_python_file(__file__, 'create_diamond_pipeline', UserProcessApi.CLI)
+    )
+    external_repo = next(iter(repo_location.get_repositories().values()))
+    external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
+    assert external_pipeline.solid_names_in_topological_order == [
         'A_source',
         'A',
         'B',

@@ -18,6 +18,7 @@ from dagster.config.snap import (
     ConfigTypeSnap,
 )
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition
+from dagster.core.utils import toposort_flatten
 from dagster.serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
 
 from .config_types import build_config_schema_snapshot
@@ -148,6 +149,20 @@ class PipelineSnapshot(
     @property
     def solid_names(self):
         return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
+
+    @property
+    def solid_names_in_topological_order(self):
+        upstream_outputs = {}
+
+        for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
+            solid_name = solid_invocation_snap.solid_name
+            upstream_outputs[solid_name] = {
+                upstream_output_snap.solid_name
+                for input_dep_snap in solid_invocation_snap.input_dep_snaps
+                for upstream_output_snap in input_dep_snap.upstream_output_snaps
+            }
+
+        return toposort_flatten(upstream_outputs)
 
 
 def _construct_enum_from_snap(config_type_snap):

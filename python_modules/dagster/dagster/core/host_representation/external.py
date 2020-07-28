@@ -123,6 +123,18 @@ class ExternalPipeline(RepresentedPipeline):
         self._handle = PipelineHandle(self._pipeline_index.name, repository_handle)
 
     @property
+    def name(self):
+        return self._pipeline_index.pipeline_snapshot.name
+
+    @property
+    def description(self):
+        return self._pipeline_index.pipeline_snapshot.description
+
+    @property
+    def solid_names_in_topological_order(self):
+        return self._pipeline_index.pipeline_snapshot.solid_names_in_topological_order
+
+    @property
     def solid_selection(self):
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection

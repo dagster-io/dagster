@@ -11,7 +11,6 @@ from click import UsageError
 from click.testing import CliRunner
 
 from dagster import (
-    DagsterInvariantViolationError,
     PartitionSetDefinition,
     ScheduleDefinition,
     check,
@@ -165,6 +164,10 @@ def assert_correct_extra_repository_output(result):
     )
 
 
+def grpc_instance():
+    return DagsterInstance.local_temp(overrides={"opt_in": {"local_servers": True}})
+
+
 def test_list_command():
     runner = CliRunner()
 
@@ -177,6 +180,17 @@ def test_list_command():
         },
         no_print,
         DagsterInstance.local_temp(),
+    )
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'bar',
+        },
+        no_print,
+        grpc_instance(),
     )
 
     result = runner.invoke(
@@ -195,6 +209,17 @@ def test_list_command():
         },
         no_print,
         DagsterInstance.local_temp(),
+    )
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': None,
+            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'fn_name': 'bar',
+        },
+        no_print,
+        grpc_instance(),
     )
 
     result = runner.invoke(

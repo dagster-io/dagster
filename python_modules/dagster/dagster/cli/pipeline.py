@@ -31,7 +31,6 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
     recon_repo_from_external_repo,
-    repository_def_from_repository_handle,
 )
 from dagster.utils.indenting_printer import IndentingPrinter
 
@@ -71,14 +70,11 @@ def pipeline_list_command(**kwargs):
 def execute_list_command(cli_args, print_fn, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     external_repository = get_external_repository_from_kwargs(cli_args, instance)
-    # We should move this to use external repository
-    # https://github.com/dagster-io/dagster/issues/2556
-    repository = repository_def_from_repository_handle(external_repository.handle)
-    title = 'Repository {name}'.format(name=repository.name)
+    title = 'Repository {name}'.format(name=external_repository.name)
     print_fn(title)
     print_fn('*' * len(title))
     first = True
-    for pipeline in repository.get_all_pipelines():
+    for pipeline in external_repository.get_all_external_pipelines():
         pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
 
         if not first:
@@ -90,8 +86,8 @@ def execute_list_command(cli_args, print_fn, instance):
             print_fn('Description:')
             print_fn(format_description(pipeline.description, indent=' ' * 4))
         print_fn('Solids: (Execution Order)')
-        for solid in pipeline.solids_in_topological_order:
-            print_fn('    ' + solid.name)
+        for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
+            print_fn('    ' + solid_name)
 
 
 def format_description(desc, indent):
