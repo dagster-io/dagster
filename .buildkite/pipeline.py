@@ -184,18 +184,6 @@ def dagit_extra_cmds_fn(_):
     return ["make rebuild_dagit"]
 
 
-def dask_extra_cmds_fn(version):
-    return [
-        "pushd python_modules/libraries/dagster-dask/dagster_dask_tests/dask-docker",
-        "./build.sh " + version,
-        # Run the docker-compose dask cluster
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-        network_buildkite_container('dask'),
-        connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS'),
-        "popd",
-    ]
-
-
 def legacy_examples_extra_cmds_fn(_):
     return [
         "pushd examples/legacy_examples",
@@ -367,7 +355,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/libraries/dagster-dask',
         env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
         supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
-        extra_cmds_fn=dask_extra_cmds_fn,
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-databricks',
