@@ -6,7 +6,7 @@ from dagster_dask import DataFrame
 from dask.dataframe.utils import assert_eq
 
 from dagster import InputDefinition, OutputDefinition, execute_solid, file_relative_path, solid
-from dagster.utils.test import get_temp_dir, get_temp_file_name
+from dagster.utils.test import get_temp_dir
 
 
 def create_dask_df():
