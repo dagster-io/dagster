@@ -1,7 +1,10 @@
 from dagster import check
 from dagster.api.utils import execute_unary_api_cli_command
 from dagster.core.origin import PipelineOrigin, PipelinePythonOrigin
-from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    ExecutionPlanSnapshotErrorData,
+)
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import ExecutionPlanSnapshotArgs
 
@@ -35,7 +38,7 @@ def sync_get_external_execution_plan(
                 pipeline_snapshot_id=pipeline_snapshot_id,
             ),
         ),
-        ExecutionPlanSnapshot,
+        (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
     )
 
 
@@ -68,5 +71,5 @@ def sync_get_external_execution_plan_grpc(
                 pipeline_snapshot_id=pipeline_snapshot_id,
             )
         ),
-        ExecutionPlanSnapshot,
+        (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
     )

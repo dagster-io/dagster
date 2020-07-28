@@ -415,7 +415,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
 
 
 class ScheduleExecutionError(DagsterUserCodeExecutionError):
-    '''Errors raised during the execution of schedule.'''
+    '''Errors raised in a user process during the execution of schedule.'''
 
 
 class PartitionExecutionError(DagsterUserCodeExecutionError):

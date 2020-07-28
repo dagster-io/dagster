@@ -23,7 +23,7 @@ class ScheduledExecutionFailed(
     def __new__(cls, run_id, errors):
         return super(ScheduledExecutionFailed, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id'),
+            run_id=check.opt_str_param(run_id, 'run_id'),
             errors=check.list_param(errors, 'errors', of_type=SerializableErrorInfo),
         )
 

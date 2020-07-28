@@ -1,12 +1,9 @@
 import datetime
 import sys
 
-import pytest
-
 from dagster import daily_schedule, pipeline, repository, seven, solid
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterSubprocessError
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
     ScheduleTickStatus,
@@ -113,11 +110,14 @@ def test_bad_env_fn():
                 in result.errors[0].to_string()
             )
 
-            run = instance.get_run_by_id(result.run_id)
-            assert run.is_failure
+            assert not result.run_id
 
             ticks = instance.get_schedule_ticks(bad_env_fn.get_origin_id())
-            assert ticks[0].status == ScheduleTickStatus.SUCCESS
+            assert ticks[0].status == ScheduleTickStatus.FAILURE
+            assert (
+                'Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule'
+                in ticks[0].error.message
+            )
 
 
 def test_bad_should_execute():
@@ -130,8 +130,14 @@ def test_bad_should_execute():
                 'bad_should_execute_schedule'
             )
 
-            with pytest.raises(DagsterSubprocessError):
-                sync_launch_scheduled_execution(bad_should_execute.get_origin())
+            result = sync_launch_scheduled_execution(bad_should_execute.get_origin())
+            assert isinstance(result, ScheduledExecutionFailed)
+            assert (
+                'Error occurred during the execution of should_execute for schedule bad_should_execute_schedule'
+                in result.errors[0].to_string()
+            )
+
+            assert not result.run_id
 
             ticks = instance.get_schedule_ticks(bad_should_execute.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.FAILURE
@@ -183,8 +189,9 @@ def test_bad_load():
             recon_repo = ReconstructableRepository.for_file(__file__, 'doesnt_exist')
             schedule = recon_repo.get_reconstructable_schedule('also_doesnt_exist')
 
-            with pytest.raises(DagsterSubprocessError):
-                sync_launch_scheduled_execution(schedule.get_origin())
+            result = sync_launch_scheduled_execution(schedule.get_origin())
+            assert isinstance(result, ScheduledExecutionFailed)
+            assert 'doesnt_exist not found at module scope in file' in result.errors[0].to_string()
 
             ticks = instance.get_schedule_ticks(schedule.get_origin_id())
             assert ticks[0].status == ScheduleTickStatus.FAILURE

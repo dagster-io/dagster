@@ -35,7 +35,10 @@ from dagster.core.host_representation import (
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshotErrorData,
+    snapshot_from_execution_plan,
+)
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.impl import (
     get_external_schedule_execution,
@@ -515,7 +518,7 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.str_param(mode, 'mode')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        execution_plan_snapshot = sync_get_external_execution_plan(
+        execution_plan_snapshot_or_error = sync_get_external_execution_plan(
             pipeline_origin=external_pipeline.get_origin(),
             solid_selection=external_pipeline.solid_selection,
             run_config=run_config,
@@ -524,8 +527,12 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
         )
 
+        if isinstance(execution_plan_snapshot_or_error, ExecutionPlanSnapshotErrorData):
+            return execution_plan_snapshot_or_error
+
         return ExternalExecutionPlan(
-            execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=external_pipeline,
+            execution_plan_snapshot=execution_plan_snapshot_or_error,
+            represented_pipeline=external_pipeline,
         )
 
     def execute_plan(

@@ -1,4 +1,5 @@
 import os
+import sys
 import warnings
 from collections import namedtuple
 
@@ -6,10 +7,11 @@ import click
 from click import UsageError
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.origin import RepositoryPythonOrigin
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -307,17 +309,25 @@ def pipeline_target_argument(f):
     )
 
 
-def get_reconstructable_repository_from_origin_kwargs(kwargs):
-    if kwargs.get('python_file'):
-        _check_cli_arguments_none(kwargs, 'module_name')
-        return ReconstructableRepository.for_file(
-            kwargs.get('python_file'), kwargs.get('attribute'), kwargs.get('working_directory')
+def get_repository_origin_from_kwargs(kwargs):
+    load_target = created_workspace_load_target(kwargs)
+
+    if isinstance(load_target, PythonFileTarget):
+        return RepositoryPythonOrigin(
+            executable_path=sys.executable,
+            code_pointer=CodePointer.from_python_file(
+                load_target.python_file,
+                load_target.attribute,
+                working_directory=load_target.working_directory,
+            ),
         )
-    if kwargs.get('module_name'):
-        return ReconstructableRepository.for_module(
-            kwargs.get('module_name'), kwargs.get('attribute')
+    elif isinstance(load_target, ModuleTarget):
+        return RepositoryPythonOrigin(
+            executable_path=sys.executable,
+            code_pointer=CodePointer.from_module(load_target.module_name, load_target.attribute),
         )
-    check.failed('invalid')
+    else:
+        check.failed('invalid')
 
 
 def get_repository_location_from_kwargs(kwargs, instance):

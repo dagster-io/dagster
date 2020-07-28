@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput, StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
+from dagster.utils.error import SerializableErrorInfo
 
 
 def create_execution_plan_snapshot_id(execution_plan_snapshot):
@@ -29,6 +30,14 @@ class ExecutionPlanSnapshot(
             step_keys_to_execute=check.opt_list_param(
                 step_keys_to_execute, 'step_keys_to_execute', of_type=str
             ),
+        )
+
+
+@whitelist_for_serdes
+class ExecutionPlanSnapshotErrorData(namedtuple('_ExecutionPlanSnapshotErrorData', 'error')):
+    def __new__(cls, error):
+        return super(ExecutionPlanSnapshotErrorData, cls).__new__(
+            cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
         )
 
 

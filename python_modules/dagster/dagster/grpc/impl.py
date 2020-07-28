@@ -197,10 +197,11 @@ def get_external_schedule_execution(external_schedule_execution_args):
     instance = DagsterInstance.from_ref(external_schedule_execution_args.instance_ref)
     schedule_context = ScheduleExecutionContext(instance)
     schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
+
     try:
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred while fetching should_execute for schedule '
+            lambda: 'Error occurred during the execution of should_execute for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             should_execute = None
@@ -213,14 +214,14 @@ def get_external_schedule_execution(external_schedule_execution_args):
 
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred while fetching run_config for schedule '
+            lambda: 'Error occurred during the execution of run_config_fn for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             run_config = schedule_def.get_run_config(schedule_context)
 
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred while fetching tags for schedule '
+            lambda: 'Error occurred during the execution of tags_fn for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             tags = schedule_def.get_tags(schedule_context)

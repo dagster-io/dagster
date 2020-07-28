@@ -11,19 +11,12 @@ import click
 
 from dagster import check, seven
 from dagster.cli.workspace.cli_target import (
-    get_reconstructable_repository_from_origin_kwargs,
+    get_repository_location_from_kwargs,
+    get_repository_origin_from_kwargs,
     python_origin_target_argument,
 )
-from dagster.core.definitions import ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterLaunchFailedError,
-    DagsterSubprocessError,
-    DagsterUserCodeExecutionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
-)
+from dagster.core.errors import DagsterLaunchFailedError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import (
     create_execution_plan,
@@ -31,10 +24,8 @@ from dagster.core.execution.api import (
     execute_run_iterator,
 )
 from dagster.core.execution.retries import Retries
-from dagster.core.host_representation import (
-    InProcessRepositoryLocation,
-    external_repository_data_from_def,
-)
+from dagster.core.host_representation import external_repository_data_from_def
+from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -45,6 +36,7 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionData,
     ExternalScheduleExecutionErrorData,
 )
+from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.scheduler import (
@@ -56,6 +48,7 @@ from dagster.core.scheduler import (
 )
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
+    ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.tags import check_tags
@@ -79,6 +72,7 @@ from dagster.grpc.types import (
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
+    ScheduleExecutionDataMode,
 )
 from dagster.grpc.utils import get_loadable_targets
 from dagster.serdes import (
@@ -193,10 +187,9 @@ def pipeline_subset_snapshot_command(args):
         'Users should generally not invoke this command interactively.'
     ),
     input_cls=ExecutionPlanSnapshotArgs,
-    output_cls=ExecutionPlanSnapshot,
+    output_cls=(ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
 )
 def execution_plan_snapshot_command(args):
-
     check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
 
     recon_pipeline = (
@@ -205,15 +198,20 @@ def execution_plan_snapshot_command(args):
         else recon_pipeline_from_origin(args.pipeline_origin)
     )
 
-    return snapshot_from_execution_plan(
-        create_execution_plan(
-            pipeline=recon_pipeline,
-            run_config=args.run_config,
-            mode=args.mode,
-            step_keys_to_execute=args.step_keys_to_execute,
-        ),
-        args.pipeline_snapshot_id,
-    )
+    try:
+        return snapshot_from_execution_plan(
+            create_execution_plan(
+                pipeline=recon_pipeline,
+                run_config=args.run_config,
+                mode=args.mode,
+                step_keys_to_execute=args.step_keys_to_execute,
+            ),
+            args.pipeline_snapshot_id,
+        )
+    except:  # pylint: disable=bare-except
+        return ExecutionPlanSnapshotErrorData(
+            error=serializable_error_info_from_exc_info(sys.exc_info())
+        )
 
 
 @unary_api_cli_command(
@@ -424,7 +422,7 @@ class _ScheduleTickHolder:
 
 
 @contextmanager
-def _schedule_tick_state(instance, tick_data):
+def _schedule_tick_state(instance, stream, tick_data):
     tick = instance.create_schedule_tick(tick_data)
     holder = _ScheduleTickHolder(tick=tick, instance=instance)
     try:
@@ -432,7 +430,7 @@ def _schedule_tick_state(instance, tick_data):
     except Exception:  # pylint: disable=broad-except
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
         holder.update_with_status(ScheduleTickStatus.FAILURE, error=error_data)
-        raise
+        stream.send(ScheduledExecutionFailed(run_id=None, errors=[error_data]))
     finally:
         holder.write()
 
@@ -514,112 +512,108 @@ def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwar
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
         instance = DagsterInstance.get()
+        repository_origin = get_repository_origin_from_kwargs(kwargs)
+        schedule_origin = repository_origin.get_schedule_origin(schedule_name)
 
-        recon_repo = get_reconstructable_repository_from_origin_kwargs(kwargs)
-        schedule = recon_repo.get_reconstructable_schedule(schedule_name)
-
-        # open the tick scope before we call get_definition to make sure
+        # open the tick scope before we load any external artifacts so that
         # load errors are stored in DB
         with _schedule_tick_state(
             instance,
+            stream,
             ScheduleTickData(
-                schedule_origin_id=schedule.get_origin_id(),
+                schedule_origin_id=schedule_origin.get_id(),
                 schedule_name=schedule_name,
                 timestamp=time.time(),
                 cron_schedule=None,  # not yet loaded
                 status=ScheduleTickStatus.STARTED,
             ),
         ) as tick:
-
-            schedule_def = schedule.get_definition()
-
+            repo_location = get_repository_location_from_kwargs(kwargs, instance)
+            repo_dict = repo_location.get_repositories()
+            check.invariant(
+                repo_dict and len(repo_dict) == 1,
+                'Passed in arguments should reference exactly one repository, instead there are {num_repos}'.format(
+                    num_repos=len(repo_dict)
+                ),
+            )
+            external_repo = next(iter(repo_dict.values()))
+            external_schedule = external_repo.get_external_schedule(schedule_name)
             tick.update_with_status(
-                status=ScheduleTickStatus.STARTED, cron_schedule=schedule_def.cron_schedule,
+                status=ScheduleTickStatus.STARTED, cron_schedule=external_schedule.cron_schedule,
+            )
+            _launch_scheduled_execution(
+                instance, repo_location, external_repo, external_schedule, tick, stream
             )
 
-            pipeline = recon_repo.get_reconstructable_pipeline(
-                schedule_def.pipeline_name
-            ).subset_for_execution(schedule_def.solid_selection)
 
-            _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream)
+def _launch_scheduled_execution(
+    instance, repo_location, external_repo, external_schedule, tick, stream
+):
+    pipeline_selector = PipelineSelector(
+        location_name=repo_location.name,
+        repository_name=external_repo.name,
+        pipeline_name=external_schedule.pipeline_name,
+        solid_selection=external_schedule.solid_selection,
+    )
 
+    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
+    external_pipeline = ExternalPipeline(
+        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+    )
 
-def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
-    pipeline_def = pipeline.get_definition()
+    schedule_execution_data = repo_location.get_external_schedule_execution_data(
+        instance=instance,
+        repository_handle=external_repo.handle,
+        schedule_name=external_schedule.name,
+        schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
+    )
 
-    # Run should_execute and halt if it returns False
-    schedule_context = ScheduleExecutionContext(instance)
-    with user_code_error_boundary(
-        ScheduleExecutionError,
-        lambda: 'Error occurred during the execution of should_execute for schedule '
-        '{schedule_name}'.format(schedule_name=schedule_def.name),
-    ):
-        should_execute = schedule_def.should_execute(schedule_context)
+    run_config = {}
+    schedule_tags = {}
+    execution_plan_snapshot = None
+    errors = []
 
-    if not should_execute:
+    if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
+        error = schedule_execution_data.error
+        tick.update_with_status(ScheduleTickStatus.FAILURE, error=error)
+        stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
+        return
+    elif not schedule_execution_data.should_execute:
         # Update tick to skipped state and return
         tick.update_with_status(ScheduleTickStatus.SKIPPED)
         stream.send(ScheduledExecutionSkipped())
         return
+    else:
+        run_config = schedule_execution_data.run_config
+        schedule_tags = schedule_execution_data.tags
+        external_execution_plan = repo_location.get_external_execution_plan(
+            external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
+        )
+        if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
+            errors.append(external_execution_plan.error)
+        else:
+            execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    errors = []
-
-    run_config = {}
-    schedule_tags = {}
-    try:
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of run_config_fn for schedule '
-            '{schedule_name}'.format(schedule_name=schedule_def.name),
-        ):
-            run_config = schedule_def.get_run_config(schedule_context)
-    except DagsterUserCodeExecutionError:
-        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        errors.append(error_data)
-
-    try:
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of tags_fn for schedule '
-            '{schedule_name}'.format(schedule_name=schedule_def.name),
-        ):
-            schedule_tags = schedule_def.get_tags(schedule_context)
-    except DagsterUserCodeExecutionError:
-        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        errors.append(error_data)
-
-    pipeline_tags = pipeline_def.tags or {}
+    pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, 'pipeline_tags')
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
-    mode = schedule_def.mode
-
-    execution_plan_snapshot = None
-    try:
-        execution_plan = create_execution_plan(pipeline_def, run_config=run_config, mode=mode,)
-        execution_plan_snapshot = snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
-        )
-    except DagsterInvalidConfigError:
-        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        errors.append(error_data)
-
     # Enter the run in the DB with the information we have
     possibly_invalid_pipeline_run = instance.create_run(
-        pipeline_name=schedule_def.pipeline_name,
+        pipeline_name=external_schedule.pipeline_name,
         run_id=None,
         run_config=run_config,
-        mode=mode,
-        solids_to_execute=pipeline.solids_to_execute,
+        mode=external_schedule.mode,
+        solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
-        solid_selection=pipeline.solid_selection,
+        solid_selection=external_pipeline.solid_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
     )
 
     tick.update_with_status(ScheduleTickStatus.SUCCESS, run_id=possibly_invalid_pipeline_run.run_id)
@@ -635,15 +629,6 @@ def _launch_scheduled_execution(instance, schedule_def, pipeline, tick, stream):
             ScheduledExecutionFailed(run_id=possibly_invalid_pipeline_run.run_id, errors=errors)
         )
         return
-
-    # Otherwise the run should be valid so lets launch it
-
-    # Need an ExternalPipeline to launch so make one here
-    recon_repo = pipeline.get_reconstructable_repository()
-    repo_location = InProcessRepositoryLocation(recon_repo)
-    external_pipeline = repo_location.get_repository(
-        recon_repo.get_definition().name
-    ).get_full_external_pipeline(pipeline_def.name)
 
     try:
         launched_run = instance.launch_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
