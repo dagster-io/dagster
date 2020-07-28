@@ -214,8 +214,9 @@ class CompositeSolidExecutionResult(IContainSolidsExecutionResult):
                 SolidHandle(output_mapping.solid_name, None),
             ).output_values
 
-            if output_mapping.output_name in inner_solid_values:
-                values[output_name] = inner_solid_values[output_mapping.output_name]
+            if inner_solid_values is not None:  # may be None if inner solid was skipped
+                if output_mapping.output_name in inner_solid_values:
+                    values[output_name] = inner_solid_values[output_mapping.output_name]
 
         return values
 

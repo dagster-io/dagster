@@ -440,6 +440,10 @@ def test_composite_skippable_output_result():
     def emit_one():
         return 1
 
+    @lambda_solid(output_def=OutputDefinition(Optional[float]))
+    def echo(x):
+        return x
+
     @solid(output_defs=[OutputDefinition(Optional[float], name="foo_output", is_required=False)])
     def foo_solid(_, condition=False):
         if condition:
@@ -454,5 +458,14 @@ def test_composite_skippable_output_result():
     def foo_composite():
         return {"foo_output": foo_solid(), "one_output": emit_one()}
 
+    @composite_solid(
+        output_defs=[OutputDefinition(Optional[float], name="foo_output", is_required=False),]
+    )
+    def baz_composite():
+        return {"foo_output": echo(foo_solid())}
+
     result = execute_solid(foo_composite)
     assert result.output_values == {"one_output": 1}
+
+    result = execute_solid(baz_composite)
+    assert result.output_values == {}
