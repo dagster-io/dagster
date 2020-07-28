@@ -100,20 +100,7 @@ class EnvironmentConfig(
 
         config_value = config_evr.value
 
-        mode_def = pipeline_def.get_mode_definition(mode)
-        resource_configs = run_config.get('resources', {})
-        processed_resource_configs = {}
-        for resource_key, resource_def in mode_def.resource_defs.items():
-            resource_config = resource_configs.get(resource_key, {})
-            resource_config_evr = resource_def.process_config(resource_config)
-            if not resource_config_evr.success:
-                raise DagsterInvalidConfigError(
-                    'Error in config for resource {}'.format(resource_key),
-                    resource_config_evr.errors,
-                    resource_config,
-                )
-            else:
-                processed_resource_configs[resource_key] = resource_config_evr.value
+        config_mapped_resource_configs = config_map_resources(pipeline_def, config_value, mode)
 
         solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
         # TODO:  replace this with a simple call to from_dict of the config.get when ready to fully deprecate
@@ -129,8 +116,29 @@ class EnvironmentConfig(
             intermediate_storage=IntermediateStorageConfig.from_dict(temp_intermed),
             loggers=config_value.get('loggers'),
             original_config_dict=run_config,
-            resources=processed_resource_configs,
+            resources=config_mapped_resource_configs,
         )
+
+
+def config_map_resources(pipeline_def, config_value, mode):
+    '''This function executes the config mappings for resource with respect to IConfigMappable.'''
+
+    mode_def = pipeline_def.get_mode_definition(mode)
+    resource_configs = config_value.get('resources', {})
+    config_mapped_resource_configs = {}
+    for resource_key, resource_def in mode_def.resource_defs.items():
+        resource_config = resource_configs.get(resource_key, {})
+        resource_config_evr = resource_def.apply_config_mapping(resource_config)
+        if not resource_config_evr.success:
+            raise DagsterInvalidConfigError(
+                'Error in config for resource {}'.format(resource_key),
+                resource_config_evr.errors,
+                resource_config,
+            )
+        else:
+            config_mapped_resource_configs[resource_key] = resource_config_evr.value
+
+    return config_mapped_resource_configs
 
 
 class ExecutionConfig(

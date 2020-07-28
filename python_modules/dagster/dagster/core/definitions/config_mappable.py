@@ -1,19 +1,20 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import six
 
+from dagster import check
+from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster.config.validate import process_config
+from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
+
 
 class IConfigMappable(six.with_metaclass(ABCMeta)):
-    @abstractmethod
-    def process_config(self, config):
-        '''
-        Args:
-            config (Any): The configuration to be processed.
+    @abstractproperty
+    def _configured_config_mapping_fn(self):
+        raise NotImplementedError()
 
-        Returns (EvaluateValueResult):
-            If successful, the value is the "processed" configuration, which has defaults and
-            environment variables resolved.
-        '''
+    @abstractproperty
+    def config_schema(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -36,6 +37,79 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
         Returns (IConfigMappable): A configured version of this object.
         '''
         raise NotImplementedError()
+
+    def apply_config_mapping(self, config):
+        '''
+        Applies user-provided config mapping functions to the given configuration and validates the
+        results against the respective config schema.
+
+        Expects incoming config to be validated and have fully-resolved values (StringSource values
+        resolved, Enum types hydrated, etc.) via process_config() during EnvironmentConfig
+        construction and CompositeSolid config mapping.
+
+        Args:
+            config (Any): A validated and resolved configuration dictionary matching this object's
+            config_schema
+
+        Returns (EvaluateValueResult):
+            If successful, the value is a validated and resolved configuration dictionary for the
+            innermost wrapped object after applying the config mapping transformation function.
+        '''
+        # If there is no __configured_config_mapping_fn, this is the innermost resource (base case),
+        # so we aren't responsible for validating against anything farther down. Returns an EVR for
+        # type consistency with wrapped_config_mapping_fn.
+        return (
+            self._configured_config_mapping_fn(config)
+            if self._configured_config_mapping_fn
+            else EvaluateValueResult.for_value(config)
+        )
+
+    def _get_user_code_error_str_lambda(self):
+        return lambda: (
+            'The config mapping function on a `configured` {} has thrown an unexpected '
+            'error during its execution.'
+        ).format(self.__class__.__name__)
+
+    def _get_wrapped_config_mapping_fn(self, config_or_config_fn, config_schema):
+        '''
+        Returns a config mapping helper function that will be stored on the child `IConfigMappable`
+        under `_configured_config_mapping_fn`. Encapsulates the recursiveness of the `configurable`
+        pattern by returning a closure that invokes `self.apply_config_mapping` (belonging to this
+        parent object) on the mapping function or static config passed into this method.
+        '''
+        # Provide either a config mapping function with noneable schema...
+        if callable(config_or_config_fn):
+            config_fn = config_or_config_fn
+        else:  # or a static config object (and no schema).
+            check.invariant(
+                config_schema is None,
+                'When non-callable config is given, config_schema must be None',
+            )
+
+            def config_fn(_):  # Stub a config mapping function from the static config object.
+                return config_or_config_fn
+
+        def wrapped_config_mapping_fn(validated_and_resolved_config):
+            '''
+            Given validated and resolved configuration for this IConfigMappable, applies the
+            provided config mapping function, validates its output against the inner resource's
+            config_schema, and recursively invoked the `apply_config_mapping` method on the resource
+            '''
+            check.dict_param(validated_and_resolved_config, 'validated_and_resolved_config')
+            with user_code_error_boundary(
+                DagsterConfigMappingFunctionError, self._get_user_code_error_str_lambda()
+            ):
+                mapped_config = {
+                    'config': config_fn(validated_and_resolved_config.get('config', {}))
+                }
+            # Validate mapped_config against the inner resource's config_schema (on self).
+            config_evr = process_config({'config': self.config_schema or {}}, mapped_config)
+            if config_evr.success:
+                return self.apply_config_mapping(config_evr.value)  # Recursive step
+            else:
+                return config_evr  # Bubble up the errors
+
+        return wrapped_config_mapping_fn
 
 
 def configured(configurable, config_schema=None, **kwargs):
@@ -65,6 +139,8 @@ def configured(configurable, config_schema=None, **kwargs):
             def dev_s3(config):
                 return {'bucket': config['bucket_prefix'] + 'dev'}
     '''
+
+    check.inst_param(configurable, 'configurable', IConfigMappable)
 
     def _configured(config_or_config_fn):
         return configurable.configured(

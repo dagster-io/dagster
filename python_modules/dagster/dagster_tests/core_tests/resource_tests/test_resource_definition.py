@@ -20,7 +20,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
@@ -845,6 +845,25 @@ def test_configured_decorator_with_fn():
         return str(num + 1)
 
     assert_pipeline_runs_with_resource(configured_resource, 2, '3')
+
+
+def test_configured_decorator_with_fn_and_user_code_error():
+    str_resource = define_string_resource()
+
+    @configured(str_resource, Int)
+    def configured_resource(num):
+        raise Exception('beep boop broke')
+
+    with pytest.raises(
+        DagsterConfigMappingFunctionError,
+        match=(
+            'The config mapping function on a `configured` ResourceDefinition has thrown an '
+            'unexpected error during its execution.'
+        ),
+    ) as user_code_exc:
+        assert_pipeline_runs_with_resource(configured_resource, 2, 'unreachable')
+
+    assert user_code_exc.value.user_exception.args[0] == 'beep boop broke'
 
 
 def test_resource_with_enum_in_schema():
