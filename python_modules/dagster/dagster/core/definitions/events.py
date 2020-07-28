@@ -132,7 +132,7 @@ class EventMetadataEntry(
         :py:class:`TextMetadataEntryData`.
 
         Args:
-            text (str): The text of this metadata entry.
+            text (Optional[str]): The text of this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -144,7 +144,7 @@ class EventMetadataEntry(
         :py:class:`UrlMetadataEntryData`.
 
         Args:
-            url (str): The URL contained by this metadata entry.
+            url (Optional[str]): The URL contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -156,7 +156,7 @@ class EventMetadataEntry(
         :py:class:`PathMetadataEntryData`.
 
         Args:
-            path (str): The path contained by this metadata entry.
+            path (Optional[str]): The path contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -168,8 +168,8 @@ class EventMetadataEntry(
         :py:class:`PathMetadataEntryData`.
 
         Args:
-            path (str): The path contained by this metadata entry.
-            label (Optional[str]): Short display label for this metadata entry. Defaults to the
+            path (Optional[str]): The path contained by this metadata entry.
+            label (str): Short display label for this metadata entry. Defaults to the
                 base name of the path.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -183,7 +183,7 @@ class EventMetadataEntry(
         :py:class:`JsonMetadataEntryData`.
 
         Args:
-            data (Dict[str, Any]): The JSON data contained by this metadata entry.
+            data (Optional[Dict[str, Any]]): The JSON data contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -194,7 +194,7 @@ class EventMetadataEntry(
         '''Static constructor for a metadata entry containing markdown.
 
         Args:
-            md_str (str): The markdown contained by this metadata entry.
+            md_str (Optional[str]): The markdown contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -211,8 +211,16 @@ class EventMetadataEntry(
 
     @staticmethod
     def float(value, label, description=None):
-        check.float_param(value, 'value')
-        return EventMetadataEntry(label, description, FloatMetadataEntryData(value),)
+        '''Static constructor for a metadata entry containing float as
+        :py:class:`FloatMetadataEntryData`.
+
+        Args:
+            value (Optional[float]): The float value contained by this metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        '''
+        check.opt_float_param(value, 'value')
+        return EventMetadataEntry(label, description, FloatMetadataEntryData(value))
 
 
 @whitelist_for_persistence
@@ -220,11 +228,13 @@ class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text'), Persis
     '''Container class for text metadata entry data.
 
     Args:
-        text (str): The text data.
+        text (Optional[str]): The text data.
     '''
 
     def __new__(cls, text):
-        return super(TextMetadataEntryData, cls).__new__(cls, check.str_param(text, 'text'))
+        return super(TextMetadataEntryData, cls).__new__(
+            cls, check.opt_str_param(text, 'text', default='')
+        )
 
 
 @whitelist_for_persistence
@@ -232,11 +242,13 @@ class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url'), Persistab
     '''Container class for URL metadata entry data.
 
     Args:
-        url (str): The URL as a string.
+        url (Optional[str]): The URL as a string.
     '''
 
     def __new__(cls, url):
-        return super(UrlMetadataEntryData, cls).__new__(cls, check.str_param(url, 'url'))
+        return super(UrlMetadataEntryData, cls).__new__(
+            cls, check.opt_str_param(url, 'url', default='')
+        )
 
 
 @whitelist_for_persistence
@@ -244,11 +256,13 @@ class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path'), Persis
     '''Container class for path metadata entry data.
 
     Args:
-        path (str): The path as a string.
+        path (Optional[str]): The path as a string.
     '''
 
     def __new__(cls, path):
-        return super(PathMetadataEntryData, cls).__new__(cls, check.str_param(path, 'path'))
+        return super(PathMetadataEntryData, cls).__new__(
+            cls, check.opt_str_param(path, 'path', default='')
+        )
 
 
 @whitelist_for_persistence
@@ -256,12 +270,12 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data'), Persis
     '''Container class for JSON metadata entry data.
 
     Args:
-        data (Dict[str, Any]): The JSON data.
+        data (Optional[Dict[str, Any]]): The JSON data.
     '''
 
     def __new__(cls, data):
         return super(JsonMetadataEntryData, cls).__new__(
-            cls, check.dict_param(data, 'data', key_type=str)
+            cls, check.opt_dict_param(data, 'data', key_type=str)
         )
 
 
@@ -270,11 +284,13 @@ class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str
     '''Container class for markdown metadata entry data.
 
     Args:
-        md_str (str): The markdown as a string.
+        md_str (Optional[str]): The markdown as a string.
     '''
 
     def __new__(cls, md_str):
-        return super(MarkdownMetadataEntryData, cls).__new__(cls, check.str_param(md_str, 'md_str'))
+        return super(MarkdownMetadataEntryData, cls).__new__(
+            cls, check.opt_str_param(md_str, 'md_str', default='')
+        )
 
 
 @whitelist_for_persistence
@@ -290,8 +306,10 @@ class PythonArtifactMetadataEntryData(
 @whitelist_for_persistence
 class FloatMetadataEntryData(namedtuple('_FloatMetadataEntryData', 'value'), Persistable):
     def __new__(cls, value):
-        check.float_param(value, 'value')
-        return super(FloatMetadataEntryData, cls).__new__(cls, check.float_param(value, 'value'))
+        check.opt_float_param(value, 'value')
+        return super(FloatMetadataEntryData, cls).__new__(
+            cls, check.opt_float_param(value, 'value')
+        )
 
 
 EntryDataUnion = (
