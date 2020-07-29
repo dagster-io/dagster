@@ -240,7 +240,7 @@ redis:
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
 ####################################################################################################
 flower:
-  enabled: true
+  enabled: false
   service:
     annotations:
     port:
