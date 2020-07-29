@@ -184,7 +184,10 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     assert len(results) == len(external_repository.get_external_schedules())
 
     for schedule in results:
-        if schedule['name'] == 'run_config_error_schedule':
+        if (
+            schedule['name'] == 'run_config_error_schedule'
+            or schedule['name'] == 'tags_error_schedule'
+        ):
             assert schedule['runConfigOrError']['__typename'] == 'PythonError'
         elif schedule['name'] == 'invalid_config_schedule':
             assert (

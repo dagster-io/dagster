@@ -61,8 +61,18 @@ def bar_pipeline():
 def define_bar_schedules():
     return {
         'foo_schedule': ScheduleDefinition(
-            "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
-        )
+            "foo_schedule",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            run_config={'fizz': 'buzz'},
+        ),
+        'foo_schedule_never_execute': ScheduleDefinition(
+            "foo_schedule_never_execute",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            run_config={'fizz': 'buzz'},
+            should_execute=lambda _context: False,
+        ),
     }
 
 

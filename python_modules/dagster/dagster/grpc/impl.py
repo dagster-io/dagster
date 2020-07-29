@@ -27,7 +27,12 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExternalScheduleExecutionArgs, PartitionArgs, PartitionNamesArgs
+from dagster.grpc.types import (
+    ExternalScheduleExecutionArgs,
+    PartitionArgs,
+    PartitionNamesArgs,
+    ScheduleExecutionDataMode,
+)
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.utils import start_termination_thread
@@ -191,14 +196,38 @@ def get_external_schedule_execution(external_schedule_execution_args):
     schedule_def = definition.get_schedule_def(external_schedule_execution_args.schedule_name)
     instance = DagsterInstance.from_ref(external_schedule_execution_args.instance_ref)
     schedule_context = ScheduleExecutionContext(instance)
+    schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
     try:
         with user_code_error_boundary(
             ScheduleExecutionError,
-            lambda: 'Error occurred during the execution of run_config_fn for schedule '
+            lambda: 'Error occurred while fetching should_execute for schedule '
+            '{schedule_name}'.format(schedule_name=schedule_def.name),
+        ):
+            should_execute = None
+            if schedule_execution_data_mode == ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION:
+                should_execute = schedule_def.should_execute(schedule_context)
+                if not should_execute:
+                    return ExternalScheduleExecutionData(
+                        should_execute=False, run_config=None, tags=None
+                    )
+
+        with user_code_error_boundary(
+            ScheduleExecutionError,
+            lambda: 'Error occurred while fetching run_config for schedule '
             '{schedule_name}'.format(schedule_name=schedule_def.name),
         ):
             run_config = schedule_def.get_run_config(schedule_context)
-            return ExternalScheduleExecutionData(run_config=run_config)
+
+        with user_code_error_boundary(
+            ScheduleExecutionError,
+            lambda: 'Error occurred while fetching tags for schedule '
+            '{schedule_name}'.format(schedule_name=schedule_def.name),
+        ):
+            tags = schedule_def.get_tags(schedule_context)
+
+        return ExternalScheduleExecutionData(
+            run_config=run_config, tags=tags, should_execute=should_execute
+        )
     except ScheduleExecutionError:
         return ExternalScheduleExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())

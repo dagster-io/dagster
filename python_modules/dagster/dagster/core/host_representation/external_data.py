@@ -168,10 +168,15 @@ class ExternalScheduleData(
 
 
 @whitelist_for_serdes
-class ExternalScheduleExecutionData(namedtuple('_ExternalScheduleExecutionData', 'run_config')):
-    def __new__(cls, run_config=None):
+class ExternalScheduleExecutionData(
+    namedtuple('_ExternalScheduleExecutionData', 'run_config tags should_execute')
+):
+    def __new__(cls, run_config=None, tags=None, should_execute=None):
         return super(ExternalScheduleExecutionData, cls).__new__(
-            cls, run_config=check.opt_dict_param(run_config, 'run_config'),
+            cls,
+            run_config=check.opt_dict_param(run_config, 'run_config'),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
+            should_execute=check.opt_bool_param(should_execute, 'should_execute'),
         )
 
 

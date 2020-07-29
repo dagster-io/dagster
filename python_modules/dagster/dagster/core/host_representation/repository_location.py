@@ -43,7 +43,12 @@ from dagster.grpc.impl import (
     get_partition_names,
     get_partition_tags,
 )
-from dagster.grpc.types import ExternalScheduleExecutionArgs, PartitionArgs, PartitionNamesArgs
+from dagster.grpc.types import (
+    ExternalScheduleExecutionArgs,
+    PartitionArgs,
+    PartitionNamesArgs,
+    ScheduleExecutionDataMode,
+)
 from dagster.utils.hosted_user_process import (
     external_repo_from_def,
     is_repository_location_in_same_python_env,
@@ -130,7 +135,9 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+    def get_external_schedule_execution_data(
+        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+    ):
         pass
 
     @abstractmethod
@@ -309,15 +316,21 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
         return get_partition_names(args)
 
-    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+    def get_external_schedule_execution_data(
+        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+    ):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
         check.str_param(schedule_name, 'schedule_name')
+        check.inst_param(
+            schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
+        )
 
         args = ExternalScheduleExecutionArgs(
             instance_ref=instance.get_ref(),
             repository_origin=repository_handle.get_origin(),
             schedule_name=schedule_name,
+            schedule_execution_data_mode=schedule_execution_data_mode,
         )
         return get_external_schedule_execution(args)
 
@@ -437,13 +450,22 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             self._handle.client, repository_handle, partition_set_name
         )
 
-    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+    def get_external_schedule_execution_data(
+        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+    ):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
         check.str_param(schedule_name, 'schedule_name')
+        check.inst_param(
+            schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
+        )
 
         return sync_get_external_schedule_execution_data_grpc(
-            self._handle.client, instance, repository_handle, schedule_name
+            self._handle.client,
+            instance,
+            repository_handle,
+            schedule_name,
+            schedule_execution_data_mode,
         )
 
 
@@ -592,9 +614,16 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
         return sync_get_external_partition_names(repository_handle, partition_set_name)
 
-    def get_external_schedule_execution_data(self, instance, repository_handle, schedule_name):
+    def get_external_schedule_execution_data(
+        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+    ):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
         check.str_param(schedule_name, 'schedule_name')
+        check.inst_param(
+            schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
+        )
 
-        return sync_get_external_schedule_execution_data(instance, repository_handle, schedule_name)
+        return sync_get_external_schedule_execution_data(
+            instance, repository_handle, schedule_name, schedule_execution_data_mode
+        )

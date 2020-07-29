@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.instance import DagsterInstance
+from dagster.grpc.types import ScheduleExecutionDataMode
 
 
 class DagsterGraphQLContext:
@@ -122,7 +123,9 @@ class DagsterGraphQLContext:
     def get_external_schedule_execution_data(self, repository_handle, schedule_name):
         return self._repository_locations[
             repository_handle.repository_location_handle.location_name
-        ].get_external_schedule_execution_data(self.instance, repository_handle, schedule_name)
+        ].get_external_schedule_execution_data(
+            self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW,
+        )
 
     def execute_plan(
         self, external_pipeline, run_config, pipeline_run, step_keys_to_execute, retries=None

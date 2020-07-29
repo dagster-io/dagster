@@ -5,15 +5,24 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.grpc.client import ephemeral_grpc_api_client
-from dagster.grpc.types import ExternalScheduleExecutionArgs, LoadableTargetOrigin
+from dagster.grpc.types import (
+    ExternalScheduleExecutionArgs,
+    LoadableTargetOrigin,
+    ScheduleExecutionDataMode,
+)
 
 from .utils import execute_unary_api_cli_command
 
 
-def sync_get_external_schedule_execution_data(instance, repository_handle, schedule_name):
+def sync_get_external_schedule_execution_data(
+    instance, repository_handle, schedule_name, schedule_execution_data_mode
+):
 
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(schedule_name, 'schedule_name')
+    check.inst_param(
+        schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
+    )
 
     origin = repository_handle.get_origin()
 
@@ -25,6 +34,7 @@ def sync_get_external_schedule_execution_data(instance, repository_handle, sched
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
+                schedule_execution_data_mode=schedule_execution_data_mode,
             ),
         ),
         (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
@@ -32,22 +42,25 @@ def sync_get_external_schedule_execution_data(instance, repository_handle, sched
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
-    instance, repository_handle, schedule_name
+    instance, repository_handle, schedule_name, schedule_execution_data_mode
 ):
     origin = repository_handle.get_origin()
     with ephemeral_grpc_api_client(
         LoadableTargetOrigin(executable_path=origin.executable_path)
     ) as api_client:
         return sync_get_external_schedule_execution_data_grpc(
-            api_client, instance, repository_handle, schedule_name
+            api_client, instance, repository_handle, schedule_name, schedule_execution_data_mode,
         )
 
 
 def sync_get_external_schedule_execution_data_grpc(
-    api_client, instance, repository_handle, schedule_name
+    api_client, instance, repository_handle, schedule_name, schedule_execution_data_mode,
 ):
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(schedule_name, 'schedule_name')
+    check.inst_param(
+        schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
+    )
 
     origin = repository_handle.get_origin()
 
@@ -57,6 +70,7 @@ def sync_get_external_schedule_execution_data_grpc(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
+                schedule_execution_data_mode=schedule_execution_data_mode,
             )
         ),
         (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
