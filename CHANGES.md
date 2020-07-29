@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+
+**Breaking Changes**
+
+- The `dagit` key is no longer part of the instance configuration schema and must be removed from
+`dagster.yaml` files before they can be used.
+
 ## 0.8.10
 
 **New**

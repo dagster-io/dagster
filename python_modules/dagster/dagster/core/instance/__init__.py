@@ -386,10 +386,6 @@ class DagsterInstance:
     def compute_log_manager(self):
         return self._compute_log_manager
 
-    @property
-    def dagit_settings(self):
-        return self.get_settings('dagit')
-
     def get_settings(self, settings_key):
         check.str_param(settings_key, 'settings_key')
         if self._settings and settings_key in self._settings:

@@ -1,12 +1,9 @@
 import uuid
-from contextlib import contextmanager
 
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from dagster import seven
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
@@ -428,14 +425,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             assert step_mat_event
             assert len(step_mat_event['materialization']['metadataEntries']) == 1
             assert step_mat_event['materialization']['metadataEntries'][0]['path'] == out_csv_path
-
-
-@contextmanager
-def sqlite_instance_with_manager_disabled():
-    with seven.TemporaryDirectory() as temp_dir:
-        yield DagsterInstance.local_temp(
-            tempdir=temp_dir, overrides={'dagit': {'execution_manager': {'disabled': True}}}
-        )
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):

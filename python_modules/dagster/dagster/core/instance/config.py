@@ -1,6 +1,6 @@
 import os
 
-from dagster import Bool, Int, check
+from dagster import Bool, check
 from dagster.config import Field, Permissive
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
@@ -40,18 +40,6 @@ def dagster_instance_config_schema():
         'schedule_storage': config_field_for_configurable_class(),
         'scheduler': config_field_for_configurable_class(),
         'run_launcher': config_field_for_configurable_class(),
-        'dagit': Field(
-            {
-                'execution_manager': Field(
-                    {
-                        'disabled': Field(Bool, is_required=False),
-                        'max_concurrent_runs': Field(Int, is_required=False),
-                    },
-                    is_required=False,
-                ),
-            },
-            is_required=False,
-        ),
         'telemetry': Field({'enabled': Field(Bool, default_value=True, is_required=False)}),
         'opt_in': Field({'local_servers': Field(Bool, default_value=False, is_required=False)}),
     }

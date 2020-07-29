@@ -151,7 +151,7 @@ class InstanceRef(
             ),
         )
 
-        settings_keys = {'dagit', 'telemetry', 'opt_in'}
+        settings_keys = {'telemetry', 'opt_in'}
         settings = {key: config_value.get(key) for key in settings_keys}
 
         return InstanceRef(
