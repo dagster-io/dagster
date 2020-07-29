@@ -10,6 +10,7 @@
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_pipelines {
   __typename: "Pipeline";
   name: string;
+  pipelineSnapshotId: string;
 }
 
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location {

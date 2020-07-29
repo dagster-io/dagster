@@ -67,6 +67,7 @@ export interface RunFragment {
   tags: RunFragment_tags[];
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { IconNames } from "@blueprintjs/icons";
-import { Button, Intent } from "@blueprintjs/core";
+import { Button, IconName, Intent } from "@blueprintjs/core";
 import { useMutation } from "react-apollo";
 import { LaunchButtonDropdown, LaunchButtonConfiguration } from "../execute/LaunchButton";
 import { PipelineRunStatus } from "../types/globalTypes";
@@ -8,6 +8,7 @@ import { PipelineRunStatus } from "../types/globalTypes";
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../DomUtils";
 import { IStepState } from "../RunMetadataProvider";
+import { useRepository, useRepositoryOptions } from "../DagsterRepositoryContext";
 
 const CANCEL_TITLE = "Terminate";
 
@@ -40,7 +41,9 @@ interface RunActionButtonsRun {
   status: PipelineRunStatus;
   pipeline: {
     __typename: string;
+    name: string;
   };
+  pipelineSnapshotId: string | null;
   canTerminate: boolean;
 }
 
@@ -95,6 +98,8 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
 }) => {
   // Run's status
 
+  const currentRepository = useRepository();
+  const { options: repositoryOptions } = useRepositoryOptions();
   const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
   const isSelectionPresent = selectedSteps && selectedSteps.length > 0;
   const isSelectionFinished = selectedStepStates.every(stepState =>
@@ -149,9 +154,57 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     }
   ];
 
+  let disabled = false;
+  let tooltip = undefined;
+  let icon: IconName | undefined = undefined;
+
+  const currentRepositorySnapshots = {};
+  currentRepository.pipelines.forEach(pipeline => {
+    currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
+  });
+
+  if (run) {
+    if (run.pipeline.name in currentRepositorySnapshots) {
+      if (currentRepositorySnapshots[run.pipeline.name] === run.pipelineSnapshotId) {
+      } else {
+        icon = IconNames.WARNING_SIGN;
+        tooltip = `The pipeline "${run.pipeline.name}" in the current repository is a different version than the original pipeline run.`;
+      }
+    } else {
+      disabled = true;
+      icon = IconNames.ERROR;
+
+      const matchingRepoNames = repositoryOptions
+        .map(x => x.repository)
+        .filter(
+          x =>
+            x.name !== currentRepository.name &&
+            x.pipelines.map(x => x.name).includes(run.pipeline.name)
+        )
+        .map(x => x.name);
+
+      if (matchingRepoNames.length) {
+        tooltip = `"${
+          run.pipeline.name
+        }" is not in the current repository.  It is available in the following repositories: ${matchingRepoNames.join(
+          ", "
+        )}.`;
+      } else {
+        tooltip = `"${run.pipeline.name}" is not in the current repository.`;
+      }
+    }
+  }
+
   return (
     <>
-      <LaunchButtonDropdown small={true} options={options} title="Launch Re-execution" />
+      <LaunchButtonDropdown
+        small={true}
+        options={options}
+        disabled={disabled}
+        tooltip={tooltip}
+        title="Launch Re-execution"
+        icon={icon}
+      />
       {run?.canTerminate && (
         <>
           <div style={{ minWidth: 6 }} />

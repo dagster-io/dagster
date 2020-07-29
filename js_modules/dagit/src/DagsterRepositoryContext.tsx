@@ -8,8 +8,8 @@ import {
 } from "./types/RootRepositoriesQuery";
 import PythonErrorInfo from "./PythonErrorInfo";
 
-type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
-type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+export type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
+export type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
 
 export interface DagsterRepoOption {
   repositoryLocation: RepositoryLocation;
@@ -31,6 +31,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
           name
           pipelines {
             name
+            pipelineSnapshotId
           }
           location {
             name
@@ -60,14 +61,15 @@ export const useRepositoryOptions = () => {
     fetchPolicy: "cache-and-network"
   });
 
+  let options: DagsterRepoOption[] = [];
   if (!data || !data.repositoriesOrError) {
-    return { options: [], error: null };
+    return { options, error: null };
   }
   if (data.repositoriesOrError.__typename === "PythonError") {
-    return { options: [], error: data.repositoriesOrError };
+    return { options, error: data.repositoriesOrError };
   }
 
-  const options: DagsterRepoOption[] = data.repositoriesOrError.nodes.map(repository => ({
+  options = data.repositoriesOrError.nodes.map(repository => ({
     repository,
     repositoryLocation: repository.location
   }));
@@ -105,6 +107,14 @@ export const useCurrentRepositoryState = (options: DagsterRepoOption[]) => {
 };
 
 export const useRepositorySelector = () => {
+  const repository = useRepository();
+  return {
+    repositoryLocationName: repository.location.name,
+    repositoryName: repository.name
+  };
+};
+
+export const useRepository = () => {
   const { repository, repositoryLocation } = React.useContext(DagsterRepositoryContext);
 
   if (!repository || !repositoryLocation) {
@@ -112,10 +122,7 @@ export const useRepositorySelector = () => {
     throw Error("no legacy repository");
   }
 
-  return {
-    repositoryLocationName: repositoryLocation.name,
-    repositoryName: repository.name
-  };
+  return repository;
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {

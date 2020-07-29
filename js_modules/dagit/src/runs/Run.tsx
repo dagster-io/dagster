@@ -67,6 +67,7 @@ export class Run extends React.Component<RunProps, RunState> {
             solidSelection
           }
         }
+        pipelineSnapshotId
         executionPlan {
           steps {
             key

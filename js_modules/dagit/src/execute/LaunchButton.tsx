@@ -103,16 +103,22 @@ interface LaunchButtonDropdownProps {
   title: string;
   small?: boolean;
   options: LaunchButtonConfiguration[];
+  disabled?: boolean;
+  tooltip?: string;
+  icon?: IconName | undefined;
 }
 
 export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownProps> = ({
   title,
   small,
-  options
+  options,
+  disabled,
+  tooltip,
+  icon
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
-    disabled: options.every(d => d.disabled)
+    disabled: disabled || options.every(d => d.disabled)
   });
 
   return (
@@ -153,7 +159,7 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
           small={small}
           title={title}
           rightIcon={"caret-down"}
-          {...forced}
+          {...{ tooltip, icon, ...forced }}
         />
       </Popover>
     </ShortcutHandler>
