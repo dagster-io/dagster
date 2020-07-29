@@ -5,7 +5,10 @@ import sys
 
 from dagster import check
 from dagster.core.definitions import ScheduleExecutionContext
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
 from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterSubprocessError,
@@ -14,7 +17,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import execute_run_iterator
+from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
@@ -26,8 +29,13 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshotErrorData,
+    snapshot_from_execution_plan,
+)
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import (
+    ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -184,14 +192,16 @@ def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
-def get_external_schedule_execution(external_schedule_execution_args):
+def get_external_schedule_execution(recon_repo, external_schedule_execution_args):
+    check.inst_param(
+        recon_repo, 'recon_repo', ReconstructableRepository,
+    )
     check.inst_param(
         external_schedule_execution_args,
         'external_schedule_execution_args',
         ExternalScheduleExecutionArgs,
     )
 
-    recon_repo = recon_repository_from_origin(external_schedule_execution_args.repository_origin)
     definition = recon_repo.get_definition()
     schedule_def = definition.get_schedule_def(external_schedule_execution_args.schedule_name)
     instance = DagsterInstance.from_ref(external_schedule_execution_args.instance_ref)
@@ -294,4 +304,30 @@ def get_partition_tags(args):
     except PartitionExecutionError:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
+def get_external_execution_plan_snapshot(recon_pipeline, args):
+    check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline)
+    check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
+
+    try:
+        pipeline = (
+            recon_pipeline.subset_for_execution(args.solid_selection)
+            if args.solid_selection
+            else recon_pipeline
+        )
+
+        return snapshot_from_execution_plan(
+            create_execution_plan(
+                pipeline=pipeline,
+                run_config=args.run_config,
+                mode=args.mode,
+                step_keys_to_execute=args.step_keys_to_execute,
+            ),
+            args.pipeline_snapshot_id,
+        )
+    except:  # pylint: disable=bare-except
+        return ExecutionPlanSnapshotErrorData(
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )

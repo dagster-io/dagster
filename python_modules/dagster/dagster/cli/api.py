@@ -14,6 +14,7 @@ from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     get_repository_origin_from_kwargs,
     python_origin_target_argument,
+    repository_target_argument,
 )
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.errors import DagsterLaunchFailedError, DagsterSubprocessError
@@ -49,11 +50,11 @@ from dagster.core.scheduler import (
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
-    snapshot_from_execution_plan,
 )
 from dagster.core.storage.tags import check_tags
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
+    get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     get_partition_config,
@@ -192,26 +193,8 @@ def pipeline_subset_snapshot_command(args):
 def execution_plan_snapshot_command(args):
     check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
 
-    recon_pipeline = (
-        recon_pipeline_from_origin(args.pipeline_origin).subset_for_execution(args.solid_selection)
-        if args.solid_selection
-        else recon_pipeline_from_origin(args.pipeline_origin)
-    )
-
-    try:
-        return snapshot_from_execution_plan(
-            create_execution_plan(
-                pipeline=recon_pipeline,
-                run_config=args.run_config,
-                mode=args.mode,
-                step_keys_to_execute=args.step_keys_to_execute,
-            ),
-            args.pipeline_snapshot_id,
-        )
-    except:  # pylint: disable=bare-except
-        return ExecutionPlanSnapshotErrorData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+    return get_external_execution_plan_snapshot(recon_pipeline, args)
 
 
 @unary_api_cli_command(
@@ -264,7 +247,8 @@ def partition_names_command(args):
     output_cls=(ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
 )
 def schedule_execution_data_command(args):
-    return get_external_schedule_execution(args)
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    return get_external_schedule_execution(recon_repo, args)
 
 
 @whitelist_for_serdes
@@ -507,7 +491,7 @@ def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwar
     ),
 )
 @click.argument('output_file', type=click.Path())
-@python_origin_target_argument
+@repository_target_argument
 @click.option('--schedule_name')
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
@@ -537,6 +521,11 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                 ),
             )
             external_repo = next(iter(repo_dict.values()))
+            check.invariant(
+                schedule_name
+                in [schedule.name for schedule in external_repo.get_external_schedules()],
+                'Could not find schedule named {schedule_name}'.format(schedule_name=schedule_name),
+            )
             external_schedule = external_repo.get_external_schedule(schedule_name)
             tick.update_with_status(
                 status=ScheduleTickStatus.STARTED, cron_schedule=external_schedule.cron_schedule,

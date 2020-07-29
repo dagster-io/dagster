@@ -11,7 +11,7 @@ from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryPythonOrigin
+from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -325,6 +325,13 @@ def get_repository_origin_from_kwargs(kwargs):
         return RepositoryPythonOrigin(
             executable_path=sys.executable,
             code_pointer=CodePointer.from_module(load_target.module_name, load_target.attribute),
+        )
+    elif isinstance(load_target, GrpcServerTarget):
+        return RepositoryGrpcServerOrigin(
+            host=load_target.host,
+            port=load_target.port,
+            socket=load_target.socket,
+            repository_name=kwargs['repository'],
         )
     else:
         check.failed('invalid')

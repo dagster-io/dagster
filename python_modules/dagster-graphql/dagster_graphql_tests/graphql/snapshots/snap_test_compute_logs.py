@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestComputeLogs.test_get_compute_logs_over_graphql[in_memory_instance_in_process_env] 1'] = {

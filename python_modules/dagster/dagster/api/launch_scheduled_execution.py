@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
-from dagster.core.origin import SchedulePythonOrigin
+from dagster.core.origin import ScheduleOrigin
 from dagster.core.scheduler import ScheduledExecutionResult
 from dagster.serdes.ipc import IPCErrorMessage, read_unary_response
 from dagster.seven import xplat_shlex_split
@@ -10,7 +10,7 @@ from .utils import execute_command_in_subprocess
 
 
 def sync_launch_scheduled_execution(schedule_origin):
-    check.inst_param(schedule_origin, 'schedule_origin', SchedulePythonOrigin)
+    check.inst_param(schedule_origin, 'schedule_origin', ScheduleOrigin)
 
     with get_temp_file_name() as output_file:
         parts = (

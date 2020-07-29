@@ -55,6 +55,7 @@ from dagster.grpc.types import (
 from dagster.utils.hosted_user_process import (
     external_repo_from_def,
     is_repository_location_in_same_python_env,
+    recon_repository_from_origin,
 )
 
 from .selector import PipelineSelector
@@ -329,13 +330,15 @@ class InProcessRepositoryLocation(RepositoryLocation):
             schedule_execution_data_mode, 'schedule_execution_data_mode', ScheduleExecutionDataMode
         )
 
+        repo_origin = repository_handle.get_origin()
         args = ExternalScheduleExecutionArgs(
             instance_ref=instance.get_ref(),
-            repository_origin=repository_handle.get_origin(),
+            repository_origin=repo_origin,
             schedule_name=schedule_name,
             schedule_execution_data_mode=schedule_execution_data_mode,
         )
-        return get_external_schedule_execution(args)
+        recon_repo = recon_repository_from_origin(repo_origin)
+        return get_external_schedule_execution(recon_repo, args)
 
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
@@ -387,7 +390,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.str_param(mode, 'mode')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        execution_plan_snapshot = sync_get_external_execution_plan_grpc(
+        execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self._handle.client,
             pipeline_origin=external_pipeline.get_origin(),
             run_config=run_config,
@@ -397,8 +400,12 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             step_keys_to_execute=step_keys_to_execute,
         )
 
+        if isinstance(execution_plan_snapshot_or_error, ExecutionPlanSnapshotErrorData):
+            return execution_plan_snapshot_or_error
+
         return ExternalExecutionPlan(
-            execution_plan_snapshot=execution_plan_snapshot, represented_pipeline=external_pipeline,
+            execution_plan_snapshot=execution_plan_snapshot_or_error,
+            represented_pipeline=external_pipeline,
         )
 
     def execute_plan(

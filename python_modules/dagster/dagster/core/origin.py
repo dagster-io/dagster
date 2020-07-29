@@ -1,4 +1,5 @@
-from abc import ABCMeta, abstractmethod
+import sys
+from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 
 import six
@@ -18,6 +19,10 @@ class RepositoryOrigin(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_schedule_origin(self, schedule_name):
+        pass
+
+    @abstractmethod
+    def get_cli_args(self):
         pass
 
 
@@ -45,6 +50,16 @@ class RepositoryGrpcServerOrigin(
     def get_schedule_origin(self, schedule_name):
         check.str_param(schedule_name, 'schedule_name')
         return ScheduleGrpcServerOrigin(schedule_name, self)
+
+    def get_cli_args(self):
+        if self.port:
+            return '--host {host} --port {port} -r {repository_name}'.format(
+                host=self.host, port=self.port, repository_name=self.repository_name,
+            )
+        else:
+            return '--host {host} --socket {socket} -r {repository_name}'.format(
+                host=self.host, socket=self.socket, repository_name=self.repository_name,
+            )
 
 
 @whitelist_for_serdes
@@ -118,6 +133,14 @@ class ScheduleOrigin(six.with_metaclass(ABCMeta)):
     def get_id(self):
         return create_snapshot_id(self)
 
+    @abstractmethod
+    def get_repo_cli_args(self):
+        pass
+
+    @abstractproperty
+    def executable_path(self):
+        pass
+
 
 @whitelist_for_serdes
 class SchedulePythonOrigin(
@@ -151,3 +174,10 @@ class ScheduleGrpcServerOrigin(
             check.str_param(schedule_name, 'schedule_name'),
             check.inst_param(repository_origin, 'repository_origin', RepositoryGrpcServerOrigin),
         )
+
+    def get_repo_cli_args(self):
+        return self.repository_origin.get_cli_args()
+
+    @property
+    def executable_path(self):
+        return sys.executable

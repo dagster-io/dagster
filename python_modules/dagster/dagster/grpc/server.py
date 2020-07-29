@@ -15,7 +15,6 @@ from dagster.core.definitions.reconstructable import (
     repository_def_from_target_def,
 )
 from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
-from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -24,7 +23,6 @@ from dagster.core.host_representation.external_data import (
     external_repository_data_from_def,
 )
 from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster.seven import multiprocessing
@@ -38,6 +36,7 @@ from .impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
     execute_run_in_subprocess,
+    get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     start_run_in_subprocess,
@@ -159,26 +158,14 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         check.inst_param(execution_plan_args, 'execution_plan_args', ExecutionPlanSnapshotArgs)
-
-        recon_pipeline = (
-            self._recon_pipeline_from_origin(
-                execution_plan_args.pipeline_origin
-            ).subset_for_execution(execution_plan_args.solid_selection)
-            if execution_plan_args.solid_selection
-            else self._recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
-        )
-
-        execution_plan_snapshot = snapshot_from_execution_plan(
-            create_execution_plan(
-                pipeline=recon_pipeline,
-                run_config=execution_plan_args.run_config,
-                mode=execution_plan_args.mode,
-                step_keys_to_execute=execution_plan_args.step_keys_to_execute,
-            ),
-            execution_plan_args.pipeline_snapshot_id,
+        recon_pipeline = self._recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
+        execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
+            recon_pipeline, execution_plan_args
         )
         return api_pb2.ExecutionPlanSnapshotReply(
-            serialized_execution_plan_snapshot=serialize_dagster_namedtuple(execution_plan_snapshot)
+            serialized_execution_plan_snapshot=serialize_dagster_namedtuple(
+                execution_plan_snapshot_or_error
+            )
         )
 
     def ListRepositories(self, request, _context):
@@ -339,9 +326,13 @@ class DagsterApiServer(DagsterApiServicer):
             ExternalScheduleExecutionArgs,
         )
 
+        recon_repo = self._recon_repository_from_origin(
+            external_schedule_execution_args.repository_origin
+        )
+
         return api_pb2.ExternalScheduleExecutionReply(
             serialized_external_schedule_execution_data_or_external_schedule_execution_error=serialize_dagster_namedtuple(
-                get_external_schedule_execution(external_schedule_execution_args)
+                get_external_schedule_execution(recon_repo, external_schedule_execution_args)
             )
         )
 
