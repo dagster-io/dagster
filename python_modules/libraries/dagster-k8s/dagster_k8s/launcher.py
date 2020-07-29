@@ -2,13 +2,14 @@ import weakref
 
 import kubernetes
 
-from dagster import EventMetadataEntry, Field, Noneable, StringSource, check, seven
+from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
+from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
 
 from .job import (
@@ -176,22 +177,18 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
 
+        input_json = serialize_dagster_namedtuple(
+            ExecuteRunArgs(
+                pipeline_origin=external_pipeline.get_origin(),
+                pipeline_run_id=run.run_id,
+                instance_ref=None,
+            )
+        )
+
         job = construct_dagster_k8s_job(
-            job_config=self.job_config,
-            command=['dagster-graphql'],
-            args=[
-                '-p',
-                'executeRunInProcess',
-                '-v',
-                seven.json.dumps(
-                    {
-                        'runId': run.run_id,
-                        'repositoryName': external_pipeline.handle.repository_name,
-                        'repositoryLocationName': external_pipeline.handle.location_name,
-                    }
-                ),
-                '--remap-sigterm',
-            ],
+            self.job_config,
+            command=['dagster'],
+            args=['api', 'execute_run_with_structured_logs', input_json],
             job_name=job_name,
             pod_name=pod_name,
             component='runmaster',
