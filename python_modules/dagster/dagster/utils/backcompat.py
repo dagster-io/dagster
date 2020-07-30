@@ -1,6 +1,14 @@
 import warnings
+from functools import wraps
 
 from dagster import check
+
+EXPERIMENTAL_WARNING_HELP = (
+    'To mute warnings for experimental functionality, set'
+    ' PYTHONWARNINGS=ignore::ExperimentalWarning in your environment or use one of the other '
+    ' methods described at'
+    ' https://docs.python.org/3/library/warnings.html#describing-warning-filters.'
+)
 
 
 def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_version, **kwargs):
@@ -79,3 +87,88 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
         + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
         stacklevel=stacklevel,
     )
+
+
+class ExperimentalWarning(Warning):
+    pass
+
+
+def experimental_fn_warning(name, stacklevel=3):
+    '''Utility for warning that a function is experimental'''
+    warnings.warn(
+        '"{name}" is an experimental function. It may break in future versions, even between dot'
+        ' releases. {help}'.format(name=name, help=EXPERIMENTAL_WARNING_HELP),
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
+def experimental_class_warning(name, stacklevel=3):
+    '''Utility for warning that a class is experimental. Expected to be called from the class's
+    __init__ method.
+
+    Usage:
+
+    .. code-block:: python
+
+        class MyExperimentalClass:
+            def __init__(self, some_arg):
+                experimental_class_warning('MyExperimentalClass')
+                # do other initialization stuff
+    '''
+    warnings.warn(
+        '"{name}" is an experimental class. It may break in future versions, even between dot'
+        ' releases. {help}'.format(name=name, help=EXPERIMENTAL_WARNING_HELP),
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
+def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
+    '''Utility for warning that an argument to a function is experimental'''
+    warnings.warn(
+        '"{arg_name}" is an experimental argument to function "{fn_name}". '
+        'It may break in future versions, even between dot releases. {help}'.format(
+            arg_name=arg_name, fn_name=fn_name, help=EXPERIMENTAL_WARNING_HELP
+        ),
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
+def experimental(fn):
+    '''
+    Spews an "experimental" warning whenever the given callable is called. If the argument is a
+    class, this means the warning will be emitted when the class is instantiated.
+
+    Usage:
+
+        .. code-block:: python
+
+            @experimental
+            def my_experimental_function(my_arg):
+                do_stuff()
+    '''
+    check.callable_param(fn, 'fn')
+
+    @wraps(fn)
+    def _inner(*args, **kwargs):
+        experimental_fn_warning(fn.__name__, stacklevel=3)
+        return fn(*args, **kwargs)
+
+    return _inner
+
+
+def canonicalize_run_config(run_config, environment_dict, stacklevel=3):
+    check.opt_dict_param(run_config, 'run_config')
+    check.opt_dict_param(environment_dict, 'environment_dict')
+    check.invariant(
+        not (run_config is not None and environment_dict is not None),
+        'Cannot set both run_config and environment_dict. Use run_config parameter.',
+    )
+
+    if environment_dict is not None:
+        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel + 1)
+        return environment_dict
+    else:
+        return run_config

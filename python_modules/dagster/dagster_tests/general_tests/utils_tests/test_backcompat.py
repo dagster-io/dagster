@@ -1,10 +1,18 @@
 import re
 
 import pytest
+from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 from dagster.check import CheckError
-from dagster.seven import mock
-from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.backcompat import (
+    EXPERIMENTAL_WARNING_HELP,
+    ExperimentalWarning,
+    canonicalize_backcompat_args,
+    experimental,
+    experimental_arg_warning,
+    experimental_class_warning,
+    experimental_fn_warning,
+)
 
 
 def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):
@@ -56,3 +64,66 @@ def test_backcompat_both_set():
         match=re.escape('Do not use deprecated "old_flag" now that you are using "new_flag".'),
     ):
         is_new(old_flag=False, new_flag=True)
+
+
+def test_experimental_fn_warning():
+    def my_experimental_function():
+        experimental_fn_warning('my_experimental_function')
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"my_experimental_function" is an experimental function. It may break in future'
+        ' versions, even between dot releases. ' + EXPERIMENTAL_WARNING_HELP,
+    ) as warning:
+        my_experimental_function()
+
+    assert warning[0].filename.endswith('test_backcompat.py')
+
+
+def test_experimental_class_warning():
+    class MyExperimentalClass:
+        def __init__(self):
+            experimental_class_warning('MyExperimentalClass')
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"MyExperimentalClass" is an experimental class. It may break in future'
+        ' versions, even between dot releases. ' + EXPERIMENTAL_WARNING_HELP,
+    ) as warning:
+        MyExperimentalClass()
+
+    assert warning[0].filename.endswith('test_backcompat.py')
+
+
+def test_experimental_arg_warning():
+    def stable_function(_stable_arg, _experimental_arg):
+        experimental_arg_warning('experimental_arg', 'stable_function')
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"experimental_arg" is an experimental argument to function "stable_function". '
+        'It may break in future versions, even between dot releases. ' + EXPERIMENTAL_WARNING_HELP,
+    ) as warning:
+        stable_function(1, 2)
+
+    assert warning[0].filename.endswith('test_backcompat.py')
+
+
+def test_experimental_decorator():
+    with assert_no_warnings():
+
+        @experimental
+        def my_experimental_function(some_arg):
+            assert some_arg == 5
+            return 4
+
+    assert my_experimental_function.__name__ == 'my_experimental_function'
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"my_experimental_function" is an experimental function. It may break in future'
+        ' versions, even between dot releases. ' + EXPERIMENTAL_WARNING_HELP,
+    ) as warning:
+        assert my_experimental_function(5) == 4
+
+    assert warning[0].filename.endswith('test_backcompat.py')
