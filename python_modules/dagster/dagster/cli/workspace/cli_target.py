@@ -44,6 +44,7 @@ def are_all_keys_empty(kwargs, keys):
 WORKSPACE_CLI_ARGS = (
     'workspace',
     'python_file',
+    'working_directory',
     'module_name',
     'attribute',
     'repository_yaml',
@@ -53,7 +54,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
-PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute')
+PythonFileTarget = namedtuple('PythonFileTarget', 'python_file attribute working_directory')
 ModuleTarget = namedtuple('ModuleTarget', 'module_name attribute')
 GrpcServerTarget = namedtuple('GrpcServerTarget', 'host port socket')
 
@@ -89,21 +90,40 @@ def created_workspace_load_target(kwargs):
             'This is deprecated and will be eliminated in 0.9.0.'
         )
         _check_cli_arguments_none(
-            kwargs, 'python_file', 'module_name', 'attribute', 'workspace', 'host', 'port', 'socket'
+            kwargs,
+            'python_file',
+            'working_directory',
+            'module_name',
+            'attribute',
+            'workspace',
+            'host',
+            'port',
+            'socket',
         )
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
         _check_cli_arguments_none(
-            kwargs, 'python_file', 'module_name', 'attribute', 'host', 'port', 'socket'
+            kwargs,
+            'python_file',
+            'working_directory',
+            'module_name',
+            'attribute',
+            'host',
+            'port',
+            'socket',
         )
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name', 'host', 'port', 'socket')
         return PythonFileTarget(
-            python_file=kwargs.get('python_file'), attribute=kwargs.get('attribute'),
+            python_file=kwargs.get('python_file'),
+            attribute=kwargs.get('attribute'),
+            working_directory=kwargs.get('working_directory'),
         )
     if kwargs.get('module_name'):
-        _check_cli_arguments_none(kwargs, 'workspace', 'python_file', 'host', 'port', 'socket')
+        _check_cli_arguments_none(
+            kwargs, 'workspace', 'python_file', 'working_directory', 'host', 'port', 'socket'
+        )
         return ModuleTarget(
             module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute'),
         )
@@ -140,8 +160,9 @@ def workspace_from_load_target(load_target, instance):
         return Workspace(
             [
                 location_handle_from_python_file(
-                    load_target.python_file,
-                    load_target.attribute,
+                    python_file=load_target.python_file,
+                    attribute=load_target.attribute,
+                    working_directory=load_target.working_directory,
                     user_process_api=python_user_process_api,
                 )
             ]

@@ -107,7 +107,8 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     instance = DagsterInstance.ephemeral()
 
     workspace = workspace_from_load_target(
-        PythonFileTarget(__file__, define_test_events_pipeline.__name__), instance,
+        PythonFileTarget(__file__, define_test_events_pipeline.__name__, working_directory=None),
+        instance,
     )
     pipeline_def = define_test_events_pipeline()
     mode = pipeline_def.get_default_mode_name()

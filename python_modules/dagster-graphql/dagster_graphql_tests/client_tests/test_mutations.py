@@ -40,7 +40,10 @@ EXPECTED_EVENTS = {
 
 def load_sleepy_workspace(instance):
     return workspace_from_load_target(
-        PythonFileTarget(file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline'), instance
+        PythonFileTarget(
+            file_relative_path(__file__, 'sleepy.py'), 'sleepy_pipeline', working_directory=None
+        ),
+        instance,
     )
 
 

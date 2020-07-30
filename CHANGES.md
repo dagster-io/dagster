@@ -6,6 +6,12 @@
 
 - The `dagit` key is no longer part of the instance configuration schema and must be removed from
 `dagster.yaml` files before they can be used.
+- `-d` can no longer be used as a command-line argument to specify a mode. Use `--mode` instead.
+- Use `--preset` instead of `--preset-name` to specify a preset to the `pipeline launch` command.
+
+**New**
+- `-d` or `--working-directory` can be used to specify a working directory in any command that
+takes in a `-f` or `--python_file` argument.
 
 ## 0.8.10
 

@@ -167,7 +167,12 @@ def test_diamond_toposort():
 
 def test_external_diamond_toposort():
     repo_location = RepositoryLocation.from_handle(
-        location_handle_from_python_file(__file__, 'create_diamond_pipeline', UserProcessApi.CLI)
+        location_handle_from_python_file(
+            python_file=__file__,
+            attribute='create_diamond_pipeline',
+            working_directory=None,
+            user_process_api=UserProcessApi.CLI,
+        )
     )
     external_repo = next(iter(repo_location.get_repositories().values()))
     external_pipeline = next(iter(external_repo.get_all_external_pipelines()))

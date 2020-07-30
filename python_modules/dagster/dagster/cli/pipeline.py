@@ -229,7 +229,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
     'preset_defs.',
 )
 @click.option(
-    '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
+    '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @click.option(
@@ -302,7 +302,7 @@ def execute_execute_command(env, cli_args, mode=None, tags=None):
     return do_execute_command(pipeline, instance, env, mode, tags, solid_selection)
 
 
-def execute_execute_command_with_preset(preset_name, cli_args, instance, _mode):
+def execute_execute_command_with_preset(preset, cli_args, instance, _mode):
     external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
     # We should move this to use external pipeline
     # https://github.com/dagster-io/dagster/issues/2556
@@ -313,7 +313,7 @@ def execute_execute_command_with_preset(preset_name, cli_args, instance, _mode):
 
     return execute_pipeline(
         pipeline,
-        preset=preset_name,
+        preset=preset,
         instance=DagsterInstance.get(),
         raise_on_error=False,
         tags=tags,
@@ -368,13 +368,13 @@ def do_execute_command(
     ),
 )
 @click.option(
-    '--preset-name',
+    '--preset',
     type=click.STRING,
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
 )
 @click.option(
-    '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
+    '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @click.option(
@@ -403,12 +403,12 @@ def do_execute_command(
         '-e, --env is deprecated and will be removed in 0.9.0.'
     ),
 )
-def pipeline_launch_command(config, preset_name, mode, **kwargs):
-    return _logged_pipeline_launch_command(config, preset_name, mode, DagsterInstance.get(), kwargs)
+def pipeline_launch_command(config, preset, mode, **kwargs):
+    return _logged_pipeline_launch_command(config, preset, mode, DagsterInstance.get(), kwargs)
 
 
 @telemetry_wrapper
-def _logged_pipeline_launch_command(config, preset_name, mode, instance, kwargs):
+def _logged_pipeline_launch_command(config, preset, mode, instance, kwargs):
     check.inst_param(instance, 'instance', DagsterInstance)
     env = (
         canonicalize_backcompat_args(
@@ -432,14 +432,14 @@ def _logged_pipeline_launch_command(config, preset_name, mode, instance, kwargs)
 
     log_repo_stats(instance=instance, pipeline=pipeline, source='pipeline_launch_command')
 
-    if preset_name:
+    if preset:
         if env:
             raise click.UsageError('Can not use --preset with --config.')
 
         if mode:
             raise click.UsageError('Can not use --preset with --mode.')
 
-        preset = pipeline.get_definition().get_preset(preset_name)
+        preset = pipeline.get_definition().get_preset(preset)
     else:
         preset = None
 

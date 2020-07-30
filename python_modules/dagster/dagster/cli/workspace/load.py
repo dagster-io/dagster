@@ -197,9 +197,9 @@ def _location_handle_from_python_file_config(
     return location_handle_from_python_file(
         absolute_path,
         attribute,
+        working_directory,
         user_process_api,
         location_name,
-        working_directory,
         executable_path,
     )
 
@@ -222,16 +222,16 @@ def _get_python_file_config_data(python_file_config, yaml_path):
 def location_handle_from_python_file(
     python_file,
     attribute,
+    working_directory,
     user_process_api,
     location_name=None,
-    working_directory=None,
     executable_path=sys.executable,
 ):
     check.str_param(python_file, 'python_file')
     check.opt_str_param(attribute, 'attribute')
+    check.opt_str_param(working_directory, 'working_directory')
     check.inst_param(user_process_api, 'user_process_api', UserProcessApi)
     check.opt_str_param(location_name, 'location_name')
-    check.opt_str_param(working_directory, 'working_directory')
 
     if user_process_api == UserProcessApi.GRPC:
         return RepositoryLocationHandle.create_process_bound_grpc_server_location(

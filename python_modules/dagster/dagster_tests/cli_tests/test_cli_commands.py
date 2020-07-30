@@ -217,6 +217,30 @@ def test_list_command():
             'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
             'module_name': None,
             'fn_name': 'bar',
+            'working_directory': os.path.dirname(__file__),
+        },
+        no_print,
+        DagsterInstance.local_temp(),
+    )
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'bar',
+        },
+        no_print,
+        grpc_instance(),
+    )
+
+    execute_list_command(
+        {
+            'repository_yaml': None,
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'module_name': None,
+            'fn_name': 'bar',
+            'working_directory': os.path.dirname(__file__),
         },
         no_print,
         grpc_instance(),
@@ -399,6 +423,17 @@ def valid_execute_args():
             {
                 'workspace': None,
                 'pipeline': 'foo',
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'bar',
+                'working_directory': os.path.dirname(__file__),
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': 'foo',
                 'python_file': None,
                 'module_name': 'dagster_tests.cli_tests.test_cli_commands',
                 'attribute': 'bar',
@@ -422,6 +457,17 @@ def valid_execute_args():
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'module_name': None,
                 'attribute': 'define_foo_pipeline',
+            },
+            False,
+        ),
+        (
+            {
+                'workspace': None,
+                'pipeline': None,
+                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                'module_name': None,
+                'attribute': 'define_foo_pipeline',
+                'working_directory': os.path.dirname(__file__),
             },
             False,
         ),
@@ -459,12 +505,36 @@ def valid_cli_args():
             ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo'],
             False,
         ),
+        (
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-d',
+                os.path.dirname(__file__),
+                '-a',
+                'bar',
+                '-p',
+                'foo',
+            ],
+            False,
+        ),
         (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo'], False),
         (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline'], False),
         (
             [
                 '-f',
                 file_relative_path(__file__, 'test_cli_commands.py'),
+                '-a',
+                'define_foo_pipeline',
+            ],
+            False,
+        ),
+        (
+            [
+                '-f',
+                file_relative_path(__file__, 'test_cli_commands.py'),
+                '-d',
+                os.path.dirname(__file__),
                 '-a',
                 'define_foo_pipeline',
             ],
@@ -545,7 +615,7 @@ def test_execute_mode_command():
             file_relative_path(__file__, '../workspace.yaml'),
             '--config',
             file_relative_path(__file__, '../environments/multi_mode_with_resources/add_mode.yaml'),
-            '-d',
+            '--mode',
             'add_mode',
             '-p',
             'multi_mode_with_resources',  # pipeline name
@@ -563,7 +633,7 @@ def test_execute_mode_command():
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/mult_mode.yaml'
             ),
-            '-d',
+            '--mode',
             'mult_mode',
             '-p',
             'multi_mode_with_resources',  # pipeline name
@@ -581,7 +651,7 @@ def test_execute_mode_command():
             file_relative_path(
                 __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
             ),
-            '-d',
+            '--mode',
             'double_adder_mode',
             '-p',
             'multi_mode_with_resources',  # pipeline name

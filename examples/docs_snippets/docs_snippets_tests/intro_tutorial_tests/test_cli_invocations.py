@@ -318,7 +318,7 @@ def test_dagster_pipeline_execute(
         dagster_pipeline_execute(
             ['-f', filepath, '-a', fn_name]
             + (['-c', yamlpath] if yamlpath else [])
-            + (['-d', mode] if mode else [])
+            + (['--mode', mode] if mode else [])
             + (['--preset', preset] if preset else []),
             return_code,
         )
