@@ -35,6 +35,13 @@ spec:
             ]
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
+        {{- if .Values.userDeployments.enabled }}
+        {{- range $deployment := .Values.userDeployments.deployments }}
+        - name: "init-user-deployment-{{- $deployment.name -}}"
+          image: busybox:1.28
+          command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+        {{- end }}
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -44,9 +51,13 @@ spec:
           command: [
             "/bin/bash",
             "-c",
+            {{- if .Values.userDeployments.enabled }}
+            "{{ template "dagster.dagit.scheduleUpCommand" $ }}"
+            {{- else }}
             "service cron start; \
             /usr/local/bin/dagster schedule up; \
             dagit -h 0.0.0.0 -p 80"
+            {{- end }}
           ]
           env:
             - name: DAGSTER_PG_PASSWORD
@@ -77,6 +88,11 @@ spec:
             - name: dagster-instance
               mountPath: "{{ .Values.dagster_home }}/dagster.yaml"
               subPath: dagster.yaml
+            {{- if .Values.userDeployments.enabled }}
+            - name: dagster-workspace-yaml
+              mountPath: "/dagster-workspace/workspace.yaml"
+              subPath: workspace.yaml
+            {{- end }}
           ports:
             - name: http
               containerPort: 80
@@ -100,6 +116,11 @@ spec:
         - name: dagster-instance
           configMap:
             name: {{ template "dagster.fullname" . }}-instance
+        {{- if .Values.userDeployments.enabled }}
+        - name: dagster-workspace-yaml
+          configMap:
+            name: {{ template "dagster.fullname" . }}-workspace-yaml
+        {{- end }}
     {{- with .Values.dagit.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

@@ -13,11 +13,11 @@ from dagster.utils import merge_dicts
 class K8sScheduler(Scheduler, ConfigurableClass):
     def __init__(
         self,
-        job_image,
         dagster_home,
         service_account_name,
         instance_config_map,
         postgres_password_secret,
+        job_image,
         load_incluster_config=True,
         scheduler_namespace='default',
         image_pull_policy='Always',

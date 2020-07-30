@@ -1,0 +1,100 @@
+{{- if .Values.userDeployments.enabled }}
+{{ range $deployment := .Values.userDeployments.deployments }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dagster.fullname" $ -}}-{{- $deployment.name }}
+  labels:
+    {{- include "dagster.labels" $ | nindent 4 }}
+    component: user-deployments
+    deployment: {{ $deployment.name }}
+spec:
+  replicas: {{ $deployment.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" $ | nindent 6 }}
+      component: user-deployments
+      deployment: {{ $deployment.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "dagster.selectorLabels" $ | nindent 8 }}
+        component: user-deployments
+        deployment: {{ $deployment.name }}
+      annotations:
+        checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") $ | sha256sum }}
+    spec:
+    {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $deployment.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-db-ready
+          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
+          command: ['sh', '-c',
+            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
+            ]
+          securityContext:
+            {{- toYaml $deployment.securityContext | nindent 12 }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml $deployment.securityContext | nindent 12 }}
+          imagePullPolicy: {{ $deployment.image.pullPolicy }}
+          image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+          command: ["dagster"]
+          args: ["api", "grpc", "-h", "0.0.0.0", "-p", "3030", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
+          env:
+            - name: DAGSTER_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
+                  key: postgresql-password
+            - name: DAGSTER_CURRENT_IMAGE
+              value: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+          envFrom:
+            {{- if $deployment.env_config_maps -}}
+            {{- range $name := $deployment.env_config_maps }}
+            {{- if $name }}
+            - configMapRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if $deployment.env_secrets -}}
+            {{- range $name := $deployment.env_secrets }}
+            {{- if $name }}
+            - secretRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: dagster-instance
+              mountPath: "{{ $.Values.dagster_home }}/dagster.yaml"
+              subPath: dagster.yaml
+          resources:
+            {{- toYaml $deployment.resources | nindent 12 }}
+      {{- with $deployment.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: dagster-instance
+          configMap:
+            name: {{ template "dagster.fullname" $ }}-instance
+    {{- with $deployment.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $deployment.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+---
+{{ end }}
+{{ end }}

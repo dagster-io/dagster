@@ -321,6 +321,10 @@ class DagsterGrpcClient(object):
             )
             raise
 
+    def get_current_image(self):
+        res = self._query('GetCurrentImage', api_pb2.Empty)
+        return deserialize_json_to_dagster_namedtuple(res.serialized_current_image)
+
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     def __init__(

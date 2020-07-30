@@ -45,6 +45,14 @@ If release name contains chart name it will be used as a full name.
 {{- required "Pipeline run image tag .Values.pipeline_run.image.tag is required" .Values.pipeline_run.image.tag }}
 {{- end -}}
 
+{{- define "dagster.dagit.scheduleUpCommand" -}}
+{{- if .Values.userDeployments.enabled }}
+{{- range $deployment := .Values.userDeployments.deployments }}
+/usr/local/bin/dagster schedule up -w /dagster-workspace/workspace.yaml --location {{$deployment.name}};
+{{- end -}}
+dagit -h 0.0.0.0 -p 80 -w /dagster-workspace/workspace.yaml
+{{- end -}}
+{{- end -}}
 
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}

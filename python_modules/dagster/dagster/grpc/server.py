@@ -49,6 +49,7 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    GetCurrentImageResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     LoadableTargetOrigin,
@@ -568,6 +569,20 @@ class DagsterApiServer(DagsterApiServicer):
                     success=success,
                     message=message,
                     serializable_error_info=serializable_error_info,
+                )
+            )
+        )
+
+    def GetCurrentImage(self, request, _context):
+        current_image = os.getenv('DAGSTER_CURRENT_IMAGE')
+        serializable_error_info = None
+
+        if not current_image:
+            serializable_error_info = 'DAGSTER_CURRENT_IMAGE is not set.'
+        return api_pb2.GetCurrentImageReply(
+            serialized_current_image=serialize_dagster_namedtuple(
+                GetCurrentImageResult(
+                    current_image=current_image, serializable_error_info=serializable_error_info
                 )
             )
         )

@@ -9,13 +9,15 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import delete_job
 
-from dagster import EventMetadataEntry, Field, Noneable, check
+from dagster import DagsterInvariantViolationError, EventMetadataEntry, Field, Noneable, check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
+from dagster.core.origin import PipelineGrpcServerOrigin, PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -158,14 +160,54 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
-
         exc_config = _get_validated_celery_k8s_executor_config(run.run_config)
+
+        job_image = None
+        pipeline_origin = None
+        env_vars = None
+        if isinstance(external_pipeline.get_origin(), PipelineGrpcServerOrigin):
+            if exc_config.get('job_image'):
+                raise DagsterInvariantViolationError(
+                    'Cannot specify job_image in executor config when loading pipeline '
+                    'from GRPC server.'
+                )
+
+            repository_location_handle = (
+                external_pipeline.repository_handle.repository_location_handle
+            )
+
+            if not isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
+                raise DagsterInvariantViolationError(
+                    'Expected RepositoryLocationHandle to be of type '
+                    'GrpcServerRepositoryLocationHandle but found type {}'.format(
+                        type(repository_location_handle)
+                    )
+                )
+
+            job_image = repository_location_handle.get_current_image()
+            env_vars = {'DAGSTER_CURRENT_IMAGE': job_image}
+
+            repository_name = external_pipeline.repository_handle.repository_name
+            pipeline_origin = PipelinePythonOrigin(
+                pipeline_name=external_pipeline.name,
+                repository_origin=repository_location_handle.get_repository_python_origin(
+                    repository_name
+                ),
+            )
+
+        else:
+            job_image = exc_config.get('job_image')
+            if not job_image:
+                raise DagsterInvariantViolationError(
+                    'Cannot find job_image in celery-k8s executor config.'
+                )
+            pipeline_origin = external_pipeline.get_origin()
 
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,
             instance_config_map=self.instance_config_map,
             postgres_password_secret=self.postgres_password_secret,
-            job_image=exc_config.get('job_image'),
+            job_image=check.str_param(job_image, 'job_image'),
             image_pull_policy=exc_config.get('image_pull_policy'),
             image_pull_secrets=exc_config.get('image_pull_secrets'),
             service_account_name=exc_config.get('service_account_name'),
@@ -181,9 +223,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             # depends on DagsterInstance.get() returning the same instance
             # https://github.com/dagster-io/dagster/issues/2757
             ExecuteRunArgs(
-                pipeline_origin=external_pipeline.get_origin(),
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
+                pipeline_origin=pipeline_origin, pipeline_run_id=run.run_id, instance_ref=None,
             )
         )
 
@@ -195,6 +235,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component='runmaster',
             resources=resources,
+            env_vars=env_vars,
         )
 
         job_namespace = exc_config.get('job_namespace')

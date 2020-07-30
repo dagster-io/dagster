@@ -20,6 +20,7 @@ service DagsterApi {
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
+  rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
 }
 
 message Empty {}
@@ -139,4 +140,8 @@ message StartRunRequest {
 
 message StartRunReply {
   string serialized_start_run_result = 1;
+}
+
+message GetCurrentImageReply {
+  string serialized_current_image = 1;
 }

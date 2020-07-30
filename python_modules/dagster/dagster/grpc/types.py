@@ -347,3 +347,17 @@ class StartRunResult(namedtuple('_StartRunResult', 'success message serializable
                 serializable_error_info, 'serializable_error_info', SerializableErrorInfo
             ),
         )
+
+
+@whitelist_for_serdes
+class GetCurrentImageResult(
+    namedtuple('_GetCurrentImageResult', 'current_image serializable_error_info')
+):
+    def __new__(cls, current_image, serializable_error_info):
+        return super(GetCurrentImageResult, cls).__new__(
+            cls,
+            current_image=check.opt_str_param(current_image, 'current_image'),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, 'serializable_error_info', SerializableErrorInfo
+            ),
+        )

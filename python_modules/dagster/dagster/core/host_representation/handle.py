@@ -167,6 +167,33 @@ class GrpcServerRepositoryLocationHandle(
             check.set_param(repository_names, 'repository_names', of_type=str),
         )
 
+    def get_current_image(self):
+        job_image = self.client.get_current_image().current_image
+        if not job_image:
+            raise DagsterInvariantViolationError(
+                'Unable to get current image that GRPC server is running. Please make sure that '
+                'env var DAGSTER_CURRENT_IMAGE is set in the GRPC server and contains the most '
+                'up-to-date user code image and tag. Exiting.'
+            )
+        return job_image
+
+    def get_repository_python_origin(self, repository_name):
+        check.str_param(repository_name, 'repository_name')
+
+        list_repositories_reply = self.client.list_repositories()
+        repository_code_pointer_dict = list_repositories_reply.repository_code_pointer_dict
+
+        if repository_name not in repository_code_pointer_dict:
+            raise DagsterInvariantViolationError(
+                'Unable to find repository name {} on GRPC server.'.format(repository_name)
+            )
+
+        code_pointer = repository_code_pointer_dict[repository_name]
+        return RepositoryPythonOrigin(
+            executable_path=list_repositories_reply.executable_path or sys.executable,
+            code_pointer=code_pointer,
+        )
+
 
 class PythonEnvRepositoryLocationHandle(
     namedtuple(

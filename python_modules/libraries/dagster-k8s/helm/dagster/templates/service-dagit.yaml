@@ -9,7 +9,6 @@ spec:
   type: {{ .Values.dagit.service.type | default "ClusterIP" }}
   ports:
     - port: {{ .Values.dagit.service.port | default 80 }}
-      targetPort: http
       protocol: TCP
       name: http
   selector:

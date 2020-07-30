@@ -69,7 +69,54 @@ dagit:
     failureThreshold: 12
 
 ####################################################################################################
-# Pipeline Run: Configuration for user code containers
+# User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
+# each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
+# GRPC server that Dagit/Dagster communicates with to get repository information and the current
+# image information. These deployments can be updated independently of Dagit, and Dagit/Dagster
+# will pull the current image for all execution. When using a distributed executor (such as
+# Celery-K8s) for pipeline run, the current image will be queried once and used for all
+# solid executions for that pipeline run. In order to guarantee that all solid executions within a
+# pipeline execution use the same image, we recommend using a unique tag (ie not "latest").
+#
+# All user code will be invoked within the images.
+####################################################################################################
+userDeployments:
+  # Whether launching user deployments is enabled.
+  enabled: false
+  # List of unique deployments
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "dagster/k8s-example-user-code-1"
+        tag: latest
+        pullPolicy: Always
+      # Arguments to `dagster api grpc`.
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # would translate to:
+      # dagsterApiGrpcArgs:
+      #   - "-m"
+      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "-a"
+      #   - "define_demo_execution_repo"
+      dagsterApiGrpcArgs:
+        - ""
+      port: 3030
+      env:
+        YOUR_ENV_VAR: ""
+      env_config_maps:
+        - ""
+      env_secrets:
+        - ""
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      podSecurityContext: {}
+      securityContext: {}
+      resources: {}
+      replicaCount: 1
+
+####################################################################################################
+# (Deprecated) Pipeline Run: Configuration for user code containers
 #
 # All user code will be invoked within the image specified here.
 ####################################################################################################

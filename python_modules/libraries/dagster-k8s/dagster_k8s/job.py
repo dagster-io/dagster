@@ -107,7 +107,7 @@ class DagsterK8sJobConfig(
 
     def __new__(
         cls,
-        job_image,
+        job_image=None,
         dagster_home=None,
         image_pull_policy=None,
         image_pull_secrets=None,
@@ -119,7 +119,7 @@ class DagsterK8sJobConfig(
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
-            job_image=check.str_param(job_image, 'job_image'),
+            job_image=check.opt_str_param(job_image, 'job_image'),
             dagster_home=check.opt_str_param(
                 dagster_home, 'dagster_home', default=DAGSTER_HOME_DEFAULT
             ),
@@ -180,10 +180,12 @@ class DagsterK8sJobConfig(
         '''
         return {
             'job_image': Field(
-                StringSource,
-                is_required=True,
-                description='Docker image to use for launched task Jobs '
-                '(e.g. "mycompany.com/dagster-k8s-image:latest").',
+                Noneable(StringSource),
+                is_required=False,
+                description='Docker image to use for launched task Jobs. If the repository is not '
+                'loaded from a GRPC server, then this field is required. If the repository is '
+                'loaded from a GRPC server, then leave this field empty.'
+                '(Ex: "mycompany.com/dagster-k8s-image:latest").',
             ),
             'image_pull_policy': Field(
                 StringSource,
@@ -252,7 +254,14 @@ class DagsterK8sJobConfig(
 
 
 def construct_dagster_k8s_job(
-    job_config, command, args, job_name, resources=None, pod_name=None, component=None
+    job_config,
+    command,
+    args,
+    job_name,
+    resources=None,
+    pod_name=None,
+    component=None,
+    env_vars=None,
 ):
     '''Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
@@ -267,6 +276,7 @@ def construct_dagster_k8s_job(
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
             app.kubernetes.io/component. Defaults to None.
+        env_vars(Dict[str, str]): Additional environment variables to add to the K8s Container.
 
     Returns:
         kubernetes.client.V1Job: A Kubernetes Job object.
@@ -278,6 +288,7 @@ def construct_dagster_k8s_job(
     check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
     pod_name = check.opt_str_param(pod_name, 'pod_name', default=job_name + '-pod')
     check.opt_str_param(component, 'component')
+    check.opt_dict_param(env_vars, 'env_vars', key_type=str, value_type=str)
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
@@ -302,6 +313,11 @@ def construct_dagster_k8s_job(
     if component:
         dagster_labels['app.kubernetes.io/component'] = component
 
+    additional_k8s_env_vars = []
+    if env_vars:
+        for key, value in env_vars.items():
+            additional_k8s_env_vars.append(kubernetes.client.V1EnvVar(name=key, value=value))
+
     job_container = kubernetes.client.V1Container(
         name=job_name,
         image=job_config.job_image,
@@ -318,7 +334,8 @@ def construct_dagster_k8s_job(
                     )
                 ),
             ),
-        ],
+        ]
+        + additional_k8s_env_vars,
         env_from=job_config.env_from_sources,
         resources=kubernetes.client.V1ResourceRequirements(**resources) if resources else None,
         volume_mounts=[

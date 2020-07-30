@@ -1,0 +1,20 @@
+{{- if .Values.userDeployments.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "dagster.fullname" . }}-workspace-yaml
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  workspace.yaml: |
+    load_from:
+      {{- range $deployment := .Values.userDeployments.deployments }}
+      - grpc_server:
+          host: {{ $deployment.name }}
+          port: {{ $deployment.port }}
+          location_name: {{ $deployment.name }}
+      {{- end }}
+{{- end }}

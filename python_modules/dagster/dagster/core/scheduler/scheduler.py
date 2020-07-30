@@ -8,7 +8,7 @@ from dagster import check
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import SchedulePythonOrigin
+from dagster.core.origin import ScheduleOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -120,7 +120,7 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
         return super(ScheduleState, cls).__new__(
             cls,
             # Using the term "origin" to leave flexibility in handling future types
-            check.inst_param(origin, 'origin', SchedulePythonOrigin),
+            check.inst_param(origin, 'origin', ScheduleOrigin),
             check.inst_param(status, 'status', ScheduleStatus),
             check.str_param(cron_schedule, 'cron_schedule'),
         )
@@ -132,7 +132,7 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
     @property
     def pipeline_origin(self):
         # Set up for future proofing
-        check.invariant(isinstance(self.origin, SchedulePythonOrigin))
+        check.invariant(isinstance(self.origin, ScheduleOrigin))
         return self.origin
 
     @property

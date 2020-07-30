@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ROOT=$(git rev-parse --show-toplevel)
-BASE_DIR="${ROOT}/python_modules/dagster-test/"
+BASE_DIR="${ROOT}/python_modules/dagster-test"
 
 function cleanup {
     rm -rf "${BASE_DIR}/modules"

@@ -1,3 +1,5 @@
+import os
+
 import kubernetes
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
@@ -102,7 +104,7 @@ def celery_k8s_job_executor(init_context):
         dagster_home=run_launcher.dagster_home,
         instance_config_map=run_launcher.instance_config_map,
         postgres_password_secret=run_launcher.postgres_password_secret,
-        job_image=exc_cfg.get('job_image'),
+        job_image=exc_cfg.get('job_image') or os.getenv('DAGSTER_CURRENT_IMAGE'),
         image_pull_policy=exc_cfg.get('image_pull_policy'),
         image_pull_secrets=exc_cfg.get('image_pull_secrets'),
         service_account_name=exc_cfg.get('service_account_name'),

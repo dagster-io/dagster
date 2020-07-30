@@ -38,9 +38,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         self._grpc_run_launcher.initialize(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        repository_location_handle = (
-            external_pipeline.handle.repository_handle.repository_location_handle
-        )
+        repository_location_handle = external_pipeline.repository_handle.repository_location_handle
         if isinstance(repository_location_handle, GRPC_REPOSITORY_LOCATION_HANDLE_TYPES,):
             return self._grpc_run_launcher.launch_run(instance, run, external_pipeline)
         else:
