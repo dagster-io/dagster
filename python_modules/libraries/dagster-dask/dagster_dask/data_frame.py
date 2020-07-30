@@ -46,12 +46,21 @@ def dict_without_keys(ddict, *keys):
                     'single_file': Field(
                         Bool,
                         is_required=False,
-                        description="Whether to save everything into a single CSV file. Under the single file mode, each partition is appended at the end of the specified CSV file. Note that not all filesystems support the append mode and thus the single file mode, especially on cloud storage systems such as S3 or GCS. A warning will be issued when writing to a file that is not backed by a local filesystem.",
+                        description="""
+                            Whether to save everything into a single CSV file.
+                            Under the single file mode, each partition is appended at the end of the specified CSV file.
+                            Note that not all filesystems support the append mode and thus the single file mode,
+                            especially on cloud storage systems such as S3 or GCS.
+                            A warning will be issued when writing to a file that is not backed by a local filesystem.
+                        """,
                     ),
                     'encoding': Field(
                         String,
                         is_required=False,
-                        description="A string representing the encoding to use in the output file, defaults to 'ascii' on Python 2 and 'utf-8' on Python 3.",
+                        description="""
+                            A string representing the encoding to use in the output file,
+                            defaults to 'ascii' on Python 2 and 'utf-8' on Python 3.
+                        """,
                     ),
                     'mode': Field(
                         String, is_required=False, description="Python write mode, default 'w'",
@@ -59,12 +68,18 @@ def dict_without_keys(ddict, *keys):
                     'compression': Field(
                         WriteCompressionTextOptions,
                         is_required=False,
-                        description="a string representing the compression to use in the output file, allowed values are 'gzip', 'bz2', 'xz'",
+                        description="""
+                            a string representing the compression to use in the output file,
+                            allowed values are 'gzip', 'bz2', 'xz'.
+                        """,
                     ),
                     'compute': Field(
                         Bool,
                         is_required=False,
-                        description="If true, immediately executes. If False, returns a set of delayed objects, which can be computed at a later time.",
+                        description="""
+                            If true, immediately executes.
+                            If False, returns a set of delayed objects, which can be computed at a later time.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
@@ -74,7 +89,13 @@ def dict_without_keys(ddict, *keys):
                     'header_first_partition_only': Field(
                         Bool,
                         is_required=False,
-                        description="If set to `True`, only write the header row in the first output file. By default, headers are written to all partitions under the multiple file mode (`single_file` is `False`) and written only once under the single file mode (`single_file` is `True`). It must not be `False` under the single file mode.",
+                        description="""
+                            If set to `True`, only write the header row in the first output file.
+                            By default, headers are written to all partitions
+                            under the multiple file mode (`single_file` is `False`)
+                            and written only once under the single file mode (`single_file` is `True`).
+                            It must not be `False` under the single file mode.
+                        """,
                     ),
                     'compute_kwargs': Field(
                         Permissive(),
@@ -88,17 +109,27 @@ def dict_without_keys(ddict, *keys):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or pathlib.Path, Destination directory for data. Prepend with protocol like ``s3://`` or ``hdfs://`` for remote data.",
+                        description="""
+                            str or pathlib.Path, Destination directory for data.
+                            Prepend with protocol like ``s3://`` or ``hdfs://`` for remote data.
+                        """,
                     ),
                     'engine': Field(
                         EngineParquetOptions,
                         is_required=False,
-                        description="{'auto', 'fastparquet', 'pyarrow'}, default 'auto' Parquet library to use. If only one library is installed, it will use that one; if both, it will use 'fastparquet'.",
+                        description="""
+                            {'auto', 'fastparquet', 'pyarrow'}, default 'auto' Parquet library to use.
+                            If only one library is installed, it will use that one; if both, it will use 'fastparquet'.
+                        """,
                     ),
                     'compression': Field(
                         Any,
                         is_required=False,
-                        description="str or dict, optional Either a string like ``'snappy'`` or a dictionary mapping column names to compressors like ``{'name': 'gzip', 'values': 'snappy'}``. The default is ``'default'``, which uses the default compression for whichever engine is selected.",
+                        description="""
+                        str or dict, optional Either a string like ``'snappy'``
+                        or a dictionary mapping column names to compressors like ``{'name': 'gzip', 'values': 'snappy'}``.
+                        The default is ``'default'``, which uses the default compression for whichever engine is selected.
+                        """,
                     ),
                     'write_index': Field(
                         Bool,
@@ -108,17 +139,27 @@ def dict_without_keys(ddict, *keys):
                     'append': Field(
                         Bool,
                         is_required=False,
-                        description="If False (default), construct data-set from scratch. If True, add new row-group(s) to an existing data-set. In the latter case, the data-set must exist, and the schema must match the input data.",
+                        description="""
+                            If False (default), construct data-set from scratch.
+                            If True, add new row-group(s) to an existing data-set.
+                            In the latter case, the data-set must exist, and the schema must match the input data.
+                        """,
                     ),
                     'ignore_divisions': Field(
                         Bool,
                         is_required=False,
-                        description="If False (default) raises error when previous divisions overlap with the new appended divisions. Ignored if append=False.",
+                        description="""
+                            If False (default) raises error when previous divisions overlap with the new appended divisions.
+                            Ignored if append=False.
+                        """,
                     ),
                     'partition_on': Field(
                         list,
                         is_required=False,
-                        description="Construct directory-based partitioning by splitting on these fields values. Each dask partition will result in one or more datafiles, there will be no global groupby.",
+                        description="""
+                            Construct directory-based partitioning by splitting on these fields values.
+                            Each dask partition will result in one or more datafiles, there will be no global groupby.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
@@ -133,7 +174,10 @@ def dict_without_keys(ddict, *keys):
                     'compute': Field(
                         Bool,
                         is_required=False,
-                        description="If True (default) then the result is computed immediately. If False then a ``dask.delayed`` object is returned for future computation.",
+                        description="""
+                            If True (default) then the result is computed immediately.
+                            If False then a ``dask.delayed`` object is returned for future computation.
+                        """,
                     ),
                     'compute_kwargs': Field(
                         Permissive(),
@@ -147,22 +191,32 @@ def dict_without_keys(ddict, *keys):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or pathlib.Path, Path to a target filename. Supports strings, ``pathlib.Path``, or any object implementing the ``__fspath__`` protocol. May contain a ``*`` to denote many filenames.",
+                        description="""
+                            str or pathlib.Path, Path to a target filename.
+                            Supports strings, ``pathlib.Path``, or any object implementing the ``__fspath__`` protocol.
+                            May contain a ``*`` to denote many filenames.
+                        """,
                     ),
                     'key': Field(
                         String,
                         is_required=True,
-                        description="Datapath within the files. May contain a ``*`` to denote many locations",
+                        description="""
+                            Datapath within the files.
+                            May contain a ``*`` to denote many locations.
+                        """,
                     ),
                     'compute': Field(
                         Bool,
                         is_required=False,
-                        description="Whether or not to execute immediately.  If False then this returns a ``dask.Delayed`` value.",
+                        description="""
+                            Whether or not to execute immediately.
+                            If False then this returns a ``dask.Delayed`` value.
+                        """,
                     ),
                     'scheduler': Field(
                         String,
                         is_required=False,
-                        description="The scheduler to use, like 'threads' or 'processes'",
+                        description="The scheduler to use, like 'threads' or 'processes'.",
                     ),
                 }
             ),
@@ -171,17 +225,23 @@ def dict_without_keys(ddict, *keys):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Location to write to. If a string, and there are more than one partitions in df, should include a glob character to expand into a set of file names, or provide a ``name_function=`` parameter. Supports protocol specifications such as ``'s3://'``.",
+                        description="""
+                            str or list, Location to write to.
+                            If a string, and there are more than one partitions in df,
+                            should include a glob character to expand into a set of file names,
+                            or provide a ``name_function=`` parameter.
+                            Supports protocol specifications such as ``'s3://'``.
+                        """,
                     ),
                     'encoding': Field(
                         String,
                         is_required=False,
-                        description="default is 'utf-8', The text encoding to implement, e.g., 'utf-8'",
+                        description="default is 'utf-8', The text encoding to implement, e.g., 'utf-8'.",
                     ),
                     'errors': Field(
                         String,
                         is_required=False,
-                        description="default is 'strict', how to respond to errors in the conversion (see ``str.encode()``)",
+                        description="default is 'strict', how to respond to errors in the conversion (see ``str.encode()``).",
                     ),
                     'storage_options': Field(
                         Permissive(),
@@ -191,7 +251,10 @@ def dict_without_keys(ddict, *keys):
                     'compute': Field(
                         Bool,
                         is_required=False,
-                        description="If true, immediately executes. If False, returns a set of delayed objects, which can be computed at a later time.",
+                        description="""
+                            If true, immediately executes.
+                            If False, returns a set of delayed objects, which can be computed at a later time.
+                        """,
                     ),
                     'compute_kwargs': Field(
                         Permissive(),
@@ -230,22 +293,37 @@ def dict_without_keys(ddict, *keys):
                     'index': Field(
                         Bool,
                         is_required=False,
-                        description="default is True, Write DataFrame index as a column. Uses `index_label` as the column name in the table.",
+                        description="""
+                            default is True, Write DataFrame index as a column.
+                            Uses `index_label` as the column name in the table.
+                        """,
                     ),
                     'index_label': Field(
                         Any,
                         is_required=False,
-                        description="str or sequence, default None Column label for index column(s). If None is given (default) and `index` is True, then the index names are used. A sequence should be given if the DataFrame uses MultiIndex.",
+                        description="""
+                            str or sequence, default None Column label for index column(s).
+                            If None is given (default) and `index` is True, then the index names are used.
+                            A sequence should be given if the DataFrame uses MultiIndex.
+                        """,
                     ),
                     'chunksize': Field(
                         Int,
                         is_required=False,
-                        description="Specify the number of rows in each batch to be written at a time. By default, all rows will be written at once",
+                        description="""
+                            Specify the number of rows in each batch to be written at a time.
+                            By default, all rows will be written at once.
+                        """,
                     ),
                     'dtype': Field(
                         Any,
                         is_required=False,
-                        description="dict or scalar, Specifying the datatype for columns. If a dictionary is used, the keys should be the column names and the values should be the SQLAlchemy types or strings for the sqlite3 legacy mode. If a scalar is provided, it will be applied to all columns.",
+                        description="""
+                            dict or scalar, Specifying the datatype for columns.
+                            If a dictionary is used, the keys should be the column names
+                            and the values should be the SQLAlchemy types or strings for the sqlite3 legacy mode.
+                            If a scalar is provided, it will be applied to all columns.
+                        """,
                     ),
                     'method': Field(
                         String,
@@ -263,12 +341,19 @@ def dict_without_keys(ddict, *keys):
                     'compute': Field(
                         Bool,
                         is_required=False,
-                        description="default is True, When true, call dask.compute and perform the load into SQL; otherwise, return a Dask object (or array of per-block objects when parallel=True)",
+                        description="""
+                            default is True, When true, call dask.compute and perform the load into SQL;
+                            otherwise, return a Dask object (or array of per-block objects when parallel=True).
+                        """,
                     ),
                     'parallel': Field(
                         Bool,
                         is_required=False,
-                        description="default is False, When true, have each block append itself to the DB table concurrently. This can result in DB rows being in a different order than the source DataFrame's corresponding rows. When false, load each block into the SQL DB in sequence.",
+                        description="""
+                            default is False, When true, have each block append itself to the DB table concurrently.
+                            This can result in DB rows being in a different order than the source DataFrame's corresponding rows.
+                            When false, load each block into the SQL DB in sequence.
+                        """,
                     ),
                 },
             ),
@@ -304,12 +389,21 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Absolute or relative filepath(s). Prefix with a protocol like `s3://` to read from alternative filesystems. To read from multiple files you can pass a globstring or a list of paths, with the caveat that they must all have the same protocol.",
+                        description="""
+                            str or list, Absolute or relative filepath(s).
+                            Prefix with a protocol like `s3://` to read from alternative filesystems.
+                            To read from multiple files you can pass a globstring or a list of paths,
+                            with the caveat that they must all have the same protocol.
+                        """,
                     ),
                     'blocksize': Field(
                         Any,
                         is_required=False,
-                        description="str or int or None, Number of bytes by which to cut up larger files. Default value is computed based on available physical memory and the number of cores, up to a maximum of 64MB. Can be a number like 64000000` or a string like ``'64MB'. If None, a single block is used for each file.",
+                        description="""
+                        str or int or None, Number of bytes by which to cut up larger files.
+                        Default value is computed based on available physical memory and the number of cores, up to a maximum of 64MB.
+                        Can be a number like 64000000` or a string like ``'64MB'. If None, a single block is used for each file.
+                        """,
                     ),
                     'sample': Field(
                         Int,
@@ -319,17 +413,27 @@ def dataframe_materializer(_context, config, dask_df):
                     'assume_missing': Field(
                         Bool,
                         is_required=False,
-                        description="If True, all integer columns that aren’t specified in `dtype` are assumed to contain missing values, and are converted to floats. Default is False.",
+                        description="""
+                            If True, all integer columns that aren’t specified in `dtype` are assumed to contain missing values,
+                            and are converted to floats. Default is False.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
                         is_required=False,
-                        description="Extra options that make sense for a particular storage connection, e.g. host, port, username, password, etc.",
+                        description="""
+                            Extra options that make sense for a particular storage connection,
+                            e.g. host, port, username, password, etc.
+                        """,
                     ),
                     'include_path_column': Field(
                         Any,
                         is_required=False,
-                        description="bool or str, Whether or not to include the path to each particular file. If True a new column is added to the dataframe called path. If str, sets new column name. Default is False.",
+                        description="""
+                            bool or str, Whether or not to include the path to each particular file.
+                            If True a new column is added to the dataframe called path.
+                            If str, sets new column name. Default is False.
+                        """,
                     ),
                 }
             ),
@@ -338,33 +442,41 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Source directory for data, or path(s) to individual parquet files. Prefix with a protocol like s3:// to read from alternative filesystems. To read from multiple files you can pass a globstring or a list of paths, with the caveat that they must all have the same protocol.",
+                        description="""
+                            str or list, Source directory for data, or path(s) to individual parquet files.
+                            Prefix with a protocol like s3:// to read from alternative filesystems.
+                            To read from multiple files you can pass a globstring or a list of paths,
+                            with the caveat that they must all have the same protocol.
+                        """,
                     ),
                     'columns': Field(
                         Any,
                         is_required=False,
-                        description="str or list or None (default), Field name(s) to read in as columns in the output. By default all non-index fields will be read (as determined by the pandas parquet metadata, if present). Provide a single field name instead of a list to read in the data as a Series.",
-                    ),
-                    'filters': Field(
-                        Any,
-                        is_required=False,
                         description="""
-                            Union[List[Tuple[str, str, Any]], List[List[Tuple[str, str, Any]]]],
-                            List of filters to apply, like [[('x', '=', 0), ...], ...].
-                            This implements partition-level (hive) filtering only, i.e., to prevent the loading of some row-groups and/or files.
-                            Predicates can be expressed in disjunctive normal form (DNF). This means that the innermost tuple describes a single column predicate. These inner predicates are combined with an AND conjunction into a larger predicate. The outer-most list then combines all of the combined filters with an OR disjunction.
-                            Predicates can also be expressed as a List[Tuple]. These are evaluated as an AND conjunction. To express OR in predictates, one must use the (preferred) List[List[Tuple]] notation.
+                            str or list or None (default), Field name(s) to read in as columns in the output.
+                            By default all non-index fields will be read (as determined by the pandas parquet metadata, if present).
+                            Provide a single field name instead of a list to read in the data as a Series.
                         """,
                     ),
                     'index': Field(
                         Any,
                         is_required=False,
-                        description="list or False or None (default), Field name(s) to use as the output frame index. By default will be inferred from the pandas parquet file metadata (if present). Use False to read all fields as columns.",
+                        description="""
+                            list or False or None (default), Field name(s) to use as the output frame index.
+                            By default will be inferred from the pandas parquet file metadata (if present).
+                            Use False to read all fields as columns.
+                        """,
                     ),
                     'categories': Field(
                         Any,
                         is_required=False,
-                        description="list or dict or None, For any fields listed here, if the parquet encoding is Dictionary, the column will be created with dtype category. Use only if it is guaranteed that the column is encoded as dictionary in all row-groups. If a list, assumes up to 2**16-1 labels; if a dict, specify the number of labels expected; if None, will load categories automatically for data written by dask/fastparquet, not otherwise.",
+                        description="""
+                            list or dict or None, For any fields listed here,
+                            if the parquet encoding is Dictionary, the column will be created with dtype category.
+                            Use only if it is guaranteed that the column is encoded as dictionary in all row-groups.
+                            If a list, assumes up to 2**16-1 labels; if a dict, specify the number of labels expected;
+                            if None, will load categories automatically for data written by dask/fastparquet, not otherwise.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
@@ -374,22 +486,40 @@ def dataframe_materializer(_context, config, dask_df):
                     'engine': Field(
                         EngineParquetOptions,
                         is_required=False,
-                        description="Parquet reader library to use. If only one library is installed, it will use that one; if both, it will use ‘fastparquet’",
+                        description="""
+                            Parquet reader library to use.
+                            If only one library is installed, it will use that one;
+                            if both, it will use ‘fastparquet’.
+                        """,
                     ),
                     'gather_statistics': Field(
                         Bool,
                         is_required=False,
-                        description="default is None, Gather the statistics for each dataset partition. By default, this will only be done if the _metadata file is available. Otherwise, statistics will only be gathered if True, because the footer of every file will be parsed (which is very slow on some systems).",
+                        description="""
+                            default is None, Gather the statistics for each dataset partition.
+                            By default, this will only be done if the _metadata file is available.
+                            Otherwise, statistics will only be gathered if True,
+                            because the footer of every file will be parsed (which is very slow on some systems).
+                        """,
                     ),
                     'split_row_groups:': Field(
                         Bool,
                         is_required=False,
-                        description="If True (default) then output dataframe partitions will correspond to parquet-file row-groups (when enough row-group metadata is available). Otherwise, partitions correspond to distinct files. Only the “pyarrow” engine currently supports this argument.",
+                        description="""
+                            If True (default) then output dataframe partitions will correspond
+                            to parquet-file row-groups (when enough row-group metadata is available).
+                            Otherwise, partitions correspond to distinct files.
+                            Only the “pyarrow” engine currently supports this argument.
+                        """,
                     ),
                     'chunksize': Field(
                         Any,
                         is_required=False,
-                        description="int or string, The target task partition size. If set, consecutive row-groups from the same file will be aggregated into the same output partition until the aggregate size reaches this value.",
+                        description="""
+                            int or string, The target task partition size.
+                            If set, consecutive row-groups from the same file will be aggregated
+                            into the same output partition until the aggregate size reaches this value.
+                        """,
                     ),
                 }
             ),
@@ -398,7 +528,11 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or pathlib.Path or list, File pattern (string), pathlib.Path, buffer to read from, or list of file paths. Can contain wildcards.",
+                        description="""
+                            str or pathlib.Path or list,
+                            File pattern (string), pathlib.Path, buffer to read from, or list of file paths.
+                            Can contain wildcards.
+                        """,
                     ),
                     'Key': Field(
                         Any,
@@ -452,7 +586,11 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Location to read from. If a string, can include a glob character to find a set of file names. Supports protocol specifications such as 's3://'.",
+                        description="""
+                            str or list, Location to read from.
+                            If a string, can include a glob character to find a set of file names.
+                            Supports protocol specifications such as 's3://'.
+                        """,
                     ),
                     'encoding': Field(
                         String,
@@ -472,12 +610,20 @@ def dataframe_materializer(_context, config, dask_df):
                     'blocksize': Field(
                         Int,
                         is_required=False,
-                        description="default is None, If None, files are not blocked, and you get one partition per input file. If int, which can only be used for line-delimited JSON files, each partition will be approximately this size in bytes, to the nearest newline character.",
+                        description="""
+                            default is None, If None, files are not blocked, and you get one partition per input file.
+                            If int, which can only be used for line-delimited JSON files,
+                            each partition will be approximately this size in bytes, to the nearest newline character.
+                        """,
                     ),
                     'sample': Field(
                         Int,
                         is_required=False,
-                        description="Number of bytes to pre-load, to provide an empty dataframe structure to any blocks without data. Only relevant is using blocksize.",
+                        description="""
+                            Number of bytes to pre-load,
+                            to provide an empty dataframe structure to any blocks without data.
+                            Only relevant is using blocksize.
+                        """,
                     ),
                     'compression': Field(
                         String,
@@ -502,35 +648,55 @@ def dataframe_materializer(_context, config, dask_df):
                         String,
                         is_required=True,
                         description="""
-                            Column which becomes the index, and defines the partitioning. Should be a indexed column in the SQL server, and any orderable type. If the type is number or time, then partition boundaries can be inferred from npartitions or bytes_per_chunk; otherwide must supply explicit divisions=. index_col could be a function to return a value, e.g., sql.func.abs(sql.column('value')).label('abs(value)'). index_col=sql.func.abs(sql.column("value")).label("abs(value)"), or index_col=cast(sql.column("id"),types.BigInteger).label("id") to convert the textfield id to BigInteger.
-                            Note sql, cast, types methods comes frome sqlalchemy module.
-                            Labeling columns created by functions or arithmetic operations is required
+                        Column which becomes the index, and defines the partitioning.
+                        Should be a indexed column in the SQL server, and any orderable type.
+                        If the type is number or time, then partition boundaries can be inferred from npartitions or bytes_per_chunk;
+                        otherwide must supply explicit divisions=.
+                        index_col could be a function to return a value, e.g., sql.func.abs(sql.column('value')).label('abs(value)').
+                        index_col=sql.func.abs(sql.column("value")).label("abs(value)"),
+                        or index_col=cast(sql.column("id"),types.BigInteger).label("id") to convert the textfield id to BigInteger.
+                        Note sql, cast, types methods comes frome sqlalchemy module.
+                        Labeling columns created by functions or arithmetic operations is required
                         """,
                     ),
                     'divisions': Field(
                         Any,
                         is_required=False,
-                        description="sequence, Values of the index column to split the table by. If given, this will override npartitions and bytes_per_chunk. The divisions are the value boundaries of the index column used to define the partitions. For example, divisions=list('acegikmoqsuwz') could be used to partition a string column lexographically into 12 partitions, with the implicit assumption that each partition contains similar numbers of records.",
+                        description="""
+                            sequence, Values of the index column to split the table by.
+                            If given, this will override npartitions and bytes_per_chunk.
+                            The divisions are the value boundaries of the index column used to define the partitions.
+                            For example, divisions=list('acegikmoqsuwz') could be used
+                            to partition a string column lexographically into 12 partitions,
+                            with the implicit assumption that each partition contains similar numbers of records.
+                        """,
                     ),
                     'npartitions': Field(
                         Int,
                         is_required=False,
-                        description="Number of partitions, if divisions is not given. Will split the values of the index column linearly between limits, if given, or the column max/min. The index column must be numeric or time for this to work.",
-                    ),
-                    'limits': Field(
-                        Any,
-                        is_required=False,
-                        description="2-tuple or None, Manually give upper and lower range of values for use with npartitions; if None, first fetches max/min from the DB. Upper limit, if given, is inclusive.",
+                        description="""
+                            Number of partitions, if divisions is not given.
+                            Will split the values of the index column linearly between limits, if given, or the column max/min.
+                            The index column must be numeric or time for this to work.
+                        """,
                     ),
                     'columns': Field(
                         Any,
                         is_required=False,
-                        description="list of strings or None, Which columns to select; if None, gets all; can include sqlalchemy functions, e.g., sql.func.abs(sql.column('value')).label('abs(value)'). Labeling columns created by functions or arithmetic operations is recommended.",
+                        description="""
+                            list of strings or None, Which columns to select;
+                            if None, gets all; can include sqlalchemy functions,
+                            e.g., sql.func.abs(sql.column('value')).label('abs(value)').
+                            Labeling columns created by functions or arithmetic operations is recommended.
+                        """,
                     ),
                     'bytes_per_chunk': Field(
                         Any,
                         is_required=False,
-                        description="str or int, If both divisions and npartitions is None, this is the target size of each partition, in bytes.",
+                        description="""
+                            str or int, If both divisions and npartitions is None,
+                            this is the target size of each partition, in bytes.
+                        """,
                     ),
                     'head_rows': Field(
                         Int,
@@ -540,7 +706,10 @@ def dataframe_materializer(_context, config, dask_df):
                     'schema': Field(
                         String,
                         is_required=False,
-                        description="If using a table name, pass this to sqlalchemy to select which DB schema to use within the URI connection.",
+                        description="""
+                            If using a table name, pass this to sqlalchemy to select
+                            which DB schema to use within the URI connection.
+                        """,
                     ),
                 }
             ),
@@ -549,12 +718,22 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Absolute or relative filepath(s). Prefix with a protocol like 's3://' to read from alternative filesystems. To read from multiple files you can pass a globstring or a list of paths, with the caveat that they must all have the same protocol.",
+                        description="""
+                            str or list, Absolute or relative filepath(s).
+                            Prefix with a protocol like 's3://' to read from alternative filesystems.
+                            To read from multiple files you can pass a globstring or a list of paths,
+                            with the caveat that they must all have the same protocol.
+                        """,
                     ),
                     'blocksize': Field(
                         Any,
                         is_required=False,
-                        description="str or int or None, Number of bytes by which to cut up larger files. Default value is computed based on available physical memory and the number of cores, up to a maximum of 64MB. Can be a number like 64000000` or a string like ``'64MB'. If None, a single block is used for each file.",
+                        description="""
+                            str or int or None, Number of bytes by which to cut up larger files.
+                            Default value is computed based on available physical memory and the number of cores,
+                            up to a maximum of 64MB. Can be a number like 64000000` or a string like ``'64MB'.
+                            If None, a single block is used for each file.
+                        """,
                     ),
                     'sample': Field(
                         Int,
@@ -564,17 +743,27 @@ def dataframe_materializer(_context, config, dask_df):
                     'assume_missing': Field(
                         Bool,
                         is_required=False,
-                        description="If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats. Default is False.",
+                        description="""
+                            If True, all integer columns that aren’t specified in dtype are assumed to contain missing values,
+                            and are converted to floats. Default is False.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
                         is_required=False,
-                        description="Extra options that make sense for a particular storage connection, e.g. host, port, username, password, etc.",
+                        description="""
+                            Extra options that make sense for a particular storage connection,
+                            e.g. host, port, username, password, etc.
+                        """,
                     ),
                     'include_path_column': Field(
                         Any,
                         is_required=False,
-                        description="bool or str, Whether or not to include the path to each particular file. If True a new column is added to the dataframe called path. If str, sets new column name. Default is False.",
+                        description="""
+                            bool or str, Whether or not to include the path to each particular file.
+                            If True a new column is added to the dataframe called path.
+                            If str, sets new column name. Default is False.
+                        """,
                     ),
                 }
             ),
@@ -583,12 +772,23 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Absolute or relative filepath(s). Prefix with a protocol like 's3://' to read from alternative filesystems. To read from multiple files you can pass a globstring or a list of paths, with the caveat that they must all have the same protocol.",
+                        description="""
+                            str or list, Absolute or relative filepath(s).
+                            Prefix with a protocol like 's3://' to read from alternative filesystems.
+                            To read from multiple files you can pass a globstring or a list of paths,
+                            with the caveat that they must all have the same protocol.
+                        """,
                     ),
                     'blocksize': Field(
                         Any,
                         is_required=False,
-                        description="str or int or None, Number of bytes by which to cut up larger files. Default value is computed based on available physical memory and the number of cores, up to a maximum of 64MB. Can be a number like 64000000` or a string like ``'64MB'. If None, a single block is used for each file.",
+                        description="""
+                            str or int or None, Number of bytes by which to cut up larger files.
+                            Default value is computed based on available physical memory
+                            and the number of cores up to a maximum of 64MB.
+                            Can be a number like 64000000` or a string like ``'64MB'.
+                            If None, a single block is used for each file.
+                        """,
                     ),
                     'sample': Field(
                         Int,
@@ -598,17 +798,28 @@ def dataframe_materializer(_context, config, dask_df):
                     'assume_missing': Field(
                         Bool,
                         is_required=False,
-                        description="If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats. Default is False.",
+                        description="""
+                            If True, all integer columns that aren’t specified in dtype are assumed
+                            to contain missing values, and are converted to floats.
+                            Default is False.
+                        """,
                     ),
                     'storage_options': Field(
                         Permissive(),
                         is_required=False,
-                        description="Extra options that make sense for a particular storage connection, e.g. host, port, username, password, etc.",
+                        description="""
+                            Extra options that make sense for a particular storage connection,
+                            e.g. host, port, username, password, etc.
+                        """,
                     ),
                     'include_path_column': Field(
                         Any,
                         is_required=False,
-                        description="bool or str, Whether or not to include the path to each particular file. If True a new column is added to the dataframe called path. If str, sets new column name. Default is False.",
+                        description="""
+                            bool or str, Whether or not to include the path to each particular file.
+                            If True a new column is added to the dataframe called path.
+                            If str, sets new column name. Default is False.
+                        """,
                     ),
                 }
             ),
@@ -617,7 +828,11 @@ def dataframe_materializer(_context, config, dask_df):
                     'path': Field(
                         Any,
                         is_required=True,
-                        description="str or list, Location of file(s), which can be a full URL with protocol specifier, and may include glob character if a single string.",
+                        description="""
+                            str or list, Location of file(s),
+                            which can be a full URL with protocol specifier,
+                            and may include glob character if a single string.
+                        """,
                     ),
                     'columns': Field(
                         list, is_required=False, description="Columns to load. If None, loads all.",
