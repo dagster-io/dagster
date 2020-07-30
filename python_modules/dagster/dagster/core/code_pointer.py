@@ -94,7 +94,14 @@ def load_python_file(python_file, working_directory):
         try:
             module = import_module_from_path(module_name, python_file)
         except ImportError as ie:
-            sys.modules = sys_modules
+            # importing alters sys.modules in ways that may interfere with the import below, even
+            # if the import has failed.  to work around this, we need to manually clear any modules
+            # that have been cached in sys.modules due to the speculative import call
+            # Also, we are mutating sys.modules instead of straight-up assigning to sys_modules,
+            # because some packages will do similar shenanigans to sys.modules (e.g. numpy)
+            to_delete = set(sys.modules) - set(sys_modules)
+            for key in to_delete:
+                del sys.modules[key]
             error = ie
 
     if not error:

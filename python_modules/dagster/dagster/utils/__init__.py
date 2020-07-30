@@ -478,7 +478,9 @@ def restore_sys_modules():
     try:
         yield
     finally:
-        sys.modules = sys_modules
+        to_delete = set(sys.modules) - set(sys_modules)
+        for key in to_delete:
+            del sys.modules[key]
 
 
 def process_is_alive(pid):
