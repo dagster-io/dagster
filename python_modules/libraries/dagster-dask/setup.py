@@ -30,7 +30,7 @@ if __name__ == '__main__':
             'bokeh',
             'dagster',
             'dagster_graphql',
-            'dask>=1.2.2',
+            'dask[dataframe]>=1.2.2',
             'distributed>=1.28.1',
         ],
         extras_require={
