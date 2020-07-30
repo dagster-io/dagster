@@ -3,7 +3,6 @@ import datetime
 import errno
 import functools
 import inspect
-import multiprocessing
 import os
 import re
 import signal
@@ -22,7 +21,7 @@ from six.moves import configparser
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, thread
+from dagster.seven import IS_WINDOWS, multiprocessing, thread
 from dagster.seven.abc import Mapping
 from dagster.utils.merger import merge_dicts
 
@@ -199,18 +198,6 @@ def list_pull(alist, key):
     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
 
 
-def get_multiprocessing_context():
-    # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
-    # Older versions are stuck with whatever is the default on their platform (fork on
-    # Unix-like and spawn on windows)
-    #
-    # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
-    if hasattr(multiprocessing, 'get_context'):
-        return multiprocessing.get_context('spawn')
-    else:
-        return multiprocessing
-
-
 def all_none(kwargs):
     for value in kwargs.values():
         if value is not None:
@@ -328,9 +315,7 @@ def _kill_on_event(termination_event):
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 def start_termination_thread(termination_event):
-    check.inst_param(
-        termination_event, 'termination_event', ttype=type(get_multiprocessing_context().Event())
-    )
+    check.inst_param(termination_event, 'termination_event', ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
         target=_kill_on_event, args=(termination_event,), name='kill-on-event'

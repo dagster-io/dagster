@@ -10,6 +10,11 @@ from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
+    '''This run launcher launches runs synchronously, in memory, and is intended only for test.
+    
+    Use the :py:class:`dagster.DefaultRunLauncher`.
+    '''
+
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
         self._repository = None

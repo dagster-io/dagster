@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 import sys
 import time
@@ -28,6 +27,7 @@ from dagster.core.storage.event_log import (
     SqliteEventLogStorage,
 )
 from dagster.core.storage.sql import create_engine
+from dagster.seven import multiprocessing
 
 
 @contextmanager

@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.origin import PipelineOrigin, PipelinePythonOrigin
-from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.types import PipelineSubsetSnapshotArgs
 
 from .utils import execute_unary_api_cli_command
@@ -24,6 +23,8 @@ def sync_get_external_pipeline_subset(pipeline_origin, solid_selection=None):
 
 
 def sync_get_external_pipeline_subset_grpc(api_client, pipeline_origin, solid_selection=None):
+    from dagster.grpc.client import DagsterGrpcClient
+
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin)
     check.opt_list_param(solid_selection, 'solid_selection', of_type=str)

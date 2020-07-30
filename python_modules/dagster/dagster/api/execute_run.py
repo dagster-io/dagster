@@ -4,7 +4,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelineOrigin, PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import ExecuteRunArgs
 from dagster.serdes.ipc import (
     IPCErrorMessage,
@@ -63,6 +62,7 @@ def cli_api_execute_run(output_file, instance, pipeline_origin, pipeline_run):
 
 def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
     '''Asynchronously execute a run over GRPC.'''
+    from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(instance_ref, 'instance_ref', InstanceRef)

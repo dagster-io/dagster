@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 import queue
 import subprocess
@@ -28,6 +27,7 @@ from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, Repo
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
+from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin

@@ -101,6 +101,7 @@ from dagster.core.execution.results import (
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.init import InitSystemStorageContext
@@ -190,6 +191,7 @@ __all__ = [
     'CompositeSolidExecutionResult',
     'DagsterEvent',
     'DagsterEventType',
+    'DefaultRunLauncher',
     'Executor',
     'InitExecutorContext',
     'InitLoggerContext',

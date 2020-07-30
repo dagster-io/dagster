@@ -2,6 +2,7 @@
 
 import datetime
 import inspect
+import multiprocessing
 import os
 import shlex
 import signal
@@ -72,6 +73,15 @@ if sys.version_info > (3,):
     from threading import Event as ThreadingEventType  # pylint: disable=import-error
 else:
     from threading import _Event as ThreadingEventType  # pylint: disable=import-error
+
+# Set execution method to spawn, to avoid fork and to have same behavior between platforms.
+# Older versions are stuck with whatever is the default on their platform (fork on
+# Unix-like and spawn on windows)
+#
+# https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
+if hasattr(multiprocessing, 'get_context'):
+    multiprocessing = multiprocessing.get_context('spawn')
+
 
 IS_WINDOWS = os.name == 'nt'
 

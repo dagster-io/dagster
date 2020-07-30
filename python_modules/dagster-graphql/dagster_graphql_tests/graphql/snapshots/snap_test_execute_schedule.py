@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots[
-    'TestExecuteSchedule.test_tick_skip[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_tick_skip[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 0, 'ticksSkipped': 1, 'ticksStarted': 0, 'ticksSucceeded': 0},
     'ticks': [{'status': 'SKIPPED', 'tickId': '1'}],
@@ -15,7 +15,7 @@ snapshots[
 }
 
 snapshots[
-    'TestExecuteSchedule.test_tick_success[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_tick_success[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
     'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
@@ -23,7 +23,7 @@ snapshots[
 }
 
 snapshots[
-    'TestExecuteSchedule.test_should_execute_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_should_execute_scheduler_error[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 1, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 0},
     'ticks': [{'status': 'FAILURE', 'tickId': '1'}],
@@ -31,7 +31,7 @@ snapshots[
 }
 
 snapshots[
-    'TestExecuteSchedule.test_tags_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_tags_scheduler_error[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
     'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
@@ -39,7 +39,7 @@ snapshots[
 }
 
 snapshots[
-    'TestExecuteSchedule.test_run_config_scheduler_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_run_config_scheduler_error[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
     'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],
@@ -47,7 +47,7 @@ snapshots[
 }
 
 snapshots[
-    'TestExecuteSchedule.test_query_multiple_schedule_ticks[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_query_multiple_schedule_ticks[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = [
     {
         'name': 'dynamic_config',
@@ -196,7 +196,7 @@ snapshots[
 ]
 
 snapshots[
-    'TestExecuteSchedule.test_invalid_config_schedule_error[sqlite_with_cli_api_run_launcher_in_process_env] 1'
+    'TestExecuteSchedule.test_invalid_config_schedule_error[sqlite_with_default_run_launcher_in_process_env] 1'
 ] = {
     'stats': {'ticksFailed': 0, 'ticksSkipped': 0, 'ticksStarted': 0, 'ticksSucceeded': 1},
     'ticks': [{'status': 'SUCCESS', 'tickId': '1'}],

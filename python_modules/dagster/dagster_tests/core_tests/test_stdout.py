@@ -22,7 +22,7 @@ from dagster.core.execution.compute_logs import should_disable_io_stream_redirec
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import create_run_for_test
-from dagster.utils import get_multiprocessing_context
+from dagster.seven import multiprocessing
 
 HELLO_SOLID = 'HELLO SOLID'
 HELLO_RESOURCE = 'HELLO RESOURCE'
@@ -266,17 +266,16 @@ def test_multi():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
     pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
-    context = get_multiprocessing_context()
 
     step_keys = ['A', 'B', 'C']
 
     with instance.compute_log_manager.watch(pipeline_run):
-        print('outer 1')
-        print('outer 2')
-        print('outer 3')
+        print('outer 1')  # pylint: disable=print-call
+        print('outer 2')  # pylint: disable=print-call
+        print('outer 3')  # pylint: disable=print-call
 
         for step_key in step_keys:
-            process = context.Process(
+            process = multiprocessing.Process(
                 target=execute_inner, args=(step_key, pipeline_run, instance.get_ref())
             )
             process.start()

@@ -4,7 +4,6 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.client import ephemeral_grpc_api_client
 from dagster.grpc.types import (
     ExternalScheduleExecutionArgs,
     LoadableTargetOrigin,
@@ -44,6 +43,8 @@ def sync_get_external_schedule_execution_data(
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
     instance, repository_handle, schedule_name, schedule_execution_data_mode
 ):
+    from dagster.grpc.client import ephemeral_grpc_api_client
+
     origin = repository_handle.get_origin()
     with ephemeral_grpc_api_client(
         LoadableTargetOrigin(executable_path=origin.executable_path)

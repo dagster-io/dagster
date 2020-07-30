@@ -1,7 +1,7 @@
 '''Facilities for running arbitrary commands in child processes.'''
 
-import multiprocessing
 import os
+import queue
 import sys
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
@@ -9,7 +9,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
-from dagster.utils import get_multiprocessing_context
+from dagster.seven import multiprocessing
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -47,7 +47,7 @@ class ChildProcessCrashException(Exception):
     '''Thrown when the child process crashes.'''
 
 
-def _execute_command_in_child_process(queue, command):
+def _execute_command_in_child_process(event_queue, command):
     '''Wraps the execution of a ChildProcessCommand.
 
     Handles errors and communicates across a queue with the parent process.'''
@@ -55,19 +55,19 @@ def _execute_command_in_child_process(queue, command):
     check.inst_param(command, 'command', ChildProcessCommand)
 
     pid = os.getpid()
-    queue.put(ChildProcessStartEvent(pid=pid))
+    event_queue.put(ChildProcessStartEvent(pid=pid))
     try:
         for step_event in command.execute():
-            queue.put(step_event)
-        queue.put(ChildProcessDoneEvent(pid=pid))
+            event_queue.put(step_event)
+        event_queue.put(ChildProcessDoneEvent(pid=pid))
     except (Exception, KeyboardInterrupt):  # pylint: disable=broad-except
-        queue.put(
+        event_queue.put(
             ChildProcessSystemErrorEvent(
                 pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())
             )
         )
     finally:
-        queue.close()
+        event_queue.close()
 
 
 TICK = 20.0 * 1.0 / 1000.0
@@ -77,19 +77,19 @@ PROCESS_DEAD_AND_QUEUE_EMPTY = 'PROCESS_DEAD_AND_QUEUE_EMPTY'
 '''Sentinel value.'''
 
 
-def _poll_for_event(process, queue):
+def _poll_for_event(process, event_queue):
     try:
-        return queue.get(block=True, timeout=TICK)
+        return event_queue.get(block=True, timeout=TICK)
     except KeyboardInterrupt as e:
         return e
-    except multiprocessing.queues.Empty:
+    except queue.Empty:
         if not process.is_alive():
             # There is a possibility that after the last queue.get the
             # process created another event and then died. In that case
             # we want to continue draining the queue.
             try:
-                return queue.get(block=False)
-            except multiprocessing.queues.Empty:
+                return event_queue.get(block=False)
+            except queue.Empty:
                 # If the queue empty we know that there are no more events
                 # and that the process has died.
                 return PROCESS_DEAD_AND_QUEUE_EMPTY
@@ -126,11 +126,10 @@ def execute_child_process_command(command):
 
     check.inst_param(command, 'command', ChildProcessCommand)
 
-    multiprocessing_context = get_multiprocessing_context()
-    queue = multiprocessing_context.Queue()
+    event_queue = multiprocessing.Queue()
 
-    process = multiprocessing_context.Process(
-        target=_execute_command_in_child_process, args=(queue, command)
+    process = multiprocessing.Process(
+        target=_execute_command_in_child_process, args=(event_queue, command)
     )
 
     process.start()
@@ -138,7 +137,7 @@ def execute_child_process_command(command):
     completed_properly = False
 
     while not completed_properly:
-        event = _poll_for_event(process, queue)
+        event = _poll_for_event(process, event_queue)
 
         if event == PROCESS_DEAD_AND_QUEUE_EMPTY:
             break

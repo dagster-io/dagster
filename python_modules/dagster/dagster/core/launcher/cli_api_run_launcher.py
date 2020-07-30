@@ -23,8 +23,14 @@ def _is_alive(popen):
 
 class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     '''
-    This run launcher launches a new process which invokes
-    the command `dagster api execute_run`.
+    This run launcher launches a new process by invoking the command `dagster api execute_run`.
+
+    This run launcher, the associated CLI, and the homegrown IPC mechanism used to communicate with
+    the launched processes, are slated for deprecation in favor of communicating over GRPC with
+    managed server processes. You will likely not want to use the ``CliApiRunLauncher`` directly.
+    Instead, use the :py:class:`dagster.DefaultRunLauncher`, which is aware of instance- and
+    repository-level options governing whether repositories should be loaded over the CLI or over
+    GRPC, and able to switch between both.
     '''
 
     def __init__(self, inst_data=None):

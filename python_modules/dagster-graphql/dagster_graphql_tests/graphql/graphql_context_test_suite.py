@@ -6,7 +6,7 @@ import six
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
-from dagster import check, file_relative_path, seven
+from dagster import DefaultRunLauncher, check, file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     GrpcServerRepositoryLocation,
@@ -15,8 +15,6 @@ from dagster.core.host_representation import (
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.cli_api_run_launcher import CliApiRunLauncher
-from dagster.core.launcher.grpc_run_launcher import EphemeralGrpcRunLauncher
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
@@ -166,9 +164,9 @@ class InstanceManagers:
         return MarkedManager(_sqlite_instance, [Marks.sqlite_instance, Marks.sync_run_launcher])
 
     @staticmethod
-    def sqlite_instance_with_cli_api_run_launcher():
+    def sqlite_instance_with_default_run_launcher():
         @contextmanager
-        def _sqlite_instance_with_cli_api_hijack():
+        def _sqlite_instance_with_default_hijack():
             with seven.TemporaryDirectory() as temp_dir:
                 instance = DagsterInstance.local_temp(
                     temp_dir,
@@ -178,10 +176,7 @@ class InstanceManagers:
                             'class': 'FilesystemTestScheduler',
                             'config': {'base_dir': temp_dir},
                         },
-                        'run_launcher': {
-                            'module': 'dagster.core.launcher',
-                            'class': 'CliApiRunLauncher',
-                        },
+                        'run_launcher': {'module': 'dagster', 'class': 'DefaultRunLauncher',},
                     },
                 )
                 try:
@@ -190,8 +185,8 @@ class InstanceManagers:
                     instance.run_launcher.join()
 
         return MarkedManager(
-            _sqlite_instance_with_cli_api_hijack,
-            [Marks.sqlite_instance, Marks.cli_api_run_launcher],
+            _sqlite_instance_with_default_hijack,
+            [Marks.sqlite_instance, Marks.default_run_launcher],
         )
 
     @staticmethod
@@ -217,9 +212,9 @@ class InstanceManagers:
         )
 
     @staticmethod
-    def postgres_instance_with_cli_api_run_launcher():
+    def postgres_instance_with_default_run_launcher():
         @contextmanager
-        def _postgres_instance_with_cli_api_hijack():
+        def _postgres_instance_with_default_hijack():
             with seven.TemporaryDirectory() as temp_dir:
                 with graphql_postgres_instance() as pg_conn_string:
                     instance = DagsterInstance(
@@ -228,7 +223,7 @@ class InstanceManagers:
                         run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
                         event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
                         compute_log_manager=LocalComputeLogManager(temp_dir),
-                        run_launcher=CliApiRunLauncher(),
+                        run_launcher=DefaultRunLauncher(),
                         schedule_storage=TestPostgresInstance.clean_schedule_storage(
                             pg_conn_string
                         ),
@@ -239,63 +234,8 @@ class InstanceManagers:
                         instance.run_launcher.join()
 
         return MarkedManager(
-            _postgres_instance_with_cli_api_hijack,
-            [Marks.postgres_instance, Marks.cli_api_run_launcher],
-        )
-
-    @staticmethod
-    def postgres_instance_with_grpc_run_launcher():
-        @contextmanager
-        def _postgres_instance_with_grpc_api_hijack():
-            with seven.TemporaryDirectory() as temp_dir:
-                with graphql_postgres_instance() as pg_conn_string:
-                    instance = DagsterInstance(
-                        instance_type=InstanceType.EPHEMERAL,
-                        local_artifact_storage=LocalArtifactStorage(temp_dir),
-                        run_storage=TestPostgresInstance.clean_run_storage(pg_conn_string),
-                        event_storage=TestPostgresInstance.clean_event_log_storage(pg_conn_string),
-                        compute_log_manager=LocalComputeLogManager(temp_dir),
-                        run_launcher=EphemeralGrpcRunLauncher(),
-                        schedule_storage=TestPostgresInstance.clean_schedule_storage(
-                            pg_conn_string
-                        ),
-                    )
-                    try:
-                        yield instance
-                    finally:
-                        instance.run_launcher.join()
-
-        return MarkedManager(
-            _postgres_instance_with_grpc_api_hijack,
-            [Marks.postgres_instance, Marks.grpc_run_launcher],
-        )
-
-    @staticmethod
-    def sqlite_instance_with_grpc_run_launcher():
-        @contextmanager
-        def _sqlite_instance_with_grpc_api_hijack():
-            with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance.local_temp(
-                    temp_dir,
-                    overrides={
-                        'scheduler': {
-                            'module': 'dagster.utils.test',
-                            'class': 'FilesystemTestScheduler',
-                            'config': {'base_dir': temp_dir},
-                        },
-                        'run_launcher': {
-                            'module': 'dagster.core.launcher.grpc_run_launcher',
-                            'class': 'EphemeralGrpcRunLauncher',
-                        },
-                    },
-                )
-                try:
-                    yield instance
-                finally:
-                    instance.run_launcher.join()
-
-        return MarkedManager(
-            _sqlite_instance_with_grpc_api_hijack, [Marks.sqlite_instance, Marks.grpc_run_launcher],
+            _postgres_instance_with_default_hijack,
+            [Marks.postgres_instance, Marks.default_run_launcher],
         )
 
     @staticmethod
@@ -433,8 +373,7 @@ class Marks:
 
     # Run launcher variants
     sync_run_launcher = pytest.mark.sync_run_launcher
-    cli_api_run_launcher = pytest.mark.cli_api_run_launcher
-    grpc_run_launcher = pytest.mark.grpc_run_launcher
+    default_run_launcher = pytest.mark.default_run_launcher
     readonly = pytest.mark.readonly
 
     # Repository Location marks
@@ -549,11 +488,11 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def sqlite_with_cli_api_run_launcher_in_process_env():
+    def sqlite_with_default_run_launcher_in_process_env():
         return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_cli_api_run_launcher(),
+            InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='sqlite_with_cli_api_run_launcher_in_process_env',
+            test_id='sqlite_with_default_run_launcher_in_process_env',
         )
 
     @staticmethod
@@ -565,27 +504,11 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
-    def postgres_with_cli_api_run_launcher_in_process_env():
+    def postgres_with_default_run_launcher_in_process_env():
         return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_cli_api_run_launcher(),
+            InstanceManagers.postgres_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='postgres_with_cli_api_run_launcher_in_process_env',
-        )
-
-    @staticmethod
-    def postgres_with_grpc_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.postgres_instance_with_grpc_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id='postgres_with_grpc_run_launcher_in_process_env',
-        )
-
-    @staticmethod
-    def sqlite_with_grpc_run_launcher_in_process_env():
-        return GraphQLContextVariant(
-            InstanceManagers.sqlite_instance_with_grpc_run_launcher(),
-            EnvironmentManagers.user_code_in_host_process(),
-            test_id='sqlite_with_grpc_run_launcher_in_process_env',
+            test_id='postgres_with_default_run_launcher_in_process_env',
         )
 
     @staticmethod
@@ -711,11 +634,9 @@ class GraphQLContextVariant:
             GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.postgres_with_sync_run_launcher_in_process_env(),
-            GraphQLContextVariant.postgres_with_cli_api_run_launcher_in_process_env(),
-            GraphQLContextVariant.postgres_with_grpc_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_grpc_run_launcher_in_process_env(),
+            GraphQLContextVariant.postgres_with_default_run_launcher_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_in_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env(),
             GraphQLContextVariant.readonly_in_memory_instance_multi_location(),
@@ -737,15 +658,13 @@ class GraphQLContextVariant:
         return [
             GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.sqlite_with_sync_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_grpc_run_launcher_in_process_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
         ]
 
     @staticmethod
     def all_out_of_process_executing_variants():
         return [
-            GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env(),
-            GraphQLContextVariant.sqlite_with_grpc_run_launcher_in_process_env(),
+            GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env(),
         ]
 
     @staticmethod

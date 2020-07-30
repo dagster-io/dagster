@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 
 from dagster import EventMetadataEntry, check
@@ -11,7 +10,8 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
-from dagster.utils import get_multiprocessing_context, start_termination_thread
+from dagster.seven import multiprocessing
+from dagster.utils import start_termination_thread
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
@@ -125,7 +125,7 @@ class MultiprocessExecutor(Executor):
 
                         for step in steps:
                             step_context = pipeline_context.for_step(step)
-                            term_events[step.key] = get_multiprocessing_context().Event()
+                            term_events[step.key] = multiprocessing.Event()
                             active_iters[step.key] = self.execute_step_out_of_process(
                                 step_context, step, errors, term_events
                             )

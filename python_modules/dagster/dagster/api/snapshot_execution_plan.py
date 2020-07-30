@@ -5,8 +5,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
 )
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import ExecutionPlanSnapshotArgs
+from dagster.grpc.types import ExecutionPlanSnapshotArgs
 
 
 def sync_get_external_execution_plan(
@@ -51,6 +50,7 @@ def sync_get_external_execution_plan_grpc(
     solid_selection=None,
     step_keys_to_execute=None,
 ):
+    from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin)

@@ -19,7 +19,6 @@ from dagster import (
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import CliApiRunLauncher
-from dagster.core.launcher.grpc_run_launcher import EphemeralGrpcRunLauncher
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -48,43 +47,6 @@ def test_fs_stores():
             event_storage=event_store,
             compute_log_manager=compute_log_manager,
             run_launcher=CliApiRunLauncher(),
-        )
-
-        result = execute_pipeline(simple, instance=instance)
-
-        assert run_store.has_run(result.run_id)
-        assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
-        assert DagsterEventType.PIPELINE_SUCCESS in [
-            event.dagster_event.event_type
-            for event in event_store.get_logs_for_run(result.run_id)
-            if event.is_dagster_event
-        ]
-        stats = event_store.get_stats_for_run(result.run_id)
-        assert stats.steps_succeeded == 1
-        assert stats.end_time is not None
-
-
-def test_fs_stores_grpc():
-    @pipeline
-    def simple():
-        @solid
-        def easy(context):
-            context.log.info('easy')
-            return 'easy'
-
-        easy()
-
-    with seven.TemporaryDirectory() as temp_dir:
-        run_store = SqliteRunStorage.from_local(temp_dir)
-        event_store = SqliteEventLogStorage(temp_dir)
-        compute_log_manager = LocalComputeLogManager(temp_dir)
-        instance = DagsterInstance(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=run_store,
-            event_storage=event_store,
-            compute_log_manager=compute_log_manager,
-            run_launcher=EphemeralGrpcRunLauncher(),
         )
 
         result = execute_pipeline(simple, instance=instance)

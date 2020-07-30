@@ -6,7 +6,6 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.types import PartitionArgs, PartitionNamesArgs
 
 from .utils import execute_unary_api_cli_command
@@ -30,6 +29,8 @@ def sync_get_external_partition_names(repository_handle, partition_set_name):
 
 
 def sync_get_external_partition_names_grpc(api_client, repository_handle, partition_set_name):
+    from dagster.grpc.client import DagsterGrpcClient
+
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
@@ -67,6 +68,8 @@ def sync_get_external_partition_config(repository_handle, partition_set_name, pa
 def sync_get_external_partition_config_grpc(
     api_client, repository_handle, partition_set_name, partition_name
 ):
+    from dagster.grpc.client import DagsterGrpcClient
+
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')
@@ -107,6 +110,8 @@ def sync_get_external_partition_tags(repository_handle, partition_set_name, part
 def sync_get_external_partition_tags_grpc(
     api_client, repository_handle, partition_set_name, partition_name
 ):
+    from dagster.grpc.client import DagsterGrpcClient
+
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
     check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
     check.str_param(partition_set_name, 'partition_set_name')

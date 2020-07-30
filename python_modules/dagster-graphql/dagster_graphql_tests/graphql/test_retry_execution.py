@@ -647,7 +647,7 @@ class TestRetryExecutionSyncOnlyBehavior(
 
 class TestRetryExecutionAsyncOnlyBehavior(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_cli_api_run_launcher_in_process_env()]
+        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env()]
     )
 ):
     def test_retry_requires_intermediates_async_only(self, graphql_context):

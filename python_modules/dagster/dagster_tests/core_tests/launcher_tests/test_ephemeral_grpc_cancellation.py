@@ -4,7 +4,6 @@ import time
 from contextlib import contextmanager
 
 from dagster import DagsterInstance, Field, Int, Materialization, pipeline, repository, seven, solid
-from dagster.core.code_pointer import CodePointer
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
