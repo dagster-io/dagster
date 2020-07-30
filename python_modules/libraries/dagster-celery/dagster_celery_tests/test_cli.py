@@ -3,7 +3,6 @@ import sys
 import time
 from contextlib import contextmanager
 
-import pytest
 from click.testing import CliRunner
 from dagster_celery.cli import main
 
@@ -11,12 +10,7 @@ from dagster import check
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 
-BUILDKITE = os.getenv('BUILDKITE')
-
-skip_ci = pytest.mark.skipif(
-    bool(BUILDKITE),
-    reason='Tests hang forever on buildkite for reasons we don\'t currently understand',
-)
+from .utils import skip_ci
 
 
 def assert_called(mck):

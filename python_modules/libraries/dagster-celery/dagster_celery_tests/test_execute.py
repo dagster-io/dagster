@@ -2,212 +2,28 @@
 # pylint: disable=unused-argument
 
 import os
-import shutil
-from contextlib import contextmanager
 
 import pytest
-from dagster_celery import celery_executor
+from dagster_celery_tests.repo import COMPOSITE_DEPTH
 
 from dagster import (
     CompositeSolidExecutionResult,
-    InputDefinition,
-    Int,
-    ModeDefinition,
-    Output,
-    OutputDefinition,
     PipelineExecutionResult,
-    RetryRequested,
     SolidExecutionResult,
-    default_executors,
     execute_pipeline,
-    lambda_solid,
-    pipeline,
     seven,
-    solid,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import nesting_composite_pipeline
 
-celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
-
-BUILDKITE = os.getenv('BUILDKITE')
-skip_ci = pytest.mark.skipif(
-    bool(BUILDKITE),
-    reason='Tests hang forever on buildkite for reasons we don\'t currently understand',
+from .utils import (  # isort:skip
+    execute_eagerly_on_celery,
+    execute_pipeline_on_celery,
+    skip_ci,
+    events_of_type,
+    REPO_FILE,
 )
-
-COMPOSITE_DEPTH = 3
-
-
-@solid
-def simple(_):
-    return 1
-
-
-@solid
-def add_one(_, num):
-    return num + 1
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_pipeline():
-    return simple()
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_serial_pipeline():
-    return add_one(simple())
-
-
-@solid(output_defs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
-def emit_values(_context):
-    yield Output(1, 'value_one')
-    yield Output(2, 'value_two')
-
-
-@lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-def subtract(num_one, num_two):
-    return num_one - num_two
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_diamond_pipeline():
-    value_one, value_two = emit_values()
-    return subtract(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_parallel_pipeline():
-    value = simple()
-    for i in range(10):
-        add_one.alias('add_one_' + str(i))(value)
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_more_parallel_pipeline():
-    value = simple()
-    for i in range(500):
-        add_one.alias('add_one_' + str(i))(value)
-
-
-def composite_pipeline():
-    return nesting_composite_pipeline(COMPOSITE_DEPTH, 2, mode_defs=celery_mode_defs)
-
-
-@solid(
-    output_defs=[
-        OutputDefinition(Int, 'out_1', is_required=False),
-        OutputDefinition(Int, 'out_2', is_required=False),
-        OutputDefinition(Int, 'out_3', is_required=False),
-    ]
-)
-def foo(_):
-    yield Output(1, 'out_1')
-
-
-@solid
-def bar(_, input_arg):
-    return input_arg
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_optional_outputs():
-    # pylint: disable=no-member
-    foo_res = foo()
-    bar.alias('first_consumer')(input_arg=foo_res.out_1)
-    bar.alias('second_consumer')(input_arg=foo_res.out_2)
-    bar.alias('third_consumer')(input_arg=foo_res.out_3)
-
-
-@lambda_solid
-def fails():
-    raise Exception('argjhgjh')
-
-
-@lambda_solid
-def should_never_execute(_):
-    assert False  # should never execute
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_fails():
-    should_never_execute(fails())
-
-
-@lambda_solid
-def retry_request():
-    raise RetryRequested()
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_retries():
-    retry_request()
-
-
-def events_of_type(result, event_type):
-    return [event for event in result.event_list if event.event_type_value == event_type]
-
-
-@solid(config_schema=str)
-def destroy(context, x):
-    shutil.rmtree(context.solid_config)
-    return x
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def engine_error():
-    a = simple()
-    b = destroy(a)
-
-    subtract(a, b)
-
-
-@solid(
-    tags={
-        'dagster-k8s/resource_requirements': {
-            'requests': {'cpu': '250m', 'memory': '64Mi'},
-            'limits': {'cpu': '500m', 'memory': '2560Mi'},
-        }
-    }
-)
-def resource_req_solid(context):
-    context.log.info('running')
-
-
-@pipeline(mode_defs=celery_mode_defs)
-def test_resources_limit():
-    resource_req_solid()
-
-
-@contextmanager
-def execute_pipeline_on_celery(pipeline_name,):
-    with seven.TemporaryDirectory() as tempdir:
-        result = execute_pipeline(
-            ReconstructablePipeline.for_file(__file__, pipeline_name),
-            run_config={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'celery': {}},
-            },
-            instance=DagsterInstance.local_temp(tempdir=tempdir),
-        )
-        yield result
-
-
-@contextmanager
-def execute_eagerly_on_celery(pipeline_name, instance=None, subset=None):
-    with seven.TemporaryDirectory() as tempdir:
-        instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
-        result = execute_pipeline(
-            ReconstructablePipeline.for_file(__file__, pipeline_name).subset_for_execution(subset),
-            run_config={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
-            },
-            instance=instance,
-        )
-        yield result
 
 
 @skip_ci
@@ -306,7 +122,7 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
 def test_execute_eagerly_on_celery():
     with seven.TemporaryDirectory() as tempdir:
         instance = DagsterInstance.local_temp(tempdir=tempdir)
-        with execute_eagerly_on_celery('test_pipeline', instance) as result:
+        with execute_eagerly_on_celery('test_pipeline', instance=instance) as result:
             assert result.result_for_solid('simple').output_value() == 1
             assert len(result.step_event_list) == 4
             assert len(events_of_type(result, 'STEP_START')) == 1
@@ -459,7 +275,7 @@ def test_engine_error():
         with seven.TemporaryDirectory() as tempdir:
             storage = os.path.join(tempdir, 'flakey_storage')
             execute_pipeline(
-                ReconstructablePipeline.for_file(__file__, 'engine_error'),
+                ReconstructablePipeline.for_file(REPO_FILE, 'engine_error'),
                 run_config={
                     'storage': {'filesystem': {'config': {'base_dir': storage}}},
                     'execution': {
