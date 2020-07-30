@@ -33,7 +33,7 @@ def good_morning_schedule(date):
     return {
         'solids': {
             'hello_cereal': {
-                'inputs': {'date': {'value': date.strftime('YYYY-mm-dd')}}
+                'inputs': {'date': {'value': date.strftime('%Y-%m-%d')}}
             }
         }
     }
@@ -60,7 +60,7 @@ def good_weekday_morning_schedule(date):
     return {
         'solids': {
             'hello_cereal': {
-                'inputs': {'date': {'value': date.strftime('YYYY-mm-dd')}}
+                'inputs': {'date': {'value': date.strftime('%Y-%m-%d')}}
             }
         }
     }
