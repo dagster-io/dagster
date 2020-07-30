@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.10
+
+**New**
+
+- Added new GCS and Azure file manager resources
+- `AssetMaterializations` can now have type information attached as metadata. See the materializations tutorial for more
+- Added verification for resource arguments (previously only validated at runtime)
+
+**Bugfixes**
+
+- Fixed bug with order-dependent python module resolution seen with some packages (e.g. numpy)
+- Fixed bug where Airflow's `context['ts']` was not passed properly
+- Fixed a bug in celery-k8s when using `task_acks_late: true` that resulted in a `409 Conflict error` from Kubernetes. The creation of a Kubernetes Job will now be aborted if another Job with the same name exists
+- Fixed a bug with composite solid output results when solids are skipped
+- Hide the re-execution button in Dagit when the pipeline is not re-executable in the currently loaded repository
+
+**Docs**
+
+- Fixed code example in the advanced scheduling doc (Thanks @wingyplus!)
+- Various other improvements
+
 ## 0.8.9
 
 **New**
