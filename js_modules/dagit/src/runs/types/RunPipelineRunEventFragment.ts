@@ -10,7 +10,7 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -546,4 +546,26 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   markerEnd: string | null;
 }
 
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;
+export interface RunPipelineRunEventFragment_HookErroredEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPipelineRunEventFragment_HookErroredEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPipelineRunEventFragment_HookErroredEvent_error_cause | null;
+}
+
+export interface RunPipelineRunEventFragment_HookErroredEvent {
+  __typename: "HookErroredEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  error: RunPipelineRunEventFragment_HookErroredEvent_error;
+}
+
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent;

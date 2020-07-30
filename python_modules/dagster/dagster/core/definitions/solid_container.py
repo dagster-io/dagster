@@ -27,7 +27,7 @@ class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         Args:
             name (str): The name of the top level solid.
-        
+
         Returns:
             Solid: The solid with the given name
         '''
@@ -235,12 +235,14 @@ def _build_pipeline_solid_dict(
             solid_instance = alias_to_solid_instance.get(alias)
 
             solid_instance_tags = solid_instance.tags if solid_instance else {}
+            hook_defs = solid_instance.hook_defs if solid_instance else frozenset()
             pipeline_solids.append(
                 Solid(
                     name=alias,
                     definition=solid_def,
                     container_definition=container_definition,
                     tags=solid_instance_tags,
+                    hook_defs=hook_defs,
                 )
             )
 

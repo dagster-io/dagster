@@ -1,11 +1,13 @@
 import sys
 
 from dagster import check
-from dagster.core.definitions import Failure, RetryRequested
+from dagster.core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster.core.errors import (
     DagsterError,
     DagsterStepOutputNotFoundError,
     DagsterUserCodeExecutionError,
+    HookExecutionError,
+    user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
@@ -33,6 +35,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
     while not active_execution.is_complete:
         step = active_execution.get_next_step()
         step_context = pipeline_context.for_step(step)
+        step_event_list = []
 
         missing_resources = [
             resource_key
@@ -65,13 +68,16 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
                         'inputs: {uncovered_inputs}'
                     ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
-                yield DagsterEvent.step_skipped_event(step_context)
+                step_event = DagsterEvent.step_skipped_event(step_context)
+                step_event_list.append(step_event)
+                yield step_event
                 active_execution.mark_skipped(step.key)
             else:
                 for step_event in check.generator(
                     _dagster_event_sequence_for_step(step_context, retries)
                 ):
                     check.inst(step_event, DagsterEvent)
+                    step_event_list.append(step_event)
                     yield step_event
                     active_execution.handle_event(step_event)
 
@@ -79,7 +85,59 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
 
         # process skips from failures or uncovered inputs
         for event in active_execution.skipped_step_events_iterator(pipeline_context):
+            step_event_list.append(event)
             yield event
+
+        # pass a list of step events to hooks
+        for hook_event in _trigger_hook(step_context, step_event_list):
+            yield hook_event
+
+
+def _trigger_hook(step_context, step_event_list):
+    '''Trigger hooks and record hook's operatonal events'''
+    hook_defs = step_context.solid.hook_defs
+    # when the solid doesn't have a hook configured
+    if hook_defs is None:
+        return
+
+    # when there are multiple hooks set on a solid, the hooks will run sequentially for the solid.
+    # * we will not able to execute hooks asynchronously until we drop python 2.
+    for hook_def in hook_defs:
+        hook_context = step_context.for_hook(hook_def)
+
+        try:
+            with user_code_error_boundary(
+                HookExecutionError,
+                lambda: 'Error occurred during the execution of hook_fn triggered for solid '
+                '"{solid_name}"'.format(solid_name=step_context.solid.name),
+            ):
+                hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
+
+        except HookExecutionError as hook_execution_error:
+            # catch hook execution error and field a failure event instead of failing the pipeline run
+            # is_hook_completed = False
+            yield DagsterEvent.hook_errored(hook_context, hook_execution_error)
+            continue
+
+        check.invariant(
+            isinstance(hook_execution_result, HookExecutionResult),
+            (
+                'Error in hook {hook_name}: hook unexpectedly returned result {result} of '
+                'type {type_}. Should be a HookExecutionResult'
+            ).format(
+                hook_name=hook_def.name,
+                result=hook_execution_result,
+                type_=type(hook_execution_result),
+            ),
+        )
+        if hook_execution_result and hook_execution_result.is_skipped:
+            # when the triggering condition didn't meet in the hook_fn, for instance,
+            # a @success_hook decorated user-defined function won't run on a failed solid
+            # but internally the hook_fn still runs, so we yield HOOK_SKIPPED event instead
+            yield DagsterEvent.hook_skipped(hook_context, hook_def)
+        else:
+            # hook_fn finishes successfully
+            yield DagsterEvent.hook_completed(hook_context, hook_def)
 
 
 def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):

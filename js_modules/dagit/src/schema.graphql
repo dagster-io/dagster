@@ -431,6 +431,34 @@ type GrpcRepositoryOrigin {
   grpcUrl: String!
 }
 
+type HookCompletedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+}
+
+type HookErroredEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  error: PythonError!
+}
+
+type HookSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+}
+
 type Input {
   solid: Solid!
   definition: InputDefinition!
@@ -840,7 +868,7 @@ type PipelineRunConflict implements Error {
   message: String!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
 
 type PipelineRunLogsSubscriptionFailure {
   message: String!

@@ -8,12 +8,13 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags
 
+from .hook import HookDefinition
 from .input import InputDefinition
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 
-class SolidInvocation(namedtuple('Solid', 'name alias tags')):
+class SolidInvocation(namedtuple('Solid', 'name alias tags hook_defs')):
     '''Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
@@ -22,6 +23,8 @@ class SolidInvocation(namedtuple('Solid', 'name alias tags')):
             multiple instances of the same solid.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
             set on the solid definition.
+        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+            solid instance.
 
     Examples:
 
@@ -52,12 +55,12 @@ class SolidInvocation(namedtuple('Solid', 'name alias tags')):
 
     '''
 
-    def __new__(cls, name, alias=None, tags=None):
+    def __new__(cls, name, alias=None, tags=None, hook_defs=None):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
         tags = frozentags(check.opt_dict_param(tags, 'tags', value_type=str, key_type=str))
-
-        return super(cls, SolidInvocation).__new__(cls, name, alias, tags)
+        hook_defs = frozenset(check.opt_set_param(hook_defs, 'hook_defs', of_type=HookDefinition))
+        return super(cls, SolidInvocation).__new__(cls, name, alias, tags, hook_defs)
 
 
 class Solid(object):
@@ -71,9 +74,7 @@ class Solid(object):
             Definition of the solid.
     '''
 
-    def __init__(
-        self, name, definition, container_definition=None, tags=None,
-    ):
+    def __init__(self, name, definition, container_definition=None, tags=None, hook_defs=None):
         from .solid import ISolidDefinition, CompositeSolidDefinition
 
         self.name = check.str_param(name, 'name')
@@ -82,6 +83,7 @@ class Solid(object):
             container_definition, 'container_definition', CompositeSolidDefinition
         )
         self._additional_tags = validate_tags(tags)
+        self._hook_defs = check.opt_set_param(hook_defs, 'hook_defs', of_type=HookDefinition)
 
         input_handles = {}
         for name, input_def in self.definition.input_dict.items():
@@ -147,6 +149,10 @@ class Solid(object):
 
     def container_mapped_input(self, input_name):
         return self.container_definition.mapped_input(self.name, input_name)
+
+    @property
+    def hook_defs(self):
+        return self._hook_defs
 
 
 @whitelist_for_serdes

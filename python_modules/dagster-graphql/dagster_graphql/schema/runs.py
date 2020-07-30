@@ -634,6 +634,26 @@ class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     failureMetadata = dauphin.Field('FailureMetadata')
 
 
+class DauphinHookCompletedEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = 'HookCompletedEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+
+class DauphinHookSkippedEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = 'HookSkippedEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+
+class DauphinHookErroredEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = 'HookErroredEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+    error = dauphin.NonNull('PythonError')
+
+
 class DauphinStepMaterializationEvent(dauphin.ObjectType):
     class Meta(object):
         name = 'StepMaterializationEvent'
@@ -690,6 +710,9 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinStepExpectationResultEvent,
             DauphinStepMaterializationEvent,
             DauphinEngineEvent,
+            DauphinHookCompletedEvent,
+            DauphinHookSkippedEvent,
+            DauphinHookErroredEvent,
         )
 
 
@@ -784,6 +807,14 @@ def from_dagster_event_record(event_record, pipeline_name):
             marker_start=dagster_event.engine_event_data.marker_start,
             marker_end=dagster_event.engine_event_data.marker_end,
             **basic_params
+        )
+    elif dagster_event.event_type == DagsterEventType.HOOK_COMPLETED:
+        return DauphinHookCompletedEvent(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.HOOK_SKIPPED:
+        return DauphinHookSkippedEvent(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.HOOK_ERRORED:
+        return DauphinHookErroredEvent(
+            error=DauphinPythonError(dagster_event.hook_errored_data.error), **basic_params
         )
     else:
         raise Exception(

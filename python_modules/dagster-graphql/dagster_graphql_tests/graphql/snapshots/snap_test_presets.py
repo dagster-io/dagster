@@ -252,6 +252,129 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_i
     }
 }
 
+snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_grpc] 1'] = {
+    'pipelineOrError': {
+        'name': 'csv_hello_world',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'prod',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num_prod.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test_inline',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: /data/num.csv
+''',
+                'solidSelection': None
+            }
+        ]
+    }
+}
+
+snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_external_grpc_server] 1'] = {
+    'pipelineOrError': {
+        'name': 'csv_hello_world',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'prod',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num_prod.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test_inline',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: /data/num.csv
+''',
+                'solidSelection': None
+            }
+        ]
+    }
+}
+
+snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_grpc] 1'] = {
+    'pipelineOrError': {
+        'name': 'csv_hello_world',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'prod',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num_prod.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: data/num.csv
+''',
+                'solidSelection': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'mode': 'default',
+                'name': 'test_inline',
+                'runConfigYaml': '''solids:
+  sum_solid:
+    inputs:
+      num: /data/num.csv
+''',
+                'solidSelection': None
+            }
+        ]
+    }
+}
+
 snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_postgres_instance_in_process_env] 1'] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
@@ -375,89 +498,7 @@ snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_postgres_in
     }
 }
 
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_in_memory_instance_grpc] 1'] = {
-    'pipelineOrError': {
-        'name': 'csv_hello_world',
-        'presets': [
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'prod',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: data/num_prod.csv
-''',
-                'solidSelection': None
-            },
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'test',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: data/num.csv
-''',
-                'solidSelection': None
-            },
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'test_inline',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: /data/num.csv
-''',
-                'solidSelection': None
-            }
-        ]
-    }
-}
-
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_external_grpc_server] 1'] = {
-    'pipelineOrError': {
-        'name': 'csv_hello_world',
-        'presets': [
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'prod',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: data/num_prod.csv
-''',
-                'solidSelection': None
-            },
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'test',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: data/num.csv
-''',
-                'solidSelection': None
-            },
-            {
-                '__typename': 'PipelinePreset',
-                'mode': 'default',
-                'name': 'test_inline',
-                'runConfigYaml': '''solids:
-  sum_solid:
-    inputs:
-      num: /data/num.csv
-''',
-                'solidSelection': None
-            }
-        ]
-    }
-}
-
-snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_sqlite_instance_grpc] 1'] = {
+snapshots['TestPresets.test_basic_preset_query_with_presets[readonly_postgres_instance_grpc] 1'] = {
     'pipelineOrError': {
         'name': 'csv_hello_world',
         'presets': [

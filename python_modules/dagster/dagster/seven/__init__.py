@@ -59,6 +59,11 @@ except ImportError:
     from urlparse import urljoin, urlparse, urlunparse
     from urllib import quote_plus
 
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error
 else:

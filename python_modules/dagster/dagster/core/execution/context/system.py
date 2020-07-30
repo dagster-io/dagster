@@ -9,6 +9,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.executable import ExecutablePipeline
+from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -275,6 +276,9 @@ class SystemStepExecutionContext(SystemExecutionContext):
     def log(self):
         return self._log_manager
 
+    def for_hook(self, hook_def):
+        return HookContext(self._execution_context_data, self.log, hook_def, self.step)
+
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
     @property
@@ -302,3 +306,46 @@ class TypeCheckContext(SystemExecutionContext):
     @property
     def resources(self):
         return self._resources
+
+
+class HookContext(SystemExecutionContext):
+    '''The ``context`` object available to a hook function on an DagsterEvent.
+
+    Attributes:
+        log (DagsterLogManager): Centralized log dispatch from user code.
+        hook_def (HookDefinition): The hook that the context object belongs to.
+        step (ExecutionStep) The compute step associated with the hook.
+    '''
+
+    def __init__(self, execution_context_data, log_manager, hook_def, step):
+        from dagster.core.execution.plan.objects import ExecutionStep
+
+        super(HookContext, self).__init__(execution_context_data, log_manager)
+        self._log_manager = log_manager
+        self._hook_def = check.inst_param(hook_def, 'hook_def', HookDefinition)
+        self._step = check.inst_param(step, 'step', ExecutionStep)
+
+        self._required_resource_keys = hook_def.required_resource_keys
+        self._resources = self._execution_context_data.scoped_resources_builder.build(
+            self._required_resource_keys
+        )
+
+    @property
+    def hook_def(self):
+        return self._hook_def
+
+    @property
+    def step(self):
+        return self._step
+
+    @property
+    def solid(self):
+        return self.pipeline_def.get_solid(self._step.solid_handle)
+
+    @property
+    def resources(self):
+        return self._resources
+
+    @property
+    def required_resource_keys(self):
+        return self._required_resource_keys

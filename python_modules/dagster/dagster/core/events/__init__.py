@@ -14,11 +14,15 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.events import ObjectStoreOperationType
-from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
+from dagster.core.execution.context.system import (
+    HookContext,
+    SystemExecutionContext,
+    SystemStepExecutionContext,
+)
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration
 
 
@@ -48,6 +52,10 @@ class DagsterEventType(Enum):
 
     ENGINE_EVENT = 'ENGINE_EVENT'
 
+    HOOK_COMPLETED = 'HOOK_COMPLETED'
+    HOOK_ERRORED = 'HOOK_ERRORED'
+    HOOK_SKIPPED = 'HOOK_SKIPPED'
+
 
 STEP_EVENTS = {
     DagsterEventType.STEP_INPUT,
@@ -73,6 +81,12 @@ PIPELINE_EVENTS = {
     DagsterEventType.PIPELINE_START,
     DagsterEventType.PIPELINE_SUCCESS,
     DagsterEventType.PIPELINE_FAILURE,
+}
+
+HOOK_EVENTS = {
+    DagsterEventType.HOOK_COMPLETED,
+    DagsterEventType.HOOK_ERRORED,
+    DagsterEventType.HOOK_SKIPPED,
 }
 
 
@@ -102,6 +116,8 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepInputData)
     elif event_type == DagsterEventType.ENGINE_EVENT:
         check.inst_param(event_specific_data, 'event_specific_data', EngineEventData)
+    elif event_type == DagsterEventType.HOOK_ERRORED:
+        check.inst_param(event_specific_data, 'event_specific_data', HookErroredData)
 
     return event_specific_data
 
@@ -266,6 +282,10 @@ class DagsterEvent(
         return self.event_type in STEP_EVENTS
 
     @property
+    def is_hook_event(self):
+        return self.event_type in HOOK_EVENTS
+
+    @property
     def step_kind(self):
         from dagster.core.execution.plan.objects import StepKind
 
@@ -380,6 +400,21 @@ class DagsterEvent(
     @property
     def engine_event_data(self):
         _assert_type('engine_event_data', DagsterEventType.ENGINE_EVENT, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def hook_completed_data(self):
+        _assert_type('hook_completed_data', DagsterEventType.HOOK_COMPLETED, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def hook_errored_data(self):
+        _assert_type('hook_errored_data', DagsterEventType.HOOK_ERRORED, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def hook_skipped_data(self):
+        _assert_type('hook_skipped_data', DagsterEventType.HOOK_SKIPPED, self.event_type)
         return self.event_specific_data
 
     @staticmethod
@@ -729,6 +764,79 @@ class DagsterEvent(
             message=message,
         )
 
+    @staticmethod
+    def hook_completed(hook_context, hook_def):
+        event_type = DagsterEventType.HOOK_COMPLETED
+        check.inst_param(hook_context, 'hook_context', HookContext)
+
+        event = DagsterEvent(
+            event_type_value=event_type.value,
+            pipeline_name=hook_context.pipeline_def.name,
+            step_key=hook_context.step.key,
+            solid_handle=hook_context.step.solid_handle,
+            step_kind_value=hook_context.step.kind.value,
+            logging_tags=hook_context.logging_tags,
+            message=(
+                'Finished the execution of hook "{hook_name}" triggered for solid "{solid_name}".'
+            ).format(hook_name=hook_def.name, solid_name=hook_context.solid.name),
+        )
+
+        hook_context.log.debug(
+            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+        )
+
+        return event
+
+    @staticmethod
+    def hook_errored(hook_context, error):
+        event_type = DagsterEventType.HOOK_ERRORED
+        check.inst_param(hook_context, 'hook_context', HookContext)
+
+        event = DagsterEvent(
+            event_type_value=event_type.value,
+            pipeline_name=hook_context.pipeline_def.name,
+            step_key=hook_context.step.key,
+            solid_handle=hook_context.step.solid_handle,
+            step_kind_value=hook_context.step.kind.value,
+            logging_tags=hook_context.logging_tags,
+            event_specific_data=_validate_event_specific_data(
+                event_type,
+                HookErroredData(
+                    error=serializable_error_info_from_exc_info(error.original_exc_info)
+                ),
+            ),
+        )
+
+        hook_context.log.error(
+            str(error), dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+        )
+
+        return event
+
+    @staticmethod
+    def hook_skipped(hook_context, hook_def):
+        event_type = DagsterEventType.HOOK_SKIPPED
+        check.inst_param(hook_context, 'hook_context', HookContext)
+
+        event = DagsterEvent(
+            event_type_value=event_type.value,
+            pipeline_name=hook_context.pipeline_def.name,
+            step_key=hook_context.step.key,
+            solid_handle=hook_context.step.solid_handle,
+            step_kind_value=hook_context.step.kind.value,
+            logging_tags=hook_context.logging_tags,
+            message=(
+                'Skipped the execution of hook "{hook_name}". It did not meet its triggering '
+                'condition during the execution of solid "{solid_name}".'
+            ).format(hook_name=hook_def.name, solid_name=hook_context.solid.name),
+        )
+
+        hook_context.log.debug(
+            event.message, dagster_event=event, pipeline_name=hook_context.pipeline_def.name,
+        )
+
+        return event
+
 
 def get_step_output_event(events, step_key, output_name='result'):
     check.list_param(events, 'events', of_type=DagsterEvent)
@@ -825,6 +933,14 @@ class PipelineInitFailureData(namedtuple('_PipelineInitFailureData', 'error')):
     def __new__(cls, error):
         return super(PipelineInitFailureData, cls).__new__(
             cls, error=check.inst_param(error, 'error', SerializableErrorInfo)
+        )
+
+
+@whitelist_for_serdes
+class HookErroredData(namedtuple('_HookErroredData', 'error')):
+    def __new__(cls, error):
+        return super(HookErroredData, cls).__new__(
+            cls, error=check.inst_param(error, 'error', SerializableErrorInfo),
         )
 
 

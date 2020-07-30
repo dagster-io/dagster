@@ -10,7 +10,7 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -544,4 +544,26 @@ export interface LogsRowStructuredFragment_EngineEvent {
   engineError: LogsRowStructuredFragment_EngineEvent_engineError | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_EngineEvent;
+export interface LogsRowStructuredFragment_HookErroredEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsRowStructuredFragment_HookErroredEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_HookErroredEvent_error_cause | null;
+}
+
+export interface LogsRowStructuredFragment_HookErroredEvent {
+  __typename: "HookErroredEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  error: LogsRowStructuredFragment_HookErroredEvent_error;
+}
+
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent;

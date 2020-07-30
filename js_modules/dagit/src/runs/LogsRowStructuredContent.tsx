@@ -137,6 +137,12 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
           <MetadataEntries entries={node.operationResult.metadataEntries} />
         </DefaultContent>
       );
+    case "HookCompletedEvent":
+      return <DefaultContent eventType="Hook Event" message={node.message} />;
+    case "HookSkippedEvent":
+      return <DefaultContent eventType="Hook Event" message={node.message} />;
+    case "HookErroredEvent":
+      return <FailureContent eventType="Hook Failed" error={node.error} />;
     case "PipelineFailureEvent":
       return (
         <DefaultContent message={node.message} eventType="Pipeline Failed" eventIntent="danger" />

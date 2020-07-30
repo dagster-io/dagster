@@ -45,6 +45,7 @@ from dagster.core.definitions import (
     daily_schedule,
     default_executors,
     executor,
+    failure_hook,
     hourly_schedule,
     in_process_executor,
     intermediate_storage,
@@ -58,6 +59,7 @@ from dagster.core.definitions import (
     resource,
     schedule,
     solid,
+    success_hook,
     system_storage,
     weekly_schedule,
 )
@@ -187,6 +189,8 @@ __all__ = [
     'schedule',
     'solid',
     'system_storage',
+    'success_hook',
+    'failure_hook',
     # Execution
     'CompositeSolidExecutionResult',
     'DagsterEvent',

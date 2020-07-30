@@ -2,7 +2,12 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import AssetMaterialization, Materialization, SolidHandle
+from dagster.core.definitions import (
+    AssetMaterialization,
+    HookDefinition,
+    Materialization,
+    SolidHandle,
+)
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.types.dagster_type import DagsterType
 from dagster.serdes import whitelist_for_serdes
@@ -191,7 +196,7 @@ class ExecutionStep(
         '_ExecutionStep',
         (
             'pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid_handle logging_tags tags'
+            'compute_fn kind solid_handle logging_tags tags hook_defs'
         ),
     )
 ):
@@ -207,6 +212,7 @@ class ExecutionStep(
         solid,
         logging_tags=None,
         tags=None,
+        hook_defs=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -229,6 +235,7 @@ class ExecutionStep(
                 check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
             tags=check.opt_inst_param(tags, 'tags', frozentags),
+            hook_defs=check.opt_set_param(hook_defs, 'hook_defs', of_type=HookDefinition),
         )
 
     @property

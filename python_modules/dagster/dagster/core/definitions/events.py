@@ -655,3 +655,20 @@ class ObjectStoreOperation(
                 **kwargs
             )
         )
+
+
+class HookExecutionResult(namedtuple('_HookExecutionResult', 'hook_name is_skipped')):
+    '''This event is used internally to indicate the execution result of a hook, e.g. whether the
+    user-defined hook function is skipped.
+
+    Args:
+        hook_name (str): The name of the hook.
+        is_skipped (bool): ``False`` if the hook_fn is executed, ``True`` otheriwse.
+    '''
+
+    def __new__(cls, hook_name, is_skipped=None):
+        return super(HookExecutionResult, cls).__new__(
+            cls,
+            hook_name=check.str_param(hook_name, 'hook_name'),
+            is_skipped=check.opt_bool_param(is_skipped, 'is_skipped', default=False),
+        )

@@ -310,6 +310,9 @@ class ExecutionPlan(
     def pipeline_def(self):
         return self.pipeline.get_definition()
 
+    def get_all_hook_defs(self):
+        return set().union(*[step.hook_defs for step in self.steps])
+
     def get_step_output(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         step = self.get_step_by_key(step_output_handle.step_key)

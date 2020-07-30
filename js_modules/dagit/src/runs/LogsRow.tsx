@@ -117,6 +117,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
             ...PythonErrorFragment
           }
         }
+        ... on HookErroredEvent {
+          error {
+            ...PythonErrorFragment
+          }
+        }
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
       ${PythonErrorInfo.fragments.PythonErrorFragment}
@@ -130,6 +135,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
       showCustomAlert({
         title: "Error",
         body: <PythonErrorInfo error={node.error} failureMetadata={node.failureMetadata} />
+      });
+    } else if (node.__typename === "HookErroredEvent") {
+      showCustomAlert({
+        title: "Error",
+        body: <PythonErrorInfo error={node.error} />
       });
     } else if (node.__typename === "PipelineInitFailureEvent") {
       showCustomAlert({

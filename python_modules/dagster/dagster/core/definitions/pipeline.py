@@ -203,7 +203,9 @@ class PipelineDefinition(IContainSolids):
             self._preset_dict[preset.name] = preset
 
         # Validate solid resource dependencies
-        _validate_resource_dependencies(self._mode_definitions, self._current_level_solid_defs)
+        _validate_resource_dependencies(
+            self._mode_definitions, self._current_level_solid_defs, self._solid_dict
+        )
 
         # Validate unsatisfied inputs can be materialized from config
         _validate_inputs(self._dependency_structure, self._solid_dict)
@@ -554,7 +556,7 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
         )
 
 
-def _validate_resource_dependencies(mode_definitions, solid_defs):
+def _validate_resource_dependencies(mode_definitions, solid_defs, solid_dict):
     '''This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     '''
@@ -589,6 +591,20 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
                             mode_name=mode_def.name,
                         )
                     )
+        for solid in solid_dict.values():
+            for hook_def in solid.hook_defs:
+                for required_resource in hook_def.required_resource_keys:
+                    if required_resource not in mode_resources:
+                        raise DagsterInvalidDefinitionError(
+                            (
+                                'Resource "{resource}" is required by hook "{hook_name}", but is not '
+                                'provided by mode "{mode_name}".'
+                            ).format(
+                                resource=required_resource,
+                                hook_name=hook_def.name,
+                                mode_name=mode_def.name,
+                            )
+                        )
 
 
 def _validate_inputs(dependency_structure, solid_dict):

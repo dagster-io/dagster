@@ -203,6 +203,8 @@ def get_required_resource_keys_to_init(
                 step, execution_plan.pipeline_def, system_storage_def, intermediate_storage_def
             )
         )
+    for hook_def in execution_plan.get_all_hook_defs():
+        resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
     return frozenset(resource_keys)
 

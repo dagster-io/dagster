@@ -420,3 +420,7 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
     ''' Error raised by invalid asset key '''
+
+
+class HookExecutionError(DagsterUserCodeExecutionError):
+    ''' Error raised during the execution of a user-defined hook. '''
