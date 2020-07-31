@@ -48,7 +48,7 @@ START_DAGIT_WEBSERVER = 'start_dagit_webserver'
 TELEMETRY_VERSION = '0.2'
 
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
-# docs/next/src/pages/install/telemetry.mdx
+# docs/next/src/pages/install/index.mdx
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     '_logged_pipeline_execute_command',
     '_logged_pipeline_launch_command',
@@ -323,6 +323,38 @@ def _set_telemetry_instance_id():
 
 def hash_name(name):
     return hashlib.sha256(name.encode('utf-8')).hexdigest()
+
+
+def log_external_repo_stats(instance, source, external_repo, external_pipeline=None):
+    from dagster.core.host_representation.external import (
+        ExternalPipeline,
+        ExternalRepository,
+    )
+
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.str_param(source, 'source')
+    check.inst_param(external_repo, 'external_repo', ExternalRepository)
+    check.opt_inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+
+    if _get_instance_telemetry_enabled(instance):
+        instance_id = _get_or_set_instance_id()
+
+        pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ''
+        repo_hash = hash_name(external_repo.name)
+        num_pipelines_in_repo = len(external_repo.get_all_external_pipelines())
+
+        write_telemetry_log_line(
+            TelemetryEntry(
+                action=UPDATE_REPO_STATS,
+                client_time=str(datetime.datetime.now()),
+                event_id=str(uuid.uuid4()),
+                instance_id=instance_id,
+                pipeline_name_hash=pipeline_name_hash,
+                num_pipelines_in_repo=str(num_pipelines_in_repo),
+                repo_hash=repo_hash,
+                metadata={'source': source},
+            )._asdict()
+        )
 
 
 def log_repo_stats(instance, source, pipeline=None, repo=None):

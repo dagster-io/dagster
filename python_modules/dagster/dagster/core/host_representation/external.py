@@ -1,6 +1,7 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from dagster import check
+from dagster.core.events import DagsterEvent
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
@@ -179,6 +180,10 @@ class ExternalPipeline(RepresentedPipeline):
     def get_preset(self, preset_name):
         check.str_param(preset_name, 'preset_name')
         return self._active_preset_dict[preset_name]
+
+    @property
+    def available_modes(self):
+        return self._pipeline_index.available_modes
 
     def has_mode(self, mode_name):
         check.str_param(mode_name, 'mode_name')
@@ -383,3 +388,15 @@ class ExternalPartitionSet:
     @property
     def pipeline_name(self):
         return self._external_partition_set_data.pipeline_name
+
+
+class ExternalPipelineExecutionResult(namedtuple('_ExternalPipelineExecutionResult', 'event_list')):
+    def __new__(cls, event_list):
+        return super(ExternalPipelineExecutionResult, cls).__new__(
+            cls, check.list_param(event_list, 'event_list', of_type=DagsterEvent)
+        )
+
+    @property
+    def success(self):
+        '''bool: Whether all steps in the execution were successful.'''
+        return all([not event.is_failure for event in self.event_list])

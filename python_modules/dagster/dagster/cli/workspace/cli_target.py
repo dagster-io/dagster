@@ -8,7 +8,7 @@ from click import UsageError
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
-from dagster.core.host_representation import RepositoryLocation, UserProcessApi
+from dagster.core.host_representation import ExternalRepository, RepositoryLocation, UserProcessApi
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
@@ -369,14 +369,11 @@ def get_repository_location_from_kwargs(kwargs, instance):
     )
 
 
-def get_external_repository_from_kwargs(kwargs, instance):
-    check.inst_param(instance, 'instance', DagsterInstance)
-    repo_location = get_repository_location_from_kwargs(kwargs, instance)
+def get_external_repository_from_repo_location(repo_location, provided_repo_name):
+    check.inst_param(repo_location, 'repo_location', RepositoryLocation)
+    check.opt_str_param(provided_repo_name, 'provided_repo_name')
 
     repo_dict = repo_location.get_repositories()
-
-    provided_repo_name = kwargs.get('repository')
-
     check.invariant(repo_dict, 'There should be at least one repo.')
 
     # no name provided and there is only one repo. Automatically return
@@ -406,11 +403,16 @@ def get_external_repository_from_kwargs(kwargs, instance):
     return repo_location.get_repository(provided_repo_name)
 
 
-def get_external_pipeline_from_kwargs(kwargs, instance):
+def get_external_repository_from_kwargs(kwargs, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    external_repo = get_external_repository_from_kwargs(kwargs, instance)
+    repo_location = get_repository_location_from_kwargs(kwargs, instance)
+    provided_repo_name = kwargs.get('repository')
+    return get_external_repository_from_repo_location(repo_location, provided_repo_name)
 
-    provided_pipeline_name = kwargs.get('pipeline')
+
+def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name):
+    check.inst_param(external_repo, 'external_repo', ExternalRepository)
+    check.opt_str_param(provided_pipeline_name, 'provided_pipeline_name')
 
     external_pipelines = {ep.name: ep for ep in external_repo.get_all_external_pipelines()}
 
@@ -442,6 +444,13 @@ def get_external_pipeline_from_kwargs(kwargs, instance):
         )
 
     return external_pipelines[provided_pipeline_name]
+
+
+def get_external_pipeline_from_kwargs(kwargs, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    external_repo = get_external_repository_from_kwargs(kwargs, instance)
+    provided_pipeline_name = kwargs.get('pipeline')
+    return get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
 
 
 def _sorted_quoted(strings):

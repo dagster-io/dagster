@@ -21,7 +21,7 @@ from six.moves import configparser
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, multiprocessing, thread
+from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
 from dagster.seven.abc import Mapping
 from dagster.utils.merger import merge_dicts
 
@@ -216,27 +216,31 @@ def check_script(path, return_code=0):
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
-    cli_cmd = [
-        sys.executable,
-        '-m',
-        'dagster',
-        'pipeline',
-        'execute',
-        '-f',
-        path,
-        '-a',
-        pipeline_fn_name,
-    ]
+    from dagster.core.test_utils import environ
 
-    if env_file:
-        cli_cmd.append('-c')
-        cli_cmd.append(env_file)
+    with TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            cli_cmd = [
+                sys.executable,
+                '-m',
+                'dagster',
+                'pipeline',
+                'execute',
+                '-f',
+                path,
+                '-a',
+                pipeline_fn_name,
+            ]
 
-    try:
-        subprocess.check_output(cli_cmd)
-    except subprocess.CalledProcessError as cpe:
-        print(cpe)  # pylint: disable=print-call
-        raise cpe
+            if env_file:
+                cli_cmd.append('-c')
+                cli_cmd.append(env_file)
+
+            try:
+                subprocess.check_output(cli_cmd)
+            except subprocess.CalledProcessError as cpe:
+                print(cpe)  # pylint: disable=print-call
+                raise cpe
 
 
 def safe_tempfile_path_unmanaged():

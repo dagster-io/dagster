@@ -11,18 +11,25 @@ import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
+    get_external_pipeline_from_external_repo,
     get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
+    get_external_repository_from_repo_location,
+    get_repository_location_from_kwargs,
     pipeline_target_argument,
     repository_target_argument,
 )
 from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
+from dagster.core.host_representation import ExternalRepository, RepositoryLocation
+from dagster.core.host_representation.external import ExternalPipeline
+from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
+from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
@@ -287,22 +294,32 @@ def _logged_pipeline_execute_command(config, preset, mode, instance, kwargs):
     env = list(env)
     tags = get_tags_from_args(kwargs)
 
-    result = execute_execute_command(env, kwargs, mode, tags)
+    result = execute_execute_command(env, kwargs, instance, mode, tags)
     if not result.success:
         raise click.ClickException('Pipeline run {} resulted in failure.'.format(result.run_id))
 
 
-def execute_execute_command(env, cli_args, mode=None, tags=None):
-    instance = DagsterInstance.get()
+def get_run_config_from_env_file_list(env_file_list):
+    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
+    return load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+
+
+def execute_execute_command(env_file_list, cli_args, instance=None, mode=None, tags=None):
+    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
+    check.opt_inst_param(instance, 'instance', DagsterInstance)
+
+    instance = instance if instance else DagsterInstance.get()
     external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
     # We should move this to use external pipeline
     # https://github.com/dagster-io/dagster/issues/2556
     pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
     solid_selection = get_solid_selection_from_args(cli_args)
-    return do_execute_command(pipeline, instance, env, mode, tags, solid_selection)
+    return do_execute_command(pipeline, instance, env_file_list, mode, tags, solid_selection)
 
 
 def execute_execute_command_with_preset(preset, cli_args, instance, _mode):
+    instance = instance if instance else DagsterInstance.get()
+
     external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
     # We should move this to use external pipeline
     # https://github.com/dagster-io/dagster/issues/2556
@@ -314,10 +331,173 @@ def execute_execute_command_with_preset(preset, cli_args, instance, _mode):
     return execute_pipeline(
         pipeline,
         preset=preset,
-        instance=DagsterInstance.get(),
+        instance=instance,
         raise_on_error=False,
         tags=tags,
         solid_selection=solid_selection,
+    )
+
+
+def _check_execute_external_pipeline_args(
+    external_pipeline, run_config, mode, preset, tags, solid_selection
+):
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+    run_config = check.opt_dict_param(run_config, 'run_config')
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(preset, 'preset')
+    check.invariant(
+        not (mode is not None and preset is not None),
+        'You may set only one of `mode` (got {mode}) or `preset` (got {preset}).'.format(
+            mode=mode, preset=preset
+        ),
+    )
+
+    tags = check.opt_dict_param(tags, 'tags', key_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+
+    if preset is not None:
+        pipeline_preset = external_pipeline.get_preset(preset)
+
+        if pipeline_preset.run_config is not None:
+            check.invariant(
+                (not run_config) or (pipeline_preset.run_config == run_config),
+                'The environment set in preset \'{preset}\' does not agree with the environment '
+                'passed in the `run_config` argument.'.format(preset=preset),
+            )
+
+            run_config = pipeline_preset.run_config
+
+        # load solid_selection from preset
+        if pipeline_preset.solid_selection is not None:
+            check.invariant(
+                solid_selection is None or solid_selection == pipeline_preset.solid_selection,
+                'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
+                'the `solid_selection` argument: {solid_selection}'.format(
+                    preset=preset,
+                    preset_subset=pipeline_preset.solid_selection,
+                    solid_selection=solid_selection,
+                ),
+            )
+            solid_selection = pipeline_preset.solid_selection
+
+        check.invariant(
+            mode is None or mode == pipeline_preset.mode,
+            'Mode {mode} does not agree with the mode set in preset \'{preset}\': '
+            '(\'{preset_mode}\')'.format(
+                preset=preset, preset_mode=pipeline_preset.mode, mode=mode
+            ),
+        )
+
+        mode = pipeline_preset.mode
+
+        tags = merge_dicts(pipeline_preset.tags, tags)
+
+    if mode is not None:
+        if not external_pipeline.has_mode(mode):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to execute pipeline {name} with mode {mode}. '
+                    'Available modes: {modes}'
+                ).format(
+                    name=external_pipeline.name, mode=mode, modes=external_pipeline.available_modes,
+                )
+            )
+    else:
+        if len(external_pipeline.available_modes) > 1:
+            raise DagsterInvariantViolationError(
+                (
+                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
+                    'attempted to execute it without specifying a mode. Set '
+                    'mode property on the PipelineRun object.'
+                ).format(name=external_pipeline.name, modes=external_pipeline.available_modes)
+            )
+        mode = external_pipeline.get_default_mode_name()
+
+    tags = merge_dicts(external_pipeline.tags, tags)
+
+    return (
+        run_config,
+        mode,
+        tags,
+        solid_selection,
+    )
+
+
+def _create_external_pipeline_run(
+    instance,
+    repo_location,
+    external_repo,
+    external_pipeline,
+    run_config,
+    mode,
+    preset,
+    tags,
+    solid_selection,
+):
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(repo_location, 'repo_location', RepositoryLocation)
+    check.inst_param(external_repo, 'external_repo', ExternalRepository)
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+    check.opt_dict_param(run_config, 'run_config')
+
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(preset, 'preset')
+    check.opt_dict_param(tags, 'tags', key_type=str)
+    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+
+    run_config, mode, tags, solid_selection = _check_execute_external_pipeline_args(
+        external_pipeline, run_config, mode, preset, tags, solid_selection,
+    )
+
+    pipeline_name = external_pipeline.name
+    pipeline_selector = PipelineSelector(
+        location_name=repo_location.name,
+        repository_name=external_repo.name,
+        pipeline_name=pipeline_name,
+        solid_selection=solid_selection,
+    )
+
+    subset_pipeline_result = repo_location.get_subset_external_pipeline_result(pipeline_selector)
+    if subset_pipeline_result.success == False:
+        raise DagsterLaunchFailedError(
+            'Failed to load external pipeline subset: {error_message}'.format(
+                error_message=subset_pipeline_result.error.message
+            ),
+            serializable_error_info=subset_pipeline_result.error,
+        )
+
+    external_pipeline_subset = ExternalPipeline(
+        subset_pipeline_result.external_pipeline_data, external_repo.handle,
+    )
+
+    pipeline_mode = mode or external_pipeline_subset.get_default_mode_name()
+
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline_subset, run_config, pipeline_mode, step_keys_to_execute=None,
+    )
+    if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
+        raise DagsterLaunchFailedError(
+            'Failed to load external execution plan',
+            serializable_error_info=external_execution_plan.error,
+        )
+    else:
+        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+
+    return instance.create_run(
+        pipeline_name=pipeline_name,
+        run_id=None,
+        run_config=run_config,
+        mode=pipeline_mode,
+        solids_to_execute=external_pipeline_subset.solids_to_execute,
+        step_keys_to_execute=None,
+        solid_selection=solid_selection,
+        status=None,
+        root_run_id=None,
+        parent_run_id=None,
+        tags=tags,
+        pipeline_snapshot=external_pipeline_subset.pipeline_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
+        parent_pipeline_snapshot=external_pipeline_subset.parent_pipeline_snapshot,
     )
 
 
@@ -326,13 +506,11 @@ def do_execute_command(
 ):
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(instance, 'instance', DagsterInstance)
-    env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
-
-    run_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
     return execute_pipeline(
         pipeline,
-        run_config=run_config,
+        run_config=get_run_config_from_env_file_list(env_file_list),
         mode=mode,
         tags=tags,
         instance=instance,
@@ -424,22 +602,26 @@ def _logged_pipeline_launch_command(config, preset, mode, instance, kwargs):
 
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
 
-    instance = DagsterInstance.get()
-    external_pipeline = get_external_pipeline_from_kwargs(kwargs, instance)
-    # We should move this to use external pipeline
-    # https://github.com/dagster-io/dagster/issues/2556
-    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
+    repo_location = get_repository_location_from_kwargs(kwargs, instance)
+    external_repo = get_external_repository_from_repo_location(
+        repo_location, kwargs.get('repository')
+    )
+    external_pipeline = get_external_pipeline_from_external_repo(
+        external_repo, kwargs.get('pipeline'),
+    )
 
-    log_repo_stats(instance=instance, pipeline=pipeline, source='pipeline_launch_command')
+    log_external_repo_stats(
+        instance=instance,
+        external_pipeline=external_pipeline,
+        external_repo=external_repo,
+        source='pipeline_launch_command',
+    )
 
     if preset:
         if env:
             raise click.UsageError('Can not use --preset with --config.')
 
-        if mode:
-            raise click.UsageError('Can not use --preset with --mode.')
-
-        preset = pipeline.get_definition().get_preset(preset)
+        preset = external_pipeline.get_preset(preset)
     else:
         preset = None
 
@@ -447,39 +629,16 @@ def _logged_pipeline_launch_command(config, preset, mode, instance, kwargs):
 
     solid_selection = get_solid_selection_from_args(kwargs)
 
-    if preset and preset.solid_selection is not None:
-        check.invariant(
-            solid_selection is None or solid_selection == preset.solid_selection,
-            'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
-            'the `solid_selection` argument: {solid_selection}'.format(
-                preset=preset,
-                preset_subset=preset.solid_selection,
-                solid_selection=solid_selection,
-            ),
-        )
-        solid_selection = preset.solid_selection
-
-    # generate pipeline subset from the given solid_selection
-    if solid_selection:
-        pipeline = pipeline.subset_for_execution(solid_selection)
-
-    # FIXME need to check the env against run_config
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
-        solid_selection=solid_selection,
-        solids_to_execute=pipeline.solids_to_execute,
-        run_config=preset.run_config if preset else load_yaml_from_glob_list(env),
-        mode=(preset.mode if preset else mode) or 'default',
+    pipeline_run = _create_external_pipeline_run(
+        instance=instance,
+        repo_location=repo_location,
+        external_repo=external_repo,
+        external_pipeline=external_pipeline,
+        run_config=get_run_config_from_env_file_list(env),
+        mode=mode,
+        preset=preset,
         tags=run_tags,
-    )
-
-    recon_repo = pipeline.get_reconstructable_repository()
-
-    repo_location = InProcessRepositoryLocation(recon_repo)
-    external_pipeline = (
-        repo_location.get_repository(recon_repo.get_definition().name).get_full_external_pipeline(
-            pipeline.get_definition().name
-        ),
+        solid_selection=solid_selection,
     )
 
     return instance.launch_run(pipeline_run.run_id, external_pipeline)

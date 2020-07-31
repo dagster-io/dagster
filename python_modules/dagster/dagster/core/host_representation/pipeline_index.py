@@ -92,6 +92,10 @@ class PipelineIndex:
 
         return False
 
+    @property
+    def available_modes(self):
+        return [mode_def_snap.name for mode_def_snap in self.pipeline_snapshot.mode_def_snaps]
+
     def get_mode_def_snap(self, name):
         check.str_param(name, 'name')
         for mode_def_snap in self.pipeline_snapshot.mode_def_snaps:

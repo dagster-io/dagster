@@ -4,7 +4,7 @@ import time
 import weakref
 
 from dagster import check
-from dagster.api.execute_run import cli_api_execute_run
+from dagster.api.execute_run import cli_api_launch_run
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -141,7 +141,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             get_system_temp_directory(), 'cli-api-execute-run-{}'.format(run.run_id)
         )
 
-        process = cli_api_execute_run(
+        process = cli_api_launch_run(
             output_file=output_file,
             instance=self._instance,
             pipeline_origin=external_pipeline.get_origin(),

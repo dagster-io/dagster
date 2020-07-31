@@ -6,9 +6,11 @@ import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
 
+from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import environ
 from dagster.utils import (
     DEFAULT_REPOSITORY_YAML_FILENAME,
     check_script,
@@ -286,8 +288,10 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
 
 
 def dagster_pipeline_execute(args, return_code):
-    runner = CliRunner()
-    res = runner.invoke(pipeline_execute_command, args)
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            runner = CliRunner()
+            res = runner.invoke(pipeline_execute_command, args)
     assert res.exit_code == return_code, res.exception
 
     return res

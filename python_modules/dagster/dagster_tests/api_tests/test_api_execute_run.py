@@ -5,8 +5,6 @@ from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import LoadableTargetOrigin
-from dagster.serdes.ipc import ipc_read_event_stream
-from dagster.utils import safe_tempfile_path
 
 from .utils import (
     get_foo_grpc_pipeline_handle,
@@ -36,24 +34,14 @@ def test_execute_run_api(pipeline_handle):
             execution_plan_snapshot=None,
             parent_pipeline_snapshot=None,
         )
-        with safe_tempfile_path() as output_file_path:
-            process = cli_api_execute_run(
-                output_file=output_file_path,
-                instance=instance,
-                pipeline_origin=pipeline_handle.get_origin(),
-                pipeline_run=pipeline_run,
-            )
+        events = cli_api_execute_run(
+            instance=instance,
+            pipeline_origin=pipeline_handle.get_origin(),
+            pipeline_run=pipeline_run,
+        )
 
-            _stdout, _stderr = process.communicate()
-
-            events = [event for event in ipc_read_event_stream(output_file_path)]
-
-    assert len(events) == 12
-    assert [
-        event.event_type_value
-        for event in events
-        if hasattr(event, 'event_type_value')  # ExecuteRunArgsLoadComplete is synthetic
-    ] == [
+    assert len(events) == 11
+    assert [event.event_type_value for event in events] == [
         'PIPELINE_START',
         'ENGINE_EVENT',
         'STEP_START',
