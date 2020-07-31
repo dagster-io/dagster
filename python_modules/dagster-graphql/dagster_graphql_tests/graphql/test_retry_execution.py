@@ -1,5 +1,7 @@
+import sys
 from time import sleep
 
+import pytest
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -657,6 +659,11 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         assert reexecution_run.is_failure
 
+    @pytest.mark.skipif(
+        sys.version_info.major == 3 and sys.version_info.minor == 8,
+        reason="CliApiRunLauncher subprocess termination hanging on py38 in Buildkite, "
+        "see https://github.com/dagster-io/dagster/issues/2768",
+    )
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
         selector = infer_pipeline_selector(
