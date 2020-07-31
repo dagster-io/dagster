@@ -365,11 +365,9 @@ class AssetMaterialization(
         description (Optional[str]): A longer human-radable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
-        dagster_type (Optional[DagsterType]): The DagsterType associated with the materialization event
-            in its metadata
     '''
 
-    def __new__(cls, asset_key, description=None, metadata_entries=None, dagster_type=None):
+    def __new__(cls, asset_key, description=None, metadata_entries=None):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, 'asset_key', AssetKey)
         elif check.is_str(asset_key):
@@ -380,29 +378,6 @@ class AssetMaterialization(
         else:
             check.is_tuple(asset_key, of_type=str)
             asset_key = AssetKey(asset_key)
-        if dagster_type is not None:
-
-            from dagster.core.types.dagster_type import DagsterType
-
-            # importing here to resolve circularity
-
-            dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
-            metadata_entries = check.opt_list_param(
-                metadata_entries, metadata_entries, of_type=EventMetadataEntry
-            )
-            if metadata_entries is None:
-                metadata_entries = []
-            metadata_entries.append(
-                EventMetadataEntry.text(
-                    (dagster_type.name if dagster_type.name else 'Any'), 'system-type-name'
-                )
-            )
-            metadata_entries.append(
-                EventMetadataEntry.text(
-                    (dagster_type.description if dagster_type.description else 'Any'),
-                    'system-type-description',
-                )
-            )
 
         return super(AssetMaterialization, cls).__new__(
             cls,
@@ -418,7 +393,7 @@ class AssetMaterialization(
         return self.asset_key.to_string()
 
     @staticmethod
-    def file(path, description=None, asset_key=None, dagster_type=None):
+    def file(path, description=None, asset_key=None):
         '''Static constructor for standard materializations corresponding to files on disk.
 
         Args:
@@ -432,7 +407,6 @@ class AssetMaterialization(
             asset_key=asset_key,
             description=description,
             metadata_entries=[EventMetadataEntry.fspath(path)],
-            dagster_type=dagster_type,
         )
 
 

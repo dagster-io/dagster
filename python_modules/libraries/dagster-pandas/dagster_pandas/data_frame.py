@@ -54,7 +54,7 @@ def dataframe_materializer(_context, config, pandas_df):
     else:
         check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
-    return AssetMaterialization.file(file_options['path'], dagster_type=_context.dagster_type)
+    return AssetMaterialization.file(file_options['path'])
 
 
 @dagster_type_loader(

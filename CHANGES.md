@@ -15,6 +15,15 @@ takes in a `-f` or `--python_file` argument.
 - Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
   supported API for custom pandas data frame type creation.
 
+## 0.8.11
+
+**Breaking Changes**
+
+- `AssetMaterializations` no longer accepts a `dagster_type` argument. This reverts the change
+  billed as "`AssetMaterializations` can now have type information attached as metadata." in the
+  previous release.
+
+
 ## 0.8.10
 
 **New**

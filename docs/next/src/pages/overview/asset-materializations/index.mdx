@@ -52,20 +52,6 @@ lines:33-47
 Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
 on they types of event metadata available.
 
-## Attaching Type Information to materializations, and the dagster_type_materializer
-
-As explored in more detail in [**Advanced: Materializations**](/tutorial/advanced_materializations),
-Dagster can be configured to directly materialize the results of computations rather than outputting them.
-In this case, the type of the materialized result can also be attached as metadata to the event,
- using the below pattern.
-
-```python literalinclude showLines startLine=31 caption=output_materialization.py
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
-lines:40-62
-```
-
-Types materialized in this way will have their dagster type's name and description as metadata in the asset view.
-
 ## Indexing with Asset Keys
 
 Asset materializations can be indexed by adding an <PyObject module="dagster" object="AssetKey" />

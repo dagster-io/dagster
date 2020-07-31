@@ -67,14 +67,14 @@ while pickle is a binary format.)
 
 ```python literalinclude showLines startLine=31 caption=output_materialization.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
-lines:31-82
+lines:31-70
 ```
 
 We set the output materialization config on the type:
 
 ```python literalinclude showLines startLine=93 emphasize-lines=5 caption=output_materialization.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
-lines:84-91
+lines:93-98
 ```
 
 Now we can tell Dagster to materialize intermediate outputs of this type by
@@ -85,8 +85,8 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/outpu
 lines:1-10
 ```
 
-When we run this pipeline, we'll see that assets, with the associated type of LessSimpleDataFrame,
-are yielded (and visible in the structured logs in Dagit), and that files are created on disk
+When we run this pipeline, we'll see that asset materializations are yielded (and
+visible in the structured logs in Dagit), and that files are created on disk
 (with the semicolon separator we specified).
 
 ![output_materializations.png](/assets/images/tutorial/output_materializations.png)

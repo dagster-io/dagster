@@ -189,7 +189,7 @@ class SystemExecutionContext(object):
             self._execution_context_data, self._log_manager.with_tags(**step.logging_tags), step,
         )
 
-    def for_type_check(self, dagster_type):
+    def for_type(self, dagster_type):
         return TypeCheckContext(self._execution_context_data, self.log, dagster_type)
 
 
@@ -243,20 +243,9 @@ class SystemStepExecutionContext(SystemExecutionContext):
     def for_compute(self):
         return SystemComputeExecutionContext(self._execution_context_data, self.log, self.step)
 
-    def for_type_output(self, output_name):
-        return OutputTypeContext(self.execution_context_data, self.log, self.step, output_name)
-
     @property
     def step(self):
         return self._step
-
-    @property
-    def execution_context_data(self):
-        return self._execution_context_data
-
-    @property
-    def dagster_type(self):
-        return None
 
     @property
     def step_launcher(self):
@@ -285,21 +274,6 @@ class SystemStepExecutionContext(SystemExecutionContext):
     @property
     def log(self):
         return self._log_manager
-
-
-class OutputTypeContext(SystemStepExecutionContext):
-    def __init__(self, execution_context_data, log_manager, step, output_name):
-        super(OutputTypeContext, self).__init__(execution_context_data, log_manager, step)
-        step_output_dict = self.step.step_output_dict
-        output = step_output_dict.get(output_name, None)
-        if output is not None:
-            self._type = output.dagster_type
-        else:
-            self._type = None
-
-    @property
-    def dagster_type(self):
-        return self._type
 
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
