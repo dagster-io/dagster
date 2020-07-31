@@ -1,4 +1,4 @@
 load_from:
   - python_module:
       module_name: dagster_examples
-      attribute: define_internal_dagit_repository
+      location_name: legacy_examples

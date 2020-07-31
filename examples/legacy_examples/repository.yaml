@@ -1,3 +1,0 @@
-repository:
-  module: dagster_examples
-  fn: define_internal_dagit_repository

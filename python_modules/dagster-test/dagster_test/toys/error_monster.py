@@ -115,7 +115,7 @@ def str_to_num(context, string):
     preset_defs=[
         PresetDefinition.from_pkg_resources(
             'passing',
-            pkg_resource_defs=[('dagster_examples.toys.environments', 'error.yaml')],
+            pkg_resource_defs=[('dagster_test.toys.environments', 'error.yaml')],
             mode='errorable_mode',
         )
     ],

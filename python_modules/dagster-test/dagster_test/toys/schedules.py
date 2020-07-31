@@ -108,7 +108,7 @@ def materialization_schedule():
 
 
 def longitudinal_schedule():
-    from .toys.longitudinal import longitudinal_config
+    from .longitudinal import longitudinal_config
 
     schedule_name = 'longitudinal_demo'
 
@@ -131,16 +131,6 @@ def longitudinal_schedule():
         partition_selector=_partition_selector,
         should_execute=_should_execute,
     )
-
-
-def get_bay_bikes_schedules():
-    from dagster_examples.bay_bikes.schedules import (
-        daily_weather_ingest_schedule,
-        daily_weather_schedule,
-        monthly_trip_ingest_schedule,
-    )
-
-    return [daily_weather_ingest_schedule, daily_weather_schedule, monthly_trip_ingest_schedule]
 
 
 def get_toys_schedules():

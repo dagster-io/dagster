@@ -1,4 +1,0 @@
-context:
-  default:
-    config:
-      log_level: DEBUG
