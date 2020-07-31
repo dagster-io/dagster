@@ -7,7 +7,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 
 class ExecutorDefinition(object):
@@ -24,21 +24,10 @@ class ExecutorDefinition(object):
     '''
 
     def __init__(
-        self,
-        name,
-        config_schema=None,
-        executor_creation_fn=None,
-        required_resource_keys=None,
-        config=None,
+        self, name, config_schema=None, executor_creation_fn=None, required_resource_keys=None,
     ):
         self._name = check.str_param(name, 'name')
-        self._config_schema = canonicalize_backcompat_args(
-            check_user_facing_opt_config_param(config_schema, 'config_schema'),
-            'config_schema',
-            check_user_facing_opt_config_param(config, 'config'),
-            'config',
-            '0.9.0',
-        )
+        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )
@@ -68,7 +57,7 @@ class ExecutorDefinition(object):
         return self._required_resource_keys
 
 
-def executor(name=None, config_schema=None, required_resource_keys=None, config=None):
+def executor(name=None, config_schema=None, required_resource_keys=None):
     '''Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -84,15 +73,10 @@ def executor(name=None, config_schema=None, required_resource_keys=None, config=
     if callable(name):
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
-        check.invariant(config is None)
         return _ExecutorDecoratorCallable()(name)
 
     return _ExecutorDecoratorCallable(
-        name=name,
-        config_schema=canonicalize_backcompat_args(
-            config_schema, 'config_schema', config, 'config', '0.9.0'
-        ),
-        required_resource_keys=required_resource_keys,
+        name=name, config_schema=config_schema, required_resource_keys=required_resource_keys,
     )
 
 

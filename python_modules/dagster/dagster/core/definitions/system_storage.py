@@ -5,7 +5,7 @@ from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediateStorage
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 
 class SystemStorageDefinition(
@@ -52,19 +52,12 @@ class SystemStorageDefinition(
         required_resource_keys,
         config_schema=None,
         system_storage_creation_fn=None,
-        config=None,
     ):
         return super(SystemStorageDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             is_persistent=check.bool_param(is_persistent, 'is_persistent'),
-            config_schema=canonicalize_backcompat_args(
-                check_user_facing_opt_config_param(config_schema, 'config_schema'),
-                'config_schema',
-                check_user_facing_opt_config_param(config, 'config'),
-                'config',
-                '0.9.0',
-            ),
+            config_schema=check_user_facing_opt_config_param(config_schema, 'config_schema'),
             system_storage_creation_fn=check.opt_callable_param(
                 system_storage_creation_fn, 'system_storage_creation_fn'
             ),
@@ -94,9 +87,7 @@ class SystemStorageData(object):
         self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(
-    required_resource_keys, name=None, is_persistent=True, config_schema=None, config=None
-):
+def system_storage(required_resource_keys, name=None, is_persistent=True, config_schema=None):
     '''Creates a system storage definition.
 
     The decorated function will be passed as the ``system_storage_creation_fn`` to a
@@ -115,7 +106,6 @@ def system_storage(
 
     if callable(name):
         check.invariant(is_persistent is True)
-        check.invariant(config is None)
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         return _SystemStorageDecoratorCallable()(name)
@@ -123,9 +113,7 @@ def system_storage(
     return _SystemStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
-        config_schema=canonicalize_backcompat_args(
-            config_schema, 'config_schema', config, 'config', '0.9.0'
-        ),
+        config_schema=config_schema,
         required_resource_keys=required_resource_keys,
     )
 

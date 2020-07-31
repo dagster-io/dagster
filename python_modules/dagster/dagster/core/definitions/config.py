@@ -4,7 +4,7 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.primitive_mapping import is_supported_config_python_builtin
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 
 def is_callable_valid_config_arg(config):
@@ -28,17 +28,11 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_schema')):
         config_schema (ConfigSchema): The schema of the composite config.
     '''
 
-    def __new__(cls, config_fn, config_schema=None, config=None):
+    def __new__(cls, config_fn, config_schema=None):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, 'config_fn'),
-            config_schema=canonicalize_backcompat_args(
-                check_user_facing_opt_config_param(config_schema, 'config_schema'),
-                'config_schema',
-                check_user_facing_opt_config_param(config, 'config'),
-                'config',
-                '0.9.0',
-            ),
+            config_schema=check_user_facing_opt_config_param(config_schema, 'config_schema'),
         )
 
     @property

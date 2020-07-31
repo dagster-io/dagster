@@ -3,7 +3,7 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 
 class IntermediateStorageDefinition(
@@ -59,7 +59,7 @@ class IntermediateStorageDefinition(
 
 
 def intermediate_storage(
-    required_resource_keys=None, name=None, is_persistent=True, config_schema=None, config=None
+    required_resource_keys=None, name=None, is_persistent=True, config_schema=None
 ):
     '''Creates an intermediate storage definition
 
@@ -79,7 +79,6 @@ def intermediate_storage(
 
     if callable(name):
         check.invariant(is_persistent is True)
-        check.invariant(config is None)
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         return _IntermediateStorageDecoratorCallable()(name)
@@ -87,9 +86,7 @@ def intermediate_storage(
     return _IntermediateStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
-        config_schema=canonicalize_backcompat_args(
-            config_schema, 'config_schema', config, 'config', '0.9.0'
-        ),
+        config_schema=config_schema,
         required_resource_keys=required_resource_keys,
     )
 

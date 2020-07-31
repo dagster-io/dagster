@@ -17,7 +17,7 @@ from dagster import (
 )
 
 
-@resource(config={'ge_root_dir': Noneable(StringSource)})
+@resource(config_schema={'ge_root_dir': Noneable(StringSource)})
 def ge_data_context(context):
     if context.resource_config['ge_root_dir'] is None:
         yield ge.data_context.DataContext()

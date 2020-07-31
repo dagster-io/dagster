@@ -7,7 +7,7 @@ from dagster.config.validate import process_config
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
@@ -36,12 +36,7 @@ class ResourceDefinition(IConfigMappable):
     '''
 
     def __init__(
-        self,
-        resource_fn=None,
-        config_schema=None,
-        description=None,
-        config=None,
-        process_config_fn=None,
+        self, resource_fn=None, config_schema=None, description=None, process_config_fn=None,
     ):
         EXPECTED_POSITIONALS = ['*']
         fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
@@ -57,13 +52,7 @@ class ResourceDefinition(IConfigMappable):
             )
 
         self._resource_fn = check.opt_callable_param(resource_fn, 'resource_fn')
-        self._config_schema = canonicalize_backcompat_args(
-            check_user_facing_opt_config_param(config_schema, 'config_schema'),
-            'config_schema',
-            check_user_facing_opt_config_param(config, 'config'),
-            'config',
-            '0.9.0',
-        )
+        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self._description = check.opt_str_param(description, 'description')
         self._process_config_fn = check.opt_callable_param(
             process_config_fn, 'process_config_fn'
@@ -149,7 +138,7 @@ class _ResourceDecoratorCallable(object):
         return resource_def
 
 
-def resource(config_schema=None, description=None, config=None):
+def resource(config_schema=None, description=None):
     '''Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -173,12 +162,9 @@ def resource(config_schema=None, description=None, config=None):
         return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn):
-        return _ResourceDecoratorCallable(
-            config_schema=canonicalize_backcompat_args(
-                config_schema, 'config_schema', config, 'config', '0.9.0'
-            ),
-            description=description,
-        )(resource_fn)
+        return _ResourceDecoratorCallable(config_schema=config_schema, description=description,)(
+            resource_fn
+        )
 
     return _wrap
 

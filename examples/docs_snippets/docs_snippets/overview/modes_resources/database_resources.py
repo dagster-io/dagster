@@ -15,7 +15,7 @@ def sqlite_database(_):
 
 
 @resource(
-    config={
+    config_schema={
         'hostname': StringSource,
         'port': IntSource,
         'username': StringSource,

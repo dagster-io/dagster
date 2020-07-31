@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 
 class LoggerDefinition(object):
@@ -19,15 +19,9 @@ class LoggerDefinition(object):
         description (Optional[str]): A human-readable description of this logger.
     '''
 
-    def __init__(self, logger_fn, config_schema=None, description=None, config=None):
+    def __init__(self, logger_fn, config_schema=None, description=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self._config_schema = canonicalize_backcompat_args(
-            check_user_facing_opt_config_param(config_schema, 'config_schema'),
-            'config_schema',
-            check_user_facing_opt_config_param(config, 'config'),
-            'config',
-            '0.9.0',
-        )
+        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -48,7 +42,7 @@ class LoggerDefinition(object):
         return self._description
 
 
-def logger(config_schema=None, description=None, config=None):
+def logger(config_schema=None, description=None):
     '''Define a logger.
 
     The decorated function should accept an :py:class:`InitLoggerContext` and return an instance of
@@ -67,11 +61,7 @@ def logger(config_schema=None, description=None, config=None):
 
     def _wrap(logger_fn):
         return LoggerDefinition(
-            logger_fn=logger_fn,
-            config_schema=canonicalize_backcompat_args(
-                config_schema, 'config_schema', config, 'config', '0.9.0'
-            ),
-            description=description,
+            logger_fn=logger_fn, config_schema=config_schema, description=description,
         )
 
     return _wrap

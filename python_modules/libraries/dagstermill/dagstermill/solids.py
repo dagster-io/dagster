@@ -28,7 +28,6 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillError, DagstermillExecutionError
@@ -274,10 +273,9 @@ def define_dagstermill_solid(
     notebook_path,
     input_defs=None,
     output_defs=None,
-    config=None,
+    config_schema=None,
     required_resource_keys=None,
     output_notebook=None,
-    config_schema=None,
 ):
     '''Wrap a Jupyter notebook in a solid.
 
@@ -316,13 +314,7 @@ def define_dagstermill_solid(
             if output_notebook
             else []
         ),
-        config_schema=canonicalize_backcompat_args(
-            check_user_facing_opt_config_param(config_schema, 'config_schema'),
-            'config_schema',
-            check_user_facing_opt_config_param(config, 'config'),
-            'config',
-            '0.9.0',
-        ),
+        config_schema=check_user_facing_opt_config_param(config_schema, 'config_schema'),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         tags={'notebook_path': notebook_path, 'kind': 'ipynb'},

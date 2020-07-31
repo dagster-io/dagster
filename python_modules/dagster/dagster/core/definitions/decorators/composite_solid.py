@@ -2,7 +2,6 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ..composition import (
     InputMappingNode,
@@ -168,7 +167,6 @@ def composite_solid(
     description=None,
     config_schema=None,
     config_fn=None,
-    config=None,
 ):
     '''Create a composite solid with the specified parameters from the decorated composition
     function.
@@ -229,7 +227,6 @@ def composite_solid(
         check.invariant(input_defs is None)
         check.invariant(output_defs is None)
         check.invariant(description is None)
-        check.invariant(config is None)
         check.invariant(config_schema is None)
         check.invariant(config_fn is None)
         return _CompositeSolid()(name)
@@ -239,8 +236,6 @@ def composite_solid(
         input_defs=input_defs,
         output_defs=output_defs,
         description=description,
-        config_schema=canonicalize_backcompat_args(
-            config_schema, 'config_schema', config, 'config', '0.9.0'
-        ),
+        config_schema=config_schema,
         config_fn=config_fn,
     )

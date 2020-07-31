@@ -25,7 +25,6 @@ class AssetStorageDefinition(ResourceDefinition):
         resource_fn=None,
         config_schema=None,
         description=None,
-        config=None,
         process_config_fn=None,
         type_policies=None,
     ):
@@ -33,7 +32,6 @@ class AssetStorageDefinition(ResourceDefinition):
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
-            config=config,
             process_config_fn=process_config_fn,
         )
         self._type_policies = type_policies

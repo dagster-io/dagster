@@ -8,7 +8,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
@@ -222,16 +222,9 @@ class SolidDefinition(ISolidDefinition):
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
-        config=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_schema = canonicalize_backcompat_args(
-            check_user_facing_opt_config_param(config_schema, 'config_schema'),
-            'config_schema',
-            check_user_facing_opt_config_param(config, 'config'),
-            'config',
-            '0.9.0',
-        )
+        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
