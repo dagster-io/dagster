@@ -26,7 +26,11 @@ if __name__ == '__main__':
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'flytekit', 'python-forge'],
+        install_requires=[
+            'dagster',
+            'flytekit<0.11.0',  # https://github.com/dagster-io/dagster/issues/2769
+            'python-forge',
+        ],
         tests_require=[],
         zip_safe=False,
     )
