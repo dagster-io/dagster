@@ -20,10 +20,18 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.definitions.executable import ExecutablePipeline
-from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
-from dagster.core.host_representation.external import ExternalPipeline
+from dagster.core.errors import (
+    DagsterBackfillFailedError,
+    DagsterInvariantViolationError,
+    DagsterLaunchFailedError,
+)
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    ExternalRepository,
+    RepositoryHandle,
+    RepositoryLocation,
+)
+from dagster.core.host_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
@@ -35,10 +43,7 @@ from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import (
-    recon_pipeline_from_origin,
-    recon_repo_from_external_repo,
-)
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -675,7 +680,7 @@ def do_scaffold_command(pipeline_def, printer, skip_non_required):
     printer(yaml_string)
 
 
-def gen_partitions_from_args(partition_set, kwargs):
+def gen_partition_names_from_args(partition_names, kwargs):
     partition_selector_args = [
         bool(kwargs.get('all')),
         bool(kwargs.get('partitions')),
@@ -686,26 +691,24 @@ def gen_partitions_from_args(partition_set, kwargs):
             'error, cannot use more than one of: `--all`, `--partitions`, `--from/--to`'
         )
 
-    partitions = partition_set.get_partitions()
-
     if kwargs.get('all'):
-        return partitions
+        return partition_names
 
     if kwargs.get('partitions'):
         selected_args = [s.strip() for s in kwargs.get('partitions').split(',') if s.strip()]
         selected_partitions = [
-            partition for partition in partitions if partition.name in selected_args
+            partition for partition in partition_names if partition in selected_args
         ]
         if len(selected_partitions) < len(selected_args):
-            selected_names = [partition.name for partition in selected_partitions]
+            selected_names = [partition for partition in selected_partitions]
             unknown = [selected for selected in selected_args if selected not in selected_names]
             raise click.UsageError('Unknown partitions: {}'.format(unknown.join(', ')))
         return selected_partitions
 
-    start = validate_partition_slice(partitions, 'from', kwargs.get('from'))
-    end = validate_partition_slice(partitions, 'to', kwargs.get('to'))
+    start = validate_partition_slice(partition_names, 'from', kwargs.get('from'))
+    end = validate_partition_slice(partition_names, 'to', kwargs.get('to'))
 
-    return partitions[start:end]
+    return partition_names[start:end]
 
 
 def get_tags_from_args(kwargs):
@@ -736,14 +739,14 @@ def print_partition_format(partitions, indent_level):
         screen_width = min(250, int(tty_width))
     else:
         screen_width = 250
-    max_str_len = max(len(x.name) for x in partitions)
+    max_str_len = max(len(x) for x in partitions)
     spacing = 10
     num_columns = min(10, int((screen_width - indent_level) / (max_str_len + spacing)))
     column_width = int((screen_width - indent_level) / num_columns)
     prefix = ' ' * max(0, indent_level - spacing)
     lines = []
     for chunk in list(split_chunk(partitions, num_columns)):
-        lines.append(prefix + ''.join(partition.name.rjust(column_width) for partition in chunk))
+        lines.append(prefix + ''.join(partition.rjust(column_width) for partition in chunk))
 
     return '\n' + '\n'.join(lines)
 
@@ -753,11 +756,10 @@ def split_chunk(l, n):
         yield l[i : i + n]
 
 
-def validate_partition_slice(partitions, name, value):
+def validate_partition_slice(partition_names, name, value):
     is_start = name == 'from'
     if value is None:
-        return 0 if is_start else len(partitions)
-    partition_names = [partition.name for partition in partitions]
+        return 0 if is_start else len(partition_names)
     if value not in partition_names:
         raise click.UsageError('invalid value {} for {}'.format(value, name))
     index = partition_names.index(value)
@@ -810,59 +812,79 @@ def pipeline_backfill_command(**kwargs):
 
 def execute_backfill_command(cli_args, print_fn, instance=None):
     instance = instance or DagsterInstance.get()
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
-    external_repository = get_external_repository_from_kwargs(cli_args, instance)
+    repo_location = get_repository_location_from_kwargs(cli_args, instance)
+    external_repo = get_external_repository_from_repo_location(
+        repo_location, cli_args.get('repository')
+    )
 
-    # We should move this to use external repository
-    # https://github.com/dagster-io/dagster/issues/2556
-    recon_repo = recon_repo_from_external_repo(external_repository)
-    repo_def = recon_repo.get_definition()
+    external_pipeline = get_external_pipeline_from_external_repo(
+        external_repo, cli_args.get('pipeline'),
+    )
 
     noprompt = cli_args.get('noprompt')
 
-    pipeline_def = repo_def.get_pipeline(external_pipeline.name)
+    pipeline_partition_set_names = {
+        external_partition_set.name: external_partition_set
+        for external_partition_set in external_repo.get_external_partition_sets()
+        if external_partition_set.pipeline_name == external_pipeline.name
+    }
 
-    # Resolve partition set
-    all_partition_sets = repo_def.partition_set_defs + [
-        schedule_def.get_partition_set()
-        for schedule_def in repo_def.schedule_defs
-        if isinstance(schedule_def, PartitionScheduleDefinition)
-    ]
-
-    pipeline_partition_sets = [
-        x for x in all_partition_sets if x.pipeline_name == pipeline_def.name
-    ]
-    if not pipeline_partition_sets:
+    if not pipeline_partition_set_names:
         raise click.UsageError(
-            'No partition sets found for pipeline `{}`'.format(pipeline_def.name)
+            'No partition sets found for pipeline `{}`'.format(external_pipeline.name)
         )
     partition_set_name = cli_args.get('partition_set')
     if not partition_set_name:
-        if len(pipeline_partition_sets) == 1:
-            partition_set_name = pipeline_partition_sets[0].name
+        if len(pipeline_partition_set_names) == 1:
+            partition_set_name = next(iter(pipeline_partition_set_names.keys()))
         elif noprompt:
             raise click.UsageError('No partition set specified (see option `--partition-set`)')
         else:
             partition_set_name = click.prompt(
                 'Select a partition set to use for backfill: {}'.format(
-                    ', '.join(x.name for x in pipeline_partition_sets)
+                    ', '.join(x for x in pipeline_partition_set_names.keys())
                 )
             )
-    partition_set = next((x for x in pipeline_partition_sets if x.name == partition_set_name), None)
+
+    partition_set = pipeline_partition_set_names.get(partition_set_name)
+
     if not partition_set:
         raise click.UsageError('No partition set found named `{}`'.format(partition_set_name))
 
+    mode = partition_set.mode
+    solid_selection = partition_set.solid_selection
+
+    repo_handle = RepositoryHandle(
+        repository_name=external_repo.name,
+        repository_location_handle=repo_location.location_handle,
+    )
+
     # Resolve partitions to backfill
-    partitions = gen_partitions_from_args(partition_set, cli_args)
+    partition_names_or_error = repo_location.get_external_partition_names(
+        repo_handle, partition_set_name,
+    )
+
+    if isinstance(partition_names_or_error, ExternalPartitionExecutionErrorData):
+        raise DagsterBackfillFailedError(
+            'Failure fetching partition names for {partition_set_name}: {error_message}'.format(
+                partition_set_name=partition_set_name,
+                error_message=partition_names_or_error.error.message,
+            ),
+            serialized_error_info=partition_names_or_error.error,
+        )
+
+    partition_names = gen_partition_names_from_args(
+        partition_names_or_error.partition_names, cli_args
+    )
 
     # Print backfill info
-    print_fn('\n     Pipeline: {}'.format(pipeline_def.name))
-    print_fn('Partition set: {}'.format(partition_set.name))
-    print_fn('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
+    print_fn('\n     Pipeline: {}'.format(external_pipeline.name))
+    print_fn('Partition set: {}'.format(partition_set_name))
+    print_fn('   Partitions: {}\n'.format(print_partition_format(partition_names, indent_level=15)))
 
     # Confirm and launch
     if noprompt or click.confirm(
-        'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
+        'Do you want to proceed with the backfill ({} partitions)?'.format(len(partition_names))
     ):
 
         print_fn('Launching runs... ')
@@ -872,15 +894,42 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             PipelineRun.tags_for_backfill_id(backfill_id), get_tags_from_args(cli_args),
         )
 
-        for partition in partitions:
-            run = instance.create_run_for_pipeline(
-                pipeline_def=pipeline_def,
-                mode=partition_set.mode,
-                solids_to_execute=frozenset(partition_set.solid_selection)
-                if partition_set and partition_set.solid_selection
-                else None,
-                run_config=partition_set.run_config_for_partition(partition),
-                tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
+        for partition_name in partition_names:
+            run_config_or_error = repo_location.get_external_partition_config(
+                repo_handle, partition_set_name, partition_name
+            )
+            if isinstance(run_config_or_error, ExternalPartitionExecutionErrorData):
+                raise DagsterBackfillFailedError(
+                    'Failure fetching run config for partition {partition_name} in {partition_set_name}: {error_message}'.format(
+                        partition_name=partition_name,
+                        partition_set_name=partition_set_name,
+                        error_message=run_config_or_error.error.message,
+                    ),
+                    serialized_error_info=run_config_or_error.error,
+                )
+
+            tags_or_error = repo_location.get_external_partition_tags(
+                repo_handle, partition_set_name, partition_name
+            )
+            if isinstance(tags_or_error, ExternalPartitionExecutionErrorData):
+                raise DagsterBackfillFailedError(
+                    'Failure fetching tags for partition {partition_name} in {partition_set_name}: {error_message}'.format(
+                        partition_name=partition_name,
+                        partition_set_name=partition_set_name,
+                        error_message=tags_or_error.error.message,
+                    ),
+                    serialized_error_info=tags_or_error.error,
+                )
+            run = _create_external_pipeline_run(
+                instance=instance,
+                repo_location=repo_location,
+                external_repo=external_repo,
+                external_pipeline=external_pipeline,
+                run_config=run_config_or_error.run_config,
+                mode=mode,
+                preset=None,
+                tags=merge_dicts(tags_or_error.tags, run_tags),
+                solid_selection=frozenset(solid_selection) if solid_selection else None,
             )
 
             instance.launch_run(run.run_id, external_pipeline)
@@ -889,7 +938,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
 
         print_fn('Launched backfill job `{}`'.format(backfill_id))
     else:
-        print_fn(' Aborted!')
+        print_fn('Aborted!')
 
 
 pipeline_cli = create_pipeline_cli_group()
