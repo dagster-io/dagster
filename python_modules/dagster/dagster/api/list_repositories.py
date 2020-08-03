@@ -1,4 +1,6 @@
 from dagster import check
+from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.utils.error import SerializableErrorInfo
 
 from .utils import execute_unary_api_cli_command
 
@@ -6,7 +8,7 @@ from .utils import execute_unary_api_cli_command
 def sync_list_repositories(executable_path, python_file, module_name, working_directory, attribute):
     from dagster.grpc.types import ListRepositoriesResponse, ListRepositoriesInput
 
-    return check.inst(
+    result = check.inst(
         execute_unary_api_cli_command(
             executable_path,
             'list_repositories',
@@ -17,8 +19,14 @@ def sync_list_repositories(executable_path, python_file, module_name, working_di
                 attribute=attribute,
             ),
         ),
-        ListRepositoriesResponse,
+        (ListRepositoriesResponse, SerializableErrorInfo),
     )
+    if isinstance(result, SerializableErrorInfo):
+        raise DagsterUserCodeProcessError(
+            result.to_string(), user_code_process_error_infos=[result]
+        )
+    else:
+        return result
 
 
 def sync_list_repositories_grpc(api_client):
@@ -26,7 +34,15 @@ def sync_list_repositories_grpc(api_client):
     from dagster.grpc.types import ListRepositoriesResponse
 
     check.inst_param(api_client, 'api_client', DagsterGrpcClient)
-    return check.inst(api_client.list_repositories(), ListRepositoriesResponse)
+    result = check.inst(
+        api_client.list_repositories(), (ListRepositoriesResponse, SerializableErrorInfo)
+    )
+    if isinstance(result, SerializableErrorInfo):
+        raise DagsterUserCodeProcessError(
+            result.to_string(), user_code_process_error_infos=[result]
+        )
+    else:
+        return result
 
 
 def sync_list_repositories_ephemeral_grpc(

@@ -87,7 +87,7 @@ from dagster.serdes.ipc import (
     read_unary_input,
     setup_interrupt_support,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
     recon_repository_from_origin,
@@ -128,7 +128,7 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
         'Users should generally not invoke this command interactively.'
     ),
     input_cls=ListRepositoriesInput,
-    output_cls=ListRepositoriesResponse,
+    output_cls=(ListRepositoriesResponse, SerializableErrorInfo),
 )
 def list_repositories_command(args):
     check.inst_param(args, 'args', ListRepositoriesInput)
@@ -138,16 +138,21 @@ def list_repositories_command(args):
         args.working_directory,
         args.attribute,
     )
-    loadable_targets = get_loadable_targets(python_file, module_name, working_directory, attribute)
-    return ListRepositoriesResponse(
-        [
-            LoadableRepositorySymbol(
-                attribute=lt.attribute,
-                repository_name=repository_def_from_target_def(lt.target_definition).name,
-            )
-            for lt in loadable_targets
-        ]
-    )
+    try:
+        loadable_targets = get_loadable_targets(
+            python_file, module_name, working_directory, attribute
+        )
+        return ListRepositoriesResponse(
+            [
+                LoadableRepositorySymbol(
+                    attribute=lt.attribute,
+                    repository_name=repository_def_from_target_def(lt.target_definition).name,
+                )
+                for lt in loadable_targets
+            ]
+        )
+    except Exception:  # pylint: disable=broad-except
+        return serializable_error_info_from_exc_info(sys.exc_info())
 
 
 @unary_api_cli_command(

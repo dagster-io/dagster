@@ -334,6 +334,21 @@ class DagsterSubprocessError(DagsterError):
         super(DagsterSubprocessError, self).__init__(*args, **kwargs)
 
 
+class DagsterUserCodeProcessError(DagsterError):
+    '''An exception has occurred in a user code process that the host process raising this error
+     was communicating with.'''
+
+    def __init__(self, *args, **kwargs):
+        from dagster.utils.error import SerializableErrorInfo
+
+        self.user_code_process_error_infos = check.list_param(
+            kwargs.pop('user_code_process_error_infos'),
+            'user_code_process_error_infos',
+            SerializableErrorInfo,
+        )
+        super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
+
+
 class DagsterLaunchFailedError(DagsterError):
     '''Indicates an error while attempting to launch a pipeline run.
     '''

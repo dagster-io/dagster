@@ -43,6 +43,7 @@ from dagster.cli.schedule import (
     schedule_wipe_command,
 )
 from dagster.config.field_utils import Shape
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -55,7 +56,6 @@ from dagster.core.test_utils import environ
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import LoadableTargetOrigin
 from dagster.serdes import ConfigurableClass
-from dagster.serdes.ipc import DagsterIPCProtocolError
 from dagster.utils import file_relative_path
 from dagster.utils.test import FilesystemTestScheduler
 
@@ -871,7 +871,7 @@ def test_more_than_one_pipeline():
 
 def test_attribute_not_found():
     with pytest.raises(
-        DagsterIPCProtocolError, match=re.escape('nope not found at module scope in file')
+        DagsterUserCodeProcessError, match=re.escape('nope not found at module scope in file')
     ):
         execute_execute_command(
             env_file_list=None,
@@ -894,7 +894,7 @@ not_a_repo_or_pipeline = 123
 
 def test_attribute_is_wrong_thing():
     with pytest.raises(
-        DagsterIPCProtocolError,
+        DagsterUserCodeProcessError,
         match=re.escape(
             'Loadable attributes must be either a PipelineDefinition or a '
             'RepositoryDefinition. Got 123.'
@@ -914,7 +914,7 @@ def test_attribute_is_wrong_thing():
 
 def test_attribute_fn_returns_wrong_thing():
     with pytest.raises(
-        DagsterIPCProtocolError,
+        DagsterUserCodeProcessError,
         match=re.escape(
             "Loadable attributes must be either a PipelineDefinition or a RepositoryDefinition."
         ),

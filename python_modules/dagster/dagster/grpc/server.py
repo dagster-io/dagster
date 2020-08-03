@@ -75,6 +75,80 @@ def heartbeat_thread(heartbeat_timeout, last_heartbeat_time, shutdown_event):
             shutdown_event.set()
 
 
+class LazyRepositorySymbolsAndCodePointers:
+    '''Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
+    we can gracefully handle user code errors.'''
+
+    def __init__(self, loadable_target_origin):
+        self._loadable_target_origin = loadable_target_origin
+        self._loadable_repository_symbols = None
+        self._code_pointers_by_repo_name = None
+
+    def _load(self):
+        self._loadable_repository_symbols = load_loadable_repository_symbols(
+            self._loadable_target_origin
+        )
+        self._code_pointers_by_repo_name = build_code_pointers_by_repo_name(
+            self._loadable_target_origin, self._loadable_repository_symbols
+        )
+
+    @property
+    def loadable_repository_symbols(self):
+        if self._loadable_repository_symbols is None:
+            self._load()
+
+        return self._loadable_repository_symbols
+
+    @property
+    def code_pointers_by_repo_name(self):
+        if self._code_pointers_by_repo_name is None:
+            self._load()
+
+        return self._code_pointers_by_repo_name
+
+
+def load_loadable_repository_symbols(loadable_target_origin):
+    if loadable_target_origin:
+        loadable_targets = get_loadable_targets(
+            loadable_target_origin.python_file,
+            loadable_target_origin.module_name,
+            loadable_target_origin.working_directory,
+            loadable_target_origin.attribute,
+        )
+        return [
+            LoadableRepositorySymbol(
+                attribute=loadable_target.attribute,
+                repository_name=repository_def_from_target_def(
+                    loadable_target.target_definition
+                ).name,
+            )
+            for loadable_target in loadable_targets
+        ]
+    else:
+        return []
+
+
+def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository_symbols):
+    repository_code_pointer_dict = {}
+    for loadable_repository_symbol in loadable_repository_symbols:
+        if loadable_target_origin.python_file:
+            repository_code_pointer_dict[
+                loadable_repository_symbol.repository_name
+            ] = CodePointer.from_python_file(
+                loadable_target_origin.python_file,
+                loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
+            )
+        if loadable_target_origin.module_name:
+            repository_code_pointer_dict[
+                loadable_repository_symbol.repository_name
+            ] = CodePointer.from_module(
+                loadable_target_origin.module_name, loadable_repository_symbol.attribute,
+            )
+
+    return repository_code_pointer_dict
+
+
 class DagsterApiServer(DagsterApiServicer):
     # The loadable_target_origin is currently Noneable to support instaniating a server.
     # This helps us test the ping methods, and incrementally migrate each method to
@@ -99,25 +173,6 @@ class DagsterApiServer(DagsterApiServicer):
             loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
         )
 
-        if loadable_target_origin:
-            loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.working_directory,
-                loadable_target_origin.attribute,
-            )
-            self._loadable_repository_symbols = [
-                LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
-                    repository_name=repository_def_from_target_def(
-                        loadable_target.target_definition
-                    ).name,
-                )
-                for loadable_target in loadable_targets
-            ]
-        else:
-            self._loadable_repository_symbols = []
-
         self._shutdown_server_event = check.inst_param(
             shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
         )
@@ -127,22 +182,9 @@ class DagsterApiServer(DagsterApiServicer):
         self._termination_events = {}
         self._execution_lock = threading.Lock()
 
-        self._repository_code_pointer_dict = {}
-        for loadable_repository_symbol in self._loadable_repository_symbols:
-            if self._loadable_target_origin.python_file:
-                self._repository_code_pointer_dict[
-                    loadable_repository_symbol.repository_name
-                ] = CodePointer.from_python_file(
-                    self._loadable_target_origin.python_file,
-                    loadable_repository_symbol.attribute,
-                    self._loadable_target_origin.working_directory,
-                )
-            if self._loadable_target_origin.module_name:
-                self._repository_code_pointer_dict[
-                    loadable_repository_symbol.repository_name
-                ] = CodePointer.from_module(
-                    self._loadable_target_origin.module_name, loadable_repository_symbol.attribute,
-                )
+        self._repository_symbols_and_code_pointers = LazyRepositorySymbolsAndCodePointers(
+            loadable_target_origin
+        )
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
@@ -162,7 +204,9 @@ class DagsterApiServer(DagsterApiServicer):
 
         if isinstance(repository_origin, RepositoryGrpcServerOrigin):
             return ReconstructableRepository(
-                self._repository_code_pointer_dict[repository_origin.repository_name]
+                self._repository_symbols_and_code_pointers.code_pointers_by_repo_name[
+                    repository_origin.repository_name
+                ]
             )
         return recon_repository_from_origin(repository_origin)
 
@@ -203,16 +247,21 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ListRepositories(self, request, _context):
-        return api_pb2.ListRepositoriesReply(
-            serialized_list_repositories_response=serialize_dagster_namedtuple(
-                ListRepositoriesResponse(
-                    self._loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path
-                    if self._loadable_target_origin
-                    else None,
-                    repository_code_pointer_dict=self._repository_code_pointer_dict,
-                )
+        try:
+            response = ListRepositoriesResponse(
+                self._repository_symbols_and_code_pointers.loadable_repository_symbols,
+                executable_path=self._loadable_target_origin.executable_path
+                if self._loadable_target_origin
+                else None,
+                repository_code_pointer_dict=(
+                    self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
+                ),
             )
+        except Exception:  # pylint: disable=broad-except
+            response = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.ListRepositoriesReply(
+            serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(response)
         )
 
     def ExternalPartitionNames(self, request, _context):
