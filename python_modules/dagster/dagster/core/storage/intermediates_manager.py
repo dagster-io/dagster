@@ -60,7 +60,7 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
         return uncovered_inputs
 
 
-class InMemoryIntermediatesManager(IntermediateStorage):
+class InMemoryIntermediateStorage(IntermediateStorage):
     def __init__(self):
 
         self.values = {}
@@ -101,7 +101,7 @@ class InMemoryIntermediatesManager(IntermediateStorage):
         return False
 
 
-class IntermediateStoreIntermediatesManager(IntermediateStorage):
+class ObjectStoreIntermediateStorage(IntermediateStorage):
     def __init__(self, intermediate_store):
         self._intermediate_store = check.inst_param(
             intermediate_store, 'intermediate_store', IntermediateStore
@@ -163,4 +163,4 @@ class IntermediateStoreIntermediatesManager(IntermediateStorage):
 
 
 def build_in_mem_intermediates_storage(*args, **kwargs):
-    return IntermediateStoreIntermediatesManager(build_mem_intermediate_store(*args, **kwargs))
+    return ObjectStoreIntermediateStorage(build_mem_intermediate_store(*args, **kwargs))

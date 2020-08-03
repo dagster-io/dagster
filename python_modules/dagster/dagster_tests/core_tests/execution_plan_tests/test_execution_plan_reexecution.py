@@ -20,7 +20,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
+from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.utils import merge_dicts
 
 
@@ -60,7 +60,7 @@ def test_execution_plan_reexecution():
 
     assert result.success
 
-    intermediates_manager = IntermediateStoreIntermediatesManager(
+    intermediates_manager = ObjectStoreIntermediateStorage(
         build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
     )
     assert (
@@ -91,7 +91,7 @@ def test_execution_plan_reexecution():
         instance=instance,
     )
 
-    intermediates_manager = IntermediateStoreIntermediatesManager(
+    intermediates_manager = ObjectStoreIntermediateStorage(
         build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
     )
     assert (
@@ -174,7 +174,7 @@ def test_pipeline_step_key_subset_execution():
 
     assert result.success
 
-    intermediates_manager = IntermediateStoreIntermediatesManager(
+    intermediates_manager = ObjectStoreIntermediateStorage(
         build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
     )
     assert (
@@ -201,7 +201,7 @@ def test_pipeline_step_key_subset_execution():
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
 
-    intermediates_manager = IntermediateStoreIntermediatesManager(
+    intermediates_manager = ObjectStoreIntermediateStorage(
         build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
     )
     assert (

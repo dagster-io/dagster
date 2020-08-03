@@ -8,7 +8,7 @@ from .file_manager import LocalFileManager
 from .init import InitIntermediateStorageContext
 from .intermediate_store import IntermediateStore, build_fs_intermediate_store
 from .intermediates_manager import (
-    IntermediateStoreIntermediatesManager,
+    ObjectStoreIntermediateStorage,
     build_in_mem_intermediates_storage,
 )
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
@@ -49,7 +49,7 @@ def build_intermediate_storage_from_object_store(
         if init_context.type_storage_plugin_registry
         else TypeStoragePluginRegistry(types_to_register=[]),
     )
-    return IntermediateStoreIntermediatesManager(intermediate_store)
+    return ObjectStoreIntermediateStorage(intermediate_store)
 
 
 @system_storage(name='in_memory', is_persistent=False, required_resource_keys=set())
@@ -127,7 +127,7 @@ def fs_system_storage(init_context):
 
     return SystemStorageData(
         file_manager=file_manager,
-        intermediates_manager=IntermediateStoreIntermediatesManager(intermediate_store),
+        intermediates_manager=ObjectStoreIntermediateStorage(intermediate_store),
     )
 
 

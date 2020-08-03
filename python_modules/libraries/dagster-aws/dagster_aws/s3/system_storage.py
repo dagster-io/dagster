@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
+from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -121,7 +121,7 @@ def s3_system_storage(init_context):
             s3_bucket=init_context.system_storage_config['s3_bucket'],
             s3_base_key=s3_key,
         ),
-        intermediates_manager=IntermediateStoreIntermediatesManager(
+        intermediates_manager=ObjectStoreIntermediateStorage(
             S3IntermediateStore(
                 s3_session=s3_session,
                 s3_bucket=init_context.system_storage_config['s3_bucket'],

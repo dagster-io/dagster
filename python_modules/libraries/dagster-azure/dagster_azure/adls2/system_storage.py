@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
+from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -125,7 +125,7 @@ def adls2_system_storage(init_context):
             file_system=init_context.system_storage_config['adls2_file_system'],
             prefix=adls2_base,
         ),
-        intermediates_manager=IntermediateStoreIntermediatesManager(
+        intermediates_manager=ObjectStoreIntermediateStorage(
             ADLS2IntermediateStore(
                 file_system=init_context.system_storage_config['adls2_file_system'],
                 run_id=init_context.pipeline_run.run_id,

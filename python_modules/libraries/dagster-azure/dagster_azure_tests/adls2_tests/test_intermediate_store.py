@@ -31,7 +31,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
+from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
@@ -162,7 +162,7 @@ def test_using_adls2_for_subplan(storage_account, file_system):
             adls2_client=resource.adls2_client,
             blob_client=resource.blob_client,
         )
-        intermediates_manager = IntermediateStoreIntermediatesManager(store)
+        intermediates_manager = ObjectStoreIntermediateStorage(store)
         step_output_handle = StepOutputHandle('return_one.compute')
         assert intermediates_manager.has_intermediate(context, step_output_handle)
         assert intermediates_manager.get_intermediate(context, Int, step_output_handle).obj == 1
@@ -343,7 +343,7 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
             adls2_client=resource.adls2_client,
             blob_client=resource.blob_client,
         )
-        intermediates_manager = IntermediateStoreIntermediatesManager(store)
+        intermediates_manager = ObjectStoreIntermediateStorage(store)
         assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         assert (
             intermediates_manager.get_intermediate(

@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
+from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -57,7 +57,7 @@ def gcs_system_storage(init_context):
             gcs_bucket=init_context.system_storage_config['gcs_bucket'],
             gcs_base_key=gcs_key,
         ),
-        intermediates_manager=IntermediateStoreIntermediatesManager(
+        intermediates_manager=ObjectStoreIntermediateStorage(
             GCSIntermediateStore(
                 client=client,
                 gcs_bucket=init_context.system_storage_config['gcs_bucket'],
