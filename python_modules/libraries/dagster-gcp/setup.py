@@ -31,8 +31,8 @@ if __name__ == '__main__':
             'dagster',
             'dagster_pandas',
             'google-api-python-client',
-            'google-cloud-bigquery>=1.19.*,<1.26.0',  # https://github.com/dagster-io/dagster/issues/2744
-            'google-cloud-storage<1.30.0',  # pinned for ^
+            'google-cloud-bigquery>=1.19.*',
+            'google-cloud-storage',
             'oauth2client',
             # RSA 4.1+ is incompatible with py2.7
             'rsa<=4.0; python_version<"3"',
