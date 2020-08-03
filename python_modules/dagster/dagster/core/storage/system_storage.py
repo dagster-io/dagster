@@ -70,6 +70,15 @@ def mem_system_storage(init_context):
 
 @intermediate_storage(name='in_memory', is_persistent=False, required_resource_keys=set())
 def mem_intermediate_storage(init_context):
+    '''The default in-memory intermediate storage.
+
+    In-memory intermediate storage is the default on any pipeline run that does
+    not configure any custom intermediate storage.
+
+    Keep in mind when using this storage that intermediates will not be persisted after the pipeline
+    run ends. Use a persistent intermediate storage like :py:func:`fs_intermediate_storage` to
+    persist intermediates and take advantage of advanced features like pipeline re-execution.
+    '''
     object_store = InMemoryObjectStore()
     return build_intermediate_storage_from_object_store(
         object_store=object_store, init_context=init_context

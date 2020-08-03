@@ -172,7 +172,7 @@ System Storage
 
 
 Intermediate Storage
---------------
+--------------------
 .. autodata:: mem_intermediate_storage
   :annotation: IntermediateStorageDefinition
 
