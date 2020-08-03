@@ -1,5 +1,3 @@
-import warnings
-
 import pandas as pd
 from dagster_pandas.constraints import (
     ColumnDTypeFnConstraint,
@@ -184,11 +182,6 @@ def create_dagster_pandas_dataframe_type(
     # Users can load and matrerialize their custom dataframes via configuration their own way if the default
     # configs don't suffice. This is purely optional.
     check.str_param(name, 'name')
-    warnings.warn(
-        """Using create_dagster_pandas_dataframe_type for dataframe types is deprecated,
-     and is planned to be removed in a future version (tentatively 0.10.0).
-     Please use create_structured_dataframe_type instead."""
-    )
     event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, 'description', default=''),

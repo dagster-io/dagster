@@ -12,6 +12,8 @@
 **New**
 - `-d` or `--working-directory` can be used to specify a working directory in any command that
 takes in a `-f` or `--python_file` argument.
+- Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
+  supported API for custom pandas data frame type creation.
 
 ## 0.8.10
 
