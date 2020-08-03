@@ -15,8 +15,7 @@ from dagster import (
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
+from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 
 
 def define_inty_pipeline():
@@ -72,14 +71,13 @@ def test_using_file_system_for_subplan():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(
-            None, Int, StepOutputHandle('return_one.compute')
-        ).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
         == 1
     )
 
@@ -93,9 +91,9 @@ def test_using_file_system_for_subplan():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
         == 2
     )
 
@@ -130,14 +128,13 @@ def test_using_intermediates_file_system_for_subplan():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(
-            None, Int, StepOutputHandle('return_one.compute')
-        ).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
         == 1
     )
 
@@ -151,9 +148,9 @@ def test_using_intermediates_file_system_for_subplan():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
         == 2
     )
 
@@ -179,10 +176,11 @@ def test_using_intermediates_to_override():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert not intermediates_manager.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert not intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
 
 
 def test_using_file_system_for_subplan_multiprocessing():
@@ -208,15 +206,14 @@ def test_using_file_system_for_subplan_multiprocessing():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(
-            None, Int, StepOutputHandle('return_one.compute')
-        ).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
         == 1
     )
 
@@ -230,9 +227,9 @@ def test_using_file_system_for_subplan_multiprocessing():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
         == 2
     )
 
@@ -260,15 +257,14 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(
-            None, Int, StepOutputHandle('return_one.compute')
-        ).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
         == 1
     )
 
@@ -282,9 +278,9 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
     assert (
-        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
         == 2
     )
 

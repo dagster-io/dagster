@@ -233,7 +233,7 @@ class DagsterFlyteCompiler:
                     self.execution_plan.get_step_by_key(output_handle.step_key)
                 )
 
-                step_context.intermediates_manager.set_intermediate(
+                step_context.intermediate_storage.set_intermediate(
                     context=step_context,
                     dagster_type=step_input.dagster_type,
                     step_output_handle=output_handle,
@@ -257,7 +257,7 @@ class DagsterFlyteCompiler:
                         self.execution_plan.get_step_by_key(output_handle.step_key)
                     )
 
-                    step_context.intermediates_manager.set_intermediate(
+                    step_context.intermediate_storage.set_intermediate(
                         context=step_context,
                         dagster_type=step_input.dagster_type,
                         step_output_handle=output_handle,
@@ -279,13 +279,13 @@ class DagsterFlyteCompiler:
                 step=execution_step, output_name=result.step_output_data.output_name
             )
 
-            if not context.intermediates_manager.has_intermediate(context, step_output_handle):
+            if not context.intermediate_storage.has_intermediate(context, step_output_handle):
                 # Not working for InMemoryIntermediateManager ?
                 raise KeyError(
                     "No Intermediate Store record for StepOutput: {}".format(step_output_handle)
                 )
 
-            output_value = context.intermediates_manager.get_intermediate(
+            output_value = context.intermediate_storage.get_intermediate(
                 context=context, dagster_type=dagster_type, step_output_handle=step_output_handle,
             ).obj
 

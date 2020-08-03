@@ -1,9 +1,10 @@
 import csv
+import os
 from collections import OrderedDict
 from io import BytesIO
 
 import pytest
-from dagster_gcp.gcs.intermediate_store import GCSIntermediateStore
+from dagster_gcp.gcs.intermediate_storage import GCSIntermediateStorage
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
@@ -26,7 +27,6 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.dagster_type import Bool as RuntimeBool
@@ -126,17 +126,16 @@ def test_using_gcs_for_subplan(gcs_bucket):
         pipeline_run,
         instance,
     ) as context:
-        store = GCSIntermediateStore(
+        intermediate_storage = GCSIntermediateStorage(
             gcs_bucket,
             run_id,
             client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
         )
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
-        assert intermediates_manager.has_intermediate(
+        assert intermediate_storage.has_intermediate(
             context, StepOutputHandle('return_one.compute')
         )
         assert (
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 context, Int, StepOutputHandle('return_one.compute')
             ).obj
             == 1
@@ -158,9 +157,9 @@ def test_using_gcs_for_subplan(gcs_bucket):
         pipeline_run,
         instance,
     ) as context:
-        assert intermediates_manager.has_intermediate(context, StepOutputHandle('add_one.compute'))
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle('add_one.compute'))
         assert (
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 context, Int, StepOutputHandle('add_one.compute')
             ).obj
             == 2
@@ -174,28 +173,37 @@ class FancyStringGCSTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-i
         raise NotImplementedError()
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', GCSIntermediateStore)
-        paths.append(obj)
-        return intermediate_store.set_object('', context, dagster_type, paths)
+    def set_intermediate_object(
+        cls, intermediate_storage, context, dagster_type, step_output_handle, value
+    ):
+        check.inst_param(intermediate_storage, 'intermediate_storage', GCSIntermediateStorage)
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        paths.append(value)
+        key = intermediate_storage.object_store.key_for_paths([intermediate_storage.root] + paths)
+        return intermediate_storage.object_store.set_object(
+            key, '', dagster_type.serialization_strategy
+        )
 
     @classmethod
-    def get_object(cls, intermediate_store, _context, _dagster_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', GCSIntermediateStore)
+    def get_intermediate_object(
+        cls, intermediate_storage, context, dagster_type, step_output_handle
+    ):
+        check.inst_param(intermediate_storage, 'intermediate_storage', GCSIntermediateStorage)
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
         res = list(
-            intermediate_store.object_store.client.list_blobs(
-                intermediate_store.object_store.bucket,
-                prefix=intermediate_store.key_for_paths(paths),
+            intermediate_storage.object_store.client.list_blobs(
+                intermediate_storage.object_store.bucket,
+                prefix=intermediate_storage.key_for_paths(paths),
             )
         )
         return res[0].name.split('/')[-1]
 
 
 @nettest
-def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
+def test_gcs_intermediate_storage_with_type_storage_plugin(gcs_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(
+    intermediate_storage = GCSIntermediateStorage(
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -207,20 +215,27 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString, [obj_name])
+            intermediate_storage.set_intermediate(
+                context, RuntimeString, StepOutputHandle(obj_name), 'hello'
+            )
 
-            assert intermediate_store.has_object(context, [obj_name])
-            assert intermediate_store.get_value(context, RuntimeString, [obj_name]) == 'hello'
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, RuntimeString, StepOutputHandle(obj_name)
+                )
+                == 'hello'
+            )
 
         finally:
-            intermediate_store.rm_object(context, [obj_name])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
 
 
 @nettest
-def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
+def test_gcs_intermediate_storage_with_composite_type_storage_plugin(gcs_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(
+    intermediate_storage = GCSIntermediateStorage(
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -232,59 +247,78 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
-            intermediate_store.set_value(
-                ['hello'], context, resolve_dagster_type(List[String]), [obj_name]
+            intermediate_storage.set_intermediate(
+                context, resolve_dagster_type(List[String]), StepOutputHandle(obj_name), ['hello']
             )
 
 
 @nettest
-def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner_type(gcs_bucket):
+def test_gcs_intermediate_storage_composite_types_with_custom_serializer_for_inner_type(gcs_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
+    intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
 
     obj_name = 'list'
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object(
-                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), [obj_name],
+            intermediate_storage.set_intermediate(
+                context,
+                resolve_dagster_type(List[LowercaseString]),
+                StepOutputHandle(obj_name),
+                ['foo', 'bar'],
             )
-            assert intermediate_store.has_object(context, [obj_name])
-            assert intermediate_store.get_object(
-                context, resolve_dagster_type(List[Bool]), [obj_name]
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
+            assert intermediate_storage.get_intermediate(
+                context, resolve_dagster_type(List[Bool]), StepOutputHandle(obj_name)
             ).obj == ['foo', 'bar']
 
         finally:
-            intermediate_store.rm_object(context, [obj_name])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
 
 
 @nettest
-def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
+def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
+    intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
 
     obj_name = 'foo'
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object('foo', context, LowercaseString, [obj_name])
-
-            bucket_obj = intermediate_store.object_store.client.get_bucket(
-                intermediate_store.object_store.bucket
+            intermediate_storage.set_intermediate(
+                context, LowercaseString, StepOutputHandle(obj_name), 'foo'
             )
-            blob = bucket_obj.blob('/'.join([intermediate_store.root] + [obj_name]))
+
+            bucket_obj = intermediate_storage.object_store.client.get_bucket(
+                intermediate_storage.object_store.bucket
+            )
+            blob = bucket_obj.blob(
+                os.path.join(
+                    *[
+                        intermediate_storage.root,
+                        'intermediates',
+                        StepOutputHandle(obj_name).step_key,
+                        StepOutputHandle(obj_name).output_name,
+                    ]
+                )
+            )
             file_obj = BytesIO()
             blob.download_to_file(file_obj)
             file_obj.seek(0)
 
             assert file_obj.read().decode('utf-8') == 'FOO'
 
-            assert intermediate_store.has_object(context, [obj_name])
-            assert intermediate_store.get_object(context, LowercaseString, [obj_name]).obj == 'foo'
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, LowercaseString, StepOutputHandle(obj_name)
+                ).obj
+                == 'foo'
+            )
         finally:
-            intermediate_store.rm_object(context, [obj_name])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
 
 
 @nettest
@@ -304,22 +338,21 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
 
     execution_plan = create_execution_plan(pipe, run_config)
     with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
-        store = GCSIntermediateStore(
+        intermediate_storage = GCSIntermediateStorage(
             run_id=result.run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
             client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
         )
-        assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
+        assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         assert (
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 context, Int, StepOutputHandle('return_one.compute')
             ).obj
             == 1
         )
         assert (
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 context, Int, StepOutputHandle('add_one.compute')
             ).obj
             == 2
@@ -327,58 +360,74 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
 
 
 @nettest
-def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
+def test_gcs_intermediate_storage_with_custom_prefix(gcs_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(
+    intermediate_storage = GCSIntermediateStorage(
         run_id=run_id, gcs_bucket=gcs_bucket, gcs_prefix='custom_prefix'
     )
-    assert intermediate_store.root == '/'.join(['custom_prefix', 'storage', run_id])
+    assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', run_id])
 
     obj_name = 'true'
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, [obj_name])
+            intermediate_storage.set_intermediate(
+                context, RuntimeBool, StepOutputHandle(obj_name), True
+            )
 
-            assert intermediate_store.has_object(context, [obj_name])
-            assert intermediate_store.uri_for_paths([obj_name]).startswith(
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
+            assert intermediate_storage.uri_for_paths([obj_name]).startswith(
                 'gs://%s/custom_prefix' % gcs_bucket
             )
 
     finally:
-        intermediate_store.rm_object(context, [obj_name])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
 
 
 @nettest
-def test_gcs_intermediate_store(gcs_bucket):
+def test_gcs_intermediate_storage(gcs_bucket):
     run_id = make_new_run_id()
     run_id_2 = make_new_run_id()
 
-    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
-    assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
+    intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
+    assert intermediate_storage.root == '/'.join(['dagster', 'storage', run_id])
 
-    intermediate_store_2 = GCSIntermediateStore(run_id=run_id_2, gcs_bucket=gcs_bucket)
-    assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
+    intermediate_storage_2 = GCSIntermediateStorage(run_id=run_id_2, gcs_bucket=gcs_bucket)
+    assert intermediate_storage_2.root == '/'.join(['dagster', 'storage', run_id_2])
 
     obj_name = 'true'
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, [obj_name])
+            intermediate_storage.set_intermediate(
+                context, RuntimeBool, StepOutputHandle(obj_name), True
+            )
 
-            assert intermediate_store.has_object(context, [obj_name])
-            assert intermediate_store.get_object(context, RuntimeBool, [obj_name]).obj is True
-            assert intermediate_store.uri_for_paths([obj_name]).startswith('gs://')
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, RuntimeBool, StepOutputHandle(obj_name)
+                ).obj
+                is True
+            )
+            assert intermediate_storage.uri_for_paths([obj_name]).startswith('gs://')
 
-            intermediate_store_2.copy_object_from_run(context, run_id, [obj_name])
-            assert intermediate_store_2.has_object(context, [obj_name])
-            assert intermediate_store_2.get_object(context, RuntimeBool, [obj_name]).obj is True
+            intermediate_storage_2.copy_intermediate_from_run(
+                context, run_id, StepOutputHandle(obj_name)
+            )
+            assert intermediate_storage_2.has_intermediate(context, StepOutputHandle(obj_name))
+            assert (
+                intermediate_storage_2.get_intermediate(
+                    context, RuntimeBool, StepOutputHandle(obj_name)
+                ).obj
+                is True
+            )
     finally:
-        intermediate_store.rm_object(context, [obj_name])
-        intermediate_store_2.rm_object(context, [obj_name])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
+        intermediate_storage_2.rm_intermediate(context, StepOutputHandle(obj_name))
 
 
 class CsvSerializationStrategy(SerializationStrategy):
@@ -409,25 +458,28 @@ class LessSimpleDataFrame(list):
 
 def test_custom_read_write_mode(gcs_bucket):
     run_id = make_new_run_id()
-    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
+    intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
     data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
 
     obj_name = 'data_frame'
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
-            intermediate_store.set_object(
-                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), [obj_name]
+            intermediate_storage.set_intermediate(
+                context,
+                resolve_dagster_type(LessSimpleDataFrame),
+                StepOutputHandle(obj_name),
+                data_frame,
             )
 
-            assert intermediate_store.has_object(context, [obj_name])
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
             assert (
-                intermediate_store.get_object(
-                    context, resolve_dagster_type(LessSimpleDataFrame), [obj_name]
+                intermediate_storage.get_intermediate(
+                    context, resolve_dagster_type(LessSimpleDataFrame), StepOutputHandle(obj_name)
                 ).obj
                 == data_frame
             )
-            assert intermediate_store.uri_for_paths([obj_name]).startswith('gs://')
+            assert intermediate_storage.uri_for_paths([obj_name]).startswith('gs://')
 
     finally:
-        intermediate_store.rm_object(context, [obj_name])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))

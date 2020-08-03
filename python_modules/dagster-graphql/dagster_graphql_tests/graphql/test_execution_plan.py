@@ -4,8 +4,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 
 from dagster import check
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
+from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
@@ -178,12 +177,11 @@ def test_success_whole_execution_plan(graphql_context, snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(
+    intermediate_storage = build_fs_intermediate_storage(
         graphql_context.instance.intermediates_directory, pipeline_run.run_id
     )
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
 def test_success_whole_execution_plan_with_filesystem_config(graphql_context, snapshot):
@@ -221,10 +219,11 @@ def test_success_whole_execution_plan_with_filesystem_config(graphql_context, sn
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
 def test_success_whole_execution_plan_with_in_memory_config(graphql_context, snapshot):
@@ -262,12 +261,11 @@ def test_success_whole_execution_plan_with_in_memory_config(graphql_context, sna
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
-    assert not intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
-    assert not intermediates_manager.has_intermediate(
-        None, StepOutputHandle('sum_sq_solid.compute')
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
     )
+    assert not intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert not intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
 def test_successful_one_part_execute_plan(graphql_context, snapshot):
@@ -321,12 +319,13 @@ def test_successful_one_part_execute_plan(graphql_context, snapshot):
 
     snapshot.assert_match(clean_log_messages(result.data))
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
     assert (
         str(
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 None, PoorMansDataFrame, StepOutputHandle('sum_solid.compute')
             ).obj
         )
@@ -400,13 +399,14 @@ def test_successful_two_part_execute_plan(graphql_context, snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
+    intermediate_storage = build_fs_intermediate_storage(
+        instance.intermediates_directory, pipeline_run.run_id
+    )
 
-    intermediates_manager = ObjectStoreIntermediateStorage(store)
-    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
     assert (
         str(
-            intermediates_manager.get_intermediate(
+            intermediate_storage.get_intermediate(
                 None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
             ).obj
         )

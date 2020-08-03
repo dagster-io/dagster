@@ -3,12 +3,8 @@ import os
 import botocore
 import pyspark
 from airline_demo.solids import ingest_csv_file_handle_to_spark
-from dagster_aws.s3 import (
-    S3IntermediateStore,
-    s3_file_manager,
-    s3_plus_default_intermediate_storage_defs,
-    s3_resource,
-)
+from dagster_aws.s3 import s3_file_manager, s3_plus_default_intermediate_storage_defs, s3_resource
+from dagster_aws.s3.intermediate_storage import S3IntermediateStorage
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row, SparkSession
 
@@ -26,7 +22,7 @@ from dagster import (
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 spark_local_fs_mode = ModeDefinition(
@@ -75,13 +71,13 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
         instance=instance,
     )
 
-    intermediate_store = build_fs_intermediate_store(
+    intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, run_id=result.run_id
     )
 
     assert result.success
     result_dir = os.path.join(
-        intermediate_store.root,
+        intermediate_storage.root,
         'intermediates',
         'ingest_csv_file_handle_to_spark.compute',
         'result',
@@ -120,11 +116,11 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
 
     assert result.success
 
-    intermediate_store = S3IntermediateStore(s3_bucket=s3_bucket, run_id=result.run_id)
+    intermediate_storage = S3IntermediateStorage(s3_bucket=s3_bucket, run_id=result.run_id)
 
     success_key = '/'.join(
         [
-            intermediate_store.root.strip('/'),
+            intermediate_storage.root.strip('/'),
             'intermediates',
             'ingest_csv_file_handle_to_spark.compute',
             'result',
@@ -132,8 +128,8 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
         ]
     )
     try:
-        assert intermediate_store.object_store.s3.get_object(
-            Bucket=intermediate_store.object_store.bucket, Key=success_key
+        assert intermediate_storage.object_store.s3.get_object(
+            Bucket=intermediate_storage.object_store.bucket, Key=success_key
         )
     except botocore.exceptions.ClientError:
         raise Exception('Couldn\'t find object at {success_key}'.format(success_key=success_key))

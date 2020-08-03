@@ -4,7 +4,7 @@ from functools import update_wrapper
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.storage.file_manager import FileManager
-from dagster.core.storage.intermediates_manager import IntermediateStorage
+from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.utils.backcompat import rename_warning
 
 
@@ -76,13 +76,13 @@ class SystemStorageData(object):
     '''Represents an instance of system storage.
 
     Attributes:
-        intermediates_manager (IntermediateStorage): An intermediates manager.
+        intermediate_storage (IntermediateStorage): An intermediates manager.
         file_manager (FileManager): A file manager.
     '''
 
-    def __init__(self, intermediates_manager, file_manager):
-        self.intermediates_manager = check.inst_param(
-            intermediates_manager, 'intermediates_manager', IntermediateStorage
+    def __init__(self, intermediate_storage, file_manager):
+        self.intermediate_storage = check.inst_param(
+            intermediate_storage, 'intermediate_storage', IntermediateStorage
         )
         self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 

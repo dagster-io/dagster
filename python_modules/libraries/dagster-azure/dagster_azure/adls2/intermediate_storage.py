@@ -1,11 +1,11 @@
 from dagster import check
-from dagster.core.storage.intermediate_store import IntermediateStore
+from dagster.core.storage.intermediate_storage import ObjectStoreIntermediateStorage
 from dagster.core.storage.type_storage import TypeStoragePluginRegistry
 
 from .object_store import ADLS2ObjectStore
 
 
-class ADLS2IntermediateStore(IntermediateStore):
+class ADLS2IntermediateStorage(ObjectStoreIntermediateStorage):
     '''Intermediate store using Azure Data Lake Storage Gen2.
 
     This intermediate store uses ADLS2 APIs to communicate with the storage,
@@ -30,7 +30,7 @@ class ADLS2IntermediateStore(IntermediateStore):
         def root_for_run_id(r_id):
             return object_store.key_for_paths([prefix, 'storage', r_id])
 
-        super(ADLS2IntermediateStore, self).__init__(
+        super(ADLS2IntermediateStorage, self).__init__(
             object_store,
             root_for_run_id=root_for_run_id,
             run_id=run_id,

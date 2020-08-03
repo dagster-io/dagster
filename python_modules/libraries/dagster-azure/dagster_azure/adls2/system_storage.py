@@ -1,5 +1,4 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -9,7 +8,7 @@ from dagster.core.storage.system_storage import (
 )
 
 from .file_manager import ADLS2FileManager
-from .intermediate_store import ADLS2IntermediateStore
+from .intermediate_storage import ADLS2IntermediateStorage
 from .object_store import ADLS2ObjectStore
 
 
@@ -125,15 +124,13 @@ def adls2_system_storage(init_context):
             file_system=init_context.system_storage_config['adls2_file_system'],
             prefix=adls2_base,
         ),
-        intermediates_manager=ObjectStoreIntermediateStorage(
-            ADLS2IntermediateStore(
-                file_system=init_context.system_storage_config['adls2_file_system'],
-                run_id=init_context.pipeline_run.run_id,
-                adls2_client=resource.adls2_client,
-                blob_client=resource.blob_client,
-                prefix=init_context.system_storage_config['adls2_prefix'],
-                type_storage_plugin_registry=init_context.type_storage_plugin_registry,
-            )
+        intermediate_storage=ADLS2IntermediateStorage(
+            file_system=init_context.system_storage_config['adls2_file_system'],
+            run_id=init_context.pipeline_run.run_id,
+            adls2_client=resource.adls2_client,
+            blob_client=resource.blob_client,
+            prefix=init_context.system_storage_config['adls2_prefix'],
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         ),
     )
 

@@ -398,14 +398,20 @@ def define_plugin_pipeline(
             return compatible_storage
 
         @classmethod
-        def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
+        def set_intermediate_object(
+            cls, intermediate_storage, context, dagster_type, step_output_handle, value
+        ):
             assert context.resources.a == 'A'
-            return intermediate_store.set_object(obj, context, dagster_type, paths)
+            return intermediate_storage.set_intermediate_object(
+                dagster_type, step_output_handle, value
+            )
 
         @classmethod
-        def get_object(cls, intermediate_store, context, dagster_type, paths):
+        def get_intermediate_object(
+            cls, intermediate_storage, context, dagster_type, step_output_handle
+        ):
             assert context.resources.a == 'A'
-            return intermediate_store.get_object(context, dagster_type, paths)
+            return intermediate_storage.get_intermediate_object(dagster_type, step_output_handle)
 
         @classmethod
         def required_resource_keys(cls):

@@ -1,5 +1,4 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -9,7 +8,7 @@ from dagster.core.storage.system_storage import (
 )
 
 from .file_manager import GCSFileManager
-from .intermediate_store import GCSIntermediateStore
+from .intermediate_storage import GCSIntermediateStorage
 from .object_store import GCSObjectStore
 
 
@@ -57,14 +56,12 @@ def gcs_system_storage(init_context):
             gcs_bucket=init_context.system_storage_config['gcs_bucket'],
             gcs_base_key=gcs_key,
         ),
-        intermediates_manager=ObjectStoreIntermediateStorage(
-            GCSIntermediateStore(
-                client=client,
-                gcs_bucket=init_context.system_storage_config['gcs_bucket'],
-                gcs_prefix=init_context.system_storage_config['gcs_prefix'],
-                run_id=init_context.pipeline_run.run_id,
-                type_storage_plugin_registry=init_context.type_storage_plugin_registry,
-            )
+        intermediate_storage=GCSIntermediateStorage(
+            client=client,
+            gcs_bucket=init_context.system_storage_config['gcs_bucket'],
+            gcs_prefix=init_context.system_storage_config['gcs_prefix'],
+            run_id=init_context.pipeline_run.run_id,
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         ),
     )
 

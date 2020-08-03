@@ -27,7 +27,7 @@ class SystemExecutionContextData(
         '_SystemExecutionContextData',
         (
             'pipeline_run scoped_resources_builder environment_config pipeline '
-            'mode_def system_storage_def intermediate_storage_def instance intermediates_manager file_manager '
+            'mode_def system_storage_def intermediate_storage_def instance intermediate_storage file_manager '
             'raise_on_error retries'
         ),
     )
@@ -47,14 +47,14 @@ class SystemExecutionContextData(
         system_storage_def,
         intermediate_storage_def,
         instance,
-        intermediates_manager,
+        intermediate_storage,
         file_manager,
         raise_on_error,
         retries,
     ):
         from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-        from dagster.core.storage.intermediates_manager import IntermediateStorage
+        from dagster.core.storage.intermediate_storage import IntermediateStorage
         from dagster.core.instance import DagsterInstance
 
         return super(SystemExecutionContextData, cls).__new__(
@@ -75,8 +75,8 @@ class SystemExecutionContextData(
                 intermediate_storage_def, 'intermediate_storage_def', IntermediateStorageDefinition
             ),
             instance=check.inst_param(instance, 'instance', DagsterInstance),
-            intermediates_manager=check.inst_param(
-                intermediates_manager, 'intermediates_manager', IntermediateStorage
+            intermediate_storage=check.inst_param(
+                intermediate_storage, 'intermediate_storage', IntermediateStorage
             ),
             file_manager=check.inst_param(file_manager, 'file_manager', FileManager),
             raise_on_error=check.bool_param(raise_on_error, 'raise_on_error'),
@@ -150,8 +150,8 @@ class SystemExecutionContext(object):
         return self._execution_context_data.instance
 
     @property
-    def intermediates_manager(self):
-        return self._execution_context_data.intermediates_manager
+    def intermediate_storage(self):
+        return self._execution_context_data.intermediate_storage
 
     @property
     def file_manager(self):

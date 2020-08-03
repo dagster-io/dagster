@@ -237,7 +237,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
         yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
-    for input_name, input_value in _input_values_from_intermediates_manager(step_context):
+    for input_name, input_value in _input_values_from_intermediate_storage(step_context):
         if isinstance(input_value, ObjectStoreOperation):
             yield DagsterEvent.object_store_operation(
                 step_context, ObjectStoreOperation.serializable(input_value, value_name=input_name)
@@ -308,7 +308,7 @@ def _create_step_events_for_output(step_context, output):
 
 
 def _set_intermediates(step_context, step_output, step_output_handle, output):
-    res = step_context.intermediates_manager.set_intermediate(
+    res = step_context.intermediate_storage.set_intermediate(
         context=step_context,
         dagster_type=step_output.dagster_type,
         step_output_handle=step_output_handle,
@@ -414,7 +414,7 @@ def _generate_error_boundary_msg_for_step_input(context, input_):
     )
 
 
-def _input_values_from_intermediates_manager(step_context):
+def _input_values_from_intermediate_storage(step_context):
     step = step_context.step
 
     for step_input in step.step_inputs:
@@ -431,14 +431,14 @@ def _input_values_from_intermediates_manager(step_context):
                 dagster_type = step_input.dagster_type
 
             input_value = [
-                step_context.intermediates_manager.get_intermediate(
+                step_context.intermediate_storage.get_intermediate(
                     context=step_context,
                     step_output_handle=source_handle,
                     dagster_type=dagster_type,
                 )
                 for source_handle in step_input.source_handles
                 # Filter out missing intermediates from skipped upstream outputs
-                if step_context.intermediates_manager.has_intermediate(step_context, source_handle)
+                if step_context.intermediate_storage.has_intermediate(step_context, source_handle)
             ]
 
             # When we're using an object store-backed intermediate store, we wrap the
@@ -448,7 +448,7 @@ def _input_values_from_intermediates_manager(step_context):
                 input_value = MultipleStepOutputsListWrapper(input_value)
 
         elif step_input.is_from_single_output:
-            input_value = step_context.intermediates_manager.get_intermediate(
+            input_value = step_context.intermediate_storage.get_intermediate(
                 context=step_context,
                 step_output_handle=step_input.source_handles[0],
                 dagster_type=step_input.dagster_type,

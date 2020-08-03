@@ -15,8 +15,7 @@ from dagster_graphql.test.utils import (
 
 from dagster import DagsterEventType
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
+from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
@@ -371,15 +370,14 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         instance = graphql_context.instance
 
-        store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
-        assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
-        assert intermediates_manager.has_intermediate(
-            None, StepOutputHandle('sum_sq_solid.compute')
+        intermediate_storage = build_fs_intermediate_storage(
+            instance.intermediates_directory, run_id
         )
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
         assert (
             str(
-                intermediates_manager.get_intermediate(
+                intermediate_storage.get_intermediate(
                     None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
                 ).obj
             )
@@ -422,18 +420,17 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert not get_step_output_event(logs, 'sum_solid.compute')
         assert get_step_output_event(logs, 'sum_sq_solid.compute')
 
-        store = build_fs_intermediate_store(instance.intermediates_directory, new_run_id)
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
-        assert not intermediates_manager.has_intermediate(
+        intermediate_storage = build_fs_intermediate_storage(
+            instance.intermediates_directory, new_run_id
+        )
+        assert not intermediate_storage.has_intermediate(
             None, StepOutputHandle('sum_solid.inputs.num.read', 'input_thunk_output')
         )
-        assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
-        assert intermediates_manager.has_intermediate(
-            None, StepOutputHandle('sum_sq_solid.compute')
-        )
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
         assert (
             str(
-                intermediates_manager.get_intermediate(
+                intermediate_storage.get_intermediate(
                     None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
                 ).obj
             )

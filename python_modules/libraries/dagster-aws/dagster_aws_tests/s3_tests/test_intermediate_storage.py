@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 
 import pytest
-from dagster_aws.s3 import S3IntermediateStore, s3_plus_default_storage_defs, s3_resource
+from dagster_aws.s3 import S3IntermediateStorage, s3_plus_default_storage_defs, s3_resource
 
 from dagster import (
     Bool,
@@ -25,7 +25,6 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
@@ -128,12 +127,11 @@ def test_using_s3_for_subplan(s3_bucket):
         instance,
     ) as context:
 
-        store = S3IntermediateStore(
+        intermediates_manager = S3IntermediateStorage(
             s3_bucket,
             run_id,
             s3_session=context.scoped_resources_builder.build(required_resource_keys={'s3'},).s3,
         )
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
         step_output_handle = StepOutputHandle('return_one.compute')
         assert intermediates_manager.has_intermediate(context, step_output_handle)
         assert intermediates_manager.get_intermediate(context, Int, step_output_handle).obj == 1
@@ -163,26 +161,35 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
         raise NotImplementedError()
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
-        paths.append(obj)
-        return intermediate_store.set_object('', context, dagster_type, paths)
+    def set_intermediate_object(
+        cls, intermediate_storage, context, dagster_type, step_output_handle, value
+    ):
+        check.inst_param(intermediate_storage, 'intermediate_storage', S3IntermediateStorage)
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        paths.append(value)
+        key = intermediate_storage.object_store.key_for_paths([intermediate_storage.root] + paths)
+        return intermediate_storage.object_store.set_object(
+            key, '', dagster_type.serialization_strategy
+        )
 
     @classmethod
-    def get_object(cls, intermediate_store, _context, _dagster_type, paths):
-        check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
-        res = intermediate_store.object_store.s3.list_objects(
-            Bucket=intermediate_store.object_store.bucket,
-            Prefix=intermediate_store.key_for_paths(paths),
+    def get_intermediate_object(
+        cls, intermediate_storage, context, dagster_type, step_output_handle
+    ):
+        check.inst_param(intermediate_storage, 'intermediate_storage', S3IntermediateStorage)
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        res = intermediate_storage.object_store.s3.list_objects(
+            Bucket=intermediate_storage.object_store.bucket,
+            Prefix=intermediate_storage.key_for_paths(paths),
         )
         return res['Contents'][0]['Key'].split('/')[-1]
 
 
 @nettest
-def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
+def test_s3_intermediate_storage_with_type_storage_plugin(s3_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(
+    intermediate_storage = S3IntermediateStorage(
         run_id=run_id,
         s3_bucket=s3_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -192,20 +199,28 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString, ['obj_name'])
 
-            assert intermediate_store.has_object(context, ['obj_name'])
-            assert intermediate_store.get_value(context, RuntimeString, ['obj_name']) == 'hello'
+            intermediate_storage.set_intermediate(
+                context, RuntimeString, StepOutputHandle('obj_name'), 'hello'
+            )
+
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('obj_name'))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, RuntimeString, StepOutputHandle('obj_name')
+                )
+                == 'hello'
+            )
 
         finally:
-            intermediate_store.rm_object(context, ['obj_name'])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle('obj_name'))
 
 
 @nettest
-def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
+def test_s3_intermediate_storage_with_composite_type_storage_plugin(s3_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(
+    intermediate_storage = S3IntermediateStorage(
         run_id=run_id,
         s3_bucket=s3_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
@@ -215,54 +230,67 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
-            intermediate_store.set_value(
-                ['hello'], context, resolve_dagster_type(List[String]), ['obj_name']
+            intermediate_storage.set_intermediate(
+                context,
+                resolve_dagster_type(List[String]),
+                StepOutputHandle('obj_name'),
+                ['hello',],
             )
 
 
 @nettest
-def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
+def test_s3_intermediate_storage_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object(
-                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), ['list'],
+            intermediate_storage.set_intermediate(
+                context,
+                resolve_dagster_type(List[LowercaseString]),
+                StepOutputHandle('list'),
+                ['foo', 'bar'],
             )
-            assert intermediate_store.has_object(context, ['list'])
-            assert intermediate_store.get_object(
-                context, resolve_dagster_type(List[Bool]), ['list']
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('list'))
+            assert intermediate_storage.get_intermediate(
+                context, resolve_dagster_type(List[Bool]), StepOutputHandle('list')
             ).obj == ['foo', 'bar']
 
         finally:
-            intermediate_store.rm_object(context, ['foo'])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle('list'))
 
 
 @nettest
-def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
+def test_s3_intermediate_storage_with_custom_serializer(s3_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object('foo', context, LowercaseString, ['foo'])
+            intermediate_storage.set_intermediate(
+                context, LowercaseString, StepOutputHandle('foo'), 'foo'
+            )
 
             assert (
-                intermediate_store.object_store.s3.get_object(
-                    Bucket=intermediate_store.object_store.bucket,
-                    Key='/'.join([intermediate_store.root] + ['foo']),
+                intermediate_storage.object_store.s3.get_object(
+                    Bucket=intermediate_storage.object_store.bucket,
+                    Key=os.path.join(intermediate_storage.root, 'intermediates', 'foo', 'result'),
                 )['Body']
                 .read()
                 .decode('utf-8')
                 == 'FOO'
             )
 
-            assert intermediate_store.has_object(context, ['foo'])
-            assert intermediate_store.get_object(context, LowercaseString, ['foo']).obj == 'foo'
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('foo'))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, LowercaseString, StepOutputHandle('foo')
+                ).obj
+                == 'foo'
+            )
         finally:
-            intermediate_store.rm_object(context, ['foo'])
+            intermediate_storage.rm_intermediate(context, StepOutputHandle('foo'))
 
 
 @nettest
@@ -280,14 +308,13 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
 
     execution_plan = create_execution_plan(pipe, run_config)
     with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
-        store = S3IntermediateStore(
+        intermediates_manager = S3IntermediateStorage(
             run_id=result.run_id,
             s3_bucket=s3_bucket,
             s3_prefix=s3_prefix,
             s3_session=context.scoped_resources_builder.build(required_resource_keys={'s3'}).s3,
         )
-        intermediates_manager = ObjectStoreIntermediateStorage(store)
-        assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
+        assert intermediates_manager.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         assert (
             intermediates_manager.get_intermediate(
                 context, Int, StepOutputHandle('return_one.compute')
@@ -303,54 +330,70 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
 
 
 @nettest
-def test_s3_intermediate_store_with_custom_prefix(s3_bucket):
+def test_s3_intermediate_storage_with_custom_prefix(s3_bucket):
     run_id = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(
+    intermediate_storage = S3IntermediateStorage(
         run_id=run_id, s3_bucket=s3_bucket, s3_prefix='custom_prefix'
     )
-    assert intermediate_store.root == '/'.join(['custom_prefix', 'storage', run_id])
+    assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', run_id])
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
+            intermediate_storage.set_intermediate(
+                context, RuntimeBool, StepOutputHandle('true'), True
+            )
 
-            assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.uri_for_paths(['true']).startswith(
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('true'))
+            assert intermediate_storage.uri_for_paths(['true']).startswith(
                 's3://%s/custom_prefix' % s3_bucket
             )
 
     finally:
-        intermediate_store.rm_object(context, ['true'])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle('true'))
 
 
 @nettest
-def test_s3_intermediate_store(s3_bucket):
+def test_s3_intermediate_storage(s3_bucket):
     run_id = make_new_run_id()
     run_id_2 = make_new_run_id()
 
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
-    assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
+    assert intermediate_storage.root == '/'.join(['dagster', 'storage', run_id])
 
-    intermediate_store_2 = S3IntermediateStore(run_id=run_id_2, s3_bucket=s3_bucket)
-    assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
+    intermediate_storage_2 = S3IntermediateStorage(run_id=run_id_2, s3_bucket=s3_bucket)
+    assert intermediate_storage_2.root == '/'.join(['dagster', 'storage', run_id_2])
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
+            intermediate_storage.set_intermediate(
+                context, RuntimeBool, StepOutputHandle('true'), True
+            )
 
-            assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool, ['true']).obj is True
-            assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('true'))
+            assert (
+                intermediate_storage.get_intermediate(
+                    context, RuntimeBool, StepOutputHandle('true')
+                ).obj
+                is True
+            )
+            assert intermediate_storage.uri_for_paths(['true']).startswith('s3://')
 
-            intermediate_store_2.copy_object_from_run(context, run_id, ['true'])
-            assert intermediate_store_2.has_object(context, ['true'])
-            assert intermediate_store_2.get_object(context, RuntimeBool, ['true']).obj is True
+            intermediate_storage_2.copy_intermediate_from_run(
+                context, run_id, StepOutputHandle('true')
+            )
+            assert intermediate_storage_2.has_intermediate(context, StepOutputHandle('true'))
+            assert (
+                intermediate_storage_2.get_intermediate(
+                    context, RuntimeBool, StepOutputHandle('true')
+                ).obj
+                is True
+            )
     finally:
-        intermediate_store.rm_object(context, ['true'])
-        intermediate_store_2.rm_object(context, ['true'])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle('true'))
+        intermediate_storage_2.rm_intermediate(context, StepOutputHandle('true'))
 
 
 class CsvSerializationStrategy(SerializationStrategy):
@@ -381,22 +424,27 @@ class LessSimpleDataFrame(list):
 
 def test_custom_read_write_mode(s3_bucket):
     run_id = make_new_run_id()
-    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
     data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
-            intermediate_store.set_object(
-                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+            intermediate_storage.set_intermediate(
+                context,
+                resolve_dagster_type(LessSimpleDataFrame),
+                StepOutputHandle('data_frame'),
+                data_frame,
             )
 
-            assert intermediate_store.has_object(context, ['data_frame'])
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle('data_frame'))
             assert (
-                intermediate_store.get_object(
-                    context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+                intermediate_storage.get_intermediate(
+                    context,
+                    resolve_dagster_type(LessSimpleDataFrame),
+                    StepOutputHandle('data_frame'),
                 ).obj
                 == data_frame
             )
-            assert intermediate_store.uri_for_paths(['data_frame']).startswith('s3://')
+            assert intermediate_storage.uri_for_paths(['data_frame']).startswith('s3://')
 
     finally:
-        intermediate_store.rm_object(context, ['data_frame'])
+        intermediate_storage.rm_intermediate(context, StepOutputHandle('data_frame'))

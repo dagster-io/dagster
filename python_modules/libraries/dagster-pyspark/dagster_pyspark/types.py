@@ -354,15 +354,23 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
             return False
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, context, _dagster_type, paths):
-        target_path = intermediate_store.object_store.key_for_paths(paths)
-        obj.write.parquet(intermediate_store.uri_for_paths(paths, protocol=cls.protocol(context)))
+    def set_intermediate_object(
+        cls, intermediate_storage, context, _dagster_type, step_output_handle, value
+    ):
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        target_path = intermediate_storage.object_store.key_for_paths(paths)
+        value.write.parquet(
+            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
+        )
         return target_path
 
     @classmethod
-    def get_object(cls, intermediate_store, context, _dagster_type, paths):
+    def get_intermediate_object(
+        cls, intermediate_storage, context, _dagster_type, step_output_handle
+    ):
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
         return context.resources.pyspark.spark_session.read.parquet(
-            intermediate_store.uri_for_paths(paths, protocol=cls.protocol(context))
+            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
         )
 
     @classmethod
@@ -390,15 +398,21 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
         )
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, _context, _dagster_type, paths):
-        target_path = os.path.join(intermediate_store.root, *paths)
-        obj.write.parquet(intermediate_store.uri_for_paths(paths))
+    def set_intermediate_object(
+        cls, intermediate_storage, _context, _dagster_type, step_output_handle, value
+    ):
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        target_path = os.path.join(intermediate_storage.root, *paths)
+        value.write.parquet(intermediate_storage.uri_for_paths(paths))
         return target_path
 
     @classmethod
-    def get_object(cls, intermediate_store, context, _dagster_type, paths):
+    def get_intermediate_object(
+        cls, intermediate_storage, context, _dagster_type, step_output_handle
+    ):
+        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
         return context.resources.pyspark.spark_session.read.parquet(
-            os.path.join(intermediate_store.root, *paths)
+            os.path.join(intermediate_storage.root, *paths)
         )
 
     @classmethod

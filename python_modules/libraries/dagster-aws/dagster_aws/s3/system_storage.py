@@ -1,5 +1,4 @@
 from dagster import Field, StringSource, SystemStorageData, intermediate_storage, system_storage
-from dagster.core.storage.intermediates_manager import ObjectStoreIntermediateStorage
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     fs_intermediate_storage,
@@ -9,7 +8,7 @@ from dagster.core.storage.system_storage import (
 )
 
 from .file_manager import S3FileManager
-from .intermediate_store import S3IntermediateStore
+from .intermediate_storage import S3IntermediateStorage
 from .object_store import S3ObjectStore
 
 
@@ -121,14 +120,12 @@ def s3_system_storage(init_context):
             s3_bucket=init_context.system_storage_config['s3_bucket'],
             s3_base_key=s3_key,
         ),
-        intermediates_manager=ObjectStoreIntermediateStorage(
-            S3IntermediateStore(
-                s3_session=s3_session,
-                s3_bucket=init_context.system_storage_config['s3_bucket'],
-                s3_prefix=init_context.system_storage_config['s3_prefix'],
-                run_id=init_context.pipeline_run.run_id,
-                type_storage_plugin_registry=init_context.type_storage_plugin_registry,
-            )
+        intermediate_storage=S3IntermediateStorage(
+            s3_session=s3_session,
+            s3_bucket=init_context.system_storage_config['s3_bucket'],
+            s3_prefix=init_context.system_storage_config['s3_prefix'],
+            run_id=init_context.pipeline_run.run_id,
+            type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         ),
     )
 
