@@ -1,5 +1,5 @@
 import dagster_pandas as dagster_pd
-from dagster_dask import dask_executor
+from dagster_dask import DataFrame, dask_executor
 
 from dagster import (
     InputDefinition,
@@ -79,6 +79,38 @@ def test_pandas_dask():
 
     result = execute_pipeline(
         ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
+        run_config={
+            'storage': {'filesystem': {}},
+            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
+            **run_config,
+        },
+        instance=DagsterInstance.local_temp(),
+    )
+
+    assert result.success
+
+
+@solid(input_defs=[InputDefinition('df', DataFrame)])
+def dask_solid(_, df):  # pylint: disable=unused-argument
+    pass
+
+
+@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+def dask_pipeline():
+    return dask_solid()
+
+
+def test_dask():
+    run_config = {
+        'solids': {
+            'dask_solid': {
+                'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'ex*.csv')}}}
+            }
+        }
+    }
+
+    result = execute_pipeline(
+        ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
         run_config={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
