@@ -263,7 +263,7 @@ const SecondaryContainer = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const ScheduleFragment = gql`
+const OverviewScheduleFragment = gql`
   fragment OverviewScheduleFragment on ScheduleDefinition {
     __typename
     name
@@ -323,7 +323,7 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
     }
   }
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-  ${ScheduleFragment}
+  ${OverviewScheduleFragment}
   ${RunComponentFragments.RUN_TIME_FRAGMENT}
   ${RunComponentFragments.RUN_ACTION_MENU_FRAGMENT}
 `;

@@ -6,7 +6,7 @@ import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
 import { ScheduleRootQuery } from "./types/ScheduleRootQuery";
-import { ScheduleRow, ScheduleRowHeader, ScheduleFragment } from "./ScheduleRow";
+import { ScheduleRow, ScheduleRowHeader, SCHEDULE_DEFINITION_FRAGMENT } from "./ScheduleRow";
 
 import { __RouterContext as RouterContext } from "react-router";
 import * as querystring from "query-string";
@@ -78,5 +78,5 @@ export const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
-  ${ScheduleFragment}
+  ${SCHEDULE_DEFINITION_FRAGMENT}
 `;

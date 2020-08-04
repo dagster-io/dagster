@@ -22,7 +22,7 @@ import Loading from "../Loading";
 import gql from "graphql-tag";
 import PythonErrorInfo from "../PythonErrorInfo";
 
-import { ScheduleRow, ScheduleFragment, ScheduleStateRow } from "./ScheduleRow";
+import { ScheduleRow, SCHEDULE_DEFINITION_FRAGMENT, ScheduleStateRow } from "./ScheduleRow";
 import { RepositoryInformation, RepositoryInformationFragment } from "../RepositoryInformation";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
@@ -312,7 +312,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${ScheduleFragment}
+  ${SCHEDULE_DEFINITION_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${RepositoryInformationFragment}
 `;

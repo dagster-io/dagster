@@ -582,7 +582,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-export const ScheduleFragment = gql`
+export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
     __typename
     id
@@ -624,6 +624,10 @@ export const ScheduleFragment = gql`
     status
   }
 
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
+`;
+
+export const SCHEDULE_DEFINITION_FRAGMENT = gql`
   fragment ScheduleDefinitionFragment on ScheduleDefinition {
     name
     cronSchedule
@@ -637,7 +641,7 @@ export const ScheduleFragment = gql`
       ...ScheduleStateFragment
     }
   }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${SCHEDULE_STATE_FRAGMENT}
 `;
 
 const ScheduleName = styled.pre`
