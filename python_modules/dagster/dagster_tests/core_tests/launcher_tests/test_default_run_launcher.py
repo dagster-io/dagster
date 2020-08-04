@@ -146,7 +146,9 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     repo_yaml = file_relative_path(__file__, 'repo.yaml')
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     loadable_target_origin = LoadableTargetOrigin.from_python_origin(recon_repo.get_origin())
-    with GrpcServerProcess(loadable_target_origin=loadable_target_origin) as server:
+    with GrpcServerProcess(
+        loadable_target_origin=loadable_target_origin
+    ).create_ephemeral_client() as server:
         repository_location = GrpcServerRepositoryLocation(
             RepositoryLocationHandle.create_grpc_server_location(
                 location_name='test', port=server.port, socket=server.socket, host='localhost',

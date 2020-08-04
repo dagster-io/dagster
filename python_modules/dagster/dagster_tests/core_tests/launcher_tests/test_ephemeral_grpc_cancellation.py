@@ -80,9 +80,9 @@ def test_cancel_run():
             executable_path=sys.executable, python_file=__file__, working_directory=None,
         )
 
-        with GrpcServerProcess(loadable_target_origin, max_workers=10) as server_process:
-            api_client = server_process.create_ephemeral_client()
-
+        with GrpcServerProcess(
+            loadable_target_origin, max_workers=10
+        ).create_ephemeral_client() as api_client:
             streaming_results = []
 
             pipeline_run = instance.create_run_for_pipeline(
@@ -93,8 +93,8 @@ def test_cancel_run():
                     pipeline_name='streaming_pipeline',
                     repository_origin=RepositoryGrpcServerOrigin(
                         host='localhost',
-                        socket=server_process.socket,
-                        port=server_process.port,
+                        socket=api_client.socket,
+                        port=api_client.port,
                         repository_name='test_repository',
                     ),
                 ),

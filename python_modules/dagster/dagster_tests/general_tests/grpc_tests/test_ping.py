@@ -1,11 +1,13 @@
+import os
 import re
+import time
 
 import grpc
 import pytest
 
 from dagster import check, seven
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
-from dagster.grpc.server import open_server_process
+from dagster.grpc.server import GrpcServerProcess, open_server_process
 from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port, safe_tempfile_path
 
@@ -42,6 +44,25 @@ def test_server_socket():
             assert DagsterGrpcClient(socket=skt).ping('foobar') == 'foobar'
         finally:
             interrupt_ipc_subprocess_pid(server_process.pid)
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason='Unix-only test')
+def test_process_killed_after_client_finished():
+
+    server_process = GrpcServerProcess()
+
+    with server_process.create_ephemeral_client() as client:
+        socket = client.socket
+        assert socket and os.path.exists(socket)
+
+    start_time = time.time()
+    while server_process.server_process.poll() is None:
+        time.sleep(0.05)
+        # Verify server process cleans up eventually
+        assert time.time() - start_time < 1
+
+    # verify socket is cleaned up
+    assert not os.path.exists(socket)
 
 
 def test_server_port():

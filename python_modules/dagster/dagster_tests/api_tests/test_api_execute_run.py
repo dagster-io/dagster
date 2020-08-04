@@ -132,9 +132,9 @@ def test_execute_run_api_grpc_python_handle(pipeline_handle):
             pipeline_handle.get_origin().repository_origin
         )
 
-        with GrpcServerProcess(loadable_target_origin, max_workers=2) as server_process:
-            api_client = server_process.create_ephemeral_client()
-
+        with GrpcServerProcess(
+            loadable_target_origin, max_workers=2
+        ).create_ephemeral_client() as api_client:
             events = [
                 event
                 for event in sync_execute_run_grpc(

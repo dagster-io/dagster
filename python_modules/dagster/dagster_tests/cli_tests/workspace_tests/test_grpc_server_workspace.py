@@ -13,8 +13,8 @@ from dagster.utils import file_relative_path
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace():
 
-    with GrpcServerProcess() as first_server:
-        with GrpcServerProcess() as second_server:
+    with GrpcServerProcess().create_ephemeral_client() as first_server:
+        with GrpcServerProcess().create_ephemeral_client() as second_server:
             first_socket = first_server.socket
             second_socket = second_server.socket
             workspace_yaml = '''
@@ -59,8 +59,8 @@ load_from:
 
 
 def test_grpc_server_workspace():
-    with GrpcServerProcess(force_port=True) as first_server:
-        with GrpcServerProcess(force_port=True) as second_server:
+    with GrpcServerProcess(force_port=True).create_ephemeral_client() as first_server:
+        with GrpcServerProcess(force_port=True).create_ephemeral_client() as second_server:
             first_port = first_server.port
             second_port = second_server.port
             workspace_yaml = '''

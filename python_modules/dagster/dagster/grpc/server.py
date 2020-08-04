@@ -823,6 +823,7 @@ class GrpcServerProcess(object):
                 max_workers=max_workers,
             )
         else:
+            # Who will clean this up now
             self.socket = safe_tempfile_path_unmanaged()
 
             self.server_process = open_server_process(
@@ -835,32 +836,9 @@ class GrpcServerProcess(object):
         if self.server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
 
-    def create_client(self):
-        from dagster.grpc.client import DagsterGrpcClient
-
-        return DagsterGrpcClient(port=self.port, socket=self.socket, host='localhost')
-
     def create_ephemeral_client(self):
         from dagster.grpc.client import EphemeralDagsterGrpcClient
 
         return EphemeralDagsterGrpcClient(
             port=self.port, socket=self.socket, server_process=self.server_process
         )
-
-    def __enter__(self):
-        return self
-
-    def __del__(self):
-        self._dispose()
-
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._dispose()
-
-    def _dispose(self):
-        if self.server_process:
-            cleanup_server_process(self.server_process)
-            self.server_process = None
-        if self.socket:
-            if os.path.exists(self.socket):
-                os.unlink(self.socket)
-            self.socket = None

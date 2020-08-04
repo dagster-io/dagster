@@ -317,13 +317,15 @@ class EnvironmentManagers:
                 recon_repo.get_origin()
             )
 
-            with GrpcServerProcess(loadable_target_origin=loadable_target_origin) as server:
+            with GrpcServerProcess(
+                loadable_target_origin=loadable_target_origin
+            ).create_ephemeral_client() as api_client:
                 yield [
                     GrpcServerRepositoryLocation(
                         RepositoryLocationHandle.create_grpc_server_location(
-                            port=server.port,
-                            socket=server.socket,
-                            host='localhost',
+                            port=api_client.port,
+                            socket=api_client.socket,
+                            host=api_client.host,
                             location_name='test',
                         )
                     )

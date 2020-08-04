@@ -29,9 +29,9 @@ from .types import (
 
 class DagsterGrpcClient(object):
     def __init__(self, port=None, socket=None, host='localhost'):
-        check.opt_int_param(port, 'port')
-        check.opt_str_param(socket, 'socket')
-        check.opt_str_param(host, 'host')
+        self.port = check.opt_int_param(port, 'port')
+        self.socket = check.opt_str_param(socket, 'socket')
+        self.host = check.opt_str_param(host, 'host')
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
             'You must pass a valid `port` on Windows: `socket` not supported.',
@@ -62,9 +62,6 @@ class DagsterGrpcClient(object):
             response_stream = getattr(stub, method)(request_type(**kwargs))
             for response in response_stream:
                 yield response
-
-    def _terminate_server(self):
-        self.shutdown_server()
 
     def ping(self, echo):
         check.str_param(echo, 'echo')
@@ -327,15 +324,27 @@ class DagsterGrpcClient(object):
 
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
+    '''A client that tells the server process that created it to shut down once it is destroyed or leaves a context manager.'''
+
     def __init__(
         self, server_process=None, *args, **kwargs
     ):  # pylint: disable=keyword-arg-before-vararg
         self._server_process = check.inst_param(server_process, 'server_process', subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
-    def _terminate_server(self):
-        # Hard termination pending implementation of soft scheme
-        self._server_process.terminate()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self._dispose()
+
+    def __del__(self):
+        self._dispose()
+
+    def _dispose(self):
+        if self._server_process and self._server_process.poll() is None:
+            self.shutdown_server()
+            self._server_process = None
 
 
 @contextmanager
@@ -351,10 +360,5 @@ def ephemeral_grpc_api_client(
         force_port=force_port,
         max_retries=max_retries,
         max_workers=max_workers,
-    ) as server:
-        client = server.create_ephemeral_client()
-        try:
-            yield client
-        finally:
-            if server.server_process.poll() is None:
-                client.shutdown_server()
+    ).create_ephemeral_client() as client:
+        yield client

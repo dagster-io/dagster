@@ -1,9 +1,6 @@
-import threading
-import time
 import weakref
 
 from dagster import check
-from dagster.api.execute_run import sync_execute_run_grpc
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.handle import (
@@ -11,18 +8,9 @@ from dagster.core.host_representation.handle import (
     ManagedGrpcPythonEnvRepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import (
-    CanCancelExecutionRequest,
-    CancelExecutionRequest,
-    ExecuteRunArgs,
-    LoadableTargetOrigin,
-)
+from dagster.grpc.types import CanCancelExecutionRequest, CancelExecutionRequest, ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.seven import multiprocessing
 
 from .base import RunLauncher
 
@@ -32,44 +20,6 @@ GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
     GrpcServerRepositoryLocationHandle,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
 )
-
-
-def _ephemeral_launched_run_client(
-    instance_ref, pipeline_origin, pipeline_run_id, cancellation_event
-):
-    '''Spins up an ephemeral client & server with two workers. This is to allow for cancellation
-    to be processed as an interrupt rather than waiting for the launched run to complete.'''
-    check.inst_param(instance_ref, 'instance_ref', InstanceRef)
-    check.inst_param(pipeline_origin, 'pipeline_origin', PipelinePythonOrigin)
-    check.str_param(pipeline_run_id, 'pipeline_run_id')
-    check.inst_param(cancellation_event, 'cancellation_event', multiprocessing.synchronize.Event)
-
-    instance = DagsterInstance.from_ref(instance_ref)
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-
-    loadable_target_origin = LoadableTargetOrigin.from_python_origin(
-        pipeline_origin.repository_origin
-    )
-
-    with GrpcServerProcess(loadable_target_origin, max_workers=2) as server_process:
-        api_client = server_process.create_ephemeral_client()
-
-        execute_run_thread = threading.Thread(
-            target=sync_execute_run_grpc,
-            kwargs={
-                'api_client': api_client,
-                'instance_ref': instance_ref,
-                'pipeline_origin': pipeline_origin,
-                'pipeline_run': pipeline_run,
-            },
-        )
-
-        execute_run_thread.start()
-        while execute_run_thread.is_alive():
-            if cancellation_event.is_set():
-                api_client.cancel_execution(CancelExecutionRequest(run_id=pipeline_run_id))
-                execute_run_thread.join()
-            time.sleep(SUBPROCESS_TICK)
 
 
 class GrpcRunLauncher(RunLauncher, ConfigurableClass):

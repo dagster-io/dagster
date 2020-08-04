@@ -179,21 +179,21 @@ def test_list_command_grpc_socket():
         loadable_target_origin=LoadableTargetOrigin(
             python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
         ),
-    ) as server_process:
+    ).create_ephemeral_client() as api_client:
         execute_list_command(
-            {'socket': server_process.socket}, no_print, DagsterInstance.local_temp(),
+            {'socket': api_client.socket}, no_print, DagsterInstance.local_temp(),
         )
         execute_list_command(
-            {'socket': server_process.socket, 'host': 'localhost'},
+            {'socket': api_client.socket, 'host': api_client.host},
             no_print,
             DagsterInstance.local_temp(),
         )
 
-        result = runner.invoke(pipeline_list_command, ['--socket', server_process.socket])
+        result = runner.invoke(pipeline_list_command, ['--socket', api_client.socket])
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
-            pipeline_list_command, ['--socket', server_process.socket, '--host', 'localhost'],
+            pipeline_list_command, ['--socket', api_client.socket, '--host', api_client.host],
         )
         assert_correct_bar_repository_output(result)
 
@@ -259,31 +259,31 @@ def test_list_command():
             python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
         ),
         force_port=True,
-    ) as server_process:
+    ).create_ephemeral_client() as api_client:
         execute_list_command(
-            {'port': server_process.port}, no_print, DagsterInstance.local_temp(),
+            {'port': api_client.port}, no_print, DagsterInstance.local_temp(),
         )
-        result = runner.invoke(pipeline_list_command, ['--port', server_process.port])
+        result = runner.invoke(pipeline_list_command, ['--port', api_client.port])
         assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
-            pipeline_list_command, ['--port', server_process.port, '--host', 'localhost',],
+            pipeline_list_command, ['--port', api_client.port, '--host', api_client.host],
         )
         assert_correct_bar_repository_output(result)
 
-        result = runner.invoke(pipeline_list_command, ['--port', server_process.port],)
+        result = runner.invoke(pipeline_list_command, ['--port', api_client.port],)
         assert_correct_bar_repository_output(result)
 
         # Can't supply both port and socket
         with pytest.raises(UsageError):
             execute_list_command(
-                {'port': server_process.port, 'socket': 'foonamedsocket'},
+                {'port': api_client.port, 'socket': 'foonamedsocket'},
                 no_print,
                 DagsterInstance.local_temp(),
             )
 
         result = runner.invoke(
-            pipeline_list_command, ['--port', server_process.port, '--socket', 'foonamedsocket'],
+            pipeline_list_command, ['--port', api_client.port, '--socket', 'foonamedsocket'],
         )
 
     execute_list_command(

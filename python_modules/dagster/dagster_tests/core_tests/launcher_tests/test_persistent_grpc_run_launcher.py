@@ -26,6 +26,16 @@ def noop_pipeline():
 
 
 @solid
+def slow_solid(_):
+    time.sleep(4)
+
+
+@pipeline
+def slow_pipeline():
+    slow_solid()
+
+
+@solid
 def crashy_solid(_):
     os._exit(1)  # pylint: disable=W0212
 
@@ -74,7 +84,7 @@ def math_diamond():
 
 @repository
 def nope():
-    return [noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
+    return [noop_pipeline, crashy_pipeline, sleepy_pipeline, slow_pipeline, math_diamond]
 
 
 @pytest.fixture(scope='module')
@@ -146,8 +156,8 @@ def poll_for_event(instance, run_id, event_type, message, timeout=10):
 
 @pytest.fixture(scope='module')
 def grpc_server_port_fixture():
-    with GrpcServerProcess(force_port=True) as server:
-        yield server.port
+    with GrpcServerProcess(force_port=True).create_ephemeral_client() as api_client:
+        yield api_client.port
 
 
 @contextmanager
@@ -155,10 +165,15 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     repo_yaml = file_relative_path(__file__, 'repo.yaml')
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     loadable_target_origin = LoadableTargetOrigin.from_python_origin(recon_repo.get_origin())
-    with GrpcServerProcess(loadable_target_origin=loadable_target_origin) as server:
+    with GrpcServerProcess(
+        loadable_target_origin=loadable_target_origin
+    ).create_ephemeral_client() as api_client:
         repository_location = GrpcServerRepositoryLocation(
             RepositoryLocationHandle.create_grpc_server_location(
-                location_name='test', port=server.port, socket=server.socket, host='localhost',
+                location_name='test',
+                port=api_client.port,
+                socket=api_client.socket,
+                host=api_client.host,
             )
         )
 
@@ -211,6 +226,53 @@ def test_successful_run(
 
         pipeline_run = poll_for_run(instance, run_id)
         assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+
+def test_run_always_finishes(temp_instance):  # pylint: disable=redefined-outer-name
+    instance = temp_instance
+
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=slow_pipeline, run_config=None)
+    run_id = pipeline_run.run_id
+
+    recon_repo = ReconstructableRepository.for_file(__file__, 'nope')
+    loadable_target_origin = LoadableTargetOrigin.from_python_origin(recon_repo.get_origin())
+
+    server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin, max_workers=4)
+    with server_process.create_ephemeral_client() as api_client:
+        repository_location = GrpcServerRepositoryLocation(
+            RepositoryLocationHandle.create_grpc_server_location(
+                location_name='test',
+                port=api_client.port,
+                socket=api_client.socket,
+                host=api_client.host,
+            )
+        )
+
+        external_pipeline = repository_location.get_repository('nope').get_full_external_pipeline(
+            'slow_pipeline'
+        )
+
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+
+        launcher = instance.run_launcher
+        launcher.launch_run(
+            instance=instance, run=pipeline_run, external_pipeline=external_pipeline
+        )
+
+    # Server process now receives shutdown event, run has not finished yet
+    pipeline_run = instance.get_run_by_id(run_id)
+    assert not pipeline_run.is_finished
+    assert server_process.server_process.poll() is None
+
+    # Server should wait until run finishes, then shutdown
+    pipeline_run = poll_for_run(instance, run_id)
+    assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+    start_time = time.time()
+    while server_process.server_process.poll() is None:
+        time.sleep(0.05)
+        # Verify server process cleans up eventually
+        assert time.time() - start_time < 5
 
 
 @pytest.mark.parametrize(

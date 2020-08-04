@@ -99,7 +99,7 @@ class RepositoryLocationHandle:
         from dagster.grpc.server import GrpcServerProcess
 
         server = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
-        client = server.create_client()
+        client = server.create_ephemeral_client()
         list_repositories_response = sync_list_repositories_grpc(client)
 
         code_pointer_dict = list_repositories_response.repository_code_pointer_dict
