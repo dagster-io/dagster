@@ -35,6 +35,13 @@ data:
         env_config_maps:
           - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
         env_secrets:
+          {{- if $.Values.scheduler.env_secrets -}}
+          {{- range $name := $.Values.scheduler.env_secrets }}
+          {{- if $name }}
+          - {{ $name }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
     {{- else }}
       module: dagster_cron.cron_scheduler
       class: SystemCronScheduler

@@ -107,6 +107,10 @@ scheduler:
   loadInclusterConfig: true
   # (K8sScheduler only) File to load kubeconfig from. Only set this if loadInclusterConfig is false.
   kubeconfigFile: ""
+  # (K8sScheduler only) Additional (secret) environment variables can be retrieved and set from
+  # the Secrets enumerated as a list here
+  env_secrets:
+    - ""
 
 ####################################################################################################
 # PostgreSQL: Configuration values for postgresql
