@@ -1,4 +1,5 @@
 import os
+import sys
 
 from dagster import EventMetadataEntry, check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
@@ -6,16 +7,19 @@ from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
 from dagster.seven import multiprocessing
 from dagster.utils import start_termination_thread
+from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
     ChildProcessCommand,
+    ChildProcessCrashException,
     ChildProcessEvent,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
@@ -141,6 +145,28 @@ class MultiprocessExecutor(Executor):
                                 yield event_or_none
                                 active_execution.handle_event(event_or_none)
 
+                        except ChildProcessCrashException as crash:
+                            serializable_error = serializable_error_info_from_exc_info(
+                                sys.exc_info()
+                            )
+                            yield DagsterEvent.engine_event(
+                                pipeline_context,
+                                (
+                                    'Multiprocess executor: child process for step {step_key} '
+                                    'unexpectedly exited with code {exit_code}'
+                                ).format(step_key=key, exit_code=crash.exit_code),
+                                EngineEventData.engine_error(serializable_error),
+                                step_key=key,
+                            )
+                            yield DagsterEvent.step_failure_event(
+                                step_context=pipeline_context.for_step(
+                                    active_execution.get_step_by_key(key)
+                                ),
+                                step_failure_data=StepFailureData(
+                                    error=serializable_error, user_failure_data=None
+                                ),
+                            )
+                            empty_iters.append(key)
                         except StopIteration:
                             empty_iters.append(key)
 

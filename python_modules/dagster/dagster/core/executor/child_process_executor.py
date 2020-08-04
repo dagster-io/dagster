@@ -46,6 +46,9 @@ class ChildProcessCommand(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
 class ChildProcessCrashException(Exception):
     '''Thrown when the child process crashes.'''
 
+    def __init__(self, exit_code=None):
+        self.exit_code = exit_code
+
 
 def _execute_command_in_child_process(event_queue, command):
     '''Wraps the execution of a ChildProcessCommand.
@@ -148,7 +151,7 @@ def execute_child_process_command(command):
             completed_properly = True
 
     if not completed_properly:
-        # TODO Gather up stderr and the process exit code
-        raise ChildProcessCrashException()
+        # TODO Figure out what to do about stderr/stdout
+        raise ChildProcessCrashException(exit_code=process.exitcode)
 
     process.join()

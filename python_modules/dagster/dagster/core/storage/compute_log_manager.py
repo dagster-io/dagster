@@ -78,7 +78,8 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
         Args:
             run_id (str): The id of the pipeline run.
             key (str): The unique descriptor of the execution step (e.g. `solid_invocation.compute`)
-            io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
+            io_type (ComputeIOType): Flag indicating the I/O type, either ComputeIOType.STDOUT or
+                ComputeIOType.STDERR
 
         Returns:
             Path

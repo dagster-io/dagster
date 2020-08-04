@@ -1,7 +1,10 @@
 import os
+import sys
 import time
 
 from dagster import (
+    EventMetadataEntry,
+    Failure,
     Field,
     InputDefinition,
     Nothing,
@@ -16,7 +19,8 @@ from dagster import (
     solid,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.utils import safe_tempfile_path
+from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.utils import safe_tempfile_path, segfault
 
 
 def test_diamond_simple_execution():
@@ -288,3 +292,131 @@ def test_optional_outputs():
     assert multi_result.success
     assert not [event for event in multi_result.step_event_list if event.is_step_failure]
     assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
+
+
+@lambda_solid
+def throw():
+    raise Failure(
+        description='it Failure',
+        metadata_entries=[
+            EventMetadataEntry.text(label='label', text='text', description='description')
+        ],
+    )
+
+
+@pipeline
+def failure():
+    throw()
+
+
+def test_failure_multiprocessing():
+    result = execute_pipeline(
+        reconstructable(failure),
+        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        instance=DagsterInstance.local_temp(),
+        raise_on_error=False,
+    )
+    assert not result.success
+    failure_data = result.result_for_solid('throw').failure_data
+    assert failure_data
+    assert failure_data.error.cls_name == 'Failure'
+
+    # hard coded
+    assert failure_data.user_failure_data.label == 'intentional-failure'
+    # from Failure
+    assert failure_data.user_failure_data.description == 'it Failure'
+    assert failure_data.user_failure_data.metadata_entries[0].label == 'label'
+    assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == 'text'
+    assert failure_data.user_failure_data.metadata_entries[0].description == 'description'
+
+
+@solid
+def sys_exit(context):
+    context.log.info('Informational message')
+    print('Crashy output to stdout')  # pylint: disable=print-call
+    sys.exit('Crashy output to stderr')
+
+
+@pipeline
+def sys_exit_pipeline():
+    sys_exit()
+
+
+def test_crash_multiprocessing():
+    instance = DagsterInstance.local_temp()
+    result = execute_pipeline(
+        reconstructable(sys_exit_pipeline),
+        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        instance=instance,
+        raise_on_error=False,
+    )
+    assert not result.success
+    failure_data = result.result_for_solid('sys_exit').failure_data
+    assert failure_data
+    assert failure_data.error.cls_name == 'ChildProcessCrashException'
+
+    assert failure_data.user_failure_data is None
+
+    assert (
+        'Crashy output to stdout'
+        in instance.compute_log_manager.read_logs_file(
+            result.run_id, 'sys_exit.compute', ComputeIOType.STDOUT
+        ).data
+    )
+
+    # The argument to sys.exit won't (reliably) make it to the compute logs for stderr b/c the
+    # LocalComputeLogManger is in-process -- documenting this behavior here though we may want to
+    # change it
+
+    # assert (
+    #     'Crashy output to stderr'
+    #     not in instance.compute_log_manager.read_logs_file(
+    #         result.run_id, 'sys_exit.compute', ComputeIOType.STDERR
+    #     ).data
+    # )
+
+
+# segfault test
+@solid
+def segfault_solid(context):
+    context.log.info('Informational message')
+    print('Crashy output to stdout')  # pylint: disable=print-call
+    segfault()
+
+
+@pipeline
+def segfault_pipeline():
+    segfault_solid()
+
+
+def test_crash_hard_multiprocessing():
+    instance = DagsterInstance.local_temp()
+    result = execute_pipeline(
+        reconstructable(segfault_pipeline),
+        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        instance=instance,
+        raise_on_error=False,
+    )
+    assert not result.success
+    failure_data = result.result_for_solid('segfault_solid').failure_data
+    assert failure_data
+    assert failure_data.error.cls_name == 'ChildProcessCrashException'
+
+    assert failure_data.user_failure_data is None
+
+    # Neither the stderr not the stdout spew will (reliably) make it to the compute logs --
+    # documenting this behavior here though we may want to change it
+
+    # assert (
+    #     'Crashy output to stdout'
+    #     not in instance.compute_log_manager.read_logs_file(
+    #         result.run_id, 'segfault_solid.compute', ComputeIOType.STDOUT
+    #     ).data
+    # )
+
+    # assert (
+    #     instance.compute_log_manager.read_logs_file(
+    #         result.run_id, 'sys_exit.compute', ComputeIOType.STDERR
+    #     ).data
+    #     is None
+    # )

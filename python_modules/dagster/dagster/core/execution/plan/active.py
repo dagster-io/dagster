@@ -52,7 +52,7 @@ class ActiveExecution(object):
                 if requirements.issubset(self._success):
                     new_steps_to_execute.append(step_key)
                 else:
-                    step = self._plan.get_step_by_key(step_key)
+                    step = self.get_step_by_key(step_key)
 
                     # The step will skip on any upstream failure
                     should_skip = True
@@ -113,12 +113,15 @@ class ActiveExecution(object):
         check.invariant(step is not None, 'Unexpected ActiveExecution state')
         return step
 
+    def get_step_by_key(self, step_key):
+        return self._plan.get_step_by_key(step_key)
+
     def get_steps_to_execute(self, limit=None):
         check.opt_int_param(limit, 'limit')
         self._update()
 
         steps = sorted(
-            [self._plan.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
+            [self.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
         )
 
         if limit:
@@ -135,7 +138,7 @@ class ActiveExecution(object):
         steps = []
         steps_to_skip = list(self._pending_skip)
         for key in steps_to_skip:
-            steps.append(self._plan.get_step_by_key(key))
+            steps.append(self.get_step_by_key(key))
             self._in_flight.add(key)
             self._pending_skip.remove(key)
 

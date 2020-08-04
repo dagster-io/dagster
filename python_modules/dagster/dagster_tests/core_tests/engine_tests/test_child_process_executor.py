@@ -12,6 +12,7 @@ from dagster.core.executor.child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
+from dagster.utils import segfault
 
 
 class DoubleAStringChildProcessCommand(ChildProcessCommand):
@@ -35,6 +36,12 @@ class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
     def execute(self):
         # access inner API to simulate hard crash
         os._exit(1)  # pylint: disable=protected-access
+
+
+class SegfaultCommand(ChildProcessCommand):  # pylint: disable=no-init
+    def execute(self):
+        # access inner API to simulate hard crash
+        segfault()
 
 
 class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
@@ -80,8 +87,15 @@ def test_child_process_uncaught_exception():
 
 
 def test_child_process_crashy_process():
-    with pytest.raises(ChildProcessCrashException):
+    with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(CrashyCommand()))
+    assert exc.value.exit_code == 1
+
+
+def test_child_process_segfault():
+    with pytest.raises(ChildProcessCrashException) as exc:
+        list(execute_child_process_command(SegfaultCommand()))
+    assert exc.value.exit_code == -11
 
 
 @pytest.mark.skip('too long')
