@@ -100,7 +100,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
   );
 };
 
-const SchedulesRoot: React.FunctionComponent = () => {
+export const SchedulesRoot: React.FunctionComponent = () => {
   const repositorySelector = useRepositorySelector();
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
@@ -316,5 +316,3 @@ export const SCHEDULES_ROOT_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${RepositoryInformationFragment}
 `;
-
-export default SchedulesRoot;

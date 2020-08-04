@@ -13,7 +13,8 @@ import PythonErrorInfo from "./PythonErrorInfo";
 import { RunRoot } from "./runs/RunRoot";
 import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
-import SchedulesRoot from "./schedules/SchedulesRoot";
+import { SchedulerRoot } from "./schedules/SchedulerRoot";
+import { SchedulesRoot } from "./schedules/SchedulesRoot";
 import { ScheduleRoot } from "./schedules/ScheduleRoot";
 import { AssetsRoot } from "./assets/AssetsRoot";
 import { LeftNav } from "./nav/LeftNav";
@@ -35,6 +36,7 @@ const AppRoutes = () => (
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solid/:name" component={SolidDetailsRoot} />
     <Route path="/solids/:name?" component={SolidsRoot} />
+    <Route path="/scheduler" component={SchedulerRoot} exact={true} />
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
     <Route path="/schedules" component={SchedulesRoot} />
     <Route path="/assets" component={AssetsRoot} exact={true} />

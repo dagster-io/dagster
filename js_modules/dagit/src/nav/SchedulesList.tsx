@@ -5,36 +5,29 @@ import { useQuery } from "react-apollo";
 import { Link } from "react-router-dom";
 import styled from "styled-components/macro";
 
-import { tabForPipelinePathComponent } from "./PipelineNav";
-import { ContentListSolidsQuery } from "./types/ContentListSolidsQuery";
+import { SchedulesListQuery } from "./types/SchedulesListQuery";
 import { DagsterRepoOption } from "../DagsterRepositoryContext";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { useHistory } from "react-router";
+import { ScheduleStatus } from "../types/globalTypes";
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
 
-interface RepositoryContentListProps {
+interface SchedulesListProps {
   selector?: string;
-  tab?: string;
   repo: DagsterRepoOption;
 }
 
-export const RepositoryContentList: React.FunctionComponent<RepositoryContentListProps> = ({
-  tab,
-  repo,
-  selector
-}) => {
-  const [type, setType] = React.useState<"pipelines" | "solids">("pipelines");
+export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({ repo, selector }) => {
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
-  const pipelineTab = tabForPipelinePathComponent(tab);
   const history = useHistory();
 
   const [q, setQ] = React.useState<string>("");
-  // Load solids, but only if the user clicks on the Solid option
-  const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
-    fetchPolicy: "cache-first",
+
+  const schedules = useQuery<SchedulesListQuery>(SCHEDULES_LIST_QUERY, {
+    fetchPolicy: "cache-and-network",
     variables: {
       repositorySelector: {
         repositoryLocationName: repo.repositoryLocation.name,
@@ -42,36 +35,19 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
       }
     }
   });
-  React.useEffect(() => {
-    if (type === "solids") {
-      solids.refetch();
-    }
-  }, [type, solids]);
-  const usedSolids =
-    solids.data?.repositoryOrError?.__typename === "Repository"
-      ? solids.data.repositoryOrError.usedSolids
+
+  const repoSchedules =
+    schedules.data?.scheduleDefinitionsOrError?.__typename === "ScheduleDefinitions"
+      ? schedules.data.scheduleDefinitionsOrError.results
       : [];
 
-  const items =
-    type === "pipelines"
-      ? repo.repository.pipelines
-          .map(pipeline => pipeline.name)
-          .filter(p => !q || iincludes(p, q))
-          .map(p => ({
-            to: `/pipeline/${p}/${pipelineTab.pathComponent}`,
-            label: p
-          }))
-      : usedSolids
-          .filter(
-            s =>
-              !q ||
-              iincludes(s.definition.name, q) ||
-              s.invocations.some(i => iincludes(i.pipeline.name, q))
-          )
-          .map(({ definition }) => ({
-            to: `/solid/${definition.name}`,
-            label: definition.name
-          }));
+  const items = repoSchedules
+    .filter(({ name }) => !q || iincludes(name, q))
+    .map(({ name, scheduleState }) => ({
+      to: `/schedules/${name}`,
+      label: name,
+      status: scheduleState?.status
+    }));
 
   const onShiftFocus = (dir: 1 | -1) => {
     const idx = items.findIndex(p => p.label === focused);
@@ -116,7 +92,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
             inputRef={c => (inputRef.current = c)}
             value={q}
             small
-            placeholder={`Search ${type}...`}
+            placeholder={`Search schedules...`}
             onKeyDown={e => {
               if (e.key === "ArrowDown") {
                 onShiftFocus(1);
@@ -137,20 +113,11 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
         </ShortcutHandler>
         <div style={{ width: 4 }} />
         <ButtonGroup>
-          <Button
-            small={true}
-            active={type === "pipelines"}
-            intent={type === "pipelines" ? "primary" : "none"}
-            icon={<Icon icon="diagram-tree" iconSize={13} />}
-            onClick={() => setType("pipelines")}
-          />
-          <Button
-            small={true}
-            active={type === "solids"}
-            intent={type === "solids" ? "primary" : "none"}
-            icon={<Icon icon="git-commit" iconSize={13} />}
-            onClick={() => setType("solids")}
-          />
+          <a href="/schedules">
+            <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
+              View All{" "}
+            </Button>
+          </a>
         </ButtonGroup>
       </Header>
       <Items>
@@ -164,7 +131,8 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
             }`}
             to={p.to}
           >
-            {p.label}
+            <div>{p.label}</div>
+            <div>{p.status === ScheduleStatus.RUNNING && <ScheduleStatusDot size={9} />}</div>
           </Item>
         ))}
       </Items>
@@ -177,6 +145,21 @@ const Header = styled.div`
   display: flex;
   & .bp3-input-group {
     flex: 1;
+  }
+`;
+
+const ScheduleStatusDot = styled.div<{
+  size: number;
+}>`
+  display: inline-block;
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+  border-radius: ${({ size }) => size / 2}px;
+  align-self: center;
+  transition: background 200ms linear;
+  background: ${Colors.GREEN2};
+  &:hover {
+    background: ${Colors.GREEN2};
   }
 `;
 
@@ -209,7 +192,8 @@ const Item = styled(Link)`
   padding-left: 8px;
   border-left: 4px solid transparent;
   border-bottom: 1px solid transparent;
-  display: block;
+  display: flex;
+  justify-content: space-between;
   color: ${Colors.LIGHT_GRAY3} !important;
   &:hover {
     text-decoration: none;
@@ -256,21 +240,14 @@ const SelectedItemTooltipStyle = JSON.stringify({
   fontWeight: 600
 });
 
-export const CONTENT_LIST_SOLIDS_QUERY = gql`
-  query ContentListSolidsQuery($repositorySelector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      ... on Repository {
-        id
-        usedSolids {
-          __typename
-          definition {
-            name
-          }
-          invocations {
-            __typename
-            pipeline {
-              name
-            }
+export const SCHEDULES_LIST_QUERY = gql`
+  query SchedulesListQuery($repositorySelector: RepositorySelector!) {
+    scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
+      ... on ScheduleDefinitions {
+        results {
+          name
+          scheduleState {
+            status
           }
         }
       }

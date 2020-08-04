@@ -10,17 +10,11 @@ exports[`renders execution 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -37,7 +31,7 @@ exports[`renders execution 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -65,7 +59,7 @@ exports[`renders execution 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -89,13 +83,13 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -119,16 +113,46 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -138,7 +162,10 @@ exports[`renders execution 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -205,40 +232,9 @@ exports[`renders execution 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -246,123 +242,221 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/playground"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/playground"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/playground"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -645,17 +739,11 @@ exports[`renders pipeline page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -672,7 +760,7 @@ exports[`renders pipeline page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -700,7 +788,7 @@ exports[`renders pipeline page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -724,13 +812,13 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -754,16 +842,46 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -773,7 +891,10 @@ exports[`renders pipeline page 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -840,40 +961,9 @@ exports[`renders pipeline page 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -881,123 +971,221 @@ exports[`renders pipeline page 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -5230,17 +5418,11 @@ exports[`renders pipeline solid page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -5257,7 +5439,7 @@ exports[`renders pipeline solid page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -5285,7 +5467,7 @@ exports[`renders pipeline solid page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -5309,13 +5491,13 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -5339,16 +5521,46 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -5358,7 +5570,10 @@ exports[`renders pipeline solid page 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -5425,40 +5640,9 @@ exports[`renders pipeline solid page 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -5466,123 +5650,221 @@ exports[`renders pipeline solid page 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -9815,17 +10097,11 @@ exports[`renders solids explorer 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -9842,7 +10118,7 @@ exports[`renders solids explorer 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -9870,7 +10146,7 @@ exports[`renders solids explorer 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -9894,13 +10170,13 @@ exports[`renders solids explorer 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -9924,16 +10200,46 @@ exports[`renders solids explorer 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -9943,7 +10249,10 @@ exports[`renders solids explorer 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -10010,40 +10319,9 @@ exports[`renders solids explorer 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -10051,123 +10329,221 @@ exports[`renders solids explorer 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -11526,17 +11902,11 @@ exports[`renders type page 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -11553,7 +11923,7 @@ exports[`renders type page 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -11581,7 +11951,7 @@ exports[`renders type page 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -11605,13 +11975,13 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -11635,16 +12005,46 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -11654,7 +12054,10 @@ exports[`renders type page 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -11721,40 +12124,9 @@ exports[`renders type page 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -11762,123 +12134,221 @@ exports[`renders type page 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -16111,17 +16581,11 @@ exports[`renders type page 2`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -16138,7 +16602,7 @@ exports[`renders type page 2`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -16166,7 +16630,7 @@ exports[`renders type page 2`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -16190,13 +16654,13 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -16220,16 +16684,46 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -16239,7 +16733,10 @@ exports[`renders type page 2`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -16306,40 +16803,9 @@ exports[`renders type page 2`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -16347,123 +16813,221 @@ exports[`renders type page 2`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div
@@ -20696,17 +21260,11 @@ exports[`renders without error 1`] = `
   }
 >
   <div
-    className="LeftNav__LeftNavContainer-sc-1s6k43w-1 eTCgsW"
+    className="LeftNav__LeftNavContainer-sc-1s6k43w-2 fvpwMW"
   >
-    <div
-      style={
-        Object {
-          "flexShrink": 0,
-        }
-      }
-    >
+    <div>
       <div
-        className="LeftNav__LogoContainer-sc-1s6k43w-4 kFRSr"
+        className="LeftNav__LogoContainer-sc-1s6k43w-5 ebRkKK"
       >
         <img
           alt="logo"
@@ -20723,7 +21281,7 @@ exports[`renders without error 1`] = `
           }
         />
         <div
-          className="LeftNav__LogoMetaContainer-sc-1s6k43w-5 jVbWDi"
+          className="LeftNav__LogoMetaContainer-sc-1s6k43w-6 hAsnwr"
         >
           <img
             alt="title"
@@ -20751,7 +21309,7 @@ exports[`renders without error 1`] = `
         />
       </div>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/runs"
         onClick={[Function]}
       >
@@ -20775,13 +21333,13 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Runs
         </div>
       </a>
       <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
         href="/assets"
         onClick={[Function]}
       >
@@ -20805,16 +21363,46 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
         >
           Assets
+        </div>
+      </a>
+      <a
+        className="LeftNav__Tab-sc-1s6k43w-3 jgIaWh"
+        href="/scheduler"
+        onClick={[Function]}
+      >
+        <span
+          className="bp3-icon bp3-icon-time"
+          icon="time"
+        >
+          <svg
+            data-icon="time"
+            height={18}
+            viewBox="0 0 16 16"
+            width={18}
+          >
+            <desc>
+              time
+            </desc>
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+              fillRule="evenodd"
+            />
+          </svg>
+        </span>
+        <div
+          className="LeftNav__TabLabel-sc-1s6k43w-4 kirFmu"
+        >
+          Scheduler
         </div>
       </a>
     </div>
     <div
       style={
         Object {
-          "height": 40,
+          "height": 20,
         }
       }
     />
@@ -20824,7 +21412,10 @@ exports[`renders without error 1`] = `
         Object {
           "background": "rgba(0,0,0,0.3)",
           "color": "#FFFFFF",
+          "display": "flex",
           "flex": 1,
+          "flexDirection": "column",
+          "overflow": "none",
         }
       }
     >
@@ -20891,40 +21482,9 @@ exports[`renders without error 1`] = `
           </div>
         </div>
       </div>
-      <a
-        className="LeftNav__Tab-sc-1s6k43w-2 kYoTIm"
-        href="/schedules"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-calendar"
-          icon="calendar"
-        >
-          <svg
-            data-icon="calendar"
-            height={18}
-            viewBox="0 0 16 16"
-            width={18}
-          >
-            <desc>
-              calendar
-            </desc>
-            <path
-              d="M11 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1s-1 .4-1 1v1c0 .5.4 1 1 1zm3-2h-1v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H6v1c0 1.1-.9 2-2 2s-2-.9-2-2V1H1c-.6 0-1 .5-1 1v12c0 .6.4 1 1 1h13c.6 0 1-.4 1-1V2c0-.6-.5-1-1-1zM5 13H2v-3h3v3zm0-4H2V6h3v3zm4 4H6v-3h3v3zm0-4H6V6h3v3zm4 4h-3v-3h3v3zm0-4h-3V6h3v3zM4 3c.6 0 1-.5 1-1V1c0-.6-.4-1-1-1S3 .4 3 1v1c0 .5.4 1 1 1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        <div
-          className="LeftNav__TabLabel-sc-1s6k43w-3 dskmQq"
-        >
-          Schedules
-        </div>
-      </a>
       <div
         style={
           Object {
-            "borderTop": "1px solid #30404D",
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
@@ -20932,123 +21492,221 @@ exports[`renders without error 1`] = `
         }
       >
         <div
-          className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
+        >
+          Pipelines & Solids:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
         >
           <div
-            className="bp3-input-group bp3-small"
+            className="RepositoryContentList__Header-sc-91axco-0 eJdZqN"
           >
-            <input
-              className="bp3-input"
-              onChange={[Function]}
-              onKeyDown={[Function]}
-              placeholder="Search pipelines..."
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search pipelines..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
               style={
                 Object {
-                  "background": "#30404D",
-                  "border": "1px solid #394B59",
-                  "paddingRight": 10,
+                  "width": 4,
                 }
               }
-              type="text"
-              value=""
             />
+            <div
+              className="bp3-button-group"
+            >
+              <button
+                className="bp3-button bp3-active bp3-small bp3-intent-primary"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-diagram-tree"
+                  icon="diagram-tree"
+                >
+                  <svg
+                    data-icon="diagram-tree"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      diagram-tree
+                    </desc>
+                    <path
+                      d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <button
+                className="bp3-button bp3-small"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-icon bp3-icon-git-commit"
+                  icon="git-commit"
+                >
+                  <svg
+                    data-icon="git-commit"
+                    height={13}
+                    viewBox="0 0 16 16"
+                    width={13}
+                  >
+                    <desc>
+                      git-commit
+                    </desc>
+                    <path
+                      d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
+                      fillRule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
           <div
-            style={
-              Object {
-                "width": 4,
-              }
-            }
-          />
-          <div
-            className="bp3-button-group"
+            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
           >
-            <button
-              className="bp3-button bp3-active bp3-small bp3-intent-primary"
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
+              data-tooltip="airline_demo_ingest_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
+              href="/pipeline/airline_demo_ingest_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-diagram-tree"
-                icon="diagram-tree"
-              >
-                <svg
-                  data-icon="diagram-tree"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    diagram-tree
-                  </desc>
-                  <path
-                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
-            <button
-              className="bp3-button bp3-small"
+              airline_demo_ingest_pipeline
+            </a>
+            <a
+              className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
+              data-tooltip="airline_demo_warehouse_pipeline"
+              data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
+              href="/pipeline/airline_demo_warehouse_pipeline/"
               onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
             >
-              <span
-                className="bp3-icon bp3-icon-git-commit"
-                icon="git-commit"
-              >
-                <svg
-                  data-icon="git-commit"
-                  height={13}
-                  viewBox="0 0 16 16"
-                  width={13}
-                >
-                  <desc>
-                    git-commit
-                  </desc>
-                  <path
-                    d="M15 7h-3.14c-.45-1.72-2-3-3.86-3S4.59 5.28 4.14 7H1c-.55 0-1 .45-1 1s.45 1 1 1h3.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H15c.55 0 1-.45 1-1s-.45-1-1-1zm-7 3c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-            </button>
+              airline_demo_warehouse_pipeline
+            </a>
           </div>
         </div>
         <div
-          className="RepositoryContentList__Items-sc-91axco-1 gzgwNb"
+          className="LeftNav__ItemHeader-sc-1s6k43w-1 dUjoCX"
         >
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
-            data-tooltip="airline_demo_ingest_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#10161A\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4,\\"fontWeight\\":600}"
-            href="/pipeline/airline_demo_ingest_pipeline/"
-            onClick={[Function]}
+          Schedules:
+        </div>
+        <div
+          style={
+            Object {
+              "borderTop": "1px solid #30404D",
+              "display": "flex",
+              "flex": 1,
+              "flexDirection": "column",
+            }
+          }
+        >
+          <div
+            className="SchedulesList__Header-iq7kk9-0 gMLkYr"
           >
-            airline_demo_ingest_pipeline
-          </a>
-          <a
-            className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
-            data-tooltip="airline_demo_warehouse_pipeline"
-            data-tooltip-style="{\\"fontSize\\":13,\\"padding\\":3,\\"paddingRight\\":7,\\"left\\":9,\\"top\\":5,\\"color\\":\\"#FFFFFF\\",\\"background\\":\\"#182026\\",\\"transform\\":\\"none\\",\\"border\\":0,\\"borderRadius\\":4}"
-            href="/pipeline/airline_demo_warehouse_pipeline/"
-            onClick={[Function]}
-          >
-            airline_demo_warehouse_pipeline
-          </a>
+            <div
+              className="bp3-input-group bp3-small"
+            >
+              <input
+                className="bp3-input"
+                onChange={[Function]}
+                onKeyDown={[Function]}
+                placeholder="Search schedules..."
+                style={
+                  Object {
+                    "background": "#30404D",
+                    "border": "1px solid #394B59",
+                    "paddingRight": 10,
+                  }
+                }
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              style={
+                Object {
+                  "width": 4,
+                }
+              }
+            />
+            <div
+              className="bp3-button-group"
+            >
+              <a
+                href="/schedules"
+              >
+                <button
+                  className="bp3-button bp3-small"
+                  onKeyDown={[Function]}
+                  onKeyUp={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="bp3-icon bp3-icon-diagram-tree"
+                    icon="diagram-tree"
+                  >
+                    <svg
+                      data-icon="diagram-tree"
+                      height={13}
+                      viewBox="0 0 16 16"
+                      width={13}
+                    >
+                      <desc>
+                        diagram-tree
+                      </desc>
+                      <path
+                        d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                        fillRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    className="bp3-button-text"
+                  >
+                    View All
+                     
+                  </span>
+                </button>
+              </a>
+            </div>
+          </div>
+          <div
+            className="SchedulesList__Items-iq7kk9-2 iTvrIE"
+          />
         </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
   </div>
   <div

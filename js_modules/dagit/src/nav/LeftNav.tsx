@@ -12,6 +12,7 @@ import { RepositoryContentList } from "./RepositoryContentList";
 import navBarImage from "../images/nav-logo-icon.png";
 import navTitleImage from "../images/nav-title.png";
 import { DagsterRepoOption } from "../DagsterRepositoryContext";
+import { SchedulesList } from "./SchedulesList";
 
 const KEYCODE_FOR_1 = 49;
 
@@ -27,15 +28,12 @@ const INSTANCE_TABS = [
     tab: `assets`,
     icon: <Icon icon="panel-table" iconSize={18} />,
     label: "Assets"
-  }
-];
-
-const REPO_SCOPE_TABS = [
+  },
   {
-    to: `/schedules`,
-    tab: `schedules`,
-    icon: <Icon icon="calendar" iconSize={18} />,
-    label: "Schedules"
+    to: `/scheduler`,
+    tab: `scheduler`,
+    icon: <Icon icon="time" iconSize={18} />,
+    label: "Scheduler"
   }
 ];
 
@@ -50,11 +48,11 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
   const match = useRouteMatch<
     | { selector: string; tab: string; rootTab: undefined }
     | { selector: undefined; tab: undefined; rootTab: string }
-  >(["/pipeline/:selector/:tab?", "/solid/:selector", "/:rootTab?"]);
+  >(["/pipeline/:selector/:tab?", "/solid/:selector", "/schedules/:selector", "/:rootTab?"]);
 
   return (
     <LeftNavContainer>
-      <div style={{ flexShrink: 0 }}>
+      <div>
         <LogoContainer>
           <img
             alt="logo"
@@ -82,25 +80,27 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
           </ShortcutHandler>
         ))}
       </div>
-      <div style={{ height: 40 }} />
+      <div style={{ height: 20 }} />
       <div
         className="bp3-dark"
         style={{
           background: `rgba(0,0,0,0.3)`,
           color: Colors.WHITE,
-          flex: 1
+          display: "flex",
+          flex: 1,
+          overflow: "none",
+          flexDirection: "column"
         }}
       >
         <RepositoryPicker options={options} repo={repo} setRepo={setRepo} />
-        {repo &&
-          REPO_SCOPE_TABS.map(t => (
-            <Tab to={t.to} key={t.tab} className={match?.params.tab === t.tab ? "selected" : ""}>
-              {t.icon}
-              <TabLabel>{t.label}</TabLabel>
-            </Tab>
-          ))}
-        {repo && <RepositoryContentList {...match?.params} repo={repo} />}
-        <div style={{ flex: 1 }} />
+        {repo && (
+          <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+            <ItemHeader>Pipelines & Solids:</ItemHeader>
+            <RepositoryContentList {...match?.params} repo={repo} />
+            <ItemHeader>Schedules:</ItemHeader>
+            <SchedulesList {...match?.params} repo={repo} />
+          </div>
+        )}
       </div>
     </LeftNavContainer>
   );
@@ -112,13 +112,27 @@ const LogoWebsocketStatus = styled(WebsocketStatus)`
   left: 42px;
 `;
 
+const ItemHeader = styled.div`
+  font-size: 15px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding: 8px 12px;
+  padding-left: 8px;
+  margin-top: 10px;
+  border-left: 4px solid transparent;
+  border-bottom: 1px solid transparent;
+  display: block;
+  font-weight: bold;
+  color: ${Colors.LIGHT_GRAY3} !important;
+`;
+
 const LeftNavContainer = styled.div`
   width: 235px;
   height: 100%;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
-  justify-content: center;
+  justify-content: start;
   background: ${Colors.DARK_GRAY2};
   border-right: 1px solid ${Colors.DARK_GRAY5};
   padding-top: 14px;
