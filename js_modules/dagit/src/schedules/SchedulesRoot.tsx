@@ -13,11 +13,11 @@ import { Header, Legend, LegendColumn, ScrollContainer } from "../ListComponents
 import { useQuery } from "react-apollo";
 import {
   SchedulesRootQuery,
-  SchedulesRootQuery_scheduler,
   SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
 } from "./types/SchedulesRootQuery";
+
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import PythonErrorInfo from "../PythonErrorInfo";
@@ -27,37 +27,7 @@ import { RepositoryInformation, RepositoryInformationFragment } from "../Reposit
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { ReconcileButton } from "./ReconcileButton";
-
-const getSchedulerSection = (scheduler: SchedulesRootQuery_scheduler) => {
-  if (scheduler.__typename === "SchedulerNotDefinedError") {
-    return (
-      <Callout
-        icon="calendar"
-        intent={Intent.WARNING}
-        title="The current dagster instance does not have a scheduler configured."
-        style={{ marginBottom: 40 }}
-      >
-        <p>
-          A scheduler must be configured on the instance to run schedules. Therefore, the schedules
-          below are not currently running. You can configure a scheduler on the instance through the{" "}
-          <Code>dagster.yaml</Code> file in <Code>$DAGSTER_HOME</Code>
-        </p>
-
-        <p>
-          See the{" "}
-          <a href="https://docs.dagster.io/overview/instances/dagster-instance#instance-configuration-yaml">
-            instance configuration documentation
-          </a>{" "}
-          for more information.
-        </p>
-      </Callout>
-    );
-  } else if (scheduler.__typename === "PythonError") {
-    return <PythonErrorInfo error={scheduler} />;
-  }
-
-  return null;
-};
+import { SCHEDULER_FRAGMENT, SchedulerInfo } from "./SchedulerInfo";
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
@@ -121,7 +91,6 @@ export const SchedulesRoot: React.FunctionComponent = () => {
           scheduleDefinitionsOrError,
           scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError
         } = result;
-        const schedulerSection = getSchedulerSection(scheduler);
         let staleReconcileSection = null;
         let scheduleDefinitionsSection = null;
 
@@ -157,7 +126,7 @@ export const SchedulesRoot: React.FunctionComponent = () => {
 
         return (
           <ScrollContainer>
-            {schedulerSection}
+            <SchedulerInfo schedulerOrError={scheduler} errorsOnly={true} />
             {staleReconcileSection}
             {scheduleDefinitionsSection}
           </ScrollContainer>
@@ -287,11 +256,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     scheduler {
-      __typename
-      ... on SchedulerNotDefinedError {
-        message
-      }
-      ...PythonErrorFragment
+      ...SchedulerFragment
     }
     scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
       ... on ScheduleDefinitions {
@@ -313,6 +278,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
   }
 
   ${SCHEDULE_DEFINITION_FRAGMENT}
+  ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${RepositoryInformationFragment}
 `;
