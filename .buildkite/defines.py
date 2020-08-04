@@ -13,16 +13,6 @@ SupportedPythons = [
     SupportedPython.V3_8,
 ]
 
-# See: https://github.com/dagster-io/dagster/issues/1960
-SupportedPythonsNo38 = [
-    SupportedPython.V2_7,
-    SupportedPython.V3_6,
-    SupportedPython.V3_7,
-]
-
-
-# See: https://github.com/dagster-io/dagster/issues/1960
-SupportedPython3sNo38 = [SupportedPython.V3_7, SupportedPython.V3_6]
 
 SupportedPython3s = [
     SupportedPython.V3_6,

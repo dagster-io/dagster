@@ -37,6 +37,8 @@ if __name__ == '__main__':
             'pendulum==1.4.4',
             # RSA 4.1+ is incompatible with py2.7
             'rsa<=4.0; python_version<"3"',
+            # https://issues.apache.org/jira/browse/AIRFLOW-6854
+            'typing_extensions; python_version>="3.8"',
         ],
         extras_require={'kubernetes': ['kubernetes>=3.0.0', 'cryptography>=2.0.0']},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},

@@ -6,9 +6,7 @@ from defines import (
     UNIT_IMAGE_VERSION,
     SupportedPython,
     SupportedPython3s,
-    SupportedPython3sNo38,
     SupportedPythons,
-    SupportedPythonsNo38,
 )
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
@@ -28,7 +26,6 @@ def publish_test_images():
     the dagster-k8s tests
     '''
     tests = []
-    # See: https://github.com/dagster-io/dagster/issues/1960
     for version in SupportedPythons:
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
         tests.append(
@@ -251,7 +248,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # Examples: Airline Demo
     ModuleBuildSpec(
         'examples/airline_demo',
-        supported_pythons=SupportedPython3sNo38,
+        supported_pythons=SupportedPython3s,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label='airline-demo',
     ),
@@ -260,16 +257,14 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # ModuleBuildSpec(
     #     'examples',
     #     env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
-    #     supported_pythons=SupportedPython3sNo38,
+    #     supported_pythons=SupportedPython3s,
     #     tox_file='tox_events.ini',
     #     buildkite_label='events-demo',
     # ),
     # Examples
     ModuleBuildSpec(
         'examples/legacy_examples',
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        # Also, examples are py3-only
-        supported_pythons=SupportedPython3sNo38,
+        supported_pythons=SupportedPython3s,
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
     ),
     ModuleBuildSpec(
@@ -279,9 +274,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPython3s,
     ),
     ModuleBuildSpec('python_modules/dagit', extra_cmds_fn=dagit_extra_cmds_fn),
-    ModuleBuildSpec(
-        'python_modules/automation', supported_pythons=[SupportedPython.V3_7, SupportedPython.V3_8]
-    ),
+    ModuleBuildSpec('python_modules/automation', supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
         'python_modules/dagster',
         extra_cmds_fn=dagster_extra_cmds_fn,
@@ -325,7 +318,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             'BUILDKITE_SECRETS_BUCKET',
             'GOOGLE_APPLICATION_CREDENTIALS',
         ],
-        supported_pythons=SupportedPythonsNo38,
         extra_cmds_fn=airflow_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
         tox_env_suffixes=['-default', '-requiresairflowdb'],
@@ -333,8 +325,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         'python_modules/libraries/dagster-aws',
         env_vars=['AWS_DEFAULT_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        supported_pythons=SupportedPythonsNo38,
     ),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-azure', env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
@@ -354,14 +344,9 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         'python_modules/libraries/dagster-dask',
         env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
-        supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
+        supported_pythons=SupportedPython3s,
     ),
-    ModuleBuildSpec(
-        'python_modules/libraries/dagster-databricks',
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        supported_pythons=SupportedPythonsNo38,
-    ),
-    ModuleBuildSpec('python_modules/libraries/dagster-flyte', supported_pythons=SupportedPython3s,),
+    ModuleBuildSpec('python_modules/libraries/dagster-flyte', supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-gcp',
         env_vars=[
@@ -374,9 +359,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec(
-        'python_modules/libraries/dagster-ge', supported_pythons=SupportedPython3sNo38,
-    ),
+    ModuleBuildSpec('python_modules/libraries/dagster-ge', supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
         'python_modules/libraries/dagster-k8s',
         env_vars=[
@@ -392,35 +375,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/libraries/dagster-postgres', extra_cmds_fn=postgres_extra_cmds_fn
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-pyspark',
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        supported_pythons=SupportedPythonsNo38,
-    ),
-    ModuleBuildSpec(
-        'python_modules/libraries/dagster-spark',
-        # See: https://github.com/dagster-io/dagster/issues/1960
-        supported_pythons=SupportedPythonsNo38,
-    ),
-    ModuleBuildSpec(
         'python_modules/libraries/dagster-twilio',
         env_vars=['TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN'],
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec(
-        'python_modules/libraries/dagstermill',
-        supported_pythons=[
-            SupportedPython.V2_7,
-            # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
-            SupportedPython.V3_6,
-            SupportedPython.V3_7,
-            SupportedPython.V3_8,
-        ],
-    ),
-    ModuleBuildSpec(
-        'python_modules/libraries/lakehouse',
-        supported_pythons=[SupportedPython.V3_6, SupportedPython.V3_7],
-    ),
+    ModuleBuildSpec('python_modules/libraries/lakehouse', supported_pythons=SupportedPython3s),
 ]
 
 

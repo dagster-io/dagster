@@ -41,7 +41,9 @@ setup(
             'moto==1.3.7',
             'pandas>=1.0.0',
             'pytest-mock',
-            'pyspark>=2.0.2',
+            # Pyspark 2.x is incompatible with Python 3.8+
+            'pyspark>=3.0.0; python_version >= "3.8"',
+            'pyspark>=2.0.2; python_version < "3.8"',
             'seaborn',
             'sqlalchemy-redshift>=0.7.2',
             'SQLAlchemy-Utils==0.33.8',
