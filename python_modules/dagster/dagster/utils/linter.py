@@ -1,6 +1,7 @@
 def define_dagster_checker():
     # if we have reached here, we have pylint/astroid installed, since that is what registers the
     # linter
+
     import astroid
     from pylint.checkers import BaseChecker
     from pylint.interfaces import IAstroidChecker
@@ -21,6 +22,11 @@ def define_dagster_checker():
                 ),
             ),
             'W0002': ('print() call', 'print-call', 'Cannot call print()'),
+            'W0003': (
+                'setting daemon=True in threading.Thread constructor',
+                'daemon-thread',
+                'Cannot set daemon=True in threading.Thread constructor (py2 compat)',
+            ),
         }
         options = ()
 
@@ -61,6 +67,15 @@ def define_dagster_checker():
                 and node.func.name == 'print'
             ):
                 self.add_message('print-call', node=node)
+            if (
+                node.callable
+                and isinstance(node.func, astroid.node_classes.Attribute)
+                and node.func.attrname == 'Thread'
+                and isinstance(node.func.expr, astroid.node_classes.Name)
+                and node.func.expr.name == 'threading'
+                and 'daemon' in [keyword.arg for keyword in node.keywords]
+            ):
+                self.add_message('daemon-thread', node=node)
 
     return DagsterChecker
 

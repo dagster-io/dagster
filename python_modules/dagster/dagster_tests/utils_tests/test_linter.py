@@ -69,3 +69,13 @@ class TestDagsterChecker(pylint.testutils.CheckerTestCase):
         node = astroid.extract_node(statement)
         self.walk(node)
         assert [msg.msg_id for msg in self.linter.release_messages()] == ['print-call']
+
+    def test_daemon_thread(self):
+        daemon_thread_node = astroid.extract_node(
+            "threading.Thread(target=..., args=..., daemon=True)"
+        )
+
+        with self.assertAddsMessages(
+            pylint.testutils.Message(msg_id="daemon-thread", node=daemon_thread_node)
+        ):
+            self.checker.visit_call(daemon_thread_node)
