@@ -19,7 +19,7 @@ from dagster import (
     dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
-from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.backcompat import canonicalize_backcompat_args, experimental
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 
@@ -231,6 +231,7 @@ def create_dagster_pandas_dataframe_type(
     )
 
 
+@experimental
 def create_structured_dataframe_type(
     name,
     description=None,

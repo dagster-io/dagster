@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from dagster import DagsterType, EventMetadataEntry, TypeCheck, check
+from dagster.utils.backcompat import experimental_class_warning
 
 
 class ConstraintViolationException(Exception):
@@ -152,6 +153,7 @@ class ConstraintWithMetadata(object):
     def __init__(
         self, description, validation_fn, resulting_exception, raise_or_typecheck=True, name=None
     ):
+        experimental_class_warning(self.__class__.__name__)
         if name is None:
             self.name = self.__class__.__name__
         else:
