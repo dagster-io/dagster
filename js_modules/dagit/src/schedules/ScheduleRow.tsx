@@ -433,13 +433,25 @@ export const ScheduleRowHeader: React.FunctionComponent<{
 
 export const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: ScheduleStateFragment;
-}> = ({ scheduleState }) => {
-  const { scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
+  showStatus?: boolean;
+}> = ({ scheduleState, showStatus = false }) => {
+  const { status, scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
     <RowContainer key={scheduleName}>
+      {showStatus && (
+        <RowColumn style={{ maxWidth: 60, paddingLeft: 0, textAlign: "center" }}>
+          <Switch
+            checked={status === ScheduleStatus.RUNNING}
+            large={true}
+            disabled={true}
+            innerLabelChecked="on"
+            innerLabel="off"
+          />
+        </RowColumn>
+      )}
       <RowColumn style={{ flex: 1.4 }}>
         <div>{scheduleName}</div>
       </RowColumn>
@@ -581,68 +593,6 @@ export const TickTag: React.FunctionComponent<{
       return assertUnreachable(status);
   }
 };
-
-export const SCHEDULE_STATE_FRAGMENT = gql`
-  fragment ScheduleStateFragment on ScheduleState {
-    __typename
-    id
-    scheduleOriginId
-    scheduleName
-    cronSchedule
-    runningScheduleCount
-    ticks(limit: 1) {
-      tickId
-      status
-      timestamp
-      tickSpecificData {
-        __typename
-        ... on ScheduleTickSuccessData {
-          run {
-            pipelineName
-            status
-            runId
-          }
-        }
-        ... on ScheduleTickFailureData {
-          error {
-            ...PythonErrorFragment
-          }
-        }
-      }
-    }
-    runsCount
-    runs(limit: 10) {
-      runId
-      tags {
-        key
-        value
-      }
-      pipelineName
-      status
-    }
-    ticksCount
-    status
-  }
-
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-`;
-
-export const SCHEDULE_DEFINITION_FRAGMENT = gql`
-  fragment ScheduleDefinitionFragment on ScheduleDefinition {
-    name
-    cronSchedule
-    pipelineName
-    solidSelection
-    mode
-    partitionSet {
-      name
-    }
-    scheduleState {
-      ...ScheduleStateFragment
-    }
-  }
-  ${SCHEDULE_STATE_FRAGMENT}
-`;
 
 const ScheduleName = styled.pre`
   margin: 0;

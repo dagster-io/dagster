@@ -77,10 +77,21 @@ def get_schedule_states_or_error(
     graphene_info, repository_selector, with_no_schedule_definition_filter=None
 ):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(repository_selector, 'repository_selector', RepositorySelector)
+    check.opt_inst_param(repository_selector, 'repository_selector', RepositorySelector)
     check.opt_bool_param(
         with_no_schedule_definition_filter, 'with_no_schedule_definition_filter', default=False
     )
+
+    instance = graphene_info.context.instance
+    if not repository_selector:
+        # Return all schedule states
+        results = [
+            graphene_info.schema.type_named('ScheduleState')(
+                graphene_info, schedule_state=schedule_state
+            )
+            for schedule_state in instance.all_stored_schedule_state()
+        ]
+        return graphene_info.schema.type_named('ScheduleStates')(results=results)
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)

@@ -1,10 +1,10 @@
 import * as React from "react";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
-import { SCHEDULES_ROOT_QUERY } from "./SchedulesRoot";
 import { useMutation } from "react-apollo";
 import { Spinner, Button, Intent } from "@blueprintjs/core";
 import gql from "graphql-tag";
+import { SCHEDULES_ROOT_QUERY } from "./ScheduleUtils";
 
 export const ReconcileButton: React.FunctionComponent<{}> = () => {
   const repositorySelector = useRepositorySelector();

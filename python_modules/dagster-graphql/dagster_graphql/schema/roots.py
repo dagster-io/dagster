@@ -111,7 +111,7 @@ class DauphinQuery(dauphin.ObjectType):
     )
     scheduleStatesOrError = dauphin.Field(
         dauphin.NonNull('ScheduleStatesOrError'),
-        repositorySelector=dauphin.NonNull('RepositorySelector'),
+        repositorySelector=dauphin.Argument('RepositorySelector'),
         withNoScheduleDefinition=dauphin.Boolean(),
     )
 
@@ -234,7 +234,9 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_scheduleStatesOrError(self, graphene_info, **kwargs):
         return get_schedule_states_or_error(
             graphene_info,
-            RepositorySelector.from_graphql_input(kwargs.get('repositorySelector')),
+            RepositorySelector.from_graphql_input(kwargs['repositorySelector'])
+            if kwargs.get('repositorySelector')
+            else None,
             kwargs.get('withNoScheduleDefinition'),
         )
 

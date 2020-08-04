@@ -19,15 +19,15 @@ import {
 } from "./types/SchedulesRootQuery";
 
 import Loading from "../Loading";
-import gql from "graphql-tag";
 import PythonErrorInfo from "../PythonErrorInfo";
 
-import { ScheduleRow, SCHEDULE_DEFINITION_FRAGMENT, ScheduleStateRow } from "./ScheduleRow";
-import { RepositoryInformation, RepositoryInformationFragment } from "../RepositoryInformation";
+import { ScheduleRow, ScheduleStateRow } from "./ScheduleRow";
+import { RepositoryInformation } from "../RepositoryInformation";
 
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { ReconcileButton } from "./ReconcileButton";
-import { SCHEDULER_FRAGMENT, SchedulerInfo } from "./SchedulerInfo";
+import { SchedulerInfo } from "./SchedulerInfo";
+import { SCHEDULES_ROOT_QUERY } from "./ScheduleUtils";
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
@@ -243,42 +243,3 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
     </div>
   );
 };
-
-export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery($repositorySelector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on Repository {
-        name
-        id
-        ...RepositoryInfoFragment
-      }
-      ...PythonErrorFragment
-    }
-    scheduler {
-      ...SchedulerFragment
-    }
-    scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
-      ... on ScheduleDefinitions {
-        results {
-          ...ScheduleDefinitionFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-    scheduleStatesOrError(repositorySelector: $repositorySelector, withNoScheduleDefinition: true) {
-      __typename
-      ... on ScheduleStates {
-        results {
-          ...ScheduleStateFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${SCHEDULE_DEFINITION_FRAGMENT}
-  ${SCHEDULER_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${RepositoryInformationFragment}
-`;
