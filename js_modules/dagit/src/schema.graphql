@@ -629,7 +629,7 @@ type Mutation {
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!

@@ -44,15 +44,10 @@ def start_schedule(graphene_info, schedule_selector):
 
 
 @capture_dauphin_error
-def stop_schedule(graphene_info, schedule_selector):
+def stop_schedule(graphene_info, schedule_origin_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(schedule_selector, 'schedule_selector', ScheduleSelector)
-    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
-    repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
-    schedule_state = instance.stop_schedule_and_update_storage_state(
-        repository.get_external_schedule(schedule_selector.schedule_name).get_origin_id()
-    )
+    schedule_state = instance.stop_schedule_and_update_storage_state(schedule_origin_id)
     return graphene_info.schema.type_named('ScheduleStateResult')(
         schedule_state=graphene_info.schema.type_named('ScheduleState')(
             graphene_info, schedule_state=schedule_state

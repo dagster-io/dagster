@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StopSchedule
@@ -34,5 +34,5 @@ export interface StopSchedule {
 }
 
 export interface StopScheduleVariables {
-  scheduleSelector: ScheduleSelector;
+  scheduleOriginId: string;
 }

@@ -128,6 +128,7 @@ mutation(
     }
     ... on ScheduleStateResult {
       scheduleState {
+        scheduleOriginId
         status
       }
     }
@@ -138,10 +139,10 @@ mutation(
 
 STOP_SCHEDULES_QUERY = '''
 mutation(
-  $scheduleSelector: ScheduleSelector!
+  $scheduleOriginId: String!
 ) {
   stopRunningSchedule(
-    scheduleSelector: $scheduleSelector,
+    scheduleOriginId: $scheduleOriginId,
   ) {
     ... on PythonError {
       message
@@ -324,9 +325,11 @@ def test_start_and_stop_schedule(graphql_context):
         == ScheduleStatus.RUNNING.value
     )
 
+    schedule_origin_id = start_result.data['startSchedule']['scheduleState']['scheduleOriginId']
+
     # Stop a single schedule
     stop_result = execute_dagster_graphql(
-        graphql_context, STOP_SCHEDULES_QUERY, variables={'scheduleSelector': schedule_selector},
+        graphql_context, STOP_SCHEDULES_QUERY, variables={'scheduleOriginId': schedule_origin_id},
     )
     assert (
         stop_result.data['stopRunningSchedule']['scheduleState']['status']

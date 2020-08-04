@@ -228,7 +228,7 @@ export const ScheduleRow: React.FunctionComponent<{
     );
   }
 
-  const { status, runningScheduleCount, ticks, runs, runsCount } = scheduleState;
+  const { status, runningScheduleCount, ticks, runs, runsCount, scheduleOriginId } = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -244,7 +244,7 @@ export const ScheduleRow: React.FunctionComponent<{
           onChange={() => {
             if (status === ScheduleStatus.RUNNING) {
               stopSchedule({
-                variables: { scheduleSelector }
+                variables: { scheduleOriginId }
               });
             } else {
               startSchedule({
@@ -455,7 +455,15 @@ export const ScheduleStateRow: React.FunctionComponent<{
   const [_, setRepo] = useCurrentRepositoryState(options);
   const history = useHistory();
 
-  const { status, scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
+  const {
+    status,
+    scheduleName,
+    cronSchedule,
+    ticks,
+    runs,
+    runsCount,
+    scheduleOriginId
+  } = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   const goToRepositorySchedules = () => {
@@ -492,7 +500,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
 
               if (status === ScheduleStatus.RUNNING) {
                 stopSchedule({
-                  variables: { scheduleSelector }
+                  variables: { scheduleOriginId }
                 });
               } else {
                 startSchedule({
@@ -698,8 +706,8 @@ const START_SCHEDULE_MUTATION = gql`
 `;
 
 const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleSelector: ScheduleSelector!) {
-    stopRunningSchedule(scheduleSelector: $scheduleSelector) {
+  mutation StopSchedule($scheduleOriginId: String!) {
+    stopRunningSchedule(scheduleOriginId: $scheduleOriginId) {
       __typename
       ... on ScheduleStateResult {
         scheduleState {

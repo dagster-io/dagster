@@ -169,9 +169,9 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
         name = 'StopRunningScheduleMutation'
 
     class Arguments(object):
-        schedule_selector = dauphin.NonNull('ScheduleSelector')
+        schedule_origin_id = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull('ScheduleMutationResult')
 
-    def mutate(self, graphene_info, schedule_selector):
-        return stop_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
+    def mutate(self, graphene_info, schedule_origin_id):
+        return stop_schedule(graphene_info, schedule_origin_id)
