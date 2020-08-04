@@ -450,8 +450,31 @@ def _schedule_tick_state(instance, stream, tick_data):
     default=1,
     help='Maximum number of (threaded) workers to use in the GRPC server',
 )
+@click.option(
+    '--heartbeat',
+    is_flag=True,
+    help=(
+        'If set, the GRPC server will shut itself down when it fails to receive a heartbeat '
+        'after a timeout configurable with --heartbeat-timeout.'
+    ),
+)
+@click.option(
+    '--heartbeat-timeout',
+    type=click.INT,
+    required=False,
+    default=30,
+    help='Timout after which to shutdown if --heartbeat is set and a heartbeat is not received',
+)
 @python_origin_target_argument
-def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwargs):
+def grpc_command(
+    port=None,
+    socket=None,
+    host='localhost',
+    max_workers=1,
+    heartbeat=False,
+    heartbeat_timeout=30,
+    **kwargs
+):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             'You must pass a valid --port/-p on Windows: --socket/-f not supported.'
@@ -475,6 +498,8 @@ def grpc_command(port=None, socket=None, host='localhost', max_workers=1, **kwar
         host=host,
         loadable_target_origin=loadable_target_origin,
         max_workers=max_workers,
+        heartbeat=heartbeat,
+        heartbeat_timeout=heartbeat_timeout,
     )
 
     server.serve()

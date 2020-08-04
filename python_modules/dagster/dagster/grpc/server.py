@@ -68,12 +68,29 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
+def heartbeat_thread(heartbeat_timeout, last_heartbeat_time, shutdown_event):
+    while True:
+        time.sleep(heartbeat_timeout)
+        if last_heartbeat_time < time.time() - heartbeat_timeout:
+            shutdown_event.set()
+
+
 class DagsterApiServer(DagsterApiServicer):
     # The loadable_target_origin is currently Noneable to support instaniating a server.
     # This helps us test the ping methods, and incrementally migrate each method to
     # the target passed in here instead of passing in a target in the argument.
-    def __init__(self, shutdown_server_event, loadable_target_origin=None):
+    def __init__(
+        self,
+        shutdown_server_event,
+        loadable_target_origin=None,
+        heartbeat=False,
+        heartbeat_timeout=30,
+    ):
         super(DagsterApiServer, self).__init__()
+
+        check.bool_param(heartbeat, 'heartbeat')
+        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
+        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
 
         self._shutdown_server_event = check.inst_param(
             shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
@@ -127,6 +144,17 @@ class DagsterApiServer(DagsterApiServicer):
                     self._loadable_target_origin.module_name, loadable_repository_symbol.attribute,
                 )
 
+        self.__last_heartbeat_time = time.time()
+        if heartbeat:
+            self.__heartbeat_thread = threading.Thread(
+                target=heartbeat_thread,
+                args=(heartbeat_timeout, self.__last_heartbeat_time, self._shutdown_server_event),
+            )
+            self.__heartbeat_thread.daemon = True
+            self.__heartbeat_thread.start()
+        else:
+            self.__heartbeat_thread = None
+
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
             repository_origin, 'repository_origin', RepositoryOrigin,
@@ -152,6 +180,11 @@ class DagsterApiServer(DagsterApiServicer):
         echo = request.echo
         for sequence_number in range(sequence_length):
             yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
+
+    def Heartbeat(self, request, _context):
+        self.__last_heartbeat_time = time.time()
+        echo = request.echo
+        return api_pb2.PingReply(echo=echo)
 
     def ExecutionPlanSnapshot(self, request, _context):
         execution_plan_args = deserialize_json_to_dagster_namedtuple(
@@ -609,7 +642,14 @@ def server_termination_target(termination_event, server):
 
 class DagsterGrpcServer(object):
     def __init__(
-        self, host='localhost', port=None, socket=None, max_workers=1, loadable_target_origin=None
+        self,
+        host='localhost',
+        port=None,
+        socket=None,
+        max_workers=1,
+        loadable_target_origin=None,
+        heartbeat=False,
+        heartbeat_timeout=30,
     ):
         check.opt_str_param(host, 'host')
         check.opt_int_param(port, 'port')
@@ -624,9 +664,15 @@ class DagsterGrpcServer(object):
             (port or socket) and not (port and socket),
             'You must pass one and only one of `port` or `socket`.',
         )
-
         check.invariant(
             host is not None if port else True, 'Must provide a host when serving on a port',
+        )
+        check.bool_param(heartbeat, 'heartbeat')
+        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
+        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
+        check.invariant(
+            max_workers > 1 if heartbeat else True,
+            "max_workers must be greater than 1 if heartbeat is True",
         )
 
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
@@ -635,6 +681,8 @@ class DagsterGrpcServer(object):
             DagsterApiServer(
                 shutdown_server_event=self._shutdown_server_event,
                 loadable_target_origin=loadable_target_origin,
+                heartbeat=heartbeat,
+                heartbeat_timeout=heartbeat_timeout,
             ),
             self.server,
         )
@@ -723,7 +771,9 @@ def wait_for_grpc_server(server_process, timeout=3):
             return True
 
 
-def open_server_process(port, socket, loadable_target_origin=None, max_workers=1):
+def open_server_process(
+    port, socket, loadable_target_origin=None, max_workers=1, heartbeat=False, heartbeat_timeout=30
+):
     check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
     check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
     check.int_param(max_workers, 'max_workers')
@@ -739,6 +789,8 @@ def open_server_process(port, socket, loadable_target_origin=None, max_workers=1
         + (['--port', str(port)] if port else [])
         + (['--socket', socket] if socket else [])
         + ['-n', str(max_workers)]
+        + (['--heartbeat'] if heartbeat else [])
+        + (['--heartbeat-timeout', str(heartbeat_timeout)] if heartbeat_timeout else [])
     )
 
     if loadable_target_origin:
@@ -805,7 +857,13 @@ def cleanup_server_process(server_process, timeout=3):
 
 class GrpcServerProcess(object):
     def __init__(
-        self, loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
+        self,
+        loadable_target_origin=None,
+        force_port=False,
+        max_retries=10,
+        max_workers=1,
+        heartbeat=False,
+        heartbeat_timeout=30,
     ):
         self.port = None
         self.socket = None
@@ -815,6 +873,13 @@ class GrpcServerProcess(object):
         check.bool_param(force_port, 'force_port')
         check.int_param(max_retries, 'max_retries')
         check.int_param(max_workers, 'max_workers')
+        check.bool_param(heartbeat, 'heartbeat')
+        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
+        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
+        check.invariant(
+            max_workers > 1 if heartbeat else True,
+            "max_workers must be greater than 1 if heartbeat is True",
+        )
 
         if seven.IS_WINDOWS or force_port:
             self.server_process, self.port = open_server_process_on_dynamic_port(
@@ -831,6 +896,8 @@ class GrpcServerProcess(object):
                 socket=self.socket,
                 loadable_target_origin=loadable_target_origin,
                 max_workers=max_workers,
+                heartbeat=heartbeat,
+                heartbeat_timeout=heartbeat_timeout,
             )
 
         if self.server_process is None:

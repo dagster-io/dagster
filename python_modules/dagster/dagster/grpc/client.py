@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import time
 from contextlib import contextmanager
 
 import grpc
@@ -25,6 +26,17 @@ from .types import (
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
 )
+
+CLIENT_HEARTBEAT_INTERVAL = 1
+
+
+def client_heartbeat_thread(client):
+    while True:
+        time.sleep(CLIENT_HEARTBEAT_INTERVAL)
+        try:
+            client.heartbeat('ping')
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            continue
 
 
 class DagsterGrpcClient(object):
@@ -66,6 +78,11 @@ class DagsterGrpcClient(object):
     def ping(self, echo):
         check.str_param(echo, 'echo')
         res = self._query('Ping', api_pb2.PingRequest, echo=echo)
+        return res.echo
+
+    def heartbeat(self, echo=''):
+        check.str_param(echo, 'echo')
+        res = self._query('Heartbeat', api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def streaming_ping(self, sequence_length, echo):

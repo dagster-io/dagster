@@ -6,6 +6,7 @@ package api;
 
 service DagsterApi {
   rpc Ping (PingRequest) returns (PingReply) {}
+  rpc Heartbeat (PingRequest) returns (PingReply) {}
   rpc StreamingPing (StreamingPingRequest) returns (stream StreamingPingEvent) {}
   rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
   rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}

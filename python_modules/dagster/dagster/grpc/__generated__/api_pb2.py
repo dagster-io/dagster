@@ -26,7 +26,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax='proto3',
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x07\n\x05\x45mpty\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"=\n\x14StreamingPingRequest\x12\x17\n\x0fsequence_length\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\";\n\x12StreamingPingEvent\x12\x17\n\x0fsequence_number\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"\x19\n\x17ListRepositoriesRequest\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t\"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t\"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t\"H\n\x19\x45xternalRepositoryRequest\x12+\n#serialized_repository_python_origin\x18\x01 \x01(\t\"F\n\x17\x45xternalRepositoryReply\x12+\n#serialized_external_repository_data\x18\x01 \x01(\t\"W\n ExternalScheduleExecutionRequest\x12\x33\n+serialized_external_schedule_execution_args\x18\x01 \x01(\t\"z\n\x1e\x45xternalScheduleExecutionReply\x12X\nPserialized_external_schedule_execution_data_or_external_schedule_execution_error\x18\x01 \x01(\t\"8\n\x11\x45xecuteRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"H\n\x0f\x45xecuteRunEvent\x12\x35\n-serialized_dagster_event_or_ipc_error_message\x18\x01 \x01(\t\"@\n\x13ShutdownServerReply\x12)\n!serialized_shutdown_server_result\x18\x01 \x01(\t\"E\n\x16\x43\x61ncelExecutionRequest\x12+\n#serialized_cancel_execution_request\x18\x01 \x01(\t\"B\n\x14\x43\x61ncelExecutionReply\x12*\n\"serialized_cancel_execution_result\x18\x01 \x01(\t\"L\n\x19\x43\x61nCancelExecutionRequest\x12/\n\'serialized_can_cancel_execution_request\x18\x01 \x01(\t\"I\n\x17\x43\x61nCancelExecutionReply\x12.\n&serialized_can_cancel_execution_result\x18\x01 \x01(\t\"6\n\x0fStartRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"4\n\rStartRunReply\x12#\n\x1bserialized_start_run_result\x18\x01 \x01(\t\"8\n\x14GetCurrentImageReply\x12 \n\x18serialized_current_image\x18\x01 \x01(\t2\xa2\n\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent\"\x00\x30\x01\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply\"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply\"\x00\x12i\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a#.api.ExternalScheduleExecutionReply\"\x00\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply\"\x00\x12>\n\nExecuteRun\x12\x16.api.ExecuteRunRequest\x1a\x14.api.ExecuteRunEvent\"\x00\x30\x01\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply\"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply\"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply\"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply\"\x00\x62\x06proto3',
+    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x07\n\x05\x45mpty\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"=\n\x14StreamingPingRequest\x12\x17\n\x0fsequence_length\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\";\n\x12StreamingPingEvent\x12\x17\n\x0fsequence_number\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"\x19\n\x17ListRepositoriesRequest\"F\n\x15ListRepositoriesReply\x12-\n%serialized_list_repositories_response\x18\x01 \x01(\t\"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t\"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t\"H\n\x19\x45xternalRepositoryRequest\x12+\n#serialized_repository_python_origin\x18\x01 \x01(\t\"F\n\x17\x45xternalRepositoryReply\x12+\n#serialized_external_repository_data\x18\x01 \x01(\t\"W\n ExternalScheduleExecutionRequest\x12\x33\n+serialized_external_schedule_execution_args\x18\x01 \x01(\t\"z\n\x1e\x45xternalScheduleExecutionReply\x12X\nPserialized_external_schedule_execution_data_or_external_schedule_execution_error\x18\x01 \x01(\t\"8\n\x11\x45xecuteRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"H\n\x0f\x45xecuteRunEvent\x12\x35\n-serialized_dagster_event_or_ipc_error_message\x18\x01 \x01(\t\"@\n\x13ShutdownServerReply\x12)\n!serialized_shutdown_server_result\x18\x01 \x01(\t\"E\n\x16\x43\x61ncelExecutionRequest\x12+\n#serialized_cancel_execution_request\x18\x01 \x01(\t\"B\n\x14\x43\x61ncelExecutionReply\x12*\n\"serialized_cancel_execution_result\x18\x01 \x01(\t\"L\n\x19\x43\x61nCancelExecutionRequest\x12/\n\'serialized_can_cancel_execution_request\x18\x01 \x01(\t\"I\n\x17\x43\x61nCancelExecutionReply\x12.\n&serialized_can_cancel_execution_result\x18\x01 \x01(\t\"6\n\x0fStartRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"4\n\rStartRunReply\x12#\n\x1bserialized_start_run_result\x18\x01 \x01(\t\"8\n\x14GetCurrentImageReply\x12 \n\x18serialized_current_image\x18\x01 \x01(\t2\xd3\n\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent\"\x00\x30\x01\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply\"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply\"\x00\x12i\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a#.api.ExternalScheduleExecutionReply\"\x00\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply\"\x00\x12>\n\nExecuteRun\x12\x16.api.ExecuteRunRequest\x1a\x14.api.ExecuteRunEvent\"\x00\x30\x01\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply\"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply\"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply\"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply\"\x00\x62\x06proto3',
 )
 
 
@@ -1687,7 +1687,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
     serialized_start=2213,
-    serialized_end=3527,
+    serialized_end=3576,
     methods=[
         _descriptor.MethodDescriptor(
             name='Ping',
@@ -1700,9 +1700,19 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
+            name='Heartbeat',
+            full_name='api.DagsterApi.Heartbeat',
+            index=1,
+            containing_service=None,
+            input_type=_PINGREQUEST,
+            output_type=_PINGREPLY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
             name='StreamingPing',
             full_name='api.DagsterApi.StreamingPing',
-            index=1,
+            index=2,
             containing_service=None,
             input_type=_STREAMINGPINGREQUEST,
             output_type=_STREAMINGPINGEVENT,
@@ -1712,7 +1722,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExecutionPlanSnapshot',
             full_name='api.DagsterApi.ExecutionPlanSnapshot',
-            index=2,
+            index=3,
             containing_service=None,
             input_type=_EXECUTIONPLANSNAPSHOTREQUEST,
             output_type=_EXECUTIONPLANSNAPSHOTREPLY,
@@ -1722,7 +1732,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ListRepositories',
             full_name='api.DagsterApi.ListRepositories',
-            index=3,
+            index=4,
             containing_service=None,
             input_type=_LISTREPOSITORIESREQUEST,
             output_type=_LISTREPOSITORIESREPLY,
@@ -1732,7 +1742,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalPartitionNames',
             full_name='api.DagsterApi.ExternalPartitionNames',
-            index=4,
+            index=5,
             containing_service=None,
             input_type=_EXTERNALPARTITIONNAMESREQUEST,
             output_type=_EXTERNALPARTITIONNAMESREPLY,
@@ -1742,7 +1752,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalPartitionConfig',
             full_name='api.DagsterApi.ExternalPartitionConfig',
-            index=5,
+            index=6,
             containing_service=None,
             input_type=_EXTERNALPARTITIONCONFIGREQUEST,
             output_type=_EXTERNALPARTITIONCONFIGREPLY,
@@ -1752,7 +1762,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalPartitionTags',
             full_name='api.DagsterApi.ExternalPartitionTags',
-            index=6,
+            index=7,
             containing_service=None,
             input_type=_EXTERNALPARTITIONTAGSREQUEST,
             output_type=_EXTERNALPARTITIONTAGSREPLY,
@@ -1762,7 +1772,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalPipelineSubsetSnapshot',
             full_name='api.DagsterApi.ExternalPipelineSubsetSnapshot',
-            index=7,
+            index=8,
             containing_service=None,
             input_type=_EXTERNALPIPELINESUBSETSNAPSHOTREQUEST,
             output_type=_EXTERNALPIPELINESUBSETSNAPSHOTREPLY,
@@ -1772,7 +1782,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalRepository',
             full_name='api.DagsterApi.ExternalRepository',
-            index=8,
+            index=9,
             containing_service=None,
             input_type=_EXTERNALREPOSITORYREQUEST,
             output_type=_EXTERNALREPOSITORYREPLY,
@@ -1782,7 +1792,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExternalScheduleExecution',
             full_name='api.DagsterApi.ExternalScheduleExecution',
-            index=9,
+            index=10,
             containing_service=None,
             input_type=_EXTERNALSCHEDULEEXECUTIONREQUEST,
             output_type=_EXTERNALSCHEDULEEXECUTIONREPLY,
@@ -1792,7 +1802,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ShutdownServer',
             full_name='api.DagsterApi.ShutdownServer',
-            index=10,
+            index=11,
             containing_service=None,
             input_type=_EMPTY,
             output_type=_SHUTDOWNSERVERREPLY,
@@ -1802,7 +1812,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='ExecuteRun',
             full_name='api.DagsterApi.ExecuteRun',
-            index=11,
+            index=12,
             containing_service=None,
             input_type=_EXECUTERUNREQUEST,
             output_type=_EXECUTERUNEVENT,
@@ -1812,7 +1822,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='CancelExecution',
             full_name='api.DagsterApi.CancelExecution',
-            index=12,
+            index=13,
             containing_service=None,
             input_type=_CANCELEXECUTIONREQUEST,
             output_type=_CANCELEXECUTIONREPLY,
@@ -1822,7 +1832,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='CanCancelExecution',
             full_name='api.DagsterApi.CanCancelExecution',
-            index=13,
+            index=14,
             containing_service=None,
             input_type=_CANCANCELEXECUTIONREQUEST,
             output_type=_CANCANCELEXECUTIONREPLY,
@@ -1832,7 +1842,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='StartRun',
             full_name='api.DagsterApi.StartRun',
-            index=14,
+            index=15,
             containing_service=None,
             input_type=_STARTRUNREQUEST,
             output_type=_STARTRUNREPLY,
@@ -1842,7 +1852,7 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
         _descriptor.MethodDescriptor(
             name='GetCurrentImage',
             full_name='api.DagsterApi.GetCurrentImage',
-            index=15,
+            index=16,
             containing_service=None,
             input_type=_EMPTY,
             output_type=_GETCURRENTIMAGEREPLY,

@@ -1,4 +1,5 @@
 import sys
+import threading
 from collections import namedtuple
 from enum import Enum
 
@@ -96,10 +97,16 @@ class RepositoryLocationHandle:
 
     @staticmethod
     def create_process_bound_grpc_server_location(loadable_target_origin, location_name):
+        from dagster.grpc.client import client_heartbeat_thread
         from dagster.grpc.server import GrpcServerProcess
 
-        server = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+        server = GrpcServerProcess(
+            loadable_target_origin=loadable_target_origin, max_workers=2, heartbeat=True
+        )
         client = server.create_ephemeral_client()
+        heartbeat_thread = threading.Thread(target=client_heartbeat_thread, args=(client,))
+        heartbeat_thread.daemon = True
+        heartbeat_thread.start()
         list_repositories_response = sync_list_repositories_grpc(client)
 
         code_pointer_dict = list_repositories_response.repository_code_pointer_dict
