@@ -290,7 +290,7 @@ def test_list_command():
         {
             'repository_yaml': None,
             'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
             'fn_name': 'bar',
         },
         no_print,
@@ -301,7 +301,7 @@ def test_list_command():
         {
             'repository_yaml': None,
             'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+            'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
             'fn_name': 'bar',
         },
         no_print,
@@ -309,7 +309,8 @@ def test_list_command():
     )
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar'],
+        pipeline_list_command,
+        ['-m', 'dagster_tests.cli_tests.command_tests.test_cli_commands', '-a', 'bar'],
     )
     assert_correct_bar_repository_output(result)
 
@@ -363,7 +364,7 @@ def test_list_command():
             {
                 'repository_yaml': None,
                 'python_file': 'foo.py',
-                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
                 'fn_name': 'bar',
             },
             no_print,
@@ -372,12 +373,19 @@ def test_list_command():
 
     result = runner.invoke(
         pipeline_list_command,
-        ['-f', 'foo.py', '-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar',],
+        [
+            '-f',
+            'foo.py',
+            '-m',
+            'dagster_tests.cli_tests.command_tests.test_cli_commands',
+            '-a',
+            'bar',
+        ],
     )
     assert result.exit_code == 2
 
     result = runner.invoke(
-        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.test_cli_commands'],
+        pipeline_list_command, ['-m', 'dagster_tests.cli_tests.command_tests.test_cli_commands'],
     )
     assert_correct_bar_repository_output(result)
 
@@ -436,7 +444,7 @@ def valid_execute_args():
                 'workspace': None,
                 'pipeline': 'foo',
                 'python_file': None,
-                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
                 'attribute': 'bar',
             },
             False,
@@ -446,7 +454,7 @@ def valid_execute_args():
                 'workspace': None,
                 'pipeline': None,
                 'python_file': None,
-                'module_name': 'dagster_tests.cli_tests.test_cli_commands',
+                'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
                 'attribute': 'foo_pipeline',
             },
             False,
@@ -519,8 +527,21 @@ def valid_cli_args():
             ],
             False,
         ),
-        (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'bar', '-p', 'foo'], False),
-        (['-m', 'dagster_tests.cli_tests.test_cli_commands', '-a', 'foo_pipeline'], False),
+        (
+            [
+                '-m',
+                'dagster_tests.cli_tests.command_tests.test_cli_commands',
+                '-a',
+                'bar',
+                '-p',
+                'foo',
+            ],
+            False,
+        ),
+        (
+            ['-m', 'dagster_tests.cli_tests.command_tests.test_cli_commands', '-a', 'foo_pipeline'],
+            False,
+        ),
         (
             [
                 '-f',
@@ -623,10 +644,10 @@ def test_execute_mode_command():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--config',
                 file_relative_path(
-                    __file__, '../environments/multi_mode_with_resources/add_mode.yaml'
+                    __file__, '../../environments/multi_mode_with_resources/add_mode.yaml'
                 ),
                 '--mode',
                 'add_mode',
@@ -641,10 +662,10 @@ def test_execute_mode_command():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--config',
                 file_relative_path(
-                    __file__, '../environments/multi_mode_with_resources/mult_mode.yaml'
+                    __file__, '../../environments/multi_mode_with_resources/mult_mode.yaml'
                 ),
                 '--mode',
                 'mult_mode',
@@ -659,10 +680,10 @@ def test_execute_mode_command():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--config',
                 file_relative_path(
-                    __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
+                    __file__, '../../environments/multi_mode_with_resources/double_adder_mode.yaml'
                 ),
                 '--mode',
                 'double_adder_mode',
@@ -681,7 +702,7 @@ def test_execute_preset_command():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--preset',
                 'add',
                 '-p',
@@ -696,12 +717,12 @@ def test_execute_preset_command():
             pipeline_execute_command,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--preset',
                 'add',
                 '--config',
                 file_relative_path(
-                    __file__, '../environments/multi_mode_with_resources/double_adder_mode.yaml'
+                    __file__, '../../environments/multi_mode_with_resources/double_adder_mode.yaml'
                 ),
                 '-p',
                 'multi_mode_with_resources',  # pipeline name
@@ -1284,7 +1305,7 @@ def test_multiproc():
             runner,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--preset',
                 'multiproc',
                 '-p',
@@ -1303,7 +1324,7 @@ def test_multiproc_invalid():
         runner,
         [
             '-w',
-            file_relative_path(__file__, '../workspace.yaml'),
+            file_relative_path(__file__, '../../workspace.yaml'),
             '--preset',
             'multiproc',
             '-p',
@@ -1538,7 +1559,7 @@ def test_tags_pipeline():
             pipeline_execute_command,
             [
                 '-w',
-                file_relative_path(__file__, '../workspace.yaml'),
+                file_relative_path(__file__, '../../workspace.yaml'),
                 '--preset',
                 'add',
                 '--tags',

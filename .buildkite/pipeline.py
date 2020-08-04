@@ -287,7 +287,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         extra_cmds_fn=dagster_extra_cmds_fn,
         env_vars=['AWS_ACCOUNT_ID'],
         depends_on_fn=test_image_depends_fn,
-        tox_env_suffixes=['-api_tests', '-cli_tests', '-core_tests', '-general_tests'],
+        tox_env_suffixes=[
+            '-api_tests',
+            '-cli_tests',
+            '-cli_command_tests',
+            '-core_tests',
+            '-general_tests',
+        ],
     ),
     ModuleBuildSpec(
         'python_modules/dagster-graphql',

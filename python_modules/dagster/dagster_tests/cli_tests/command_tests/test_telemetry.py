@@ -141,7 +141,7 @@ def test_repo_stats(caplog):
                     pipeline_execute_command,
                     [
                         '-w',
-                        file_relative_path(__file__, '../workspace.yaml'),
+                        file_relative_path(__file__, '../../workspace.yaml'),
                         '-p',
                         pipeline_name,
                         '--preset',

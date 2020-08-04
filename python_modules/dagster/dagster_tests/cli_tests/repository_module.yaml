@@ -1,3 +1,0 @@
-repository:
-  module: dagster_tests.cli_tests.test_cli_commands
-  fn: bar
