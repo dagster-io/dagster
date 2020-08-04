@@ -47,6 +47,7 @@ class DauphinScheduleState(dauphin.ObjectType):
     stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
     logs_path = dauphin.NonNull(dauphin.String)
     running_schedule_count = dauphin.NonNull(dauphin.Int)
+    repository_origin_id = dauphin.NonNull(dauphin.String)
     id = dauphin.NonNull(dauphin.ID)
 
     def __init__(self, _graphene_info, schedule_state):
@@ -113,3 +114,6 @@ class DauphinScheduleState(dauphin.ObjectType):
         return graphene_info.context.instance.get_runs_count(
             filters=PipelineRunsFilter.for_schedule(self._schedule_state)
         )
+
+    def resolve_repository_origin_id(self, _graphene_info):
+        return self._schedule_state.repository_origin_id

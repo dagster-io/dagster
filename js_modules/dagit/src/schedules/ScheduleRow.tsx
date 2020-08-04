@@ -29,7 +29,7 @@ import { StopSchedule, StopSchedule_stopRunningSchedule_PythonError } from "./ty
 import { ScheduleStatus, ScheduleTickStatus } from "../types/globalTypes";
 import { Legend, LegendColumn } from "../ListComponents";
 
-import { Link, useRouteMatch } from "react-router-dom";
+import { Link, useRouteMatch, useHistory } from "react-router-dom";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -37,7 +37,14 @@ import styled from "styled-components/macro";
 import { titleForRun } from "../runs/RunUtils";
 import { RunStatus } from "../runs/RunStatusDots";
 import PythonErrorInfo from "../PythonErrorInfo";
-import { useScheduleSelector } from "../DagsterRepositoryContext";
+import {
+  useScheduleSelector,
+  scheduleSelectorWithRepository,
+  DagsterRepoOption,
+  useRepositoryOptions,
+  useCurrentRepositoryState,
+  repositorySelectorFromDagsterRepoOption
+} from "../DagsterRepositoryContext";
 import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
 import { assertUnreachable } from "../Util";
 import { ReconcileButton } from "./ReconcileButton";
@@ -434,10 +441,34 @@ export const ScheduleRowHeader: React.FunctionComponent<{
 export const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: ScheduleStateFragment;
   showStatus?: boolean;
-}> = ({ scheduleState, showStatus = false }) => {
-  const { status, scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
+  dagsterRepoOption?: DagsterRepoOption;
+}> = ({ scheduleState, showStatus = false, dagsterRepoOption }) => {
+  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
+  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
 
+  const { options } = useRepositoryOptions();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, setRepo] = useCurrentRepositoryState(options);
+  const history = useHistory();
+
+  const { status, scheduleName, cronSchedule, ticks, runs, runsCount } = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
+
+  const goToRepositorySchedules = () => {
+    if (!dagsterRepoOption) return;
+    setRepo(dagsterRepoOption);
+    history.push(`/schedules`);
+  };
+
+  const goToSchedule = () => {
+    if (!dagsterRepoOption) return;
+    setRepo(dagsterRepoOption);
+    history.push(`/schedules/${scheduleName}`);
+  };
 
   return (
     <RowContainer key={scheduleName}>
@@ -446,14 +477,44 @@ export const ScheduleStateRow: React.FunctionComponent<{
           <Switch
             checked={status === ScheduleStatus.RUNNING}
             large={true}
-            disabled={true}
+            disabled={!dagsterRepoOption || toggleOffInFlight || toggleOnInFlight}
             innerLabelChecked="on"
             innerLabel="off"
+            onChange={() => {
+              if (!dagsterRepoOption) {
+                return;
+              }
+
+              const scheduleSelector = scheduleSelectorWithRepository(
+                scheduleName,
+                repositorySelectorFromDagsterRepoOption(dagsterRepoOption)
+              );
+
+              if (status === ScheduleStatus.RUNNING) {
+                stopSchedule({
+                  variables: { scheduleSelector }
+                });
+              } else {
+                startSchedule({
+                  variables: { scheduleSelector }
+                });
+              }
+            }}
           />
         </RowColumn>
       )}
       <RowColumn style={{ flex: 1.4 }}>
         <div>{scheduleName}</div>
+        {dagsterRepoOption && (
+          <div style={{ marginTop: 10 }}>
+            <Button onClick={goToRepositorySchedules} small={true}>
+              Go to repository schedules
+            </Button>{" "}
+            <Button onClick={goToSchedule} small={true}>
+              Go to schedule page
+            </Button>
+          </div>
+        )}
       </RowColumn>
       <RowColumn
         style={{

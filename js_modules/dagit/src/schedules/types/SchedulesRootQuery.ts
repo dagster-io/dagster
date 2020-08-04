@@ -157,6 +157,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
   runningScheduleCount: number;
@@ -260,6 +261,7 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
   runningScheduleCount: number;

@@ -72,6 +72,7 @@ export interface ScheduleDefinitionFragment_scheduleState {
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
   runningScheduleCount: number;
