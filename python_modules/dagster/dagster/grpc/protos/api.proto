@@ -1,3 +1,5 @@
+// If you make changes to this file, run "python -m dagster.grpc.compile" after.
+
 syntax = "proto3";
 
 package api;
