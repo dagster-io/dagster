@@ -43,7 +43,7 @@ def wait_for_connection(host, port):
 
     while retry_limit:
         try:
-            if DagsterGrpcClient(host, port).ping("ready") == "ready":
+            if DagsterGrpcClient(host=host, port=port).ping("ready") == "ready":
                 return True
         except grpc.RpcError:
             pass
@@ -52,7 +52,9 @@ def wait_for_connection(host, port):
         retry_limit -= 1
 
     assert retry_limit == 0
-    raise Exception('too many retries for db at {conn_string}'.format(conn_string=port))
+    raise Exception(
+        'too many retries for grpc_server at {host}:{port}'.format(host=host, port=port)
+    )
 
 
 @contextmanager
@@ -100,13 +102,9 @@ def grpc_port():
 
 
 @pytest.fixture(scope='session')
-def grpc_server(grpc_host):  # pylint: disable=redefined-outer-name
+def grpc_server(grpc_host, grpc_port):  # pylint: disable=redefined-outer-name
     if not IS_BUILDKITE:
-        with docker_service_up(
-            file_relative_path(__file__, 'docker-compose.yml'), 'dagster-grpc-server'
-        ):
-            wait_for_connection(grpc_host, HARDCODED_PORT)
-            yield
-    else:
-        wait_for_connection(grpc_host, HARDCODED_PORT)
-        yield
+        docker_service_up(file_relative_path(__file__, 'docker-compose.yml'), 'dagster-grpc-server')
+
+    wait_for_connection(grpc_host, grpc_port)
+    yield (grpc_host, grpc_port)
