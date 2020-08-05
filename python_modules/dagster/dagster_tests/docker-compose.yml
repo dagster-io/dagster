@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  dagster-grpc-server:
+    image: ${IMAGE_NAME}
+    hostname: dagster-grpc-server
+    container_name: dagster-grpc-server
+    ports:
+      - "8090:8090"
+    command: ["dagster", "api", "grpc", "--port", "8090", "--host", "0.0.0.0"]
+    networks:
+      - dagster
+
+networks:
+  dagster:
+    driver: bridge
+    name: dagster

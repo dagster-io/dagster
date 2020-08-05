@@ -174,6 +174,13 @@ def dagster_extra_cmds_fn(version):
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
         "aws ecr get-login --no-include-email --region us-west-1 | sh",
+        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-core-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
+        + version,
+        "pushd python_modules/dagster/dagster_tests",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        network_buildkite_container('dagster'),
+        connect_sibling_docker_container('dagster', 'dagster-grpc-server', 'GRPC_SERVER_HOST'),
+        "popd",
     ]
 
 
@@ -279,6 +286,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         'python_modules/dagster',
         extra_cmds_fn=dagster_extra_cmds_fn,
         env_vars=['AWS_ACCOUNT_ID'],
+        depends_on_fn=test_image_depends_fn,
         tox_env_suffixes=['-api_tests', '-cli_tests', '-core_tests', '-general_tests'],
     ),
     ModuleBuildSpec(

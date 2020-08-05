@@ -72,16 +72,13 @@ def test_project_docker_image():
             'to proceed'
         )
 
-    # This needs to be a domain name to avoid the k8s machinery automatically prefixing it with
-    # `docker.io/` and attempting to pull images from Docker Hub
-    if not docker_repository:
-        docker_repository = 'dagster.io.priv'
-
     if not docker_image_tag:
         docker_image_tag = get_default_docker_image_tag()
 
-    final_docker_image = '{repository}/{image_name}:{tag}'.format(
-        repository=docker_repository, image_name=image_name, tag=docker_image_tag
+    final_docker_image = '{repository}{image_name}:{tag}'.format(
+        repository="{}/".format(docker_repository) if docker_repository else "",
+        image_name=image_name,
+        tag=docker_image_tag,
     )
     print('Using Docker image: %s' % final_docker_image)
     return final_docker_image
