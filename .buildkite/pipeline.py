@@ -450,6 +450,7 @@ def integration_tests():
             extra_cmds_fn=integration_suite_extra_cmds_fn,
             depends_on_fn=test_image_depends_fn,
             tox_env_suffixes=tox_env_suffixes,
+            retries=2,
         ).get_tox_build_steps()
     return tests
 
