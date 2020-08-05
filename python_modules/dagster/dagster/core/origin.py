@@ -94,6 +94,14 @@ class PipelineOrigin(six.with_metaclass(ABCMeta)):
     def get_id(self):
         return create_snapshot_id(self)
 
+    @abstractmethod
+    def get_repo_cli_args(self):
+        pass
+
+    @abstractproperty
+    def executable_path(self):
+        pass
+
 
 @whitelist_for_serdes
 class PipelinePythonOrigin(
@@ -127,6 +135,13 @@ class PipelineGrpcServerOrigin(
             check.str_param(pipeline_name, 'pipeline_name'),
             check.inst_param(repository_origin, 'repository_origin', RepositoryGrpcServerOrigin),
         )
+
+    @property
+    def executable_path(self):
+        return sys.executable
+
+    def get_repo_cli_args(self):
+        return self.repository_origin.get_cli_args()
 
 
 class ScheduleOrigin(six.with_metaclass(ABCMeta)):
