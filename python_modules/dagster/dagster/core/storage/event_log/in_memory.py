@@ -1,7 +1,5 @@
 from collections import OrderedDict, defaultdict
 
-import gevent.lock
-
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventRecord
@@ -19,7 +17,6 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
 
     def __init__(self, inst_data=None):
         self._logs = defaultdict(EventLogSequence)
-        self._lock = defaultdict(gevent.lock.Semaphore)
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
 
@@ -44,34 +41,27 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         )
 
         cursor = cursor + 1
-        with self._lock[run_id]:
-            return self._logs[run_id][cursor:]
+        return self._logs[run_id][cursor:]
 
     def store_event(self, event):
         check.inst_param(event, 'event', EventRecord)
         run_id = event.run_id
-        with self._lock[run_id]:
-            self._logs[run_id] = self._logs[run_id].append(event)
-            for handler in self._handlers[run_id]:
-                handler(event)
+        self._logs[run_id] = self._logs[run_id].append(event)
+        for handler in self._handlers[run_id]:
+            handler(event)
 
     def delete_events(self, run_id):
-        with self._lock[run_id]:
-            del self._logs[run_id]
-        del self._lock[run_id]
+        del self._logs[run_id]
 
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
-        self._lock = defaultdict(gevent.lock.Semaphore)
 
     def watch(self, run_id, _start_cursor, callback):
-        with self._lock[run_id]:
-            self._handlers[run_id].add(callback)
+        self._handlers[run_id].add(callback)
 
     def end_watch(self, run_id, handler):
-        with self._lock[run_id]:
-            if handler in self._handlers[run_id]:
-                self._handlers[run_id].remove(handler)
+        if handler in self._handlers[run_id]:
+            self._handlers[run_id].remove(handler)
 
     @property
     def is_persistent(self):
@@ -128,27 +118,26 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         check.inst_param(asset_key, 'asset_key', AssetKey)
 
         for run_id in self._logs.keys():
-            with self._lock[run_id]:
-                updated_records = []
-                for record in self._logs[run_id]:
-                    if (
-                        not record.is_dagster_event
-                        or not record.dagster_event.asset_key
-                        or record.dagster_event.asset_key.to_string() != asset_key.to_string()
-                    ):
-                        # not an asset record
-                        updated_records.append(record)
-                    else:
-                        dagster_event = record.dagster_event
-                        event_specific_data = dagster_event.event_specific_data
-                        materialization = event_specific_data.materialization
-                        updated_materialization = materialization._replace(asset_key=None)
-                        updated_event_specific_data = event_specific_data._replace(
-                            materialization=updated_materialization
-                        )
-                        updated_dagster_event = dagster_event._replace(
-                            event_specific_data=updated_event_specific_data
-                        )
-                        updated_record = record._replace(dagster_event=updated_dagster_event)
-                        updated_records.append(updated_record)
-                self._logs[run_id] = updated_records
+            updated_records = []
+            for record in self._logs[run_id]:
+                if (
+                    not record.is_dagster_event
+                    or not record.dagster_event.asset_key
+                    or record.dagster_event.asset_key.to_string() != asset_key.to_string()
+                ):
+                    # not an asset record
+                    updated_records.append(record)
+                else:
+                    dagster_event = record.dagster_event
+                    event_specific_data = dagster_event.event_specific_data
+                    materialization = event_specific_data.materialization
+                    updated_materialization = materialization._replace(asset_key=None)
+                    updated_event_specific_data = event_specific_data._replace(
+                        materialization=updated_materialization
+                    )
+                    updated_dagster_event = dagster_event._replace(
+                        event_specific_data=updated_event_specific_data
+                    )
+                    updated_record = record._replace(dagster_event=updated_dagster_event)
+                    updated_records.append(updated_record)
+            self._logs[run_id] = updated_records

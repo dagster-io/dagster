@@ -14,6 +14,7 @@
 takes in a `-f` or `--python_file` argument.
 - Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
   supported API for custom pandas data frame type creation.
+- Removed gevent dependency from dagster
 
 ## 0.8.11
 
