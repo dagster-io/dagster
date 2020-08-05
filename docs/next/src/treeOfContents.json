@@ -184,6 +184,10 @@
         ]
       },
       {
+        "name": "Dagit",
+        "path": "/overview/dagit"
+      },
+      {
         "name": "Packages",
         "path": "/overview/packages/core-packages",
         "childPath": true,

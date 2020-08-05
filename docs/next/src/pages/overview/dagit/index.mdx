@@ -1,0 +1,109 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import PyObject from 'components/PyObject';
+
+<DynamicMetaTags title="Dagit | Dagster" />
+
+
+# Dagit
+
+Dagit is a web-based interface for viewing and interacting with Dagster objects.
+
+Through it, you can inspect solid and pipeline definitions, launch runs, view launched runs, and
+view assets produced by those runs.
+
+To launch the Dagit web server, run `dagit`.  The command will print out the URL you can access the
+interface from in the browser, usually on port 3000.
+
+Dagit fetches definitions - pipelines, solids, schedules, partition sets - from a set of
+repositories configured in a `workspace.yaml`.  It fetches runs from a run storage, configured in
+an instance's `dagster.yaml`.  It fetches assets from an asset storage, also configured in an
+instance's `dagster.yaml`.
+
+These are the main pages inside Dagit:
+
+## Pipeline
+
+The Pipeline page lets you explore a pipeline definition, launch a pipeline run, and examine a
+pipeline run.
+
+### Pipeline definition
+
+The Definition tab in the pipeline page shows the topology of solids that make up a
+pipeline.  Selecting a solid reveals detailed metadata about it in the right pane.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/pipeline-definition.png" />
+</p>
+
+### Playground
+
+The Playground tab in the pipeline page lets you experiment with configuration and launch runs.  You
+can select from the set of presets for the pipeline, or type in your own configuration in the
+editor.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/playground.png" />
+</p>
+
+
+### Run
+
+The Run tab in the pipeline page lets you see what happened within a single pipeline run. The upper
+left pane contains a Gantt chart, indicating how long each solid took to execute. The bottom pane
+shows events and logs emitted during the course of execution. The "Launch Re-execution" button
+lets you kick off a new run with the same configuration as the displayed run.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/single-run.png" />
+</p>
+
+
+## Solid
+
+The Solid page lets you see detailed information about a solid definition.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/solid-definition.png" />
+</p>
+
+## Runs
+
+The Runs page lists all pipeline runs.  You can filter the list by pipeline name, run ID,
+execution status, or pipeline tag.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/all-runs.png" />
+</p>
+
+## Assets
+
+The Assets page lists all assets.  You can filter the list by asset key.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/all-assets.png" />
+</p>
+
+### Asset
+
+The Asset page lists details about a single asset.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/asset.png" />
+</p>
+
+## Schedules
+
+The Schedules page lists all schedules.
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/schedules.png" />
+</p>
+
+### Schedule
+
+The Schedule page lists details about a single schedule.
+
+
+<p align="center">
+  <img src="/assets/images/overview/dagit/single-schedule.png" />
+</p>
