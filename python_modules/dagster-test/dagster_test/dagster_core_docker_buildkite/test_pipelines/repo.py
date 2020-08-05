@@ -1,165 +1,124 @@
-# pylint:disable=no-member
-import datetime
-import math
-import random
-import time
-from collections import defaultdict
+import string
 
 from dagster import (
     InputDefinition,
     Int,
-    Output,
     OutputDefinition,
-    RetryRequested,
-    String,
+    PartitionSetDefinition,
+    ScheduleDefinition,
     lambda_solid,
     pipeline,
     repository,
     solid,
+    usable_as_dagster_type,
 )
-from dagster.core.definitions.decorators import daily_schedule, schedule
-from dagster.core.test_utils import nesting_composite_pipeline
 
 
-@solid(input_defs=[InputDefinition('word', String)], config_schema={'factor': Int})
-def multiply_the_word(context, word):
-    return word * context.solid_config['factor']
+@lambda_solid
+def do_something():
+    return 1
 
 
-@lambda_solid(input_defs=[InputDefinition('word')])
-def count_letters(word):
-    counts = defaultdict(int)
-    for letter in word:
-        counts[letter] += 1
-    return dict(counts)
+@lambda_solid
+def do_input(x):
+    return x
 
 
-@lambda_solid()
-def error_solid():
-    raise Exception('Unusual error')
+@pipeline(name='foo')
+def foo_pipeline():
+    do_input(do_something())
 
 
-@pipeline
-def demo_pipeline():
-    count_letters(multiply_the_word())
+@pipeline(name='baz', description='Not much tbh')
+def baz_pipeline():
+    do_input()
 
 
-@pipeline
-def demo_error_pipeline():
-    error_solid()
+def define_foo_pipeline():
+    return foo_pipeline
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(Int, 'out_1', is_required=False),
-        OutputDefinition(Int, 'out_2', is_required=False),
-        OutputDefinition(Int, 'out_3', is_required=False),
-    ]
-)
-def foo(_):
-    yield Output(1, 'out_1')
+@pipeline(name="bar")
+def bar_pipeline():
+    @usable_as_dagster_type(name='InputTypeWithoutHydration')
+    class InputTypeWithoutHydration(int):
+        pass
 
+    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    def one(_):
+        return 1
 
-@solid
-def bar(_, input_arg):
-    return input_arg
-
-
-@pipeline
-def optional_outputs():
-    foo_res = foo()
-    bar.alias('first_consumer')(input_arg=foo_res.out_1)
-    bar.alias('second_consumer')(input_arg=foo_res.out_2)
-    bar.alias('third_consumer')(input_arg=foo_res.out_3)
-
-
-def define_long_running_pipeline():
-    @solid
-    def long_running_task(context):
-        iterations = 20 * 30  # 20 minutes
-        for i in range(iterations):
-            context.log.info(
-                'task in progress [%d/100]%% complete' % math.floor(100.0 * float(i) / iterations)
-            )
-            time.sleep(2)
-        return random.randint(0, iterations)
-
-    @solid
-    def post_process(context, input_count):
-        context.log.info('received input %d' % input_count)
-        iterations = 60 * 2  # 2 hours
-        for i in range(iterations):
-            context.log.info(
-                'post-process task in progress [%d/100]%% complete'
-                % math.floor(100.0 * float(i) / iterations)
-            )
-            time.sleep(60)
-
-    @pipeline
-    def long_running_pipeline():
-        for i in range(10):
-            t = long_running_task.alias('first_%d' % i)()
-            post_process.alias('post_process_%d' % i)(t)
-
-    return long_running_pipeline
-
-
-def define_large_pipeline():
-    return nesting_composite_pipeline(depth=1, num_children=6, name='large_pipeline')
-
-
-def define_schedules():
-    @daily_schedule(
-        name='daily_optional_outputs',
-        pipeline_name=optional_outputs.name,
-        start_date=datetime.datetime(2020, 1, 1),
+    @solid(
+        input_defs=[InputDefinition('some_input', InputTypeWithoutHydration)],
+        output_defs=[OutputDefinition(Int)],
     )
-    def daily_optional_outputs(_date):
-        return {}
+    def fail_subset(_, some_input):
+        return some_input
 
-    @schedule(
-        name='frequent_large_pipe', pipeline_name='large_pipeline', cron_schedule='*/5 * * * *',
-    )
-    def frequent_large_pipe(_):
-        return {}
+    return fail_subset(one())
 
+
+def define_bar_schedules():
     return {
-        'daily_optional_outputs': daily_optional_outputs,
-        'frequent_large_pipe': frequent_large_pipe,
+        'foo_schedule': ScheduleDefinition(
+            "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
+        )
     }
 
 
-def define_step_retry_pipeline():
-    @solid
-    def fail_first_time(context):
-        event_records = context.instance.all_logs(context.run_id)
-        for event_record in event_records:
-            context.log.info(event_record.message)
-            if 'Started re-execution' in event_record.message:
-                return 'okay perfect'
-
-        raise RetryRequested()
-
-    @pipeline()
-    def retry_pipeline():
-        fail_first_time()
-
-    return retry_pipeline
+def error_partition_fn():
+    raise Exception('womp womp')
 
 
-def define_demo_execution_repo():
-    @repository
-    def demo_execution_repo():
-        return {
-            'pipelines': {
-                'large_pipeline': define_large_pipeline,
-                'long_running_pipeline': define_long_running_pipeline,
-                'optional_outputs': optional_outputs,
-                'demo_pipeline': demo_pipeline,
-                'demo_error_pipeline': demo_error_pipeline,
-                'retry_pipeline': define_step_retry_pipeline,
+def error_partition_config_fn():
+    raise Exception('womp womp')
+
+
+def error_partition_tags_fn(_partition):
+    raise Exception('womp womp')
+
+
+def define_baz_partitions():
+    return {
+        'baz_partitions': PartitionSetDefinition(
+            name='baz_partitions',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            run_config_fn_for_partition=lambda partition: {
+                'solids': {'do_input': {'inputs': {'x': {'value': partition.value}}}}
             },
-            'schedules': define_schedules(),
-        }
+            tags_fn_for_partition=lambda _partition: {'foo': 'bar'},
+        ),
+        'error_partitions': PartitionSetDefinition(
+            name='error_partitions',
+            pipeline_name='baz',
+            partition_fn=error_partition_fn,
+            run_config_fn_for_partition=lambda partition: {},
+        ),
+        'error_partition_config': PartitionSetDefinition(
+            name='error_partition_config',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            run_config_fn_for_partition=error_partition_config_fn,
+        ),
+        'error_partition_tags': PartitionSetDefinition(
+            name='error_partition_tags',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            run_config_fn_for_partition=lambda partition: {},
+            tags_fn_for_partition=error_partition_tags_fn,
+        ),
+    }
 
-    return demo_execution_repo
+
+@repository
+def bar_repo():
+    return {
+        'pipelines': {
+            'foo': define_foo_pipeline,
+            'bar': lambda: bar_pipeline,
+            'baz': lambda: baz_pipeline,
+        },
+        'schedules': define_bar_schedules(),
+        'partition_sets': define_baz_partitions(),
+    }

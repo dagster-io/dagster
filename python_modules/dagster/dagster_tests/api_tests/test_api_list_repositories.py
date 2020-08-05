@@ -3,6 +3,7 @@ import sys
 from dagster.api.list_repositories import (
     sync_list_repositories,
     sync_list_repositories_ephemeral_grpc,
+    sync_list_repositories_grpc,
 )
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.grpc.types import LoadableRepositorySymbol
@@ -272,3 +273,27 @@ def test_sync_list_python_module_attribute_grpc():
     assert (
         repository_code_pointer_dict['hello_world_repository'].fn_name == 'hello_world_repository'
     )
+
+
+def test_sync_list_container_grpc(docker_grpc_client):
+    response = sync_list_repositories_grpc(docker_grpc_client)
+
+    loadable_repo_symbols = response.repository_symbols
+
+    assert isinstance(loadable_repo_symbols, list)
+    assert len(loadable_repo_symbols) == 1
+    assert isinstance(loadable_repo_symbols[0], LoadableRepositorySymbol)
+
+    symbol = loadable_repo_symbols[0]
+
+    assert symbol.repository_name == 'bar_repo'
+    assert symbol.attribute == 'bar_repo'
+
+    executable_path = response.executable_path
+    assert executable_path
+
+    repository_code_pointer_dict = response.repository_code_pointer_dict
+    assert 'bar_repo' in repository_code_pointer_dict
+    assert isinstance(repository_code_pointer_dict['bar_repo'], FileCodePointer)
+    assert repository_code_pointer_dict['bar_repo'].python_file.endswith("repo.py")
+    assert repository_code_pointer_dict['bar_repo'].fn_name == 'bar_repo'

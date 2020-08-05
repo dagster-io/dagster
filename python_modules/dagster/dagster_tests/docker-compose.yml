@@ -7,7 +7,18 @@ services:
     container_name: dagster-grpc-server
     ports:
       - "8090:8090"
-    command: ["dagster", "api", "grpc", "--port", "8090", "--host", "0.0.0.0"]
+    command:
+      [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        "8090",
+        "--host",
+        "0.0.0.0",
+        "--python-file",
+        "test_pipelines/repo.py",
+      ]
     networks:
       - dagster
 

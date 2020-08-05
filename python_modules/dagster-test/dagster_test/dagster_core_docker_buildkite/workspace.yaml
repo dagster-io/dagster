@@ -1,3 +1,3 @@
 repository:
   module: dagster_test.test_project.test_pipelines.repo
-  fn: define_demo_execution_repo
+  fn: bar_repo

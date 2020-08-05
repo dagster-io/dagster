@@ -102,9 +102,11 @@ def grpc_port():
 
 
 @pytest.fixture(scope='session')
-def grpc_server(grpc_host, grpc_port):  # pylint: disable=redefined-outer-name
+def docker_grpc_client(
+    dagster_docker_image, grpc_host, grpc_port
+):  # pylint: disable=redefined-outer-name, unused-argument
     if not IS_BUILDKITE:
         docker_service_up(file_relative_path(__file__, 'docker-compose.yml'), 'dagster-grpc-server')
 
     wait_for_connection(grpc_host, grpc_port)
-    yield (grpc_host, grpc_port)
+    yield DagsterGrpcClient(port=grpc_port, host=grpc_host)
