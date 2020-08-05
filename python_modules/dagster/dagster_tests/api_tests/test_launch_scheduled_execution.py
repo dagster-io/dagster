@@ -16,7 +16,7 @@ from dagster.core.scheduler import (
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
-from dagster.core.test_utils import test_instance
+from dagster.core.test_utils import instance_for_test
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils import find_free_port
@@ -113,7 +113,7 @@ def grpc_schedule_origin(schedule_name):
     'schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin,],
 )
 def test_launch_scheduled_execution(schedule_origin_context):
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with schedule_origin_context('simple_schedule') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionSuccess)
@@ -127,7 +127,7 @@ def test_launch_scheduled_execution(schedule_origin_context):
 
 @pytest.mark.parametrize('schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin])
 def test_bad_env_fn(schedule_origin_context):
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with schedule_origin_context('bad_env_fn_schedule') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -149,7 +149,7 @@ def test_bad_env_fn(schedule_origin_context):
 
 @pytest.mark.parametrize('schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin])
 def test_bad_should_execute(schedule_origin_context):
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with schedule_origin_context('bad_should_execute_schedule') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionFailed)
@@ -170,7 +170,7 @@ def test_bad_should_execute(schedule_origin_context):
 
 @pytest.mark.parametrize('schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin])
 def test_skip(schedule_origin_context):
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with schedule_origin_context('skip_schedule') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -182,7 +182,7 @@ def test_skip(schedule_origin_context):
 
 @pytest.mark.parametrize('schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin])
 def test_wrong_config(schedule_origin_context):
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with schedule_origin_context('wrong_config_schedule') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -197,7 +197,7 @@ def test_wrong_config(schedule_origin_context):
 
 
 def test_bad_load():
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         instance = DagsterInstance.get()
 
         working_directory = os.path.dirname(__file__)
@@ -214,7 +214,7 @@ def test_bad_load():
 
 
 def test_bad_load_grpc():
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         with grpc_schedule_origin('doesnt_exist') as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionFailed)
@@ -226,7 +226,7 @@ def test_bad_load_grpc():
 
 
 def test_grpc_server_down():
-    with test_instance() as instance:
+    with instance_for_test() as instance:
         down_grpc_repo_origin = RepositoryGrpcServerOrigin(
             host='localhost', port=find_free_port(), socket=None, repository_name='down_repo'
         )

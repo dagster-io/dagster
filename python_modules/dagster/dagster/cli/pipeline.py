@@ -144,11 +144,11 @@ def get_partitioned_pipeline_instructions(command_name):
 @click.option('--verbose', is_flag=True)
 @pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
-    return execute_print_command(verbose, cli_args, click.echo)
+    return execute_print_command(verbose, cli_args, click.echo, instance=DagsterInstance.get())
 
 
-def execute_print_command(verbose, cli_args, print_fn):
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, DagsterInstance.get())
+def execute_print_command(verbose, cli_args, print_fn, instance):
+    external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
     pipeline_snapshot = external_pipeline.pipeline_snapshot
 
     if verbose:
@@ -291,15 +291,13 @@ def _logged_pipeline_execute_command(config, preset, mode, instance, kwargs):
 
     check.invariant(isinstance(env, tuple))
 
-    if preset:
-        if env:
-            raise click.UsageError('Can not use --preset with --env.')
-        return execute_execute_command_with_preset(preset, kwargs, instance, mode)
+    if preset and env:
+        raise click.UsageError('Can not use --preset with --env.')
 
     env = list(env)
     tags = get_tags_from_args(kwargs)
 
-    result = execute_execute_command(env, kwargs, instance, mode, tags)
+    result = execute_execute_command(env, kwargs, instance, mode, tags, preset)
     if not result.success:
         raise click.ClickException('Pipeline run {} resulted in failure.'.format(result.run_id))
 
@@ -309,37 +307,17 @@ def get_run_config_from_env_file_list(env_file_list):
     return load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
 
-def execute_execute_command(env_file_list, cli_args, instance=None, mode=None, tags=None):
+def execute_execute_command(env_file_list, cli_args, instance, mode=None, tags=None, preset=None):
     check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
-    check.opt_inst_param(instance, 'instance', DagsterInstance)
-
-    instance = instance if instance else DagsterInstance.get()
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
-    # We should move this to use external pipeline
-    # https://github.com/dagster-io/dagster/issues/2556
-    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
-    solid_selection = get_solid_selection_from_args(cli_args)
-    return do_execute_command(pipeline, instance, env_file_list, mode, tags, solid_selection)
-
-
-def execute_execute_command_with_preset(preset, cli_args, instance, _mode):
-    instance = instance if instance else DagsterInstance.get()
+    check.inst_param(instance, 'instance', DagsterInstance)
 
     external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
     # We should move this to use external pipeline
     # https://github.com/dagster-io/dagster/issues/2556
     pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
-
-    tags = get_tags_from_args(cli_args)
     solid_selection = get_solid_selection_from_args(cli_args)
-
-    return execute_pipeline(
-        pipeline,
-        preset=preset,
-        instance=instance,
-        raise_on_error=False,
-        tags=tags,
-        solid_selection=solid_selection,
+    return do_execute_command(
+        pipeline, instance, env_file_list, mode, tags, solid_selection, preset
     )
 
 
@@ -507,7 +485,7 @@ def _create_external_pipeline_run(
 
 
 def do_execute_command(
-    pipeline, instance, env_file_list, mode=None, tags=None, solid_selection=None
+    pipeline, instance, env_file_list, mode=None, tags=None, solid_selection=None, preset=None,
 ):
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(instance, 'instance', DagsterInstance)
@@ -521,6 +499,7 @@ def do_execute_command(
         instance=instance,
         raise_on_error=False,
         solid_selection=solid_selection,
+        preset=preset,
     )
 
 

@@ -22,7 +22,7 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import test_instance_tempdir
+from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.test.postgres_instance import TestPostgresInstance
@@ -169,7 +169,7 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance_with_default_hijack():
             with seven.TemporaryDirectory() as temp_dir:
-                with test_instance_tempdir(
+                with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
                         'scheduler': {

@@ -122,14 +122,14 @@ def environ(env):
 
 
 @contextmanager
-def test_instance(overrides=None, enable_telemetry=False):
+def instance_for_test(overrides=None, enable_telemetry=False):
     with seven.TemporaryDirectory() as temp_dir:
-        with test_instance_tempdir(temp_dir, overrides, enable_telemetry) as instance:
+        with instance_for_test_tempdir(temp_dir, overrides, enable_telemetry) as instance:
             yield instance
 
 
 @contextmanager
-def test_instance_tempdir(temp_dir, overrides=None, enable_telemetry=False):
+def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
     # Disable telemetry by default to avoid writing to the tempdir while cleaning it up
     overrides = merge_dicts(
         overrides if overrides else {}, {'telemetry': {'enabled': enable_telemetry}}

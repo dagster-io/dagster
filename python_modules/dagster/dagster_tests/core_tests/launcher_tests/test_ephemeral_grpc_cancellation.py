@@ -4,7 +4,7 @@ import time
 
 from dagster import Field, Int, Materialization, pipeline, repository, solid
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
-from dagster.core.test_utils import test_instance
+from dagster.core.test_utils import instance_for_test
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
 
@@ -64,7 +64,7 @@ def _stream_events_target(results, api_client, execute_run_args):
 
 
 def test_cancel_run():
-    with test_instance() as instance:
+    with instance_for_test() as instance:
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable, python_file=__file__, working_directory=None,

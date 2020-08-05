@@ -5,7 +5,7 @@ from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test, test_instance
+from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -36,7 +36,7 @@ def runner_execute_run_with_structured_logs(runner, cli_args):
 def test_execute_run_with_structured_logs(pipeline_handle):
     runner = CliRunner()
 
-    with test_instance(
+    with instance_for_test(
         overrides={
             'compute_logs': {
                 'module': 'dagster.core.storage.noop_compute_log_manager',
@@ -85,7 +85,7 @@ def runner_execute_step_with_structured_logs(runner, cli_args):
 def test_execute_step_with_structured_logs(pipeline_handle):
     runner = CliRunner()
 
-    with test_instance(
+    with instance_for_test(
         overrides={
             'compute_logs': {
                 'module': 'dagster.core.storage.noop_compute_log_manager',
