@@ -23,7 +23,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     .. code-block:: YAML
 
-        compute_log_manager:
+        compute_logs:
           module: dagster_aws.s3.compute_log_manager
           class: S3ComputeLogManager
           config:
