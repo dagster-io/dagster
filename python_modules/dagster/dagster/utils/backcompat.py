@@ -79,18 +79,3 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
         + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
         stacklevel=stacklevel,
     )
-
-
-def canonicalize_run_config(run_config, environment_dict, stacklevel=3):
-    check.opt_dict_param(run_config, 'run_config')
-    check.opt_dict_param(environment_dict, 'environment_dict')
-    check.invariant(
-        not (run_config is not None and environment_dict is not None),
-        'Cannot set both run_config and environment_dict. Use run_config parameter.',
-    )
-
-    if environment_dict is not None:
-        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel + 1)
-        return environment_dict
-    else:
-        return run_config

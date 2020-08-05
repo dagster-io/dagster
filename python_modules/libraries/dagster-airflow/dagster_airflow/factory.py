@@ -12,7 +12,6 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
-from dagster.utils.backcompat import canonicalize_run_config
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -107,9 +106,7 @@ class DagsterOperatorParameters(
         pipeline_snapshot=None,
         execution_plan_snapshot=None,
         parent_pipeline_snapshot=None,
-        environment_dict=None,
     ):
-        run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
         check_storage_specified(run_config)
 
         return super(DagsterOperatorParameters, cls).__new__(
@@ -147,11 +144,6 @@ class DagsterOperatorParameters(
             execution_plan_snapshot=self.execution_plan_snapshot,
             parent_pipeline_snapshot=self.parent_pipeline_snapshot,
         )
-
-    @property
-    def environment_dict(self):
-        # backcompat
-        return self.run_config
 
 
 def _make_airflow_dag(
@@ -247,7 +239,6 @@ def make_airflow_dag(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
-    environment_dict=None,
 ):
     '''Construct an Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -289,8 +280,6 @@ def make_airflow_dag(
 
     recon_repo = ReconstructableRepository.for_module(module_name, pipeline_name)
 
-    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
-
     return _make_airflow_dag(
         recon_repo=recon_repo,
         pipeline_name=pipeline_name,
@@ -314,7 +303,6 @@ def make_airflow_dag_for_operator(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
-    environment_dict=None,
 ):
     '''Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
 
@@ -352,7 +340,6 @@ def make_airflow_dag_for_operator(
         list of its constituent tasks.
     '''
     check.subclass_param(operator, 'operator', BaseOperator)
-    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
 
     return _make_airflow_dag(
         recon_repo=recon_repo,
@@ -399,7 +386,6 @@ def make_airflow_dag_containerized(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
-    environment_dict=None,
 ):
     '''Construct a containerized Airflow DAG corresponding to a given Dagster pipeline.
 
@@ -445,10 +431,8 @@ def make_airflow_dag_containerized(
     check.opt_str_param(dag_description, 'dag_description')
     check.opt_dict_param(dag_kwargs, 'dag_kwargs')
     check.opt_dict_param(op_kwargs, 'op_kwargs')
-    check.opt_dict_param(environment_dict, 'environment_dict')
 
     recon_repo = ReconstructableRepository.for_module(module_name, pipeline_name)
-    run_config = canonicalize_run_config(run_config, environment_dict)  # backcompact
 
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image

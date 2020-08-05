@@ -43,7 +43,6 @@ from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import ConfigurableClass
-from dagster.utils.backcompat import canonicalize_run_config
 
 # pylint: disable=unused-import
 from ..temp_file import (
@@ -146,7 +145,6 @@ def execute_solids_within_pipeline(
     preset=None,
     tags=None,
     instance=None,
-    environment_dict=None,
 ):
     '''Execute a set of solids within an existing pipeline.
 
@@ -177,9 +175,6 @@ def execute_solids_within_pipeline(
     check.set_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
 
-    # backcompact
-    run_config = canonicalize_run_config(run_config, environment_dict)
-
     sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
     result = execute_pipeline(
@@ -203,7 +198,6 @@ def execute_solid_within_pipeline(
     preset=None,
     tags=None,
     instance=None,
-    environment_dict=None,
 ):
     '''Execute a single solid within an existing pipeline.
 
@@ -230,8 +224,6 @@ def execute_solid_within_pipeline(
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
     '''
-    # backcompact
-    run_config = canonicalize_run_config(run_config, environment_dict)
 
     return execute_solids_within_pipeline(
         pipeline_def,
@@ -277,13 +269,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 
 
 def execute_solid(
-    solid_def,
-    mode_def=None,
-    input_values=None,
-    tags=None,
-    run_config=None,
-    raise_on_error=True,
-    environment_dict=None,
+    solid_def, mode_def=None, input_values=None, tags=None, run_config=None, raise_on_error=True,
 ):
     '''Execute a single solid in an ephemeral pipeline.
 
@@ -311,9 +297,6 @@ def execute_solid(
     check.inst_param(solid_def, 'solid_def', ISolidDefinition)
     check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
     input_values = check.opt_dict_param(input_values, 'input_values', key_type=str)
-    # backcompact
-    run_config = canonicalize_run_config(run_config, environment_dict)
-
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):

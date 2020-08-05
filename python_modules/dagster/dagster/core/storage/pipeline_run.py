@@ -274,11 +274,6 @@ class PipelineRun(
         # Compat
         return self.parent_run_id
 
-    @property
-    def environment_dict(self):
-        # Compat
-        return self.run_config
-
     @staticmethod
     def tags_for_schedule(schedule):
         return {SCHEDULE_NAME_TAG: schedule.name}

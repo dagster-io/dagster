@@ -14,7 +14,6 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import canonicalize_run_config
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -184,7 +183,6 @@ def execute_pipeline_iterator(
     tags=None,
     solid_selection=None,
     instance=None,
-    environment_dict=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -219,8 +217,6 @@ def execute_pipeline_iterator(
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
-    # stack level is to punch through helper function
-    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=4)
 
     (
         pipeline,
@@ -261,7 +257,6 @@ def execute_pipeline(
     solid_selection=None,
     instance=None,
     raise_on_error=True,
-    environment_dict=None,
 ):
     '''Execute a pipeline synchronously.
 
@@ -309,7 +304,6 @@ def execute_pipeline(
         solid_selection=solid_selection,
         instance=instance,
         raise_on_error=raise_on_error,
-        environment_dict=environment_dict,
     )
 
 
@@ -323,10 +317,7 @@ def _logged_execute_pipeline(
     solid_selection=None,
     instance=None,
     raise_on_error=True,
-    environment_dict=None,
 ):
-    # stack level is to punch through helper functions and telemetry wrapper
-    run_config = canonicalize_run_config(run_config, environment_dict, stacklevel=7)
 
     (
         pipeline,

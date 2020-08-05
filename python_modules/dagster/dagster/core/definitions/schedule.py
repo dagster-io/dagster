@@ -6,7 +6,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -90,20 +89,11 @@ class ScheduleDefinition(object):
         mode="default",
         should_execute=None,
         environment_vars=None,
-        environment_dict=None,
-        environment_dict_fn=None,
     ):
 
         self._name = check.str_param(name, 'name')
         self._cron_schedule = check.str_param(cron_schedule, 'cron_schedule')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        check.opt_callable_param(environment_dict_fn, 'environment_dict_fn')
-        run_config = canonicalize_backcompat_args(
-            run_config, 'run_config', environment_dict, 'environment_dict', '0.9.0'
-        )
-        run_config_fn = canonicalize_backcompat_args(
-            run_config_fn, 'run_config_fn', environment_dict_fn, 'environment_dict_fn', '0.9.0'
-        )
         self._run_config = check.opt_dict_param(run_config, 'run_config')
         self._tags = check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
 
@@ -162,10 +152,6 @@ class ScheduleDefinition(object):
         if self._run_config:
             return self._run_config
         return self._run_config_fn(context)
-
-    def get_environment_dict(self, context):
-        rename_warning('get_run_config', 'get_environment_dict', '0.9.0')
-        return self.get_run_config(context)
 
     def get_tags(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)

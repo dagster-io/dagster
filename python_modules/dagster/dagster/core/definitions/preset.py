@@ -9,11 +9,7 @@ from dagster.core.definitions.utils import config_from_files, config_from_yaml_s
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import (
-    canonicalize_backcompat_args,
-    canonicalize_run_config,
-    rename_warning,
-)
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -49,15 +45,8 @@ class PresetDefinition(
     '''
 
     def __new__(
-        cls,
-        name,
-        run_config=None,
-        solid_selection=None,
-        mode=None,
-        environment_dict=None,
-        tags=None,
+        cls, name, run_config=None, solid_selection=None, mode=None, tags=None,
     ):
-        run_config = canonicalize_run_config(run_config, environment_dict)
 
         return super(PresetDefinition, cls).__new__(
             cls,
@@ -223,9 +212,3 @@ class PresetDefinition(
                 tags=self.tags,
                 run_config=merge_dicts(self.run_config, run_config),
             )
-
-    @property
-    def environment_dict(self):
-        # Backcompat
-        rename_warning('run_config', 'environment_dict', '0.9.0')
-        return self.run_config
