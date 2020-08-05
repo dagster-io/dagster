@@ -572,6 +572,11 @@ def create_log_manager(context_creation_data):
         context_creation_data.pipeline_run,
     )
 
+    # The following logic is tightly coupled to the processing of logger config in
+    # python_modules/dagster/dagster/core/system_config/objects.py#config_map_loggers
+    # Changes here should be accompanied checked against that function, which applies config mapping
+    # via IConfigMappable (@configured) to incoming logger configs. See docstring for more details.
+
     loggers = []
     for logger_key, logger_def in mode_def.loggers.items() or default_loggers().items():
         if logger_key in environment_config.loggers:

@@ -4,13 +4,14 @@ from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
 from dagster.utils.backcompat import rename_warning
 
 
-class ExecutorDefinition(object):
+class ExecutorDefinition(IConfigMappable):
     '''
     Args:
         name (Optional[str]): The name of the executor.
@@ -20,11 +21,17 @@ class ExecutorDefinition(object):
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
-
+        _configured_config_mapping_fn: This argument is for internal use only. Users should not
+            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
     '''
 
     def __init__(
-        self, name, config_schema=None, executor_creation_fn=None, required_resource_keys=None,
+        self,
+        name,
+        config_schema=None,
+        executor_creation_fn=None,
+        required_resource_keys=None,
+        _configured_config_mapping_fn=None,
     ):
         self._name = check.str_param(name, 'name')
         self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
@@ -33,6 +40,9 @@ class ExecutorDefinition(object):
         )
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
+        )
+        self.__configured_config_mapping_fn = check.opt_callable_param(
+            _configured_config_mapping_fn, 'config_mapping_fn'
         )
 
     @property
@@ -55,6 +65,23 @@ class ExecutorDefinition(object):
     @property
     def required_resource_keys(self):
         return self._required_resource_keys
+
+    @property
+    def _configured_config_mapping_fn(self):
+        return self.__configured_config_mapping_fn
+
+    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
+            config_or_config_fn, config_schema
+        )
+
+        return ExecutorDefinition(
+            config_schema=config_schema,
+            name=kwargs.get('name', self.name),
+            executor_creation_fn=self.executor_creation_fn,
+            required_resource_keys=self.required_resource_keys,
+            _configured_config_mapping_fn=wrapped_config_mapping_fn,
+        )
 
 
 def executor(name=None, config_schema=None, required_resource_keys=None):
