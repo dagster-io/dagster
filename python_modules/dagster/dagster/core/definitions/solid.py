@@ -160,6 +160,11 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
         return CallableSolidNode(self, tags=validate_tags(tags))
 
+    def with_hooks(self, hook_defs):
+        from .composition import CallableSolidNode
+
+        return CallableSolidNode(self, hook_defs=hook_defs)
+
 
 class SolidDefinition(ISolidDefinition):
     '''

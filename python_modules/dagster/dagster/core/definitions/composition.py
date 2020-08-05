@@ -5,6 +5,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import frozentags
 
 from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidInvocation
+from .hook import HookDefinition
 from .output import OutputDefinition
 from .solid import ISolidDefinition
 from .utils import validate_tags
@@ -44,8 +45,9 @@ class InProgressCompositionContext(object):
         self._invocations = {}
         self._collisions = {}
 
-    def observe_invocation(self, given_alias, solid_def, input_bindings, input_mappings, metadata):
-
+    def observe_invocation(
+        self, given_alias, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
+    ):
         if given_alias is None:
             solid_name = solid_def.name
             if self._collisions.get(solid_name):
@@ -66,7 +68,7 @@ class InProgressCompositionContext(object):
             )
 
         self._invocations[solid_name] = InvokedSolidNode(
-            solid_name, solid_def, input_bindings, input_mappings, metadata
+            solid_name, solid_def, input_bindings, input_mappings, tags, hook_defs
         )
         return solid_name
 
@@ -115,7 +117,10 @@ class CompleteCompositionContext(
 
             dep_dict[
                 SolidInvocation(
-                    invocation.solid_def.name, invocation.solid_name, tags=invocation.tags
+                    invocation.solid_def.name,
+                    invocation.solid_name,
+                    tags=invocation.tags,
+                    hook_defs=invocation.hook_defs,
                 )
             ] = deps
 
@@ -132,10 +137,11 @@ class CallableSolidNode(object):
     an alias before invoking.
     '''
 
-    def __init__(self, solid_def, given_alias=None, tags=None):
+    def __init__(self, solid_def, given_alias=None, tags=None, hook_defs=None):
         self.solid_def = solid_def
         self.given_alias = check.opt_str_param(given_alias, 'given_alias')
         self.tags = check.opt_inst_param(tags, 'tags', frozentags)
+        self.hook_defs = check.opt_set_param(hook_defs, 'hook_defs', HookDefinition)
 
     def __call__(self, *args, **kwargs):
         solid_name = self.given_alias if self.given_alias else self.solid_def.name
@@ -193,7 +199,12 @@ class CallableSolidNode(object):
             )
 
         solid_name = current_context().observe_invocation(
-            self.given_alias, self.solid_def, input_bindings, input_mappings, self.tags
+            self.given_alias,
+            self.solid_def,
+            input_bindings,
+            input_mappings,
+            self.tags,
+            self.hook_defs,
         )
 
         if len(self.solid_def.output_defs) == 0:
@@ -288,14 +299,24 @@ class CallableSolidNode(object):
             frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
         )
 
+    def with_hooks(self, hook_defs):
+        hook_defs = check.set_param(hook_defs, 'hook_defs', of_type=HookDefinition)
+        return CallableSolidNode(
+            self.solid_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
+        )
+
 
 class InvokedSolidNode(
-    namedtuple('_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings tags')
+    namedtuple(
+        '_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings tags hook_defs'
+    )
 ):
     '''The metadata about a solid invocation saved by the current composition context.
     '''
 
-    def __new__(cls, solid_name, solid_def, input_bindings, input_mappings, tags=None):
+    def __new__(
+        cls, solid_name, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
+    ):
         return super(cls, InvokedSolidNode).__new__(
             cls,
             check.str_param(solid_name, 'solid_name'),
@@ -305,6 +326,7 @@ class InvokedSolidNode(
                 input_mappings, 'input_mappings', key_type=str, value_type=InputMappingNode
             ),
             check.opt_inst_param(tags, 'tags', frozentags),
+            check.opt_set_param(hook_defs, 'hook_defs', HookDefinition),
         )
 
 
@@ -337,6 +359,19 @@ class InvokedSolidOutputHandle(object):
     def alias(self, _):
         raise DagsterInvariantViolationError(
             'In {source} {name}, attempted to call alias method for {cls}. This object '
+            'represents the output "{out}" from the already invoked solid "{solid}". Consider '
+            'checking the location of parentheses.'.format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                solid=self.solid_name,
+                out=self.output_name,
+            )
+        )
+
+    def with_hooks(self, _):
+        raise DagsterInvariantViolationError(
+            'In {source} {name}, attempted to call hook method for {cls}. This object '
             'represents the output "{out}" from the already invoked solid "{solid}". Consider '
             'checking the location of parentheses.'.format(
                 source=current_context().source,
