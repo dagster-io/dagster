@@ -266,9 +266,9 @@ def _unpack_value(val, whitelist_map):
     if isinstance(val, dict) and val.get('__enum__'):
         name, member = val['__enum__'].split('.')
         return getattr(whitelist_map['types']['enum'][name], member)
-    if isinstance(val, dict) and val.get('__set__'):
+    if isinstance(val, dict) and val.get('__set__') is not None:
         return set([_unpack_value(item, whitelist_map) for item in val['__set__']])
-    if isinstance(val, dict) and val.get('__frozenset__'):
+    if isinstance(val, dict) and val.get('__frozenset__') is not None:
         return frozenset([_unpack_value(item, whitelist_map) for item in val['__frozenset__']])
     if isinstance(val, dict):
         return {key: _unpack_value(value, whitelist_map) for key, value in val.items()}

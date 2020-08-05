@@ -17,6 +17,7 @@ from dagster.serdes import (
     default_to_storage_value,
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
+    serialize_value,
 )
 from dagster.utils import compose
 
@@ -36,6 +37,11 @@ def test_deserialize_json_to_dagster_namedtuple_non_namedtuple():
 def test_deserialize_json_to_dagster_namedtuple_invalid_types(bad_obj):
     with pytest.raises(ParameterCheckError):
         deserialize_json_to_dagster_namedtuple(bad_obj)
+
+
+def test_deserialize_empty_set():
+    assert set() == deserialize_value(serialize_value(set()))
+    assert frozenset() == deserialize_value(serialize_value(frozenset()))
 
 
 def _initial_whitelist_map():
