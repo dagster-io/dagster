@@ -11,7 +11,9 @@ def execute_command_in_subprocess(parts):
         subprocess.check_output(parts, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         raise DagsterIPCProtocolError(
-            "Error when executing API command {cmd}: {output}".format(cmd=e.cmd, output=e.output)
+            "Error when executing API command {cmd}: {output}".format(
+                cmd=e.cmd, output=e.output.decode('utf-8')
+            )
         )
 
 
