@@ -515,7 +515,7 @@ def do_execute_command(
 @click.option(
     "--config-json",
     type=click.STRING,
-    help="JSON string of run config to use for this pipeline run. Cannot be used with -c / --config",
+    help="JSON string of run config to use for this pipeline run. Cannot be used with -c / --config.",
 )
 @click.option(
     "--preset",
@@ -558,7 +558,7 @@ def execute_launch_command(instance, kwargs):
             repo_location, kwargs.get("repository")
         )
         external_pipeline = get_external_pipeline_from_external_repo(
-            external_repo, kwargs.get("pipeline"),
+            external_repo, kwargs.get("pipeline")
         )
 
         log_external_repo_stats(

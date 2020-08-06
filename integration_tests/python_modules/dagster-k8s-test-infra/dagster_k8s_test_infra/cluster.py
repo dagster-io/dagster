@@ -178,6 +178,31 @@ def dagster_instance_with_k8s_scheduler(
 
 
 @pytest.fixture(scope='session')
+def dagster_instance_for_user_deployments(
+    helm_namespace_for_user_deployments, run_launcher
+):  # pylint: disable=redefined-outer-name
+    tempdir = DagsterInstance.temp_storage()
+
+    with local_port_forward_postgres(
+        namespace=helm_namespace_for_user_deployments
+    ) as local_forward_port:
+        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+            local_forward_port=local_forward_port
+        )
+        print('Local Postgres forwarding URL: ', postgres_url)
+
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(tempdir),
+            run_storage=PostgresRunStorage(postgres_url),
+            event_storage=PostgresEventLogStorage(postgres_url),
+            compute_log_manager=NoOpComputeLogManager(),
+            run_launcher=run_launcher,
+        )
+        yield instance
+
+
+@pytest.fixture(scope='session')
 def dagster_instance(helm_namespace, run_launcher):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 

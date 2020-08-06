@@ -14,6 +14,7 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -156,7 +157,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
+        check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
