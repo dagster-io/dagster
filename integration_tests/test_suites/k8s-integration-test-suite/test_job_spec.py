@@ -27,7 +27,7 @@ api_version: batch/v1
 kind: Job
 metadata:
   labels:
-    app.kubernetes.io/component: runmaster
+    app.kubernetes.io/component: run_coordinator
     app.kubernetes.io/instance: dagster
     app.kubernetes.io/name: dagster
     app.kubernetes.io/part-of: dagster
@@ -38,7 +38,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: runmaster
+        app.kubernetes.io/component: run_coordinator
         app.kubernetes.io/instance: dagster
         app.kubernetes.io/name: dagster
         app.kubernetes.io/part-of: dagster
@@ -102,7 +102,7 @@ def test_valid_job_format(run_launcher):
         args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
         job_name=job_name,
         pod_name=pod_name,
-        component='runmaster',
+        component='run_coordinator',
     )
 
     assert (
@@ -144,7 +144,7 @@ def test_valid_job_format_with_resources(run_launcher):
         job_name=job_name,
         resources=resources,
         pod_name=pod_name,
-        component='runmaster',
+        component='run_coordinator',
     )
 
     assert (

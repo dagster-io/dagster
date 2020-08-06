@@ -32,8 +32,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     With this run launcher, execution is delegated to:
 
-        1. A run master Kubernetes Job, which traverses the pipeline run execution plan and submits
-           steps to Celery queues for execution;
+        1. A run coordinator Kubernetes Job, which traverses the pipeline run execution plan and
+           submits steps to Celery queues for execution;
         2. The step executions which are submitted to Celery queues are picked up by Celery workers,
            and each step execution spawns a step execution Kubernetes Job. See the implementation
            defined in :py:func:`dagster_celery_k8.executor.create_k8s_job_task`.
@@ -233,7 +233,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             args=['api', 'execute_run_with_structured_logs', input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component='runmaster',
+            component='run_coordinator',
             resources=resources,
             env_vars=env_vars,
         )
@@ -244,7 +244,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         api.create_namespaced_job(body=job, namespace=job_namespace)
 
         self._instance.report_engine_event(
-            'Kubernetes runmaster job launched',
+            'Kubernetes run_coordinator job launched',
             run,
             EngineEventData(
                 [

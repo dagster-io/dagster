@@ -283,13 +283,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             args=['api', 'execute_run_with_structured_logs', input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component='runmaster',
+            component='run_coordinator',
             resources=resources,
         )
 
         self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
-            'Kubernetes runmaster job launched',
+            'Kubernetes run_coordinator job launched',
             run,
             EngineEventData(
                 [
