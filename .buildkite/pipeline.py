@@ -487,11 +487,9 @@ def pipenv_smoke_tests():
         return []
 
     smoke_test_steps = [
-        "mkdir /tmp/pipenv_smoke_tests",
-        "pushd /tmp/pipenv_smoke_tests",
+        "pushd /workdir/python_modules",
         "pip install pipenv",
-        "pipenv install -e /workdir/python_modules/dagster",
-        "pipenv install -e /workdir/python_modules/dagit",
+        "pipenv install",
     ]
 
     # See: https://github.com/dagster-io/dagster/issues/2079
@@ -668,6 +666,7 @@ if __name__ == "__main__":
 
     steps += extra_library_tests()
 
+    # https://github.com/dagster-io/dagster/issues/2785
     steps += pipenv_smoke_tests()
     steps += version_equality_checks()
     steps += next_docs_build_tests()

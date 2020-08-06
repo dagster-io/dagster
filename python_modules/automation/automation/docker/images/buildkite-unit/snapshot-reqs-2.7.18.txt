@@ -87,7 +87,7 @@ pathtools==0.1.2
 pendulum==1.4.4
 prometheus-client==0.8.0
 promise==2.3
-protobuf==3.12.2
+protobuf==3.12.4
 psycopg2-binary==2.8.5
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
