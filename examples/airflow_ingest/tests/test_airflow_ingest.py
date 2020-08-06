@@ -1,6 +1,6 @@
-from dagster import execute_pipeline
+from airflow_ingest.repo import airflow_complex_dag, airflow_simple_dag
 
-from ..repo import airflow_complex_dag, airflow_simple_dag
+from dagster import execute_pipeline
 
 
 def test_airflow_simple_dag():
