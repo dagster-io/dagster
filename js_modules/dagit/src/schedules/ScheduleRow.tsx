@@ -48,6 +48,7 @@ import {
 import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
 import { assertUnreachable } from "../Util";
 import { ReconcileButton } from "./ReconcileButton";
+import { useConfirmation, ConfirmationOptions } from "../CustomConfirmationProvider";
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -454,6 +455,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setRepo] = useCurrentRepositoryState(options);
   const history = useHistory();
+  const confirm = useConfirmation();
 
   const {
     status,
@@ -478,6 +480,45 @@ export const ScheduleStateRow: React.FunctionComponent<{
     history.push(`/schedules/${scheduleName}`);
   };
 
+  const switchScheduleStatus = async (
+    status: ScheduleStatus,
+    confirm: (options: ConfirmationOptions) => Promise<void>,
+    dagsterRepoOption?: DagsterRepoOption
+  ) => {
+    if (!dagsterRepoOption) {
+      if (status === ScheduleStatus.RUNNING) {
+        // If we don't have the dagster repo in context, then we can only switch the schedule off.
+        // Before doing so, we alert the user that we can't switch the schedule back on
+        await confirm({
+          title: "Are you sure you want to stop this schedule?",
+          description:
+            "The schedule definition for this schedule is not available." +
+            "If you turn off this schedule, you will not be able to turn it back on from " +
+            "this currently loaded workspace."
+        });
+        stopSchedule({
+          variables: { scheduleOriginId }
+        });
+      }
+      return;
+    }
+
+    if (status === ScheduleStatus.RUNNING) {
+      stopSchedule({
+        variables: { scheduleOriginId }
+      });
+    } else {
+      const scheduleSelector = scheduleSelectorWithRepository(
+        scheduleName,
+        repositorySelectorFromDagsterRepoOption(dagsterRepoOption)
+      );
+
+      startSchedule({
+        variables: { scheduleSelector }
+      });
+    }
+  };
+
   return (
     <RowContainer key={scheduleName}>
       {showStatus && (
@@ -485,29 +526,14 @@ export const ScheduleStateRow: React.FunctionComponent<{
           <Switch
             checked={status === ScheduleStatus.RUNNING}
             large={true}
-            disabled={!dagsterRepoOption || toggleOffInFlight || toggleOnInFlight}
+            disabled={
+              (!dagsterRepoOption && status !== ScheduleStatus.RUNNING) ||
+              toggleOffInFlight ||
+              toggleOnInFlight
+            }
             innerLabelChecked="on"
             innerLabel="off"
-            onChange={() => {
-              if (!dagsterRepoOption) {
-                return;
-              }
-
-              const scheduleSelector = scheduleSelectorWithRepository(
-                scheduleName,
-                repositorySelectorFromDagsterRepoOption(dagsterRepoOption)
-              );
-
-              if (status === ScheduleStatus.RUNNING) {
-                stopSchedule({
-                  variables: { scheduleOriginId }
-                });
-              } else {
-                startSchedule({
-                  variables: { scheduleSelector }
-                });
-              }
-            }}
+            onChange={() => switchScheduleStatus(status, confirm, dagsterRepoOption)}
           />
         </RowColumn>
       )}

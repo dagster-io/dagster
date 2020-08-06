@@ -7,7 +7,8 @@ import {
   Card,
   Colors,
   Tooltip,
-  PopoverInteractionKind
+  PopoverInteractionKind,
+  NonIdealState
 } from "@blueprintjs/core";
 import { Header, Legend, LegendColumn, ScrollContainer } from "../ListComponents";
 import { useQuery } from "react-apollo";
@@ -28,6 +29,7 @@ import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { ReconcileButton } from "./ReconcileButton";
 import { SchedulerInfo } from "./SchedulerInfo";
 import { SCHEDULES_ROOT_QUERY } from "./ScheduleUtils";
+import { IconNames } from "@blueprintjs/icons";
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
@@ -105,12 +107,30 @@ export const SchedulesRoot: React.FunctionComponent = () => {
           const scheduleDefinitionsWithState = scheduleDefinitions.filter(s => s.scheduleState);
           const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(s => !s.scheduleState);
 
-          scheduleDefinitionsSection = (
-            <ScheduleTable
-              schedules={scheduleDefinitionsWithState}
-              repository={repositoryOrError}
-            />
-          );
+          if (!scheduleDefinitions.length) {
+            scheduleDefinitionsSection = (
+              <NonIdealState
+                icon={IconNames.ERROR}
+                title="No Schedules Found"
+                description={
+                  <p>
+                    This repository does not have any schedules defined. Visit the{" "}
+                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                      scheduler documentation
+                    </a>{" "}
+                    for more information about scheduling pipeline runs in Dagster. .
+                  </p>
+                }
+              />
+            );
+          } else {
+            scheduleDefinitionsSection = (
+              <ScheduleTable
+                schedules={scheduleDefinitionsWithState}
+                repository={repositoryOrError}
+              />
+            );
+          }
 
           if (scheduleStatesWithoutDefinitionsOrError.__typename === "ScheduleStates") {
             const scheduleStatesWithoutDefinitions =

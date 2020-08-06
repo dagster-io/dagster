@@ -29,6 +29,7 @@ import {
 } from "./DagsterRepositoryContext";
 import { CustomTooltipProvider } from "./CustomTooltipProvider";
 import { APP_PATH_PREFIX } from "./DomUtils";
+import { CustomConfirmationProvider } from "./CustomConfirmationProvider";
 
 const AppRoutes = () => (
   <Switch>
@@ -100,11 +101,13 @@ export const App: React.FunctionComponent = () => {
             centered={true}
           />
         ) : repo ? (
-          <DagsterRepositoryContext.Provider value={repo}>
-            <AppRoutes />
-            <CustomTooltipProvider />
-            <CustomAlertProvider />
-          </DagsterRepositoryContext.Provider>
+          <CustomConfirmationProvider>
+            <DagsterRepositoryContext.Provider value={repo}>
+              <AppRoutes />
+              <CustomTooltipProvider />
+              <CustomAlertProvider />
+            </DagsterRepositoryContext.Provider>
+          </CustomConfirmationProvider>
         ) : (
           <NonIdealState icon={<Spinner size={24} />} />
         )}
