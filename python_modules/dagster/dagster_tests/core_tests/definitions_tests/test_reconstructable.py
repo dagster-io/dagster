@@ -132,9 +132,15 @@ def test_inner_decorator_3():
 
 
 def test_reconstructable_cli_args():
-    recon_file = ReconstructableRepository.for_file('foo_file', 'bar_function')
-    assert recon_file.get_cli_args() == '-f {foo_file} -a bar_function'.format(
+    recon_file = ReconstructableRepository.for_file(
+        'foo_file', 'bar_function', '/path/to/working_dir'
+    )
+    assert recon_file.get_cli_args() == '-f {foo_file} -a bar_function -d /path/to/working_dir'.format(
         foo_file=os.path.abspath(os.path.expanduser('foo_file'))
+    )
+    recon_file = ReconstructableRepository.for_file('foo_file', 'bar_function')
+    assert recon_file.get_cli_args() == '-f {foo_file} -a bar_function -d {working_dir}'.format(
+        foo_file=os.path.abspath(os.path.expanduser('foo_file')), working_dir=os.getcwd()
     )
     recon_module = ReconstructableRepository.for_module('foo_module', 'bar_function')
     assert recon_module.get_cli_args() == '-m foo_module -a bar_function'

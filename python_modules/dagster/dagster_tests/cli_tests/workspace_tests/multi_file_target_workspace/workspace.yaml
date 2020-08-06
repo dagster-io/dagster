@@ -1,0 +1,9 @@
+load_from:
+  - python_file:
+      relative_path: example_one/pipelines.py
+      working_directory: example_one
+      location_name: one
+  - python_file:
+      relative_path: example_two/pipelines.py
+      working_directory: example_two
+      location_name: two

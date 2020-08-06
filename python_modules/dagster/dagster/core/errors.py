@@ -439,3 +439,7 @@ class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
 
 class HookExecutionError(DagsterUserCodeExecutionError):
     ''' Error raised during the execution of a user-defined hook. '''
+
+
+class DagsterImportError(DagsterError):
+    ''' Import error raised while importing user-code. '''

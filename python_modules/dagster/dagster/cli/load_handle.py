@@ -52,7 +52,7 @@ def recon_repo_for_cli_args(kwargs):
         return ReconstructableRepository.for_file(
             os.path.abspath(kwargs['python_file']),
             kwargs['fn_name'],
-            kwargs.get('working_directory'),
+            kwargs.get('working_directory') if kwargs.get('working_directory') else os.getcwd(),
         )
     else:
         _cli_load_invariant(False)

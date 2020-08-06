@@ -214,7 +214,7 @@ def _get_python_file_config_data(python_file_config, yaml_path):
             python_file_config.get('location_name'),
             rebase_file(python_file_config.get('working_directory'), yaml_path)
             if python_file_config.get('working_directory')
-            else None,
+            else rebase_file(os.path.dirname(yaml_path), yaml_path),
         )
     )
 

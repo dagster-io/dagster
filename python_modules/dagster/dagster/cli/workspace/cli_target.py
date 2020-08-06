@@ -117,10 +117,13 @@ def created_workspace_load_target(kwargs):
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
         _check_cli_arguments_none(kwargs, 'workspace', 'module_name', 'host', 'port', 'socket')
+        working_directory = (
+            kwargs.get('working_directory') if kwargs.get('working_directory') else os.getcwd()
+        )
         return PythonFileTarget(
             python_file=kwargs.get('python_file'),
             attribute=kwargs.get('attribute'),
-            working_directory=kwargs.get('working_directory'),
+            working_directory=working_directory,
         )
     if kwargs.get('module_name'):
         _check_cli_arguments_none(

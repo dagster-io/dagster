@@ -7,7 +7,6 @@ from dagster import check
 from dagster.core.code_pointer import (
     CodePointer,
     FileCodePointer,
-    FileInDirectoryCodePointer,
     ModuleCodePointer,
     PackageCodePointer,
 )
@@ -153,7 +152,7 @@ class DauphinCodePointer(dauphin.ObjectType):
 
     def resolve_metadata(self, graphene_info):
         metadata = {}
-        if isinstance(self._code_pointer, (FileCodePointer, FileInDirectoryCodePointer)):
+        if isinstance(self._code_pointer, FileCodePointer):
             metadata['python_file'] = self._code_pointer.python_file
             metadata['attribute'] = self._code_pointer.fn_name
         if isinstance(self._code_pointer, ModuleCodePointer):

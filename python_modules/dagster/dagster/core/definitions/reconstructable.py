@@ -6,7 +6,6 @@ from dagster import check, seven
 from dagster.core.code_pointer import (
     CodePointer,
     FileCodePointer,
-    FileInDirectoryCodePointer,
     ModuleCodePointer,
     get_python_file_from_previous_stack_frame,
 )
@@ -45,9 +44,9 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 
     @classmethod
     def for_file(cls, file, fn_name, working_directory=None):
-        if working_directory:
-            return cls(FileInDirectoryCodePointer(file, fn_name, working_directory))
-        return cls(FileCodePointer(file, fn_name))
+        if not working_directory:
+            working_directory = os.getcwd()
+        return cls(FileCodePointer(file, fn_name, working_directory))
 
     @classmethod
     def for_module(cls, module, fn_name):
@@ -156,7 +155,9 @@ class ReconstructablePipeline(
 
     @staticmethod
     def for_file(python_file, fn_name):
-        return bootstrap_standalone_recon_pipeline(FileCodePointer(python_file, fn_name))
+        return bootstrap_standalone_recon_pipeline(
+            FileCodePointer(python_file, fn_name, os.getcwd())
+        )
 
     @staticmethod
     def for_module(module, fn_name):
@@ -241,7 +242,9 @@ def reconstructable(target):
                 python_file
             )
         )
-    pointer = FileCodePointer(python_file=python_file, fn_name=target.__name__,)
+    pointer = FileCodePointer(
+        python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
+    )
 
     return bootstrap_standalone_recon_pipeline(pointer)
 

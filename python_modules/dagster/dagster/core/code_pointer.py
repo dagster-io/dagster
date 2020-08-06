@@ -9,7 +9,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import import_module_from_path
 from dagster.utils import alter_sys_path, load_yaml_from_path
@@ -41,11 +41,9 @@ class CodePointer(six.with_metaclass(ABCMeta)):
         check.str_param(python_file, 'python_file')
         check.str_param(definition, 'definition')
         check.opt_str_param(working_directory, 'working_directory')
-        if working_directory:
-            return FileInDirectoryCodePointer(
-                python_file=python_file, fn_name=definition, working_directory=working_directory
-            )
-        return FileCodePointer(python_file=python_file, fn_name=definition)
+        return FileCodePointer(
+            python_file=python_file, fn_name=definition, working_directory=working_directory
+        )
 
     @staticmethod
     def from_legacy_repository_yaml(file_path):
@@ -84,8 +82,44 @@ def load_python_file(python_file, working_directory):
     module_name = os.path.splitext(os.path.basename(python_file))[0]
     cwd = sys.path[0]
     if working_directory:
-        with alter_sys_path(to_add=[working_directory], to_remove=[cwd]):
-            return import_module_from_path(module_name, python_file)
+        try:
+            with alter_sys_path(to_add=[working_directory], to_remove=[cwd]):
+                return import_module_from_path(module_name, python_file)
+        except ImportError as ie:
+            if ie.msg == 'attempted relative import with no known parent package':
+                six.raise_from(
+                    DagsterImportError(
+                        (
+                            'Encountered ImportError: `{msg}` while importing module {module} from '
+                            'file {python_file}. Consider using the module-based options `-m` for '
+                            'CLI-based targets or the `python_package` workspace.yaml target.'
+                        ).format(
+                            msg=ie.msg,
+                            module=module_name,
+                            python_file=os.path.abspath(os.path.expanduser(python_file)),
+                        )
+                    ),
+                    ie,
+                )
+
+            six.raise_from(
+                DagsterImportError(
+                    (
+                        'Encountered ImportError: `{msg}` while importing module {module} from '
+                        'file {python_file}. Local modules were resolved using the working '
+                        'directory `{working_directory}`. If another working directory should be '
+                        'used, please explicitly specify the appropriate path using the `-d` or '
+                        '`--working-directory` for CLI based targets or the `working_directory` '
+                        'configuration option for `python_file`-based workspace.yaml targets. '
+                    ).format(
+                        msg=ie.msg,
+                        module=module_name,
+                        python_file=os.path.abspath(os.path.expanduser(python_file)),
+                        working_directory=os.path.abspath(os.path.expanduser(working_directory)),
+                    )
+                ),
+                ie,
+            )
 
     error = None
     sys_modules = {k: v for k, v in sys.modules.items()}
@@ -110,7 +144,7 @@ def load_python_file(python_file, working_directory):
     try:
         module = import_module_from_path(module_name, python_file)
         # if here, we were able to resolve the module with the working directory on the
-        # path, but should error because we may not always invoke from the same directory
+        # path, but should warn because we may not always invoke from the same directory
         # (e.g. from cron)
         warnings.warn(
             (
@@ -122,7 +156,28 @@ def load_python_file(python_file, working_directory):
             ).format(module=error.name if hasattr(error, 'name') else module_name)
         )
         return module
+    except RuntimeError:
+        # We might be here because numpy throws run time errors at import time when being imported
+        # multiple times... we should also use the original import error as the root
+        six.raise_from(
+            DagsterImportError(
+                (
+                    'Encountered ImportError: `{msg}` while importing module {module} from file '
+                    '{python_file}. If relying on the working directory to resolve modules, please '
+                    'explicitly specify the appropriate path using the `-d` or '
+                    '`--working-directory` for CLI based targets or the `working_directory` '
+                    'configuration option for `python_file`-based workspace.yaml targets. '
+                    + error.msg
+                ).format(
+                    msg=error.msg,
+                    module=module_name,
+                    python_file=os.path.abspath(os.path.expanduser(python_file)),
+                )
+            ),
+            error,
+        )
     except ImportError:
+        # raise the original import error
         raise error
 
 
@@ -168,6 +223,10 @@ def load_python_module(module_name, warn_only=False, remove_from_path_fn=None):
                     ),
                     error,
                 )
+        except RuntimeError:
+            # We might be here because numpy throws run time errors at import time when being
+            # imported multiple times, just raise the original import error
+            raise error
         except ImportError as ie:
             raise error
 
@@ -175,54 +234,16 @@ def load_python_module(module_name, warn_only=False, remove_from_path_fn=None):
 
 
 @whitelist_for_serdes
-class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), CodePointer):
-    def __new__(cls, python_file, fn_name):
-        return super(FileCodePointer, cls).__new__(
-            cls, check.str_param(python_file, 'python_file'), check.str_param(fn_name, 'fn_name'),
-        )
-
-    def load_target(self):
-        module = load_python_file(self.python_file, None)
-        if not hasattr(module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                '{name} not found at module scope in file {file}.'.format(
-                    name=self.fn_name, file=self.python_file
-                )
-            )
-
-        return getattr(module, self.fn_name)
-
-    def describe(self):
-        return '{self.python_file}::{self.fn_name}'.format(self=self)
-
-    def get_cli_args(self):
-        return '-f {python_file} -a {fn_name}'.format(
-            python_file=os.path.abspath(os.path.expanduser(self.python_file)), fn_name=self.fn_name
-        )
-
-
-@whitelist_for_serdes
-class FileInDirectoryCodePointer(
-    namedtuple('_FileInDirectoryCodePointer', 'python_file fn_name working_directory'), CodePointer
+class FileCodePointer(
+    namedtuple('_FileCodePointer', 'python_file fn_name working_directory'), CodePointer
 ):
-    '''
-    Same as FileCodePointer, but with an additional field `working_directory` to help resolve
-    modules that are resolved from the python invocation directory.  Required so other processes
-    that need to resolve modules (e.g. cron scheduler) can do so.  This could be merged with the
-    `FileCodePointer` with `working_directory` as a None-able field, but not without changing
-    the origin_id for schedules.  This would require purging schedule storage to resolve.
-
-    Should strongly consider merging when we need to do a storage migration.
-
-    https://github.com/dagster-io/dagster/issues/2673
-    '''
-
-    def __new__(cls, python_file, fn_name, working_directory):
-        return super(FileInDirectoryCodePointer, cls).__new__(
+    def __new__(cls, python_file, fn_name, working_directory=None):
+        check.opt_str_param(working_directory, 'working_directory')
+        return super(FileCodePointer, cls).__new__(
             cls,
             check.str_param(python_file, 'python_file'),
             check.str_param(fn_name, 'fn_name'),
-            check.str_param(working_directory, 'working_directory'),
+            working_directory,
         )
 
     def load_target(self):
@@ -237,16 +258,25 @@ class FileInDirectoryCodePointer(
         return getattr(module, self.fn_name)
 
     def describe(self):
-        return '{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]'.format(
-            self=self
-        )
+        if self.working_directory:
+            return '{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]'.format(
+                self=self
+            )
+        else:
+            return '{self.python_file}::{self.fn_name}'.format(self=self)
 
     def get_cli_args(self):
-        return '-f {python_file} -a {fn_name}  -d {directory}'.format(
-            python_file=os.path.abspath(os.path.expanduser(self.python_file)),
-            fn_name=self.fn_name,
-            directory=self.working_directory,
-        )
+        if self.working_directory:
+            return '-f {python_file} -a {fn_name} -d {directory}'.format(
+                python_file=os.path.abspath(os.path.expanduser(self.python_file)),
+                fn_name=self.fn_name,
+                directory=os.path.abspath(os.path.expanduser(self.working_directory)),
+            )
+        else:
+            return '-f {python_file} -a {fn_name}'.format(
+                python_file=os.path.abspath(os.path.expanduser(self.python_file)),
+                fn_name=self.fn_name,
+            )
 
 
 @whitelist_for_serdes

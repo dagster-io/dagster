@@ -245,19 +245,31 @@ def test_local_directory_module():
     assert result.exit_code != 0
 
 
-def test_local_directory_file():
-    assert successfully_load_repository_via_cli(
+@pytest.mark.parametrize(
+    'cli_args',
+    (
+        # load workspace with explicit working directory
         [
             '-w',
             file_relative_path(
                 __file__, 'hello_world_file_in_directory/working_directory_workspace.yaml'
             ),
-        ]
-    )
-
-    bad_args = [
-        '-w',
-        file_relative_path(__file__, 'hello_world_file_in_directory/broken_workspace.yaml'),
-    ]
-    result, _ = load_repository_via_cli_runner(bad_args)
-    assert result.exit_code != 0
+        ],
+        # load workspace with default working directory
+        [
+            '-w',
+            file_relative_path(
+                __file__, 'hello_world_file_in_directory/default_working_dir_workspace.yaml'
+            ),
+        ],
+        # load workspace with multiple working directory file targets
+        [
+            '-w',
+            file_relative_path(__file__, 'multi_file_target_workspace/workspace.yaml'),
+            '-l',
+            'one',
+        ],
+    ),
+)
+def test_local_directory_file(cli_args):
+    assert successfully_load_repository_via_cli(cli_args)

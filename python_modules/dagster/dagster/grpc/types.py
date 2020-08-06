@@ -5,7 +5,6 @@ from dagster import check
 from dagster.core.code_pointer import (
     CodePointer,
     FileCodePointer,
-    FileInDirectoryCodePointer,
     ModuleCodePointer,
     PackageCodePointer,
 )
@@ -52,12 +51,6 @@ class LoadableTargetOrigin(
         executable_path = repository_python_origin.executable_path
         code_pointer = repository_python_origin.code_pointer
         if isinstance(code_pointer, FileCodePointer):
-            return LoadableTargetOrigin(
-                executable_path=executable_path,
-                python_file=code_pointer.python_file,
-                attribute=code_pointer.fn_name,
-            )
-        elif isinstance(code_pointer, FileInDirectoryCodePointer):
             return LoadableTargetOrigin(
                 executable_path=executable_path,
                 python_file=code_pointer.python_file,
