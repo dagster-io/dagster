@@ -7,4 +7,4 @@ from .version import __version__
 
 check_dagster_package_version('dagster-k8s', __version__)
 
-__all__ = ['K8sRunLauncher']
+__all__ = ['K8sRunLauncher', 'K8sScheduler']

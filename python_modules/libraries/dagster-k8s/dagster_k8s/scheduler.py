@@ -11,6 +11,12 @@ from dagster.utils import merge_dicts
 
 
 class K8sScheduler(Scheduler, ConfigurableClass):
+    '''Scheduler implementation on top of Kubernetes CronJob.
+
+    Enable this scheduler by adding it to your dagster.yaml, or by configuring the scheduler
+    section of the Helm chart
+    https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-k8s/helm'''
+
     def __init__(
         self,
         dagster_home,

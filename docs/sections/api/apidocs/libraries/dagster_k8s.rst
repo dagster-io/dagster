@@ -7,6 +7,16 @@ This library contains utilities for running Dagster with Kubernetes. This includ
 allowing Dagit to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
 for a Dagster deployment on a Kubernetes cluster.
 
+APIs
+----
+.. currentmodule:: dagster_k8s
+
+.. autoclass:: K8sRunLauncher
+
+.. currentmodule:: dagster_k8s
+
+.. autoclass:: K8sScheduler
+
 
 Python API
 ^^^^^^^^^^
@@ -238,10 +248,3 @@ Then, to connect to your database from outside the cluster execute the following
 
    kubectl port-forward --namespace default svc/dagredis-master 6379:6379
    redis-cli -h 127.0.0.1 -p 6379
-
-
-APIs
-----
-.. currentmodule:: dagster_k8s
-
-.. autoclass:: K8sRunLauncher
