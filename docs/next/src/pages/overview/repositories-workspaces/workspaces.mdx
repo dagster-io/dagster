@@ -95,7 +95,9 @@ load_from:
   - python_file: path/to/team_that_refuses_to_install_packages/repo.py
 ```
 
-### Loading from an external environment
+## Loading from an external environment
+
+### Python Environment
 
 It is useful for repositories to have independent environments. A data engineering
 team running Spark can have dramatically different dependencies than an ML team
@@ -119,3 +121,52 @@ load_from:
 
 Note that not only could these be distinct sets of installed dependencies, but they
 could also be completely different python versions.
+
+### GRPC Server
+
+Using the built in Dagster GRPC Server, it is possible to interact with repositories that are
+completely remote. This allows for complete separation between tools like the Dagster CLI and Dagit
+and your repository code.
+
+The Dagster GRPC server needs to have access to your code. This server is responsible for serving
+information about your repositories over GRPC. To initialize the server, you need to run
+the `dagster api grpc` command and pass it a target.
+
+The target can be either either a python file or python module. The server will automatically find
+and load all repositories within the specified target. If you want to manually specify where to find
+a single repository within a target, you can use the `attribute` flag.
+
+You also need to specify a host and either a post or socket to run the server on.
+
+```
+# Load GRPC Server using python file:
+dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port 4266
+dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port /path/to/socket
+
+# Load GRPC Server using python module:
+dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
+dagster api grpc --module-name my_module_name --host 0.0.0.0 --socket /path/to/socket
+
+# Specify an attribute within the target to load a specific repository:
+dagster api grpc --python-file /path/to/file.py --attribute my_repository --host 0.0.0.0 --port 4266
+dagster api grpc --module-name my_module_name --attribute my_repository --host 0.0.0.0 --port 4266
+```
+
+Then, in your `workspace.yaml`, you can configure a new GRPC server repository location to load from:
+
+```yaml caption=workspace.yaml
+load_from:
+  - grpc_server:
+      host: localhost
+      port: 4266
+      location_name: 'my_grpc_server'
+```
+
+#### Executing runs against a GRPC Server:
+
+If you are using the <PyObject module="dagster.core.launcher" object="DefaultRunLauncher"/>, which is configured by
+default on your <PyObject module="dagster.core.instance" object="DagsterInstance"/>, the run launcher will launch
+runs against your hosted GRPC server.
+
+If you have implemented a custom run launcher and would like to host your code using the Dagster
+GRPC server, please reach out to us.
