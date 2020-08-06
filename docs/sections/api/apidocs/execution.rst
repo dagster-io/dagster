@@ -209,3 +209,6 @@ Contexts
 
 .. autoclass:: TypeCheckContext
   :members:
+
+.. autoclass:: HookContext
+   :members:

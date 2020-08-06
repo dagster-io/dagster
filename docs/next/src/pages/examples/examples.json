@@ -35,6 +35,11 @@
         "description": "Create a pipeline with a fan-in dependency"
     },
     {
+        "name": "hooks",
+        "title": "Hooks",
+        "description": "Create a pipeline with hooks"
+    },
+    {
         "name": "materializations",
         "title": "Asset Materialization",
         "description": "Record that a solid materialized an asset"
