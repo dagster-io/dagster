@@ -122,4 +122,8 @@ def monthly_trip_ingest_schedule(date):
 
 
 def define_schedules():
-    return [daily_weather_ingest_schedule, daily_weather_schedule, monthly_trip_ingest_schedule]
+    return {
+        "daily_weather_ingest_schedule": lambda: daily_weather_ingest_schedule,
+        "daily_weather_schedule": lambda: daily_weather_schedule,
+        "monthly_trip_ingest_schedule": lambda: monthly_trip_ingest_schedule,
+    }
