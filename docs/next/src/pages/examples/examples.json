@@ -1,5 +1,10 @@
 [
     {
+        "name": "airline_demo",
+        "title": "Airline Demo",
+        "description": "A comprehensive demo to showcase Dagster and"
+    },
+    {
         "name": "airflow_ingest",
         "title": "Airflow Ingest",
         "description": "Create a pipeline from an Airflow DAG"
