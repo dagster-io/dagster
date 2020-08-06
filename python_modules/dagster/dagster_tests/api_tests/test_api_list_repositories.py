@@ -277,6 +277,7 @@ def test_sync_list_python_module_attribute_grpc():
         repository_code_pointer_dict['hello_world_repository'].fn_name == 'hello_world_repository'
     )
 
+
 @pytest.mark.skipif(seven.IS_WINDOWS, reason='Depends on Docker, so skip running in Windows')
 def test_sync_list_container_grpc(docker_grpc_client):
     response = sync_list_repositories_grpc(docker_grpc_client)
