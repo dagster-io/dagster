@@ -383,8 +383,12 @@
         "path": "/deploying/local"
       },
       {
-        "name": "Deploying on Kubernetes",
-        "path": "/deploying/k8s"
+        "name": "Deploying on Kubernetes Pt 1",
+        "path": "/deploying/k8s_part1"
+      },
+      {
+        "name": "Deploying on Kubernetes Pt 2",
+        "path": "/deploying/k8s_part2"
       },
       {
         "name": "Using AWS for storage",
