@@ -12,6 +12,31 @@ from .dagster_docker import DagsterDockerImage
 
 
 @contextlib.contextmanager
+def copy_directories(paths, cwd):
+    check.invariant(os.path.exists(cwd), 'Image directory does not exist')
+    build_cache_dir = os.path.join(cwd, 'build_cache')
+
+    paths_to_copy = []
+    for path in paths:
+        src_path = os.path.join(git_repo_root(), path)
+        check.invariant(os.path.exists(src_path), 'Path for copying to image build does not exist')
+
+        _, dest_name = os.path.split(path)
+        dest_path = os.path.join(build_cache_dir, dest_name)
+
+        paths_to_copy.append((src_path, dest_path))
+
+    try:
+        for src_path, dest_path in paths_to_copy:
+            print('Syncing {} to build dir {}...'.format(src_path, dest_path))
+            shutil.copytree(src_path, dest_path)
+        yield
+
+    finally:
+        shutil.rmtree(build_cache_dir)
+
+
+@contextlib.contextmanager
 def buildkite_integration_cm(cwd):
     '''For the buildkite integration base image, we first copy over scala_modules into the image
     build directory.
@@ -38,20 +63,31 @@ def buildkite_integration_cm(cwd):
 
 @contextlib.contextmanager
 def k8s_example_cm(cwd):
-    example_project_dir = os.path.join(git_repo_root(), 'examples', 'deploy_k8s', 'example_project')
-    try:
-        print('Syncing {} to build dir {}...'.format(example_project_dir, cwd))
-        shutil.copytree(example_project_dir, os.path.join(cwd, 'example_project'))
+    with copy_directories(['examples/deploy_k8s/example_project'], cwd):
         yield
 
-    finally:
-        shutil.rmtree(os.path.join(cwd, 'example_project'))
+
+@contextlib.contextmanager
+def k8s_celery_worker_editable(cwd):
+    with copy_directories(
+        [
+            'python_modules/dagster',
+            'python_modules/libraries/dagster-celery',
+            'python_modules/libraries/dagster-cron',
+            'python_modules/libraries/dagster-k8s',
+            'python_modules/libraries/dagster-celery-k8s',
+            'python_modules/libraries/dagster-postgres',
+        ],
+        cwd,
+    ):
+        yield
 
 
 # Some images have custom build context manager functions, listed here
 CUSTOM_BUILD_CONTEXTMANAGERS = {
     'buildkite-integration-base': buildkite_integration_cm,
     'k8s-example': k8s_example_cm,
+    'k8s-celery-worker-editable': k8s_celery_worker_editable,
 }
 
 
