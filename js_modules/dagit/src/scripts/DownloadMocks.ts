@@ -24,7 +24,9 @@ it(`builds mocks`, () => {
       .replace(/[\n\r]/g, "")
       .replace(/[ ][ ]+/g, " ");
     const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
-    const repo = `${dagsterRoot}/${mock.repo || "examples/airline_demo"}/repository.yaml`;
+    const repo = `${dagsterRoot}/${mock.repo || "examples/airline_demo"}/${
+      mock.workspace ? "workspace" : "repository"
+    }.yaml`;
 
     execSync(`dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`);
 
