@@ -4,17 +4,22 @@
 
 **Breaking Changes**
 
-- The `dagit` key is no longer part of the instance configuration schema and must be removed from
-`dagster.yaml` files before they can be used.
+- The `dagit` key is no longer part of the instance configuration schema and must be removed from `dagster.yaml` files before they can be used.
 - `-d` can no longer be used as a command-line argument to specify a mode. Use `--mode` instead.
 - Use `--preset` instead of `--preset-name` to specify a preset to the `pipeline launch` command.
+- We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`, `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`, and `ResourceDefinition` APIs, which we deprecated in 0.8.0. Use `config_schema` instead.
 
 **New**
+- Python 3.8 is now fully supported.
 - `-d` or `--working-directory` can be used to specify a working directory in any command that
 takes in a `-f` or `--python_file` argument.
 - Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
   supported API for custom pandas data frame type creation.
 - Removed gevent dependency from dagster
+- New `configured` API for predefining configuration for various definitions: https://docs.dagster.io/overview/configuration/#configured
+- Added hooks to enable success and failure handling policies on pipelines. This enables users to set up policies on all solids within a pipeline or on a per solid basis. Example usage can be found [here](https://docs.dagster.io/examples/hooks)
+- New instance level view of Scheduler and running schedules
+- dagster-graphql is now only required in dagit images. 
 
 ## 0.8.11
 
