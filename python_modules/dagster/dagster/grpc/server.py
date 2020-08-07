@@ -22,6 +22,7 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
@@ -62,6 +63,8 @@ from .types import (
 from .utils import get_loadable_targets
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
+
+CLEANUP_TICK = 0.5
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -176,7 +179,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._shutdown_server_event = check.inst_param(
             shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
         )
-        # Dict[str, multiprocessing.Process] of run_id to execute_run process
+        # Dict[str, (multiprocessing.Process, DagsterInstance)]
         self._executions = {}
         # Dict[str, multiprocessing.Event]
         self._termination_events = {}
@@ -196,6 +199,41 @@ class DagsterApiServer(DagsterApiServicer):
             self.__heartbeat_thread.start()
         else:
             self.__heartbeat_thread = None
+
+        self.__cleanup_thread = threading.Thread(target=self._cleanup_thread, args=(),)
+        self.__cleanup_thread.daemon = True
+
+        self.__cleanup_thread.start()
+
+    def _generate_synthetic_error_from_crash(self, run, instance):
+        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+            run_id=run.run_id
+        )
+        instance.report_engine_event(message, run, cls=self.__class__)
+        instance.report_run_failed(run)
+
+    def _cleanup_thread(self):
+        while True:
+            time.sleep(CLEANUP_TICK)
+            with self._execution_lock:
+                runs_to_clear = []
+                for run_id, (process, instance) in self._executions.items():
+                    if process.is_alive():
+                        continue
+
+                    run = instance.get_run_by_id(run_id)
+
+                    runs_to_clear.append(run_id)
+
+                    if run.is_finished:
+                        continue
+
+                    # the process died in an unexpected manner. inform the system
+                    self._generate_synthetic_error_from_crash(run, instance)
+
+                for run_id in runs_to_clear:
+                    del self._executions[run_id]
+                    del self._termination_events[run_id]
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
@@ -456,7 +494,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
         with self._execution_lock:
             execution_process.start()
-            self._executions[run_id] = execution_process
+            self._executions[run_id] = (
+                execution_process,
+                DagsterInstance.from_ref(execute_run_args.instance_ref),
+            )
             self._termination_events[run_id] = termination_event
 
         done = False
@@ -605,7 +646,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
         with self._execution_lock:
             execution_process.start()
-            self._executions[run_id] = execution_process
+            self._executions[run_id] = (
+                execution_process,
+                DagsterInstance.from_ref(execute_run_args.instance_ref),
+            )
             self._termination_events[run_id] = termination_event
 
         success = None

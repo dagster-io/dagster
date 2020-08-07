@@ -245,10 +245,16 @@ def test_crashy_run(temp_instance, get_external_pipeline):  # pylint: disable=re
         assert failed_pipeline_run
         assert failed_pipeline_run.run_id == run_id
 
-        poll_for_step_start(instance, run_id)
+        failed_pipeline_run = poll_for_run(instance, run_id, timeout=5)
+        assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
 
-        failed_pipeline_run = instance.get_run_by_id(run_id)
-        assert failed_pipeline_run.status == PipelineRunStatus.STARTED
+        event_records = instance.all_logs(run_id)
+
+        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+            run_id=run_id
+        )
+
+        assert _message_exists(event_records, message)
 
 
 @pytest.mark.parametrize(
