@@ -53,11 +53,11 @@ class RepositoryGrpcServerOrigin(
 
     def get_cli_args(self):
         if self.port:
-            return '--host {host} --port {port} -r {repository_name}'.format(
+            return '--grpc_host {host} --grpc_port {port} -r {repository_name}'.format(
                 host=self.host, port=self.port, repository_name=self.repository_name,
             )
         else:
-            return '--host {host} --socket {socket} -r {repository_name}'.format(
+            return '--grpc_host {host} --grpc_socket {socket} -r {repository_name}'.format(
                 host=self.host, socket=self.socket, repository_name=self.repository_name,
             )
 

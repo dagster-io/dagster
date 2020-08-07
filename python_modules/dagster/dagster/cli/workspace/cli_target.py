@@ -50,9 +50,9 @@ WORKSPACE_CLI_ARGS = (
     'module_name',
     'attribute',
     'repository_yaml',
-    'host',
-    'port',
-    'socket',
+    'grpc_host',
+    'grpc_port',
+    'grpc_socket',
 )
 
 WorkspaceFileTarget = namedtuple('WorkspaceFileTarget', 'paths')
@@ -98,9 +98,9 @@ def created_workspace_load_target(kwargs):
             'module_name',
             'attribute',
             'workspace',
-            'host',
-            'port',
-            'socket',
+            'grpc_host',
+            'grpc_port',
+            'grpc_socket',
         )
         return WorkspaceFileTarget(paths=[kwargs['repository_yaml']])
     if kwargs.get('workspace'):
@@ -110,13 +110,15 @@ def created_workspace_load_target(kwargs):
             'working_directory',
             'module_name',
             'attribute',
-            'host',
-            'port',
-            'socket',
+            'grpc_host',
+            'grpc_port',
+            'grpc_socket',
         )
         return WorkspaceFileTarget(paths=list(kwargs['workspace']))
     if kwargs.get('python_file'):
-        _check_cli_arguments_none(kwargs, 'workspace', 'module_name', 'host', 'port', 'socket')
+        _check_cli_arguments_none(
+            kwargs, 'workspace', 'module_name', 'grpc_host', 'grpc_port', 'grpc_socket'
+        )
         working_directory = (
             kwargs.get('working_directory') if kwargs.get('working_directory') else os.getcwd()
         )
@@ -127,23 +129,29 @@ def created_workspace_load_target(kwargs):
         )
     if kwargs.get('module_name'):
         _check_cli_arguments_none(
-            kwargs, 'workspace', 'python_file', 'working_directory', 'host', 'port', 'socket'
+            kwargs,
+            'workspace',
+            'python_file',
+            'working_directory',
+            'grpc_host',
+            'grpc_port',
+            'grpc_socket',
         )
         return ModuleTarget(
             module_name=kwargs.get('module_name'), attribute=kwargs.get('attribute'),
         )
-    if kwargs.get('port'):
-        _check_cli_arguments_none(kwargs, 'socket')
+    if kwargs.get('grpc_port'):
+        _check_cli_arguments_none(kwargs, 'grpc_socket')
         return GrpcServerTarget(
-            port=kwargs.get('port'),
+            port=kwargs.get('grpc_port'),
             socket=None,
-            host=(kwargs.get('host') if kwargs.get('host') else 'localhost'),
+            host=(kwargs.get('grpc_host') if kwargs.get('grpc_host') else 'localhost'),
         )
-    elif kwargs.get('socket'):
+    elif kwargs.get('grpc_socket'):
         return GrpcServerTarget(
             port=None,
-            socket=kwargs.get('socket'),
-            host=(kwargs.get('host') if kwargs.get('host') else 'localhost'),
+            socket=kwargs.get('grpc_socket'),
+            host=(kwargs.get('grpc_host') if kwargs.get('grpc_host') else 'localhost'),
         )
     check.failed('invalid')
 
@@ -226,9 +234,9 @@ def python_target_click_options():
 
 def grpc_server_target_click_options():
     return [
-        click.option('--port', type=click.INT, required=False),
-        click.option('--socket', type=click.Path(), required=False),
-        click.option('--host', type=click.STRING, required=False),
+        click.option('--grpc_port', type=click.INT, required=False),
+        click.option('--grpc_socket', type=click.Path(), required=False),
+        click.option('--grpc_host', type=click.STRING, required=False),
     ]
 
 
