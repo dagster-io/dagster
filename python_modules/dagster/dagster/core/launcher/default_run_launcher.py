@@ -57,3 +57,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     def join(self):
         self._cli_api_run_launcher.join()
         self._grpc_run_launcher.join()
+
+    def cleanup_managed_grpc_servers(self):
+        self._grpc_run_launcher.cleanup_managed_grpc_servers()

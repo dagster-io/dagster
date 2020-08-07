@@ -686,7 +686,7 @@ def server_termination_target(termination_event, server):
     while not termination_event.is_set():
         time.sleep(0.1)
     # We could make this grace period configurable if we set it in the ShutdownServer handler
-    server.stop(grace=None)
+    server.stop(grace=5)
 
 
 class DagsterGrpcServer(object):
@@ -951,6 +951,9 @@ class GrpcServerProcess(object):
 
         if self.server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
+
+    def wait(self):
+        self.server_process.wait()
 
     def create_ephemeral_client(self):
         from dagster.grpc.client import EphemeralDagsterGrpcClient

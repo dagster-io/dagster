@@ -586,12 +586,15 @@ def do_execute_command(
         '-e, --env is deprecated and will be removed in 0.9.0.'
     ),
 )
-def pipeline_launch_command(config, preset, mode, **kwargs):
-    return _logged_pipeline_launch_command(config, preset, mode, DagsterInstance.get(), kwargs)
+def pipeline_launch_command(**kwargs):
+    return execute_launch_command(DagsterInstance.get(), kwargs)
 
 
 @telemetry_wrapper
-def _logged_pipeline_launch_command(config, preset, mode, instance, kwargs):
+def execute_launch_command(instance, kwargs):
+    config = kwargs.get('config')
+    preset = kwargs.get('preset')
+    mode = kwargs.get('mode')
     check.inst_param(instance, 'instance', DagsterInstance)
     env = (
         canonicalize_backcompat_args(
@@ -807,11 +810,10 @@ def validate_partition_slice(partition_names, name, value):
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @click.option('--noprompt', is_flag=True)
 def pipeline_backfill_command(**kwargs):
-    execute_backfill_command(kwargs, click.echo)
+    execute_backfill_command(kwargs, click.echo, DagsterInstance.get())
 
 
-def execute_backfill_command(cli_args, print_fn, instance=None):
-    instance = instance or DagsterInstance.get()
+def execute_backfill_command(cli_args, print_fn, instance):
     repo_location = get_repository_location_from_kwargs(cli_args, instance)
     external_repo = get_external_repository_from_repo_location(
         repo_location, cli_args.get('repository')

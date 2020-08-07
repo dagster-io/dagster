@@ -1,25 +1,12 @@
-import os
 import sys
 import threading
 import time
-from contextlib import contextmanager
 
-import pytest
-
-from dagster import DagsterInstance, Field, Int, Materialization, pipeline, repository, seven, solid
+from dagster import Field, Int, Materialization, pipeline, repository, solid
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
+from dagster.core.test_utils import test_instance
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
-
-
-@contextmanager
-def temp_instance():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        try:
-            yield instance
-        finally:
-            instance.run_launcher.join()
 
 
 def poll_for_run(instance, run_id, timeout=5):
@@ -38,7 +25,7 @@ def poll_for_run(instance, run_id, timeout=5):
                 raise Exception('Timed out')
 
 
-def poll_for_step_start(instance, run_id, timeout=5):
+def poll_for_step_start(instance, run_id, timeout=15):
     total_time = 0
     backoff = 0.01
 
@@ -76,17 +63,16 @@ def _stream_events_target(results, api_client, execute_run_args):
         results.append(result)
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="TemporaryDirectory contention: see issue #2789")
 def test_cancel_run():
-    with temp_instance() as instance:
+    with test_instance() as instance:
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable, python_file=__file__, working_directory=None,
         )
 
-        with GrpcServerProcess(
-            loadable_target_origin, max_workers=10
-        ).create_ephemeral_client() as api_client:
+        server_process = GrpcServerProcess(loadable_target_origin, max_workers=10)
+
+        with server_process.create_ephemeral_client() as api_client:
             streaming_results = []
 
             pipeline_run = instance.create_run_for_pipeline(
@@ -133,3 +119,5 @@ def test_cancel_run():
 
             # soft termination
             assert [ev for ev in logs if ev.dagster_event.event_type_value == 'STEP_FAILURE']
+
+        server_process.wait()

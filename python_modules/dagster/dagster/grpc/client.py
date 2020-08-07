@@ -351,19 +351,19 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
         self._server_process = check.inst_param(server_process, 'server_process', subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
+    def cleanup_server(self):
+        if self._server_process and self._server_process.poll() is None:
+            self.shutdown_server()
+            self._server_process = None
+
     def __enter__(self):
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._dispose()
+        self.cleanup_server()
 
     def __del__(self):
-        self._dispose()
-
-    def _dispose(self):
-        if self._server_process and self._server_process.poll() is None:
-            self.shutdown_server()
-            self._server_process = None
+        self.cleanup_server()
 
 
 @contextmanager

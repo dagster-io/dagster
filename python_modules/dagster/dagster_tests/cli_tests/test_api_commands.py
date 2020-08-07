@@ -2,11 +2,10 @@ import pytest
 from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
-from dagster import seven
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test, environ
+from dagster.core.test_utils import create_run_for_test, test_instance
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -37,20 +36,26 @@ def runner_execute_run_with_structured_logs(runner, cli_args):
 def test_execute_run_with_structured_logs(pipeline_handle):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with environ({'DAGSTER_HOME': temp_dir}):
-            instance = DagsterInstance.get()
-            run = create_run_for_test(instance, pipeline_name='foo', run_id='new_run')
+    with test_instance(
+        overrides={
+            'compute_logs': {
+                'module': 'dagster.core.storage.noop_compute_log_manager',
+                'class': 'NoOpComputeLogManager',
+            }
+        }
+    ) as instance:
+        instance = DagsterInstance.get()
+        run = create_run_for_test(instance, pipeline_name='foo', run_id='new_run')
 
-            input_json = serialize_dagster_namedtuple(
-                ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_origin(),
-                    pipeline_run_id=run.run_id,
-                    instance_ref=instance.get_ref(),
-                )
+        input_json = serialize_dagster_namedtuple(
+            ExecuteRunArgs(
+                pipeline_origin=pipeline_handle.get_origin(),
+                pipeline_run_id=run.run_id,
+                instance_ref=instance.get_ref(),
             )
+        )
 
-            result = runner_execute_run_with_structured_logs(runner, [input_json],)
+        result = runner_execute_run_with_structured_logs(runner, [input_json],)
 
     assert 'PIPELINE_SUCCESS' in result.stdout, 'no match, result: {}'.format(result)
 
@@ -80,9 +85,14 @@ def runner_execute_step_with_structured_logs(runner, cli_args):
 def test_execute_step_with_structured_logs(pipeline_handle):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-
+    with test_instance(
+        overrides={
+            'compute_logs': {
+                'module': 'dagster.core.storage.noop_compute_log_manager',
+                'class': 'NoOpComputeLogManager',
+            }
+        }
+    ) as instance:
         run = create_run_for_test(instance, pipeline_name='foo', run_id='new_run')
 
         input_json = serialize_dagster_namedtuple(

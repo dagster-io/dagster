@@ -1,14 +1,21 @@
 import os
 from contextlib import contextmanager
 
+import yaml
+
 from dagster import (
     DagsterInvariantViolationError,
     Output,
     SolidDefinition,
     composite_solid,
     pipeline,
+    seven,
     solid,
 )
+from dagster.core.instance import DagsterInstance
+from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
+from dagster.core.launcher.grpc_run_launcher import GrpcRunLauncher
+from dagster.utils import merge_dicts
 
 
 def step_output_event_filter(pipe_iterator):
@@ -112,6 +119,37 @@ def environ(env):
                 del os.environ[key]
             else:
                 os.environ[key] = value
+
+
+@contextmanager
+def test_instance(overrides=None, enable_telemetry=False):
+    with seven.TemporaryDirectory() as temp_dir:
+        with test_instance_tempdir(temp_dir, overrides, enable_telemetry) as instance:
+            yield instance
+
+
+@contextmanager
+def test_instance_tempdir(temp_dir, overrides=None, enable_telemetry=False):
+    # Disable telemetry by default to avoid writing to the tempdir while cleaning it up
+    overrides = merge_dicts(
+        overrides if overrides else {}, {'telemetry': {'enabled': enable_telemetry}}
+    )
+    with seven.TemporaryDirectory() as temp_dir:
+        # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
+        # DagsterInstance.get() is called from a different process
+        with environ({'DAGSTER_HOME': temp_dir}):
+            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+                yaml.dump(overrides, fd, default_flow_style=False)
+            try:
+                instance = DagsterInstance.get()
+                yield instance
+            finally:
+                # To avoid filesystem contention when we close the temporary directory, wait for
+                # all runs to reach a terminal state, and close any subprocesses or threads
+                # that might be accessing the run history DB.
+                instance.run_launcher.join()
+                if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
+                    instance.run_launcher.cleanup_managed_grpc_servers()
 
 
 def create_run_for_test(
