@@ -7,7 +7,6 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    IntSource,
     ModeDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -17,6 +16,7 @@ from dagster import (
     execute_pipeline_iterator,
     reconstructable,
     resource,
+    seven,
     solid,
 )
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
@@ -282,6 +282,53 @@ def test_string_resource():
     )
 
     result = execute_pipeline(pipeline, {'resources': {'test_string': {'config': 'foo'}}})
+
+    assert result.success
+    assert called['yup']
+
+
+def test_hardcoded_resource():
+    called = {}
+
+    mock_obj = seven.mock.MagicMock()
+
+    @solid(required_resource_keys={'hardcoded'})
+    def solid_hardcoded(context):
+        assert context.resources.hardcoded('called')
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='hardcoded_resource',
+        solid_defs=[solid_hardcoded],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={'hardcoded': ResourceDefinition.hardcoded_resource(mock_obj)}
+            )
+        ],
+    )
+
+    result = execute_pipeline(pipeline)
+
+    assert result.success
+    assert called['yup']
+    mock_obj.assert_called_with('called')
+
+
+def test_mock_resource():
+    called = {}
+
+    @solid(required_resource_keys={'test_mock'})
+    def solid_test_mock(context):
+        assert context.resources.test_mock is not None
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='test_mock_resource',
+        solid_defs=[solid_test_mock],
+        mode_defs=[ModeDefinition(resource_defs={'test_mock': ResourceDefinition.mock_resource()})],
+    )
+
+    result = execute_pipeline(pipeline)
 
     assert result.success
     assert called['yup']
