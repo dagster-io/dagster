@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.1
+
+**Bugfixes**
+
+- Fixes an issue in the `dagster-k8s-celery` executor when executing solid subsets
+
 ## 0.9.0
 
 **Breaking Changes**
@@ -19,7 +25,7 @@ takes in a `-f` or `--python_file` argument.
 - New `configured` API for predefining configuration for various definitions: https://docs.dagster.io/overview/configuration/#configured
 - Added hooks to enable success and failure handling policies on pipelines. This enables users to set up policies on all solids within a pipeline or on a per solid basis. Example usage can be found [here](https://docs.dagster.io/examples/hooks)
 - New instance level view of Scheduler and running schedules
-- dagster-graphql is now only required in dagit images. 
+- dagster-graphql is now only required in dagit images.
 
 ## 0.8.11
 
