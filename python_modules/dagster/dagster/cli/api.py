@@ -374,7 +374,7 @@ def execute_step_with_structured_logs_command(input_json):
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
     execution_plan = create_execution_plan(
-        recon_pipeline,
+        recon_pipeline.subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute),
         run_config=args.run_config,
         step_keys_to_execute=args.step_keys_to_execute,
         mode=args.mode,
