@@ -92,6 +92,7 @@ def test_child_process_crashy_process():
     assert exc.value.exit_code == 1
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="Segfault not being caught on Windows: See issue #2791")
 def test_child_process_segfault():
     with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(SegfaultCommand()))

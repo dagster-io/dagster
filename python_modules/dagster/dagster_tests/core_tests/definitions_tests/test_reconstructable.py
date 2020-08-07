@@ -131,6 +131,7 @@ def test_inner_decorator_3():
         reconstructable(pipe)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="working directory in a different format on Windows")
 def test_reconstructable_cli_args():
     recon_file = ReconstructableRepository.for_file(
         'foo_file', 'bar_function', '/path/to/working_dir'

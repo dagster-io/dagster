@@ -113,7 +113,10 @@ def grpc_schedule_origin(schedule_name):
                 yield repo_origin.get_schedule_origin(schedule_name)
 
 
-@pytest.mark.parametrize('schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.skip(reason="TemporaryDirectory contention: see issue #2789")
+@pytest.mark.parametrize(
+    'schedule_origin_context', [cli_api_schedule_origin, grpc_schedule_origin,],
+)
 def test_launch_scheduled_execution(schedule_origin_context):
     with schedule_origin_context('simple_schedule') as schedule_origin:
         instance = DagsterInstance.get()
