@@ -1,7 +1,10 @@
+import os
 import sys
 import threading
 import time
 from contextlib import contextmanager
+
+import pytest
 
 from dagster import DagsterInstance, Field, Int, Materialization, pipeline, repository, seven, solid
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
@@ -73,6 +76,7 @@ def _stream_events_target(results, api_client, execute_run_args):
         results.append(result)
 
 
+@pytest.mark.skipif(os.name == 'nt', reason="TemporaryDirectory contention: see issue #2789")
 def test_cancel_run():
     with temp_instance() as instance:
 
