@@ -1,45 +1,46 @@
 # Basic Lakehouse
-Lakehouse is an experimental API built on top of Dagster's core abstractions that makes it easy to
-define computations in terms of the data assets that they produce. In this example, we'll explain
-how to use Lakehouse to transform data assets into a core Dagster pipeline.
 
-Assets are designed to handle computations whose results will be used outside of the context of
-dagster. This can mean anything from a machine learning model to a database table.
-The Asset API provides functionality for defining the dependencies necessary to compute these data
-assets.
+Lakehouse is set of APIs for defining pipelines that puts "assets", like database tables and ML
+models, at the center.
 
-To illustrate how this works, consider the following example. We have a table of temperature samples
-collected in 5 minute increments, and we want to compute the high temperature for each day
-represented in the table.
+Lakehouse is built on top of Dagster's core abstractions, and is currently an experimental API.
+
+In this example, we'll define some tables and generate a Dagster pipeline that updates them.  We
+have a table of temperature samples collected in five-minute increments, and we want to compute a
+table of the highest temperatures for each day.
 
 ## Data Assets
 
-Using Assets, we can define each of these tables, and also represent how the high temperature table
-is computed from the original temperature data.
+Here are our asset (aka table) definitions.
 
 ```python literalinclude caption=assets.py
 file:/simple_lakehouse/simple_lakehouse/assets.py
 ```
 
-`sfo_q2_weather_sample_table` represents our base temperature table. Passing in `"filesystem"` for
-the `storage_key` argument indicates that this asset is stored locally. The `path` argument gives
-the path to the data asset itself.
+They're pure functions that describe how the asset is derived from parent assets.
+They intentionally omit code for storing and retrieving the assets, because that code often varies
+across environments - e.g. we might want to store data in a local csv file for easy testing, but
+store data a data warehouse in production.
+
+`sfo_q2_weather_sample_table` represents our base temperature table. `"filesystem"` is a name we
+have chosen to identify the storage system where this table lives. The `path` argument gives
+the path to the data asset itself within that storage system.
 
 `daily_temperature_highs_table` represents our computed asset. We explicitly define the dependency
 on the original table by passing `sfo_q2_weather_sample_table` as the value for the `input_deps`
 argument.
-
-We want to persist the data to disk using csv files. Then, we need to create an `AssetStorage` to
-describe the conversion between pandas dataframes and csv files.
 
 ## Storage
 ```python literalinclude caption=lakehouse_def.py
 file:/simple_lakehouse/simple_lakehouse/lakehouse_def.py
 ```
 
+We want to persist the data to disk using csv files. Then, we need to create an `AssetStorage` to
+describe the conversion between pandas dataframes and csv files.
+
 The `load` function converts inputs to the required format for an asset. Since our base asset will
 represent a csv file, and our second asset will be processing a pandas dataframe, `load` will
-convert a csv to a dataframe.. Likewise, we want to persist the results of our
+convert a csv to a dataframe. Likewise, we want to persist the results of our
 second asset as a csv file, so our `save` method converts a pandas dataframe to a csv.
 
 Then, we construct our `Lakehouse`, which delegates conversion and storage between assets by
@@ -55,9 +56,6 @@ file:/simple_lakehouse/simple_lakehouse/pipelines.py
 
 Note that the assets don't have to be provided in order. Lakehouse is able to determine asset
 ordering by resolving input asset dependencies.
-
-
-
 
 ## Open in a playground
 

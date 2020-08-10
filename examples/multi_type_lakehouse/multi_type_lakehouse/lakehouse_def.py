@@ -100,7 +100,6 @@ local_file_system_storage = multi_type_asset_storage(
 
 def make_multi_type_lakehouse():
     dev_mode = ModeDefinition(
-        name='dev',
         resource_defs={
             'pyspark': pyspark_resource,
             'default_storage': local_file_system_storage.configured({'root': '.'}),
