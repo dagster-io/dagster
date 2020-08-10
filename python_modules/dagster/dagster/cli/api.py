@@ -605,13 +605,15 @@ def _launch_scheduled_execution(
     else:
         run_config = schedule_execution_data.run_config
         schedule_tags = schedule_execution_data.tags
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
-        )
-        if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
-            errors.append(external_execution_plan.error)
-        else:
+        try:
+            external_execution_plan = repo_location.get_external_execution_plan(
+                external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
+            )
             execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+        except DagsterSubprocessError as e:
+            errors.extend(e.subprocess_error_infos)
+        except Exception as e:  # pylint: disable=broad-except
+            errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, 'pipeline_tags')
