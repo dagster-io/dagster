@@ -570,6 +570,7 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
             mode_defs=pipeline_def.mode_definitions,
             dependencies=deps,
             _parent_pipeline_def=pipeline_def,
+            tags=pipeline_def.tags,
         )
 
         return sub_pipeline_def
