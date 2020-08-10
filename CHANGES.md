@@ -5,6 +5,8 @@
 **Breaking Changes**
 
 * The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
+* The `pipeline execute` command no longer accepts the `--workspace` argument.
+To execute pipelines in a workspace, use `pipeline launch` instead.
 
 **New**
 

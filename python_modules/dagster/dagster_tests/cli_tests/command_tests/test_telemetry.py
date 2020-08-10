@@ -140,8 +140,10 @@ def test_repo_stats(caplog):
                 result = runner.invoke(
                     pipeline_execute_command,
                     [
-                        '-w',
-                        file_relative_path(__file__, '../../workspace.yaml'),
+                        '-f',
+                        file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                        '-a',
+                        'dagster_test_repository',
                         '-p',
                         pipeline_name,
                         '--preset',

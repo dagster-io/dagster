@@ -8,10 +8,17 @@ from click import UsageError
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation import ExternalRepository, RepositoryLocation, UserProcessApi
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    PipelinePythonOrigin,
+    RepositoryGrpcServerOrigin,
+    RepositoryPythonOrigin,
+)
+from dagster.grpc.utils import get_loadable_targets
+from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 from .load import (
     load_workspace_from_yaml_paths,
@@ -263,6 +270,26 @@ def workspace_target_click_options():
     )
 
 
+def python_pipeline_target_click_options():
+    return (
+        python_target_click_options()
+        + [
+            click.option(
+                '--repository',
+                '-r',
+                help=('Repository name, necessary if more than one repository is present.'),
+            )
+        ]
+        + [pipeline_option()]
+    )
+
+
+def python_pipeline_target_argument(f):
+    from dagster.cli.pipeline import apply_click_params
+
+    return apply_click_params(f, *python_pipeline_target_click_options())
+
+
 def workspace_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
@@ -305,47 +332,136 @@ def repository_target_argument(f):
     )
 
 
+def pipeline_option():
+    return click.option(
+        '--pipeline',
+        '-p',
+        help=('Pipeline within the repository, necessary if more than one pipeline is present.'),
+    )
+
+
 def pipeline_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
-    return apply_click_params(
-        repository_target_argument(f),
-        click.option(
-            '--pipeline',
-            '-p',
-            help=(
-                'Pipeline within the repository, necessary if more than one pipeline is present.'
-            ),
-        ),
-    )
+    return apply_click_params(repository_target_argument(f), pipeline_option())
 
 
 def get_repository_origin_from_kwargs(kwargs):
     load_target = created_workspace_load_target(kwargs)
 
-    if isinstance(load_target, PythonFileTarget):
-        return RepositoryPythonOrigin(
-            executable_path=sys.executable,
-            code_pointer=CodePointer.from_python_file(
-                load_target.python_file,
-                load_target.attribute,
-                working_directory=load_target.working_directory,
-            ),
-        )
-    elif isinstance(load_target, ModuleTarget):
-        return RepositoryPythonOrigin(
-            executable_path=sys.executable,
-            code_pointer=CodePointer.from_module(load_target.module_name, load_target.attribute),
-        )
-    elif isinstance(load_target, GrpcServerTarget):
+    if isinstance(load_target, GrpcServerTarget):
         return RepositoryGrpcServerOrigin(
             host=load_target.host,
             port=load_target.port,
             socket=load_target.socket,
             repository_name=kwargs['repository'],
         )
+
+    return get_repository_python_origin_from_kwargs(kwargs)
+
+
+def get_pipeline_python_origin_from_kwargs(kwargs):
+    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+    provided_pipeline_name = kwargs.get('pipeline')
+
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_definition = recon_repo.get_definition()
+
+    pipeline_names = set(repo_definition.pipeline_names)
+
+    if provided_pipeline_name is None and len(pipeline_names) == 1:
+        pipeline_name = next(iter(pipeline_names))
+    elif provided_pipeline_name is None:
+        raise click.UsageError(
+            (
+                'Must provide --pipeline as there is more than one pipeline '
+                'in {repository}. Options are: {pipelines}.'
+            ).format(repository=repo_definition.name, pipelines=_sorted_quoted(pipeline_names))
+        )
+    elif not provided_pipeline_name in pipeline_names:
+        raise click.UsageError(
+            (
+                'Pipeline "{provided_pipeline_name}" not found in repository "{repository_name}". '
+                'Found {found_names} instead.'
+            ).format(
+                provided_pipeline_name=provided_pipeline_name,
+                repository_name=repo_definition.name,
+                found_names=_sorted_quoted(pipeline_names),
+            )
+        )
+    else:
+        pipeline_name = provided_pipeline_name
+
+    return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
+
+
+def _get_code_pointer_dict_from_kwargs(kwargs):
+    python_file = kwargs.get('python_file')
+    module_name = kwargs.get('module_name')
+    working_directory = kwargs.get('working_directory')
+    attribute = kwargs.get('attribute')
+    loadable_targets = get_loadable_targets(python_file, module_name, working_directory, attribute)
+    if python_file:
+        return {
+            repository_def_from_target_def(
+                loadable_target.target_definition
+            ).name: CodePointer.from_python_file(
+                python_file, loadable_target.attribute, working_directory
+            )
+            for loadable_target in loadable_targets
+        }
+    elif module_name:
+        return {
+            repository_def_from_target_def(
+                loadable_target.target_definition
+            ).name: CodePointer.from_module(module_name, loadable_target.attribute)
+            for loadable_target in loadable_targets
+        }
     else:
         check.failed('invalid')
+
+
+def get_repository_python_origin_from_kwargs(kwargs):
+    provided_repo_name = kwargs.get('repository')
+
+    # Short-circuit the case where an attribute and no repository name is passed in,
+    # giving us enough information to return an origin without loading any target
+    # definitions - we may need to return an origin for a non-existent repository
+    # (e.g. to log an origin ID for an error message)
+    if kwargs.get('attribute') and not provided_repo_name:
+        if kwargs.get('python_file'):
+            code_pointer = CodePointer.from_python_file(
+                kwargs.get('python_file'), kwargs.get('attribute'), kwargs.get('working_directory')
+            )
+        elif kwargs.get('module_name'):
+            code_pointer = CodePointer.from_module(
+                kwargs.get('module_name'), kwargs.get('attribute'),
+            )
+        else:
+            check.failed('Must specify a Python file or module name')
+        return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
+
+    code_pointer_dict = _get_code_pointer_dict_from_kwargs(kwargs)
+    if provided_repo_name is None and len(code_pointer_dict) == 1:
+        code_pointer = next(iter(code_pointer_dict.values()))
+    elif provided_repo_name is None:
+        raise click.UsageError(
+            (
+                'Must provide --repository as there is more than one repository. '
+                'Options are: {repos}.'
+            ).format(repos=_sorted_quoted(code_pointer_dict.keys()))
+        )
+    elif not provided_repo_name in code_pointer_dict:
+        raise click.UsageError(
+            'Repository "{provided_repo_name}" not found. Found {found_names} instead.'.format(
+                provided_repo_name=provided_repo_name,
+                found_names=_sorted_quoted(code_pointer_dict.keys()),
+            )
+        )
+    else:
+        code_pointer = code_pointer_dict[provided_repo_name]
+
+    return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
 
 
 def get_repository_location_from_kwargs(kwargs, instance):
@@ -394,7 +510,7 @@ def get_external_repository_from_repo_location(repo_location, provided_repo_name
     if provided_repo_name is None:
         raise click.UsageError(
             (
-                'Must provide --repository as there are more than one repositories '
+                'Must provide --repository as there is more than one repository '
                 'in {location}. Options are: {repos}.'
             ).format(location=repo_location.name, repos=_sorted_quoted(repo_dict.keys()))
         )

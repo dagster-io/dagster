@@ -8,11 +8,14 @@ from click import UsageError
 from click.testing import CliRunner
 
 from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
-from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, merge_dicts
 
-from .test_cli_commands import execute_command_contexts, valid_pipeline_target_cli_args
+from .test_cli_commands import (
+    pipeline_python_origin_contexts,
+    valid_pipeline_python_origin_target_cli_args,
+)
 
 
 def test_execute_mode_command():
@@ -22,8 +25,10 @@ def test_execute_mode_command():
         add_result = runner_pipeline_execute(
             runner,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--config',
                 file_relative_path(
                     __file__, '../../environments/multi_mode_with_resources/add_mode.yaml'
@@ -40,8 +45,10 @@ def test_execute_mode_command():
         mult_result = runner_pipeline_execute(
             runner,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--config',
                 file_relative_path(
                     __file__, '../../environments/multi_mode_with_resources/mult_mode.yaml'
@@ -58,8 +65,10 @@ def test_execute_mode_command():
         double_adder_result = runner_pipeline_execute(
             runner,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--config',
                 file_relative_path(
                     __file__, '../../environments/multi_mode_with_resources/double_adder_mode.yaml'
@@ -80,8 +89,10 @@ def test_execute_preset_command():
         add_result = runner_pipeline_execute(
             runner,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--preset',
                 'add',
                 '-p',
@@ -95,8 +106,10 @@ def test_execute_preset_command():
         bad_res = runner.invoke(
             pipeline_execute_command,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--preset',
                 'add',
                 '--config',
@@ -110,70 +123,33 @@ def test_execute_preset_command():
         assert bad_res.exit_code == 2
 
 
-@pytest.mark.parametrize('gen_execute_args', execute_command_contexts())
+@pytest.mark.parametrize('gen_execute_args', pipeline_python_origin_contexts())
 def test_execute_command_no_env(gen_execute_args):
-    with gen_execute_args as (cli_args, uses_legacy_repository_yaml_format, instance):
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    'You are using the legacy repository yaml format. Please update your file '
-                ),
-            ):
-                execute_execute_command(kwargs=cli_args, instance=instance)
-        else:
-            execute_execute_command(kwargs=cli_args, instance=instance)
+    with gen_execute_args as (cli_args, instance):
+        execute_execute_command(kwargs=cli_args, instance=instance)
 
 
-@pytest.mark.parametrize('gen_execute_args', execute_command_contexts())
+@pytest.mark.parametrize('gen_execute_args', pipeline_python_origin_contexts())
 def test_execute_command_env(gen_execute_args):
-    with gen_execute_args as (cli_args, uses_legacy_repository_yaml_format, instance):
+    with gen_execute_args as (cli_args, instance):
         kwargs = merge_dicts(
             {'config': (file_relative_path(__file__, 'default_log_error_env.yaml'),)}, cli_args,
         )
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    'You are using the legacy repository yaml format. Please update your file '
-                ),
-            ):
-                execute_execute_command(
-                    kwargs=kwargs, instance=instance,
-                )
-        else:
-            execute_execute_command(
-                kwargs=kwargs, instance=instance,
-            )
+        execute_execute_command(
+            kwargs=kwargs, instance=instance,
+        )
 
 
-@pytest.mark.parametrize('execute_cli_args', valid_pipeline_target_cli_args())
-def test_execute_command_runner(execute_cli_args):
-    cli_args, uses_legacy_repository_yaml_format = execute_cli_args
+@pytest.mark.parametrize('cli_args', valid_pipeline_python_origin_target_cli_args())
+def test_execute_command_runner(cli_args):
     runner = CliRunner()
-
     with instance_for_test():
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    'You are using the legacy repository yaml format. Please update your file '
-                ),
-            ):
-                runner_pipeline_execute(runner, cli_args)
+        runner_pipeline_execute(runner, cli_args)
 
-                runner_pipeline_execute(
-                    runner,
-                    ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')]
-                    + cli_args,
-                )
-        else:
-            runner_pipeline_execute(runner, cli_args)
-
-            runner_pipeline_execute(
-                runner,
-                ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
-            )
+        runner_pipeline_execute(
+            runner,
+            ['--config', file_relative_path(__file__, 'default_log_error_env.yaml')] + cli_args,
+        )
 
 
 def test_output_execute_log_stdout(capfd):
@@ -243,7 +219,8 @@ def test_more_than_one_pipeline():
 def test_attribute_not_found():
     with instance_for_test() as instance:
         with pytest.raises(
-            DagsterUserCodeProcessError, match=re.escape('nope not found at module scope in file')
+            DagsterInvariantViolationError,
+            match=re.escape('nope not found at module scope in file'),
         ):
             execute_execute_command(
                 kwargs={
@@ -260,7 +237,7 @@ def test_attribute_not_found():
 def test_attribute_is_wrong_thing():
     with instance_for_test() as instance:
         with pytest.raises(
-            DagsterUserCodeProcessError,
+            DagsterInvariantViolationError,
             match=re.escape(
                 'Loadable attributes must be either a PipelineDefinition or a '
                 'RepositoryDefinition. Got 123.'
@@ -281,7 +258,7 @@ def test_attribute_is_wrong_thing():
 def test_attribute_fn_returns_wrong_thing():
     with instance_for_test() as instance:
         with pytest.raises(
-            DagsterUserCodeProcessError,
+            DagsterInvariantViolationError,
             match=re.escape(
                 "Loadable attributes must be either a PipelineDefinition or a RepositoryDefinition."
             ),
@@ -317,60 +294,39 @@ def runner_pipeline_execute(runner, cli_args):
 def test_default_memory_run_storage():
     with instance_for_test() as instance:
         cli_args = {
-            'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'atribute': 'bar',
             'pipeline': 'foo',
-            'python_file': None,
             'module_name': None,
-            'attribute': None,
         }
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                'You are using the legacy repository yaml format. Please update your file '
-            ),
-        ):
-            result = execute_execute_command(kwargs=cli_args, instance=instance)
-            assert result.success
+        result = execute_execute_command(kwargs=cli_args, instance=instance)
+        assert result.success
 
 
 def test_override_with_in_memory_storage():
     with instance_for_test() as instance:
         cli_args = {
-            'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'atribute': 'bar',
             'pipeline': 'foo',
-            'python_file': None,
             'module_name': None,
-            'attribute': None,
             'config': (file_relative_path(__file__, 'in_memory_env.yaml'),),
         }
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                'You are using the legacy repository yaml format. Please update your file '
-            ),
-        ):
-            result = execute_execute_command(kwargs=cli_args, instance=instance,)
-            assert result.success
+        result = execute_execute_command(kwargs=cli_args, instance=instance,)
+        assert result.success
 
 
 def test_override_with_filesystem_storage():
     with instance_for_test() as instance:
         cli_args = {
-            'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
+            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+            'atribute': 'bar',
             'pipeline': 'foo',
-            'python_file': None,
             'module_name': None,
-            'attribute': None,
             'config': (file_relative_path(__file__, 'filesystem_env.yaml'),),
         }
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                'You are using the legacy repository yaml format. Please update your file '
-            ),
-        ):
-            result = execute_execute_command(kwargs=cli_args, instance=instance,)
-            assert result.success
+        result = execute_execute_command(kwargs=cli_args, instance=instance,)
+        assert result.success
 
 
 def test_multiproc():
@@ -379,8 +335,10 @@ def test_multiproc():
         add_result = runner_pipeline_execute(
             runner,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--preset',
                 'multiproc',
                 '-p',
@@ -398,8 +356,10 @@ def test_multiproc_invalid():
     add_result = runner.invoke(
         pipeline_execute_command,
         [
-            '-w',
-            file_relative_path(__file__, '../../workspace.yaml'),
+            '-f',
+            file_relative_path(__file__, '../../general_tests/test_repository.py'),
+            '-a',
+            'dagster_test_repository',
             '--preset',
             'multiproc',
             '-p',
@@ -414,23 +374,19 @@ def test_multiproc_invalid():
 def test_tags_pipeline():
     runner = CliRunner()
     with instance_for_test() as instance:
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                'You are using the legacy repository yaml format. Please update your file '
-            ),
-        ):
-            result = runner.invoke(
-                pipeline_execute_command,
-                [
-                    '-w',
-                    file_relative_path(__file__, 'repository_module.yaml'),
-                    '--tags',
-                    '{ "foo": "bar" }',
-                    '-p',
-                    'foo',
-                ],
-            )
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-m',
+                'dagster_tests.cli_tests.command_tests.test_cli_commands',
+                '-a',
+                'bar',
+                '--tags',
+                '{ "foo": "bar" }',
+                '-p',
+                'foo',
+            ],
+        )
         assert result.exit_code == 0
         runs = instance.get_runs()
         assert len(runs) == 1
@@ -442,8 +398,10 @@ def test_tags_pipeline():
         result = runner.invoke(
             pipeline_execute_command,
             [
-                '-w',
-                file_relative_path(__file__, '../../workspace.yaml'),
+                '-f',
+                file_relative_path(__file__, '../../general_tests/test_repository.py'),
+                '-a',
+                'dagster_test_repository',
                 '--preset',
                 'add',
                 '--tags',

@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from dagster.cli.pipeline import execute_print_command, pipeline_print_command
 from dagster.utils import file_relative_path
 
-from .test_cli_commands import launch_command_contexts, valid_pipeline_target_cli_args
+from .test_cli_commands import launch_command_contexts, valid_external_pipeline_target_cli_args
 
 
 def no_print(_):
@@ -53,7 +53,7 @@ def test_print_command(gen_pipeline_args):
             )
 
 
-@pytest.mark.parametrize('pipeline_cli_args', valid_pipeline_target_cli_args())
+@pytest.mark.parametrize('pipeline_cli_args', valid_external_pipeline_target_cli_args())
 def test_print_command_cli(pipeline_cli_args):
     runner = CliRunner()
     cli_args, uses_legacy_repository_yaml_format = pipeline_cli_args

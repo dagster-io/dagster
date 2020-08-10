@@ -12,7 +12,7 @@ from .test_cli_commands import (
     grpc_server_bar_cli_args,
     launch_command_contexts,
     python_bar_cli_args,
-    valid_pipeline_target_cli_args,
+    valid_external_pipeline_target_cli_args,
 )
 
 
@@ -47,7 +47,7 @@ def test_launch_pipeline(gen_pipeline_args):
             run_launch(cli_args, instance, expected_count=1)
 
 
-@pytest.mark.parametrize('pipeline_cli_args', valid_pipeline_target_cli_args())
+@pytest.mark.parametrize('pipeline_cli_args', valid_external_pipeline_target_cli_args())
 def test_launch_pipeline_cli(pipeline_cli_args):
     with default_instance() as instance:
         cli_args, uses_legacy_repository_yaml_format = pipeline_cli_args

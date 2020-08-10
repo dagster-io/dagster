@@ -15,8 +15,10 @@ from dagster.cli.workspace.cli_target import (
     get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
+    get_pipeline_python_origin_from_kwargs,
     get_repository_location_from_kwargs,
     pipeline_target_argument,
+    python_pipeline_target_argument,
     repository_target_argument,
 )
 from dagster.core.definitions.executable import ExecutablePipeline
@@ -109,6 +111,16 @@ def format_description(desc, indent):
     wrapper = textwrap.TextWrapper(initial_indent='', subsequent_indent=indent)
     filled = wrapper.fill(dedented)
     return filled
+
+
+def get_pipeline_in_same_python_env_instructions(command_name):
+    return (
+        'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
+        '\n\n1. dagster pipeline {command_name} -f /path/to/file.py -a define_some_pipeline'
+        '\n\n2. dagster pipeline {command_name} -m a_module.submodule -a define_some_pipeline'
+        '\n\n3. dagster pipeline {command_name} -f /path/to/file.py -a define_some_repo -p <<pipeline_name>>'
+        '\n\n4. dagster pipeline {command_name} -m a_module.submodule -a define_some_repo -p <<pipeline_name>>'
+    ).format(command_name=command_name)
 
 
 def get_pipeline_instructions(command_name):
@@ -210,10 +222,10 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 @click.command(
     name='execute',
     help='Execute a pipeline.\n\n{instructions}'.format(
-        instructions=get_pipeline_instructions('execute')
+        instructions=get_pipeline_in_same_python_env_instructions('execute')
     ),
 )
-@pipeline_target_argument
+@python_pipeline_target_argument
 @click.option(
     '-c',
     '--config',
@@ -226,11 +238,12 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
-        'dagster pipeline execute -p pandas_hello_world -c "pandas_hello_world/*.yaml"'
+        'dagster pipeline execute -f hello_world.py -p pandas_hello_world '
+        '-c "pandas_hello_world/*.yaml"'
         '\n\nYou can also specify multiple files:'
         '\n\nExample: '
-        'dagster pipeline execute -p pandas_hello_world -c pandas_hello_world/solids.yaml '
-        '-e pandas_hello_world/env.yaml'
+        'dagster pipeline execute -f hello_world.py -p pandas_hello_world '
+        '-c pandas_hello_world/solids.yaml -e pandas_hello_world/env.yaml'
     ),
 )
 @click.option(
@@ -275,11 +288,8 @@ def execute_execute_command(instance, kwargs):
 
     tags = get_tags_from_args(kwargs)
 
-    external_pipeline = get_external_pipeline_from_kwargs(kwargs, instance)
-    # We should move this to use external pipeline
-    # https://github.com/dagster-io/dagster/issues/2556
-
-    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
+    pipeline_origin = get_pipeline_python_origin_from_kwargs(kwargs)
+    pipeline = recon_pipeline_from_origin(pipeline_origin)
     solid_selection = get_solid_selection_from_args(kwargs)
     result = do_execute_command(pipeline, instance, config, mode, tags, solid_selection, preset)
 
