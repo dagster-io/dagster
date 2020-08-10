@@ -623,3 +623,137 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
 
     assert result.success
     assert result.result_for_solid('introduce_aj_20').output_value() == "AJ is 20 years old"
+
+
+def test_single_level_pipeline_with_configured_composite_solid():
+    @solid(config_schema={'inner': int})
+    def multiply_by_two(context):
+        return context.solid_config['inner'] * 2
+
+    @solid
+    def add(_context, lhs, rhs):
+        return lhs + rhs
+
+    @composite_solid(
+        config_schema={'outer': int},
+        config_fn=lambda c: {
+            'multiply_by_two': {'config': {'inner': c['outer']}},
+            'multiply_by_two_again': {'config': {'inner': c['outer']}},
+        },
+    )
+    def multiply_by_four():
+        return add(multiply_by_two(), multiply_by_two.alias('multiply_by_two_again')())
+
+    multiply_three_by_four = configured(multiply_by_four)({'outer': 3})
+
+    @pipeline
+    def test_pipeline():
+        multiply_three_by_four()
+
+    result = execute_pipeline(test_pipeline)
+
+    assert result.success
+    assert result.result_for_solid('multiply_by_four').output_value() == 12
+
+
+def test_single_level_pipeline_with_configured_decorated_composite_solid():
+    @solid(config_schema={'inner': int})
+    def multiply_by_two(context):
+        return context.solid_config['inner'] * 2
+
+    @solid
+    def add(_context, lhs, rhs):
+        return lhs + rhs
+
+    @composite_solid(
+        config_schema={'outer': int},
+        config_fn=lambda c: {
+            'multiply_by_two': {'config': {'inner': c['outer']}},
+            'multiply_by_two_again': {'config': {'inner': c['outer']}},
+        },
+    )
+    def multiply_by_four():
+        return add(multiply_by_two(), multiply_by_two.alias('multiply_by_two_again')())
+
+    @configured(
+        multiply_by_four, config_schema={}
+    )  # test that with config_schema={} we can omit config
+    def multiply_three_by_four(_config):
+        return {'outer': 3}
+
+    @pipeline
+    def test_pipeline():
+        multiply_three_by_four()
+
+    result = execute_pipeline(test_pipeline)
+
+    assert result.success
+    assert result.result_for_solid('multiply_by_four').output_value() == 12
+
+
+def test_configured_composite_solid_with_inputs():
+    @solid(config_schema=str, input_defs=[InputDefinition('x', int)])
+    def return_int(context, x):
+        assert context.solid_config == 'inner config sentinel'
+        return x
+
+    return_int_x = configured(return_int)('inner config sentinel')
+
+    @solid(config_schema=str)
+    def add(context, lhs, rhs):
+        assert context.solid_config == 'outer config sentinel'
+        return lhs + rhs
+
+    @composite_solid(
+        input_defs=[InputDefinition('x', int), InputDefinition('y', int)],
+        config_schema={'outer': str},
+        config_fn=lambda cfg: {'add': {'config': cfg['outer']}},
+    )
+    def return_int_composite(x, y):
+        return add(return_int_x(x), return_int_x.alias('return_int_again')(y))
+
+    return_int_composite_x = configured(return_int_composite)({'outer': 'outer config sentinel'})
+
+    @pipeline
+    def test_pipeline():
+        return_int_composite_x()
+
+    result = execute_pipeline(
+        test_pipeline, {'solids': {'return_int_composite': {'inputs': {'x': 6, 'y': 4}}}}
+    )
+
+    assert result.success
+    assert result.result_for_solid('return_int_composite').output_value() == 10
+
+
+def test_configured_composite_solid_cannot_stub_inner_solids_config():
+    @solid(config_schema=int)
+    def return_int(context, x):
+        return context.solid_config + x
+
+    @composite_solid(
+        config_schema={'num': int},
+        config_fn=lambda config: {'return_int': {'config': config['num']}},
+    )
+    def return_int_composite():
+        return return_int()
+
+    @pipeline
+    def return_int_pipeline():
+        return_int_composite()
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='Undefined field "solids" at path root:solids:return_int_composite.',
+    ):
+        execute_pipeline(
+            return_int_pipeline,
+            {
+                'solids': {
+                    'return_int_composite': {
+                        'config': {'num': 4},
+                        'solids': {'return_int': {'config': 3, 'inputs': {'x': 1}}},
+                    }
+                }
+            },
+        )

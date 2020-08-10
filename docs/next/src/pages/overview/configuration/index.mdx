@@ -43,7 +43,7 @@ file:/docs_snippets/docs_snippets/overview/configuration/example.py
 In many cases, the option to configure an entity at runtime is more distracting than helpful, and
 it's preferable to supply the entity's configuration at definition time.
 
-The `configured` API offers a way to do this.  When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />, <PyObject module="dagster" object="IntermediateStorageDefinition" />, or <PyObject module="dagster" object="SystemStorageDefinition" />,
+The `configured` API offers a way to do this.  When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="CompositeSolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />, <PyObject module="dagster" object="IntermediateStorageDefinition" />, or <PyObject module="dagster" object="SystemStorageDefinition" />,
 it returns an interchangeable object with the given configuration "baked in".
 
 ```python literalinclude
@@ -59,7 +59,8 @@ It returns an entity with the "outer" config schema as its schema.
 file:/docs_snippets/docs_snippets/overview/configuration/config_map_example.py
 ```
 
-To configure a solid, simply invoke it on the solid definition:
+The `configured` API can be used with any definition type in the same way. To configure a solid, for
+example, simply invoke `configured` on the solid definition:
 
 ```python literalinclude
 file:/docs_snippets/docs_snippets/overview/configuration/configured_solid_example.py
@@ -69,4 +70,10 @@ By default, the resulting solid definition will inherit the name of the solid it
 you may optionally add a keyword argument `name` in the call to `configured` if you'd like the
 configured solid to take on a different name. Since solid definitions must have unique names, make
 sure you give configured solids different names if you want to use them together with the original
-solid or if you are configuring one solid in different ways within the same repository.
+solid or if you are configuring one solid in different ways within the same repository. Below is one
+case that would require this pattern:
+
+```python literalinclude
+file:/docs_snippets/docs_snippets/overview/configuration/configured_named_solid_example.py
+lines:1-39
+```

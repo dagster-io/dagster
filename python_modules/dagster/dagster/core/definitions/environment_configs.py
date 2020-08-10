@@ -240,9 +240,11 @@ def define_isolid_field(solid, handle, dependency_structure):
     # config. The only thing the varies is on extra element of configuration
     # 1) Vanilla solid definition: a 'config' key with the config_schema as the value
     # 2) Composite with field mapping: a 'config' key with the config_schema of
-    #    the config mapping
+    #    the config mapping (via CompositeSolidDefinition#config_schema)
     # 3) Composite without field mapping: a 'solids' key with recursively defined
     #    solids dictionary
+    # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
+    #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
     if isinstance(solid.definition, SolidDefinition):
         return construct_leaf_solid_config(
@@ -252,9 +254,17 @@ def define_isolid_field(solid, handle, dependency_structure):
     composite_def = check.inst(solid.definition, CompositeSolidDefinition)
 
     if composite_def.has_config_mapping:
+        # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
+        # be `configured`)...
         return construct_leaf_solid_config(
-            solid, handle, dependency_structure, composite_def.config_mapping.config_schema
+            solid,
+            handle,
+            dependency_structure,
+            # ...and in both cases, the correct schema for 'config' key is exposed by this property:
+            composite_def.config_schema,
         )
+        # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
+        # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
     else:
         return filtered_system_dict(
             {

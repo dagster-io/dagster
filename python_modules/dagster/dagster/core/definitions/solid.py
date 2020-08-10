@@ -1,7 +1,5 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import abstractmethod, abstractproperty
 from collections import OrderedDict
-
-import six
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
@@ -18,7 +16,7 @@ from .solid_container import IContainSolids, create_execution_structure, validat
 from .utils import check_valid_name, validate_tags
 
 
-class ISolidDefinition(six.with_metaclass(ABCMeta)):
+class ISolidDefinition(IConfigMappable):
     def __init__(
         self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None
     ):
@@ -167,7 +165,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         return CallableSolidNode(self, hook_defs=hook_defs)
 
 
-class SolidDefinition(ISolidDefinition, IConfigMappable):
+class SolidDefinition(ISolidDefinition):
     '''
     The definition of a Solid that performs a user-defined computation.
 
@@ -376,6 +374,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         description=None,
         tags=None,
         positional_inputs=None,
+        _configured_config_mapping_fn=None,
+        _configured_config_schema=None,
     ):
         check.str_param(name, 'name')
         self._solid_defs = check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
@@ -402,6 +402,11 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self.solids_in_topological_order = self._solids_in_topological_order()
 
         output_defs = [output_mapping.definition for output_mapping in self._output_mappings]
+
+        self.__configured_config_mapping_fn = check.opt_callable_param(
+            _configured_config_mapping_fn, 'config_mapping_fn'
+        )
+        self.__configured_config_schema = _configured_config_schema
 
         super(CompositeSolidDefinition, self).__init__(
             name=name,
@@ -491,10 +496,10 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
 
     @property
     def has_config_entry(self):
-        has_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
+        has_child_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
         return (
             self.has_config_mapping
-            or has_solid_config
+            or has_child_solid_config
             or self.has_configurable_inputs
             or self.has_configurable_outputs
         )
@@ -566,6 +571,38 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         for solid_def in self._solid_defs:
             for ttype in solid_def.all_dagster_types():
                 yield ttype
+
+    @property
+    def config_schema(self):
+        if self.is_preconfigured:
+            return self.__configured_config_schema
+        elif self.has_config_mapping:
+            return self.config_mapping.config_schema
+
+    @property
+    def _configured_config_mapping_fn(self):
+        return self.__configured_config_mapping_fn
+
+    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        check.invariant(self.has_config_entry)  # must have reason to be configured
+
+        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
+            config_or_config_fn, config_schema
+        )
+
+        return CompositeSolidDefinition(
+            name=kwargs.get('name', self.name),
+            solid_defs=self._solid_defs,
+            input_mappings=self.input_mappings,
+            output_mappings=self.output_mappings,
+            config_mapping=self.config_mapping,
+            dependencies=self.dependencies,
+            description=kwargs.get('description', self.description),
+            tags=self.tags,
+            positional_inputs=self.positional_inputs,
+            _configured_config_schema=config_schema,
+            _configured_config_mapping_fn=wrapped_config_mapping_fn,
+        )
 
 
 def _validate_in_mappings(input_mappings, solid_dict, name):

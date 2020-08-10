@@ -10,6 +10,10 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_err
 
 
 class IConfigMappable(six.with_metaclass(ABCMeta)):
+    @property
+    def is_preconfigured(self):
+        return self._configured_config_mapping_fn is not None
+
     @abstractproperty
     def _configured_config_mapping_fn(self):
         raise NotImplementedError()
@@ -122,7 +126,7 @@ def _check_configurable_param(configurable):
         (
             'You have invoked `configured` on a CallableSolidNode (an intermediate type), which is '
             'produced by aliasing or tagging a solid definition. To configure a solid, you must '
-            'call `configured` on a SolidDefinition. To fix '
+            'call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix '
             'this error, make sure to call `configured` on the definition object *before* using '
             'the `tag` or `alias` methods. For usage examples, see '
             'https://docs.dagster.io/overview/configuration#configured'
@@ -134,7 +138,7 @@ def _check_configurable_param(configurable):
         IConfigMappable,
         (
             'Only the following types can be used with the `configured` method: ResourceDefinition, '
-            'ExecutorDefinition, SolidDefinition, LoggerDefinition, '
+            'ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, '
             'IntermediateStorageDefinition, and SystemStorageDefinition. For usage examples of '
             '`configured`, see https://docs.dagster.io/overview/configuration#configured'
         ),
@@ -146,7 +150,7 @@ def configured(configurable, config_schema=None, **kwargs):
     A decorator that makes it easy to create a function-configured version of an object.
     The following definition types can be configured using this function:
     :py:class:`ResourceDefinition`, :py:class:`ExecutorDefinition`,
-    :py:class:`SolidDefinition`, :py:class:`LoggerDefinition`,
+    :py:class:`CompositeSolidDefinition`, :py:class:`SolidDefinition`, :py:class:`LoggerDefinition`,
     :py:class:`IntermediateStorageDefinition`, and :py:class:`SystemStorageDefinition`.
 
 
