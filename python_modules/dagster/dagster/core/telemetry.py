@@ -50,7 +50,7 @@ TELEMETRY_VERSION = '0.2'
 # When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
 # docs/next/src/pages/install/index.mdx
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    '_logged_pipeline_execute_command',
+    'execute_execute_command',
     '_logged_execute_pipeline',
     'execute_launch_command',
 }

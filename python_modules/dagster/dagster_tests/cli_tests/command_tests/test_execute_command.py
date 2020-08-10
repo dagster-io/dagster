@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import re
 
+import click
 import pytest
 from click import UsageError
 from click.testing import CliRunner
@@ -9,7 +10,7 @@ from click.testing import CliRunner
 from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
+from dagster.utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import execute_command_contexts, valid_pipeline_target_cli_args
 
@@ -119,14 +120,17 @@ def test_execute_command_no_env(gen_execute_args):
                     'You are using the legacy repository yaml format. Please update your file '
                 ),
             ):
-                execute_execute_command(env_file_list=None, cli_args=cli_args, instance=instance)
+                execute_execute_command(kwargs=cli_args, instance=instance)
         else:
-            execute_execute_command(env_file_list=None, cli_args=cli_args, instance=instance)
+            execute_execute_command(kwargs=cli_args, instance=instance)
 
 
 @pytest.mark.parametrize('gen_execute_args', execute_command_contexts())
 def test_execute_command_env(gen_execute_args):
     with gen_execute_args as (cli_args, uses_legacy_repository_yaml_format, instance):
+        kwargs = merge_dicts(
+            {'config': (file_relative_path(__file__, 'default_log_error_env.yaml'),)}, cli_args,
+        )
         if uses_legacy_repository_yaml_format:
             with pytest.warns(
                 UserWarning,
@@ -135,15 +139,11 @@ def test_execute_command_env(gen_execute_args):
                 ),
             ):
                 execute_execute_command(
-                    env_file_list=[file_relative_path(__file__, 'default_log_error_env.yaml')],
-                    cli_args=cli_args,
-                    instance=instance,
+                    kwargs=kwargs, instance=instance,
                 )
         else:
             execute_execute_command(
-                env_file_list=[file_relative_path(__file__, 'default_log_error_env.yaml')],
-                cli_args=cli_args,
-                instance=instance,
+                kwargs=kwargs, instance=instance,
             )
 
 
@@ -186,8 +186,7 @@ def test_output_execute_log_stdout(capfd):
         },
     ) as instance:
         execute_execute_command(
-            env_file_list=None,
-            cli_args={
+            kwargs={
                 'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
                 'attribute': 'stdout_pipeline',
             },
@@ -208,14 +207,14 @@ def test_output_execute_log_stderr(capfd):
             }
         },
     ) as instance:
-        execute_execute_command(
-            env_file_list=None,
-            cli_args={
-                'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-                'attribute': 'stderr_pipeline',
-            },
-            instance=instance,
-        )
+        with pytest.raises(click.ClickException, match=re.escape('resulted in failure')):
+            execute_execute_command(
+                kwargs={
+                    'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
+                    'attribute': 'stderr_pipeline',
+                },
+                instance=instance,
+            )
         captured = capfd.readouterr()
         assert 'I AM SUPPOSED TO FAIL' in captured.err
 
@@ -230,8 +229,7 @@ def test_more_than_one_pipeline():
             ),
         ):
             execute_execute_command(
-                env_file_list=None,
-                cli_args={
+                kwargs={
                     'repository_yaml': None,
                     'pipeline': None,
                     'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
@@ -248,8 +246,7 @@ def test_attribute_not_found():
             DagsterUserCodeProcessError, match=re.escape('nope not found at module scope in file')
         ):
             execute_execute_command(
-                env_file_list=None,
-                cli_args={
+                kwargs={
                     'repository_yaml': None,
                     'pipeline': None,
                     'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
@@ -270,8 +267,7 @@ def test_attribute_is_wrong_thing():
             ),
         ):
             execute_execute_command(
-                env_file_list=[],
-                cli_args={
+                kwargs={
                     'repository_yaml': None,
                     'pipeline': None,
                     'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
@@ -291,8 +287,7 @@ def test_attribute_fn_returns_wrong_thing():
             ),
         ):
             execute_execute_command(
-                env_file_list=[],
-                cli_args={
+                kwargs={
                     'repository_yaml': None,
                     'pipeline': None,
                     'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
@@ -334,10 +329,8 @@ def test_default_memory_run_storage():
                 'You are using the legacy repository yaml format. Please update your file '
             ),
         ):
-            result = execute_execute_command(
-                env_file_list=None, cli_args=cli_args, instance=instance
-            )
-        assert result.success
+            result = execute_execute_command(kwargs=cli_args, instance=instance)
+            assert result.success
 
 
 def test_override_with_in_memory_storage():
@@ -348,6 +341,7 @@ def test_override_with_in_memory_storage():
             'python_file': None,
             'module_name': None,
             'attribute': None,
+            'config': (file_relative_path(__file__, 'in_memory_env.yaml'),),
         }
         with pytest.warns(
             UserWarning,
@@ -355,12 +349,8 @@ def test_override_with_in_memory_storage():
                 'You are using the legacy repository yaml format. Please update your file '
             ),
         ):
-            result = execute_execute_command(
-                env_file_list=[file_relative_path(__file__, 'in_memory_env.yaml')],
-                cli_args=cli_args,
-                instance=instance,
-            )
-        assert result.success
+            result = execute_execute_command(kwargs=cli_args, instance=instance,)
+            assert result.success
 
 
 def test_override_with_filesystem_storage():
@@ -371,6 +361,7 @@ def test_override_with_filesystem_storage():
             'python_file': None,
             'module_name': None,
             'attribute': None,
+            'config': (file_relative_path(__file__, 'filesystem_env.yaml'),),
         }
         with pytest.warns(
             UserWarning,
@@ -378,12 +369,8 @@ def test_override_with_filesystem_storage():
                 'You are using the legacy repository yaml format. Please update your file '
             ),
         ):
-            result = execute_execute_command(
-                env_file_list=[file_relative_path(__file__, 'filesystem_env.yaml')],
-                cli_args=cli_args,
-                instance=instance,
-            )
-        assert result.success
+            result = execute_execute_command(kwargs=cli_args, instance=instance,)
+            assert result.success
 
 
 def test_multiproc():

@@ -41,7 +41,6 @@ from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
-from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -259,66 +258,40 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
-@click.option(
-    # backcompat
-    '-e',
-    '--env',
-    type=click.Path(exists=True),
-    multiple=True,
-    help=(
-        'Please use -c, --config to specify one or more run config files. '
-        '-e, --env is deprecated and will be removed in 0.9.0.'
-    ),
-)
-def pipeline_execute_command(config, preset, mode, **kwargs):
-    return _logged_pipeline_execute_command(config, preset, mode, DagsterInstance.get(), kwargs)
+def pipeline_execute_command(**kwargs):
+    execute_execute_command(DagsterInstance.get(), kwargs)
 
 
 @telemetry_wrapper
-def _logged_pipeline_execute_command(config, preset, mode, instance, kwargs):
+def execute_execute_command(instance, kwargs):
     check.inst_param(instance, 'instance', DagsterInstance)
-    env = (
-        canonicalize_backcompat_args(
-            (config if config else None),
-            '--config',
-            (kwargs.get('env') if kwargs.get('env') else None),
-            '--env',
-            '0.9.0',
-            stacklevel=2,  # this stacklevel can point the warning to this line
-        )
-        or tuple()  # back to default empty tuple
-    )
 
-    check.invariant(isinstance(env, tuple))
+    config = list(check.opt_tuple_param(kwargs.get('config'), 'config', default=(), of_type=str))
+    preset = kwargs.get('preset')
+    mode = kwargs.get('mode')
 
-    if preset and env:
-        raise click.UsageError('Can not use --preset with --env.')
+    if preset and config:
+        raise click.UsageError('Can not use --preset with --config.')
 
-    env = list(env)
     tags = get_tags_from_args(kwargs)
 
-    result = execute_execute_command(env, kwargs, instance, mode, tags, preset)
+    external_pipeline = get_external_pipeline_from_kwargs(kwargs, instance)
+    # We should move this to use external pipeline
+    # https://github.com/dagster-io/dagster/issues/2556
+
+    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
+    solid_selection = get_solid_selection_from_args(kwargs)
+    result = do_execute_command(pipeline, instance, config, mode, tags, solid_selection, preset)
+
     if not result.success:
         raise click.ClickException('Pipeline run {} resulted in failure.'.format(result.run_id))
 
-
-def get_run_config_from_env_file_list(env_file_list):
-    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
-    return load_yaml_from_glob_list(env_file_list) if env_file_list else {}
+    return result
 
 
-def execute_execute_command(env_file_list, cli_args, instance, mode=None, tags=None, preset=None):
-    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
-    check.inst_param(instance, 'instance', DagsterInstance)
-
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
-    # We should move this to use external pipeline
-    # https://github.com/dagster-io/dagster/issues/2556
-    pipeline = recon_pipeline_from_origin(external_pipeline.handle.get_origin())
-    solid_selection = get_solid_selection_from_args(cli_args)
-    return do_execute_command(
-        pipeline, instance, env_file_list, mode, tags, solid_selection, preset
-    )
+def get_run_config_from_file_list(file_list):
+    check.opt_list_param(file_list, 'file_list', of_type=str)
+    return load_yaml_from_glob_list(file_list) if file_list else {}
 
 
 def _check_execute_external_pipeline_args(
@@ -485,15 +458,15 @@ def _create_external_pipeline_run(
 
 
 def do_execute_command(
-    pipeline, instance, env_file_list, mode=None, tags=None, solid_selection=None, preset=None,
+    pipeline, instance, config, mode=None, tags=None, solid_selection=None, preset=None,
 ):
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
+    check.opt_list_param(config, 'config', of_type=str)
 
     return execute_pipeline(
         pipeline,
-        run_config=get_run_config_from_env_file_list(env_file_list),
+        run_config=get_run_config_from_file_list(config),
         mode=mode,
         tags=tags,
         instance=instance,
@@ -554,40 +527,16 @@ def do_execute_command(
         '   ancestors, "other_solid_a" itself, and "other_solid_b" and its direct child solids'
     ),
 )
-@click.option(
-    # backcompat
-    '-e',
-    '--env',
-    type=click.Path(exists=True),
-    multiple=True,
-    help=(
-        'Please use -c, --config to specify one or more run config files. '
-        '-e, --env is deprecated and will be removed in 0.9.0.'
-    ),
-)
 def pipeline_launch_command(**kwargs):
     return execute_launch_command(DagsterInstance.get(), kwargs)
 
 
 @telemetry_wrapper
 def execute_launch_command(instance, kwargs):
-    config = kwargs.get('config')
     preset = kwargs.get('preset')
     mode = kwargs.get('mode')
     check.inst_param(instance, 'instance', DagsterInstance)
-    env = (
-        canonicalize_backcompat_args(
-            (config if config else None),
-            '--config',
-            (kwargs.get('env') if kwargs.get('env') else None),
-            '--env',
-            '0.9.0',
-            stacklevel=2,  # this stacklevel can point the warning to this line
-        )
-        or tuple()  # back to default empty tuple
-    )
-
-    env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
+    config = list(check.opt_tuple_param(kwargs.get('config'), 'config', default=(), of_type=str))
 
     repo_location = get_repository_location_from_kwargs(kwargs, instance)
     external_repo = get_external_repository_from_repo_location(
@@ -605,7 +554,7 @@ def execute_launch_command(instance, kwargs):
     )
 
     if preset:
-        if env:
+        if config:
             raise click.UsageError('Can not use --preset with --config.')
 
         preset = external_pipeline.get_preset(preset)
@@ -621,7 +570,7 @@ def execute_launch_command(instance, kwargs):
         repo_location=repo_location,
         external_repo=external_repo,
         external_pipeline=external_pipeline,
-        run_config=get_run_config_from_env_file_list(env),
+        run_config=get_run_config_from_file_list(config),
         mode=mode,
         preset=preset,
         tags=run_tags,

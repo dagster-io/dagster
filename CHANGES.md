@@ -2,6 +2,10 @@
 
 ## 0.9.2
 
+**Breaking Changes**
+
+* The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
+
 **New**
 
 * Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
