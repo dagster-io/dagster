@@ -15,6 +15,8 @@ from dagster.utils import safe_tempfile_path
 from .cluster import ClusterConfig
 from .integration_utils import check_output, which_, within_docker
 
+CLUSTER_INFO_DUMP_DIR = 'kind-info-dump'
+
 
 def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):
     check.str_param(cluster_name, 'cluster_name')
@@ -145,9 +147,9 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
             kubernetes.config.load_kube_config(config_file=kubeconfig_file)
             yield ClusterConfig(cluster_name, kubeconfig_file)
 
-            if not should_cleanup:
+            if should_cleanup:
                 print(
-                    "WARNING: keep_cluster is false, won't delete your existing cluster. If you'd "
+                    "WARNING: should_cleanup is true, but won't delete your existing cluster. If you'd "
                     "like to delete this cluster, please manually remove by running the command:\n"
                     "kind delete cluster --name %s" % cluster_name
                 )
@@ -157,27 +159,70 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
                 kubernetes.config.load_kube_config(config_file=kubeconfig_file)
                 kind_sync_dockerconfig()
 
-                # Ensure cluster is up by listing svc accounts in the default namespace
-                # Otherwise if not ready yet, pod creation on kind cluster will fail with error
-                # like:
-                #
-                # pods "dagster.demo-error-pipeline.error-solid-e748d5c2" is forbidden: error
-                # looking up service account default/default: serviceaccount "default" not found
-                print('Testing service account listing...')
-                start = time.time()
-                while True:
-                    if time.time() - start > kind_ready_timeout:
-                        raise Exception('Timed out while waiting for kind cluster to be ready')
+                try:
+                    # Ensure cluster is up by listing svc accounts in the default namespace
+                    # Otherwise if not ready yet, pod creation on kind cluster will fail with error
+                    # like:
+                    #
+                    # pods "dagster.demo-error-pipeline.error-solid-e748d5c2" is forbidden: error
+                    # looking up service account default/default: serviceaccount "default" not found
+                    print('Testing service account listing...')
+                    start = time.time()
+                    while True:
+                        if time.time() - start > kind_ready_timeout:
+                            raise Exception('Timed out while waiting for kind cluster to be ready')
 
-                    api = kubernetes.client.CoreV1Api()
-                    service_accounts = [
-                        s.metadata.name
-                        for s in api.list_namespaced_service_account('default').items
-                    ]
-                    print('Service accounts: ', service_accounts)
-                    if 'default' in service_accounts:
-                        break
+                        api = kubernetes.client.CoreV1Api()
+                        service_accounts = [
+                            s.metadata.name
+                            for s in api.list_namespaced_service_account('default').items
+                        ]
+                        print('Service accounts: ', service_accounts)
+                        if 'default' in service_accounts:
+                            break
 
-                    time.sleep(1)
+                        time.sleep(1)
 
-                yield ClusterConfig(cluster_name, kubeconfig_file)
+                    yield ClusterConfig(cluster_name, kubeconfig_file)
+
+                finally:
+                    cluster_info_dump()
+
+
+def cluster_info_dump():
+    print(
+        'Writing out cluster info to {output_directory}'.format(
+            output_directory=CLUSTER_INFO_DUMP_DIR
+        )
+    )
+
+    p = subprocess.Popen(
+        [
+            'kubectl',
+            'cluster-info',
+            'dump',
+            '--all-namespaces=true',
+            '--output-directory={output_directory}'.format(output_directory=CLUSTER_INFO_DUMP_DIR),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    stdout, stderr = p.communicate()
+    print('Cluster info dumped with stdout: ', stdout)
+    print('Cluster info dumped with stderr: ', stderr)
+    assert p.returncode == 0
+
+    p = subprocess.Popen(
+        [
+            'buildkite-agent',
+            'artifact',
+            'upload',
+            '{output_directory}/**/*'.format(output_directory=CLUSTER_INFO_DUMP_DIR),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    stdout, stderr = p.communicate()
+    print('Buildkite artifact added with stdout: ', stdout)
+    print('Buildkite artifact added with stderr: ', stderr)
+    assert p.returncode == 0
