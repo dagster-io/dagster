@@ -2,7 +2,7 @@ import re
 import sys
 
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.utils import check
+from dagster.utils import check, is_str
 
 MAX_NUM = sys.maxsize
 
@@ -125,7 +125,7 @@ def _clause_to_subset(traverser, graph, clause):
             invalid.
     '''
     # parse cluase
-    if not check.is_str(clause):
+    if not is_str(clause):
         return []
     parts = parse_clause(clause)
     if parts is None:
