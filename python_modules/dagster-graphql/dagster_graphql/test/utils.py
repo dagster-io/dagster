@@ -1,9 +1,10 @@
+import sys
+
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
 from dagster import check
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     InProcessRepositoryLocation,
@@ -11,6 +12,7 @@ from dagster.core.host_representation import (
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.grpc.types import LoadableTargetOrigin
 
 
 def execute_dagster_graphql(context, query, variables=None):
@@ -56,8 +58,11 @@ def define_out_of_process_context(python_file, fn_name, instance):
     return DagsterGraphQLContext(
         locations=[
             PythonEnvRepositoryLocation(
-                RepositoryLocationHandle.create_out_of_process_location(
-                    'test_location', {fn_name: FileCodePointer(python_file, fn_name)}
+                RepositoryLocationHandle.create_python_env_location(
+                    loadable_target_origin=LoadableTargetOrigin(
+                        executable_path=sys.executable, python_file=python_file, attribute=fn_name,
+                    ),
+                    location_name='test_location',
                 )
             )
         ],

@@ -7,7 +7,6 @@ import pytest
 from marks import mark_scheduler
 
 from dagster import DagsterInstance, ScheduleDefinition, seven
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import PythonEnvRepositoryLocation, RepositoryLocationHandle
 from dagster.core.scheduler import ScheduleStatus
@@ -18,6 +17,7 @@ from dagster.core.scheduler.scheduler import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import environ
+from dagster.grpc.types import LoadableTargetOrigin
 
 
 @pytest.fixture(scope='function')
@@ -79,11 +79,11 @@ def test_repository():
 
 def get_test_external_repo():
     return PythonEnvRepositoryLocation(
-        RepositoryLocationHandle.create_out_of_process_location(
+        RepositoryLocationHandle.create_python_env_location(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable, python_file=__file__, attribute='test_repository',
+            ),
             location_name='test_location',
-            repository_code_pointer_dict={
-                'test_repository': FileCodePointer(__file__, 'test_repository'),
-            },
         )
     ).get_repository('test_repository')
 

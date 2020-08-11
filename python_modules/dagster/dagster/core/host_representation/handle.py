@@ -4,7 +4,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.api.list_repositories import sync_list_repositories_grpc
+from dagster.api.list_repositories import sync_list_repositories, sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.selector import PipelineSelector
@@ -66,32 +66,59 @@ class RepositoryLocationHandle:
         return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, {repo_def.name: pointer})
 
     @staticmethod
-    def create_out_of_process_location(
-        location_name, repository_code_pointer_dict,
+    def create_python_env_location(
+        loadable_target_origin,
+        location_name,
+        user_process_api=UserProcessApi.CLI,
+        use_python_package=False,
     ):
-        return RepositoryLocationHandle.create_python_env_location(
-            executable_path=sys.executable,
-            location_name=location_name,
-            repository_code_pointer_dict=repository_code_pointer_dict,
+        from dagster.grpc.types import LoadableTargetOrigin
+
+        check.inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+        check.opt_str_param(location_name, 'location_name')
+        check.bool_param(use_python_package, 'use_python_package')
+
+        if user_process_api == UserProcessApi.GRPC:
+            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                loadable_target_origin=loadable_target_origin, location_name=location_name
+            )
+
+        response = sync_list_repositories(
+            executable_path=loadable_target_origin.executable_path,
+            python_file=loadable_target_origin.python_file,
+            module_name=loadable_target_origin.module_name,
+            working_directory=loadable_target_origin.working_directory,
+            attribute=loadable_target_origin.attribute,
         )
 
-    @staticmethod
-    def create_python_env_location(
-        executable_path, location_name, repository_code_pointer_dict,
-    ):
-        check.str_param(executable_path, 'executable_path')
-        check.opt_str_param(location_name, 'location_name')
-        check.dict_param(
-            repository_code_pointer_dict,
-            'repository_code_pointer_dict',
-            key_type=str,
-            value_type=CodePointer,
-        )
+        if loadable_target_origin.python_file:
+            repository_code_pointer_dict = {
+                lrs.repository_name: CodePointer.from_python_file(
+                    loadable_target_origin.python_file,
+                    lrs.attribute,
+                    loadable_target_origin.working_directory,
+                )
+                for lrs in response.repository_symbols
+            }
+        elif use_python_package:
+            repository_code_pointer_dict = {
+                lrs.repository_name: CodePointer.from_python_package(
+                    loadable_target_origin.module_name, lrs.attribute
+                )
+                for lrs in response.repository_symbols
+            }
+        else:
+            repository_code_pointer_dict = {
+                lrs.repository_name: CodePointer.from_module(
+                    loadable_target_origin.module_name, lrs.attribute
+                )
+                for lrs in response.repository_symbols
+            }
         return PythonEnvRepositoryLocationHandle(
             location_name=location_name
             if location_name
             else _assign_python_env_location_name(repository_code_pointer_dict),
-            executable_path=executable_path,
+            executable_path=loadable_target_origin.executable_path,
             repository_code_pointer_dict=repository_code_pointer_dict,
         )
 

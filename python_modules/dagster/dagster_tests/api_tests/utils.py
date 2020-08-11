@@ -1,5 +1,6 @@
+import sys
+
 from dagster import file_relative_path
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import (
@@ -11,13 +12,13 @@ from dagster.grpc.types import LoadableTargetOrigin
 
 
 def get_bar_repo_repository_location_handle():
-    return RepositoryLocationHandle.create_out_of_process_location(
+    return RepositoryLocationHandle.create_python_env_location(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, 'api_tests_repo.py'),
+            attribute='bar_repo',
+        ),
         location_name='bar_repo_location',
-        repository_code_pointer_dict={
-            'bar_repo': FileCodePointer(
-                file_relative_path(__file__, 'api_tests_repo.py'), 'bar_repo'
-            )
-        },
     )
 
 

@@ -1,6 +1,8 @@
+import sys
+
 from dagster import lambda_solid, pipeline, repository
-from dagster.core.code_pointer import FileCodePointer
 from dagster.core.host_representation import PythonEnvRepositoryLocation, RepositoryLocationHandle
+from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 
@@ -21,9 +23,11 @@ def the_repo():
 
 def test_origin_id():
     host_location = PythonEnvRepositoryLocation(
-        RepositoryLocationHandle.create_out_of_process_location(
+        RepositoryLocationHandle.create_python_env_location(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable, python_file=__file__, attribute='the_repo'
+            ),
             location_name='the_location',
-            repository_code_pointer_dict={'the_repo': FileCodePointer(__file__, 'the_repo'),},
         )
     )
 
