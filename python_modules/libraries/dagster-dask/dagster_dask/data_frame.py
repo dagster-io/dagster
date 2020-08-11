@@ -852,28 +852,28 @@ def dataframe_materializer(_context, config, dask_df):
     })
 )
 def dataframe_loader(_context, config):
-    file_type, file_options = next(iter(config["read"].items()))
-    path = file_options.get("path")
+    read_type, read_options = next(iter(config["read"].items()))
+    path = read_options.get("path")
 
-    if file_type == "csv":
-        return dd.read_csv(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "parquet":
-        return dd.read_parquet(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "hdf":
-        return dd.read_hdf(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "json":
-        return dd.read_json(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "sql_table":
-        return dd.read_sql_table(**file_options)
-    elif file_type == "table":
-        return dd.read_table(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "fwf":
-        return dd.read_fwf(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "orc":
-        return dd.read_orc(path, **dict_without_keys(file_options, "path"))
+    if read_type == "csv":
+        return dd.read_csv(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "parquet":
+        return dd.read_parquet(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "hdf":
+        return dd.read_hdf(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "json":
+        return dd.read_json(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "sql_table":
+        return dd.read_sql_table(**read_options)
+    elif read_type == "table":
+        return dd.read_table(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "fwf":
+        return dd.read_fwf(path, **dict_without_keys(read_options, "path"))
+    elif read_type == "orc":
+        return dd.read_orc(path, **dict_without_keys(read_options, "path"))
     else:
         raise DagsterInvariantViolationError(
-            "Unsupported file_type {file_type}".format(file_type=file_type)
+            "Unsupported read_type {read_type}".format(read_type=read_type)
         )
 
 
