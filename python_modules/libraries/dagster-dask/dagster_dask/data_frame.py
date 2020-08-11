@@ -364,20 +364,22 @@ def dict_without_keys(ddict, *keys):
             is_required=False,
             description='Sample a random fraction of items.',
         ),
-        'repartition': Field(Selector(
-            {
-                'npartitions': Field(
-                    int,
-                    description='Number of partitions of output.',
-                ),
-                'partition_size': Field(
-                    Any,
-                    Description='Max number of bytes of memory for each partition.',
-                ),
-            },
+        'repartition': Field(
+            Selector(
+                {
+                    'npartitions': Field(
+                        int,
+                        description='Number of partitions of output.',
+                    ),
+                    'partition_size': Field(
+                        Any,
+                        description='Max number of bytes of memory for each partition.',
+                    ),
+                },
+            ),
             is_required=False,
             description='Repartition dataframe along new divisions.',
-        )),
+        ),
         'reset_index': Field(
             bool,
             is_required=False,
@@ -890,20 +892,22 @@ def dataframe_materializer(_context, config, dask_df):
             is_required=False,
             description='Sample a random fraction of items.',
         ),
-        'repartition': Field(Selector(
-            {
-                'npartitions': Field(
-                    int,
-                    description='Number of partitions of output.',
-                ),
-                'partition_size': Field(
-                    Any,
-                    Description='Max number of bytes of memory for each partition.',
-                ),
-            },
+        'repartition': Field(
+            Selector(
+                {
+                    'npartitions': Field(
+                        int,
+                        description='Number of partitions of output.',
+                    ),
+                    'partition_size': Field(
+                        Any,
+                        description='Max number of bytes of memory for each partition.',
+                    ),
+                },
+            ),
             is_required=False,
             description='Repartition dataframe along new divisions.',
-        )),
+        ),
         'lower_cols': Field(
             bool,
             is_required=False,
