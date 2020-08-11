@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 
 import dask.dataframe as dd
@@ -457,7 +458,10 @@ def dataframe_materializer(_context, config, dask_df):
         to_args = [to_path] if to_path else []
         to_kwargs = to_options
 
-        to_function(dask_df, *to_args, **to_kwargs)
+        # Get the Dask client from the dask resource, if available.
+        client_context = _context.resources.dask.client.as_current() if hasattr(_context.resources, "dask") else contextlib.nullcontext()
+        with client_context:
+            to_function(dask_df, *to_args, **to_kwargs)
 
         if to_path:
             yield AssetMaterialization.file(to_path)
