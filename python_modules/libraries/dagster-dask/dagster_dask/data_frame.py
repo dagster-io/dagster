@@ -366,21 +366,21 @@ def dict_without_keys(ddict, *keys):
 )
 def dataframe_materializer(_context, config, dask_df):
     check.inst_param(dask_df, "dask_df", dd.DataFrame)
-    file_type, file_options = list(config["to"].items())[0]
-    path = file_options.get("path")
+    to_type, to_options = list(config["to"].items())[0]
+    path = to_options.get("path")
 
-    if file_type == "csv":
-        dask_df.to_csv(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "parquet":
-        dask_df.to_parquet(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "hdf":
-        dask_df.to_hdf(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "json":
-        dask_df.to_json(path, **dict_without_keys(file_options, "path"))
-    elif file_type == "sql":
-        dask_df.to_sql(**file_options)
+    if to_type == "csv":
+        dask_df.to_csv(path, **dict_without_keys(to_options, "path"))
+    elif to_type == "parquet":
+        dask_df.to_parquet(path, **dict_without_keys(to_options, "path"))
+    elif to_type == "hdf":
+        dask_df.to_hdf(path, **dict_without_keys(to_options, "path"))
+    elif to_type == "json":
+        dask_df.to_json(path, **dict_without_keys(to_options, "path"))
+    elif to_type == "sql":
+        dask_df.to_sql(**to_options)
     else:
-        check.failed("Unsupported file_type {file_type}".format(file_type=file_type))
+        check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
 
     return AssetMaterialization.file(path)
 
