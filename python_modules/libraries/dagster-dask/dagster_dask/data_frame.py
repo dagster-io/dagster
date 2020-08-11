@@ -37,7 +37,7 @@ def dict_without_keys(ddict, *keys):
 @dagster_type_materializer(
     Shape({
         'to': {
-            'csv': Permissive(
+            'csv': Field(
                 {
                     'path': Field(
                         Any,
@@ -103,9 +103,10 @@ def dict_without_keys(ddict, *keys):
                         is_required=False,
                         description="Options to be passed in to the compute method",
                     ),
-                }
+                },
+                is_required=False,
             ),
-            'parquet': Permissive(
+            'parquet': Field(
                 {
                     'path': Field(
                         Any,
@@ -185,9 +186,10 @@ def dict_without_keys(ddict, *keys):
                         is_required=False,
                         description="Options to be passed in to the compute method.",
                     ),
-                }
+                },
+                is_required=False,
             ),
-            'hdf': Permissive(
+            'hdf': Field(
                 {
                     'path': Field(
                         Any,
@@ -219,9 +221,10 @@ def dict_without_keys(ddict, *keys):
                         is_required=False,
                         description="The scheduler to use, like 'threads' or 'processes'.",
                     ),
-                }
+                },
+                is_required=False,
             ),
-            'json': Permissive(
+            'json': Field(
                 {
                     'path': Field(
                         Any,
@@ -266,8 +269,9 @@ def dict_without_keys(ddict, *keys):
                         String, is_required=False, description="String like 'gzip' or 'xz'.",
                     ),
                 },
+                is_required=False,
             ),
-            'sql': Permissive(
+            'sql': Field(
                 {
                     'name': Field(String, is_required=True, description="Name of SQL table",),
                     'uri': Field(
@@ -357,6 +361,7 @@ def dict_without_keys(ddict, *keys):
                         """,
                     ),
                 },
+                is_required=False,
             ),
         },
         'sample': Field(
