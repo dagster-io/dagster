@@ -423,7 +423,7 @@ def dataframe_materializer(_context, config, dask_df):
 
 @dagster_type_loader(
     Shape({
-        'from': Selector(
+        'read': Selector(
             {
                 'csv': Permissive(
                     {
