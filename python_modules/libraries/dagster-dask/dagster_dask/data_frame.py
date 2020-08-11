@@ -10,6 +10,7 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     Field,
+    Float,
     Int,
     Permissive,
     Selector,
@@ -365,7 +366,7 @@ def dict_without_keys(ddict, *keys):
             ),
         },
         'sample': Field(
-            float,
+            Float,
             is_required=False,
             description='Sample a random fraction of items.',
         ),
@@ -386,7 +387,7 @@ def dict_without_keys(ddict, *keys):
             description='Repartition dataframe along new divisions.',
         ),
         'reset_index': Field(
-            bool,
+            Bool,
             is_required=False,
             description='Reset the index to the default index. If true, the index will be inserted into dataframe columns. Defaults to false.'
         ),
@@ -893,7 +894,7 @@ def dataframe_materializer(_context, config, dask_df):
             },
         ),
         'sample': Field(
-            float,
+            Float,
             is_required=False,
             description='Sample a random fraction of items.',
         ),
@@ -914,12 +915,12 @@ def dataframe_materializer(_context, config, dask_df):
             description='Repartition dataframe along new divisions.',
         ),
         'lower_cols': Field(
-            bool,
+            Bool,
             is_required=False,
             description='Lowercase column names.',
         ),
         'reset_index': Field(
-            bool,
+            Bool,
             is_required=False,
             description='Reset the index to the default index. If true, the index will be inserted into dataframe columns. Defaults to false.'
         )
