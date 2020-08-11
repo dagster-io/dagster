@@ -233,7 +233,6 @@ DataFrameToTypes = {
                 False,
                 "A string representing the compression to use in the output file.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
@@ -274,7 +273,6 @@ DataFrameToTypes = {
                 False,
                 "Whether to write the special ``_metadata`` file.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
@@ -288,8 +286,7 @@ DataFrameToTypes = {
         "options": {
             "path": (Any, True, "Path to a target filename."),
             "key": (String, True, "Datapath within the files."),
-            "compute": (Bool, False, "Whether or not to execute immediately."),
-            "scheduler": (String, False, 'The scheduler to use, like "threads" or "processes".'),
+            "scheduler": (String, False, "The scheduler to use, like \"threads\" or \"processes\"."),
         },
     },
     "json": {
@@ -304,13 +301,12 @@ DataFrameToTypes = {
                 False,
                 "Passed to backend file-system implementation.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
                 "Options to be passed in to the compute method.",
             ),
-            "compression": (String, False, 'String like "gzip" or "xz".'),
+            "compression": (String, False, "String like \"gzip\" or \"xz\"."),
         },
     },
     "sql": {
@@ -330,7 +326,6 @@ DataFrameToTypes = {
             ),
             "dtype": (Any, False, "Specifying the datatype for columns."),
             "method": (String, False, "Controls the SQL insertion clause used."),
-            "compute": (Bool, False, "When true, call dask.compute and perform the load into SQL."),
             "parallel": (
                 Bool,
                 False,
