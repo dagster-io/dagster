@@ -848,6 +848,35 @@ def dataframe_materializer(_context, config, dask_df):
                 ),
             },
         ),
+        'sample': Field(
+            float,
+            is_required=False,
+            description='Sample a random fraction of items.',
+        ),
+        'repartition': Field(Selector(
+            {
+                'npartitions': Field(
+                    int,
+                    description='Number of partitions of output.',
+                ),
+                'partition_size': Field(
+                    Any,
+                    Description='Max number of bytes of memory for each partition.',
+                ),
+            },
+            is_required=False,
+            description='Repartition dataframe along new divisions.',
+        )),
+        'lower_cols': Field(
+            bool,
+            is_required=False,
+            description='Lowercase column names.',
+        ),
+        'reset_index': Field(
+            bool,
+            is_required=False,
+            description='Reset the index to the default index. If true, the index will be inserted into dataframe columns. Defaults to false.'
+        )
     })
 )
 def dataframe_loader(_context, config):
@@ -855,25 +884,44 @@ def dataframe_loader(_context, config):
     path = read_options.get('path')
 
     if read_type == 'csv':
-        return dd.read_csv(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_csv(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'parquet':
-        return dd.read_parquet(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_parquet(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'hdf':
-        return dd.read_hdf(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_hdf(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'json':
-        return dd.read_json(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_json(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'sql_table':
-        return dd.read_sql_table(**read_options)
+        df = dd.read_sql_table(**read_options)
     elif read_type == 'table':
-        return dd.read_table(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_table(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'fwf':
-        return dd.read_fwf(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_fwf(path, **dict_without_keys(read_options, 'path'))
     elif read_type == 'orc':
-        return dd.read_orc(path, **dict_without_keys(read_options, 'path'))
+        df = dd.read_orc(path, **dict_without_keys(read_options, 'path'))
     else:
         raise DagsterInvariantViolationError(
             'Unsupported read_type {read_type}'.format(read_type=read_type)
         )
+    
+    if 'sample' in config:
+        value = config['sample']
+        df = df.sample(frac=value)
+
+    if 'repartition' in config:
+        value = config['repartition']
+        df = df.repartition(**value)
+
+    if 'lower_cols' in config:
+        value = config['lower_cols']
+        if value:
+            df.columns = map(str.lower, df.columns)
+
+    if 'reset_index' in config:
+        value = config['reset_index']
+        df = df.reset_index(drop=value)
+
+    return df
 
 
 def df_type_check(_, value):
