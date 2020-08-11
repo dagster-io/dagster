@@ -359,10 +359,46 @@ def dict_without_keys(ddict, *keys):
                 },
             ),
         },
+        'sample': Field(
+            float,
+            is_required=False,
+            description='Sample a random fraction of items.',
+        ),
+        'repartition': Field(Selector(
+            {
+                'npartitions': Field(
+                    int,
+                    description='Number of partitions of output.',
+                ),
+                'partition_size': Field(
+                    Any,
+                    Description='Max number of bytes of memory for each partition.',
+                ),
+            },
+            is_required=False,
+            description='Repartition dataframe along new divisions.',
+        )),
+        'reset_index': Field(
+            bool,
+            is_required=False,
+            description='Reset the index to the default index. If true, the index will be inserted into dataframe columns. Defaults to false.'
+        ),
     })
 )
 def dataframe_materializer(_context, config, dask_df):
     check.inst_param(dask_df, 'dask_df', dd.DataFrame)
+
+    if 'sample' in config:
+        value = config['sample']
+        dask_df = dask_df.sample(frac=value)
+
+    if 'repartition' in config:
+        value = config['repartition']
+        dask_df = dask_df.repartition(**value)
+
+    if 'reset_index' in config:
+        value = config['reset_index']
+        dask_df = dask_df.reset_index(drop=value)
 
     for to_type, to_options in config['to'].items():
         path = to_options.get('path')
