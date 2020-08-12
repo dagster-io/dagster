@@ -27,6 +27,10 @@ To execute pipelines in a workspace, use `pipeline launch` instead.
 
 - Fixes an issue in the `dagster-k8s-celery` executor when executing solid subsets
 
+**Breaking Changes**
+
+- Deprecated the `IntermediateStore` API. `IntermediateStorage` now wraps an ObjectStore, and `TypeStoragePlugin` now accepts an `IntermediateStorage` instance instead of an `IntermediateStore` instance. (Noe that `IntermediateStore` and `IntermediateStorage` are both internal APIs that are used in some non-core libraries).
+
 ## 0.9.0
 
 **Breaking Changes**
