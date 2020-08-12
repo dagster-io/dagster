@@ -109,7 +109,7 @@ class TestDBTSingleOperationSolids:
             "result": {"request_token": request_token_sentinel_value}
         }
 
-        configured_solid = configured(op_solid)(op_config)
+        configured_solid = configured(op_solid, name="configured_solid")(op_config)
 
         instance = DagsterInstance.ephemeral()
         result = execute_pipeline(

@@ -70,12 +70,12 @@ example, simply invoke `configured` on the solid definition:
 file:/docs_snippets/docs_snippets/overview/configuration/configured_solid_example.py
 ```
 
-By default, the resulting solid definition will inherit the name of the solid it wraps. As shown,
-you may optionally add a keyword argument `name` in the call to `configured` if you'd like the
-configured solid to take on a different name. Since solid definitions must have unique names, make
-sure you give configured solids different names if you want to use them together with the original
-solid or if you are configuring one solid in different ways within the same repository. Below is one
-case that would require this pattern:
+When using the decorator syntax (`@configured`), the resulting solid definition will inherit the
+name of the function being decorated (like `another_configured_example` in the above example). When
+configuring a solid completely with a config dictionary rather than with a function (as with
+`configured_example`), you must add a keyword argument `name` in the call to `configured`.
+When naming solids, remember that solid definitions must have unique names within a repository or
+pipeline.
 
 ```python literalinclude
 file:/docs_snippets/docs_snippets/overview/configuration/configured_named_solid_example.py

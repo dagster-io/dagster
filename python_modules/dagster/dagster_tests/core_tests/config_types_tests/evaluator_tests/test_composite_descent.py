@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     Enum,
     EnumValue,
     Field,
@@ -9,12 +10,12 @@ from dagster import (
     Output,
     String,
     composite_solid,
+    configured,
     execute_pipeline,
     lambda_solid,
     pipeline,
     solid,
 )
-from dagster.core.definitions.config_mappable import configured
 from dagster.core.system_config.composite_descent import composite_descent
 
 
@@ -545,16 +546,18 @@ def test_configured_solid_with_inputs():
         assert context.solid_config == "config sentinel"
         return x
 
-    return_int_configured = configured(return_int)("config sentinel")
+    return_int_configured = configured(return_int, name="return_int_configured")("config sentinel")
 
     @pipeline
     def return_int_pipeline():
         return_int_configured()
 
-    result = execute_pipeline(return_int_pipeline, {"solids": {"return_int": {"inputs": {"x": 6}}}})
+    result = execute_pipeline(
+        return_int_pipeline, {"solids": {"return_int_configured": {"inputs": {"x": 6}}}}
+    )
 
     assert result.success
-    assert result.result_for_solid("return_int").output_value() == 6
+    assert result.result_for_solid("return_int_configured").output_value() == 6
 
 
 def test_single_level_pipeline_with_complex_configured_solid_within_composite():
@@ -566,11 +569,11 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
     def introduce_aj(config):
         return {"name": "AJ", "age": config["age"]}
 
-    assert introduce_aj.name == "introduce"
+    assert introduce_aj.name == "introduce_aj"
 
     @composite_solid(
         config_schema={"num_as_str": str},
-        config_fn=lambda cfg: {"introduce": {"config": {"age": int(cfg["num_as_str"])}}},
+        config_fn=lambda cfg: {"introduce_aj": {"config": {"age": int(cfg["num_as_str"])}}},
     )
     def introduce_wrapper():
         return introduce_aj()
@@ -644,7 +647,9 @@ def test_single_level_pipeline_with_configured_composite_solid():
     def multiply_by_four():
         return add(multiply_by_two(), multiply_by_two.alias("multiply_by_two_again")())
 
-    multiply_three_by_four = configured(multiply_by_four)({"outer": 3})
+    multiply_three_by_four = configured(multiply_by_four, name="multiply_three_by_four")(
+        {"outer": 3}
+    )
 
     @pipeline
     def test_pipeline():
@@ -653,7 +658,7 @@ def test_single_level_pipeline_with_configured_composite_solid():
     result = execute_pipeline(test_pipeline)
 
     assert result.success
-    assert result.result_for_solid("multiply_by_four").output_value() == 12
+    assert result.result_for_solid("multiply_three_by_four").output_value() == 12
 
 
 def test_single_level_pipeline_with_configured_decorated_composite_solid():
@@ -681,6 +686,8 @@ def test_single_level_pipeline_with_configured_decorated_composite_solid():
     def multiply_three_by_four(_config):
         return {"outer": 3}
 
+    assert multiply_three_by_four.name == "multiply_three_by_four"
+
     @pipeline
     def test_pipeline():
         multiply_three_by_four()
@@ -688,7 +695,7 @@ def test_single_level_pipeline_with_configured_decorated_composite_solid():
     result = execute_pipeline(test_pipeline)
 
     assert result.success
-    assert result.result_for_solid("multiply_by_four").output_value() == 12
+    assert result.result_for_solid("multiply_three_by_four").output_value() == 12
 
 
 def test_configured_composite_solid_with_inputs():
@@ -697,7 +704,7 @@ def test_configured_composite_solid_with_inputs():
         assert context.solid_config == "inner config sentinel"
         return x
 
-    return_int_x = configured(return_int)("inner config sentinel")
+    return_int_x = configured(return_int, name="return_int_x")("inner config sentinel")
 
     @solid(config_schema=str)
     def add(context, lhs, rhs):
@@ -712,7 +719,9 @@ def test_configured_composite_solid_with_inputs():
     def return_int_composite(x, y):
         return add(return_int_x(x), return_int_x.alias("return_int_again")(y))
 
-    return_int_composite_x = configured(return_int_composite)({"outer": "outer config sentinel"})
+    return_int_composite_x = configured(return_int_composite, name="return_int_composite")(
+        {"outer": "outer config sentinel"}
+    )
 
     @pipeline
     def test_pipeline():
@@ -757,3 +766,43 @@ def test_configured_composite_solid_cannot_stub_inner_solids_config():
                 }
             },
         )
+
+
+def test_configuring_solids_without_specifying_name():
+    @solid(config_schema=int)
+    def return_int(context):
+        return context.solid_config
+
+    @composite_solid(
+        config_schema={"num": int}, config_fn=lambda cfg: {"return_int": {"config": cfg["num"]}}
+    )
+    def return_int_composite():
+        return_int()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Missing string param "name" while attempting to configure the solid "return_int',
+    ):
+        configured(return_int)(2)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Missing string param "name" while attempting to configure the composite solid "return_int_composite"',
+    ):
+        configured(return_int_composite)({"num": 5})
+
+
+def test_configuring_composite_solid_with_no_config_mapping():
+    @solid
+    def return_run_id(context):
+        return context.run_id
+
+    @composite_solid
+    def composite_without_config_fn():
+        return return_run_id()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Only composite solids utilizing config mapping can be pre-configured. The solid "composite_without_config_fn"',
+    ):
+        configured(composite_without_config_fn, name="configured_composite")({})

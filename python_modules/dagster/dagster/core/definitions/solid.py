@@ -293,12 +293,42 @@ class SolidDefinition(ISolidDefinition):
         return self.__configured_config_mapping_fn
 
     def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        """
+        Returns a new :py:class:`SolidDefinition` that bundles this definition with the specified
+        config or config function.
+
+        Args:
+            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
+                that fully satisfies this solid's config schema or (2) A function that accepts run
+                configuration and returns run configuration that fully satisfies this solid's
+                config schema.  In the latter case, config_schema must be specified.  When
+                passing a function, it's easiest to use :py:func:`configured`.
+            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
+                that its input must satisfy.
+            name (str): Name of the new (configured) solid. Must be unique within any
+                :py:class:`PipelineDefinition` using the solid.
+
+        Returns (SolidDefinition): A configured version of this solid definition.
+        """
+
+        fn_name = config_or_config_fn.__name__ if callable(config_or_config_fn) else None
+        name = kwargs.get("name", fn_name)
+        if not name:
+            raise DagsterInvalidDefinitionError(
+                'Missing string param "name" while attempting to configure the solid '
+                '"{solid_name}". When configuring a solid, you must specify a name for the '
+                "resulting solid definition as a keyword param or use `configured` in decorator "
+                "form. For examples, visit https://docs.dagster.io/overview/configuration#configured.".format(
+                    solid_name=self.name
+                )
+            )
+
         wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
             config_or_config_fn, config_schema
         )
 
         return SolidDefinition(
-            name=kwargs.get("name", self.name),
+            name=name,
             input_defs=self.input_defs,
             compute_fn=self.compute_fn,
             output_defs=self.output_defs,
@@ -587,14 +617,50 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self.__configured_config_mapping_fn
 
     def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        check.invariant(self.has_config_entry)  # must have reason to be configured
+        """
+        Returns a new :py:class:`CompositeSolidDefinition` that bundles this definition with the
+        specified config or config function.
+
+        Args:
+            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
+                that fully satisfies this composite solid's config schema or (2) A function that accepts run
+                configuration and returns run configuration that fully satisfies this composite solid's
+                config schema.  In the latter case, config_schema must be specified.  When
+                passing a function, it's easiest to use :py:func:`configured`.
+            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
+                that its input must satisfy.
+            name (str): Name of the new (configured) composite solid. Must be unique within any
+                :py:class:`PipelineDefinition` using the composite solid.
+            **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the
+                returned composite solid.
+
+        Returns (CompositeSolidDefinition): A configured version of this composite solid definition.
+        """
+        if not self.has_config_mapping:
+            raise DagsterInvalidDefinitionError(
+                "Only composite solids utilizing config mapping can be pre-configured. The solid "
+                '"{solid_name}" does not have a config mapping, and thus has nothing to be '
+                "configured.".format(solid_name=self.name)
+            )
+
+        fn_name = config_or_config_fn.__name__ if callable(config_or_config_fn) else None
+        name = kwargs.get("name", fn_name)
+        if not name:
+            raise DagsterInvalidDefinitionError(
+                'Missing string param "name" while attempting to configure the composite solid '
+                '"{solid_name}". When configuring a solid, you must specify a name for the '
+                "resulting solid definition as a keyword param or use `configured` in decorator "
+                "form. For examples, visit https://docs.dagster.io/overview/configuration#configured.".format(
+                    solid_name=self.name
+                )
+            )
 
         wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
             config_or_config_fn, config_schema
         )
 
         return CompositeSolidDefinition(
-            name=kwargs.get("name", self.name),
+            name=name,
             solid_defs=self._solid_defs,
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,

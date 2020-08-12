@@ -2,6 +2,10 @@
 
 ## 0.9.4
 
+**Breaking Changes**
+
+* When using the `configured` API on a solid or composite solid, a new solid name must be provided.
+
 **New**
 
 * Added an experimental mode that speeds up interactions in dagit by launching a gRPC server on startup for each repository location in your workspace. To enable it, add the following to your `dagster.yaml`:

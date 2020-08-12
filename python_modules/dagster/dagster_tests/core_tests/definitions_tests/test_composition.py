@@ -8,7 +8,9 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
+    SolidDefinition,
     composite_solid,
+    configured,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -64,6 +66,18 @@ def adder(_context, int_1, int_2):
 def return_mult(_context):
     yield Output(1, "one")
     yield Output(2, "two")
+
+
+@solid(config_schema=int)
+def return_config_int(context):
+    return context.solid_config
+
+
+def get_duplicate_solids():
+    return (
+        SolidDefinition("a_solid", [], lambda: None, []),
+        SolidDefinition("a_solid", [], lambda: None, []),
+    )
 
 
 def test_basic():
@@ -137,7 +151,7 @@ def test_mult_out_fail():
             add_one(ret)
 
 
-def test_dupes_fail():
+def test_aliased_with_name_name_fails():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid
@@ -145,6 +159,32 @@ def test_dupes_fail():
             one, two = return_mult()
             add_one(num=one)
             add_one.alias("add_one")(num=two)  # explicit alias disables autoalias
+
+
+def test_composite_with_duplicate_solids():
+    solid_1, solid_2 = get_duplicate_solids()
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Detected conflicting solid definitions with the same name",
+    ):
+
+        @composite_solid
+        def _name_conflict_composite():
+            solid_1()
+            solid_2()
+
+
+def test_pipeline_with_duplicate_solids():
+    solid_1, solid_2 = get_duplicate_solids()
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Detected conflicting solid definitions with the same name",
+    ):
+
+        @pipeline
+        def _name_conflict_pipeline():
+            solid_1()
+            solid_2()
 
 
 def test_multiple():
@@ -629,6 +669,6 @@ def test_alias_on_invoked_solid_fails():
 
         @pipeline
         def alias_on_invoked_solid_pipeline():
-            return_one().alias("something")
+            return_one().alias("something")  # pylint: disable=no-member
 
         execute_pipeline(alias_on_invoked_solid_pipeline)
