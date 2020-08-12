@@ -217,160 +217,174 @@
     "path": "/_apidocs",
     "children": [
       {
-        "name": "Solids",
-        "path": "/_apidocs/solids"
+        "name": "Core",
+        "path": "/_apidocs#core",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Solids",
+            "path": "/_apidocs/solids"
+          },
+          {
+            "name": "Pipelines",
+            "path": "/_apidocs/pipeline"
+          },
+          {
+            "name": "Modes & Resources",
+            "path": "/_apidocs/modes-resources"
+          },
+          {
+            "name": "Presets",
+            "path": "/_apidocs/presets"
+          },
+          {
+            "name": "Loggers",
+            "path": "/_apidocs/loggers"
+          },
+          {
+            "name": "Repositories",
+            "path": "/_apidocs/repositories"
+          },
+          {
+            "name": "Config",
+            "path": "/_apidocs/config"
+          },
+          {
+            "name": "Types",
+            "path": "/_apidocs/types"
+          },
+          {
+            "name": "Dagster CLI",
+            "path": "/_apidocs/cli"
+          },
+          {
+            "name": "Schedules",
+            "path": "/_apidocs/schedules"
+          },
+          {
+            "name": "Partitions",
+            "path": "/_apidocs/partitions"
+          },
+          {
+            "name": "Errors",
+            "path": "/_apidocs/errors"
+          },
+          {
+            "name": "Execution",
+            "path": "/_apidocs/execution"
+          },
+          {
+            "name": "Utilities",
+            "path": "/_apidocs/utilities"
+          },
+          {
+            "name": "Internals",
+            "path": "/_apidocs/internals"
+          }
+        ]
       },
       {
-        "name": "Pipelines",
-        "path": "/_apidocs/pipeline"
-      },
-      {
-        "name": "Modes & Resources",
-        "path": "/_apidocs/modes-resources"
-      },
-      {
-        "name": "Presets",
-        "path": "/_apidocs/presets"
-      },
-      {
-        "name": "Loggers",
-        "path": "/_apidocs/loggers"
-      },
-      {
-        "name": "Repositories",
-        "path": "/_apidocs/repositories"
-      },
-      {
-        "name": "Config",
-        "path": "/_apidocs/config"
-      },
-      {
-        "name": "Types",
-        "path": "/_apidocs/types"
-      },
-      {
-        "name": "Dagster CLI",
-        "path": "/_apidocs/cli"
-      },
-      {
-        "name": "Schedules",
-        "path": "/_apidocs/schedules"
-      },
-      {
-        "name": "Partitions",
-        "path": "/_apidocs/partitions"
-      },
-      {
-        "name": "Errors",
-        "path": "/_apidocs/errors"
-      },
-      {
-        "name": "Execution",
-        "path": "/_apidocs/execution"
-      },
-      {
-        "name": "Utilities",
-        "path": "/_apidocs/utilities"
-      },
-      {
-        "name": "Internals",
-        "path": "/_apidocs/internals"
-      },
-      {
-        "name": "Dagstermill",
-        "path": "/_apidocs/libraries/dagstermill"
-      },
-      {
-        "name": "Airflow (dagster_airflow)",
-        "path": "/_apidocs/libraries/dagster_airflow"
-      },
-      {
-        "name": "AWS (dagster_aws)",
-        "path": "/_apidocs/libraries/dagster_aws"
-      },
-      {
-        "name": "Azure (dagster_azure)",
-        "path": "/_apidocs/libraries/dagster_azure"
-      },
-      {
-        "name": "Celery (dagster_celery)",
-        "path": "/_apidocs/libraries/dagster_celery"
-      },
-      {
-        "name": "Cron (dagster_cron)",
-        "path": "/_apidocs/libraries/dagster_cron"
-      },
-      {
-        "name": "Dask (dagster_dask)",
-        "path": "/_apidocs/libraries/dagster_dask"
-      },
-      {
-        "name": "Datadog (dagster_datadog)",
-        "path": "/_apidocs/libraries/dagster_datadog"
-      },
-      {
-        "name": "Databricks (dagster_databricks)",
-        "path": "/_apidocs/libraries/dagster_databricks"
-      },
-      {
-        "name": "GCP (dagster_gcp)",
-        "path": "/_apidocs/libraries/dagster_gcp"
-      },
-      {
-        "name": "Github (dagster_github)",
-        "path": "/_apidocs/libraries/dagster_github"
-      },
-      {
-        "name": "Kubernetes (dagster_k8s)",
-        "path": "/_apidocs/libraries/dagster_k8s"
-      },
-      {
-        "name": "PagerDuty (dagster_pagerduty)",
-        "path": "/_apidocs/libraries/dagster_pagerduty"
-      },
-      {
-        "name": "Pandas (dagster_pandas)",
-        "path": "/_apidocs/libraries/dagster_pandas"
-      },
-      {
-        "name": "PostgreSQL (dagster_postgres)",
-        "path": "/_apidocs/libraries/dagster_postgres"
-      },
-      {
-        "name": "Prometheus (dagster_prometheus)",
-        "path": "/_apidocs/libraries/dagster_prometheus"
-      },
-      {
-        "name": "Pyspark (dagster_pyspark)",
-        "path": "/_apidocs/libraries/dagster_pyspark"
-      },
-      {
-        "name": "Shell (dagster_shell)",
-        "path": "/_apidocs/libraries/dagster_shell"
-      },
-      {
-        "name": "Slack (dagster_slack)",
-        "path": "/_apidocs/libraries/dagster_slack"
-      },
-      {
-        "name": "Snowflake (dagster_snowflake)",
-        "path": "/_apidocs/libraries/dagster_snowflake"
-      },
-      {
-        "name": "Spark (dagster_spark)",
-        "path": "/_apidocs/libraries/dagster_spark"
-      },
-      {
-        "name": "SSH / SFTP (dagster_ssh)",
-        "path": "/_apidocs/libraries/dagster_ssh"
-      },
-      {
-        "name": "Twilio (dagster_twilio)",
-        "path": "/_apidocs/libraries/dagster_twilio"
-      },
-      {
-        "name": "Lakehouse (experimental)",
-        "path": "/_apidocs/libraries/lakehouse"
+        "name": "Libraries",
+        "path": "/_apidocs#libraries",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Dagstermill",
+            "path": "/_apidocs/libraries/dagstermill"
+          },
+          {
+            "name": "Airflow (dagster_airflow)",
+            "path": "/_apidocs/libraries/dagster_airflow"
+          },
+          {
+            "name": "AWS (dagster_aws)",
+            "path": "/_apidocs/libraries/dagster_aws"
+          },
+          {
+            "name": "Azure (dagster_azure)",
+            "path": "/_apidocs/libraries/dagster_azure"
+          },
+          {
+            "name": "Celery (dagster_celery)",
+            "path": "/_apidocs/libraries/dagster_celery"
+          },
+          {
+            "name": "Cron (dagster_cron)",
+            "path": "/_apidocs/libraries/dagster_cron"
+          },
+          {
+            "name": "Dask (dagster_dask)",
+            "path": "/_apidocs/libraries/dagster_dask"
+          },
+          {
+            "name": "Datadog (dagster_datadog)",
+            "path": "/_apidocs/libraries/dagster_datadog"
+          },
+          {
+            "name": "Databricks (dagster_databricks)",
+            "path": "/_apidocs/libraries/dagster_databricks"
+          },
+          {
+            "name": "GCP (dagster_gcp)",
+            "path": "/_apidocs/libraries/dagster_gcp"
+          },
+          {
+            "name": "Github (dagster_github)",
+            "path": "/_apidocs/libraries/dagster_github"
+          },
+          {
+            "name": "Kubernetes (dagster_k8s)",
+            "path": "/_apidocs/libraries/dagster_k8s"
+          },
+          {
+            "name": "PagerDuty (dagster_pagerduty)",
+            "path": "/_apidocs/libraries/dagster_pagerduty"
+          },
+          {
+            "name": "Pandas (dagster_pandas)",
+            "path": "/_apidocs/libraries/dagster_pandas"
+          },
+          {
+            "name": "PostgreSQL (dagster_postgres)",
+            "path": "/_apidocs/libraries/dagster_postgres"
+          },
+          {
+            "name": "Prometheus (dagster_prometheus)",
+            "path": "/_apidocs/libraries/dagster_prometheus"
+          },
+          {
+            "name": "Pyspark (dagster_pyspark)",
+            "path": "/_apidocs/libraries/dagster_pyspark"
+          },
+          {
+            "name": "Shell (dagster_shell)",
+            "path": "/_apidocs/libraries/dagster_shell"
+          },
+          {
+            "name": "Slack (dagster_slack)",
+            "path": "/_apidocs/libraries/dagster_slack"
+          },
+          {
+            "name": "Snowflake (dagster_snowflake)",
+            "path": "/_apidocs/libraries/dagster_snowflake"
+          },
+          {
+            "name": "Spark (dagster_spark)",
+            "path": "/_apidocs/libraries/dagster_spark"
+          },
+          {
+            "name": "SSH / SFTP (dagster_ssh)",
+            "path": "/_apidocs/libraries/dagster_ssh"
+          },
+          {
+            "name": "Twilio (dagster_twilio)",
+            "path": "/_apidocs/libraries/dagster_twilio"
+          },
+          {
+            "name": "Lakehouse (experimental)",
+            "path": "/_apidocs/libraries/lakehouse"
+          }
+        ]
       }
     ]
   },
