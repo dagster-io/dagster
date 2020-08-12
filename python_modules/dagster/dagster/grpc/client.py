@@ -24,6 +24,7 @@ from .types import (
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
 )
 
@@ -158,6 +159,25 @@ class DagsterGrpcClient(object):
 
         return deserialize_json_to_dagster_namedtuple(
             res.serialized_external_partition_tags_or_external_partition_execution_error
+        )
+
+    def external_partition_set_execution_params(self, partition_set_execution_param_args):
+        check.inst_param(
+            partition_set_execution_param_args,
+            'partition_set_execution_param_args',
+            PartitionSetExecutionParamArgs,
+        )
+
+        res = self._query(
+            'ExternalPartitionSetExecutionParams',
+            api_pb2.ExternalPartitionSetExecutionParamsRequest,
+            serialized_partition_set_execution_param_args=serialize_dagster_namedtuple(
+                partition_set_execution_param_args
+            ),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_partition_set_execution_param_data_or_external_partition_execution_error
         )
 
     def external_pipeline_subset(self, pipeline_subset_snapshot_args):

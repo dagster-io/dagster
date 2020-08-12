@@ -165,6 +165,23 @@ class PartitionNamesArgs(namedtuple('_PartitionNamesArgs', 'repository_origin pa
 
 
 @whitelist_for_serdes
+class PartitionSetExecutionParamArgs(
+    namedtuple(
+        '_PartitionSetExecutionParamArgs', 'repository_origin partition_set_name partition_names',
+    )
+):
+    def __new__(cls, repository_origin, partition_set_name, partition_names):
+        return super(PartitionSetExecutionParamArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, 'repository_origin', RepositoryOrigin
+            ),
+            partition_set_name=check.str_param(partition_set_name, 'partition_set_name'),
+            partition_names=check.list_param(partition_names, 'partition_names', of_type=str),
+        )
+
+
+@whitelist_for_serdes
 class PipelineSubsetSnapshotArgs(
     namedtuple('_PipelineSubsetSnapshotArgs', 'pipeline_origin solid_selection')
 ):

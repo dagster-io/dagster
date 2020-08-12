@@ -9,6 +9,8 @@ from dagster.api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names,
     sync_get_external_partition_names_grpc,
+    sync_get_external_partition_set_execution_param_data,
+    sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags,
     sync_get_external_partition_tags_grpc,
 )
@@ -45,12 +47,14 @@ from dagster.grpc.impl import (
     get_external_schedule_execution,
     get_partition_config,
     get_partition_names,
+    get_partition_set_execution_param_data,
     get_partition_tags,
 )
 from dagster.grpc.types import (
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
     ScheduleExecutionDataMode,
 )
 from dagster.utils.hosted_user_process import (
@@ -143,6 +147,12 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_external_partition_names(self, repository_handle, partition_set_name):
+        pass
+
+    @abstractmethod
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
         pass
 
     @abstractmethod
@@ -358,6 +368,20 @@ class InProcessRepositoryLocation(RepositoryLocation):
         recon_repo = recon_repository_from_origin(repo_origin)
         return get_external_schedule_execution(recon_repo, args)
 
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.list_param(partition_names, 'partition_names', of_type=str)
+
+        args = PartitionSetExecutionParamArgs(
+            repository_origin=repository_handle.get_origin(),
+            partition_set_name=partition_set_name,
+            partition_names=partition_names,
+        )
+        return get_partition_set_execution_param_data(args)
+
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(self, repository_location_handle):
@@ -507,6 +531,17 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             repository_handle,
             schedule_name,
             schedule_execution_data_mode,
+        )
+
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.list_param(partition_names, 'partition_names', of_type=str)
+
+        return sync_get_external_partition_set_execution_param_data_grpc(
+            self._handle.client, repository_handle, partition_set_name, partition_names
         )
 
 
@@ -688,4 +723,15 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
         return sync_get_external_schedule_execution_data(
             instance, repository_handle, schedule_name, schedule_execution_data_mode
+        )
+
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
+        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        check.str_param(partition_set_name, 'partition_set_name')
+        check.list_param(partition_names, 'partition_names', of_type=str)
+
+        return sync_get_external_partition_set_execution_param_data(
+            repository_handle, partition_set_name, partition_names
         )

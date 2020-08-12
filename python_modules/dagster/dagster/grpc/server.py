@@ -18,7 +18,9 @@ from dagster.core.errors import PartitionExecutionError, user_code_error_boundar
 from dagster.core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
+    ExternalPartitionExecutionParamData,
     ExternalPartitionNamesData,
+    ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
@@ -56,6 +58,7 @@ from .types import (
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     ShutdownServerResult,
     StartRunResult,
@@ -335,6 +338,75 @@ class DagsterApiServer(DagsterApiServicer):
                     ExternalPartitionExecutionErrorData(
                         serializable_error_info_from_exc_info(sys.exc_info())
                     )
+                )
+            )
+
+    def ExternalPartitionSetExecutionParams(self, request, _context):
+        partition_set_execution_param_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_partition_set_execution_param_args
+        )
+
+        check.inst_param(
+            partition_set_execution_param_args,
+            'partition_set_execution_param_args',
+            PartitionSetExecutionParamArgs,
+        )
+
+        recon_repo = self._recon_repository_from_origin(
+            partition_set_execution_param_args.repository_origin
+        )
+        definition = recon_repo.get_definition()
+        partition_set_def = definition.get_partition_set_def(
+            partition_set_execution_param_args.partition_set_name
+        )
+
+        try:
+            with user_code_error_boundary(
+                PartitionExecutionError,
+                lambda: 'Error occurred during the partition generation for partition set '
+                '{partition_set_name}'.format(partition_set_name=partition_set_def.name),
+            ):
+                all_partitions = partition_set_def.get_partitions()
+            partitions = [
+                partition
+                for partition in all_partitions
+                if partition.name in partition_set_execution_param_args.partition_names
+            ]
+
+            partition_data = []
+            for partition in partitions:
+
+                def _error_message_fn(partition_set_name, partition_name):
+                    return lambda: (
+                        'Error occurred during the partition config and tag generation for '
+                        'partition set {partition_set_name}::{partition_name}'.format(
+                            partition_set_name=partition_set_name, partition_name=partition_name
+                        )
+                    )
+
+                with user_code_error_boundary(
+                    PartitionExecutionError,
+                    _error_message_fn(partition_set_def.name, partition.name),
+                ):
+                    run_config = partition_set_def.run_config_for_partition(partition)
+                    tags = partition_set_def.tags_for_partition(partition)
+
+                partition_data.append(
+                    ExternalPartitionExecutionParamData(
+                        name=partition.name, tags=tags, run_config=run_config,
+                    )
+                )
+
+            return api_pb2.ExternalPartitionSetExecutionParamsReply(
+                serialized_external_partition_set_execution_param_data_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                    ExternalPartitionSetExecutionParamData(partition_data=partition_data)
+                )
+            )
+
+        except PartitionExecutionError:
+            return api_pb2.ExternalPartitionSetExecutionParamsReply(
+                ExternalPartitionExecutionErrorData(
+                    serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 

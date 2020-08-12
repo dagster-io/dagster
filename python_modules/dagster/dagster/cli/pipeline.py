@@ -4,7 +4,6 @@ import os
 import re
 import sys
 import textwrap
-import time
 
 import click
 import yaml
@@ -33,7 +32,10 @@ from dagster.core.host_representation import (
     RepositoryHandle,
     RepositoryLocation,
 )
-from dagster.core.host_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster.core.host_representation.external_data import (
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionSetExecutionParamData,
+)
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
@@ -793,6 +795,7 @@ def execute_backfill_command(cli_args, print_fn, instance):
 
     mode = partition_set.mode
     solid_selection = partition_set.solid_selection
+    run_tags = get_tags_from_args(cli_args)
 
     repo_handle = RepositoryHandle(
         repository_name=external_repo.name,
@@ -828,55 +831,37 @@ def execute_backfill_command(cli_args, print_fn, instance):
     ):
 
         print_fn('Launching runs... ')
-        backfill_id = make_new_backfill_id()
 
-        run_tags = merge_dicts(
-            PipelineRun.tags_for_backfill_id(backfill_id), get_tags_from_args(cli_args),
+        backfill_id = make_new_backfill_id()
+        backfill_tags = PipelineRun.tags_for_backfill_id(backfill_id)
+        partition_execution_data = repo_location.get_external_partition_set_execution_param_data(
+            repository_handle=repo_handle,
+            partition_set_name=partition_set_name,
+            partition_names=partition_names,
         )
 
-        for partition_name in partition_names:
-            run_config_or_error = repo_location.get_external_partition_config(
-                repo_handle, partition_set_name, partition_name
-            )
-            if isinstance(run_config_or_error, ExternalPartitionExecutionErrorData):
-                raise DagsterBackfillFailedError(
-                    'Failure fetching run config for partition {partition_name} in {partition_set_name}: {error_message}'.format(
-                        partition_name=partition_name,
-                        partition_set_name=partition_set_name,
-                        error_message=run_config_or_error.error.message,
-                    ),
-                    serialized_error_info=run_config_or_error.error,
-                )
+        if isinstance(partition_execution_data, ExternalPartitionExecutionErrorData):
+            return print_fn('Backfill failed: {}'.format(partition_execution_data.error))
 
-            tags_or_error = repo_location.get_external_partition_tags(
-                repo_handle, partition_set_name, partition_name
-            )
-            if isinstance(tags_or_error, ExternalPartitionExecutionErrorData):
-                raise DagsterBackfillFailedError(
-                    'Failure fetching tags for partition {partition_name} in {partition_set_name}: {error_message}'.format(
-                        partition_name=partition_name,
-                        partition_set_name=partition_set_name,
-                        error_message=tags_or_error.error.message,
-                    ),
-                    serialized_error_info=tags_or_error.error,
-                )
+        assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
+
+        for partition_data in partition_execution_data.partition_data:
             run = _create_external_pipeline_run(
                 instance=instance,
                 repo_location=repo_location,
                 external_repo=external_repo,
                 external_pipeline=external_pipeline,
-                run_config=run_config_or_error.run_config,
+                run_config=partition_data.run_config,
                 mode=mode,
                 preset=None,
-                tags=merge_dicts(tags_or_error.tags, run_tags),
+                tags=merge_dicts(merge_dicts(partition_data.tags, backfill_tags), run_tags),
                 solid_selection=frozenset(solid_selection) if solid_selection else None,
             )
 
             instance.launch_run(run.run_id, external_pipeline)
-            # Remove once we can handle synchronous execution... currently limited by sqlite
-            time.sleep(0.1)
 
         print_fn('Launched backfill job `{}`'.format(backfill_id))
+
     else:
         print_fn('Aborted!')
 

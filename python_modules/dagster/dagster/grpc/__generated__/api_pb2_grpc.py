@@ -62,6 +62,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionTagsReply.FromString,
         )
+        self.ExternalPartitionSetExecutionParams = channel.unary_unary(
+            '/api.DagsterApi/ExternalPartitionSetExecutionParams',
+            request_serializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
+        )
         self.ExternalPipelineSubsetSnapshot = channel.unary_unary(
             '/api.DagsterApi/ExternalPipelineSubsetSnapshot',
             request_serializer=api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
@@ -155,6 +160,12 @@ class DagsterApiServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def ExternalPartitionTags(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExternalPartitionSetExecutionParams(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -256,6 +267,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalPartitionTags,
             request_deserializer=api__pb2.ExternalPartitionTagsRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionTagsReply.SerializeToString,
+        ),
+        'ExternalPartitionSetExecutionParams': grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalPartitionSetExecutionParams,
+            request_deserializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.FromString,
+            response_serializer=api__pb2.ExternalPartitionSetExecutionParamsReply.SerializeToString,
         ),
         'ExternalPipelineSubsetSnapshot': grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPipelineSubsetSnapshot,
@@ -518,6 +534,33 @@ class DagsterApi(object):
             '/api.DagsterApi/ExternalPartitionTags',
             api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             api__pb2.ExternalPartitionTagsReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalPartitionSetExecutionParams(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/api.DagsterApi/ExternalPartitionSetExecutionParams',
+            api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
+            api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
             options,
             channel_credentials,
             call_credentials,
