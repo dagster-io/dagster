@@ -6,7 +6,7 @@ import PyObject from 'components/PyObject';
 # Assets & Materializations
 
 In Dagster, an `Asset` is the abstract representation of a data artifact produced and persisted by
-a solid.  These assets are generally persisted to storage external to Dagster (e.g. database table,
+a solid. These assets are generally persisted to storage external to Dagster (e.g. database table,
 analytics dashboard) as a side-effect of the solid's computation. The act of persisting an asset
 is called a "materialization" and solids can express materializations by yielding an asset
 materialization event.
@@ -36,11 +36,10 @@ event.
 
 We should now see a materialization event in the event log when we execute this solid.
 
-
 ## Attaching Metadata to the Asset Materialization
 
 There are a variety of types of metadata that can be associated with a materialization event, all
-through the <PyObject module="dagster" object="EventMetadataEntry" /> class.  Each materialization
+through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each materialization
 event optionally takes a list of metadata entries that are then displayed in the event log.
 
 ```python literalinclude caption=materialization.py
@@ -55,7 +54,7 @@ on they types of event metadata available.
 ## Indexing with Asset Keys
 
 Asset materializations can be indexed by adding an <PyObject module="dagster" object="AssetKey" />
-to the materialization event.  The <PyObject module="dagster" object="AssetKey" /> is a normalized,
+to the materialization event. The <PyObject module="dagster" object="AssetKey" /> is a normalized,
 structured identifier for an Asset.
 
 ```python literalinclude caption=materialization.py
@@ -66,5 +65,5 @@ lines:50-62
 As soon as materialization events with asset keys are generated during pipeline execution, those
 assets should appear in the `Assets` dashboard in `dagit`. With these indexed assets, we can now
 explore the relationship between our units of computation (e.g. solids, pipelines) and the data they
-produce (e.g. assets).  Specifically, that exploration can begin with the starting point of the
+produce (e.g. assets). Specifically, that exploration can begin with the starting point of the
 asset rather than from the pipeline.
