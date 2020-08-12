@@ -13,6 +13,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.system_config.objects import SolidConfig
+from dagster.utils.merger import merge_dicts
 
 
 class SolidConfigEntry(namedtuple('_SolidConfigEntry', 'handle solid_config')):
@@ -97,7 +98,7 @@ def _composite_descent(parent_stack, solids_config_dict):
         # the base case
         if not isinstance(solid.definition, CompositeSolidDefinition):
             transformed_current_solid_config = solid.definition.apply_config_mapping(
-                current_solid_config
+                {'config': current_solid_config.get('config')}
             )
             if not transformed_current_solid_config.success:
                 raise DagsterInvalidConfigError(
@@ -106,9 +107,10 @@ def _composite_descent(parent_stack, solids_config_dict):
                     transformed_current_solid_config,
                 )
 
-            yield SolidConfigEntry(
-                current_handle, SolidConfig.from_dict(transformed_current_solid_config.value)
+            complete_config_object = merge_dicts(
+                current_solid_config, transformed_current_solid_config.value
             )
+            yield SolidConfigEntry(current_handle, SolidConfig.from_dict(complete_config_object))
             continue
 
         composite_def = check.inst(solid.definition, CompositeSolidDefinition)

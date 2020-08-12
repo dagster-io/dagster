@@ -539,6 +539,24 @@ def test_single_level_pipeline_with_configured_solid():
     assert result.result_for_solid('return_int_5').output_value() == 5
 
 
+def test_configured_solid_with_inputs():
+    @solid(config_schema=str, input_defs=[InputDefinition('x', int)])
+    def return_int(context, x):
+        assert context.solid_config == 'config sentinel'
+        return x
+
+    return_int_configured = configured(return_int)('config sentinel')
+
+    @pipeline
+    def return_int_pipeline():
+        return_int_configured()
+
+    result = execute_pipeline(return_int_pipeline, {'solids': {'return_int': {'inputs': {'x': 6}}}})
+
+    assert result.success
+    assert result.result_for_solid('return_int').output_value() == 6
+
+
 def test_single_level_pipeline_with_complex_configured_solid_within_composite():
     @solid(config_schema={'age': int, 'name': str})
     def introduce(context):
@@ -548,25 +566,25 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
     def introduce_aj(config):
         return {'name': 'AJ', 'age': config['age']}
 
-    assert introduce_aj.name == 'introduce'  # TODO should this be called `introduce_aj`?
+    assert introduce_aj.name == 'introduce'
 
     @composite_solid(
         config_schema={'num_as_str': str},
         config_fn=lambda cfg: {'introduce': {'config': {'age': int(cfg['num_as_str'])}}},
     )
-    def composite_wrapper():
+    def introduce_wrapper():
         return introduce_aj()
 
     @pipeline
-    def return_int_pipeline():
-        composite_wrapper()
+    def introduce_pipeline():
+        introduce_wrapper()
 
     result = execute_pipeline(
-        return_int_pipeline, {'solids': {'composite_wrapper': {'config': {'num_as_str': '20'}}}}
+        introduce_pipeline, {'solids': {'introduce_wrapper': {'config': {'num_as_str': '20'}}}}
     )
 
     assert result.success
-    assert result.result_for_solid('composite_wrapper').output_value() == "AJ is 20 years old"
+    assert result.result_for_solid('introduce_wrapper').output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_complex_configured_solid():
@@ -577,10 +595,10 @@ def test_single_level_pipeline_with_complex_configured_solid():
     introduce_aj = configured(introduce, name="introduce_aj")({'age': 20, 'name': "AJ"})
 
     @pipeline
-    def return_int_pipeline():
+    def introduce_pipeline():
         introduce_aj()
 
-    result = execute_pipeline(return_int_pipeline)
+    result = execute_pipeline(introduce_pipeline)
 
     assert result.success
     assert result.result_for_solid('introduce_aj').output_value() == "AJ is 20 years old"
@@ -598,10 +616,10 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
     introduce_aj_20 = configured(introduce_aj, name="introduce_aj_20")({'age': 20})
 
     @pipeline
-    def return_int_pipeline():
+    def introduce_pipeline():
         introduce_aj_20()
 
-    result = execute_pipeline(return_int_pipeline)
+    result = execute_pipeline(introduce_pipeline)
 
     assert result.success
     assert result.result_for_solid('introduce_aj_20').output_value() == "AJ is 20 years old"
