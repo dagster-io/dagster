@@ -39,6 +39,7 @@ class DagsterGraphQLContext:
 
     def reload_repository_location(self, name):
         new_location = self._repository_locations[name].create_reloaded_repository_location()
+        check.invariant(new_location.name == name)
         self._repository_locations[name] = new_location
         return new_location
 
