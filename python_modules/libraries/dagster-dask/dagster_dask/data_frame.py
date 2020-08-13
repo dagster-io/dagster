@@ -602,6 +602,11 @@ def dataframe_materializer(_context, config, dask_df):
                         is_required=False,
                         description="how to respond to errors in the conversion (see str.encode()).",
                     ),
+                    'orient': Field(
+                        String,
+                        is_required=False,
+                        description="The JSON string format."
+                    ),
                     'storage_option': Field(
                         Permissive(),
                         is_required=False,
