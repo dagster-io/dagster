@@ -16,6 +16,13 @@ def all_optional_type(config_type):
                 return False
         return True
 
+    if ConfigTypeKind.is_selector(config_type.kind):
+        if len(config_type.fields) == 1:
+            for field in config_type.fields.values():
+                if field.is_required:
+                    return False
+            return True
+
     return False
 
 

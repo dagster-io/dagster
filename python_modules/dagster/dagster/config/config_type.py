@@ -39,6 +39,11 @@ class ConfigTypeKind(PythonEnum):
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
+    @staticmethod
+    def is_selector(kind):
+        check.inst_param(kind, "kind", ConfigTypeKind)
+        return kind == ConfigTypeKind.SELECTOR
+
 
 class ConfigType(object):
     """
