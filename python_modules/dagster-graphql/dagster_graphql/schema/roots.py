@@ -3,6 +3,7 @@ import sys
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.execution import (
     ExecutionParams,
+    create_and_launch_partition_backfill,
     delete_pipeline_run,
     do_execute_plan,
     get_compute_log_observable,
@@ -433,6 +434,20 @@ class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
         )
 
 
+class DauphinLaunchPartitionBackfillMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'LaunchPartitionBackfillMutation'
+        description = 'Launches a set of partition backfill runs via the run launcher configured on the instance.'
+
+    class Arguments(object):
+        backfillParams = dauphin.NonNull('PartitionBackfillParams')
+
+    Output = dauphin.NonNull('PartitionBackfillResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return create_and_launch_partition_backfill(graphene_info, kwargs['backfillParams'])
+
+
 @capture_dauphin_error
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     # refactored into a helper function here in order to wrap with @capture_dauphin_error,
@@ -682,6 +697,7 @@ class DauphinMutation(dauphin.ObjectType):
     terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
     reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()
+    launch_partition_backfill = DauphinLaunchPartitionBackfillMutation.Field()
 
     # These below are never invoked by tools such as a dagit. They are in the
     # graphql layer because it was a convenient, pre-existing IPC layer.
@@ -774,6 +790,25 @@ class DauphinScheduleSelector(dauphin.InputObjectType):
     repositoryName = dauphin.NonNull(dauphin.String)
     repositoryLocationName = dauphin.NonNull(dauphin.String)
     scheduleName = dauphin.NonNull(dauphin.String)
+
+
+class DauphinPartitionSetSelector(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'PartitionSetSelector'
+        description = '''This type represents the fields necessary to identify a
+        pipeline or pipeline subset.'''
+
+    partitionSetName = dauphin.NonNull(dauphin.String)
+    repositorySelector = dauphin.NonNull('RepositorySelector')
+
+
+class DauphinPartitionBackfillParams(dauphin.InputObjectType):
+    class Meta(object):
+        name = 'PartitionBackfillParams'
+
+    selector = dauphin.NonNull('PartitionSetSelector')
+    partitionNames = dauphin.List(dauphin.NonNull(dauphin.String))
+    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):
@@ -911,7 +946,6 @@ class DauphinInstance(dauphin.ObjectType):
 
     info = dauphin.NonNull(dauphin.String)
     runLauncher = dauphin.Field('RunLauncher')
-    disableRunStart = dauphin.NonNull(dauphin.Boolean)
     assetsSupported = dauphin.NonNull(dauphin.Boolean)
     executablePath = dauphin.NonNull(dauphin.String)
 
@@ -925,9 +959,6 @@ class DauphinInstance(dauphin.ObjectType):
         return (
             DauphinRunLauncher(self._instance.run_launcher) if self._instance.run_launcher else None
         )
-
-    def resolve_disableRunStart(self, _graphene_info):
-        return False
 
     def resolve_assetsSupported(self, _graphene_info):
         return self._instance.is_asset_aware

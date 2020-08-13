@@ -500,3 +500,23 @@ query ReexecutionInfoQuery($runId: ID!) {
     }
   }
 '''
+
+LAUNCH_PARTITION_BACKFILL_MUTATION = (
+    ERROR_FRAGMENT
+    + '''
+mutation($backfillParams: PartitionBackfillParams!) {
+  launchPartitionBackfill(backfillParams: $backfillParams) {
+    __typename
+    ... on PythonError {
+      ...errorFragment
+    }
+    ... on PartitionSetNotFoundError {
+      message
+    }
+    ... on PartitionBackfillSuccess {
+      backfillId
+    }
+  }
+}
+'''
+)

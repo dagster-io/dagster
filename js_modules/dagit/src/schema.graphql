@@ -480,7 +480,6 @@ type InputMapping {
 type Instance {
   info: String!
   runLauncher: RunLauncher
-  disableRunStart: Boolean!
   assetsSupported: Boolean!
   executablePath: String!
 }
@@ -633,6 +632,7 @@ type Mutation {
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+  launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
   executePlan(executionParams: ExecutionParams!, retries: Retries): ExecutePlanResult!
   executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
 }
@@ -721,6 +721,18 @@ type Partition {
   runs: [PipelineRun!]!
 }
 
+input PartitionBackfillParams {
+  selector: PartitionSetSelector!
+  partitionNames: [String!]
+  solidSelection: [String!]
+}
+
+union PartitionBackfillResult = PartitionBackfillSuccess | PythonError | PartitionSetNotFoundError
+
+type PartitionBackfillSuccess {
+  backfillId: String!
+}
+
 type PartitionRunConfig {
   yaml: String!
 }
@@ -749,6 +761,11 @@ union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonErr
 
 type PartitionSets {
   results: [PartitionSet!]!
+}
+
+input PartitionSetSelector {
+  partitionSetName: String!
+  repositorySelector: RepositorySelector!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError

@@ -683,6 +683,23 @@ class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
         )
 
 
+class DauphinPartitionBackfillSuccess(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PartitionBackfillSuccess'
+
+    backfill_id = dauphin.NonNull(dauphin.String)
+
+
+class DauphinPartitionBackfillResult(dauphin.Union):
+    class Meta(object):
+        name = 'PartitionBackfillResult'
+        types = (
+            DauphinPartitionBackfillSuccess,
+            DauphinPythonError,
+            DauphinPartitionSetNotFoundError,
+        )
+
+
 class DauphinRepositoriesOrError(dauphin.Union):
     class Meta(object):
         name = 'RepositoriesOrError'

@@ -128,6 +128,17 @@ class DagsterGraphQLContext:
             self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW,
         )
 
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_partition_set_execution_param_data(
+            repository_handle=repository_handle,
+            partition_set_name=partition_set_name,
+            partition_names=partition_names,
+        )
+
     def execute_plan(
         self, external_pipeline, run_config, pipeline_run, step_keys_to_execute, retries=None
     ):
