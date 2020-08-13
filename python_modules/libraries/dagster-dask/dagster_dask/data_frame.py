@@ -879,7 +879,6 @@ def df_type_check(_, value):
     return TypeCheck(
         success=True,
         metadata_entries=[
-            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
             # string cast columns since they may be things like datetime
             EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
         ],
