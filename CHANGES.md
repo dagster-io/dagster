@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.2
+
+**New**
+
+* Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
+* Remove the `row_count` metadata entry from the Dask DataFrame type check (thanks [@kinghuang](https://github.com/kinghuang)!)
+* Add [`orient`](https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.to_json) to the config options when materializing a Dask DataFrame to `json` (thanks [@kinghuang](https://github.com/kinghuang)!)
+
+**Bugfixes**
+
+* Fixed a bug where applying `configured` to a solid definition would overwrite inputs from run config.
+* Fixed a bug where pipeline tags would not apply to solid subsets.
+* Improved error messages for repository-loading errors in CLI commands.
+* Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
+
 ## 0.9.1
 
 **Bugfixes**
