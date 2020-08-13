@@ -17,8 +17,8 @@ from dagster.core.scheduler import (
     ScheduledExecutionSuccess,
 )
 from dagster.core.test_utils import instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils import find_free_port
 
 _COUPLE_DAYS_AGO = datetime.datetime.now() - datetime.timedelta(days=2)

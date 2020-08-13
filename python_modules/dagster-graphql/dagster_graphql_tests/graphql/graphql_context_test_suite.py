@@ -24,8 +24,8 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 

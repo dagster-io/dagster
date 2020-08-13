@@ -2,7 +2,7 @@ import sys
 
 from dagster import lambda_solid, pipeline, repository
 from dagster.core.host_representation import PythonEnvRepositoryLocation, RepositoryLocationHandle
-from dagster.grpc.types import LoadableTargetOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 

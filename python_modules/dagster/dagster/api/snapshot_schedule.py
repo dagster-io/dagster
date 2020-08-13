@@ -4,11 +4,8 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.types import (
-    ExternalScheduleExecutionArgs,
-    LoadableTargetOrigin,
-    ScheduleExecutionDataMode,
-)
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.grpc.types import ExternalScheduleExecutionArgs, ScheduleExecutionDataMode
 
 from .utils import execute_unary_api_cli_command
 

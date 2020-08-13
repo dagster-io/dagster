@@ -11,8 +11,8 @@ from dagster import seven
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils import file_relative_path
 
 from .test_cli_commands import managed_grpc_instance

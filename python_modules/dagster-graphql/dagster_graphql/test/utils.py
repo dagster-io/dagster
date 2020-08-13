@@ -12,7 +12,7 @@ from dagster.core.host_representation import (
     RepositoryLocationHandle,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.grpc.types import LoadableTargetOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def execute_dagster_graphql(context, query, variables=None):

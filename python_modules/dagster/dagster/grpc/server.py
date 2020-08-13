@@ -24,6 +24,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster.seven import multiprocessing
@@ -53,7 +54,6 @@ from .types import (
     GetCurrentImageResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,

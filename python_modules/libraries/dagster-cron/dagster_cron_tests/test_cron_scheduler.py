@@ -25,7 +25,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.core.test_utils import environ
-from dagster.grpc.types import LoadableTargetOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import TemporaryDirectory
 
 

@@ -9,6 +9,7 @@ from dagster.core.code_pointer import CodePointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -72,8 +73,6 @@ class RepositoryLocationHandle:
         user_process_api=UserProcessApi.CLI,
         use_python_package=False,
     ):
-        from dagster.grpc.types import LoadableTargetOrigin
-
         check.inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
         check.opt_str_param(location_name, 'location_name')
         check.bool_param(use_python_package, 'use_python_package')

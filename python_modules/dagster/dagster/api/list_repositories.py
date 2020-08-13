@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.utils.error import SerializableErrorInfo
 
 from .utils import execute_unary_api_cli_command
@@ -49,7 +50,6 @@ def sync_list_repositories_ephemeral_grpc(
     executable_path, python_file, module_name, working_directory, attribute
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
-    from dagster.grpc.types import LoadableTargetOrigin
 
     check.str_param(executable_path, 'executable_path')
     check.opt_str_param(python_file, 'python_file')

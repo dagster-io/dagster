@@ -8,7 +8,7 @@ from dagster.core.host_representation.repository_location import (
     InProcessRepositoryLocation,
     PythonEnvRepositoryLocation,
 )
-from dagster.grpc.types import LoadableTargetOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def get_bar_repo_repository_location_handle():

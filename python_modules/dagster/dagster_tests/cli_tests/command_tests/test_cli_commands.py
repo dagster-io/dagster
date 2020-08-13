@@ -25,8 +25,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path, merge_dicts
 

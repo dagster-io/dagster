@@ -52,6 +52,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster.core.storage.tags import check_tags
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
     get_external_execution_plan_snapshot,
@@ -69,7 +70,6 @@ from dagster.grpc.types import (
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,

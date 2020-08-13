@@ -17,7 +17,7 @@ from dagster.core.scheduler.scheduler import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import environ
-from dagster.grpc.types import LoadableTargetOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 @pytest.fixture(scope='function')

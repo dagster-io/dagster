@@ -3,8 +3,8 @@ import pytest
 from dagster import seven
 from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 
 from .utils import (
     get_foo_grpc_pipeline_handle,

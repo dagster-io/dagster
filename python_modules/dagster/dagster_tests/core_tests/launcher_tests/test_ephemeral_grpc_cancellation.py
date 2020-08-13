@@ -5,8 +5,9 @@ import time
 from dagster import Field, Int, Materialization, pipeline, repository, solid
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
 from dagster.core.test_utils import instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs, LoadableTargetOrigin
+from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs
 
 
 def poll_for_run(instance, run_id, timeout=5):

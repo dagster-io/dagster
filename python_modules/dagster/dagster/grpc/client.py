@@ -10,6 +10,7 @@ from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -21,7 +22,6 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
