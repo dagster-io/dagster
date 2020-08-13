@@ -1,0 +1,13 @@
+load_from:
+  - python_environment:
+    executable_path: venvs/path/to/dataengineering_spark_team/bin/python
+    target:
+      python_package:
+        package_name: dataengineering_spark_repository
+        location_name: dataengineering_spark_team_py_38_virtual_env
+  - python_environment:
+    executable_path: venvs/path/to/ml_tensorflow/bin/python
+    target:
+      python_file:
+        relative_path: path/to/team_repos.py
+        location_name: ml_team_py_36_virtual_env
