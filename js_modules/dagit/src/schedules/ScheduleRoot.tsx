@@ -10,7 +10,7 @@ import { ScheduleRow, ScheduleRowHeader } from "./ScheduleRow";
 
 import { __RouterContext as RouterContext } from "react-router";
 import * as querystring from "query-string";
-import { PartitionView } from "./PartitionView";
+import { PartitionView } from "../partitions/PartitionView";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
 import { SCHEDULE_DEFINITION_FRAGMENT } from "./ScheduleUtils";
 
