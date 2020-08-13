@@ -603,9 +603,7 @@ def dataframe_materializer(_context, config, dask_df):
                         description="how to respond to errors in the conversion (see str.encode()).",
                     ),
                     'orient': Field(
-                        String,
-                        is_required=False,
-                        description="The JSON string format."
+                        String, is_required=False, description="The JSON string format."
                     ),
                     'storage_option': Field(
                         Permissive(),
