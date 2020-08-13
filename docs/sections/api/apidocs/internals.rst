@@ -60,7 +60,9 @@ System Storage
 
 
 Intermediate Storage
---------------
+--------------------
+.. currentmodule:: dagster
+
 .. autodecorator:: intermediate_storage
 
 .. autoclass:: IntermediateStorageDefinition

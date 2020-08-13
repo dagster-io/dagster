@@ -110,7 +110,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.init import InitIntermediateStorageContext, InitSystemStorageContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
@@ -207,6 +207,7 @@ __all__ = [
     'InitLoggerContext',
     'InitResourceContext',
     'InitSystemStorageContext',
+    'InitIntermediateStorageContext',
     'PipelineExecutionResult',
     'RetryRequested',
     'SolidExecutionResult',
