@@ -4,11 +4,7 @@ from setuptools import find_packages, setup
 def long_description():
     return '''
 ## Dagster
-Dagster is a system for building modern data applications.
-
-Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers,
-data engineers, and data scientists to seamlessly collaborate to process and produce the trusted,
-reliable data needed in today's world.
+Dagster is a data orchestrator for machine learning, analytics, and ETL.
 '''.strip()
 
 
@@ -27,7 +23,7 @@ if __name__ == '__main__':
         author='Elementl',
         author_email='hello@elementl.com',
         license='Apache-2.0',
-        description='Dagster is an opinionated programming model for data pipelines.',
+        description='A data orchestrator for machine learning, analytics, and ETL.',
         long_description=long_description(),
         long_description_content_type='text/markdown',
         url='https://github.com/dagster-io/dagster',
