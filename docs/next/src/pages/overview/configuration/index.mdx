@@ -1,7 +1,11 @@
 import PyObject from 'components/PyObject';
 import { DynamicMetaTags } from 'components/MetaTags';
 
-<DynamicMetaTags title="Configuration | Dagster" />
+<DynamicMetaTags
+  title="Configuration | Dagster"
+  description="Several dimensions of pipeline execution can be determined at execution time through configuration.
+  Dagster call this set of chosen values run config."
+/>
 
 # Configuration
 
@@ -43,7 +47,7 @@ file:/docs_snippets/docs_snippets/overview/configuration/example.py
 In many cases, the option to configure an entity at runtime is more distracting than helpful, and
 it's preferable to supply the entity's configuration at definition time.
 
-The `configured` API offers a way to do this.  When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="CompositeSolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />, <PyObject module="dagster" object="IntermediateStorageDefinition" />, or <PyObject module="dagster" object="SystemStorageDefinition" />,
+The `configured` API offers a way to do this. When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="CompositeSolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />, <PyObject module="dagster" object="IntermediateStorageDefinition" />, or <PyObject module="dagster" object="SystemStorageDefinition" />,
 it returns an interchangeable object with the given configuration "baked in".
 
 ```python literalinclude
@@ -51,7 +55,7 @@ file:/docs_snippets/docs_snippets/overview/configuration/configured_example.py
 ```
 
 In other cases, it's useful to partially fill out configuration at definition time and leave other
-configuration for runtime.  For these cases, `configured` can be used as a decorator, accepting a
+configuration for runtime. For these cases, `configured` can be used as a decorator, accepting a
 function that translates from runtime config to config that satisfies the entity's config schema.
 It returns an entity with the "outer" config schema as its schema.
 

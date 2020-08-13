@@ -3,7 +3,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Deploying on Kubernetes Part 1 | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="A guide to Kubernetes-based deployment of Dagster."
 />
 
 # Deploying on Kubernetes Part 1
@@ -95,7 +95,7 @@ using the `pipeline_run:` image, and each will be named `dagster-job-<hash>`.
 
 _**Note:** In the default Helm chart, we configure a <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
 It is also possible to deploy with a <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or a custom Run Launcher.
-If you have questions, please reach out to us on [Slack][1] and we're happy to help!_
+If you have questions, please reach out to us on [Slack](https://dagster-slackin.herokuapp.com/) and we're happy to help!_
 
 ## Helm chart
 
@@ -133,6 +133,7 @@ As a full inventory, the Helm chart sets up the following components by default:
     [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/).
 
 Other components are optional, including:
+
 - [Flower](https://flower.readthedocs.io/en/latest/), a useful service for monitoring Celery tasks
   and debugging issues
 - User Code Deployments, which we will cover in the next part.

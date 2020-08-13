@@ -1,24 +1,28 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
-<DynamicMetaTags title="Modes and Resources | Dagster" />
+<DynamicMetaTags
+  title="Modes and Resources | Dagster"
+  description="Modes and resources provide a way to control the behavior of multiple solids at pipeline execution time. "
+/>
 
 # Modes and Resources
 
-Modes and resources provide a way to control the behavior of multiple solids at pipeline execution time.  For those familiar with dependency injection, modes and resources offer a similar capability, using pythonic idioms and Dagster’s configuration system.  Each pipeline run uses exactly one mode, and each mode exposes a set of resources to the solids in that pipeline run.
+Modes and resources provide a way to control the behavior of multiple solids at pipeline execution time. For those familiar with dependency injection, modes and resources offer a similar capability, using pythonic idioms and Dagster’s configuration system. Each pipeline run uses exactly one mode, and each mode exposes a set of resources to the solids in that pipeline run.
 
-A typical usage for modes is to vary pipeline behavior between different deployment environments.  For example, you might define a “local_dev” mode for running pipelines on a laptop against synthetic data and a “prod” mode for running pipelines against production data in the cloud.
+A typical usage for modes is to vary pipeline behavior between different deployment environments. For example, you might define a “local_dev” mode for running pipelines on a laptop against synthetic data and a “prod” mode for running pipelines against production data in the cloud.
 
-Modes affect solid behavior by providing resources to the solids.  For example, the “local_dev” mode might reference a “SQLiteDatabase” resource that solids can execute queries against.  The “prod” mode might both instead reference an “PostgresDatabase” resource.
+Modes affect solid behavior by providing resources to the solids. For example, the “local_dev” mode might reference a “SQLiteDatabase” resource that solids can execute queries against. The “prod” mode might both instead reference an “PostgresDatabase” resource.
 
 ## Defining Pipelines with Modes
 
 Here’s what it looks like to define a pipeline with modes:
+
 ```python literalinclude caption=pipeline_with_modes.py
 file:/docs_snippets/docs_snippets/overview/modes_resources/pipeline_with_modes.py
 ```
 
-"database", the key in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" />'s `resource_defs` dict, is a "resource key".  The same resource key can refer to a different <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" /> in each mode - e.g. “database” can be a `SQLiteDatabase` in the local_dev mode and a `PostgresDatabase` in the production mode.
+"database", the key in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" />'s `resource_defs` dict, is a "resource key". The same resource key can refer to a different <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" /> in each mode - e.g. “database” can be a `SQLiteDatabase` in the local_dev mode and a `PostgresDatabase` in the production mode.
 
 ## Accessing Resources in Solids
 
@@ -32,17 +36,17 @@ After including the resource key in its set of required_resource_keys, the body 
 
 ## Defining Resources
 
-`sqlite_database` and `postgres_database`, in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" /> above, are <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" />s. Each describes how to instantiate a resource, given run config.  Here's what it looks like to define these resources:
+`sqlite_database` and `postgres_database`, in the <PyObject module="dagster" object="ModeDefinition" displayText="ModeDefinition" /> above, are <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" />s. Each describes how to instantiate a resource, given run config. Here's what it looks like to define these resources:
 
 ```python literalinclude caption=database_resources.py
 file:/docs_snippets/docs_snippets/overview/modes_resources/database_resources.py
 ```
 
-The <PyObject module="dagster" object="resource" displayText="@resource" /> decorator decorates a function that returns a resource.  The resource itself is a plain old python object - it doesn't need to inherit any particular interface or implement any particular functionality.  ResourceDefinitions may have a config schema, which enables customizing them at runtime.
+The <PyObject module="dagster" object="resource" displayText="@resource" /> decorator decorates a function that returns a resource. The resource itself is a plain old python object - it doesn't need to inherit any particular interface or implement any particular functionality. ResourceDefinitions may have a config schema, which enables customizing them at runtime.
 
 ## Selecting a Mode
 
-When launching a pipeline via the Dagit Playground, you can select the mode from a dropdown.  When launching a pipeline via the CLI, you can select the mode using the "-d" option.  E.g.
+When launching a pipeline via the Dagit Playground, you can select the mode from a dropdown. When launching a pipeline via the CLI, you can select the mode using the "-d" option. E.g.
 
 <!-- TODO: add a screenshot -->
 
@@ -52,11 +56,18 @@ dagster pipeline execute -d local_dev generate_tables_pipeline
 
 ## Other Mode-Level Definitions
 
-In addition to holding resource definitions, mode definitions also have arguments for `logger_defs`, `system_storage_defs`, and `executor_defs`.  These arguments determine which <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" />s, <PyObject module="dagster" object="SystemStorageDefinition" displayText="SystemStorageDefinition" />s, and <PyObject module="dagster" object="ExecutorDefinition" displayText="ExecutorDefinition" />s are available to the pipeline when executing in that mode.  From the options made available from the ModeDefinition, the particular `LoggerDefinition`, `SystemStorageDefinition`, and `ExecutorDefinition` used for a pipeline run are chosen using the pipeline's run config.
+In addition to holding resource definitions, mode definitions also have arguments for `logger_defs`, `system_storage_defs`, and `executor_defs`. These arguments determine which <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" />s, <PyObject module="dagster" object="SystemStorageDefinition" displayText="SystemStorageDefinition" />s, and <PyObject module="dagster" object="ExecutorDefinition" displayText="ExecutorDefinition" />s are available to the pipeline when executing in that mode. From the options made available from the ModeDefinition, the particular `LoggerDefinition`, `SystemStorageDefinition`, and `ExecutorDefinition` used for a pipeline run are chosen using the pipeline's run config.
 
 ## Glossary
 
-* <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition" /> - defines how to instantiate a resource, given run config.
-* **resource** - a plain old python object instantiated from a ResourceDefinition and made available to solids at execution time.
-* <PyObject module="dagster" object="resource" displayText="@resource" /> - a decorator that makes it easy to construct ResourceDefinitions.  It’s used to decorate a function with a single init_context argument or a class whose constructor has a single init_context argument.
-* **resource key** - a string that’s used as a handle for a ResourceDefinition.  A ModeDefinition maps resource keys to ResourceDefinitions, and solids access resources instantiated from those ResourceDefinitions using the same resource keys.
+- <PyObject
+    module="dagster"
+    object="ResourceDefinition"
+    displayText="ResourceDefinition"
+  /> - defines how to instantiate a resource, given run config.
+- **resource** - a plain old python object instantiated from a ResourceDefinition and made available to solids at execution time.
+- <PyObject module="dagster" object="resource" displayText="@resource" /> - a decorator
+  that makes it easy to construct ResourceDefinitions. It’s used to decorate a function
+  with a single init_context argument or a class whose constructor has a single init_context
+  argument.
+- **resource key** - a string that’s used as a handle for a ResourceDefinition. A ModeDefinition maps resource keys to ResourceDefinitions, and solids access resources instantiated from those ResourceDefinitions using the same resource keys.

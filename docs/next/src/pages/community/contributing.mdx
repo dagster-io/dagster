@@ -2,7 +2,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Contributing | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Contributions are welcome and are greatly appreciated. Here's the contribution guide."
 />
 
 # Contributing
@@ -31,6 +31,7 @@ eval "$(pyenv virtualenv-init -)"
 ```
 
 &nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspand finally create and activate the virtualenev:
+
 ```
 pyenv install 3.7.4
 pyenv virtualenv 3.7.4 dagster37
@@ -54,7 +55,7 @@ git clone git@github.com:dagster-io/dagster.git
 5.  Run `make dev_install` at the root of the repository. This sets up a
     full Dagster developer environment with all modules and runs tests
     that do not require heavy external dependencies such as docker. This
-    will take a few minutes.  Note that certain sections of the makefile (sanity_check,
+    will take a few minutes. Note that certain sections of the makefile (sanity_check,
     which is part of rebuild_dagit) require POSIX compliant shells and will fail
     on CMD and powershell -- if developing on windows, using something like WSL or git-bash
     is recommended.

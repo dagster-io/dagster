@@ -1,8 +1,11 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
-<DynamicMetaTags title="Dagit | Dagster" />
-
+<DynamicMetaTags
+  title="Dagit | Dagster"
+  description="Dagit is a web-based interface for Dagster. You can inspect solid and pipeline definitions,
+  launch runs, view launched runs, and view assets."
+/>
 
 # Dagit
 
@@ -11,12 +14,12 @@ Dagit is a web-based interface for viewing and interacting with Dagster objects.
 Through it, you can inspect solid and pipeline definitions, launch runs, view launched runs, and
 view assets produced by those runs.
 
-To launch the Dagit web server, run `dagit`.  The command will print out the URL you can access the
+To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the
 interface from in the browser, usually on port 3000.
 
 Dagit fetches definitions - pipelines, solids, schedules, partition sets - from a set of
-repositories configured in a `workspace.yaml`.  It fetches runs from a run storage, configured in
-an instance's `dagster.yaml`.  It fetches assets from an asset storage, also configured in an
+repositories configured in a `workspace.yaml`. It fetches runs from a run storage, configured in
+an instance's `dagster.yaml`. It fetches assets from an asset storage, also configured in an
 instance's `dagster.yaml`.
 
 These are the main pages inside Dagit:
@@ -29,7 +32,7 @@ pipeline run.
 ### Pipeline definition
 
 The Definition tab in the pipeline page shows the topology of solids that make up a
-pipeline.  Selecting a solid reveals detailed metadata about it in the right pane.
+pipeline. Selecting a solid reveals detailed metadata about it in the right pane.
 
 <p align="center">
   <img src="/assets/images/overview/dagit/pipeline-definition.png" />
@@ -37,14 +40,13 @@ pipeline.  Selecting a solid reveals detailed metadata about it in the right pan
 
 ### Playground
 
-The Playground tab in the pipeline page lets you experiment with configuration and launch runs.  You
+The Playground tab in the pipeline page lets you experiment with configuration and launch runs. You
 can select from the set of presets for the pipeline, or type in your own configuration in the
 editor.
 
 <p align="center">
   <img src="/assets/images/overview/dagit/playground.png" />
 </p>
-
 
 ### Run
 
@@ -57,7 +59,6 @@ lets you kick off a new run with the same configuration as the displayed run.
   <img src="/assets/images/overview/dagit/single-run.png" />
 </p>
 
-
 ## Solid
 
 The Solid page lets you see detailed information about a solid definition.
@@ -68,7 +69,7 @@ The Solid page lets you see detailed information about a solid definition.
 
 ## Runs
 
-The Runs page lists all pipeline runs.  You can filter the list by pipeline name, run ID,
+The Runs page lists all pipeline runs. You can filter the list by pipeline name, run ID,
 execution status, or pipeline tag.
 
 <p align="center">
@@ -77,7 +78,7 @@ execution status, or pipeline tag.
 
 ## Assets
 
-The Assets page lists all assets.  You can filter the list by asset key.
+The Assets page lists all assets. You can filter the list by asset key.
 
 <p align="center">
   <img src="/assets/images/overview/dagit/all-assets.png" />
@@ -102,7 +103,6 @@ The Schedules page lists all schedules.
 ### Schedule
 
 The Schedule page lists details about a single schedule.
-
 
 <p align="center">
   <img src="/assets/images/overview/dagit/single-schedule.png" />
