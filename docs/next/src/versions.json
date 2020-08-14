@@ -1,10 +1,25 @@
 {
     "currentVersion": {
-        "version": "0.8.10",
+        "version": "0.9.2",
         "documentation": "/install",
-        "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.8.10"
+        "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.2"
     },
     "allVersions": [
+        {
+            "version": "0.9.2",
+            "documentation": "/0.9.2/install",
+            "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.2"
+        },
+        {
+            "version": "0.9.1",
+            "documentation": "/0.9.1/install",
+            "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.1"
+        },
+        {
+            "version": "0.9.0",
+            "documentation": "/0.9.0/install",
+            "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.0"
+        },
         {
             "version": "0.8.10",
             "documentation": "/0.8.10/install",
