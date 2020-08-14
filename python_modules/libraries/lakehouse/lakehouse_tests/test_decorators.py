@@ -12,6 +12,18 @@ def test_computed_asset_no_deps():
     assert len(casset.computation.deps.keys()) == 0
 
 
+def test_computed_asset_no_deps_default_storage():
+    @computed_asset()
+    def casset() -> str:
+        return 'a'
+
+    assert casset.storage_key == 'default_storage'
+    assert casset.computation
+    assert casset.path == ('casset',)
+    assert casset.computation.output_in_memory_type == str
+    assert len(casset.computation.deps.keys()) == 0
+
+
 def test_computed_asset_path():
     @computed_asset(storage_key='filesystem', path=('z', 'd'))
     def casset() -> str:

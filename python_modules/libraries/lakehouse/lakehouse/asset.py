@@ -31,7 +31,7 @@ class Asset(six.with_metaclass(ABCMeta)):
         return self._dagster_type
 
 
-def source_asset(storage_key, path):
+def source_asset(path, storage_key='default_storage'):
     '''A source asset is an asset that's not derived inside the lakehouse.  Other assets
     may depend on it, but it has no dependencies that the lakehouse is aware of.
     '''

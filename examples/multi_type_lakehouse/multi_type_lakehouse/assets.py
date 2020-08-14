@@ -8,14 +8,12 @@ from pyspark.sql import Window
 from pyspark.sql import functions as f
 
 sfo_q2_weather_sample_table = source_table(
-    storage_key='filesystem',
     path=('sfo_q2_weather_sample',),
     columns=[Column('tmpf', float64()), Column('valid_date', string())],
 )
 
 
 @computed_table(
-    storage_key='filesystem',
     input_assets=[sfo_q2_weather_sample_table],
     columns=[Column('valid_date', date32()), Column('max_tmpf', float64())],
 )
@@ -26,7 +24,6 @@ def daily_temperature_highs_table(sfo_q2_weather_sample: PandasDF) -> PandasDF:
 
 
 @computed_table(
-    storage_key='filesystem',
     input_assets=[daily_temperature_highs_table],
     columns=[Column('valid_date', date32()), Column('max_tmpf', float64())],
 )

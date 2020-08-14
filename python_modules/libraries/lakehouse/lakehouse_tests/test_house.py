@@ -37,6 +37,17 @@ def test_get_computed_asset_solid_def_no_deps(basic_lakehouse):
     _assert_output_def(solid_def, some_asset.dagster_type, 'result')
 
 
+def test_get_computed_asset_solid_def_no_deps_default_storage(basic_lakehouse):
+    @computed_asset()
+    def some_asset() -> int:
+        return 1
+
+    solid_def = basic_lakehouse.get_computed_asset_solid_def(some_asset, [])
+    assert solid_def.required_resource_keys == {'default_storage'}
+    _assert_input_defs(solid_def, [])
+    _assert_output_def(solid_def, some_asset.dagster_type, 'result')
+
+
 def test_get_computed_asset_solid_def_with_source_deps(basic_lakehouse):
     source_asset1 = source_asset(storage_key='storage1', path=('a', 'b'))
     source_asset2 = source_asset(storage_key='storage1', path=('a', 'c'))

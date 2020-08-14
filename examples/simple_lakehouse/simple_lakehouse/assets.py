@@ -4,14 +4,11 @@ from lakehouse import Column, computed_table, source_table
 from pyarrow import date32, float64, string
 
 sfo_q2_weather_sample_table = source_table(
-    storage_key='filesystem',
-    path=('data',),
-    columns=[Column('tmpf', float64()), Column('valid_date', string())],
+    path=('data',), columns=[Column('tmpf', float64()), Column('valid_date', string())],
 )
 
 
 @computed_table(
-    storage_key='filesystem',
     input_assets=[sfo_q2_weather_sample_table],
     columns=[Column('valid_date', date32()), Column('max_tmpf', float64())],
 )

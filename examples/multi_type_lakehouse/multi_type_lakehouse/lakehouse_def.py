@@ -103,7 +103,7 @@ def make_multi_type_lakehouse():
         name='dev',
         resource_defs={
             'pyspark': pyspark_resource,
-            'filesystem': local_file_system_storage.configured({'root': '.'}),
+            'default_storage': local_file_system_storage.configured({'root': '.'}),
         },
     )
 

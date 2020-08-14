@@ -8,14 +8,15 @@ from .computation import AssetDependency, Computation
 from .table import Table
 
 
-def computed_asset(storage_key, path=None, input_assets=None):
+def computed_asset(storage_key='default_storage', path=None, input_assets=None):
     '''Create an Asset with its computation built from the decorated function.
 
     The type annotations on the arguments and return value of the decorated function are use to
     determine which TypeStoragePolicy will be used to load and save its outputs and inputs.
 
     Args:
-        storage_key (str): The key of the storage used to persist the asset.
+        storage_key (str): The key of the storage used to persist the asset. Defaults to
+            "default_storage".
         path (Optional[Tuple[str, ...]]): The path of the asset within the storage_key. If not
             given, the name of the decorated function is used.
         input_assets (Optional[Union[List[Asset], Dict[str, Asset]]]): The assets that this asset
@@ -68,14 +69,15 @@ def computed_asset(storage_key, path=None, input_assets=None):
     return _computed_asset
 
 
-def computed_table(storage_key, path=None, input_assets=None, columns=None):
+def computed_table(storage_key='default_storage', path=None, input_assets=None, columns=None):
     '''Create a Table with its computation built from the decorated function.
 
     The type annotations on the arguments and return value of the decorated function are use to
     determine which TypeStoragePolicy will be used to load and save its outputs and inputs.
 
     Args:
-        storage_key (str): The key of the storage used to persist the asset.
+        storage_key (str): The key of the storage used to persist the asset. Defaults to
+            "default_storage".
         path (Optional[Tuple[str, ...]]): The path of the asset within the storage_key. If not
             given, the name of the decorated function is used.
         input_assets (Optional[Union[List[Asset], Dict[str, Asset]]]): The assets that this asset

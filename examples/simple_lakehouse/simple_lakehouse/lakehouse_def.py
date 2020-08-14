@@ -45,7 +45,9 @@ def pandas_df_local_filesystem_storage(init_context):
 def make_simple_lakehouse():
     dev_mode = ModeDefinition(
         name='dev',
-        resource_defs={'filesystem': pandas_df_local_filesystem_storage.configured({'root': '.'}),},
+        resource_defs={
+            'default_storage': pandas_df_local_filesystem_storage.configured({'root': '.'}),
+        },
     )
 
     return Lakehouse(mode_defs=[dev_mode])
