@@ -8,14 +8,13 @@ import yaml
 from dagster import check, seven
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
-from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
 
-def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
+def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
     # Load environment dict from either a preset or yaml file globs
     if preset_name:
-        if env:
+        if config:
             raise click.UsageError('Can not use --preset with --config.')
 
         cli_args = {
@@ -27,8 +26,8 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
         run_config = pipeline.get_preset(preset_name).run_config
 
     else:
-        env = list(env)
-        run_config = load_yaml_from_glob_list(env) if env else {}
+        config = list(config)
+        run_config = load_yaml_from_glob_list(config) if config else {}
 
     # If not provided by the user, ensure we have storage location defined
     if 'storage' not in run_config:
@@ -143,33 +142,16 @@ def main():
     help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
     'preset_defs.',
 )
-@click.option(
-    # backcompat
-    '-e',
-    '--env',
-    type=click.Path(exists=True),
-    multiple=True,
-    help=(
-        'Please use -c / --config to specify one or more run config files. '
-        '-e / --env is deprecated and will be removed in 0.9.0.'
-    ),
-)
-def scaffold(module_name, pipeline_name, output_path, config, preset, env):
+def scaffold(module_name, pipeline_name, output_path, config, preset):
     '''Creates a DAG file for a specified dagster pipeline'''
-    env = (
-        canonicalize_backcompat_args(
-            (config if config else None), '--config', (env if env else None), '--env', '0.9.0',
-        )
-        or tuple()  # back to default empty tuple
-    )
-
-    check.invariant(isinstance(env, tuple))
+    check.tuple_param(config, 'config', of_type=str)
+    check.invariant(isinstance(config, tuple))
     check.invariant(
         output_path is not None,
         'You must specify --output-path or set AIRFLOW_HOME to use this script.',
     )
 
-    run_config = construct_environment_yaml(preset, env, pipeline_name, module_name)
+    run_config = construct_environment_yaml(preset, config, pipeline_name, module_name)
     file_contents = construct_scaffolded_file_contents(module_name, pipeline_name, run_config)
 
     # Ensure output_path/dags exists

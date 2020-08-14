@@ -1,7 +1,7 @@
 from .fake_adls2_resource import FakeADLS2Resource, FakeADLS2ServiceClient
 from .file_cache import ADLS2FileCache, adls2_file_cache
 from .file_manager import ADLS2FileHandle, ADLS2FileManager
-from .intermediate_store import ADLS2IntermediateStore
+from .intermediate_storage import ADLS2IntermediateStorage
 from .object_store import ADLS2ObjectStore
 from .resources import adls2_file_manager, adls2_resource
 from .system_storage import (

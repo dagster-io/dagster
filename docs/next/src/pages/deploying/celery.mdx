@@ -33,8 +33,7 @@ Let's construct a very parallel toy pipeline and then execute it using
 the Celery executor.
 
 ```python literalinclude caption=celery_pipeline.py
-file:src/pages/deploying/celery_pipeline.py
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/celery_pipeline.py
 ```
 
 Save this pipeline as `celery_pipeline.py`.
@@ -65,11 +64,8 @@ dagit -f celery_pipeline.py
 Now you can execute the parallel pipeline from Dagit with the following
 config:
 
-```YAML
-execution:
-  celery:
-storage:
-  filesystem:
+```yaml literalinclude caption=celery.yaml
+file:/docs_snippets/docs_snippets/deploying/celery.yaml
 ```
 
 ## Ensuring workers are in sync
@@ -100,8 +96,7 @@ You can do this by adding a block such as the following to your
 variable is set):
 
 ```python literalinclude caption=dagster-pg.yaml
-file:src/pages/deploying/dagster-pg.yaml
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
 ```
 
 **The same instance config must be present in Dagit's environment and

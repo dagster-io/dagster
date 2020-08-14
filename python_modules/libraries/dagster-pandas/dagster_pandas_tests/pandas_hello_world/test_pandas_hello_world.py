@@ -53,7 +53,7 @@ def test_cli_execute():
                 'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
             ),
             instance=DagsterInstance.get(),
-            env_file_list=[
+            config=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
                 )
@@ -79,7 +79,7 @@ def test_cli_execute_failure():
                 'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world_fails'
             ),
             instance=DagsterInstance.get(),
-            env_file_list=[
+            config=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
                 )

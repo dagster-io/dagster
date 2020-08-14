@@ -105,18 +105,8 @@ running Tensorflow. Dagster supports this by having its tools communicate with
 those user environments over an IPC layer. In order to do this you must configure
 your workspace to load the correct repository in the correct virtual environment.
 
-```yaml caption=workspace.yaml
-load_from:
-  - python_environment:
-      executable_path: venvs/path/to/dataengineering_spark_team/bin/python
-      target:
-        python_package: dataengineering_spark_repository
-        location_name: dataengineering_spark_team_py_38_virtual_env
-  - python_environment:
-      executable_path: venvs/path/to/ml_tensorflow/bin/python
-      target:
-        python_file: path/to/team_repos.py
-        location_name: ml_team_py_36_virtual_env
+```yaml literalinclude caption=workspace.yaml
+file:/docs_snippets/docs_snippets/overview/repositories_workspaces/python_environment_example.yaml
 ```
 
 Note that not only could these be distinct sets of installed dependencies, but they

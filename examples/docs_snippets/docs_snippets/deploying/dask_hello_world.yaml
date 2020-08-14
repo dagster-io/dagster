@@ -2,3 +2,6 @@ storage:
   filesystem:
 execution:
   dask:
+    config:
+      cluster:
+        local:

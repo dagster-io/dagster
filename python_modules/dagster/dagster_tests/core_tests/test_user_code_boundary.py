@@ -108,11 +108,15 @@ def test_user_error_boundary_storage_plugin():
             return True
 
         @classmethod
-        def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
+        def set_intermediate_object(
+            cls, intermediate_storage, context, dagster_type, step_output_handle, value
+        ):
             raise UserError()
 
         @classmethod
-        def get_object(cls, intermediate_store, context, dagster_type, paths):
+        def get_intermediate_object(
+            cls, intermediate_storage, context, dagster_type, step_output_handle
+        ):
             raise UserError()
 
     CustomDagsterType = create_any_type(name='CustomType', auto_plugins=[CustomStoragePlugin])

@@ -43,7 +43,7 @@ const Layout: React.FunctionComponent = (props) => {
             <div className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8')}>
               <div className="flex justify-between">
                 <div className={cx('flex-1 overflow-hidden')}>
-                  <div className={cx({ markdown: !isHomepage })}>
+                  <div className={cx('markdown')}>
                     {props.children}
                   </div>
 

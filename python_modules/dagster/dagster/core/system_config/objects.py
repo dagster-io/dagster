@@ -2,8 +2,6 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.executor import ExecutorDefinition
-from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.run_config_schema import create_environment_type
 from dagster.core.errors import DagsterInvalidConfigError
@@ -83,6 +81,9 @@ class EnvironmentConfig(
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         '''
         from dagster.config.validate import process_config
+        from dagster.core.definitions.executor import ExecutorDefinition
+        from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
+        from dagster.core.definitions.system_storage import SystemStorageDefinition
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -102,21 +103,40 @@ class EnvironmentConfig(
 
         config_value = config_evr.value
 
+        mode_def = pipeline_def.get_mode_definition(mode)
+        config_mapped_intermediate_storage_configs = config_map_objects(
+            config_value,
+            mode_def.intermediate_storage_defs,
+            'intermediate_storage',
+            IntermediateStorageDefinition,
+            'intermediate storage',
+        )
+        # TODO:  replace this with a simple call to from_dict of config_mapped_intermediate_storage_configs when ready to fully deprecate
+        # TODO:  tracking: https://github.com/dagster-io/dagster/issues/2705
+        temp_intermed = config_mapped_intermediate_storage_configs
+        if config_value.get('storage') and temp_intermed is None:
+            temp_intermed = {EmptyIntermediateStoreBackcompatConfig(): {}}
+
+        config_mapped_execution_configs = config_map_objects(
+            config_value, mode_def.executor_defs, 'execution', ExecutorDefinition, 'executor'
+        )
+        config_mapped_system_storage_configs = config_map_objects(
+            config_value,
+            mode_def.system_storage_defs,
+            'storage',
+            SystemStorageDefinition,
+            'system storage',
+        )
+
         config_mapped_resource_configs = config_map_resources(pipeline_def, config_value, mode)
         config_mapped_logger_configs = config_map_loggers(pipeline_def, config_value, mode)
-        config_mapped_execution_configs = config_map_executors(pipeline_def, config_value, mode)
 
         solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
-        # TODO:  replace this with a simple call to from_dict of the config.get when ready to fully deprecate
-        temp_intermed = config_value.get('intermediate_storage')
-        if config_value.get('storage'):
-            if temp_intermed is None:
-                temp_intermed = {EmptyIntermediateStoreBackcompatConfig(): {}}
 
         return EnvironmentConfig(
             solids=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
-            storage=StorageConfig.from_dict(config_value.get('storage')),
+            storage=StorageConfig.from_dict(config_mapped_system_storage_configs),
             intermediate_storage=IntermediateStorageConfig.from_dict(temp_intermed),
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
@@ -167,6 +187,7 @@ def config_map_loggers(pipeline_def, config_value, mode):
     in that function is tightly coupled to this one and changes in either path should be confirmed
     in the other.
     '''
+    from dagster.core.definitions.logger import LoggerDefinition
 
     mode_def = pipeline_def.get_mode_definition(mode)
     logger_configs = config_value.get('loggers', {})
@@ -189,34 +210,41 @@ def config_map_loggers(pipeline_def, config_value, mode):
     return config_mapped_logger_configs
 
 
-def config_map_executors(pipeline_def, config_value, mode):
-    '''This function executes the config mappings for executors with respect to IConfigMappable.
-    It calls the ensure_single_item macro on the incoming config and then applies config mapping to
-    the result and the first executor_def with the same name on the mode_def.'''
+def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type):
+    '''This function executes the config mappings for executors and {system, intermediate} storage
+    definitions with respect to IConfigMappable. It calls the ensure_single_item macro on the
+    incoming config and then applies config mapping to the result and the first executor_def with
+    the same name on the mode_def.'''
 
-    config = config_value.get('execution')
+    config = config_value.get(keyed_by)
 
     check.opt_dict_param(config, 'config', key_type=str)
     if not config:
         return None
 
-    executor_name, executor_config = ensure_single_item(config)
+    obj_name, obj_config = ensure_single_item(config)
 
-    mode_def = pipeline_def.get_mode_definition(mode)
-    executor_def = next(
-        (defi for defi in mode_def.executor_defs if defi.name == executor_name), None
-    )  # executor_defs are stored in a list and we want to find the def matching name
-    check.inst(executor_def, ExecutorDefinition)
+    obj_def = next(
+        (defi for defi in defs if defi.name == obj_name), None
+    )  # obj_defs are stored in a list and we want to find the def matching name
+    check.inst(
+        obj_def,
+        def_type,
+        (
+            'Could not find a {def_type} definition on the selected mode that matches the '
+            '{def_type} "{obj_name}" given in run config'
+        ).format(def_type=def_type, obj_name=obj_name),
+    )
 
-    executor_config_evr = executor_def.apply_config_mapping(executor_config)
-    if not executor_config_evr.success:
+    obj_config_evr = obj_def.apply_config_mapping(obj_config)
+    if not obj_config_evr.success:
         raise DagsterInvalidConfigError(
-            'Error in config for executor {}'.format(executor_name),
-            executor_config_evr.errors,
-            executor_config,
+            'Error in config for {} {}'.format(name_of_def_type, obj_name),
+            obj_config_evr.errors,
+            obj_config,
         )
 
-    return {executor_name: executor_config_evr.value}
+    return {obj_name: obj_config_evr.value}
 
 
 class ExecutionConfig(

@@ -166,7 +166,7 @@ def test_missing_repo_name_in_multi_repo_location():
     assert result.exit_code == 2
 
     assert (
-        '''Must provide --repository as there are more than one repositories in '''
+        '''Must provide --repository as there is more than one repository in '''
         '''multi_repo. Options are: ['repo_one', 'repo_two'].'''
     ) in result.stdout
 

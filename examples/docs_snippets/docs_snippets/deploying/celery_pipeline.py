@@ -4,9 +4,11 @@ from dagster import ModeDefinition, default_executors, pipeline, solid
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 
+
 @solid
 def not_much(_):
     return
+
 
 @pipeline(mode_defs=celery_mode_defs)
 def parallel_pipeline():

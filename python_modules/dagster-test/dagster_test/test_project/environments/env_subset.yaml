@@ -1,0 +1,10 @@
+loggers:
+  console:
+    config:
+      log_level: DEBUG
+
+solids:
+  count_letters:
+    inputs:
+      word:
+        value: bar

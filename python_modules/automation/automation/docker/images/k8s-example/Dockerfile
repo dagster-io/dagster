@@ -17,4 +17,4 @@ RUN pip install \
     dagster-celery-k8s==${DAGSTER_VERSION} \
     dagit==${DAGSTER_VERSION}
 
-ADD example_project .
+COPY build_cache/ /

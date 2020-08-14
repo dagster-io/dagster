@@ -4,6 +4,7 @@ import six
 
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.config.validate import process_config
 from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
 
@@ -112,9 +113,46 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
         return wrapped_config_mapping_fn
 
 
+def _check_configurable_param(configurable):
+    from dagster.core.definitions.composition import CallableSolidNode
+
+    check.param_invariant(
+        not isinstance(configurable, CallableSolidNode),
+        'configurable',
+        (
+            'You have invoked `configured` on a CallableSolidNode (an intermediate type), which is '
+            'produced by aliasing or tagging a solid definition. To configure a solid, you must '
+            'call `configured` on a SolidDefinition. To fix '
+            'this error, make sure to call `configured` on the definition object *before* using '
+            'the `tag` or `alias` methods. For usage examples, see '
+            'https://docs.dagster.io/overview/configuration#configured'
+        ),
+    )
+    check.inst_param(
+        configurable,
+        'configurable',
+        IConfigMappable,
+        (
+            'Only the following types can be used with the `configured` method: ResourceDefinition, '
+            'ExecutorDefinition, SolidDefinition, LoggerDefinition, '
+            'IntermediateStorageDefinition, and SystemStorageDefinition. For usage examples of '
+            '`configured`, see https://docs.dagster.io/overview/configuration#configured'
+        ),
+    )
+
+
 def configured(configurable, config_schema=None, **kwargs):
     '''
     A decorator that makes it easy to create a function-configured version of an object.
+    The following definition types can be configured using this function:
+    :py:class:`ResourceDefinition`, :py:class:`ExecutorDefinition`,
+    :py:class:`SolidDefinition`, :py:class:`LoggerDefinition`,
+    :py:class:`IntermediateStorageDefinition`, and :py:class:`SystemStorageDefinition`.
+
+
+    If the config that will be supplied to the object is constant, you may alternatively invoke this
+    and call the result with a dict of config values to be curried. Examples of both strategies
+    below.
 
     Args:
         configurable (IConfigMappable): An object that can be configured.
@@ -139,8 +177,8 @@ def configured(configurable, config_schema=None, **kwargs):
             def dev_s3(config):
                 return {'bucket': config['bucket_prefix'] + 'dev'}
     '''
-
-    check.inst_param(configurable, 'configurable', IConfigMappable)
+    _check_configurable_param(configurable)
+    config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
 
     def _configured(config_or_config_fn):
         return configurable.configured(

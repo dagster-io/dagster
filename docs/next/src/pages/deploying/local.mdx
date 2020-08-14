@@ -35,25 +35,24 @@ you'll likely want to package Dagit using a Docker image.
 A minimal skeleton `Dockerfile` and entrypoint shell script that will run Dagit and the cron
 scheduler are shown below:
 
+file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
+
 ```dockerfile literalinclude caption=Dockerfile
-file:src/pages/deploying/docker/Dockerfile
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/docker/Dockerfile
 ```
 
 In this setup, the contents of `entrypoint.sh` should be something like the following. This script
 ensures that cron will run in the Docker container alongside Dagit:
 
 ```bash literalinclude caption=entrypoint.sh
-file:src/pages/deploying/docker/entrypoint.sh
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/docker/entrypoint.sh
 ```
 
 Finally, you should include a `dagster.yaml` file in `$DAGSTER_HOME` to configure the [Dagster
 instance](/overview/instances/dagster-instance) that Dagit will use:
 
 ```yaml literalinclude caption=dagster.yaml
-file:src/pages/deploying/docker/dagster.yaml
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/docker/dagster.yaml
 ```
 
 In cases where you're using env vars to configure the instance database, you should ensure these
@@ -78,8 +77,7 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 To run Dagit as a long-lived service, you can install a systemd service such as the following:
 
 ```bash literalinclude caption=dagit.service
-file:src/pages/deploying/systemd/dagit.service
-relativeToProject
+file:/docs_snippets/docs_snippets/deploying/systemd/dagit.service
 ```
 
 Note that this assumes you've got a virtualenv for Dagster at `/opt/dagster/venv` and that your

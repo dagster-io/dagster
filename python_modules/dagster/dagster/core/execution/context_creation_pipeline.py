@@ -23,7 +23,7 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitIntermediateStorageContext, InitSystemStorageContext
-from dagster.core.storage.intermediates_manager import IntermediateStorage
+from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
 from dagster.core.system_config.objects import (
@@ -254,7 +254,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
                 )
             else:
                 # remove this as part of https://github.com/dagster-io/dagster/issues/2705
-                intermediate_storage = system_storage_data.intermediates_manager
+                intermediate_storage = system_storage_data.intermediate_storage
 
             execution_context = self.construct_context(
                 context_creation_data=context_creation_data,
@@ -509,7 +509,7 @@ def construct_execution_context_data(
         scoped_resources_builder=scoped_resources_builder,
         environment_config=context_creation_data.environment_config,
         instance=context_creation_data.instance,
-        intermediates_manager=intermediate_storage,
+        intermediate_storage=intermediate_storage,
         file_manager=system_storage_data.file_manager,
         raise_on_error=raise_on_error,
         retries=retries,

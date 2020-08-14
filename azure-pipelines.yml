@@ -10,7 +10,8 @@ parameters:
   default:
     - api_tests
     - cli_tests
-    - cli_command_tests
+    - cli_command_cli_api_tests
+    - cli_command_grpc_tests
     - core_tests
 jobs:
   - job: "dagster"

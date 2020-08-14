@@ -1,4 +1,5 @@
 import PyObject from 'components/PyObject';
+import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags title="Configuration | Dagster" />
 
@@ -42,8 +43,8 @@ file:/docs_snippets/docs_snippets/overview/configuration/example.py
 In many cases, the option to configure an entity at runtime is more distracting than helpful, and
 it's preferable to supply the entity's configuration at definition time.
 
-The `configured` API offers a way to do this.  It returns an entity with the given configuration
-"baked in".
+The `configured` API offers a way to do this.  When invoked on a <PyObject module="dagster" object="ResourceDefinition" />, <PyObject module="dagster" object="ExecutorDefinition" />, <PyObject module="dagster" object="SolidDefinition" />, <PyObject module="dagster" object="LoggerDefinition" />, <PyObject module="dagster" object="IntermediateStorageDefinition" />, or <PyObject module="dagster" object="SystemStorageDefinition" />,
+it returns an interchangeable object with the given configuration "baked in".
 
 ```python literalinclude
 file:/docs_snippets/docs_snippets/overview/configuration/configured_example.py
@@ -57,3 +58,15 @@ It returns an entity with the "outer" config schema as its schema.
 ```python literalinclude
 file:/docs_snippets/docs_snippets/overview/configuration/config_map_example.py
 ```
+
+To configure a solid, simply invoke it on the solid definition:
+
+```python literalinclude
+file:/docs_snippets/docs_snippets/overview/configuration/configured_solid_example.py
+```
+
+By default, the resulting solid definition will inherit the name of the solid it wraps. As shown,
+you may optionally add a keyword argument `name` in the call to `configured` if you'd like the
+configured solid to take on a different name. Since solid definitions must have unique names, make
+sure you give configured solids different names if you want to use them together with the original
+solid or if you are configuring one solid in different ways within the same repository.

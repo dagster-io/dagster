@@ -602,6 +602,9 @@ def dataframe_materializer(_context, config, dask_df):
                         is_required=False,
                         description="how to respond to errors in the conversion (see str.encode()).",
                     ),
+                    'orient': Field(
+                        String, is_required=False, description="The JSON string format."
+                    ),
                     'storage_option': Field(
                         Permissive(),
                         is_required=False,
@@ -879,7 +882,6 @@ def df_type_check(_, value):
     return TypeCheck(
         success=True,
         metadata_entries=[
-            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
             # string cast columns since they may be things like datetime
             EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
         ],

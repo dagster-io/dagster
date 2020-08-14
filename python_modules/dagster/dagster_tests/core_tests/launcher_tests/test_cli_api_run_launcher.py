@@ -1,13 +1,12 @@
 import os
 import time
-from contextlib import contextmanager
 
-from dagster import file_relative_path, pipeline, repository, seven, solid
+from dagster import file_relative_path, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
-from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import CliApiRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import instance_for_test
 
 
 @solid
@@ -72,16 +71,6 @@ def nope():
     return [noop_pipeline, crashy_pipeline, sleepy_pipeline, math_diamond]
 
 
-@contextmanager
-def temp_instance():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        try:
-            yield instance
-        finally:
-            instance.run_launcher.join()
-
-
 def test_repo_construction():
     repo_yaml = file_relative_path(__file__, 'repo.yaml')
     assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
@@ -129,7 +118,7 @@ def poll_for_step_start(instance, run_id, timeout=5):
 
 
 def test_successful_run():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=noop_pipeline, run_config=None)
 
@@ -153,7 +142,7 @@ def test_successful_run():
 
 
 def test_crashy_run():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=crashy_pipeline, run_config=None
@@ -185,7 +174,7 @@ def test_crashy_run():
 
 
 def test_terminated_run():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=sleepy_pipeline, run_config=None
@@ -250,7 +239,7 @@ def _message_exists(event_records, message_text):
 
 
 def test_single_solid_selection_execution():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
@@ -277,7 +266,7 @@ def test_single_solid_selection_execution():
 
 
 def test_multi_solid_selection_execution():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(
@@ -311,7 +300,7 @@ def test_multi_solid_selection_execution():
 
 def test_engine_events():
 
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         repo_yaml = file_relative_path(__file__, 'repo.yaml')
 
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=math_diamond, run_config=None)

@@ -52,16 +52,8 @@ def celery_k8s_job_executor(init_context):
     :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
     :py:class:`~dagster.ModeDefinition` as follows:
 
-    .. code-block:: python
-
-        from dagster import ModeDefinition, default_executors, pipeline
-        from dagster_celery.executor_k8s import celery_k8s_job_executor
-
-        @pipeline(mode_defs=[
-            ModeDefinition(executor_defs=default_executors + [celery_k8s_job_executor])
-        ])
-        def celery_enabled_pipeline():
-            pass
+    .. literalinclude:: ../dagster_celery_k8s_tests/example_celery_mode_def.py
+       :language: python
 
     Then you can configure the executor as follows:
 

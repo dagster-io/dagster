@@ -151,10 +151,6 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     ):
         pass
 
-    @abstractmethod
-    def create_reloaded_repository_location(self):
-        pass
-
     @abstractproperty
     def is_reload_supported(self):
         pass
@@ -178,6 +174,9 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         else:
             check.failed('Unsupported handle: {}'.format(repository_location_handle))
 
+    def create_reloaded_repository_location(self):
+        return RepositoryLocation.from_handle(self.location_handle.create_reloaded_handle())
+
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, recon_repo):
@@ -191,9 +190,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
             RepositoryHandle(repository_name=def_name, repository_location_handle=self._handle),
         )
         self._repositories = {self._external_repo.name: self._external_repo}
-
-    def create_reloaded_repository_location(self):
-        raise NotImplementedError('Not implemented for in-process')
 
     @property
     def is_reload_supported(self):

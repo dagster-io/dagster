@@ -54,7 +54,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
             step_context.pipeline_run, step_context.step.key
         ):
             # capture all of the logs for this step
-            uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
+            uncovered_inputs = pipeline_context.intermediate_storage.uncovered_inputs(
                 step_context, step
             )
             if uncovered_inputs:

@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.api.utils import execute_unary_api_cli_command
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.origin import PipelineOrigin, PipelinePythonOrigin
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
@@ -24,7 +25,7 @@ def sync_get_external_execution_plan(
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
 
-    return check.inst(
+    result = check.inst(
         execute_unary_api_cli_command(
             pipeline_origin.executable_path,
             'execution_plan',
@@ -39,6 +40,12 @@ def sync_get_external_execution_plan(
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
     )
+
+    if isinstance(result, ExecutionPlanSnapshotErrorData):
+        raise DagsterSubprocessError(
+            result.error.to_string(), subprocess_error_infos=[result.error]
+        )
+    return result
 
 
 def sync_get_external_execution_plan_grpc(
@@ -60,7 +67,7 @@ def sync_get_external_execution_plan_grpc(
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
     check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
 
-    return check.inst(
+    result = check.inst(
         api_client.execution_plan_snapshot(
             execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
                 pipeline_origin=pipeline_origin,
@@ -73,3 +80,9 @@ def sync_get_external_execution_plan_grpc(
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
     )
+
+    if isinstance(result, ExecutionPlanSnapshotErrorData):
+        raise DagsterSubprocessError(
+            result.error.to_string(), subprocess_error_infos=[result.error]
+        )
+    return result

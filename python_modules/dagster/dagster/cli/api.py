@@ -52,6 +52,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster.core.storage.tags import check_tags
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
     get_external_execution_plan_snapshot,
@@ -69,7 +70,6 @@ from dagster.grpc.types import (
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -87,7 +87,7 @@ from dagster.serdes.ipc import (
     read_unary_input,
     setup_interrupt_support,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
     recon_repository_from_origin,
@@ -128,7 +128,7 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
         'Users should generally not invoke this command interactively.'
     ),
     input_cls=ListRepositoriesInput,
-    output_cls=ListRepositoriesResponse,
+    output_cls=(ListRepositoriesResponse, SerializableErrorInfo),
 )
 def list_repositories_command(args):
     check.inst_param(args, 'args', ListRepositoriesInput)
@@ -138,16 +138,21 @@ def list_repositories_command(args):
         args.working_directory,
         args.attribute,
     )
-    loadable_targets = get_loadable_targets(python_file, module_name, working_directory, attribute)
-    return ListRepositoriesResponse(
-        [
-            LoadableRepositorySymbol(
-                attribute=lt.attribute,
-                repository_name=repository_def_from_target_def(lt.target_definition).name,
-            )
-            for lt in loadable_targets
-        ]
-    )
+    try:
+        loadable_targets = get_loadable_targets(
+            python_file, module_name, working_directory, attribute
+        )
+        return ListRepositoriesResponse(
+            [
+                LoadableRepositorySymbol(
+                    attribute=lt.attribute,
+                    repository_name=repository_def_from_target_def(lt.target_definition).name,
+                )
+                for lt in loadable_targets
+            ]
+        )
+    except Exception:  # pylint: disable=broad-except
+        return serializable_error_info_from_exc_info(sys.exc_info())
 
 
 @unary_api_cli_command(
@@ -600,13 +605,15 @@ def _launch_scheduled_execution(
     else:
         run_config = schedule_execution_data.run_config
         schedule_tags = schedule_execution_data.tags
-        external_execution_plan = repo_location.get_external_execution_plan(
-            external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
-        )
-        if isinstance(external_execution_plan, ExecutionPlanSnapshotErrorData):
-            errors.append(external_execution_plan.error)
-        else:
+        try:
+            external_execution_plan = repo_location.get_external_execution_plan(
+                external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
+            )
             execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+        except DagsterSubprocessError as e:
+            errors.extend(e.subprocess_error_infos)
+        except Exception as e:  # pylint: disable=broad-except
+            errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, 'pipeline_tags')

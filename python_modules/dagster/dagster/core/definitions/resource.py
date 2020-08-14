@@ -1,7 +1,7 @@
 from collections import namedtuple
 from functools import update_wrapper
 
-from dagster import check
+from dagster import check, seven
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import IConfigMappable
@@ -82,11 +82,43 @@ class ResourceDefinition(IConfigMappable):
 
     @staticmethod
     def none_resource(description=None):
+        '''A helper function that returns a none resource.
+
+        Args:
+            description ([Optional[str]]): The description of the resource. Defaults to None.
+
+        Returns:
+            [ResourceDefinition]: A resource that does nothing.
+        '''
         return ResourceDefinition.hardcoded_resource(value=None, description=description)
 
     @staticmethod
     def hardcoded_resource(value, description=None):
+        '''A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
+
+        Args:
+            value (Any): A hardcoded object which helps mock the resource.
+            description ([Optional[str]]): The description of the resource. Defaults to None.
+
+        Returns:
+            [ResourceDefinition]: A hardcoded resource.
+        '''
         return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
+
+    @staticmethod
+    def mock_resource(description=None):
+        '''A helper function that creates a ``ResourceDefinition`` which wraps a ``mock.MagicMock``.
+
+        Args:
+            description ([Optional[str]]): The description of the resource. Defaults to None.
+
+        Returns:
+            [ResourceDefinition]: A resource that creates the magic methods automatically and helps
+                you mock existing resources.
+        '''
+        return ResourceDefinition.hardcoded_resource(
+            value=seven.mock.MagicMock(), description=description
+        )
 
     @staticmethod
     def string_resource(description=None):

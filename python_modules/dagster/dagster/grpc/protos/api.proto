@@ -80,7 +80,7 @@ message ListRepositoriesRequest {
 }
 
 message ListRepositoriesReply {
-  string serialized_list_repositories_response = 1;
+  string serialized_list_repositories_response_or_error = 1;
 }
 
 message ExternalPipelineSubsetSnapshotRequest {

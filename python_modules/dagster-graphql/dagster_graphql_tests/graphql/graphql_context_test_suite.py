@@ -1,3 +1,4 @@
+import sys
 from abc import ABCMeta, abstractmethod
 from contextlib import contextmanager
 
@@ -22,8 +23,9 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
+from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import LoadableTargetOrigin
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 
@@ -168,7 +170,7 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance_with_default_hijack():
             with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance.local_temp(
+                with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
                         'scheduler': {
@@ -178,11 +180,8 @@ class InstanceManagers:
                         },
                         'run_launcher': {'module': 'dagster', 'class': 'DefaultRunLauncher',},
                     },
-                )
-                try:
+                ) as instance:
                     yield instance
-                finally:
-                    instance.run_launcher.join()
 
         return MarkedManager(
             _sqlite_instance_with_default_hijack,
@@ -274,12 +273,14 @@ class EnvironmentManagers:
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
 
             # this is "ok" because we know the test host process containers the user code
-            repo_name = recon_repo.get_definition().name
+            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
+                recon_repo.get_origin()
+            )
+
             yield [
                 PythonEnvRepositoryLocation(
-                    RepositoryLocationHandle.create_out_of_process_location(
-                        location_name='test',
-                        repository_code_pointer_dict={repo_name: recon_repo.pointer},
+                    RepositoryLocationHandle.create_python_env_location(
+                        loadable_target_origin=loadable_target_origin, location_name='test',
                     )
                 )
             ]
@@ -346,20 +347,24 @@ class EnvironmentManagers:
 
             yield [
                 PythonEnvRepositoryLocation(
-                    RepositoryLocationHandle.create_out_of_process_location(
+                    RepositoryLocationHandle.create_python_env_location(
+                        loadable_target_origin=LoadableTargetOrigin(
+                            executable_path=sys.executable,
+                            python_file=file_relative_path(__file__, 'setup.py'),
+                            attribute='test_repo',
+                        ),
                         location_name='test',
-                        repository_code_pointer_dict={
-                            recon_repo.get_definition().name: recon_repo.pointer
-                        },
                     )
                 ),
                 InProcessRepositoryLocation(empty_repo),
                 PythonEnvRepositoryLocation(
-                    RepositoryLocationHandle.create_out_of_process_location(
+                    RepositoryLocationHandle.create_python_env_location(
+                        loadable_target_origin=LoadableTargetOrigin(
+                            executable_path=sys.executable,
+                            python_file=file_relative_path(__file__, 'setup.py'),
+                            attribute='empty_repo',
+                        ),
                         location_name='empty_repo',
-                        repository_code_pointer_dict={
-                            empty_repo.get_definition().name: empty_repo.pointer
-                        },
                     )
                 ),
             ]

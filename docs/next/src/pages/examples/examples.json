@@ -68,5 +68,10 @@
         "name": "simple_lakehouse",
         "title": "Basic Lakehouse (Experimental)",
         "description": "Define a computation graph in terms of the tables it produces."
+    },
+    {
+        "name": "multi_type_lakehouse",
+        "title": "Lakehouse with Pandas and Pyspark (Experimental)",
+        "description": "Use the Lakehouse API with multiple compute types."
     }
 ]

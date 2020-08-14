@@ -109,8 +109,8 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                 false;
 
               return (
-                <div>
-                  <VersionedLink key={`${c.path}-${c.name}`} href={c.path}>
+                <div key={`${c.path}-${c.name}`}>
+                  <VersionedLink href={c.path}>
                     <a
                       className={cx(
                         `group flex justify-between items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
@@ -143,9 +143,9 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                               viewBox="0 0 20 20"
                             >
                               <path
-                                fill-rule="evenodd"
+                                fillRule="evenodd"
                                 d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
+                                clipRule="evenodd"
                               ></path>
                             </svg>
                           ) : (
@@ -155,9 +155,9 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                               viewBox="0 0 20 20"
                             >
                               <path
-                                fill-rule="evenodd"
+                                fillRule="evenodd"
                                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                clip-rule="evenodd"
+                                clipRule="evenodd"
                               ></path>
                             </svg>
                           )}
@@ -165,7 +165,10 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                       )}
                     </a>
                   </VersionedLink>
-                  {(subSelected || subChildSelected) &&
+                  {(subSelected ||
+                    subChildSelected ||
+                    // always expand selections in 'API Docs'
+                    selectedSection.name === 'API Docs') &&
                     c.children &&
                     c.children.map((child) => {
                       const childSelected =
@@ -173,11 +176,11 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                         router.asPath.length - child.path.length < 2;
 
                       return (
-                        <div className="ml-4 border-l">
-                          <VersionedLink
-                            key={`${child.path}-${child.name}`}
-                            href={child.path}
-                          >
+                        <div
+                          className="ml-4 border-l"
+                          key={`${child.path}-${child.name}`}
+                        >
+                          <VersionedLink href={child.path}>
                             <a
                               className={cx(
                                 `group flex justify-between items-center px-3 py-2 text-sm leading-5 ml-1 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,

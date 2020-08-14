@@ -10,6 +10,7 @@ from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -21,7 +22,6 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -117,7 +117,9 @@ class DagsterGrpcClient(object):
 
         res = self._query('ListRepositories', api_pb2.ListRepositoriesRequest)
 
-        return deserialize_json_to_dagster_namedtuple(res.serialized_list_repositories_response)
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_list_repositories_response_or_error
+        )
 
     def external_partition_names(self, partition_names_args):
         check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
@@ -349,19 +351,19 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
         self._server_process = check.inst_param(server_process, 'server_process', subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
+    def cleanup_server(self):
+        if self._server_process and self._server_process.poll() is None:
+            self.shutdown_server()
+            self._server_process = None
+
     def __enter__(self):
         return self
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
-        self._dispose()
+        self.cleanup_server()
 
     def __del__(self):
-        self._dispose()
-
-    def _dispose(self):
-        if self._server_process and self._server_process.poll() is None:
-            self.shutdown_server()
-            self._server_process = None
+        self.cleanup_server()
 
 
 @contextmanager

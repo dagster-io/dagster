@@ -22,7 +22,9 @@ from dagster.core.host_representation.external_data import (
     ExternalPartitionTagsData,
     external_repository_data_from_def,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster.seven import multiprocessing
@@ -52,7 +54,6 @@ from .types import (
     GetCurrentImageResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
-    LoadableTargetOrigin,
     PartitionArgs,
     PartitionNamesArgs,
     PipelineSubsetSnapshotArgs,
@@ -62,6 +63,8 @@ from .types import (
 from .utils import get_loadable_targets
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
+
+CLEANUP_TICK = 0.5
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -73,6 +76,80 @@ def heartbeat_thread(heartbeat_timeout, last_heartbeat_time, shutdown_event):
         time.sleep(heartbeat_timeout)
         if last_heartbeat_time < time.time() - heartbeat_timeout:
             shutdown_event.set()
+
+
+class LazyRepositorySymbolsAndCodePointers:
+    '''Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
+    we can gracefully handle user code errors.'''
+
+    def __init__(self, loadable_target_origin):
+        self._loadable_target_origin = loadable_target_origin
+        self._loadable_repository_symbols = None
+        self._code_pointers_by_repo_name = None
+
+    def _load(self):
+        self._loadable_repository_symbols = load_loadable_repository_symbols(
+            self._loadable_target_origin
+        )
+        self._code_pointers_by_repo_name = build_code_pointers_by_repo_name(
+            self._loadable_target_origin, self._loadable_repository_symbols
+        )
+
+    @property
+    def loadable_repository_symbols(self):
+        if self._loadable_repository_symbols is None:
+            self._load()
+
+        return self._loadable_repository_symbols
+
+    @property
+    def code_pointers_by_repo_name(self):
+        if self._code_pointers_by_repo_name is None:
+            self._load()
+
+        return self._code_pointers_by_repo_name
+
+
+def load_loadable_repository_symbols(loadable_target_origin):
+    if loadable_target_origin:
+        loadable_targets = get_loadable_targets(
+            loadable_target_origin.python_file,
+            loadable_target_origin.module_name,
+            loadable_target_origin.working_directory,
+            loadable_target_origin.attribute,
+        )
+        return [
+            LoadableRepositorySymbol(
+                attribute=loadable_target.attribute,
+                repository_name=repository_def_from_target_def(
+                    loadable_target.target_definition
+                ).name,
+            )
+            for loadable_target in loadable_targets
+        ]
+    else:
+        return []
+
+
+def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository_symbols):
+    repository_code_pointer_dict = {}
+    for loadable_repository_symbol in loadable_repository_symbols:
+        if loadable_target_origin.python_file:
+            repository_code_pointer_dict[
+                loadable_repository_symbol.repository_name
+            ] = CodePointer.from_python_file(
+                loadable_target_origin.python_file,
+                loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
+            )
+        if loadable_target_origin.module_name:
+            repository_code_pointer_dict[
+                loadable_repository_symbol.repository_name
+            ] = CodePointer.from_module(
+                loadable_target_origin.module_name, loadable_repository_symbol.attribute,
+            )
+
+    return repository_code_pointer_dict
 
 
 class DagsterApiServer(DagsterApiServicer):
@@ -99,50 +176,18 @@ class DagsterApiServer(DagsterApiServicer):
             loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
         )
 
-        if loadable_target_origin:
-            loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.working_directory,
-                loadable_target_origin.attribute,
-            )
-            self._loadable_repository_symbols = [
-                LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
-                    repository_name=repository_def_from_target_def(
-                        loadable_target.target_definition
-                    ).name,
-                )
-                for loadable_target in loadable_targets
-            ]
-        else:
-            self._loadable_repository_symbols = []
-
         self._shutdown_server_event = check.inst_param(
             shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
         )
-        # Dict[str, multiprocessing.Process] of run_id to execute_run process
+        # Dict[str, (multiprocessing.Process, DagsterInstance)]
         self._executions = {}
         # Dict[str, multiprocessing.Event]
         self._termination_events = {}
         self._execution_lock = threading.Lock()
 
-        self._repository_code_pointer_dict = {}
-        for loadable_repository_symbol in self._loadable_repository_symbols:
-            if self._loadable_target_origin.python_file:
-                self._repository_code_pointer_dict[
-                    loadable_repository_symbol.repository_name
-                ] = CodePointer.from_python_file(
-                    self._loadable_target_origin.python_file,
-                    loadable_repository_symbol.attribute,
-                    self._loadable_target_origin.working_directory,
-                )
-            if self._loadable_target_origin.module_name:
-                self._repository_code_pointer_dict[
-                    loadable_repository_symbol.repository_name
-                ] = CodePointer.from_module(
-                    self._loadable_target_origin.module_name, loadable_repository_symbol.attribute,
-                )
+        self._repository_symbols_and_code_pointers = LazyRepositorySymbolsAndCodePointers(
+            loadable_target_origin
+        )
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:
@@ -155,6 +200,41 @@ class DagsterApiServer(DagsterApiServicer):
         else:
             self.__heartbeat_thread = None
 
+        self.__cleanup_thread = threading.Thread(target=self._cleanup_thread, args=(),)
+        self.__cleanup_thread.daemon = True
+
+        self.__cleanup_thread.start()
+
+    def _generate_synthetic_error_from_crash(self, run, instance):
+        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+            run_id=run.run_id
+        )
+        instance.report_engine_event(message, run, cls=self.__class__)
+        instance.report_run_failed(run)
+
+    def _cleanup_thread(self):
+        while True:
+            time.sleep(CLEANUP_TICK)
+            with self._execution_lock:
+                runs_to_clear = []
+                for run_id, (process, instance) in self._executions.items():
+                    if process.is_alive():
+                        continue
+
+                    run = instance.get_run_by_id(run_id)
+
+                    runs_to_clear.append(run_id)
+
+                    if run.is_finished:
+                        continue
+
+                    # the process died in an unexpected manner. inform the system
+                    self._generate_synthetic_error_from_crash(run, instance)
+
+                for run_id in runs_to_clear:
+                    del self._executions[run_id]
+                    del self._termination_events[run_id]
+
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
             repository_origin, 'repository_origin', RepositoryOrigin,
@@ -162,7 +242,9 @@ class DagsterApiServer(DagsterApiServicer):
 
         if isinstance(repository_origin, RepositoryGrpcServerOrigin):
             return ReconstructableRepository(
-                self._repository_code_pointer_dict[repository_origin.repository_name]
+                self._repository_symbols_and_code_pointers.code_pointers_by_repo_name[
+                    repository_origin.repository_name
+                ]
             )
         return recon_repository_from_origin(repository_origin)
 
@@ -203,16 +285,21 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ListRepositories(self, request, _context):
-        return api_pb2.ListRepositoriesReply(
-            serialized_list_repositories_response=serialize_dagster_namedtuple(
-                ListRepositoriesResponse(
-                    self._loadable_repository_symbols,
-                    executable_path=self._loadable_target_origin.executable_path
-                    if self._loadable_target_origin
-                    else None,
-                    repository_code_pointer_dict=self._repository_code_pointer_dict,
-                )
+        try:
+            response = ListRepositoriesResponse(
+                self._repository_symbols_and_code_pointers.loadable_repository_symbols,
+                executable_path=self._loadable_target_origin.executable_path
+                if self._loadable_target_origin
+                else None,
+                repository_code_pointer_dict=(
+                    self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
+                ),
             )
+        except Exception:  # pylint: disable=broad-except
+            response = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.ListRepositoriesReply(
+            serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(response)
         )
 
     def ExternalPartitionNames(self, request, _context):
@@ -407,7 +494,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
         with self._execution_lock:
             execution_process.start()
-            self._executions[run_id] = execution_process
+            self._executions[run_id] = (
+                execution_process,
+                DagsterInstance.from_ref(execute_run_args.instance_ref),
+            )
             self._termination_events[run_id] = termination_event
 
         done = False
@@ -556,7 +646,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
         with self._execution_lock:
             execution_process.start()
-            self._executions[run_id] = execution_process
+            self._executions[run_id] = (
+                execution_process,
+                DagsterInstance.from_ref(execute_run_args.instance_ref),
+            )
             self._termination_events[run_id] = termination_event
 
         success = None
@@ -637,7 +730,7 @@ def server_termination_target(termination_event, server):
     while not termination_event.is_set():
         time.sleep(0.1)
     # We could make this grace period configurable if we set it in the ShutdownServer handler
-    server.stop(grace=None)
+    server.stop(grace=5)
 
 
 class DagsterGrpcServer(object):
@@ -902,6 +995,9 @@ class GrpcServerProcess(object):
 
         if self.server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
+
+    def wait(self):
+        self.server_process.wait()
 
     def create_ephemeral_client(self):
         from dagster.grpc.client import EphemeralDagsterGrpcClient
