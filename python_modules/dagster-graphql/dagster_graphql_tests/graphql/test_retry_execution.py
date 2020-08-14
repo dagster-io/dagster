@@ -13,7 +13,6 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
 )
 
-from dagster import DagsterEventType
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.tags import RESUME_RETRY_TAG
@@ -32,74 +31,18 @@ from .setup import (
     get_retry_multi_execution_params,
     retry_config,
 )
-from .utils import get_all_logs_for_finished_run_via_subscription, sync_execute_get_events
-
-
-def step_started(logs, step_key):
-    return any(
-        log['stepKey'] == step_key
-        for log in logs
-        if log['__typename'] in ('ExecutionStepStartEvent',)
-    )
-
-
-def step_did_not_run(logs, step_key):
-    return not any(
-        log['stepKey'] == step_key
-        for log in logs
-        if log['__typename']
-        in ('ExecutionStepSuccessEvent', 'ExecutionStepSkippedEvent', 'ExecutionStepFailureEvent')
-    )
-
-
-def step_did_succeed(logs, step_key):
-    return any(
-        log['__typename'] == 'ExecutionStepSuccessEvent' and step_key == log['stepKey']
-        for log in logs
-    )
-
-
-def step_did_skip(logs, step_key):
-    return any(
-        log['__typename'] == 'ExecutionStepSkippedEvent' and step_key == log['stepKey']
-        for log in logs
-    )
-
-
-def step_did_fail(logs, step_key):
-    return any(
-        log['__typename'] == 'ExecutionStepFailureEvent' and step_key == log['stepKey']
-        for log in logs
-    )
-
-
-def step_did_fail_in_records(records, step_key):
-    return any(
-        record.step_key == step_key
-        and record.dagster_event.event_type_value == DagsterEventType.STEP_FAILURE.value
-        for record in records
-    )
-
-
-def step_did_succeed_in_records(records, step_key):
-    return any(
-        record.step_key == step_key
-        and record.dagster_event.event_type_value == DagsterEventType.STEP_SUCCESS.value
-        for record in records
-    )
-
-
-def step_did_not_run_in_records(records, step_key):
-    return not any(
-        record.step_key == step_key
-        and record.dagster_event.event_type_value
-        in (
-            DagsterEventType.STEP_SUCCESS.value,
-            DagsterEventType.STEP_FAILURE.value,
-            DagsterEventType.STEP_SKIPPED.value,
-        )
-        for record in records
-    )
+from .utils import (
+    get_all_logs_for_finished_run_via_subscription,
+    step_did_fail,
+    step_did_fail_in_records,
+    step_did_not_run,
+    step_did_not_run_in_records,
+    step_did_skip,
+    step_did_succeed,
+    step_did_succeed_in_records,
+    step_started,
+    sync_execute_get_events,
+)
 
 
 def first_event_of_type(logs, message_type):

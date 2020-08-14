@@ -688,6 +688,7 @@ class DauphinPartitionBackfillSuccess(dauphin.ObjectType):
         name = 'PartitionBackfillSuccess'
 
     backfill_id = dauphin.NonNull(dauphin.String)
+    launched_run_ids = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinPartitionBackfillResult(dauphin.Union):
@@ -697,7 +698,7 @@ class DauphinPartitionBackfillResult(dauphin.Union):
             DauphinPartitionBackfillSuccess,
             DauphinPythonError,
             DauphinPartitionSetNotFoundError,
-        )
+        ) + pipeline_execution_error_types
 
 
 class DauphinRepositoriesOrError(dauphin.Union):

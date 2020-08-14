@@ -807,8 +807,9 @@ class DauphinPartitionBackfillParams(dauphin.InputObjectType):
         name = 'PartitionBackfillParams'
 
     selector = dauphin.NonNull('PartitionSetSelector')
-    partitionNames = dauphin.List(dauphin.NonNull(dauphin.String))
-    solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
+    partitionNames = dauphin.non_null_list(dauphin.String)
+    reexecutionSteps = dauphin.List(dauphin.NonNull(dauphin.String))
+    fromFailure = dauphin.Boolean()
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

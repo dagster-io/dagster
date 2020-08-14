@@ -2,7 +2,7 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUB
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import check
+from dagster import DagsterEventType, check
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):
@@ -64,3 +64,70 @@ def sync_execute_get_run_log_data(variables, context):
 def sync_execute_get_events(variables, context):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     return sync_execute_get_run_log_data(variables, context)['messages']
+
+
+def step_started(logs, step_key):
+    return any(
+        log['stepKey'] == step_key
+        for log in logs
+        if log['__typename'] in ('ExecutionStepStartEvent',)
+    )
+
+
+def step_did_not_run(logs, step_key):
+    return not any(
+        log['stepKey'] == step_key
+        for log in logs
+        if log['__typename']
+        in ('ExecutionStepSuccessEvent', 'ExecutionStepSkippedEvent', 'ExecutionStepFailureEvent')
+    )
+
+
+def step_did_succeed(logs, step_key):
+    return any(
+        log['__typename'] == 'ExecutionStepSuccessEvent' and step_key == log['stepKey']
+        for log in logs
+    )
+
+
+def step_did_skip(logs, step_key):
+    return any(
+        log['__typename'] == 'ExecutionStepSkippedEvent' and step_key == log['stepKey']
+        for log in logs
+    )
+
+
+def step_did_fail(logs, step_key):
+    return any(
+        log['__typename'] == 'ExecutionStepFailureEvent' and step_key == log['stepKey']
+        for log in logs
+    )
+
+
+def step_did_fail_in_records(records, step_key):
+    return any(
+        record.step_key == step_key
+        and record.dagster_event.event_type_value == DagsterEventType.STEP_FAILURE.value
+        for record in records
+    )
+
+
+def step_did_succeed_in_records(records, step_key):
+    return any(
+        record.step_key == step_key
+        and record.dagster_event.event_type_value == DagsterEventType.STEP_SUCCESS.value
+        for record in records
+    )
+
+
+def step_did_not_run_in_records(records, step_key):
+    return not any(
+        record.step_key == step_key
+        and record.dagster_event.event_type_value
+        in (
+            DagsterEventType.STEP_SUCCESS.value,
+            DagsterEventType.STEP_FAILURE.value,
+            DagsterEventType.STEP_SKIPPED.value,
+        )
+        for record in records
+    )

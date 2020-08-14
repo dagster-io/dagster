@@ -723,14 +723,16 @@ type Partition {
 
 input PartitionBackfillParams {
   selector: PartitionSetSelector!
-  partitionNames: [String!]
-  solidSelection: [String!]
+  partitionNames: [String!]!
+  reexecutionSteps: [String!]
+  fromFailure: Boolean
 }
 
-union PartitionBackfillResult = PartitionBackfillSuccess | PythonError | PartitionSetNotFoundError
+union PartitionBackfillResult = PartitionBackfillSuccess | PythonError | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type PartitionBackfillSuccess {
   backfillId: String!
+  launchedRunIds: [String!]!
 }
 
 type PartitionRunConfig {

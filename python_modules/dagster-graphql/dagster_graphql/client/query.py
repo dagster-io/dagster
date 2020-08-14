@@ -515,6 +515,7 @@ mutation($backfillParams: PartitionBackfillParams!) {
     }
     ... on PartitionBackfillSuccess {
       backfillId
+      launchedRunIds
     }
   }
 }

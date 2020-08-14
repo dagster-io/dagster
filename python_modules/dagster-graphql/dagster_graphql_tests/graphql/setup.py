@@ -1,6 +1,7 @@
 import csv
 import datetime
 import logging
+import os
 import time
 from collections import OrderedDict
 from copy import deepcopy
@@ -990,7 +991,35 @@ def define_partitions():
         run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
-    return [integer_set, enum_set]
+    chained_partition_set = PartitionSetDefinition(
+        name="chained_integer_partition",
+        pipeline_name="chained_failure_pipeline",
+        mode="default",
+        partition_fn=lambda: [Partition(i) for i in range(10)],
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+    )
+
+    return [integer_set, enum_set, chained_partition_set]
+
+
+@pipeline
+def chained_failure_pipeline():
+    @lambda_solid
+    def always_succeed():
+        return 'hello'
+
+    @lambda_solid
+    def conditionally_fail(_):
+        if os.environ.get("TEST_SOLID_SHOULD_FAIL"):
+            raise Exception('blah')
+
+        return 'hello'
+
+    @lambda_solid
+    def after_failure(_):
+        return 'world'
+
+    return after_failure(conditionally_fail(always_succeed()))
 
 
 @repository
@@ -1033,6 +1062,7 @@ def test_repo():
             single_asset_pipeline,
             spew_pipeline,
             tagged_pipeline,
+            chained_failure_pipeline,
         ]
         + define_schedules()
         + define_partitions()

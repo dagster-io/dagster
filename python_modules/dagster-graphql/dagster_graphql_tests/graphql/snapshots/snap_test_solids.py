@@ -124,6 +124,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'after_failure'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'chained_failure_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'after_failure'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'always_succeed'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'chained_failure_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'always_succeed'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'apply_to_three'
                 },
                 'invocations': [
@@ -149,6 +181,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'can_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'conditionally_fail'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'chained_failure_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'conditionally_fail'
                         }
                     }
                 ]
