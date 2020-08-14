@@ -2,7 +2,6 @@ import csv
 import os
 import time
 from collections import OrderedDict
-from contextlib import contextmanager
 from copy import deepcopy
 
 from dagster import (
@@ -20,13 +19,12 @@ from dagster import (
     lambda_solid,
     pipeline,
     reconstructable,
-    seven,
     solid,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.handle import RepositoryHandle, RepositoryLocationHandle
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 
@@ -141,16 +139,6 @@ def get_events_of_type(events, event_type):
     ]
 
 
-@contextmanager
-def temp_instance():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        try:
-            yield instance
-        finally:
-            instance.run_launcher.join()
-
-
 def test_works_in_memory():
 
     run_config = {
@@ -194,7 +182,7 @@ def test_running():
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
 
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         pipeline_run = _execute_in_launcher(instance, passing_pipeline, run_config)
 
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
@@ -213,7 +201,7 @@ def test_running():
 
 
 def test_failing():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         run_config = {
             'solids': {
                 'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}
@@ -231,7 +219,7 @@ def test_execution_crash():
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
 
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
 
         pipeline_run = _execute_in_launcher(instance, crashy_pipeline, run_config)
 
@@ -256,7 +244,7 @@ def test_multiprocessing_execution_for_composite_solid():
         }
     }
 
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         pipeline_run = _execute_in_launcher(instance, composite_pipeline, run_config)
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -272,7 +260,7 @@ def test_multiprocessing_execution_for_composite_solid_multiprocess_executor():
         'storage': {'filesystem': {}},
     }
 
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         second_run = _execute_in_launcher(instance, composite_pipeline, run_config)
         assert instance.get_run_by_id(second_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -285,7 +273,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             }
         }
     }
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         pipeline_run = _execute_in_launcher(
             instance, pipeline_def=composite_pipeline_with_config_mapping, run_config=run_config,
         )
@@ -302,7 +290,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_
         'execution': {'multiprocess': {}},
         'storage': {'filesystem': {}},
     }
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         pipeline_run = _execute_in_launcher(
             instance, pipeline_def=composite_pipeline_with_config_mapping, run_config=run_config,
         )
@@ -324,7 +312,7 @@ def infinite_loop_pipeline():
 
 
 def test_has_run_query_and_terminate():
-    with temp_instance() as instance:
+    with instance_for_test() as instance:
         with safe_tempfile_path() as path:
             run_config = {'solids': {'loop': {'config': {'file': path}}}}
 
@@ -353,7 +341,7 @@ def test_has_run_query_and_terminate():
 
 
 def test_two_runs_running():
-    with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two, temp_instance() as instance:
+    with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two, instance_for_test() as instance:
         pipeline_run_one = instance.create_run_for_pipeline(
             pipeline_def=infinite_loop_pipeline,
             run_config={'solids': {'loop': {'config': {'file': file_one}}}},

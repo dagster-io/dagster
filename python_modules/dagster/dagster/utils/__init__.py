@@ -216,31 +216,30 @@ def check_script(path, return_code=0):
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
-    from dagster.core.test_utils import environ
+    from dagster.core.test_utils import instance_for_test
 
-    with TemporaryDirectory() as temp_dir:
-        with environ({'DAGSTER_HOME': temp_dir}):
-            cli_cmd = [
-                sys.executable,
-                '-m',
-                'dagster',
-                'pipeline',
-                'execute',
-                '-f',
-                path,
-                '-a',
-                pipeline_fn_name,
-            ]
+    with instance_for_test():
+        cli_cmd = [
+            sys.executable,
+            '-m',
+            'dagster',
+            'pipeline',
+            'execute',
+            '-f',
+            path,
+            '-a',
+            pipeline_fn_name,
+        ]
 
-            if env_file:
-                cli_cmd.append('-c')
-                cli_cmd.append(env_file)
+        if env_file:
+            cli_cmd.append('-c')
+            cli_cmd.append(env_file)
 
-            try:
-                subprocess.check_output(cli_cmd)
-            except subprocess.CalledProcessError as cpe:
-                print(cpe)  # pylint: disable=print-call
-                raise cpe
+        try:
+            subprocess.check_output(cli_cmd)
+        except subprocess.CalledProcessError as cpe:
+            print(cpe)  # pylint: disable=print-call
+            raise cpe
 
 
 def safe_tempfile_path_unmanaged():
