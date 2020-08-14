@@ -90,11 +90,11 @@ dedent:4
 </details>
 
 <details className="markdown">
-  <summary>Specifying config using YAML fragments and the dagster CLI</summary>
+  <summary>Specifying config using YAML fragments and the Dagster CLI</summary>
 
 <br />
 
-When executing pipelines with the dagster CLI, we'll need to provide the run config in a file. We
+When executing pipelines with the Dagster CLI, we'll need to provide the run config in a file. We
 use YAML for the file-based representation of configuration, but the values are the same as before:
 
 ```YAML literalinclude showLines caption=inputs_env.yaml
@@ -102,7 +102,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs_env.ya
 dedent:4
 ```
 
-We can pass config files in this format to the dagster CLI tool with the `-e` flag.
+We can pass config files in this format to the Dagster CLI tool with the `-e` flag.
 
 ```bash
 dagster pipeline execute -f inputs.py -e inputs_env.yaml

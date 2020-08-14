@@ -70,7 +70,7 @@ deployment aims to provide:
 
 - **User Code Separation:** In this system, the Celery workers can be deployed via fixed images
   without user code, but rest of the system still users the user code image. In the next part, we
-  walk through how user code can be deployed separately from all dagster system components.
+  walk through how user code can be deployed separately from all Dagster system components.
 - **Priorities & Queueing:** We include Celery to take advantage of its support for task
   priorities and queue widths. When using this system, you can annotate your solids with priority
   tags to prioritize certain solid executions, and with queue tags to manage parallelism and limit

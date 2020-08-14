@@ -11,7 +11,7 @@ The core abstraction in the launch process is the run launcher. It is configured
 as part of the Dagster Instance.
 
 The role of the run launcher is to be the interface to the computational
-resources that will be used to actually execute dagster runs. It receives
+resources that will be used to actually execute Dagster runs. It receives
 the ID of a created run and a representation of the pipeline about to undergo
 execution. It is responsible for allocating the computational resource for that
 run (e.g. a process, a container, a kubernetes pod, etc) and then instigating

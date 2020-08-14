@@ -1,14 +1,11 @@
 import PyObject from 'components/PyObject';
 import { DynamicMetaTags } from 'components/MetaTags';
 
-<DynamicMetaTags
-  title="Dagster Types | Dagster"
-  description="Dagster Types."
-/>
+<DynamicMetaTags title="Dagster Types | Dagster" description="Dagster Types." />
 
 # Dagster Types
 
-The Dagster type system helps users describe what kind of values their solids accept and produce.  Each solid input and output can be annotated with a <PyObject module="dagster" object="DagsterType" />.
+The Dagster type system helps users describe what kind of values their solids accept and produce. Each solid input and output can be annotated with a <PyObject module="dagster" object="DagsterType" />.
 
 The type system is _gradual_ and
 _optional_ - pipelines can run without types specified explicitly, and specifying types in some places doesn't require that types be specified everywhere. Inputs and outputs default to the <PyObject module="dagster" object="Any" /> type.
@@ -17,11 +14,11 @@ The Dagster type system is independent from the [PEP 484](https://www.python.org
 system, although we overload the type annotation syntax on functions to
 make it easier to specify the input and output types of your solids.
 
-Dagster type-checking happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects.  When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed.  When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
+Dagster type-checking happens at solid execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects. When a type is specified for a solid's input, then the type check occurs immediately before the solid is executed. When a type is specified for a solid's output, then the type check occurs immediately after the solid is executed.
 
 ## DagsterType
 
-The core API for defining dagster types is <PyObject module="dagster" object="DagsterType" />.
+The core API for defining Dagster types is <PyObject module="dagster" object="DagsterType" />.
 
 ```python literalinclude caption=test_type_guide.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -56,7 +53,7 @@ how to do that later in this document.
 Dagster exports top level scalars -- `Int`, `Bool`, `String`, `Float`
 -- that can be used as DagsterType instances. For convenience, one can
 use the corresponding python built-in scalars -- `int`, `bool`, `str`,
-`float` -- to specify the corresponding dagster scalar types. This also
+`float` -- to specify the corresponding Dagster scalar types. This also
 makes these arguments mypy-compliant. There is a 1:1 relationship
 between the python type -- e.g. `int` -- and its corresponding dagster
 type -- e.g. `dagster.Int` and a mapping between them is maintained by
@@ -66,12 +63,12 @@ solids, the corresponding DagsterType will also be picked up by the
 system.
 
 As we will see later, the user can also define their own 1:1
-relationships between python and dagster types.
+relationships between python and Dagster types.
 
 ## PythonObjectDagsterType
 
 It is common to define
-types that just do _isinstance_ checks as the dagster type
+types that just do _isinstance_ checks as the Dagster type
 check. <PyObject module="dagster" object="PythonObjectDagsterType" /> does just that.
 
 ```python literalinclude caption=python_object_dagster_type.py
@@ -80,7 +77,7 @@ lineno-start:1
 lines:67-72
 ```
 
-One can now declare the dagster type as the interface to the solid, and
+One can now declare the Dagster type as the interface to the solid, and
 use the corresponding python type in business logic.
 
 ```python literalinclude caption=dagster_type_annotations.py
@@ -150,11 +147,11 @@ Inputs and Outputs can represent, via the type system:
 ## Python Types and Dagster Types
 
 As alluded to earlier, the user can create define their own 1:1
-relationships between dagster types and Python types, making the
-corresponding python type usable where the dagster type is expected.
+relationships between Dagster types and Python types, making the
+corresponding python type usable where the Dagster type is expected.
 
 This is convenient when one has business objects that require nothing
-more than an `isinstance` check in the dagster type check _and_ one
+more than an `isinstance` check in the Dagster type check _and_ one
 wishes to use them both in type annotations directly and as business
 objects. These type definitions reduce boilerplate as well as deliver
 out-of-the-box mypy compliance.
@@ -162,7 +159,7 @@ out-of-the-box mypy compliance.
 There are two APIs: <PyObject module="dagster" object="usable_as_dagster_type" displayText="usable_as_dagster_type()" /> -- for
 direct annotations of class declarations -- and <PyObject module="dagster" object="make_python_type_usable_as_dagster_type" displayText="make_python_type_usable_as_dagster_type()" /> -- for
 mapping _existing_ classes. This is designed for importing python types libraries that cannot be altered and mapping them
-to dagster types.
+to Dagster types.
 
 ```python literalinclude caption=usable_as_dagster_type.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
@@ -184,7 +181,7 @@ types. This can introduce challenges in terms of testability and also
 can causes in behavior based on import order.
 
 Additionally some of the most useful patterns in the ecosystem are to
-use type factories to programmatically create dagster types, such as in
+use type factories to programmatically create Dagster types, such as in
 our dagster-pandas module. In these cases a 1:1 mapping between dagster
 type and python type _no longer exists_. E.g. in dagster-pandas the
 python representation for all the dataframe variants is simply
@@ -192,7 +189,7 @@ _pandas.DataFrame_.
 
 For clearly scoped business objects, the reduction in boilerplate is
 significant and eases mypy compliance, hence its inclusion in the public
-dagster API.
+Dagster API.
 
 We do _not_ recommend that libraries use this pattern and instead rely
 on other techniques to achieve mypy compliance.

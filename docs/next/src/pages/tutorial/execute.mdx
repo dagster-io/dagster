@@ -83,7 +83,7 @@ From the directory in which you've saved the pipeline file, just run:
 dagster pipeline execute -f hello_cereal.py
 ```
 
-You'll see the full stream of events emitted by dagster appear in the console,
+You'll see the full stream of events emitted by Dagster appear in the console,
 including our call to the logging machinery, which will look like:
 
 ```bash
@@ -104,7 +104,7 @@ Success!
 <br />
 
 If you'd rather execute your pipelines as a script, you can do that without
-using the dagster CLI at all. Just add a few lines to
+using the Dagster CLI at all. Just add a few lines to
 `hello_cereal.py`
 
 ```python literalinclude showLines startLine=27 caption=hello_cereal.py

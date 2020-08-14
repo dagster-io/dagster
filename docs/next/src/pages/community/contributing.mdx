@@ -14,7 +14,7 @@ up a local development environment.
 
 1.  Install Python. Python 3.6 or above recommended, but our CI/CD
     pipeline currently tests against up-to-date patch versions of Python
-    2.7, 3.5, 3.6, and 3.7. Note that dagster is a 2/3 compatible
+    2.7, 3.5, 3.6, and 3.7. Note that Dagster is a 2/3 compatible
     project: tests must pass against Python 2.7.
 2.  Create and activate a virtualenv, using the tool of your choice.
     On macOS you can install `pyenv` with Homebrew:
@@ -45,14 +45,14 @@ pyenv activate dagster37
 brew install yarn
 ```
 
-4.  Clone the dagster repository to the destination of your choice:
+4.  Clone the Dagster repository to the destination of your choice:
 
 ```bash
 git clone git@github.com:dagster-io/dagster.git
 ```
 
 5.  Run `make dev_install` at the root of the repository. This sets up a
-    full dagster developer environment with all modules and runs tests
+    full Dagster developer environment with all modules and runs tests
     that do not require heavy external dependencies such as docker. This
     will take a few minutes.  Note that certain sections of the makefile (sanity_check,
     which is part of rebuild_dagit) require POSIX compliant shells and will fail
