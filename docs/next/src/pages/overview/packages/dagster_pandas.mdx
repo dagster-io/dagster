@@ -38,7 +38,7 @@ lines:25-31
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect
 our dataframes to follow when Dagster performs type checks for our solids. Moreover, if we go to the
-solid viewer, we can follow our schema documented in dagit:
+solid viewer, we can follow our schema documented in Dagit:
 
 ![tutorial2.png](/assets/images/learn/guides/dagster_pandas/tutorial2.png)
 
@@ -77,7 +77,7 @@ file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/summary_stats_pipe
 lines:10-39
 ```
 
-Now if we run this pipeline in the dagit playground:
+Now if we run this pipeline in the Dagit playground:
 
 ![tutorial1.png](/assets/images/learn/guides/dagster_pandas/tutorial1.png)
 
@@ -89,7 +89,7 @@ passed a list of `ColumnConstraint` objects.
 To tie this back to our example, let's say that we want to validate that the amount paid for a
 e-bike must be in 5 dollar increments because that is the price per mile rounded up. As a result,
 let's implement a `DivisibleByFiveConstraint`. To do this, all it needs is a `markdown_description`
-for dagit which accepts and renders markdown syntax, an `error_description` for error logs, and a
+for Dagit which accepts and renders markdown syntax, an `error_description` for error logs, and a
 validation method which throws a `ColumnConstraintViolationException` if a row fails validation.
 This would look like the following:
 

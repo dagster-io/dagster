@@ -72,7 +72,7 @@ file:/docs_snippets/docs_snippets/deploying/celery.yaml
 
 In the quick start, we cheated in a couple of ways:
 
-- By running a single Celery worker on the same node as dagit, so that
+- By running a single Celery worker on the same node as Dagit, so that
   local ephemeral run storage and event log storage could be shared
   between them, and so that filesystem intermediates storage would be
   sufficient to exchange values between the worker's task executions.
@@ -133,7 +133,7 @@ sync with the code present on the node running Dagit. The easiest way to
 do this is typically to package your code into a Python module, and for
 the `workspace.yaml` you use to run Dagit to load from that module.
 
-In the quick start, we accomplished this by starting dagit with the `-f`
+In the quick start, we accomplished this by starting Dagit with the `-f`
 and `-n` parameters, which told it which file to find our pipeline in
 and under what name, and then made sure that we started our Celery
 worker from the same point in the filesystem -- so that the pipeline

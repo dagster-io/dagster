@@ -102,13 +102,13 @@ file:/airline_demo/airline_demo/environments/local_fast_ingest.yaml
 lines:32-38
 ```
 
-Because each of these values is strongly typed, we'll get rich error information in the dagit config editor (or when running pipelines from the command line) when a config value is incorrectly specified:
+Because each of these values is strongly typed, we'll get rich error information in the Dagit config editor (or when running pipelines from the command line) when a config value is incorrectly specified:
 
 ![config-error.png](/assets/images/examples/airline_demo/config-error.png)
 
 While this may seem like a mere convenience, in production contexts it can dramatically reduce avoidable errors. Consider boto3's [S3.Client.put_object()](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.put_object) method, which has 28 parameters, many restricted in obscure ways (for example, `ServerSideEncryption` must be one of `'AES256'|'aws:kms'`). Strongly typed config schemas can catch any error of this type.
 
-By setting the `description` on each of our config members, we also get easily navigable documentation in dagit. Users of library solids no longer need to investigate implementations in order to understand what values are required, or what they do---enabling more confident reuse.
+By setting the `description` on each of our config members, we also get easily navigable documentation in Dagit. Users of library solids no longer need to investigate implementations in order to understand what values are required, or what they do---enabling more confident reuse.
 
 ![config-des.png](/assets/images/examples/airline_demo/config-des.png)
 
@@ -161,7 +161,7 @@ file:/airline_demo/airline_demo/resources.py
 lines:97-140
 ```
 
-By providing strongly typed configuration fields to the `@resource` decorator, we now have typeahead support in dagit and rich error messages for the configuration of our external resources. This can be extremely valuable in the case of notoriously complex configuration formats, such as Spark's.
+By providing strongly typed configuration fields to the `@resource` decorator, we now have typeahead support in Dagit and rich error messages for the configuration of our external resources. This can be extremely valuable in the case of notoriously complex configuration formats, such as Spark's.
 
 Note that Dagit is aware of all modes defined for your pipelines, and will present these to you (along with the resources they provide) in the pipeline view sidebar:
 

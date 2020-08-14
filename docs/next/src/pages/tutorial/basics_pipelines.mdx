@@ -40,7 +40,7 @@ We can use inputs and outputs to connect solids to each other. Here we tell Dags
 `load_cereals` doesn't depend on the output of any other solid, `sort_by_calories` does&mdash;it
 depends on the output of `load_cereals`.
 
-Let's visualize this pipeline in dagit:
+Let's visualize this pipeline in Dagit:
 
 ```bash
 dagit -f serial_pipeline.py
