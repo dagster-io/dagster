@@ -36,14 +36,13 @@ def _infer_output_description_from_docstring(fn):
 def infer_output_definitions(decorator_name, solid_name, fn):
     signature = funcsigs.signature(fn)
     try:
-        defs = [
+        description = _infer_output_description_from_docstring(fn)
+        return [
             OutputDefinition()
             if signature.return_annotation is funcsigs.Signature.empty
-            else OutputDefinition(signature.return_annotation)
+            else OutputDefinition(signature.return_annotation, description=description)
         ]
 
-        defs[0]._description = _infer_output_description_from_docstring(fn)
-        return defs
     except CheckError as type_error:
         six.raise_from(
             DagsterInvalidDefinitionError(
