@@ -159,28 +159,25 @@ def _dataframe_loader_config():
 @dagster_type_loader(_dataframe_loader_config())
 def dataframe_loader(_context, config):
     read_type, read_options = next(iter(config["read"].items()))
-    path = read_options.get("path")
-
-    if read_type == "csv":
-        return dd.read_csv(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "parquet":
-        return dd.read_parquet(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "hdf":
-        return dd.read_hdf(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "json":
-        return dd.read_json(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "sql_table":
-        return dd.read_sql_table(**read_options)
-    elif read_type == "table":
-        return dd.read_table(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "fwf":
-        return dd.read_fwf(path, **dict_without_keys(read_options, "path"))
-    elif read_type == "orc":
-        return dd.read_orc(path, **dict_without_keys(read_options, "path"))
-    else:
+    if not read_type in DataFrameReadTypes:
         raise DagsterInvariantViolationError(
             "Unsupported read_type {read_type}".format(read_type=read_type)
         )
+
+    # Get the metadata entry for the read_type in order to know which function
+    # to call and whether it uses path as the first argument. And, make
+    # read_options mutable if we need to pop off a path argument.
+    read_meta = DataFrameReadTypes[read_type]
+    read_options = dict(read_options)
+    
+    # Get the read function and prepare its arguments.
+    read_function = read_meta['function']
+    read_args = [read_options.pop('path')] if read_meta.get('is_path_based', False) else []
+    read_kwargs = read_options
+    
+    df = read_function(*read_args, **read_kwargs)
+
+    return df
 
 
 @dagster_type_materializer(
