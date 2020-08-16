@@ -143,25 +143,45 @@ DataFrameReadTypes = {
 
 
 def _dataframe_loader_config():
-    read_fields = Selector({
+    read_fields = {
         read_from: {
             option_name: Field(option_args[0], is_required=option_args[1], description=option_args[2])
             for option_name, option_args in read_opts["options"].items()
         }
         for read_from, read_opts in DataFrameReadTypes.items()
-    })
+    }
 
     return Shape({
-        "read": read_fields
+        'read': Field(
+            Selector(read_fields),
+            is_required=False,
+        ),
+        **{
+            field_name: Field(
+                field_config,
+                is_required=False,
+            )
+            for field_name, field_config in read_fields.items()
+        },
     })
 
 
 @dagster_type_loader(_dataframe_loader_config())
 def dataframe_loader(_context, config):
-    read_type, read_options = next(iter(config["read"].items()))
+    read_type, read_options = None, None
+    if "read" in config:
+        read_type, read_options = next(iter(config["read"].items()))
+    else:
+        for key in DataFrameReadTypes:
+            if key in config:
+                read_type, read_options = key, config[key]
+    if not read_type:
+        raise DagsterInvariantViolationError(
+            "No read_type found. Expected read key in config."
+        )
     if not read_type in DataFrameReadTypes:
         raise DagsterInvariantViolationError(
-            "Unsupported read_type {read_type}".format(read_type=read_type)
+            "Unsupported read_type {read_type}.".format(read_type=read_type)
         )
 
     # Get the metadata entry for the read_type in order to know which function
