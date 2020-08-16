@@ -257,7 +257,7 @@ def dict_without_keys(ddict, *keys):
                             is_required=False,
                             description="how to respond to errors in the conversion (see str.encode()).",
                         ),
-                        "storage_option": Field(
+                        "storage_options": Field(
                             Permissive(),
                             is_required=False,
                             description="Passed to backend file-system implementation.",
