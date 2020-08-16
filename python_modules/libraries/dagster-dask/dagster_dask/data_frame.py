@@ -189,7 +189,7 @@ def dict_without_keys(ddict, *keys):
                                 Can contain wildcards.
                             """,
                         ),
-                        "Key": Field(
+                        "key": Field(
                             Any,
                             is_required=True,
                             description="group identifier in the store. Can contain wildcards.",
