@@ -441,8 +441,27 @@ class _Nothing(DagsterType):
 class PythonObjectDagsterType(DagsterType):
     '''Define a type in dagster whose typecheck is an isinstance check.
 
+    Specifically, the type can either be a single python type (e.g. int),
+    or a tuple of types (e.g. (int, float)) which is treated as a union.
+
+    Examples:
+        .. code-block:: python
+            ntype = PythonObjectDagsterType(python_type=int)
+            assert ntype.name == 'int'
+            assert_success(ntype, 1)
+            assert_failure(ntype, 'a')
+        ```
+
+        .. code-block:: python
+            ntype = PythonObjectDagsterType(python_type=(int, float))
+            assert ntype.name == 'Union[int, float]'
+            assert_success(ntype, 1)
+            assert_success(ntype, 1.5)
+            assert_failure(ntype, 'a')
+
+
     Args:
-        python_type (Type): The dagster typecheck function calls instanceof on
+        python_type (Union[Type, Tuple[Type, ...]): The dagster typecheck function calls instanceof on
             this type.
         name (Optional[str]): Name the type. Defaults to the name of ``python_type``.
         key (Optional[str]): Key of the type. Defaults to name.
@@ -472,8 +491,17 @@ class PythonObjectDagsterType(DagsterType):
     '''
 
     def __init__(self, python_type, key=None, name=None, **kwargs):
-        self.python_type = check.type_param(python_type, 'python_type')
-        name = check.opt_str_param(name, 'name', python_type.__name__)
+        if isinstance(python_type, tuple):
+            self.python_type = check.tuple_param(
+                python_type, 'python_type', of_type=tuple(check.type_types for item in python_type)
+            )
+            self.type_str = 'Union[{}]'.format(
+                ', '.join(python_type.__name__ for python_type in python_type)
+            )
+        else:
+            self.python_type = check.type_param(python_type, 'python_type')
+            self.type_str = python_type.__name__
+        name = check.opt_str_param(name, 'name', self.type_str)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectDagsterType, self).__init__(
             key=key, name=name, type_check_fn=self.type_check_method, **kwargs
@@ -487,9 +515,7 @@ class PythonObjectDagsterType(DagsterType):
                     'Value of type {value_type} failed type check for Dagster type {dagster_type}, '
                     'expected value to be of Python type {expected_type}.'
                 ).format(
-                    value_type=type(value),
-                    dagster_type=self.name,
-                    expected_type=self.python_type.__name__,
+                    value_type=type(value), dagster_type=self.name, expected_type=self.type_str,
                 ),
             )
 
