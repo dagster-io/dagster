@@ -232,12 +232,12 @@ def grpc_server_bar_cli_args(pipeline_name=None):
         ),
     )
     with server_process.create_ephemeral_client() as client:
-        args = ['--grpc_host', client.host]
+        args = ['--grpc-host', client.host]
         if client.port:
-            args.append('--grpc_port')
+            args.append('--grpc-port')
             args.append(client.port)
         if client.socket:
-            args.append('--grpc_socket')
+            args.append('--grpc-socket')
             args.append(client.socket)
         if pipeline_name:
             args.append('--pipeline')

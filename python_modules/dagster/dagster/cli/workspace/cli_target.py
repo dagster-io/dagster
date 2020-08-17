@@ -241,9 +241,9 @@ def python_target_click_options():
 
 def grpc_server_target_click_options():
     return [
-        click.option('--grpc_port', type=click.INT, required=False),
-        click.option('--grpc_socket', type=click.Path(), required=False),
-        click.option('--grpc_host', type=click.STRING, required=False),
+        click.option('--grpc-port', type=click.INT, required=False),
+        click.option('--grpc-socket', type=click.Path(), required=False),
+        click.option('--grpc-host', type=click.STRING, required=False),
     ]
 
 
