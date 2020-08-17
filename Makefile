@@ -27,7 +27,7 @@ install_dev_python_modules:
 
 # On machines with less memory, pyspark install will fail... see:
 # https://stackoverflow.com/a/31526029/11295366
-	pip --no-cache-dir install pyspark>=3.0.0 $(QUIET)
+	pip --no-cache-dir install pyspark\>=3.0.0 $(QUIET)
 
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dasgtermill because of dependency
