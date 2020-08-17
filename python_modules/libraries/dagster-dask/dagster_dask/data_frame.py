@@ -302,23 +302,27 @@ def _dataframe_materializer_config():
 def dataframe_materializer(_context, config, dask_df):
     check.inst_param(dask_df, "dask_df", dd.DataFrame)
 
-    for to_type, to_options in config["to"].items():
-        path = to_options.get("path")
+    if "to" in config:
+        for to_type, to_options in config["to"].items():
+            if not to_type in DataFrameToTypes:
+                check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
+            
+            # Get the metadata entry for the read_type in order to know which method
+            # to call and whether it uses path as the first argument. And, make
+            # to_options mutable if we need to pop off a path argument.
+            to_meta = DataFrameToTypes[to_type]
+            to_options = dict(to_options)
 
-        if to_type == "csv":
-            dask_df.to_csv(path, **dict_without_keys(to_options, "path"))
-        elif to_type == "parquet":
-            dask_df.to_parquet(path, **dict_without_keys(to_options, "path"))
-        elif to_type == "hdf":
-            dask_df.to_hdf(path, **dict_without_keys(to_options, "path"))
-        elif to_type == "json":
-            dask_df.to_json(path, **dict_without_keys(to_options, "path"))
-        elif to_type == "sql":
-            dask_df.to_sql(**to_options)
-        else:
-            check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
+            # Get the to function and prepare its arguments.
+            to_function = to_meta["function"]
+            to_path = to_options.pop("path") if to_meta.get("is_path_based", False) else None
+            to_args = [to_path] if to_path else []
+            to_kwargs = to_options
 
-        yield AssetMaterialization.file(path)
+            to_function(dask_df, *to_args, **to_kwargs)
+
+            if to_path:
+                yield AssetMaterialization.file(to_path)
 
 
 def df_type_check(_, value):
