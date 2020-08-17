@@ -788,6 +788,9 @@ class DagsterInstance:
     def handle_run_event(self, run_id, event):
         return self._run_storage.handle_run_event(run_id, event)
 
+    def add_run_tags(self, run_id, new_tags):
+        return self._run_storage.add_run_tags(run_id, new_tags)
+
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 

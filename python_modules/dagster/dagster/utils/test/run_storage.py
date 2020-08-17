@@ -95,6 +95,56 @@ class TestRunStorage:
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
+    def test_add_run_tags(self, storage):
+        assert storage
+        one = make_new_run_id()
+        two = make_new_run_id()
+
+        storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name='foo'))
+        storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name='bar'))
+
+        assert storage.get_run_tags() == []
+
+        storage.add_run_tags(one, {'tag1': 'val1'})
+        storage.add_run_tags(two, {'tag1': 'val1'})
+
+        assert storage.get_run_tags() == [('tag1', {'val1'})]
+
+        storage.add_run_tags(one, {'tag1': 'val2', 'tag2': 'val3'})
+
+        test_run = storage.get_run_by_id(one)
+
+        assert len(test_run.tags) == 2
+        assert test_run.tags['tag1'] == 'val2'
+        assert test_run.tags['tag2'] == 'val3'
+
+        storage.add_run_tags(one, {'tag3': 'val4'})
+
+        assert storage.get_run_tags() == [
+            ('tag1', {'val1', 'val2'}),
+            ('tag2', {'val3'}),
+            ('tag3', {'val4'}),
+        ]
+
+        test_run = storage.get_run_by_id(one)
+        assert len(test_run.tags) == 3
+        assert test_run.tags['tag1'] == 'val2'
+        assert test_run.tags['tag2'] == 'val3'
+        assert test_run.tags['tag3'] == 'val4'
+
+        some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag2': 'val3'}))
+
+        assert len(some_runs) == 1
+        assert some_runs[0].run_id == one
+
+        runs_with_old_tag = storage.get_runs(PipelineRunsFilter(tags={'tag1': 'val1'}))
+        assert len(runs_with_old_tag) == 1
+        assert runs_with_old_tag[0].tags == {'tag1': 'val1'}
+
+        runs_with_new_tag = storage.get_runs(PipelineRunsFilter(tags={'tag1': 'val2'}))
+        assert len(runs_with_new_tag) == 1
+        assert runs_with_new_tag[0].tags == {'tag1': 'val2', 'tag2': 'val3', 'tag3': 'val4'}
+
     def test_fetch_by_filter(self, storage):
         assert storage
         one = make_new_run_id()

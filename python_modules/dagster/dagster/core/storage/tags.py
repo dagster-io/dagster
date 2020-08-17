@@ -25,6 +25,8 @@ SOLID_SELECTION_TAG = '{prefix}solid_selection'.format(prefix=SYSTEM_TAG_PREFIX)
 
 PRESET_NAME_TAG = '{prefix}preset_name'.format(prefix=SYSTEM_TAG_PREFIX)
 
+GRPC_INFO_TAG = '{prefix}grpc_info'.format(prefix=HIDDEN_TAG_PREFIX)
+
 
 class TagType(Enum):
     # Custom tag provided by a user

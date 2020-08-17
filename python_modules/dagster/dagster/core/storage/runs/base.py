@@ -68,7 +68,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_run_group(self, run_id):
         '''Get the run group to which a given run belongs.
-        
+
         Args:
             run_id (str): If the corresponding run is the descendant of some root run (i.e., there
                 is a root_run_id on the :py:class:`PipelineRun`), that root run and all of its
@@ -85,7 +85,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
     def get_run_groups(self, filters=None, cursor=None, limit=None):
         '''Return all of the run groups present in the storage that include rows matching the
         given filter.
-        
+
         Args:
             filter (Optional[PipelineRunsFilter]) -- The
                 :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
@@ -132,6 +132,15 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
         Returns:
             List[Tuple[string, Set[string]]]
+        '''
+
+    @abstractmethod
+    def add_run_tags(self, run_id, new_tags):
+        '''Add additional tags for a pipeline run.
+
+        Args:
+            run_id (str)
+            new_tags (Dict[string, string])
         '''
 
     @abstractmethod

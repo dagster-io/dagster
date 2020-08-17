@@ -9,7 +9,7 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.utils import frozendict
+from dagster.utils import frozendict, merge_dicts
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
@@ -119,6 +119,14 @@ class InMemoryRunStorage(RunStorage):
                 all_tags[k].add(v)
 
         return sorted([(k, v) for k, v in all_tags.items()], key=lambda x: x[0])
+
+    def add_run_tags(self, run_id, new_tags):
+        check.str_param(run_id, 'run_id')
+        check.dict_param(new_tags, 'new_tags', key_type=str, value_type=str)
+        run = self._runs[run_id]
+        run_tags = merge_dicts(run.tags if run.tags else {}, new_tags)
+        self._runs[run_id] = run.with_tags(run_tags)
+        self._run_tags[run_id] = frozendict(run_tags)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')

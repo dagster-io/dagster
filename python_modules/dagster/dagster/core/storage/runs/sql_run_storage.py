@@ -20,6 +20,7 @@ from dagster.core.snap import (
 from dagster.core.storage.tags import ROOT_RUN_ID_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
+from dagster.utils import merge_dicts
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
@@ -241,6 +242,43 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         for r in rows:
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
+
+    def add_run_tags(self, run_id, new_tags):
+        check.str_param(run_id, 'run_id')
+        check.dict_param(new_tags, 'new_tags', key_type=str, value_type=str)
+
+        run = self.get_run_by_id(run_id)
+        current_tags = run.tags if run.tags else {}
+
+        with self.connect() as conn:
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run_id)
+                .values(
+                    run_body=serialize_dagster_namedtuple(
+                        run.with_tags(merge_dicts(current_tags, new_tags))
+                    ),
+                    update_timestamp=datetime.now(),
+                )
+            )
+
+            current_tags_set = set(current_tags.keys())
+            new_tags_set = set(new_tags.keys())
+
+            existing_tags = current_tags_set & new_tags_set
+            added_tags = new_tags_set.difference(existing_tags)
+
+            for tag in existing_tags:
+                conn.execute(
+                    RunTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(RunTagsTable.c.run_id == run_id and RunTagsTable.c.key == tag)
+                    .values(value=new_tags[tag])
+                )
+
+            conn.execute(
+                RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
+            )
 
     def get_run_group(self, run_id):
         check.str_param(run_id, 'run_id')

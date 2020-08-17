@@ -1,7 +1,7 @@
 import time
 import weakref
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.host_representation.handle import (
@@ -10,8 +10,11 @@ from dagster.core.host_representation.handle import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import GRPC_INFO_TAG
+from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.types import CanCancelExecutionRequest, CancelExecutionRequest, ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
+from dagster.utils import merge_dicts
 
 from .base import RunLauncher
 
@@ -34,8 +37,8 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._instance_weakref = None
         self._inst_data = inst_data
-        # Conceivably this should be a weakref.WeakValueDictionary, but this is the safest way to
-        # get the semantics we want for termination
+
+        # Used for test cleanup purposes only
         self._run_id_to_repository_location_handle_cache = {}
 
     @property
@@ -89,29 +92,62 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         self._run_id_to_repository_location_handle_cache[run.run_id] = repository_location_handle
+
+        self._instance.add_run_tags(
+            run.run_id,
+            {
+                GRPC_INFO_TAG: seven.json.dumps(
+                    merge_dicts(
+                        {'host': repository_location_handle.host},
+                        {'port': repository_location_handle.port}
+                        if repository_location_handle.port
+                        else {'socket': repository_location_handle.socket},
+                    )
+                )
+            },
+        )
+
         return run
+
+    def _get_grpc_client_for_termination(self, run_id):
+        if not self._instance:
+            return None
+
+        run = self._instance.get_run_by_id(run_id)
+        if not run or run.is_finished:
+            return None
+
+        tags = run.tags
+
+        if GRPC_INFO_TAG not in tags:
+            return None
+
+        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
+
+        return DagsterGrpcClient(
+            port=grpc_info.get('port'), socket=grpc_info.get('socket'), host=grpc_info.get('host')
+        )
 
     def can_terminate(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        if run_id not in self._run_id_to_repository_location_handle_cache:
+        client = self._get_grpc_client_for_termination(run_id)
+        if not client:
             return False
 
-        res = self._run_id_to_repository_location_handle_cache[run_id].client.can_cancel_execution(
-            CanCancelExecutionRequest(run_id=run_id)
-        )
+        res = client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id))
 
         return res.can_cancel
 
     def terminate(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        if run_id not in self._run_id_to_repository_location_handle_cache:
+        client = self._get_grpc_client_for_termination(run_id)
+
+        if not client:
             return False
 
-        res = self._run_id_to_repository_location_handle_cache[run_id].client.cancel_execution(
-            CancelExecutionRequest(run_id=run_id)
-        )
+        res = client.cancel_execution(CancelExecutionRequest(run_id=run_id))
 
         return res.success
 
