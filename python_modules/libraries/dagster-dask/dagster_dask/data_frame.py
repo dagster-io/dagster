@@ -31,10 +31,6 @@ EngineParquetOptions = Enum(
 )
 
 
-def dict_without_keys(ddict, *keys):
-    return {key: value for key, value in ddict.items() if key not in set(keys)}
-
-
 DataFrameReadTypes = {
     "csv": {
         "function": dd.read_csv,
