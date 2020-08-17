@@ -718,7 +718,7 @@ type Partition {
   mode: String!
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
-  runs: [PipelineRun!]!
+  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
 }
 
 input PartitionBackfillParams {

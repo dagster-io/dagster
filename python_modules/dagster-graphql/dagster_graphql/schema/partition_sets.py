@@ -15,6 +15,7 @@ from dagster_graphql.schema.errors import (
 from dagster import check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.utils import merge_dicts
 
 
 class DauphinPartition(dauphin.ObjectType):
@@ -27,7 +28,12 @@ class DauphinPartition(dauphin.ObjectType):
     mode = dauphin.NonNull(dauphin.String)
     runConfigOrError = dauphin.NonNull('PartitionRunConfigOrError')
     tagsOrError = dauphin.NonNull('PartitionTagsOrError')
-    runs = dauphin.non_null_list('PipelineRun')
+    runs = dauphin.Field(
+        dauphin.non_null_list('PipelineRun'),
+        filter=dauphin.Argument('PipelineRunsFilter'),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
+    )
 
     def __init__(self, external_repository_handle, external_partition_set, partition_name):
         self._external_repository_handle = check.inst_param(
@@ -61,14 +67,26 @@ class DauphinPartition(dauphin.ObjectType):
             self._partition_name,
         )
 
-    def resolve_runs(self, graphene_info):
-        runs_filter = PipelineRunsFilter(
-            tags={
-                'dagster/partition_set': self._external_partition_set.name,
-                'dagster/partition': self._partition_name,
-            }
+    def resolve_runs(self, graphene_info, **kwargs):
+        filters = kwargs.get('filter')
+        partition_tags = {
+            'dagster/partition_set': self._external_partition_set.name,
+            'dagster/partition': self._partition_name,
+        }
+        if filters is not None:
+            filters = filters.to_selector()
+            runs_filter = PipelineRunsFilter(
+                run_ids=filters.run_ids,
+                pipeline_name=filters.pipeline_name,
+                status=filters.status,
+                tags=merge_dicts(filters.tags, partition_tags),
+            )
+        else:
+            runs_filter = PipelineRunsFilter(tags=partition_tags)
+
+        return get_runs(
+            graphene_info, runs_filter, cursor=kwargs.get('cursor'), limit=kwargs.get('limit')
         )
-        return get_runs(graphene_info, runs_filter)
 
 
 class DauphinPartitions(dauphin.ObjectType):
