@@ -57,7 +57,7 @@ def _param_type_mismatch_exception(obj, ttype, param_name, additional_message=No
 
 def _not_type_param_subclass_mismatch_exception(obj, param_name):
     return ParameterCheckError(
-        'Param "{name}" was supposed to be a type. Got {obj} instead of type {obj_type}'.format(
+        'Param "{name}" was supposed to be a type. Got {obj} of type {obj_type}'.format(
             name=param_name, obj=repr(obj), obj_type=type(obj)
         )
     )
