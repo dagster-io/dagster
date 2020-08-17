@@ -298,9 +298,7 @@ def test_none_string_input_schema_failure():
 
     error = exc_info.value.errors[0]
 
-    assert (
-        'Value at path root:solids:take_string:inputs:string must be not be None.' in error.message
-    )
+    assert 'Value at path root:solids:take_string:inputs:string must not be None.' in error.message
 
 
 def test_value_none_string_input_schema_failure():
@@ -311,7 +309,7 @@ def test_value_none_string_input_schema_failure():
             solid_selection={'take_string'},
         )
 
-    assert 'Value at path root:solids:take_string:inputs:string:value must be not be None' in str(
+    assert 'Value at path root:solids:take_string:inputs:string:value must not be None' in str(
         exc_info.value
     )
 
@@ -389,7 +387,7 @@ def test_nullable_string_input_with_none_value():
         )
 
     assert (
-        'Value at path root:solids:take_nullable_string:inputs:nullable_string:value must be not be None'
+        'Value at path root:solids:take_nullable_string:inputs:nullable_string:value must not be None'
     ) in str(exc_info.value)
 
 

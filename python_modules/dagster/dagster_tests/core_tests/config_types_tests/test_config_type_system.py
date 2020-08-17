@@ -718,8 +718,7 @@ def test_required_resource_not_given():
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
-        'Value at path root:resources must be not be None.'
-        in not_none_pe_info.value.errors[0].message
+        'Value at path root:resources must not be None.' in not_none_pe_info.value.errors[0].message
     )
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
@@ -747,9 +746,7 @@ def test_multilevel_good_error_handling_solids():
         execute_pipeline(pipeline_def, run_config={'solids': None})
 
     assert len(not_none_pe_info.value.errors) == 1
-    assert (
-        'Value at path root:solids must be not be None.' in not_none_pe_info.value.errors[0].message
-    )
+    assert 'Value at path root:solids must not be None.' in not_none_pe_info.value.errors[0].message
 
     with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
         execute_pipeline(pipeline_def, run_config={'solids': {}})

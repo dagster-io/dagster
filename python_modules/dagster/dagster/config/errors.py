@@ -353,7 +353,7 @@ def create_none_not_allowed_error(context):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Value {path_msg} must be not be None.'.format(
+        message='Value {path_msg} must not be None.'.format(
             path_msg=get_friendly_path_msg(context.stack),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(None)),
