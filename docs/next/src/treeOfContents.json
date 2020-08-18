@@ -309,6 +309,10 @@
             "path": "/_apidocs/libraries/dagster_celery"
           },
           {
+            "name": "Celery + Docker (dagster_celery_docker)",
+            "path": "/_apidocs/libraries/dagster_celery_docker"
+          },
+          {
             "name": "Cron (dagster_cron)",
             "path": "/_apidocs/libraries/dagster_cron"
           },

@@ -21,6 +21,8 @@ Example executors include:
   within a dask task.
 - <PyObject module="dagster_celery" object="celery_executor" />: Executes each
   step within a celery task.
+- <PyObject module="dagster_celery_docker" object="celery_docker_executor" />:
+  Executes each step within a Docker container.
 - <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />:
   Executes each step within a ephemeral kubernetes pod, using celery as a
   control plane for prioritization, queuing, and so forth.

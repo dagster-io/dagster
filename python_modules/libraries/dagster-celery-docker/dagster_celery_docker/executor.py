@@ -94,7 +94,7 @@ def celery_docker_executor(init_context):
     .. code-block:: python
 
         from dagster import ModeDefinition, default_executors, pipeline
-        from dagster_celery.executor_docker import celery_docker_executor
+        from dagster_celery_docker.executor import celery_docker_executor
 
         @pipeline(mode_defs=[
             ModeDefinition(executor_defs=default_executors + [celery_docker_executor])
