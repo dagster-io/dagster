@@ -317,6 +317,7 @@ def dict_without_keys(ddict, *keys):
                     ),
                 }
             ),
+            'other': Permissive(),
         }
     )
 )
@@ -344,6 +345,9 @@ def dataframe_materializer(_context, config, spark_df):
     elif file_type == 'text':
         spark_df.write.text(**file_options)
         return AssetMaterialization.file(file_options['path'])
+    elif file_type == 'other':
+        spark_df.write.save(**file_options)
+        return AssetMaterialization.file(file_options.get('path', 'There was no "path" key in "file_options".'))
     else:
         raise DagsterInvariantViolationError('Unsupported file_type {}'.format(file_type))
 
@@ -920,6 +924,7 @@ def dataframe_materializer(_context, config, spark_df):
                     ),
                 }
             ),
+            'other': Permissive(),
         },
     ),
     required_resource_keys={'pyspark'},
@@ -943,6 +948,8 @@ def dataframe_loader(_context, config):
         return spark_read.table(**file_options)
     elif file_type == 'text':
         return spark_read.text(path, **dict_without_keys(file_options, 'path'))
+    elif file_type == 'other':
+        return spark_read.load(**file_options)
     else:
         raise DagsterInvariantViolationError(
             'Unsupported file_type {file_type}'.format(file_type=file_type)
