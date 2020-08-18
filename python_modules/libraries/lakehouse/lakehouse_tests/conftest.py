@@ -4,18 +4,19 @@ from lakehouse import AssetStorage, Lakehouse, asset_storage
 from dagster import ModeDefinition, PresetDefinition
 
 
+class DictStorage(AssetStorage):
+    def __init__(self):
+        self.the_dict = {}
+
+    def save(self, obj, path, _resources):
+        self.the_dict[path] = obj
+
+    def load(self, _python_type, path, _resources):
+        return self.the_dict[path]
+
+
 @pytest.fixture
 def basic_lakehouse_and_storages():
-    class DictStorage(AssetStorage):
-        def __init__(self):
-            self.the_dict = {}
-
-        def save(self, obj, path, _resources):
-            self.the_dict[path] = obj
-
-        def load(self, _python_type, path, _resources):
-            return self.the_dict[path]
-
     storage1 = DictStorage()
     storage2 = DictStorage()
 

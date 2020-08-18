@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import List
+from typing import List, Optional
 
 from dagster import (
     DependencyDefinition,
@@ -180,7 +180,7 @@ class Lakehouse:
 
         return compute
 
-    def query_assets(self, query: str) -> List[Asset]:
+    def query_assets(self, query: Optional[str]) -> List[Asset]:
         """Returns all assets in the Lakehouse that match the query.  The supported query syntax is
         described in detail at https://docs.dagster.io/overview/solid-selection.
         """

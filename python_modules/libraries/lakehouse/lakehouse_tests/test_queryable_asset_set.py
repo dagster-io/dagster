@@ -56,6 +56,7 @@ def test_generate_dep_graph():
         ("++d", {"a", "b", "c", "d"}),
         ("+a", {"a"}),
         ("d+", {"d"}),
+        (None, {"a", "b", "c", "d", "e", "f"}),
     ],
 )
 def test_parse_solid_selection_single(query, expected_asset_names):
