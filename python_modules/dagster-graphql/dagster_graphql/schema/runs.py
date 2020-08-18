@@ -26,9 +26,11 @@ from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatu
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
+from dagster.core.storage.tags import TagType, get_tag_type
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
+DauphinTagType = dauphin.Enum.from_enum(TagType)
 
 
 class DauphinPipelineOrError(dauphin.Union):
@@ -187,6 +189,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in self._pipeline_run.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_rootRunId(self, _):

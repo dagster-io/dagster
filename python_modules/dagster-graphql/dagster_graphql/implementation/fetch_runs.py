@@ -5,6 +5,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.tags import TagType, get_tag_type
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -53,6 +54,7 @@ def get_run_tags(graphene_info):
     return [
         graphene_info.schema.type_named('PipelineTagAndValues')(key=key, values=values)
         for key, values in instance.get_run_tags()
+        if get_tag_type(key) != TagType.HIDDEN
     ]
 
 

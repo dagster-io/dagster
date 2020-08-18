@@ -14,6 +14,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven import lru_cache
 
 from .config_types import DauphinConfigTypeField
@@ -367,6 +368,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
+            if get_tag_type(key) != TagType.HIDDEN
         ]
 
 

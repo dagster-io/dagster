@@ -851,6 +851,9 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
     key = dauphin.NonNull(dauphin.String)
     values = dauphin.non_null_list(dauphin.String)
 
+    def __init__(self, key, values):
+        super(DauphinPipelineTagAndValues, self).__init__(key=key, values=values)
+
 
 class DauphinRunConfigSchema(dauphin.ObjectType):
     def __init__(self, represented_pipeline, mode):

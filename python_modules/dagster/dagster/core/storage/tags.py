@@ -1,6 +1,9 @@
+from enum import Enum
+
 from dagster import check
 
 SYSTEM_TAG_PREFIX = 'dagster/'
+HIDDEN_TAG_PREFIX = '.dagster/'
 
 SCHEDULE_NAME_TAG = '{prefix}schedule_name'.format(prefix=SYSTEM_TAG_PREFIX)
 
@@ -21,6 +24,27 @@ STEP_SELECTION_TAG = '{prefix}step_selection'.format(prefix=SYSTEM_TAG_PREFIX)
 SOLID_SELECTION_TAG = '{prefix}solid_selection'.format(prefix=SYSTEM_TAG_PREFIX)
 
 PRESET_NAME_TAG = '{prefix}preset_name'.format(prefix=SYSTEM_TAG_PREFIX)
+
+
+class TagType(Enum):
+    # Custom tag provided by a user
+    USER_PROVIDED = 'USER_PROVIDED'
+
+    # Tags used by Dagster to manage execution that should be surfaced to users.
+    SYSTEM = 'SYSTEM'
+
+    # Metadata used by Dagster for execution but isn't useful for users to see.
+    # For example, metadata about the gRPC server that executed a run.
+    HIDDEN = 'HIDDEN'
+
+
+def get_tag_type(tag):
+    if tag.startswith(SYSTEM_TAG_PREFIX):
+        return TagType.SYSTEM
+    elif tag.startswith(HIDDEN_TAG_PREFIX):
+        return TagType.HIDDEN
+    else:
+        return TagType.USER_PROVIDED
 
 
 def check_tags(obj, name):
