@@ -9,7 +9,8 @@
 
 # Dagster
 
-Dagster is a system for building modern data applications.
+Dagster is a data orchestrator for machine learning, analytics, and ETL
+
 
 **Elegant programming model:** Dagster provides a set of abstractions for building self-describing,
 testable, and reliable data applications. It embraces the principles of functional data programming;
