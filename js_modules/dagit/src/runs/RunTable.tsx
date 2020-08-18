@@ -14,6 +14,7 @@ import { RunStatusWithStats } from "./RunStatusDots";
 interface RunTableProps {
   runs: RunTableRunFragment[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
+  nonIdealState?: React.ReactNode;
 }
 
 interface RunTableState {
@@ -51,7 +52,7 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
   };
 
   render() {
-    const { runs, onSetFilter } = this.props;
+    const { runs, onSetFilter, nonIdealState } = this.props;
     const { checked } = this.state;
 
     // This is slightly complicated because we want to be able to select runs on a
@@ -70,12 +71,14 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
 
     if (runs.length === 0) {
       return (
-        <div style={{ marginTop: 100 }}>
-          <NonIdealState
-            icon="history"
-            title="Pipeline Runs"
-            description="No runs to display. Use the Playground to launch a pipeline."
-          />
+        <div style={{ marginTop: 100, marginBottom: 100 }}>
+          {nonIdealState || (
+            <NonIdealState
+              icon="history"
+              title="Pipeline Runs"
+              description="No runs to display. Use the Playground to launch a pipeline."
+            />
+          )}
         </div>
       );
     }

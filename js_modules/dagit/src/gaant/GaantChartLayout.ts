@@ -241,7 +241,7 @@ export const boxStyleFor = (
 // This requires special logic because (for easy graph travesal), boxes.children references
 // other elements of the boxes array. A basic deepClone would replicate these into
 // copies rather than references.
-const cloneLayout = ({ boxes, markers }: GaantChartLayout): GaantChartLayout => {
+export const cloneLayout = ({ boxes, markers }: GaantChartLayout): GaantChartLayout => {
   const map = new WeakMap();
   const nextMarkers = markers.map(m => ({ ...m }));
   const nextBoxes: GaantChartBox[] = [];

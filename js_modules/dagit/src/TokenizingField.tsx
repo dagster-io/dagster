@@ -32,6 +32,7 @@ interface TokenizingFieldProps {
   placeholder?: string;
   loading?: boolean;
   className?: string;
+  small?: boolean;
 
   suggestionProviders: SuggestionProvider[];
   suggestionProvidersFilter?: (
@@ -81,6 +82,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   onChangeBeforeCommit,
   placeholder,
   loading,
+  small,
   className
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
@@ -293,6 +295,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       }
     >
       <StyledTagInput
+        small={small}
         className={className}
         values={values.map(v => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
@@ -334,12 +337,26 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   );
 };
 
-const StyledTagInput = styled(TagInput)`
+const StyledTagInput = styled(TagInput)<{ small?: boolean }>`
   min-width: 400px;
   max-width: 400px;
   input {
     font-size: 12px;
   }
+
+  ${({ small }) =>
+    small
+      ? `height: 20px;
+    min-width: 200px;
+    max-width: 800px;
+    &.bp3-tag-input {
+      min-height: 26px;
+    }
+    &.bp3-tag-input .bp3-tag-input-values {
+      height: 23px;
+      margin-top: 3px;
+    }`
+      : ``}
 `;
 
 const StyledMenu = styled(Menu)`

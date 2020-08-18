@@ -21,7 +21,7 @@ export const useViewport = () => {
 
   // Monitor the container for size changes (if possible, otherwise fall back)
   // to capturing the initial size only. (Only old FF).
-  React.useEffect(() => {
+  const measureRef = () => {
     if (!ref.current) {
       return;
     }
@@ -35,13 +35,15 @@ export const useViewport = () => {
       });
       resizeObserver.observe(ref.current);
     } else {
+      console.warn(`No ResizeObsrever support, or useViewport is attached to a non-DOM node?`);
       const rect = ref.current.getBoundingClientRect();
       setSize({ width: rect.width, height: rect.height });
     }
     return () => {
       resizeObserver?.disconnect();
     };
-  }, []);
+  };
+  React.useEffect(measureRef, []);
 
   // Monitor the container for scroll offset changes
   const animation = React.useRef<any>(null);
@@ -98,9 +100,21 @@ export const useViewport = () => {
     });
   };
 
+  // There are scenarios where the exported `container ref` isn't attached to a component immediately
+  // (eg the parent is showing a loading state). This means it may be undefined during our initial render
+  // and we need to measure it when it's actually assigned a value.
+  const setRef = React.useCallback((el: any) => {
+    if (el === ref.current) return;
+    ref.current = el;
+    measureRef();
+  }, []);
+
   return {
     viewport: { ...offset, ...size } as GaantViewport,
-    containerProps: { ref, onScroll },
+    containerProps: {
+      ref: setRef,
+      onScroll
+    },
     onMoveToViewport
   };
 };

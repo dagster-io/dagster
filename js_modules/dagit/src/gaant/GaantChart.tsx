@@ -43,6 +43,7 @@ import { GaantChartModeControl } from "./GaantChartModeControl";
 import { GaantStatusPanel } from "./GaantStatusPanel";
 import { ZoomSlider } from "./ZoomSlider";
 import { useViewport } from "./useViewport";
+import { OptionsContainer, OptionsDivider, OptionsSpacer } from "../VizComponents";
 
 export { GaantChartMode } from "./Constants";
 
@@ -233,11 +234,11 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
           />
           {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
-              <div style={{ width: 15 }} />
+              <OptionsSpacer />
               <div style={{ width: 200 }}>
                 <ZoomSlider value={options.zoom} onChange={v => this.updateOptions({ zoom: v })} />
               </div>
-              <div style={{ width: 15 }} />
+              <OptionsSpacer />
               <Checkbox
                 style={{ marginBottom: 0 }}
                 label="Hide not started steps"
@@ -761,27 +762,6 @@ const GaantChartContainer = styled.div`
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
-`;
-
-const OptionsContainer = styled.div`
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  padding: 5px 15px;
-  border-bottom: 1px solid #A7B6C2;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-  background: ${Colors.WHITE};
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  z-index: 3;
-}`;
-
-const OptionsDivider = styled.div`
-  width: 1px;
-  height: 25px;
-  padding-left: 7px;
-  margin-left: 7px;
-  border-left: 1px solid ${Colors.LIGHT_GRAY3};
 `;
 
 const GraphQueryInputContainer = styled.div`

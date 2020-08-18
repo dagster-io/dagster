@@ -15,29 +15,33 @@ import { IconNames } from "@blueprintjs/icons";
 import Loading from "../Loading";
 import { PartitionTable } from "./PartitionTable";
 import { PartitionGraph, PIPELINE_LABEL } from "./PartitionGraph";
+import { PartitionRunMatrix } from "./PartitionRunMatrix";
 import { colorHash } from "../Util";
 import { Colors } from "@blueprintjs/core";
 import { RunsFilter } from "../runs/RunsFilter";
 import { TokenizingFieldValue } from "../TokenizingField";
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { RunTable } from "../runs/RunTable";
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 
 interface PartitionViewProps {
+  pipelineName: string;
   partitionSetName: string;
   cursor: string | undefined;
   setCursor: (cursor: string | undefined) => void;
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
+  pipelineName,
   partitionSetName,
   cursor,
   setCursor
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
-  const [pageSize, setPageSize] = React.useState<number | undefined>(7);
+  const [pageSize, setPageSize] = React.useState<number | undefined>(30);
   const repositorySelector = useRepositorySelector();
   const popCursor = () => {
     const nextStack = [...cursorStack];
@@ -100,11 +104,18 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                   popCursor={popCursor}
                   setCursor={setCursor}
                 />
-                <PartitionContent
-                  partitions={partitions}
-                  showLoading={showLoading}
-                  allStepKeys={Object.keys(allStepKeys)}
-                />
+                <div style={{ position: "relative" }}>
+                  <PartitionRunMatrix pipelineName={pipelineName} partitions={partitions} />
+                  <PartitionContent
+                    partitions={partitions}
+                    allStepKeys={Object.keys(allStepKeys)}
+                  />
+                  {showLoading && (
+                    <Overlay>
+                      <Spinner size={48} />
+                    </Overlay>
+                  )}
+                </div>
               </div>
             );
           }}
@@ -116,12 +127,10 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 
 const PartitionContent = ({
   partitions,
-  allStepKeys,
-  showLoading
+  allStepKeys
 }: {
   partitions: Partition[];
   allStepKeys: string[];
-  showLoading: boolean;
 }) => {
   const initial: { [stepKey: string]: boolean } = { [PIPELINE_LABEL]: true };
   allStepKeys.forEach(stepKey => (initial[stepKey] = true));
@@ -198,11 +207,6 @@ const PartitionContent = ({
           ref={rateGraph}
         />
       </div>
-      {showLoading ? (
-        <Overlay>
-          <Spinner size={48} />
-        </Overlay>
-      ) : null}
       <div style={{ width: 450 }}>
         <NavContainer>
           <NavSectionHeader>Run filters</NavSectionHeader>
@@ -247,7 +251,11 @@ const StepSelector = ({
 
   return (
     <>
-      <NavSectionHeader>Run steps</NavSectionHeader>
+      <NavSectionHeader>
+        Run steps
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 13, opacity: 0.5 }}>Tip: Shift-click to multi-select</span>
+      </NavSectionHeader>
       <NavSection>
         {Object.keys(selected).map(stepKey => (
           <Item
@@ -279,19 +287,19 @@ const StepSelector = ({
 };
 
 const NavSectionHeader = styled.div`
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid ${Colors.GRAY5};
   margin-bottom: 10px;
   padding-bottom: 5px;
+  display: flex;
 `;
 const NavSection = styled.div`
   margin-bottom: 30px;
 `;
 const NavContainer = styled.div`
-  width: 450px;
-  margin: 20px 10px;
+  margin: 20px 0 0 10px;
   padding: 10px;
   background-color: #fff;
-  border: 1px solid #ececec;
+  border: 1px solid ${Colors.GRAY5};
   overflow: auto;
 `;
 
@@ -324,6 +332,7 @@ const Overlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 `;
 
 const getPipelineDurationForRun = (run: Run) => {
@@ -470,26 +479,20 @@ const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
   return (
     <PartitionPagerContainer>
       <ButtonGroup>
+        {[7, 30, 120].map(size => (
+          <Button
+            key={size}
+            active={!hasNextPage && pageSize === size}
+            onClick={() => {
+              setCursor(undefined);
+              setPageSize(size);
+            }}
+          >
+            Last {size}
+          </Button>
+        ))}
         <Button
-          disabled={!hasNextPage && pageSize === 7}
-          onClick={() => {
-            setCursor(undefined);
-            setPageSize(7);
-          }}
-        >
-          Last 7
-        </Button>
-        <Button
-          disabled={!hasNextPage && pageSize === 30}
-          onClick={() => {
-            setCursor(undefined);
-            setPageSize(30);
-          }}
-        >
-          Last 30
-        </Button>
-        <Button
-          disabled={pageSize === undefined}
+          active={pageSize === undefined}
           onClick={() => {
             setCursor(undefined);
             setPageSize(undefined);
@@ -558,11 +561,13 @@ const PARTITION_SET_QUERY = gql`
                     materializations
                   }
                 }
+                status
                 stepStats {
                   __typename
                   stepKey
                   startTime
                   endTime
+                  status
                   materializations {
                     __typename
                   }
@@ -570,7 +575,7 @@ const PARTITION_SET_QUERY = gql`
                     success
                   }
                 }
-                status
+                ...RunTableRunFragment
               }
             }
           }
@@ -582,4 +587,5 @@ const PARTITION_SET_QUERY = gql`
     }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RunTable.fragments.RunTableRunFragment}
 `;

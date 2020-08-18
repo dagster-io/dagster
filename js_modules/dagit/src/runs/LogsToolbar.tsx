@@ -40,7 +40,8 @@ export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> 
 
     return (
       <LogsToolbarContainer>
-        <FilterTokenizingField
+        <TokenizingField
+          small
           values={filter.values}
           onChangeBeforeCommit
           onChange={(values: LogFilterValue[]) => onSetFilter({ ...filter, values })}
@@ -107,17 +108,4 @@ const LogsToolbarDivider = styled.div`
   height: 30px;
   margin: 0 15px;
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
-`;
-
-const FilterTokenizingField = styled(TokenizingField)`
-  height: 20px;
-  min-width: 200px;
-  max-width: 800px;
-  &.bp3-tag-input {
-    min-height: 26px;
-  }
-  &.bp3-tag-input .bp3-tag-input-values {
-    height: 23px;
-    margin-top: 3px;
-  }
 `;

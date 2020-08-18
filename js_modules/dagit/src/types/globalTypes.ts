@@ -57,6 +57,12 @@ export enum ScheduleTickStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum StepEventStatus {
+  FAILURE = "FAILURE",
+  SKIPPED = "SKIPPED",
+  SUCCESS = "SUCCESS",
+}
+
 export enum StepKind {
   COMPUTE = "COMPUTE",
 }

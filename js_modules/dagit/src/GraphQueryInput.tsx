@@ -14,6 +14,7 @@ interface GraphQueryInputProps {
   autoFocus?: boolean;
   presets?: { name: string; value: string }[];
   width?: string | number;
+  small?: boolean;
   className?: string;
 
   onChange: (value: string) => void;
@@ -171,6 +172,7 @@ export const GraphQueryInput = React.memo(
       <>
         <Popover minimal={true} isOpen={menu !== undefined} position={"bottom"} content={menu}>
           <GraphQueryInputField
+            small={props.small}
             intent={props.intent}
             title="graph-query-input"
             type="text"
