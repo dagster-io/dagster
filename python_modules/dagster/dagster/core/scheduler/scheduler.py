@@ -223,8 +223,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             # Restart is only needed if the schedule was previously running
             if schedule_state.status == ScheduleStatus.RUNNING:
                 try:
-                    self.stop_schedule(instance, external_schedule.get_origin_id())
-                    self.start_schedule(instance, external_schedule)
+                    self.refresh_schedule(instance, external_schedule)
                 except DagsterSchedulerError as e:
                     schedule_reconciliation_errors.append(e)
 
@@ -316,6 +315,23 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         instance.delete_schedule_state(schedule_origin_id)
         return schedule
 
+    def refresh_schedule(self, instance, external_schedule):
+        '''Refresh a running schedule. This is called when user reconciles the schedule state.
+
+        By default, this method will call stop_schedule and then start_schedule but can be
+        overriden. For example, in the K8s Scheduler we patch the existing cronjob
+        (without stopping it) to minimize downtime.
+
+        Args:
+            instance (DagsterInstance): The current instance.
+            external_schedule (ExternalSchedule): The schedule to start running.
+        '''
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+
+        self.stop_schedule(instance, external_schedule.get_origin_id())
+        self.start_schedule(instance, external_schedule)
+
     @abc.abstractmethod
     def debug_info(self):
         '''Returns debug information about the scheduler
@@ -366,7 +382,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         When the scheduler and schedule storage are in sync, this method should return:
         - 1 when a schedule is set to be running
-        - 0 wen a schedule is set to be stopped
+        - 0 when a schedule is set to be stopped
 
         Args:
             schedule_origin_id (string): The id of the schedule target to return the number of jobs for

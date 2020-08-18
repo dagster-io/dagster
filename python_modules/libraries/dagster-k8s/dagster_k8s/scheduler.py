@@ -132,9 +132,8 @@ class K8sScheduler(Scheduler, ConfigurableClass):
         )
         return job_template
 
-    def _start_cron_job(self, external_schedule, should_patch_schedule):
+    def _start_cron_job(self, external_schedule):
         check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
-        check.bool_param(should_patch_schedule, 'should_patch_schedule')
 
         job_template = self._job_template(external_schedule)
 
@@ -147,27 +146,25 @@ class K8sScheduler(Scheduler, ConfigurableClass):
             spec=cron_job_spec, metadata={'name': schedule_origin_id}
         )
 
-        if not should_patch_schedule:
-            self._api.create_namespaced_cron_job(body=cron_job, namespace=self._namespace)
-        else:
+        existing_cron_job = self.get_cron_job(schedule_origin_id=schedule_origin_id)
+        if existing_cron_job:
             self._api.patch_namespaced_cron_job(
                 name=schedule_origin_id, body=cron_job, namespace=self._namespace
             )
+        else:
+            self._api.create_namespaced_cron_job(body=cron_job, namespace=self._namespace)
+
         time.sleep(self.grace_period_seconds)
 
+    # Update the existing K8s CronJob if it exists; else, create it.
     def start_schedule(self, instance, external_schedule):
         check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
 
-        schedule_origin_id = external_schedule.get_origin_id()
-        should_patch_schedule = (
-            True if self.get_cron_job(schedule_origin_id=schedule_origin_id) else False
-        )
-
-        self._start_cron_job(external_schedule, should_patch_schedule)
+        self._start_cron_job(external_schedule)
 
         # Verify that the cron job is running
-        cron_job = self.get_cron_job(schedule_origin_id)
+        cron_job = self.get_cron_job(schedule_origin_id=external_schedule.get_origin_id())
         if not cron_job:
             raise DagsterSchedulerError(
                 "Attempted to add K8s CronJob for schedule {schedule_name}, but failed. "
@@ -176,6 +173,12 @@ class K8sScheduler(Scheduler, ConfigurableClass):
                 )
             )
         return
+
+    def refresh_schedule(self, instance, external_schedule):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+
+        self.start_schedule(instance, external_schedule)
 
     def running_schedule_count(self, schedule_origin_id):
         check.str_param(schedule_origin_id, 'schedule_origin_id')
