@@ -57,6 +57,8 @@ spec:
             - name: DAGSTER_CURRENT_IMAGE
               value: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
           envFrom:
+            - configMapRef:
+                name: {{ template "dagster.fullname" $ }}-{{ $deployment.name }}-user-env
             {{- if $deployment.env_config_maps -}}
             {{- range $name := $deployment.env_config_maps }}
             {{- if $name }}
