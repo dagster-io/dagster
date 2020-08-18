@@ -112,7 +112,7 @@ def parse_clause(clause):
     return (up_depth, item_name, down_depth)
 
 
-def _clause_to_subset(traverser, graph, clause):
+def clause_to_subset(traverser, graph, clause):
     """Take a selection query and return a list of the selected and qualified items.
 
     Args:
@@ -180,6 +180,6 @@ def parse_solid_selection(pipeline_def, solid_selection):
 
     # loop over clauses
     for clause in solid_selection:
-        solids_set.update(_clause_to_subset(traverser, graph, clause))
+        solids_set.update(clause_to_subset(traverser, graph, clause))
 
     return frozenset(solids_set)
