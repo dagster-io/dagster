@@ -1,8 +1,10 @@
 import json
 
+import pytest
 from dagster_k8s.job import K8S_RESOURCE_REQUIREMENTS_KEY, get_k8s_resource_requirements
 
 from dagster import pipeline, solid
+from dagster.core.errors import DagsterInvalidConfigError
 
 
 # CPU units are millicpu
@@ -61,3 +63,12 @@ def test_pipeline_resource_tags():
 
     no_resources = get_k8s_resource_requirements(no_resource_tags_pipeline.tags)
     assert no_resources == None
+
+
+def test_bad_resource_tags():
+    @pipeline(tags={K8S_RESOURCE_REQUIREMENTS_KEY: {'other': {'cpu': '250m', 'memory': '64Mi'},}})
+    def resource_tags_pipeline():
+        pass
+
+    with pytest.raises(DagsterInvalidConfigError):
+        get_k8s_resource_requirements(resource_tags_pipeline.tags)
