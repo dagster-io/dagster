@@ -9,6 +9,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.definitions import inference
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 
@@ -222,3 +223,127 @@ def test_nested_kitchen_sink():
         no_execute.output_defs[0].dagster_type.display_name
         == '[Tuple[[Int],String,Dict[String,[String]?]]]?'
     )
+
+
+def test_infer_input_description_from_docstring_rest():
+    @solid
+    def rest(_context, hello: str, optional: int = 5):
+        """
+        :param str hello: hello world param
+        :param int optional: optional param, defaults to 5
+        """
+        return hello + str(optional)
+
+    defs = inference.infer_input_definitions_for_solid(rest.name, rest.compute_fn)
+    assert len(defs) == 2
+
+    hello_param = defs[0]
+    assert hello_param.name == "hello"
+    assert hello_param.dagster_type.name == "String"
+
+    optional_param = defs[1]
+    assert optional_param.name == "optional"
+    assert optional_param.dagster_type.name == "Int"
+    assert optional_param.default_value == 5
+
+
+def test_infer_descriptions_from_docstring_numpy():
+    @solid
+    def good_numpy(_context, hello: str, optional: int = 5):
+        """
+        Test
+
+        Parameters
+        ----------
+        hello:
+            hello world param
+        optional:
+            optional param, default 5
+        """
+        return hello + str(optional)
+
+    defs = inference.infer_input_definitions_for_solid(good_numpy.name, good_numpy.compute_fn)
+    assert len(defs) == 2
+
+    hello_param = defs[0]
+    assert hello_param.name == "hello"
+    assert hello_param.dagster_type.name == "String"
+    assert hello_param.description == "hello world param"
+
+    optional_param = defs[1]
+    assert optional_param.name == "optional"
+    assert optional_param.dagster_type.name == "Int"
+    assert optional_param.default_value == 5
+    assert optional_param.description == "optional param, default 5"
+
+
+def test_infer_descriptions_from_docstring_google():
+    @solid
+    def good_google(_context, hello: str, optional: int = 5):
+        """
+        Test
+
+        Args:
+            hello       (str): hello world param
+            optional    (int, optional): optional param. Defaults to 5.
+        """
+        return hello + str(optional)
+
+    defs = inference.infer_input_definitions_for_solid(good_google.name, good_google.compute_fn)
+    assert len(defs) == 2
+
+    hello_param = defs[0]
+    assert hello_param.name == "hello"
+    assert hello_param.dagster_type.name == "String"
+    assert hello_param.description == "hello world param"
+
+    optional_param = defs[1]
+    assert optional_param.name == "optional"
+    assert optional_param.dagster_type.name == "Int"
+    assert optional_param.default_value == 5
+    assert optional_param.description == "optional param. Defaults to 5."
+
+
+def test_infer_output_description_from_docstring_numpy():
+    @solid
+    def numpy(_context) -> int:
+        """
+
+        Returns
+        -------
+        int
+            a number
+        """
+
+    defs = inference.infer_output_definitions("@solid", numpy.name, numpy.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].name == "result"
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
+
+
+def test_infer_output_description_from_docstring_rest():
+    @solid
+    def rest(_context) -> int:
+        """
+        :return int: a number
+        """
+
+    defs = inference.infer_output_definitions("@solid", rest.name, rest.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
+
+
+def test_infer_output_description_from_docstring_google():
+    @solid
+    def google(_context) -> int:
+        """
+        Returns:
+            int: a number
+        """
+
+    defs = inference.infer_output_definitions("@solid", google.name, google.compute_fn)
+    assert len(defs) == 1
+    assert defs[0].description == "a number"
+    assert defs[0].dagster_type.name == "Int"
