@@ -188,6 +188,10 @@
         "path": "/overview/dagit"
       },
       {
+        "name": "Solid Selection Syntax",
+        "path": "/overview/solid-selection"
+      },
+      {
         "name": "Packages",
         "path": "/overview/packages/core-packages",
         "childPath": true,
