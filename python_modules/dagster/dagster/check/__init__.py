@@ -3,7 +3,7 @@ import sys
 
 from future.utils import raise_with_traceback
 from six import integer_types, string_types
-from dagster.utils import is_str
+from .utils import is_str
 
 if sys.version_info[0] >= 3:
     type_types = type
