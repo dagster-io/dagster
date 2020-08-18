@@ -460,6 +460,10 @@
         "name": "Contributing"
       },
       {
+        "path": "/community/releases",
+        "name": "Releases & Deprecations"
+      },
+      {
         "path": "https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU",
         "isAbsolutePath": true,
         "isExternal": true,
