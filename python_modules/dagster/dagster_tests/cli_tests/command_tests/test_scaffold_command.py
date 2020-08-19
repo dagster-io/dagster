@@ -9,7 +9,7 @@ from dagster.cli.pipeline import execute_scaffold_command, pipeline_scaffold_com
 
 from .test_cli_commands import (
     valid_external_pipeline_target_args,
-    valid_external_pipeline_target_cli_args,
+    valid_external_pipeline_target_cli_args_no_preset,
 )
 
 
@@ -40,7 +40,7 @@ def test_scaffold_command(scaffold_args):
         execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
 
-@pytest.mark.parametrize('execute_cli_args', valid_external_pipeline_target_cli_args())
+@pytest.mark.parametrize('execute_cli_args', valid_external_pipeline_target_cli_args_no_preset())
 def test_scaffold_command_cli(execute_cli_args):
     cli_args, uses_legacy_repository_yaml_format = execute_cli_args
 
