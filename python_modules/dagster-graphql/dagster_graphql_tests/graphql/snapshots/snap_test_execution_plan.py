@@ -420,7 +420,7 @@ snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_in_
     }
 }
 
-snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sqlite_instance_external_grpc_server] 1'] = {
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sqlite_instance_deployed_grpc] 1'] = {
     'executionPlanOrError': {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
@@ -481,6 +481,30 @@ snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_pos
 }
 
 snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_postgres_instance_multi_location] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
+    }
+}
+
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sqlite_instance_managed_grpc_env] 1'] = {
+    'executionPlanOrError': {
+        '__typename': 'PipelineConfigValidationInvalid',
+        'errors': [
+            {
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
+            }
+        ],
+        'pipelineName': 'csv_hello_world'
+    }
+}
+
+snapshots['TestExecutionPlan.test_invalid_config_fetch_execute_plan[readonly_sqlite_instance_deployed_grpc_env] 1'] = {
     'executionPlanOrError': {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [

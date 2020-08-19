@@ -5,7 +5,7 @@ from dagster import DagsterInstance
 from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.core.utils import make_new_run_id
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .setup import (
     csv_hello_world,
     csv_hello_world_solids_config,
@@ -15,7 +15,11 @@ from .setup import (
 )
 
 
-class TestStartPipelineForCreatedRunInHostedUserProcess(ExecutingGraphQLContextTestMatrix):
+class TestStartPipelineForCreatedRunInHostedUserProcess(
+    make_graphql_context_test_suite(
+        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env()]
+    )
+):
     def test_synchronously_execute_run_within_hosted_user_process(self, graphql_context):
         pipeline_run = graphql_context.instance.create_run_for_pipeline(
             pipeline_def=csv_hello_world, run_config=csv_hello_world_solids_config()

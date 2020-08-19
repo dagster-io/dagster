@@ -22,7 +22,7 @@ query RunQuery($runId: ID!) {
 
 class TestBasicLaunch(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env()]
+        context_variants=GraphQLContextVariant.all_out_of_process_executing_variants()
     )
 ):
     def test_run_launcher(self, graphql_context):

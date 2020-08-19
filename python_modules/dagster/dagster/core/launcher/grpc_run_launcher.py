@@ -1,3 +1,4 @@
+import time
 import weakref
 
 from dagster import check
@@ -115,10 +116,33 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         return res.success
 
     def join(self):
-        for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
-            if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
-                repository_location_handle.client.cleanup_server()
-                repository_location_handle.grpc_server_process.wait()
+        total_time = 0
+        interval = 0.01
+        timeout = 60
+
+        while True:
+            active_run_ids = [
+                run_id
+                for run_id in self._run_id_to_repository_location_handle_cache.keys()
+                if (
+                    self._instance.get_run_by_id(run_id)
+                    and not self._instance.get_run_by_id(run_id).is_finished
+                )
+            ]
+
+            if len(active_run_ids) == 0:
+                return
+
+            if total_time >= timeout:
+                raise Exception(
+                    'Timed out waiting for these runs to finish: {active_run_ids}'.format(
+                        active_run_ids=repr(active_run_ids)
+                    )
+                )
+
+            total_time += interval
+            time.sleep(interval)
+            interval = interval * 2
 
     def cleanup_managed_grpc_servers(self):
         '''Shut down any managed grpc servers that used this run launcher to start a run.
