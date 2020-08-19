@@ -696,7 +696,6 @@ class DauphinPartitionBackfillResult(dauphin.Union):
         name = 'PartitionBackfillResult'
         types = (
             DauphinPartitionBackfillSuccess,
-            DauphinPythonError,
             DauphinPartitionSetNotFoundError,
         ) + pipeline_execution_error_types
 

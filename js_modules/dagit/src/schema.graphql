@@ -728,7 +728,7 @@ input PartitionBackfillParams {
   fromFailure: Boolean
 }
 
-union PartitionBackfillResult = PartitionBackfillSuccess | PythonError | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
 type PartitionBackfillSuccess {
   backfillId: String!
