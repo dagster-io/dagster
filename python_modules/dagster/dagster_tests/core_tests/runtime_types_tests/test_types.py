@@ -27,7 +27,6 @@ from dagster import (
 from dagster.core.types.dagster_type import (
     DagsterType,
     PythonObjectDagsterType,
-    PythonUnionDagsterType,
     resolve_dagster_type,
 )
 
@@ -59,15 +58,6 @@ def test_python_object_type():
 def test_python_object_union_type():
     ntype = PythonObjectDagsterType(python_type=(int, float))
     assert ntype.name == 'Union[int, float]'
-    assert_success(ntype, 1)
-    assert_success(ntype, 1.5)
-    assert_failure(ntype, 'a')
-
-
-def test_python_union_type():
-    ntype = PythonUnionDagsterType(python_types=(int, float))
-    assert ntype.name == 'Union[int, float]'
-    assert ntype.description == ntype.name
     assert_success(ntype, 1)
     assert_success(ntype, 1.5)
     assert_failure(ntype, 'a')
