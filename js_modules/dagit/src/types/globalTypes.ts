@@ -92,6 +92,18 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface PartitionBackfillParams {
+  selector: PartitionSetSelector;
+  partitionNames: string[];
+  reexecutionSteps?: string[] | null;
+  fromFailure?: boolean | null;
+}
+
+export interface PartitionSetSelector {
+  partitionSetName: string;
+  repositorySelector: RepositorySelector;
+}
+
 export interface PipelineRunsFilter {
   runId?: string | null;
   pipelineName?: string | null;

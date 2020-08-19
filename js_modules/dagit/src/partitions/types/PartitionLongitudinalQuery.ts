@@ -55,7 +55,7 @@ export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_par
   stepKey: string;
   startTime: number | null;
   endTime: number | null;
-  status: StepEventStatus;
+  status: StepEventStatus | null;
   materializations: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs_stepStats_materializations[];
   expectationResults: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs_stepStats_expectationResults[];
 }

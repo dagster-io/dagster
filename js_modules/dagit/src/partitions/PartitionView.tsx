@@ -13,7 +13,6 @@ import styled from "styled-components/macro";
 import { Divider, Button, ButtonGroup, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "../Loading";
-import { PartitionTable } from "./PartitionTable";
 import { PartitionGraph, PIPELINE_LABEL } from "./PartitionGraph";
 import { PartitionRunMatrix } from "./PartitionRunMatrix";
 import { colorHash } from "../Util";
@@ -32,13 +31,17 @@ interface PartitionViewProps {
   partitionSetName: string;
   cursor: string | undefined;
   setCursor: (cursor: string | undefined) => void;
+  onLoaded?: () => void;
+  runTags?: { [key: string]: string };
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   pipelineName,
   partitionSetName,
   cursor,
-  setCursor
+  setCursor,
+  onLoaded,
+  runTags
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState<number | undefined>(30);
@@ -70,6 +73,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
       {(queryResult: QueryResult<PartitionLongitudinalQuery, any>) => (
         <Loading queryResult={queryResult} allowStaleData={true}>
           {({ partitionSetOrError }) => {
+            onLoaded?.();
             if (partitionSetOrError.__typename !== "PartitionSet") {
               return null;
             }
@@ -92,7 +96,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
             const showLoading = queryResult.loading && queryResult.networkStatus !== 6;
             return (
               <div style={{ marginTop: 30 }}>
-                <Header>{`Partition Set: ${partitionSetName}`}</Header>
+                <Header>Longitudinal History</Header>
                 <Divider />
                 <PartitionPagerControls
                   displayed={partitions.slice(0, pageSize)}
@@ -105,7 +109,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                   setCursor={setCursor}
                 />
                 <div style={{ position: "relative" }}>
-                  <PartitionRunMatrix pipelineName={pipelineName} partitions={partitions} />
+                  <PartitionRunMatrix
+                    pipelineName={pipelineName}
+                    partitions={partitions}
+                    runTags={runTags}
+                  />
                   <PartitionContent
                     partitions={partitions}
                     allStepKeys={Object.keys(allStepKeys)}
@@ -165,7 +173,6 @@ const PartitionContent = ({
   return (
     <PartitionContentContainer>
       <div style={{ flex: 1 }}>
-        <PartitionTable title="Runs by Partition" runsByPartitionName={runsByPartitionName} />
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"

@@ -1,0 +1,167 @@
+import * as React from "react";
+import styled from "styled-components";
+import gql from "graphql-tag";
+import { useQuery } from "react-apollo";
+import { RouteComponentProps } from "react-router-dom";
+import { useRepositorySelector } from "../DagsterRepositoryContext";
+import Loading from "../Loading";
+import { Button, NonIdealState, Popover, Menu, MenuItem } from "@blueprintjs/core";
+import {
+  PipelinePartitionsRootQuery,
+  PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results
+} from "./types/PipelinePartitionsRootQuery";
+import { PartitionView } from "./PartitionView";
+import { __RouterContext as RouterContext } from "react-router";
+import * as querystring from "query-string";
+import { PartitionsBackfill } from "./PartitionsBackfill";
+
+type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
+
+export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps<{
+  pipelinePath: string;
+}>> = ({ location, match }) => {
+  const pipelineName = match.params.pipelinePath.split(":")[0];
+  const repositorySelector = useRepositorySelector();
+  const queryResult = useQuery<PipelinePartitionsRootQuery>(PIPELINE_PARTITIONS_ROOT_QUERY, {
+    variables: { repositorySelector, pipelineName },
+    fetchPolicy: "network-only"
+  });
+  const { history } = React.useContext(RouterContext);
+  const qs = querystring.parse(location.search);
+  const cursor = (qs.cursor as string) || undefined;
+  const setCursor = (cursor: string | undefined) => {
+    history.push({ search: `?${querystring.stringify({ ...qs, cursor })}` });
+  };
+
+  const [selected, setSelected] = React.useState<PartitionSet | undefined>();
+  const [showLoader, setShowLoader] = React.useState<boolean>(false);
+  const [runTags, setRunTags] = React.useState<{ [key: string]: string }>({});
+
+  return (
+    <Loading queryResult={queryResult}>
+      {({ partitionSetsOrError }) => {
+        if (partitionSetsOrError.__typename !== "PartitionSets") {
+          return (
+            <Wrapper>
+              <NonIdealState
+                icon="multi-select"
+                title="Partitions"
+                description={partitionSetsOrError.message}
+              />
+            </Wrapper>
+          );
+        }
+
+        if (!partitionSetsOrError.results.length) {
+          return (
+            <Wrapper>
+              <NonIdealState
+                icon="multi-select"
+                title="Partitions"
+                description={
+                  <p>
+                    There are no partition sets defined for pipeline <code>{pipelineName}</code>.
+                  </p>
+                }
+              />
+            </Wrapper>
+          );
+        }
+
+        const selectionHasMatch =
+          selected && !!partitionSetsOrError.results.filter(x => x.name === selected.name).length;
+        const partitionSet =
+          selectionHasMatch && selected ? selected : partitionSetsOrError.results[0];
+
+        return (
+          <div style={{ margin: 30 }}>
+            <PartitionSetSelector
+              selected={partitionSet}
+              partitionSets={partitionSetsOrError.results}
+              onSelect={setSelected}
+            />
+            <PartitionsBackfill
+              partitionSetName={partitionSet.name}
+              showLoader={showLoader}
+              onLaunch={(backfillId: string) => setRunTags({ "dagster/backfill": backfillId })}
+            />
+            <PartitionView
+              pipelineName={pipelineName}
+              partitionSetName={partitionSet.name}
+              cursor={cursor}
+              setCursor={setCursor}
+              onLoaded={() => setShowLoader(true)}
+              runTags={runTags}
+            />
+          </div>
+        );
+      }}
+    </Loading>
+  );
+};
+
+const PartitionSetSelector: React.FunctionComponent<{
+  selected: PartitionSet;
+  partitionSets: PartitionSet[];
+  onSelect: (partitionSet: PartitionSet) => void;
+}> = ({ partitionSets, selected, onSelect }) => {
+  const [open, setOpen] = React.useState(false);
+  const disabled = partitionSets.length <= 1;
+  return (
+    <Popover
+      fill={true}
+      isOpen={open}
+      onInteraction={setOpen}
+      minimal
+      wrapperTagName="span"
+      position={"bottom-left"}
+      disabled={disabled}
+      content={
+        <Menu style={{ minWidth: 280 }}>
+          {partitionSets.map((partitionSet, idx) => (
+            <MenuItem
+              key={idx}
+              onClick={() => onSelect(partitionSet)}
+              active={selected.name === partitionSet.name}
+              icon={"git-repo"}
+              text={<div>{partitionSet.name}</div>}
+            />
+          ))}
+        </Menu>
+      }
+    >
+      <Button text={selected.name} disabled={disabled} rightIcon="caret-down" />
+    </Popover>
+  );
+};
+
+const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
+  query PipelinePartitionsRootQuery(
+    $pipelineName: String!
+    $repositorySelector: RepositorySelector!
+  ) {
+    partitionSetsOrError(pipelineName: $pipelineName, repositorySelector: $repositorySelector) {
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PythonError {
+        message
+      }
+      ... on PartitionSets {
+        results {
+          name
+        }
+      }
+    }
+  }
+`;
+
+const Wrapper = styled.div`
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow: auto;
+`;

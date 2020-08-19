@@ -1,7 +1,7 @@
 import * as React from "react";
 import moment from "moment";
 import { uniq } from "lodash";
-import { Colors, Checkbox, NonIdealState, MultiSlider, Intent } from "@blueprintjs/core";
+import { Colors, Checkbox, MultiSlider, Intent } from "@blueprintjs/core";
 import styled from "styled-components/macro";
 
 import {
@@ -137,6 +137,7 @@ function buildMatrixData(
 interface PartitionRunMatrixProps {
   pipelineName: string;
   partitions: Partition[];
+  runTags?: { [key: string]: string };
 }
 
 interface MatrixDataInputs {
@@ -189,9 +190,18 @@ const useMatrixData = (inputs: MatrixDataInputs) => {
   return result;
 };
 
+const tagsToTokenFieldValues = (runTags?: { [key: string]: string }) => {
+  if (!runTags) {
+    return [];
+  }
+  return Object.keys(runTags).map(key => ({ token: "tag", value: `${key}=${runTags[key]}` }));
+};
+
 export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps> = props => {
   const { viewport, containerProps } = useViewport();
-  const [runsFilter, setRunsFilter] = React.useState<TokenizingFieldValue[]>([]);
+  const [runsFilter, setRunsFilter] = React.useState<TokenizingFieldValue[]>(
+    tagsToTokenFieldValues(props.runTags)
+  );
   const [focusedPartitionName, setFocusedPartitionName] = React.useState<string>("");
   const [hoveredStepName, setHoveredStepName] = React.useState<string>("");
   const [stepQuery, setStepQuery] = React.useState<string>("");
@@ -201,6 +211,9 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
     showSucessful: true,
     colorizeByAge: false
   });
+  React.useEffect(() => {
+    setRunsFilter(tagsToTokenFieldValues(props.runTags));
+  }, [props.runTags]);
 
   // Retrieve the pipeline's structure
   const repositorySelector = useRepositorySelector();
@@ -401,19 +414,11 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
         </GridScrollContainer>
       </div>
       {stepRows.length === 0 && <EmptyMessage>No data to display.</EmptyMessage>}
-      <div style={{ padding: "10px 0", minHeight: 220 }}>
+      <div style={{ padding: "10px 0" }}>
         <RunTable
           runs={focusedPartition ? focusedPartition.runs : []}
           onSetFilter={() => {}}
-          nonIdealState={
-            <NonIdealState
-              description={
-                focusedPartition
-                  ? `No runs for ${focusedPartitionName}. Select another partition above.`
-                  : `No runs to display. Select a partition above.`
-              }
-            />
-          }
+          nonIdealState={<div />}
         />
       </div>
     </PartitionRunMatrixContainer>
@@ -427,7 +432,6 @@ const EmptyMessage = styled.div`
 
 const PartitionRunMatrixContainer = styled.div`
   display: block;
-  border-bottom: 1px solid ${Colors.GRAY5};
 `;
 
 const OptionsContainer = styled.div`

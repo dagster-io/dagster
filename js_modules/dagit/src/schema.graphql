@@ -944,7 +944,7 @@ enum PipelineRunStatus {
 type PipelineRunStepStats {
   runId: String!
   stepKey: String!
-  status: StepEventStatus!
+  status: StepEventStatus
   startTime: Float
   endTime: Float
   materializations: [Materialization!]!

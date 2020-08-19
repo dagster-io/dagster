@@ -8,6 +8,7 @@ import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
 import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
 import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
+import { PipelinePartitionsRoot } from "./partitions/PipelinePartitionsRoot";
 import { PipelineRunsRoot } from "./PipelineRunsRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RunRoot } from "./runs/RunRoot";
@@ -67,6 +68,7 @@ const AppRoutes = () => (
             <Route path="/pipeline/:pipelinePath/runs/:runId" component={RunRoot} />
 
             <Route path="/pipeline/:pipelinePath/runs" component={PipelineRunsRoot} />
+            <Route path="/pipeline/:pipelinePath/partitions" component={PipelinePartitionsRoot} />
             {/* Capture solid subpath in a regex match */}
             <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
           </Switch>

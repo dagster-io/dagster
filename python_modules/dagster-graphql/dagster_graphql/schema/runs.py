@@ -74,7 +74,7 @@ class DauphinPipelineRunStepStats(dauphin.ObjectType):
 
     runId = dauphin.NonNull(dauphin.String)
     stepKey = dauphin.NonNull(dauphin.String)
-    status = dauphin.NonNull('StepEventStatus')
+    status = dauphin.Field('StepEventStatus')
     startTime = dauphin.Field(dauphin.Float)
     endTime = dauphin.Field(dauphin.Float)
     materializations = dauphin.non_null_list('Materialization')
