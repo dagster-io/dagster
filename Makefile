@@ -88,6 +88,7 @@ install_dev_python_modules:
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
 	-pip install -r docs-requirements.txt $(QUIET)
 	-pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
+	-pip install -e python_modules/libraries/dagster-dbt $(QUIET)
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules

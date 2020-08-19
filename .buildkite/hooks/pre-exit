@@ -15,6 +15,11 @@ docker-compose stop
 docker-compose rm -f
 popd
 
+pushd python_modules/libraries/dagster-dbt/dagster_dbt_tests/
+docker-compose stop
+docker-compose rm -f
+popd
+
 pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql
 docker-compose stop
 docker-compose rm -f

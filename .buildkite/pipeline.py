@@ -200,6 +200,20 @@ def legacy_examples_extra_cmds_fn(_):
     ]
 
 
+def dbt_extra_cmds_fn(_):
+    return [
+        "pushd python_modules/libraries/dagster-dbt/dagster_dbt_tests",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-dbt", "POSTGRES_TEST_DB_DBT_HOST"
+        ),
+        "popd",
+    ]
+
+
 def k8s_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
@@ -324,6 +338,11 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-postgres_instance_managed_grpc_env",
             "-postgres_instance_deployed_grpc_env",
         ],
+    ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-dbt",
+        supported_pythons=SupportedPython3s,
+        extra_cmds_fn=dbt_extra_cmds_fn,
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-airflow",
