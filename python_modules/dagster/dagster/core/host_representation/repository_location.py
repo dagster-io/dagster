@@ -399,9 +399,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         self.external_repositories = {repo.name: repo for repo in external_repositories_list}
 
-    def create_reloaded_repository_location(self):
-        return GrpcServerRepositoryLocation(self._handle)
-
     @property
     def is_reload_supported(self):
         return True
@@ -555,9 +552,6 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
 
         repo_list = sync_get_external_repositories(self._handle)
         self.external_repositories = {er.name: er for er in repo_list}
-
-    def create_reloaded_repository_location(self):
-        return PythonEnvRepositoryLocation(self._handle)
 
     @property
     def is_reload_supported(self):
