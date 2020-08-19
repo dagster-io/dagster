@@ -1,9 +1,12 @@
 from collections import defaultdict
 
-from dagster import ModeDefinition, execute_pipeline, pipeline, resource, solid
+import pytest
+
+from dagster import ModeDefinition, composite_solid, execute_pipeline, pipeline, resource, solid
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 class SomeUserException(Exception):
@@ -38,6 +41,41 @@ def test_hook_on_solid_instance():
     result = execute_pipeline(a_pipeline)
     assert result.success
     assert called_hook_to_solids['a_hook'] == {'a_solid', 'solid_with_hook'}
+
+
+def test_hook_on_pipeline_with_composites():
+
+    called_hook_to_step_keys = defaultdict(set)
+
+    @event_list_hook
+    def hook_a_generic(context, _):
+        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        return HookExecutionResult('hook_a_generic')
+
+    @solid
+    def two(_):
+        return 1
+
+    @solid
+    def add_one(_, num):
+        return num + 1
+
+    @composite_solid
+    def add_two():
+        adder_1 = add_one.alias('adder_1')
+        adder_2 = add_one.alias('adder_2')
+
+        return adder_2(adder_1(two()))
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match='Hook not yet supported on pipelines with composite solids',
+    ):
+
+        @hook_a_generic
+        @pipeline
+        def _():
+            add_two()
 
 
 def test_success_hook_on_solid_instance():
