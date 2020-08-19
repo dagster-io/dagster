@@ -84,13 +84,16 @@ def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=N
         try:
             if param.default is not funcsigs.Parameter.empty:
                 input_def = InputDefinition(
-                    param.name, _input_param_type(param.annotation), default_value=param.default,
-                    description=descriptions.get(param.name)
+                    param.name,
+                    _input_param_type(param.annotation),
+                    default_value=param.default,
+                    description=descriptions.get(param.name),
                 )
             else:
                 input_def = InputDefinition(
-                    param.name, _input_param_type(param.annotation),
-                    description=descriptions.get(param.name)
+                    param.name,
+                    _input_param_type(param.annotation),
+                    description=descriptions.get(param.name),
                 )
 
             input_defs.append(input_def)
@@ -117,7 +120,9 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params, '@composite_solid', solid_name, descriptions=descriptions)
+    defs = _infer_inputs_from_params(
+        params, '@composite_solid', solid_name, descriptions=descriptions
+    )
     return defs
 
 
