@@ -1,10 +1,6 @@
-import sys
-import unittest
-
 import pytest
 
 from dagster import lambda_solid, solid
-from dagster.core.definitions import inference
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 

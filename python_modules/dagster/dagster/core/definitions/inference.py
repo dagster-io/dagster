@@ -73,23 +73,25 @@ def infer_input_definitions_for_lambda_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params, '@lambda_solid', solid_name)
-
-    for d in defs:
-        d._description = descriptions.get(d.name)
+    defs = _infer_inputs_from_params(params, '@lambda_solid', solid_name, descriptions=descriptions)
     return defs
 
 
-def _infer_inputs_from_params(params, decorator_name, solid_name):
+def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=None):
+    descriptions = descriptions or {}
     input_defs = []
     for param in params:
         try:
             if param.default is not funcsigs.Parameter.empty:
                 input_def = InputDefinition(
-                    param.name, _input_param_type(param.annotation), default_value=param.default
+                    param.name, _input_param_type(param.annotation), default_value=param.default,
+                    description=descriptions.get(param.name)
                 )
             else:
-                input_def = InputDefinition(param.name, _input_param_type(param.annotation))
+                input_def = InputDefinition(
+                    param.name, _input_param_type(param.annotation),
+                    description=descriptions.get(param.name)
+                )
 
             input_defs.append(input_def)
 
@@ -115,10 +117,7 @@ def infer_input_definitions_for_composite_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params, '@composite_solid', solid_name)
-
-    for d in defs:
-        d._description = descriptions.get(d.name)
+    defs = _infer_inputs_from_params(params, '@composite_solid', solid_name, descriptions=descriptions)
     return defs
 
 
@@ -126,8 +125,5 @@ def infer_input_definitions_for_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(params[1:], '@solid', solid_name)
-
-    for d in defs:
-        d._description = descriptions.get(d.name)
+    defs = _infer_inputs_from_params(params[1:], '@solid', solid_name, descriptions=descriptions)
     return defs
