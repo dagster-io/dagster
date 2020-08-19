@@ -95,7 +95,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
 
 def _trigger_hook(step_context, step_event_list):
     '''Trigger hooks and record hook's operatonal events'''
-    hook_defs = step_context.solid.hook_defs
+    hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
         return

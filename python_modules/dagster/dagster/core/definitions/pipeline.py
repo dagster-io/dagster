@@ -18,7 +18,7 @@ from .dependency import (
 from .hook import HookDefinition
 from .mode import ModeDefinition
 from .preset import PresetDefinition
-from .solid import CompositeSolidDefinition, ISolidDefinition
+from .solid import ISolidDefinition
 from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .utils import validate_tags
 
@@ -143,6 +143,7 @@ class PipelineDefinition(IContainSolids):
         preset_defs=None,
         tags=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        _hook_defs=None,
     ):
         self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self._description = check.opt_str_param(description, 'description')
@@ -217,6 +218,8 @@ class PipelineDefinition(IContainSolids):
         )
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
+
+        self._hook_defs = check.opt_set_param(_hook_defs, '_hook_defs', of_type=HookDefinition)
 
     def get_run_config_schema(self, mode=None):
         check.str_param(mode, 'mode')
@@ -460,41 +463,63 @@ class PipelineDefinition(IContainSolids):
     def solids_to_execute(self):
         return None
 
+    @property
+    def hook_defs(self):
+        return self._hook_defs
+
+    def get_all_hooks_for_handle(self, handle):
+        '''Gather all the hooks for the given solid from all places possibly attached with a hook.
+
+        A hook can be attached to any of the following objects
+        * Solid (solid invocation)
+        * PipelineDefinition
+
+        Args:
+            handle (SolidHandle): The solid's handle
+
+        Returns:
+            FrozeSet[HookDefinition]
+        '''
+        check.inst_param(handle, 'handle', SolidHandle)
+        hook_defs = set()
+
+        current = handle
+        lineage = []
+        while current:
+            lineage.append(current.name)
+            current = current.parent
+
+        # hooks on top-level solid
+        name = lineage.pop()
+        solid = self.solid_named(name)
+        hook_defs = hook_defs.union(solid.hook_defs)
+
+        # hooks on non-top-level solids
+        while lineage:
+            name = lineage.pop()
+            solid = solid.definition.solid_named(name)
+            hook_defs = hook_defs.union(solid.hook_defs)
+
+        # hooks applied to a pipeline definition will run on every solid
+        hook_defs = hook_defs.union(self.hook_defs)
+
+        return frozenset(hook_defs)
+
     def with_hooks(self, hook_defs):
         '''Apply a set of hooks to all solid instances within the pipeline.'''
 
         hook_defs = check.set_param(hook_defs, 'hook_defs', of_type=HookDefinition)
 
-        for solid_def in self.top_level_solid_defs:
-            if isinstance(solid_def, CompositeSolidDefinition):
-                raise DagsterInvalidDefinitionError(
-                    'Hook not yet supported on pipelines with composite solids.'
-                )
-
-        # make a copy of the pipeline definition with the hook added to every solid instance
-        deps = {}
-        for dep_key, input_dep_dict in self.dependencies.items():
-            check.inst(dep_key, six.string_types + (SolidInvocation,))
-            # to add hooks, we make copies of solid invocations
-            hooked_invocation = (
-                SolidInvocation(
-                    dep_key.name, dep_key.alias, dep_key.tags, dep_key.hook_defs.union(hook_defs),
-                )
-                if isinstance(dep_key, SolidInvocation)
-                else SolidInvocation(dep_key, hook_defs=hook_defs)  # when dep_key is str
-            )
-
-            deps[hooked_invocation] = input_dep_dict
-
         return PipelineDefinition(
             solid_defs=self.top_level_solid_defs,
             name=self.name,
             description=self.description,
-            dependencies=deps,
+            dependencies=self.dependencies,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
             tags=self.tags,
             _parent_pipeline_def=self._parent_pipeline_def,
+            _hook_defs=hook_defs.union(self.hook_defs),
         )
 
 

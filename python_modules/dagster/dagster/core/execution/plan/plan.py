@@ -311,7 +311,12 @@ class ExecutionPlan(
         return self.pipeline.get_definition()
 
     def get_all_hook_defs(self):
-        return set().union(*[step.hook_defs for step in self.steps])
+        hook_defs = set()
+        for step in self.steps:
+            hook_defs = hook_defs.union(
+                self.pipeline_def.get_all_hooks_for_handle(step.solid_handle)
+            )
+        return frozenset(hook_defs)
 
     def get_step_output(self, step_output_handle):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)

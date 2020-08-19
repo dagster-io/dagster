@@ -43,7 +43,70 @@ def test_hook_on_solid_instance():
     assert called_hook_to_solids['a_hook'] == {'a_solid', 'solid_with_hook'}
 
 
-def test_hook_on_pipeline_with_composites():
+def test_hook_accumulation():
+
+    called_hook_to_step_keys = defaultdict(set)
+
+    @event_list_hook
+    def pipeline_hook(context, _):
+        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        return HookExecutionResult('pipeline_hook')
+
+    @event_list_hook
+    def solid_1_hook(context, _):
+        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        return HookExecutionResult('solid_1_hook')
+
+    @event_list_hook
+    def composite_1_hook(context, _):
+        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        return HookExecutionResult('composite_1_hook')
+
+    @solid
+    def solid_1(_):
+        return 1
+
+    @solid
+    def solid_2(_, num):
+        return num
+
+    @solid
+    def solid_3(_):
+        return 1
+
+    @composite_solid
+    def composite_1():
+        return solid_2(solid_1.with_hooks({solid_1_hook})())
+
+    @composite_solid
+    def composite_2():
+        solid_3()
+        return composite_1.with_hooks({composite_1_hook})()
+
+    @pipeline_hook
+    @pipeline
+    def a_pipeline():
+        composite_2()
+
+    result = execute_pipeline(a_pipeline)
+    assert result.success
+
+    # make sure we gather hooks from all places and invoke them with the right steps
+    assert called_hook_to_step_keys == {
+        'pipeline_hook': {
+            'composite_2.composite_1.solid_1.compute',
+            'composite_2.composite_1.solid_2.compute',
+            'composite_2.solid_3.compute',
+        },
+        'solid_1_hook': {'composite_2.composite_1.solid_1.compute'},
+        'composite_1_hook': {
+            'composite_2.composite_1.solid_1.compute',
+            'composite_2.composite_1.solid_2.compute',
+        },
+    }
+
+
+def test_hook_on_composite_solid_instance():
 
     called_hook_to_step_keys = defaultdict(set)
 
@@ -67,15 +130,16 @@ def test_hook_on_pipeline_with_composites():
 
         return adder_2(adder_1(two()))
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='Hook not yet supported on pipelines with composite solids',
-    ):
+    @pipeline
+    def a_pipeline():
+        add_two.with_hooks({hook_a_generic})()
 
-        @hook_a_generic
-        @pipeline
-        def _():
-            add_two()
+    result = execute_pipeline(a_pipeline)
+    assert result.success
+    # the hook should run on all steps inside a composite
+    assert called_hook_to_step_keys['hook_a_generic'] == set(
+        [i.step_key for i in filter(lambda i: i.is_step_event, result.event_list)]
+    )
 
 
 def test_success_hook_on_solid_instance():
@@ -167,6 +231,47 @@ def test_hook_on_pipeline_def():
     assert result.success
     # the hook should run on all solids
     assert called_hook_to_solids['hook_a_generic'] == {'solid_a', 'solid_b', 'solid_c'}
+
+
+def test_hook_on_pipeline_def_with_composite_solids():
+
+    called_hook_to_step_keys = defaultdict(set)
+
+    @event_list_hook
+    def hook_a_generic(context, _):
+        called_hook_to_step_keys[context.hook_def.name].add(context.step.key)
+        return HookExecutionResult('hook_a_generic')
+
+    @solid
+    def two(_):
+        return 1
+
+    @solid
+    def add_one(_, num):
+        return num + 1
+
+    @composite_solid
+    def add_two():
+        adder_1 = add_one.alias('adder_1')
+        adder_2 = add_one.alias('adder_2')
+
+        return adder_2(adder_1(two()))
+
+    @pipeline
+    def a_pipeline():
+        add_two()
+
+    hooked_pipeline = a_pipeline.with_hooks({hook_a_generic})
+    # hooked_pipeline should be a copy of the original pipeline
+    assert hooked_pipeline.top_level_solid_defs == a_pipeline.top_level_solid_defs
+    assert hooked_pipeline.all_solid_defs == a_pipeline.all_solid_defs
+
+    result = execute_pipeline(hooked_pipeline)
+    assert result.success
+    # the hook should run on all steps
+    assert called_hook_to_step_keys['hook_a_generic'] == set(
+        [i.step_key for i in filter(lambda i: i.is_step_event, result.event_list)]
+    )
 
 
 def test_hook_decorate_pipeline_def():

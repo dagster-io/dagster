@@ -10,6 +10,7 @@ from dagster.utils import frozendict, frozenlist
 from dagster.utils.backcompat import rename_warning
 
 from .dependency import SolidHandle
+from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
 from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
@@ -161,6 +162,8 @@ class ISolidDefinition(IConfigMappable):
 
     def with_hooks(self, hook_defs):
         from .composition import CallableSolidNode
+
+        hook_defs = frozenset(check.set_param(hook_defs, 'hook_defs', of_type=HookDefinition))
 
         return CallableSolidNode(self, hook_defs=hook_defs)
 
