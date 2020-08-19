@@ -80,7 +80,9 @@ def setup_storage(step_run_ref):
     This requires modifying the 'sc' global which isn't great.
     https://github.com/dagster-io/dagster/issues/2492 tracks a better solution
     '''
-    root_storage = step_run_ref.run_config['storage']
+    root_storage = step_run_ref.run_config.get(
+        'intermediate_storage', step_run_ref.run_config['storage']
+    )
     check.invariant(
         's3' in root_storage or 'adls2' in root_storage, 'No compatible storage found in config'
     )

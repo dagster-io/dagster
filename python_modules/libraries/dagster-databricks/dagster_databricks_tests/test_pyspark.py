@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
+from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
@@ -99,7 +99,7 @@ MODE_DEFS = [
             'pyspark': pyspark_resource,
             's3': s3_resource,
         },
-        system_storage_defs=s3_plus_default_storage_defs,
+        intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
     ),
     ModeDefinition(
         'local',
