@@ -397,6 +397,9 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-pyspark", supported_pythons=SupportedPython3s
+    ),
     ModuleBuildSpec("python_modules/libraries/lakehouse", supported_pythons=SupportedPython3s),
 ]
 
