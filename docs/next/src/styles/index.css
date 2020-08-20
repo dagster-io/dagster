@@ -78,7 +78,7 @@
 }
 
 .markdown ul {
-  @apply text-base pl-8 list-disc;
+  @apply text-base pl-8 pb-2 list-disc;
 }
 
 .markdown ol {

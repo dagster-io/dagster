@@ -188,6 +188,10 @@
         "path": "/overview/dagit"
       },
       {
+        "name": "GraphQL API",
+        "path": "/overview/graphql-api"
+      },
+      {
         "name": "Solid Selection Syntax",
         "path": "/overview/solid-selection"
       },
