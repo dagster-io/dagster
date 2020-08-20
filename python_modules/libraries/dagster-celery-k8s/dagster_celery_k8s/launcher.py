@@ -5,7 +5,7 @@ from dagster_k8s.job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
     get_job_name_from_run_id,
-    get_k8s_resource_requirements,
+    get_user_defined_k8s_config,
 )
 from dagster_k8s.utils import delete_job
 
@@ -215,7 +215,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=exc_config.get('env_secrets'),
         )
 
-        resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
 
         from dagster.cli.api import ExecuteRunArgs
 
@@ -234,7 +234,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             job_name=job_name,
             pod_name=pod_name,
             component='run_coordinator',
-            resources=resources,
+            user_defined_k8s_config=user_defined_k8s_config,
             env_vars=env_vars,
         )
 

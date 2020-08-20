@@ -6,7 +6,11 @@ from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import DagsterK8sPipelineStatusException
-from dagster_k8s.job import get_k8s_job_name, get_k8s_resource_requirements
+from dagster_k8s.job import (
+    UserDefinedDagsterK8sConfig,
+    get_k8s_job_name,
+    get_user_defined_k8s_config,
+)
 from dagster_k8s.utils import (
     delete_job,
     filter_dagster_events_from_pod_logs,
@@ -187,7 +191,8 @@ class CeleryK8sJobExecutor(Executor):
 
 
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
-    resources = get_k8s_resource_requirements(step.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
+
     task = create_k8s_job_task(app)
 
     recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
@@ -202,7 +207,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         run_id=pipeline_context.pipeline_run.run_id,
         job_config_dict=pipeline_context.executor.job_config.to_dict(),
         job_namespace=pipeline_context.executor.job_namespace,
-        resources=resources,
+        user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
         pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_origin()),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
@@ -232,7 +237,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         load_incluster_config,
         retries_dict,
         pipeline_origin_packed,
-        resources=None,
+        user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
     ):
         '''Run step execution in a K8s job pod.
@@ -264,7 +269,12 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         )
         check.inst(pipeline_origin, PipelineOrigin)
 
-        check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
+        user_defined_k8s_config = UserDefinedDagsterK8sConfig.from_dict(
+            user_defined_k8s_config_dict
+        )
+        check.opt_inst_param(
+            user_defined_k8s_config, 'user_defined_k8s_config', UserDefinedDagsterK8sConfig,
+        )
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
         # For when launched via DinD or running the cluster
@@ -317,7 +327,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         command = ['dagster']
         args = ['api', 'execute_step_with_structured_logs', input_json]
 
-        job = construct_dagster_k8s_job(job_config, command, args, job_name, resources, pod_name)
+        job = construct_dagster_k8s_job(
+            job_config, command, args, job_name, user_defined_k8s_config, pod_name
+        )
 
         # Running list of events generated from this task execution
         events = []

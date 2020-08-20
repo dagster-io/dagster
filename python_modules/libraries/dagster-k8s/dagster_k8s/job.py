@@ -35,15 +35,36 @@ DAGSTER_PG_PASSWORD_SECRET_KEY = 'postgresql-password'
 # Kubernetes Job object names cannot be longer than 63 characters
 MAX_K8S_NAME_LEN = 63
 
+# TODO: Deprecate this tag
 K8S_RESOURCE_REQUIREMENTS_KEY = 'dagster-k8s/resource_requirements'
 K8S_RESOURCE_REQUIREMENTS_SCHEMA = Shape({'limits': Permissive(), 'requests': Permissive()})
+
+USER_DEFINED_K8S_CONFIG_KEY = 'dagster-k8s/config'
+USER_DEFINED_K8S_CONFIG_SCHEMA = Shape({'container_config': Permissive()})
+
+
+class UserDefinedDagsterK8sConfig(namedtuple('_UserDefinedDagsterK8sConfig', 'container_config')):
+    def __new__(
+        cls, container_config=None,
+    ):
+
+        container_config = check.opt_dict_param(container_config, 'container_config', key_type=str)
+
+        return super(UserDefinedDagsterK8sConfig, cls).__new__(
+            cls, container_config=container_config,
+        )
+
+    def to_dict(self):
+        return {'container_config': self.container_config}
+
+    @classmethod
+    def from_dict(self, config_dict):
+        return UserDefinedDagsterK8sConfig(container_config=config_dict.get('container_config'))
 
 
 def get_k8s_resource_requirements(tags):
     check.inst_param(tags, 'tags', frozentags)
-
-    if not K8S_RESOURCE_REQUIREMENTS_KEY in tags:
-        return None
+    check.invariant(K8S_RESOURCE_REQUIREMENTS_KEY in tags)
 
     resource_requirements = json.loads(tags[K8S_RESOURCE_REQUIREMENTS_KEY])
     result = validate_config(K8S_RESOURCE_REQUIREMENTS_SCHEMA, resource_requirements)
@@ -54,6 +75,37 @@ def get_k8s_resource_requirements(tags):
         )
 
     return result.value
+
+
+def get_user_defined_k8s_config(tags):
+    check.inst_param(tags, 'tags', frozentags)
+
+    if not any(key in tags for key in [K8S_RESOURCE_REQUIREMENTS_KEY, USER_DEFINED_K8S_CONFIG_KEY]):
+        return UserDefinedDagsterK8sConfig()
+
+    user_defined_k8s_config = {}
+
+    if USER_DEFINED_K8S_CONFIG_KEY in tags:
+        user_defined_k8s_config_value = json.loads(tags[USER_DEFINED_K8S_CONFIG_KEY])
+        result = validate_config(USER_DEFINED_K8S_CONFIG_SCHEMA, user_defined_k8s_config_value)
+
+        if not result.success:
+            raise DagsterInvalidConfigError(
+                'Error in tags for {}'.format(USER_DEFINED_K8S_CONFIG_KEY), result.errors, result,
+            )
+
+        user_defined_k8s_config = result.value
+
+    container_config = user_defined_k8s_config.get('container_config', {})
+
+    # Backcompat for resource requirements key
+    if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
+        resource_requirements_config = get_k8s_resource_requirements(tags)
+        container_config = merge_dicts(
+            container_config, {'resources': resource_requirements_config}
+        )
+
+    return UserDefinedDagsterK8sConfig(container_config=container_config)
 
 
 def get_job_name_from_run_id(run_id):
@@ -256,7 +308,7 @@ def construct_dagster_k8s_job(
     command,
     args,
     job_name,
-    resources=None,
+    user_defined_k8s_config=None,
     pod_name=None,
     component=None,
     env_vars=None,
@@ -283,7 +335,12 @@ def construct_dagster_k8s_job(
     command = check.list_param(command, 'command', of_type=str)
     check.list_param(args, 'args', of_type=str)
     check.str_param(job_name, 'job_name')
-    check.opt_dict_param(resources, 'resources', key_type=str, value_type=dict)
+    user_defined_k8s_config = check.opt_inst_param(
+        user_defined_k8s_config,
+        'user_defined_k8s_config',
+        UserDefinedDagsterK8sConfig,
+        UserDefinedDagsterK8sConfig(),
+    )
 
     pod_name = check.opt_str_param(pod_name, 'pod_name', default=job_name + '-pod')
     check.opt_str_param(component, 'component')
@@ -336,7 +393,6 @@ def construct_dagster_k8s_job(
         ]
         + additional_k8s_env_vars,
         env_from=job_config.env_from_sources,
-        resources=kubernetes.client.V1ResourceRequirements(**resources) if resources else None,
         volume_mounts=[
             kubernetes.client.V1VolumeMount(
                 name='dagster-instance',
@@ -346,6 +402,7 @@ def construct_dagster_k8s_job(
                 sub_path='dagster.yaml',
             )
         ],
+        **user_defined_k8s_config.container_config
     )
 
     config_map_volume = kubernetes.client.V1Volume(

@@ -25,7 +25,7 @@ from .job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
     get_job_name_from_run_id,
-    get_k8s_resource_requirements,
+    get_user_defined_k8s_config,
 )
 from .utils import delete_job
 
@@ -233,7 +233,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = 'dagster-run-{}'.format(run.run_id)
         pod_name = job_name
 
-        resources = get_k8s_resource_requirements(frozentags(external_pipeline.tags))
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
 
         pipeline_origin = None
         job_config = None
@@ -284,7 +284,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job_name=job_name,
             pod_name=pod_name,
             component='run_coordinator',
-            resources=resources,
+            user_defined_k8s_config=user_defined_k8s_config,
         )
 
         self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
