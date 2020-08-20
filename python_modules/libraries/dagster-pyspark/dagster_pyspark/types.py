@@ -347,7 +347,9 @@ def dataframe_materializer(_context, config, spark_df):
         return AssetMaterialization.file(file_options['path'])
     elif file_type == 'other':
         spark_df.write.save(**file_options)
-        return AssetMaterialization.file(file_options.get('path', 'There was no "path" key in "file_options".'))
+        return AssetMaterialization.file(
+            file_options.get('path', 'There was no "path" key in "file_options".')
+        )
     else:
         raise DagsterInvariantViolationError('Unsupported file_type {}'.format(file_type))
 

@@ -70,7 +70,7 @@ def test_dataframe_outputs(file_type, read, other):
                             {
                                 'df': {
                                     file_type: dict(
-                                        {'mode': 'overwrite', 'compression': 'gzip',}, **options,
+                                        {'mode': 'overwrite', 'compression': 'gzip',}, **options
                                     )
                                 }
                             }
