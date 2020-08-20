@@ -77,6 +77,7 @@ if __name__ == '__main__':
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
             'pytz',
+            'docstring-parser==0.7.1; python_version >="3.6"',
         ],
         extras_require={'docker': ['docker'],},
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
