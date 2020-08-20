@@ -90,6 +90,72 @@ spec:
   ttl_seconds_after_finished: 86400
 '''
 
+EXPECTED_CONFIGURED_JOB_SPEC = '''
+api_version: batch/v1
+kind: Job
+metadata:
+  labels:
+    app.kubernetes.io/component: run_coordinator
+    app.kubernetes.io/instance: dagster
+    app.kubernetes.io/name: dagster
+    app.kubernetes.io/part-of: dagster
+    app.kubernetes.io/version: {dagster_version}
+  name: dagster-run-{run_id}
+spec:
+  backoff_limit: 4
+  template:
+    metadata:
+      {annotations}
+      labels:
+        app.kubernetes.io/component: run_coordinator
+        app.kubernetes.io/instance: dagster
+        app.kubernetes.io/name: dagster
+        app.kubernetes.io/part-of: dagster
+        app.kubernetes.io/version: {dagster_version}
+      name: dagster-run-{run_id}
+    spec:
+      {affinity}
+      containers:
+      - args:
+        - -p
+        - executeRunInProcess
+        - -v
+        - '{{"runId": "{run_id}"}}'
+        command:
+        - dagster-graphql
+        env:
+        - name: DAGSTER_HOME
+          value: /opt/dagster/dagster_home
+        - name: DAGSTER_PG_PASSWORD
+          value_from:
+            secret_key_ref:
+              key: postgresql-password
+              name: dagster-postgresql-secret
+        env_from:
+        - config_map_ref:
+            name: dagster-pipeline-env
+        - config_map_ref:
+            name: test-env-configmap
+        - secret_ref:
+            name: test-env-secret
+        image: {job_image}
+        image_pull_policy: {image_pull_policy}
+        name: dagster-run-{run_id}{resources}
+        volume_mounts:
+        - mount_path: /opt/dagster/dagster_home/dagster.yaml
+          name: dagster-instance
+          sub_path: dagster.yaml
+      image_pull_secrets:
+      - name: element-dev-key
+      restart_policy: Never
+      service_account_name: dagit-admin
+      volumes:
+      - config_map:
+          name: dagster-instance
+        name: dagster-instance
+  ttl_seconds_after_finished: 86400
+'''
+
 
 def test_valid_job_format(run_launcher):
     docker_image = test_project_docker_image()
@@ -186,7 +252,29 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
                             'requests': {'cpu': '250m', 'memory': '64Mi'},
                             'limits': {'cpu': '500m', 'memory': '2560Mi'},
                         }
-                    }
+                    },
+                    'pod_template_spec_metadata': {
+                        'annotations': {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+                    },
+                    'pod_spec_config': {
+                        'affinity': {
+                            'nodeAffinity': {
+                                'requiredDuringSchedulingIgnoredDuringExecution': {
+                                    'nodeSelectorTerms': [
+                                        {
+                                            'matchExpressions': [
+                                                {
+                                                    'key': 'kubernetes.io/e2e-az-name',
+                                                    'operator': 'In',
+                                                    'values': ['e2e-az1', 'e2e-az2'],
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
                 }
             )
         }
@@ -206,7 +294,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
 
     assert (
         yaml.dump(remove_none_recursively(job.to_dict()), default_flow_style=False).strip()
-        == EXPECTED_JOB_SPEC.format(
+        == EXPECTED_CONFIGURED_JOB_SPEC.format(
             run_id=run.run_id,
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
@@ -219,6 +307,18 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
           requests:
             cpu: 250m
             memory: 64Mi''',
+            annotations='''annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: \'true\'''',
+            affinity='''affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/e2e-az-name
+                operator: In
+                values:
+                - e2e-az1
+                - e2e-az2''',
         ).strip()
     )
 

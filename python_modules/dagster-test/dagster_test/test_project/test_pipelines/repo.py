@@ -187,9 +187,13 @@ def define_large_pipeline_celery():
 
 @solid(
     tags={
-        'dagster-k8s/resource_requirements': {
-            'requests': {'cpu': '250m', 'memory': '64Mi'},
-            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+        'dagster-k8s/config': {
+            'container_config': {
+                'resources': {
+                    'requests': {'cpu': '250m', 'memory': '64Mi'},
+                    'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                }
+            }
         }
     }
 )
@@ -201,9 +205,13 @@ def define_resources_limit_pipeline_celery():
     @pipeline(
         mode_defs=celery_mode_defs(),
         tags={
-            'dagster-k8s/resource_requirements': {
-                'requests': {'cpu': '250m', 'memory': '64Mi'},
-                'limits': {'cpu': '500m', 'memory': '2560Mi'},
+            'dagster-k8s/config': {
+                'container_config': {
+                    'resources': {
+                        'requests': {'cpu': '250m', 'memory': '64Mi'},
+                        'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                    }
+                }
             }
         },
     )

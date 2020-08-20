@@ -40,26 +40,73 @@ K8S_RESOURCE_REQUIREMENTS_KEY = 'dagster-k8s/resource_requirements'
 K8S_RESOURCE_REQUIREMENTS_SCHEMA = Shape({'limits': Permissive(), 'requests': Permissive()})
 
 USER_DEFINED_K8S_CONFIG_KEY = 'dagster-k8s/config'
-USER_DEFINED_K8S_CONFIG_SCHEMA = Shape({'container_config': Permissive()})
+USER_DEFINED_K8S_CONFIG_SCHEMA = Shape(
+    {
+        'container_config': Permissive(),
+        'pod_template_spec_metadata': Permissive(),
+        'pod_spec_config': Permissive(),
+        'job_config': Permissive(),
+        'job_metadata': Permissive(),
+        'job_spec_config': Permissive(),
+    }
+)
 
 
-class UserDefinedDagsterK8sConfig(namedtuple('_UserDefinedDagsterK8sConfig', 'container_config')):
+class UserDefinedDagsterK8sConfig(
+    namedtuple(
+        '_UserDefinedDagsterK8sConfig',
+        'container_config pod_template_spec_metadata pod_spec_config job_config job_metadata job_spec_config',
+    )
+):
     def __new__(
-        cls, container_config=None,
+        cls,
+        container_config=None,
+        pod_template_spec_metadata=None,
+        pod_spec_config=None,
+        job_config=None,
+        job_metadata=None,
+        job_spec_config=None,
     ):
 
         container_config = check.opt_dict_param(container_config, 'container_config', key_type=str)
+        pod_template_spec_metadata = check.opt_dict_param(
+            pod_template_spec_metadata, 'pod_template_spec_metadata', key_type=str
+        )
+        pod_spec_config = check.opt_dict_param(pod_spec_config, 'pod_spec_config', key_type=str)
+        job_config = check.opt_dict_param(job_config, 'job_config', key_type=str)
+        job_metadata = check.opt_dict_param(job_metadata, 'job_metadata', key_type=str)
+        job_spec_config = check.opt_dict_param(job_spec_config, 'job_spec_config', key_type=str)
 
         return super(UserDefinedDagsterK8sConfig, cls).__new__(
-            cls, container_config=container_config,
+            cls,
+            container_config=container_config,
+            pod_template_spec_metadata=pod_template_spec_metadata,
+            pod_spec_config=pod_spec_config,
+            job_config=job_config,
+            job_metadata=job_metadata,
+            job_spec_config=job_spec_config,
         )
 
     def to_dict(self):
-        return {'container_config': self.container_config}
+        return {
+            'container_config': self.container_config,
+            'pod_template_spec_metadata': self.pod_template_spec_metadata,
+            'pod_spec_config': self.pod_spec_config,
+            'job_config': self.job_config,
+            'job_metadata': self.job_metadata,
+            'job_spec_config': self.job_spec_config,
+        }
 
     @classmethod
     def from_dict(self, config_dict):
-        return UserDefinedDagsterK8sConfig(container_config=config_dict.get('container_config'))
+        return UserDefinedDagsterK8sConfig(
+            container_config=config_dict.get('container_config'),
+            pod_template_spec_metadata=config_dict.get('pod_template_spec_metadata'),
+            pod_spec_config=config_dict.get('pod_spec_config'),
+            job_config=config_dict.get('job_config'),
+            job_metadata=config_dict.get('job_metadata'),
+            job_spec_config=config_dict.get('job_spec_config'),
+        )
 
 
 def get_k8s_resource_requirements(tags):
@@ -105,7 +152,13 @@ def get_user_defined_k8s_config(tags):
             container_config, {'resources': resource_requirements_config}
         )
 
-    return UserDefinedDagsterK8sConfig(container_config=container_config)
+    return UserDefinedDagsterK8sConfig(
+        container_config=container_config,
+        pod_template_spec_metadata=user_defined_k8s_config.get('pod_template_spec_metadata'),
+        pod_spec_config=user_defined_k8s_config.get('pod_spec_config'),
+        job_config=user_defined_k8s_config.get('job_config'),
+        job_spec_config=user_defined_k8s_config.get('job_spec_config'),
+    )
 
 
 def get_job_name_from_run_id(run_id):
@@ -411,7 +464,11 @@ def construct_dagster_k8s_job(
     )
 
     template = kubernetes.client.V1PodTemplateSpec(
-        metadata=kubernetes.client.V1ObjectMeta(name=pod_name, labels=dagster_labels),
+        metadata=kubernetes.client.V1ObjectMeta(
+            name=pod_name,
+            labels=dagster_labels,
+            **user_defined_k8s_config.pod_template_spec_metadata
+        ),
         spec=kubernetes.client.V1PodSpec(
             image_pull_secrets=[
                 kubernetes.client.V1LocalObjectReference(name=x['name'])
@@ -421,18 +478,23 @@ def construct_dagster_k8s_job(
             restart_policy='Never',
             containers=[job_container],
             volumes=[config_map_volume],
+            **user_defined_k8s_config.pod_spec_config
         ),
     )
 
     job = kubernetes.client.V1Job(
         api_version='batch/v1',
         kind='Job',
-        metadata=kubernetes.client.V1ObjectMeta(name=job_name, labels=dagster_labels),
+        metadata=kubernetes.client.V1ObjectMeta(
+            name=job_name, labels=dagster_labels, **user_defined_k8s_config.job_metadata
+        ),
         spec=kubernetes.client.V1JobSpec(
             template=template,
             backoff_limit=K8S_JOB_BACKOFF_LIMIT,
             ttl_seconds_after_finished=K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
+            **user_defined_k8s_config.job_spec_config
         ),
+        **user_defined_k8s_config.job_config
     )
     return job
 

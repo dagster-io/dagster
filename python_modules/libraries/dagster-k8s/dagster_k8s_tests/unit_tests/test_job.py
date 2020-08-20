@@ -25,7 +25,12 @@ def test_user_defined_k8s_config_serialization():
                 'requests': {'cpu': '250m', 'memory': '64Mi'},
                 'limits': {'cpu': '500m', 'memory': '2560Mi'},
             }
-        }
+        },
+        pod_template_spec_metadata={"key": "value"},
+        pod_spec_config={"key": "value"},
+        job_config={"key": "value"},
+        job_metadata={"key": "value"},
+        job_spec_config={"key": "value"},
     )
 
     assert UserDefinedDagsterK8sConfig.from_dict(cfg.to_dict()) == cfg
