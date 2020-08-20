@@ -84,25 +84,25 @@ def pipeline_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    external_repository = get_external_repository_from_kwargs(cli_args, instance)
-    title = 'Repository {name}'.format(name=external_repository.name)
-    print_fn(title)
-    print_fn('*' * len(title))
-    first = True
-    for pipeline in external_repository.get_all_external_pipelines():
-        pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
+    with get_external_repository_from_kwargs(cli_args, instance) as external_repository:
+        title = 'Repository {name}'.format(name=external_repository.name)
+        print_fn(title)
+        print_fn('*' * len(title))
+        first = True
+        for pipeline in external_repository.get_all_external_pipelines():
+            pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
 
-        if not first:
-            print_fn('*' * len(pipeline_title))
-        first = False
+            if not first:
+                print_fn('*' * len(pipeline_title))
+            first = False
 
-        print_fn(pipeline_title)
-        if pipeline.description:
-            print_fn('Description:')
-            print_fn(format_description(pipeline.description, indent=' ' * 4))
-        print_fn('Solids: (Execution Order)')
-        for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
-            print_fn('    ' + solid_name)
+            print_fn(pipeline_title)
+            if pipeline.description:
+                print_fn('Description:')
+                print_fn(format_description(pipeline.description, indent=' ' * 4))
+            print_fn('Solids: (Execution Order)')
+            for solid_name in pipeline.pipeline_snapshot.solid_names_in_topological_order:
+                print_fn('    ' + solid_name)
 
 
 def format_description(desc, indent):
@@ -161,13 +161,13 @@ def pipeline_print_command(verbose, **cli_args):
 
 
 def execute_print_command(verbose, cli_args, print_fn, instance):
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, instance)
-    pipeline_snapshot = external_pipeline.pipeline_snapshot
+    with get_external_pipeline_from_kwargs(cli_args, instance) as external_pipeline:
+        pipeline_snapshot = external_pipeline.pipeline_snapshot
 
-    if verbose:
-        print_pipeline(pipeline_snapshot, print_fn=print_fn)
-    else:
-        print_solids(pipeline_snapshot, print_fn=print_fn)
+        if verbose:
+            print_pipeline(pipeline_snapshot, print_fn=print_fn)
+        else:
+            print_solids(pipeline_snapshot, print_fn=print_fn)
 
 
 def print_solids(pipeline_snapshot, print_fn):
@@ -550,41 +550,41 @@ def execute_launch_command(instance, kwargs):
     check.inst_param(instance, 'instance', DagsterInstance)
     config = list(check.opt_tuple_param(kwargs.get('config'), 'config', default=(), of_type=str))
 
-    repo_location = get_repository_location_from_kwargs(kwargs, instance)
-    external_repo = get_external_repository_from_repo_location(
-        repo_location, kwargs.get('repository')
-    )
-    external_pipeline = get_external_pipeline_from_external_repo(
-        external_repo, kwargs.get('pipeline'),
-    )
+    with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+        external_repo = get_external_repository_from_repo_location(
+            repo_location, kwargs.get('repository')
+        )
+        external_pipeline = get_external_pipeline_from_external_repo(
+            external_repo, kwargs.get('pipeline'),
+        )
 
-    log_external_repo_stats(
-        instance=instance,
-        external_pipeline=external_pipeline,
-        external_repo=external_repo,
-        source='pipeline_launch_command',
-    )
+        log_external_repo_stats(
+            instance=instance,
+            external_pipeline=external_pipeline,
+            external_repo=external_repo,
+            source='pipeline_launch_command',
+        )
 
-    if preset and config:
-        raise click.UsageError('Can not use --preset with --config.')
+        if preset and config:
+            raise click.UsageError('Can not use --preset with --config.')
 
-    run_tags = get_tags_from_args(kwargs)
+        run_tags = get_tags_from_args(kwargs)
 
-    solid_selection = get_solid_selection_from_args(kwargs)
+        solid_selection = get_solid_selection_from_args(kwargs)
 
-    pipeline_run = _create_external_pipeline_run(
-        instance=instance,
-        repo_location=repo_location,
-        external_repo=external_repo,
-        external_pipeline=external_pipeline,
-        run_config=get_run_config_from_file_list(config),
-        mode=mode,
-        preset=preset,
-        tags=run_tags,
-        solid_selection=solid_selection,
-    )
+        pipeline_run = _create_external_pipeline_run(
+            instance=instance,
+            repo_location=repo_location,
+            external_repo=external_repo,
+            external_pipeline=external_pipeline,
+            run_config=get_run_config_from_file_list(config),
+            mode=mode,
+            preset=preset,
+            tags=run_tags,
+            solid_selection=solid_selection,
+        )
 
-    return instance.launch_run(pipeline_run.run_id, external_pipeline)
+        return instance.launch_run(pipeline_run.run_id, external_pipeline)
 
 
 @click.command(
@@ -600,12 +600,12 @@ def pipeline_scaffold_command(**kwargs):
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    external_pipeline = get_external_pipeline_from_kwargs(cli_args, DagsterInstance.get())
-    # We should move this to use external pipeline
-    # https://github.com/dagster-io/dagster/issues/2556
-    pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
-    skip_non_required = cli_args['print_only_required']
-    do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
+    with get_external_pipeline_from_kwargs(cli_args, DagsterInstance.get()) as external_pipeline:
+        # We should move this to use external pipeline
+        # https://github.com/dagster-io/dagster/issues/2556
+        pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
+        skip_non_required = cli_args['print_only_required']
+        do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 
 
 def do_scaffold_command(pipeline_def, printer, skip_non_required):
@@ -749,7 +749,11 @@ def pipeline_backfill_command(**kwargs):
 
 
 def execute_backfill_command(cli_args, print_fn, instance):
-    repo_location = get_repository_location_from_kwargs(cli_args, instance)
+    with get_repository_location_from_kwargs(cli_args, instance) as repo_location:
+        _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_location)
+
+
+def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_location):
     external_repo = get_external_repository_from_repo_location(
         repo_location, cli_args.get('repository')
     )

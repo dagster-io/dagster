@@ -17,9 +17,10 @@ def load_pipeline_via_cli_runner(cli_args):
     @click.command(name='test_pipeline_command')
     @pipeline_target_argument
     def command(**kwargs):
-        capture_result['external_pipeline'] = get_external_pipeline_from_kwargs(
+        with get_external_pipeline_from_kwargs(
             kwargs, DagsterInstance.ephemeral()
-        )
+        ) as external_pipeline:
+            capture_result['external_pipeline'] = external_pipeline
 
     runner = CliRunner()
     result = runner.invoke(command, cli_args)

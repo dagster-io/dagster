@@ -2,6 +2,7 @@ import os
 import sys
 import warnings
 from collections import namedtuple
+from contextlib import contextmanager
 
 import click
 from click import UsageError
@@ -464,36 +465,38 @@ def get_repository_python_origin_from_kwargs(kwargs):
     return RepositoryPythonOrigin(executable_path=sys.executable, code_pointer=code_pointer)
 
 
+@contextmanager
 def get_repository_location_from_kwargs(kwargs, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    workspace = get_workspace_from_kwargs(kwargs, instance)
-    provided_location_name = kwargs.get('location')
+    with get_workspace_from_kwargs(kwargs, instance) as workspace:
+        provided_location_name = kwargs.get('location')
 
-    if provided_location_name is None and len(workspace.repository_location_handles) == 1:
-        return RepositoryLocation.from_handle(next(iter(workspace.repository_location_handles)))
+        if provided_location_name is None and len(workspace.repository_location_handles) == 1:
+            yield RepositoryLocation.from_handle(next(iter(workspace.repository_location_handles)))
 
-    if provided_location_name is None:
-        raise click.UsageError(
-            (
-                'Must provide --location as there are more than one locations '
-                'available. Options are: {}'
-            ).format(_sorted_quoted(workspace.repository_location_names))
-        )
-
-    if not workspace.has_repository_location_handle(provided_location_name):
-        raise click.UsageError(
-            (
-                'Location "{provided_location_name}" not found in workspace. '
-                'Found {found_names} instead.'
-            ).format(
-                provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(workspace.repository_location_names),
+        elif provided_location_name is None:
+            raise click.UsageError(
+                (
+                    'Must provide --location as there are more than one locations '
+                    'available. Options are: {}'
+                ).format(_sorted_quoted(workspace.repository_location_names))
             )
-        )
 
-    return RepositoryLocation.from_handle(
-        workspace.get_repository_location_handle(provided_location_name)
-    )
+        elif not workspace.has_repository_location_handle(provided_location_name):
+            raise click.UsageError(
+                (
+                    'Location "{provided_location_name}" not found in workspace. '
+                    'Found {found_names} instead.'
+                ).format(
+                    provided_location_name=provided_location_name,
+                    found_names=_sorted_quoted(workspace.repository_location_names),
+                )
+            )
+
+        else:
+            yield RepositoryLocation.from_handle(
+                workspace.get_repository_location_handle(provided_location_name)
+            )
 
 
 def get_external_repository_from_repo_location(repo_location, provided_repo_name):
@@ -530,11 +533,12 @@ def get_external_repository_from_repo_location(repo_location, provided_repo_name
     return repo_location.get_repository(provided_repo_name)
 
 
+@contextmanager
 def get_external_repository_from_kwargs(kwargs, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    repo_location = get_repository_location_from_kwargs(kwargs, instance)
-    provided_repo_name = kwargs.get('repository')
-    return get_external_repository_from_repo_location(repo_location, provided_repo_name)
+    with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+        provided_repo_name = kwargs.get('repository')
+        yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
 
 
 def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name):
@@ -573,11 +577,12 @@ def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_na
     return external_pipelines[provided_pipeline_name]
 
 
+@contextmanager
 def get_external_pipeline_from_kwargs(kwargs, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
-    external_repo = get_external_repository_from_kwargs(kwargs, instance)
-    provided_pipeline_name = kwargs.get('pipeline')
-    return get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
+    with get_external_repository_from_kwargs(kwargs, instance) as external_repo:
+        provided_pipeline_name = kwargs.get('pipeline')
+        yield get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
 
 
 def _sorted_quoted(strings):

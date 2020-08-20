@@ -271,17 +271,19 @@ def path_to_tutorial_file(path):
 
 def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     instance = DagsterInstance.ephemeral()
-    workspace = get_workspace_from_kwargs(kwargs, instance)
-    app = create_app_from_workspace(workspace, instance)
+    with get_workspace_from_kwargs(kwargs, instance) as workspace:
+        app = create_app_from_workspace(workspace, instance)
 
-    client = app.test_client()
+        client = app.test_client()
 
-    res = client.get('/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY))
-    json_res = json.loads(res.data.decode('utf-8'))
-    assert 'data' in json_res
-    assert 'repositoriesOrError' in json_res['data']
-    assert 'nodes' in json_res['data']['repositoriesOrError']
-    assert len(json_res['data']['repositoriesOrError']['nodes'][0]['pipelines']) == n_pipelines
+        res = client.get(
+            '/graphql?query={query_string}'.format(query_string=PIPELINES_OR_ERROR_QUERY)
+        )
+        json_res = json.loads(res.data.decode('utf-8'))
+        assert 'data' in json_res
+        assert 'repositoriesOrError' in json_res['data']
+        assert 'nodes' in json_res['data']['repositoriesOrError']
+        assert len(json_res['data']['repositoriesOrError']['nodes'][0]['pipelines']) == n_pipelines
 
     return res
 

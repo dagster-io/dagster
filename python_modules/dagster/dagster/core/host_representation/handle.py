@@ -63,6 +63,9 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     def create_reloaded_handle(self):
         pass
 
+    def cleanup(self):
+        pass
+
     @staticmethod
     def create_in_process_location(pointer):
         check.inst_param(pointer, 'pointer', CodePointer)
@@ -137,7 +140,12 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
             loadable_target_origin=loadable_target_origin, max_workers=2, heartbeat=True
         )
         client = server.create_ephemeral_client()
-        heartbeat_thread = threading.Thread(target=client_heartbeat_thread, args=(client,))
+
+        heartbeat_shutdown_event = threading.Event()
+
+        heartbeat_thread = threading.Thread(
+            target=client_heartbeat_thread, args=(client, heartbeat_shutdown_event)
+        )
         heartbeat_thread.daemon = True
         heartbeat_thread.start()
         list_repositories_response = sync_list_repositories_grpc(client)
@@ -153,6 +161,8 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
             repository_code_pointer_dict=code_pointer_dict,
             client=client,
             grpc_server_process=server,
+            heartbeat_thread=heartbeat_thread,
+            heartbeat_shutdown_event=heartbeat_shutdown_event,
         )
 
     @staticmethod
@@ -276,7 +286,8 @@ class PythonEnvRepositoryLocationHandle(
 class ManagedGrpcPythonEnvRepositoryLocationHandle(
     namedtuple(
         '_ManagedGrpcPythonEnvRepositoryLocationHandle',
-        'loadable_target_origin executable_path location_name repository_code_pointer_dict grpc_server_process client',
+        'loadable_target_origin executable_path location_name repository_code_pointer_dict '
+        'grpc_server_process client heartbeat_thread heartbeat_shutdown_event',
     ),
     RepositoryLocationHandle,
 ):
@@ -292,6 +303,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
         repository_code_pointer_dict,
         grpc_server_process,
         client,
+        heartbeat_thread,
+        heartbeat_shutdown_event,
     ):
         from dagster.grpc.client import DagsterGrpcClient
         from dagster.grpc.server import GrpcServerProcess
@@ -311,6 +324,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
             ),
             check.inst_param(grpc_server_process, 'grpc_server_process', GrpcServerProcess),
             check.inst_param(client, 'client', DagsterGrpcClient),
+            check.inst_param(heartbeat_thread, 'heartbeat_thread', threading.Thread),
+            heartbeat_shutdown_event,
         )
 
     @property
@@ -333,6 +348,11 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
         return RepositoryLocationHandle.create_process_bound_grpc_server_location(
             self.loadable_target_origin, self.location_name,
         )
+
+    def cleanup(self):
+        self.heartbeat_shutdown_event.set()
+        self.heartbeat_thread.join()
+        self.client.cleanup_server()
 
 
 class InProcessRepositoryLocationHandle(

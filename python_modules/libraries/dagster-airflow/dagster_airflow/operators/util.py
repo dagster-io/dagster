@@ -140,11 +140,11 @@ def invoke_steps_within_python_operator(
             parent_pipeline_snapshot=parent_pipeline_snapshot,
         )
 
-    workspace = create_in_process_ephemeral_workspace(pointer=recon_repo.pointer)
-    events = execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref,)
-    check_events_for_failures(events)
-    check_events_for_skips(events)
-    return events
+        workspace = create_in_process_ephemeral_workspace(pointer=recon_repo.pointer)
+        events = execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref,)
+        check_events_for_failures(events)
+        check_events_for_skips(events)
+        return events
 
 
 def airflow_tags_for_ts(ts):

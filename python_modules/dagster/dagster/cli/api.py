@@ -558,27 +558,30 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                 status=ScheduleTickStatus.STARTED,
             ),
         ) as tick:
-            repo_location = get_repository_location_from_kwargs(kwargs, instance)
-            repo_dict = repo_location.get_repositories()
-            check.invariant(
-                repo_dict and len(repo_dict) == 1,
-                'Passed in arguments should reference exactly one repository, instead there are {num_repos}'.format(
-                    num_repos=len(repo_dict)
-                ),
-            )
-            external_repo = next(iter(repo_dict.values()))
-            check.invariant(
-                schedule_name
-                in [schedule.name for schedule in external_repo.get_external_schedules()],
-                'Could not find schedule named {schedule_name}'.format(schedule_name=schedule_name),
-            )
-            external_schedule = external_repo.get_external_schedule(schedule_name)
-            tick.update_with_status(
-                status=ScheduleTickStatus.STARTED, cron_schedule=external_schedule.cron_schedule,
-            )
-            _launch_scheduled_execution(
-                instance, repo_location, external_repo, external_schedule, tick, stream
-            )
+            with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+                repo_dict = repo_location.get_repositories()
+                check.invariant(
+                    repo_dict and len(repo_dict) == 1,
+                    'Passed in arguments should reference exactly one repository, instead there are {num_repos}'.format(
+                        num_repos=len(repo_dict)
+                    ),
+                )
+                external_repo = next(iter(repo_dict.values()))
+                check.invariant(
+                    schedule_name
+                    in [schedule.name for schedule in external_repo.get_external_schedules()],
+                    'Could not find schedule named {schedule_name}'.format(
+                        schedule_name=schedule_name
+                    ),
+                )
+                external_schedule = external_repo.get_external_schedule(schedule_name)
+                tick.update_with_status(
+                    status=ScheduleTickStatus.STARTED,
+                    cron_schedule=external_schedule.cron_schedule,
+                )
+                _launch_scheduled_execution(
+                    instance, repo_location, external_repo, external_schedule, tick, stream
+                )
 
 
 def _launch_scheduled_execution(

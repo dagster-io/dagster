@@ -220,10 +220,10 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         print(res)  # pylint: disable=print-call
     else:
         instance = DagsterInstance.get()
-        workspace = get_workspace_from_kwargs(kwargs, instance)
-        execute_query_from_cli(
-            workspace, query, instance, variables, output,
-        )
+        with get_workspace_from_kwargs(kwargs, instance) as workspace:
+            execute_query_from_cli(
+                workspace, query, instance, variables, output,
+            )
 
 
 cli = create_dagster_graphql_cli()

@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-import time
+import warnings
 from contextlib import contextmanager
 
 import grpc
@@ -31,9 +31,12 @@ from .types import (
 CLIENT_HEARTBEAT_INTERVAL = 1
 
 
-def client_heartbeat_thread(client):
+def client_heartbeat_thread(client, shutdown_event):
     while True:
-        time.sleep(CLIENT_HEARTBEAT_INTERVAL)
+        shutdown_event.wait(CLIENT_HEARTBEAT_INTERVAL)
+        if shutdown_event.is_set():
+            break
+
         try:
             client.heartbeat('ping')
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
@@ -363,7 +366,8 @@ class DagsterGrpcClient(object):
 
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
-    '''A client that tells the server process that created it to shut down once it is destroyed or leaves a context manager.'''
+    '''A client that tells the server process that created it to shut down once it leaves a
+    context manager.'''
 
     def __init__(
         self, server_process=None, *args, **kwargs
@@ -372,8 +376,9 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
     def cleanup_server(self):
-        if self._server_process and self._server_process.poll() is None:
-            self.shutdown_server()
+        if self._server_process:
+            if self._server_process.poll() is None:
+                self.shutdown_server()
             self._server_process = None
 
     def __enter__(self):
@@ -383,7 +388,12 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
         self.cleanup_server()
 
     def __del__(self):
-        self.cleanup_server()
+        if self._server_process:
+            warnings.warn(
+                'Managed gRPC client is being destroyed without signalling to server that '
+                'it should shutdown. This may result in server processes living longer than '
+                'they need to. To fix this, wrap the client in a contextmanager.'
+            )
 
 
 @contextmanager

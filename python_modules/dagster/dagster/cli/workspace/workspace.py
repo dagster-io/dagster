@@ -26,3 +26,10 @@ class Workspace:
     def get_repository_location_handle(self, location_name):
         check.str_param(location_name, 'location_name')
         return self._location_handle_dict[location_name]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        for handle in self.repository_location_handles:
+            handle.cleanup()
