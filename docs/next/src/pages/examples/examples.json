@@ -35,6 +35,11 @@
         "description": "Create a pipeline with a fan-in dependency"
     },
     {
+        "name": "ge_example",
+        "title": "Great Expectations integration",
+        "description": "Use Great Expectations to check data quality"
+    },
+    {
         "name": "hooks",
         "title": "Hooks",
         "description": "Create a pipeline with hooks"
