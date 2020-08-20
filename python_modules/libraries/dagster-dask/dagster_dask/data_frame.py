@@ -50,6 +50,7 @@ DataFrameReadTypes = {
         "options": {
             "path": (Any, True, "Absolute or relative filepath(s)."),
             "columns": (Any, False, "Field name(s) to read in as columns in the output."),
+            "filters": (Any, False, "List of filters to apply."),
             "index": (Any, False, "Field name(s) to use as the output frame index."),
             "categories": (Any, False, "For any fields listed here, if the parquet encoding is Dictionary, the column will be created with dtype category."),
             "storage_options": (Permissive(), False, "Key/value pairs to be passed on to the file-system backend, if any."),
