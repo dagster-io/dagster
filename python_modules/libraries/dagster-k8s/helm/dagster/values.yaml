@@ -11,7 +11,7 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster/k8s-example"
+    repository: "dagster/k8s-dagit"
     tag: "latest"
     pullPolicy: Always
 
@@ -87,7 +87,7 @@ userDeployments:
   deployments:
     - name: "k8s-example-user-code-1"
       image:
-        repository: "dagster/k8s-example-user-code-1"
+        repository: "dagster/k8s-example"
         tag: latest
         pullPolicy: Always
       # Arguments to `dagster api grpc`.
