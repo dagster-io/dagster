@@ -29,6 +29,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const pipelineTab = tabForPipelinePathComponent(tab);
+
   const history = useHistory();
 
   const [q, setQ] = React.useState<string>("");
@@ -58,7 +59,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
           .map(pipeline => pipeline.name)
           .filter(p => !q || iincludes(p, q))
           .map(p => ({
-            to: `/pipeline/${p}/${pipelineTab.pathComponent}`,
+            to: `/pipeline/${p}/${tab === "partitions" ? "overview" : pipelineTab.pathComponent}`,
             label: p
           }))
       : usedSolids

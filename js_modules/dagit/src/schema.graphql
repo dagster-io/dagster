@@ -1098,6 +1098,7 @@ type Repository {
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
+  partitionSets: [PartitionSet!]!
 }
 
 type RepositoryConnection {

@@ -48,6 +48,9 @@ export const ROOT_REPOSITORIES_QUERY = gql`
             name
             pipelineSnapshotId
           }
+          partitionSets {
+            pipelineName
+          }
           location {
             name
             isReloadSupported

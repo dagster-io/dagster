@@ -3,6 +3,7 @@ import styled from "styled-components/macro";
 import { Colors, Icon, IconName } from "@blueprintjs/core";
 import { useRouteMatch, useHistory } from "react-router-dom";
 import { explorerPathFromString, explorerPathToString } from "../PipelinePathUtils";
+import { useRepository } from "../DagsterRepositoryContext";
 
 const PIPELINE_TABS: {
   title: string;
@@ -20,6 +21,11 @@ const PIPELINE_TABS: {
     title: "Runs",
     pathComponent: "runs",
     icon: "history"
+  },
+  {
+    title: "Partitions",
+    pathComponent: "partitions",
+    icon: "multi-select"
   }
 ];
 
@@ -32,6 +38,7 @@ export function tabForPipelinePathComponent(component?: string) {
 
 export const PipelineNav: React.FunctionComponent = () => {
   const history = useHistory();
+  const repository = useRepository();
   const match = useRouteMatch<{ tab: string; selector: string }>(["/pipeline/:selector/:tab?"]);
   if (!match) {
     return <span />;
@@ -39,6 +46,9 @@ export const PipelineNav: React.FunctionComponent = () => {
 
   const active = tabForPipelinePathComponent(match.params.tab);
   const explorerPath = explorerPathFromString(match.params.selector);
+  const hasPartitionSet = repository.partitionSets
+    .map(x => x.pipelineName)
+    .includes(explorerPath.pipelineName);
 
   // When you click one of the top tabs, it resets the snapshot you may be looking at
   // in the Definition tab and also clears solids from the path
@@ -51,16 +61,18 @@ export const PipelineNav: React.FunctionComponent = () => {
   return (
     <PipelineTabBarContainer>
       <PipelineName>{explorerPath.pipelineName}</PipelineName>
-      {PIPELINE_TABS.map(tab => (
-        <PipelineTab
-          key={tab.title}
-          tab={tab}
-          active={active === tab}
-          onClick={() =>
-            history.push(`/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`)
-          }
-        />
-      ))}
+      {PIPELINE_TABS.filter(tab => hasPartitionSet || tab.pathComponent !== "partitions").map(
+        tab => (
+          <PipelineTab
+            key={tab.title}
+            tab={tab}
+            active={active === tab}
+            onClick={() =>
+              history.push(`/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`)
+            }
+          />
+        )
+      )}
       <div style={{ flex: 1 }} />
     </PipelineTabBarContainer>
   );

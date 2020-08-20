@@ -36,6 +36,7 @@ class DauphinRepository(dauphin.ObjectType):
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
     usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
     origin = dauphin.NonNull('RepositoryOrigin')
+    partitionSets = dauphin.non_null_list('PartitionSet')
 
     def resolve_id(self, _graphene_info):
         return self._repository.get_origin_id()
@@ -64,6 +65,12 @@ class DauphinRepository(dauphin.ObjectType):
 
     def resolve_usedSolids(self, _graphene_info):
         return get_solids(self._repository)
+
+    def resolve_partitionSets(self, graphene_info):
+        return (
+            graphene_info.schema.type_named('PartitionSet')(self._repository.handle, partition_set)
+            for partition_set in self._repository.get_external_partition_sets()
+        )
 
 
 class DauphinPythonRepositoryOrigin(dauphin.ObjectType):

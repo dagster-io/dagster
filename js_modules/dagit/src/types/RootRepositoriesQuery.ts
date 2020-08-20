@@ -13,6 +13,11 @@ export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_
   pipelineSnapshotId: string;
 }
 
+export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_partitionSets {
+  __typename: "PartitionSet";
+  pipelineName: string;
+}
+
 export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location {
   __typename: "RepositoryLocation";
   name: string;
@@ -49,6 +54,7 @@ export interface RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_
   id: string;
   name: string;
   pipelines: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_pipelines[];
+  partitionSets: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_partitionSets[];
   location: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
   origin: RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_origin;
 }

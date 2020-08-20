@@ -74,7 +74,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
           selectionHasMatch && selected ? selected : partitionSetsOrError.results[0];
 
         return (
-          <div style={{ margin: 30 }}>
+          <PartitionRootContainer>
             <PartitionSetSelector
               selected={partitionSet}
               partitionSets={partitionSetsOrError.results}
@@ -94,7 +94,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
               onLoaded={() => setShowLoader(true)}
               runTags={runTags}
             />
-          </div>
+          </PartitionRootContainer>
         );
       }}
     </Loading>
@@ -165,4 +165,10 @@ const Wrapper = styled.div`
   height: 100%;
   min-width: 0;
   overflow: auto;
+`;
+
+const PartitionRootContainer = styled.div`
+  padding: 30px;
+  overflow-y: auto;
+  min-height: calc(100vh - 45px);
 `;
