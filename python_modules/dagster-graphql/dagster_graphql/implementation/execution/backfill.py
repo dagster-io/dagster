@@ -11,6 +11,7 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, RESUME_RETRY_TAG
 from dagster.core.utils import make_new_backfill_id
 from dagster.utils import merge_dicts
 
@@ -131,7 +132,7 @@ def _build_execution_param_list_for_backfill(
                     mode=external_partition_set.mode,
                     execution_metadata=ExecutionMetadata(
                         run_id=None,
-                        tags=merge_dicts(tags, {'dagster/is_resume_retry': 'true'}),
+                        tags=merge_dicts(tags, {RESUME_RETRY_TAG: 'true'}),
                         root_run_id=last_run.root_run_id or last_run.run_id,
                         parent_run_id=last_run.run_id,
                     ),
@@ -172,8 +173,8 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
         PipelineRunsFilter(
             pipeline_name=external_partition_set.pipeline_name,
             tags={
-                'dagster/partition_set': external_partition_set.name,
-                'dagster/partition': partition_name,
+                PARTITION_SET_TAG: external_partition_set.name,
+                PARTITION_NAME_TAG: partition_name,
             },
         ),
         limit=1,
