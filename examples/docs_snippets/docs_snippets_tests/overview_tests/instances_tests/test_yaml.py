@@ -12,10 +12,12 @@ def test_yaml_schema():
         "compute_logs",
         "event_log_storage",
         "local_artifact_storage",
+        "opt_in",
         "run_launcher",
         "run_storage",
         "schedule_storage",
         "scheduler",
+        "telemetry",
     ]
 
     res = load_yaml_from_globs(

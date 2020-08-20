@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.4
+
+**New**
+
+* Added an experimental mode that speeds up interactions in dagit by launching a gRPC server on startup for each repository location in your workspace. To enable it, add the following to your `dagster.yaml`:
+
+```yaml
+opt_in:
+  local_servers: true
+```
+
 ## 0.9.3
 
 **Breaking Changes**
@@ -21,14 +32,14 @@
 **Bugfixes**
 
 * Databricks now checks intermediate storage instead of system storage
-* Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid. 
-* Fixes the GraphQL playground hosted by dagit 
+* Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid.
+* Fixes the GraphQL playground hosted by dagit
 * Fixes a bug where K8s CronJobs were stopped unnecessarily during schedule reconciliation
 
 **Experimental**
 
-* New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata. 
-  * This allows users to specify settings like eviction policy annotations and node affinities. 
+* New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata.
+  * This allows users to specify settings like eviction policy annotations and node affinities.
   * Example:
   ```python
     @solid(
