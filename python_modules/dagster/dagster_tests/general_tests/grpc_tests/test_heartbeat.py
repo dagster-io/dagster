@@ -16,7 +16,16 @@ def test_heartbeat():
         heartbeat_timeout=1,
     )
     with server.create_ephemeral_client() as client:
-        client.heartbeat()
         assert server.server_process.poll() is None
+
+        # heartbeat keeps the server alive
+        time.sleep(0.5)
+        client.heartbeat()
+        time.sleep(0.5)
+        client.heartbeat()
+        time.sleep(0.5)
+        assert server.server_process.poll() is None
+
+        # without the heartbeat, the server dies
         time.sleep(2)
         assert server.server_process.poll() is not None

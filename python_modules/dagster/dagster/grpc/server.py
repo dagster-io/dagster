@@ -74,13 +74,6 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
-def heartbeat_thread(heartbeat_timeout, last_heartbeat_time, shutdown_event):
-    while True:
-        time.sleep(heartbeat_timeout)
-        if last_heartbeat_time < time.time() - heartbeat_timeout:
-            shutdown_event.set()
-
-
 class LazyRepositorySymbolsAndCodePointers:
     '''Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
     we can gracefully handle user code errors.'''
@@ -195,8 +188,7 @@ class DagsterApiServer(DagsterApiServicer):
         self.__last_heartbeat_time = time.time()
         if heartbeat:
             self.__heartbeat_thread = threading.Thread(
-                target=heartbeat_thread,
-                args=(heartbeat_timeout, self.__last_heartbeat_time, self._shutdown_server_event),
+                target=self._heartbeat_thread, args=(heartbeat_timeout,),
             )
             self.__heartbeat_thread.daemon = True
             self.__heartbeat_thread.start()
@@ -214,6 +206,12 @@ class DagsterApiServer(DagsterApiServicer):
         )
         instance.report_engine_event(message, run, cls=self.__class__)
         instance.report_run_failed(run)
+
+    def _heartbeat_thread(self, heartbeat_timeout):
+        while True:
+            time.sleep(heartbeat_timeout)
+            if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
+                self._shutdown_server_event.set()
 
     def _cleanup_thread(self):
         while True:
@@ -1053,7 +1051,6 @@ class GrpcServerProcess(object):
                 max_workers=max_workers,
             )
         else:
-            # Who will clean this up now
             self.socket = safe_tempfile_path_unmanaged()
 
             self.server_process = open_server_process(
@@ -1069,7 +1066,8 @@ class GrpcServerProcess(object):
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
 
     def wait(self):
-        self.server_process.wait()
+        if self.server_process.poll() is None:
+            self.server_process.communicate()
 
     def create_ephemeral_client(self):
         from dagster.grpc.client import EphemeralDagsterGrpcClient
