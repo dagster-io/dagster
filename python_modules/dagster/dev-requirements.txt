@@ -7,7 +7,7 @@ isort<5,>=4.3.21
 mock==3.0.5
 pytest-mock==2.0.0
 nbsphinx==0.4.2
-pylint>=2.4.1; python_version >= '3.6'
+pylint==2.6.0; python_version >= '3.6'
 pytest-cov==2.8.1
 pytest-dependency==0.4.0
 pytest-runner==5.2

@@ -15,8 +15,9 @@
 # W0511 disable TODO warning
 # W1201, W1202 disable log format warning. False positives (I think)
 # W0231 disable super-init-not-called - pylint doesn't understand six.with_metaclass(ABCMeta)
+# W0707 disable raise-missing-from which we cant use because py2 back compat
 
-disable=C,R,duplicate-code,W0231,W0511,W1201,W1202,no-init
+disable=C,R,duplicate-code,W0231,W0511,W1201,W1202,W0707,no-init
 
 # See: https://github.com/getsentry/responses/issues/74
 [TYPECHECK]
