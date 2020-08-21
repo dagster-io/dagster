@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import json
 import os
 import string
 from contextlib import contextmanager
@@ -484,6 +485,7 @@ def valid_external_pipeline_target_cli_args_no_preset():
 
 
 def valid_external_pipeline_target_cli_args_with_preset():
+    run_config = {"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}}
     return valid_external_pipeline_target_cli_args_no_preset() + [
         (
             [
@@ -497,7 +499,20 @@ def valid_external_pipeline_target_cli_args_with_preset():
                 "test",
             ],
             False,
-        )
+        ),
+        (
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-d",
+                os.path.dirname(__file__),
+                "-a",
+                "define_foo_pipeline",
+                "--config-json",
+                json.dumps(run_config),
+            ],
+            False,
+        ),
     ]
 
 
