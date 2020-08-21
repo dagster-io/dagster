@@ -282,6 +282,10 @@
             "path": "/_apidocs/execution"
           },
           {
+            "name": "Hooks",
+            "path": "/_apidocs/hooks"
+          },
+          {
             "name": "Utilities",
             "path": "/_apidocs/utilities"
           },

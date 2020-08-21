@@ -1,12 +1,17 @@
 from collections import defaultdict
 
-import pytest
-
-from dagster import ModeDefinition, composite_solid, execute_pipeline, pipeline, resource, solid
+from dagster import (
+    Int,
+    ModeDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    resource,
+    solid,
+)
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
-from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 class SomeUserException(Exception):
@@ -378,3 +383,28 @@ def test_hook_on_pipeline_def_and_solid_instance():
     hook_events = list(filter(lambda event: event.is_hook_event, result.event_list))
     # same hook will run once on the same solid invocation
     assert len(hook_events) == 5
+
+
+def test_hook_context_config_schema():
+
+    called_hook_to_solids = defaultdict(set)
+
+    @event_list_hook
+    def a_hook(context, _):
+        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        assert context.solid_config == {"config_1": 1}
+        return HookExecutionResult("a_hook")
+
+    @solid(config_schema={"config_1": Int})
+    def a_solid(_):
+        pass
+
+    @pipeline
+    def a_pipeline():
+        a_solid.with_hooks(hook_defs={a_hook})()
+
+    result = execute_pipeline(
+        a_pipeline, run_config={"solids": {"a_solid": {"config": {"config_1": 1}}}}
+    )
+    assert result.success
+    assert called_hook_to_solids["a_hook"] == {"a_solid"}

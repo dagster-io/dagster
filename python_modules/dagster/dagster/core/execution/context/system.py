@@ -314,7 +314,10 @@ class HookContext(SystemExecutionContext):
     Attributes:
         log (DagsterLogManager): Centralized log dispatch from user code.
         hook_def (HookDefinition): The hook that the context object belongs to.
-        step (ExecutionStep) The compute step associated with the hook.
+        step (ExecutionStep): The compute step associated with the hook.
+        solid (Solid): The solid instance associated with the hook.
+        resources (Any): Resources available in the hook context.
+        solid_config (Dict[str, Any]): The parsed config specific to this solid.
     """
 
     def __init__(self, execution_context_data, log_manager, hook_def, step):
@@ -349,3 +352,8 @@ class HookContext(SystemExecutionContext):
     @property
     def required_resource_keys(self):
         return self._required_resource_keys
+
+    @property
+    def solid_config(self):
+        solid_config = self.environment_config.solids.get(str(self._step.solid_handle))
+        return solid_config.config if solid_config else None
